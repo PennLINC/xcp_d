@@ -6,10 +6,6 @@ import nibabel as nb
 import pandas as pd
 import sys 
 
-
-
-
-
 def load_confound(datafile):
     """`Load confound amd json."""
     '''
