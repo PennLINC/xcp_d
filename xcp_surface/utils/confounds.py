@@ -32,7 +32,7 @@ def readjson(jsonfile):
     return data
 
 
-def _load_motion(confoundspd):
+def load_motion(confoundspd):
     """Load the 6 motion regressors."""
     motion_params = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
     return confoundspd[motion_params]
@@ -81,9 +81,43 @@ def load_tcompcor(confoundspd, confoundjs):
 
 
 def derivative(confound):
-    return confound
+    return np.diff(confound,prepend=0)
 
 def confpower(confound,order=2):
     return confound^(order)
+
+
+def getconfound(datafile,params='6P'):
+   
+   confoundtsv,confoundjson = load_confound(datafile)
+   if params == '2P':
+       confound = load_WM_CSF(confoundtsv)
+   elif params == '9P':
+       motion = load_motion(confoundtsv)
+       wmcsf = load_WM_CSF(confoundtsv)
+       gs = load_globalS(confoundtsv)
+       confound = np.concatenate([motion,wmcsf,gs])
+   elif  params == '24P':
+       motion = load_motion(confoundtsv)
+       mm_dev = np.concatenate([motion,derivative(motion)])
+       confound = np.concatenate([mm_dev,confpower(mm_dev)])
+   elif params == '36P':
+       motion = load_motion(confoundtsv)
+       mm_dev = np.concatenate([motion,derivative(motion)])
+       conf24p = np.concatenate([mm_dev,confpower(mm_dev)])
+       gswmcsf = np.concatenate([load_WM_CSF(confoundtsv),load_globalS(confoundtsv)])
+       gwcs_dev = np.concatenate([gswmcsf,derivative(gswmcsf)]) 
+       confound = np.concatenate([conf24p,gwcs_dev,confpower(gwcs_dev)])
+   elif params == 'acompcor':
+       motion = load_motion(confoundtsv)
+       mm_dev = np.concatenate([motion,derivative(motion)])
+       acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
+       confound = np.concatenate([mm_dev,acompc])
+   elif params == 'tcompcor':
+       confound = load_tcompcor(confoundspd=confoundtsv,confoundjs=confoundjson)
+   
+   return confound
+
+    
 
 
