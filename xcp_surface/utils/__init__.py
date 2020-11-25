@@ -3,8 +3,7 @@
 
 from .write_save import (read_ndata,write_ndata)
 from .plot import(plot_svg,compute_dvars)
-from .confounds import (load_acompcor,load_confound,load_globalS,
-             load_tcompcor,load_motion,load_WM_CSF,derivative,confpower)
+from .confounds import load_confound_matrix
 
 
 __all__ = [
@@ -12,12 +11,5 @@ __all__ = [
     'write_ndata',
     'plot_svg',
     'compute_dvars',
-    'load_acompcor',
-    'load_confound',
-    'load_globalS',
-    'load_tcompcor',
-    'load_motion',
-    'load_WM_CSF',
-    'derivative',
-    'confpower'
+    'load_confound_matrix'
 ]

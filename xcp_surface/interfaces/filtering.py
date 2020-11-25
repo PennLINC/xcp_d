@@ -60,12 +60,12 @@ class FilteringData(SimpleInterface):
             suffix='_filtered.nii.gz'
 
         #write the output out
-        self._results['res_file'] = fname_presuffix(
+        self._results['filt_file'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix=suffix, newpath=runtime.cwd,
                 use_ext=False,)
-        self._results['res_file'] = write_ndata(data_matrix=filt_data, template=self.inputs.in_file, 
-                filename=self._results['res_file'],mask=self.inputs.mask)
+        self._results['filt_file'] = write_ndata(data_matrix=filt_data, template=self.inputs.in_file, 
+                filename=self._results['filt_file'],mask=self.inputs.mask)
         return runtime
 
 def butter_bandpass(data,fs,lowpass,highpass,order=2):
