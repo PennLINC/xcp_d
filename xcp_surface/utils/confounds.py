@@ -84,7 +84,7 @@ def derivative(confound):
     return np.diff(confound,prepend=0)
 
 def confpower(confound,order=2):
-    return confound^(order)
+    return confound ** order
 
 
 def load_confound_matrix(datafile,params='6P'):
