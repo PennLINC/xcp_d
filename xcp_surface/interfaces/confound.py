@@ -21,11 +21,11 @@ LOGGER = logging.getLogger('nipype.interface')
 class _confoundInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc="Input file ")
     params = traits.Str(exists=True,mandatory=True, 
-                            default_value='6P',desc="confound matrix wanted")
+                            default_value='6P',desc="nuissance param")
 
 class _confoundOutputSpec(TraitedSpec):
-    counfound_file = File(exists=True, manadatory=True,
-                                  desc=" filtered file")
+    confound_file = File(exists=True, manadatory=True,
+                                  desc="confound matrix file")
 
 
 class ConfoundMatrix(SimpleInterface):
@@ -40,10 +40,10 @@ class ConfoundMatrix(SimpleInterface):
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
                         params=self.inputs.params)
         #write the output out
-        self._results['counfound_file '] = fname_presuffix(
+        self._results['confound_file'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix='_confound_matrix.tsv', newpath=runtime.cwd,
                 use_ext=False)
         datax = pd.DataFrame(data_matrix)
-        datax.to_csv(self._results['counfound_file'], header=None,index=None)
+        datax.to_csv(self._results['confound_file'] , header=None,index=None)
         return runtime

@@ -35,7 +35,7 @@ class _regressInputSpec(BaseInterfaceInputSpec):
                           desc=" custom regressors like task or respiratory")
     mask = File(exists=False, mandatory=False,
                           desc=" mask for nifti file")
-
+    
 
 class _regressOutputSpec(TraitedSpec):
     res_file = File(exists=True, manadatory=True,
@@ -51,10 +51,10 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
         
         # get the confound matrix 
-        confound = pd.read_csv(self.inputs.confounds,sep='\t',index=None).to_numpy()
+        confound = pd.read_csv(self.inputs.confounds,header=None).to_numpy().T
         if self.inputs.customs_conf:
             confound_custom = pd.read_csv(self.inputs.customs_conf,
-                                sep='\t',index=None).to_numpy()
+                                header=None).to_numpy().T
             confound = np.hstack((confound, confound_custom))
         
         # get the nifti/cifti  matrix
@@ -79,6 +79,8 @@ class regress(SimpleInterface):
         self._results['res_file'] = write_ndata(data_matrix=resid_data, template=self.inputs.in_file, 
                 filename=self._results['res_file'],mask=self.inputs.mask)
         return runtime
+
+
 
 
 

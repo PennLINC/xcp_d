@@ -33,6 +33,7 @@ class _filterdataInputSpec(BaseInterfaceInputSpec):
                           desc=" mask for nifti file")
 
 
+
 class _filterdataOutputSpec(TraitedSpec):
     filt_file = File(exists=True, manadatory=True,
                                   desc=" filtered file")
