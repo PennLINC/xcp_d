@@ -19,9 +19,13 @@ import pandas as pd
 LOGGER = logging.getLogger('nipype.interface') 
 
 class _confoundInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True,mandatory=True, desc="Input file ")
+    in_file = File(exists=True,mandatory=True, desc="Input file: either cifti or nifti file from \
+                                  fMRIPrep directory")
     params = traits.Str(exists=True,mandatory=True, 
-                            default_value='6P',desc="nuissance param")
+                            default_value='6P',desc="nuissance regressors from Ciric etal 2017 \
+                             2P: wm and csf, 6P: six motion paramters, 9P: 6P + 2P + global signal \
+                             24P: (6P + their derivative) and their square , \
+                             36P: (9P + their derivative) and their square  ")
 
 class _confoundOutputSpec(TraitedSpec):
     confound_file = File(exists=True, manadatory=True,
@@ -29,7 +33,22 @@ class _confoundOutputSpec(TraitedSpec):
 
 
 class ConfoundMatrix(SimpleInterface):
-    """select the confound matrix."""
+    r"""
+    select the confound matrix.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> conf = ConfoundMatrix()
+    >>> conf = ConfoundMatrix()
+    >>> conf.inputs.in_file = datafile
+    >>> conf.inputs.params = "9P"
+    >>> conf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
+    
+    """
 
     input_spec = _confoundInputSpec
     output_spec = _confoundOutputSpec

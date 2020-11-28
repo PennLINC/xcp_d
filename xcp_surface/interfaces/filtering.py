@@ -23,14 +23,14 @@ LOGGER = logging.getLogger('nipype.interface')
 
 
 class _filterdataInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True,mandatory=True, desc="Input file ")
+    in_file = File(exists=True,mandatory=True, desc="Input file : either cifti or nifti file")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
     lowpass = traits.Float(exists=True,mandatory=True, 
                             default_value=0.10,desc="lowpass filter in Hz")
     highpass = traits.Float(exists=True,mandatory=True, 
                             default_value=0.01,desc="highpass filter in Hz")
     mask = File(exists=False, mandatory=False,
-                          desc=" mask for nifti file")
+                          desc=" brain mask for nifti file")
 
 
 
@@ -40,7 +40,21 @@ class _filterdataOutputSpec(TraitedSpec):
 
 
 class FilteringData(SimpleInterface):
-    """filter the data."""
+    r"""filter the data.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> filt=FilteringData()
+    >>> filt.inputs.in_file = reg._results['res_file']
+    >>> filt.inputs.tr = 3
+    >>> filt.inputs.lowpass = 0.08
+    >>> filt.inputs.highpass = 0.01
+    >>> filt.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()    
+    """
 
     input_spec = _filterdataInputSpec
     output_spec = _filterdataOutputSpec

@@ -27,14 +27,14 @@ LOGGER = logging.getLogger('nipype.interface')
 
 
 class _regressInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True,mandatory=True, desc="Input file ")
+    in_file = File(exists=True,mandatory=True, desc="Input file either cifti or nifti file ")
     confounds = File(exists=True, mandatory=True,
-                          desc=" counfound regressors selected from fmriprep.")
+                          desc=" confound regressors selected from fmriprep's confound matrix.")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
     customs_conf = File(exists=False, mandatory=False,
-                          desc=" custom regressors like task or respiratory")
+                          desc=" custom regressors like task or respiratory with the same length as in_file")
     mask = File(exists=False, mandatory=False,
-                          desc=" mask for nifti file")
+                          desc=" brain mask nifti file")
     
 
 class _regressOutputSpec(TraitedSpec):
@@ -43,7 +43,21 @@ class _regressOutputSpec(TraitedSpec):
 
 
 class regress(SimpleInterface):
-    """regress the regressors from cifti or nifti."""
+    r"""
+    regress the nuissance regressors from cifti or nifti.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> reg = regress()
+    >>> reg.inputs.in_file = datafile
+    >>> reg.inputs.confounds = confoundfile # selected with ConfoundMatrix() or custom
+    >>> reg.inputs.tr = 3
+    >>> reg.run()
+    
+    
+    """
 
     input_spec = _regressInputSpec
     output_spec = _regressOutputSpec

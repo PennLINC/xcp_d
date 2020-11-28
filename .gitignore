@@ -1,3 +1,7 @@
 
 xcp_surface/.DS_Store
 .DS_Store
+*.ipynb
+*.pyc
+*.tsv
+*.nii
