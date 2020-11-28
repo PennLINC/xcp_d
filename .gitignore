@@ -5,3 +5,5 @@ xcp_surface/.DS_Store
 *.pyc
 *.tsv
 *.nii
+*.png
+*.jpg
