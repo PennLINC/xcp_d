@@ -27,15 +27,15 @@ LOGGER = logging.getLogger('nipype.interface')
 
 
 class _regressInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True,mandatory=True, desc="Input file ")
+    in_file = File(exists=True,mandatory=True, desc="Input file either cifti or nifti file ")
     confounds = File(exists=True, mandatory=True,
-                          desc=" counfound regressors selected from fmriprep.")
+                          desc=" confound regressors selected from fmriprep's confound matrix.")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
     customs_conf = File(exists=False, mandatory=False,
-                          desc=" custom regressors like task or respiratory")
+                          desc=" custom regressors like task or respiratory with the same length as in_file")
     mask = File(exists=False, mandatory=False,
-                          desc=" mask for nifti file")
-
+                          desc=" brain mask nifti file")
+    
 
 class _regressOutputSpec(TraitedSpec):
     res_file = File(exists=True, manadatory=True,
@@ -43,7 +43,21 @@ class _regressOutputSpec(TraitedSpec):
 
 
 class regress(SimpleInterface):
-    """regress the regressors from cifti or nifti."""
+    r"""
+    regress the nuissance regressors from cifti or nifti.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> reg = regress()
+    >>> reg.inputs.in_file = datafile
+    >>> reg.inputs.confounds = confoundfile # selected with ConfoundMatrix() or custom
+    >>> reg.inputs.tr = 3
+    >>> reg.run()
+    
+    
+    """
 
     input_spec = _regressInputSpec
     output_spec = _regressOutputSpec
@@ -51,10 +65,10 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
         
         # get the confound matrix 
-        confound = pd.read_csv(self.inputs.confounds,sep='\t',index=None).to_numpy()
+        confound = pd.read_csv(self.inputs.confounds,header=None).to_numpy().T
         if self.inputs.customs_conf:
             confound_custom = pd.read_csv(self.inputs.customs_conf,
-                                sep='\t',index=None).to_numpy()
+                                header=None).to_numpy().T
             confound = np.hstack((confound, confound_custom))
         
         # get the nifti/cifti  matrix
@@ -79,6 +93,8 @@ class regress(SimpleInterface):
         self._results['res_file'] = write_ndata(data_matrix=resid_data, template=self.inputs.in_file, 
                 filename=self._results['res_file'],mask=self.inputs.mask)
         return runtime
+
+
 
 
 
