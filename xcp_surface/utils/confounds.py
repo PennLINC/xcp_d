@@ -109,6 +109,12 @@ def load_confound_matrix(datafile,params='6P'):
         motion = load_motion(confoundtsv)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         confound = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
+    elif  params == 'DB':
+        motion = load_motion(confoundtsv)
+        mm_dev = pd.concat([motion,derivative(motion)],axis=1)
+        wmcsf = load_WM_CSF(confoundtsv)
+        gs = load_globalS(confoundtsv)
+        confound = pd.concat([mm_dev,confpower(mm_dev),wmcsf,gs],axis=1)
     elif params == '36P':
         motion = load_motion(confoundtsv)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
