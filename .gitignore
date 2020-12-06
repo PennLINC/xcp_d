@@ -7,3 +7,4 @@ xcp_surface/.DS_Store
 *.nii
 *.png
 *.jpg
+*.pyc
