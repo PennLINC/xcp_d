@@ -88,7 +88,7 @@ def confpower(confound,order=2):
     return confound ** order
 
 
-def load_confound_matrix(datafile,params='6P'):
+def load_confound_matrix(datafile,params='24P'):
     """ extract confound """
     '''
     datafile:
@@ -96,16 +96,8 @@ def load_confound_matrix(datafile,params='6P'):
     params: 
        confound requested based on Ciric et. al 2017
     '''
-   
     confoundtsv,confoundjson = load_confound(datafile)
-    if params == '2P':
-        confound = load_WM_CSF(confoundtsv)
-    elif params == '9P':
-        motion = load_motion(confoundtsv)
-        wmcsf = load_WM_CSF(confoundtsv)
-        gs = load_globalS(confoundtsv)
-        confound = pd.concat([motion,wmcsf,gs],axis=1)
-    elif  params == '24P':
+    if  params == '24P':
         motion = load_motion(confoundtsv)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         confound = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
@@ -129,11 +121,4 @@ def load_confound_matrix(datafile,params='6P'):
         confound = pd.concat([mm_dev,acompc],axis=1)
     elif params == 'tcompcor':
         confound = load_tcompcor(confoundspd=confoundtsv,confoundjs=confoundjson)
-    elif params == '6P':
-        confound = load_motion(confoundtsv)
-
     return confound
-
-    
-
-
