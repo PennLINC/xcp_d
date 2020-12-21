@@ -32,10 +32,12 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd):
+def load_motion(confoundspd,head_radius):
     """Load the 6 motion regressors."""
-    motion_params = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
-    return confoundspd[motion_params]
+    rot_2mm = head_radius*confoundspd[["rot_x", "rot_y", "rot_z"]]
+    trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
+
+    return pd.concat([rot_2mm,trans_mm],axis=1)   
 
 def load_globalS(confoundspd):
     """select global signal."""
@@ -88,7 +90,7 @@ def confpower(confound,order=2):
     return confound ** order
 
 
-def load_confound_matrix(datafile,params='24P'):
+def load_confound_matrix(datafile,head_radius=50,params='24P'):
     """ extract confound """
     '''
     datafile:
@@ -98,24 +100,24 @@ def load_confound_matrix(datafile,params='24P'):
     '''
     confoundtsv,confoundjson = load_confound(datafile)
     if  params == '24P':
-        motion = load_motion(confoundtsv)
+        motion = load_motion(confoundtsv,head_radius=head_radius)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         confound = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
     elif  params == 'DB':
-        motion = load_motion(confoundtsv)
+        motion = load_motion(confoundtsv,head_radius=head_radius)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
         confound = pd.concat([mm_dev,confpower(mm_dev),wmcsf,gs],axis=1)
     elif params == '36P':
-        motion = load_motion(confoundtsv)
+        motion = load_motion(confoundtsv,head_radius=head_radius)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         conf24p = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
         gswmcsf = pd.concat([load_WM_CSF(confoundtsv),load_globalS(confoundtsv)],axis=1)
         gwcs_dev = pd.concat([gswmcsf,derivative(gswmcsf)],axis=1) 
         confound = pd.concat([conf24p,gwcs_dev,confpower(gwcs_dev)],axis=1)
     elif params == 'acompcor':
-        motion = load_motion(confoundtsv)
+        motion = load_motion(confoundtsv,head_radius=head_radius)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
         confound = pd.concat([mm_dev,acompc],axis=1)
