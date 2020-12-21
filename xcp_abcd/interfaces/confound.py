@@ -21,10 +21,10 @@ LOGGER = logging.getLogger('nipype.interface')
 class _confoundInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc="Input file: either cifti or nifti file from \
                                   fMRIPrep directory")
+    head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head raidus for to convert rotxyz to arc length \
+                                               for baby, 35m is recommended")
     params = traits.Str(exists=True,mandatory=True, 
-                            default_value='6P',desc= "nuissance confound model from Ciric etal 2017 \
-                             2P: wm and csf, 6P: six motion paramters, \
-                             9P: 6P + 2P + global signal, \
+                            default_value='24P',desc= "nuissance confound model from Ciric etal 2017 \
                              24P: (6P + their derivative) and their square , \
                              DB: 24P + 2P + global signal \
                              36P: (9P + their derivative) and their square  ")
@@ -59,7 +59,7 @@ class ConfoundMatrix(SimpleInterface):
         
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
-                        params=self.inputs.params)
+                        params=self.inputs.params,head_radius=self.inputs.head_radius)
         #write the output out
         self._results['confound_file'] = fname_presuffix(
                 self.inputs.in_file,
