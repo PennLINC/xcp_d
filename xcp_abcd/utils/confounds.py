@@ -34,7 +34,8 @@ def readjson(jsonfile):
 
 def load_motion(confoundspd,head_radius):
     """Load the 6 motion regressors."""
-    rot_2mm = head_radius*confoundspd[["rot_x", "rot_y", "rot_z"]]
+    head_radius = head_radius
+    rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
 
     return pd.concat([rot_2mm,trans_mm],axis=1)   
