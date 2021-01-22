@@ -1,0 +1,13 @@
+default
+somatomotorHand
+somatomotorMouth
+visual
+frontoparietal
+auditory
+cinguloparietal
+retrosplenialTemporal
+cinguloopercular
+ventralAttention
+salience
+dorsalAttention
+none
