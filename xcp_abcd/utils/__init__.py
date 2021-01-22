@@ -5,11 +5,15 @@ from .write_save import (read_ndata,write_ndata)
 from .plot import(plot_svg,compute_dvars)
 from .confounds import load_confound_matrix
 from .fcon import extract_timeseries_funct
+from .cifticonnectivity import CiftiCorrelation
+from .ciftiparcellation import CiftiParcellate
 
 __all__ = [
     'read_ndata',
     'write_ndata',
     'plot_svg',
     'compute_dvars',
-    'load_confound_matrix'
+    'load_confound_matrix',
+    'CiftiCorrelation',
+    'CiftiParcellate'
 ]
