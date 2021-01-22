@@ -4,7 +4,7 @@
 from .write_save import (read_ndata,write_ndata)
 from .plot import(plot_svg,compute_dvars)
 from .confounds import load_confound_matrix
-
+from .fcon import extract_timeseries_funct
 
 __all__ = [
     'read_ndata',
