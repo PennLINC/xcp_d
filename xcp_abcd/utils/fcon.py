@@ -6,6 +6,7 @@ nifti functional connectivity
 from nilearn.input_data import NiftiLabelsMasker
 import numpy as np 
 from scipy.stats import rankdata
+from scipy import signal
 import nibabel as nb 
 
 def extract_timeseries_funct(in_file,
@@ -66,4 +67,16 @@ def mesh_adjacency(surf):
         A[faces[i,1],faces[i,1]]=1
         A[faces[i,2],faces[i,0]]=1
                    
-    return A + A.T 
+    return A + A.T
+
+
+def compute_alff(data_matrix,low_pass,high_pass, TR):
+    fs=1/TR
+    alff = np.zeros(data_matrix.shape[0])
+    for i in range(data_matrix.shape[0]):
+        fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs)
+        pxx_sqrt = np.sqrt(Pxx_den)
+        ff_alff = [np.argmin(np.abs(fx-high_pass)),np.argmin(np.abs(fx-low_pass))]
+        alff[i] = np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
+        
+    return alff
