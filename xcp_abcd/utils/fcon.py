@@ -71,6 +71,9 @@ def mesh_adjacency(surf):
 
 
 def compute_alff(data_matrix,low_pass,high_pass, TR):
+    """
+     https://pubmed.ncbi.nlm.nih.gov/16919409/
+    """
     fs=1/TR
     alff = np.zeros(data_matrix.shape[0])
     for i in range(data_matrix.shape[0]):
