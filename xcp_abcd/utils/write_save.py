@@ -57,3 +57,29 @@ def write_ndata(data_matrix,template,filename,mask=None):
     
     dataimg.to_filename(filename)
     return filename
+
+
+
+def write_gii(datat,template,filename):
+    '''
+    datatt : vector 
+    template: real file loaded with nibabel to get header and filemap
+    filename ; name of the output
+    '''
+    template=nb.load(template)
+    dataimg=nb.gifti.GiftiImage(header=template.header,file_map=template.file_map,extra=template.extra)
+    for i in range(len(datat)):
+        d_timepoint=nb.gifti.GiftiDataArray(data=np.asarray(datat[i]),intent='NIFTI_INTENT_TIME_SERIES')
+        dataimg.add_gifti_data_array(d_timepoint)
+    dataimg.to_filename(filename)
+    return filename
+
+
+def read_gii(surf_gii):
+    bbx = nb.load(surf_gii)
+    datat = bbx.agg_data()
+    if not hasattr(datat, '__shape__'):
+        datat = np.zeros((len(bbx.darrays[0].data), len(bbx.darrays)))
+        for arr in range(len(bbx.darrays)):
+            datat[:, arr] = bbx.darrays[arr].data
+    return datat 
