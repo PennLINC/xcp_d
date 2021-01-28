@@ -4,7 +4,8 @@
 Time series extractions 
 functional connectvity matrix
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_post_process_wf
+.. autofunction:: init_fcon_ts_wf
+.. autofunction:: init_cifti_conts_wf
 """
 import numpy as np
 import os 
@@ -114,7 +115,7 @@ def init_fcon_ts_wf(
     return workflow
 
 
-def init_cifti_conts(
+def init_cifti_conts_wf(
     mem_gb,
     name="cifti_ts_con_wf", 
     ):

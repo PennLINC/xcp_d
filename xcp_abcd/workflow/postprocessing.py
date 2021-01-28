@@ -4,6 +4,7 @@
 post processing the bold/cifti
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_post_process_wf
+
 """
 import numpy as np
 from nipype.pipeline import engine as pe
@@ -69,7 +70,7 @@ def init_post_process_wf(
                    name="nifti smoothing", mem_gb=mem_gb )
     
     ## smoothing the datt if requested
-    workflow.connect([
+        workflow.connect([
                 (filterdx, smooth_data,[('filt_file','in_file')]),
                 (smooth_data, outputnode,[('out_file','smoothed_bold')])       
             ])
