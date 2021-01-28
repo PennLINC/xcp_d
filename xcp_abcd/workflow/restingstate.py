@@ -96,20 +96,27 @@ def init_surface_reho_wf(
 
     return workflow
 
+def init_3d_reho_wf(
+    mem_gb,
+    smoothing,
+    name="surface_reho_wf",
+    ):
 
+    workflow = pe.Workflow(name=name)
+    
+    inputnode = pe.Node(niu.IdentityInterface(
+            fields=['clean_bold']), name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['reho_out']), name='outputnode')
 
+    compute_reho = pe.Node(ReHo(neighborhood=vertices), name="reho_3d", mem_gb=mem_gb)
 
+    workflow.connect([
+         (inputnode, compute_reho,[('clean_bold','in_file')]),
+         ( compute_reho,outputnode,[('out_file','reho_out')]),
+        ])
 
-
-
-
-
-
-
-
-
-
-
+    return workflow
 
 
 def fwhm2sigma(fwhm):
