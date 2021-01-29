@@ -58,7 +58,7 @@ class _alffInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc="nifti, cifti or gifti")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
     lowpass = traits.Float(exists=True,mandatory=True, 
-                            default_value=1/tr,desc="lowpass filter in Hz")
+                            default_value=0.10,desc="lowpass filter in Hz")
     highpass = traits.Float(exists=True,mandatory=True, 
                             default_value=0.01,desc="highpass filter in Hz")
     mask = File(exists=False, mandatory=False,

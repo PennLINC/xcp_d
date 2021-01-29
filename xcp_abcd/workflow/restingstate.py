@@ -99,7 +99,7 @@ def init_surface_reho_wf(
 def init_3d_reho_wf(
     mem_gb,
     smoothing,
-    name="surface_reho_wf",
+    name="3d_reho_wf",
     ):
 
     workflow = pe.Workflow(name=name)

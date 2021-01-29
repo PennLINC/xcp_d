@@ -21,7 +21,7 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
-from utils import(read_ndata, write_ndata)
+from ..utils import(read_ndata, write_ndata)
 
 LOGGER = logging.getLogger('nipype.interface') 
 

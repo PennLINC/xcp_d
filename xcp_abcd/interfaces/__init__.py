@@ -14,5 +14,6 @@ __all__ = [
     'computealff',
     'surfaceReho',
     'get_atlas_cifti',
-    'get_atlas_nifti'
+    'get_atlas_nifti',
+    'ApplyTransformsx'
 ]

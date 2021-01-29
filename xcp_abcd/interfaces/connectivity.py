@@ -15,7 +15,7 @@ from nipype.interfaces.base import (
     SimpleInterface
 )
 LOGGER = logging.getLogger('nipype.interface')
-from utils import extract_timeseries_funct
+from ..utils import extract_timeseries_funct
 
 # nifti functional connectivity
 
@@ -53,6 +53,7 @@ class nifticonnect(SimpleInterface):
                                  atlas=self.inputs.atlas,
                                  timeseries=self._results['time_series_tsv'],
                                  fconmatrix=self._results['fcon_matrix_tsv'])
+        return runtime
 
 class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
     transforms = InputMultiObject(

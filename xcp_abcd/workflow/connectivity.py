@@ -11,7 +11,7 @@ import numpy as np
 import os 
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
-from ..interfaces import ( nifticonnect,get_atlas_nifti, 
+from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti, 
                       get_atlas_cifti,ApplyTransformsx)
 from nipype.interfaces import utility as niu
 from ..utils import CiftiCorrelation, CiftiParcellate

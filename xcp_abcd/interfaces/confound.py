@@ -6,14 +6,14 @@ Handling confound.
     # will comeback
 """
 
-from utils import load_confound_matrix
+from ..utils import load_confound_matrix
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
-from utils import(read_ndata, write_ndata)
+from ..utils import(read_ndata, write_ndata)
 import pandas as pd
 
 LOGGER = logging.getLogger('nipype.interface') 
