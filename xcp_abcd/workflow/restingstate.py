@@ -99,7 +99,7 @@ def init_surface_reho_wf(
 def init_3d_reho_wf(
     mem_gb,
     smoothing,
-    name="3d_reho_wf",
+    name="afni_reho_wf",
     ):
 
     workflow = pe.Workflow(name=name)
@@ -109,7 +109,7 @@ def init_3d_reho_wf(
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['reho_out']), name='outputnode')
 
-    compute_reho = pe.Node(ReHo(neighborhood=vertices), name="reho_3d", mem_gb=mem_gb)
+    compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb)
 
     workflow.connect([
          (inputnode, compute_reho,[('clean_bold','in_file')]),

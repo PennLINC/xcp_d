@@ -37,11 +37,11 @@ def init_post_process_wf(
     confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params),
                     name="ConfoundMatrix", mem_gb=mem_gb)
     
-    filterdx  = pe.Node(FilteringData(tr=TR,lowspass=lowpass,highpass=highpass),
-                    name="filter the data", mem_gb=mem_gb)
+    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=lowpass,highpass=highpass),
+                    name="filter_the_data", mem_gb=mem_gb)
 
     regressy = pe.Node (regress(tr=TR),
-               name="regress the data", mem_gb=mem_gb)
+               name="regress_the_data", mem_gb=mem_gb)
     
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 
@@ -63,11 +63,11 @@ def init_post_process_wf(
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti smoothing", mem_gb=mem_gb)
+                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti_smoothing", mem_gb=mem_gb)
 
         elif inputnode.inputs.bold.endswith('nii.gz'):
            smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
-                   name="nifti smoothing", mem_gb=mem_gb )
+                   name="nifti_smoothing", mem_gb=mem_gb )
     
     ## smoothing the datt if requested
         workflow.connect([
