@@ -9,13 +9,14 @@ post processing the bold
 import sys
 import os
 from copy import deepcopy
+import nibabel as nb
 from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
 from ..utils import collect_data
 
-from  workflow import (init_fcon_ts_wf,
+from  ..workflow import (init_fcon_ts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
     init_3d_reho_wf)
@@ -37,24 +38,19 @@ def init_boldpostprocess_wf(
      layout=None,
      name='bold_process_wf',
       ):
-
-    bold_tlen, mem_gb = _create_mem_gb(ref_file)
-
-
-
     TR = layout.get_metadata(bold_file)
 
     workflow = pe.Workflow(name=name)
    
     # get reference and mask
-    mask_file,ref_file = _get_ref_mask(fname=bolmd_file)
+    mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_file', 'ref_file','bold_mask','customs_conf','mni_to_t1w']),
         name='inputnode')
     
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.ref_fiile = ref_file
+    inputnode.inputs.ref_file = ref_file
     inputnode.inputs.bold_mask = mask_file
     inputnode.inputs.mni_to_t1w = mni_to_t1w
 
@@ -67,22 +63,23 @@ def init_boldpostprocess_wf(
 
     
     # get the mem_bg size for each workflow
-    mem_gb = {'derivative': 1, 'resampled': 1, 'timeseries': 1}
-    clean_data_wf = init_post_process_wf( mem_gb=mem_gb['timeseries'], TR=TR,
+    
+    mem_gbx = _create_mem_gb(bold_file)
+    clean_data_wf = init_post_process_wf( mem_gb=mem_gbx['timeseries'], TR=TR,
                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   smoothing=smoothing,params=params) 
+                   smoothing=smoothing,params=params,name='clean_data_wf') 
     
     
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gb['timeseries'],
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
                  t1w_to_native=_t12native(bold_file),
                  template=template,
                  name="fcons_ts_wf")
     
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gb['timeseries'], TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=lowpass,highpass=highpass,smoothing=smoothing,
                     name="compue_alff_wf" )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gbmem_gb['timeseries'],smoothing=smoothing,
+    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
 
     workflow.connect([
@@ -102,11 +99,12 @@ def init_boldpostprocess_wf(
         #output
         'processed_bold', 
         (clean_data_wf,outputnode,[('processed_bold','processed_bold'),('smoothed_bold','smoothed_bold')]),
-        
+        (alff_compute_wf,outputnode,[('alff_out','alff_out'),('smoothed_alff','smoothed_alff')]),
+        (reho_compute_wf,outputnode,[('reho_out','reho_out')]),
         (fcon_ts_wf,outputnode,[('sc207_ts','sc207_ts' ),('sc207_fc','sc207_fc'),
                         ('sc207_ts','sc207_ts'),('sc207_fc','sc207_fc'),
                         ('gs360_ts','gs360_ts'),('gs360_fc','gs360_fc'),
-                        ('gd333_ts','gd333_ts') ('gd333_fc','gd333_fc')]),
+                        ('gd333_ts','gd333_ts'),('gd333_fc','gd333_fc')]),
         ])
     return workflow 
 
