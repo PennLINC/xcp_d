@@ -26,7 +26,7 @@ def init_compute_alff_wf(
     lowpass,
     highpass,
     smoothing,
-    name="compue_alff_wf",
+    name="compute_alff_wf",
     ):
 
     workflow = pe.Workflow(name=name)
@@ -105,15 +105,16 @@ def init_3d_reho_wf(
     workflow = pe.Workflow(name=name)
     
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['clean_bold']), name='inputnode')
+            fields=['clean_bold','bold_mask']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['reho_out']), name='outputnode')
 
     compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb)
 
     workflow.connect([
-         (inputnode, compute_reho,[('clean_bold','in_file')]),
-         ( compute_reho,outputnode,[('out_file','reho_out')]),
+         (inputnode, compute_reho,[('clean_bold','in_file'),
+                         ('bold_mask','mask_file')]),
+         (compute_reho,outputnode,[('out_file','reho_out')]),
         ])
 
     return workflow

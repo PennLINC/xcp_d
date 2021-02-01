@@ -195,7 +195,7 @@ def build_workflow(opts, retval):
     from ..__about__ import __version__
     from ..workflows.base import init_xcpabcd_wf
 
-    build_log = nlogging.getLogger('nipype.workflow')
+    build_log = logging.getLogger('nipype.workflow')
 
     INIT_MSG = """
     Running xcp_abcd version {version}:

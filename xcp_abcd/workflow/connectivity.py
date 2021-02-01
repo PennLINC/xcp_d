@@ -20,8 +20,6 @@ from pkg_resources import resource_filename as pkgrf
 
 def init_fcon_ts_wf(
     mem_gb,
-    in_file,
-    mni_to_t1w,
     t1w_to_native,
     template,
     name="fcons_ts_wf",
@@ -31,7 +29,8 @@ def init_fcon_ts_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['clean_bold','ref_file']), name='inputnode')
+            fields=['bold_file','clean_bold','ref_file',
+                   'mni_to_t1w']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc207_ts', 'sc207_fc','sc207_ts','sc207_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ]), 
@@ -46,13 +45,13 @@ def init_fcon_ts_wf(
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
 
 
-    file_base = os.path.basename(in_file)
+    file_base = os.path.basename(inputnode.inputs.bold_file)
     if template in file_base:
         transformfile = 'identity'
     elif 'T1w' in file_base: 
-        transformfile = mni_to_t1w
+        transformfile = inputnode.inputs.mni_to_t1w
     elif not  template  or  'T1w' in file_base:
-        transformfile = [mni_to_t1w, t1w_to_native]
+        transformfile = [inputnode.inputs.mni_to_t1w, t1w_to_native]
 
     sc207_transform = pe.Node(ApplyTransformsx(input_image=sc207atlas,num_threads=2,
                        transform=transformfile,interpolation='NearestNeighbor'),
@@ -69,22 +68,22 @@ def init_fcon_ts_wf(
                        transform=transformfile,interpolation='NearestNeighbor'),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
 
-    nifticonnect_sc27 = pe.Node(nifticonnect(in_file=in_file), 
+    nifticonnect_sc27 = pe.Node(nifticonnect(), 
                     name="sc27_connect", mem_gb=mem_gb)
-    nifticonnect_sc47 = pe.Node(nifticonnect(in_file=in_file), 
+    nifticonnect_sc47 = pe.Node(nifticonnect(), 
                     name="sc47_connect", mem_gb=mem_gb)
-    nifticonnect_gd33 = pe.Node(nifticonnect(in_file=in_file), 
+    nifticonnect_gd33 = pe.Node(nifticonnect(), 
                     name="gd33_connect", mem_gb=mem_gb)
-    nifticonnect_gs36 = pe.Node(nifticonnect(in_file=in_file), 
+    nifticonnect_gs36 = pe.Node(nifticonnect(), 
                     name="gs36_connect", mem_gb=mem_gb)
 
     
     workflow.connect([
              ## tansform atlas to bold space 
-             (inputnode,sc207_transform,[('ref_file','reference_image'),]),
-             (inputnode,sc407_transform,[('ref_file','reference_image'),]),
-             (inputnode,gs360_transform,[('ref_file','reference_image'),]),
-             (inputnode,gd333_transform,[('ref_file','reference_image'),]),
+             (inputnode,sc207_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
+             (inputnode,sc407_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
+             (inputnode,gs360_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
+             (inputnode,gd333_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
              
              # load bold for timeseries extraction and connectivity
              (inputnode,nifticonnect_sc27, [('clean_bold','regressed_file'),]),
