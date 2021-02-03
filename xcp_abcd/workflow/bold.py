@@ -30,7 +30,6 @@ def init_boldpostprocess_wf(
      highpass,
      smoothing,
      head_radius,
-     taskid,
      params,
      omp_nthreads,
      template='MNI152NLin2009cAsym',
