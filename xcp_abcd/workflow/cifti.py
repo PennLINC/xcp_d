@@ -55,7 +55,7 @@ def init_ciftipostprocess_wf(
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc']),
         name='outputnode')
 
-    TR = layout.get_metadata(cifti_file)
+    TR = layout.get_tr(cifti_file)
 
 
     mem_gbx = _create_mem_gb(cifti_file)

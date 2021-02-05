@@ -86,7 +86,7 @@ def get_atlas_nifti(atlasname):
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer400x17/schaefer400x7MNI.nii.gz')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
-    elif atlasname == 'glasser360':
+    elif atlasname == 'gordon333':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
     else:
         raise RuntimeError('atlas not available')
@@ -100,7 +100,7 @@ def get_atlas_cifti(atlasname):
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels7Networks_atlas.dlabel.nii')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
-    elif atlasname == 'glasser360':
+    elif atlasname == 'gordon333':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     else:
         raise RuntimeError('atlas not available')

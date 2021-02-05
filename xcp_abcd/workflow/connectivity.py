@@ -22,6 +22,7 @@ def init_fcon_ts_wf(
     mem_gb,
     t1w_to_native,
     template,
+    bold_file,
     name="fcons_ts_wf",
      ):
    
@@ -45,13 +46,13 @@ def init_fcon_ts_wf(
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
 
 
-    file_base = os.path.basename(inputnode.inputs.bold_file)
+    file_base = os.path.basename(str(bold_file))
     if template in file_base:
         transformfile = 'identity'
     elif 'T1w' in file_base: 
-        transformfile = inputnode.inputs.mni_to_t1w
+        transformfile = str(inputnode.inputs.mni_to_t1w)
     elif not  template  or  'T1w' in file_base:
-        transformfile = [inputnode.inputs.mni_to_t1w, t1w_to_native]
+        transformfile = [str(inputnode.inputs.mni_to_t1w), str(t1w_to_native)]
 
     sc207_transform = pe.Node(ApplyTransformsx(input_image=sc207atlas,num_threads=2,
                        transform=transformfile,interpolation='NearestNeighbor'),

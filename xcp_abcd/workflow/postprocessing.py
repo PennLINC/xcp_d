@@ -58,22 +58,29 @@ def init_post_process_wf(
     
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
-        if inputnode.inputs.bold.endswith('dtseries.nii'):
+        if surface:
             
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                   right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti_smoothing", mem_gb=mem_gb)
-
-        elif inputnode.inputs.bold.endswith('nii.gz'):
-           smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
-                   name="nifti_smoothing", mem_gb=mem_gb )
-    
-    ## smoothing the datt if requested
-        workflow.connect([
+            workflow.connect([
                 (filterdx, smooth_data,[('filt_file','in_file')]),
                 (smooth_data, outputnode,[('out_file','smoothed_bold')])       
             ])
+
+        else:
+           smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
+                   name="nifti_smoothing", mem_gb=mem_gb )
+           workflow.connect([
+                (filterdx, smooth_data,[('filt_file','in_file')]),
+                (smooth_data, outputnode,[('smoothed_file','smoothed_bold')])       
+            ])
+
+            
+    
+    ## smoothing the datt if requested
+        
     return workflow
 
 def fwhm2sigma(fwhm):

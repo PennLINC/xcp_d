@@ -36,7 +36,7 @@ def init_boldpostprocess_wf(
      layout=None,
      name='bold_process_wf',
       ):
-    TR = layout.get_metadata(bold_file)
+    TR = layout.get_tr(bold_file)
 
     workflow = pe.Workflow(name=name)
    
@@ -70,7 +70,7 @@ def init_boldpostprocess_wf(
     
     fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
                  t1w_to_native=_t12native(bold_file),
-                 template=template,
+                 template=template,bold_file=bold_file,
                  name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
