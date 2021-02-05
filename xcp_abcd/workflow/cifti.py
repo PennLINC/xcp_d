@@ -30,7 +30,6 @@ def init_ciftipostprocess_wf(
     highpass,
     smoothing,
     head_radius,
-    taskid,
     params,
     omp_nthreads,
     num_cifti=1,

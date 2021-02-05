@@ -25,8 +25,6 @@ def init_xcpabcd_wf(layout,
                    highpass,
                    fmriprep_dir,
                    omp_nthreads,
-                   subject_id,
-                   task_id,
                    surface,
                    head_radius,
                    params,
@@ -127,7 +125,6 @@ def init_single_subject_wf(
         for bold_file in subject_data[0]:
             mni_to_t1w = regfile[0]
             bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
-                                                       mni_to_t1w=mni_to_t1w,
                                                        lowpass=lowpass,
                                                        highpass=highpass,
                                                        smoothing=smoothing,

@@ -199,7 +199,7 @@ def build_workflow(opts, retval):
     from bids import BIDSLayout
     from ..utils  import collect_participants
     from ..__about__ import __version__
-    from ..workflows.base import init_xcpabcd_wf
+    from ..workflow.base import init_xcpabcd_wf 
 
     build_log = logging.getLogger('nipype.workflow')
 
@@ -321,15 +321,14 @@ def build_workflow(opts, retval):
         subject_list=subject_list,
         uuid=run_uuid)
     )
-
-    retval['workflow'] = init_xcpabcd_wf(
+   
+    retval['workflow'] = init_xcpabcd_wf (
               debug=opts.sloppy,
               hires=opts.hires,
               ignore=opts.ignore,
               layout=layout,
               low_mem=opts.low_mem,
               omp_nthreads=omp_nthreads,
-              output_dir=str(output_dir),
               fmirprep_dir=str(fmriprep_dir),
               subject_list=subject_list,
               work_dir=str(work_dir),
@@ -341,7 +340,8 @@ def build_workflow(opts, retval):
               head_radius=opts.head_radius,
               template=opts.template,
               custom_conf=opts.custom_conf
-           )
+              )
+    
     retval['return_code'] = 0
 
     #logs_path = Path(output_dir) / 'xcpabcd' / 'logs'
@@ -351,4 +351,4 @@ def build_workflow(opts, retval):
 
 if __name__ == '__main__':
     raise RuntimeError("xcp_abcd/cli/run.py should not be run directly;\n"
-                       "Please `pip install` fmriprep and use the `fmriprep` command")
+                       "Please `pip install` xcp_abcd and use the `xcp_abcd` command")
