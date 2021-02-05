@@ -16,7 +16,7 @@ from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
 from templateflow.api import get as get_template
 from nipype.interfaces.afni import ReHo as ReHo
-
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
  
 
 
@@ -26,10 +26,11 @@ def init_compute_alff_wf(
     lowpass,
     highpass,
     smoothing,
+    surface,
     name="compute_alff_wf",
     ):
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold', 'bold_mask']), name='inputnode')
@@ -46,21 +47,25 @@ def init_compute_alff_wf(
             ])
     
     if smoothing:
-        if inputnode.inputs.clean_bold.endswith('nii.gz'):
+        if not surface:
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
-                   name="nifti smoothing", mem_gb=mem_gb )
+                   name="niftismoothing", mem_gb=mem_gb )
+            workflow.connect([
+               (alff_compt, smooth_data,[('alff_out','in_file')]),
+               (smooth_data, outputnode,[('smoothed_file','smoothed_alff')]),
+             ])
 
-        elif inputnode.inputs.bold.endswith('dtseries.nii'): 
+        else: 
             sigma_lx = fwhm2sigma(smoothing)
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti smoothing", mem_gb=mem_gb)
+                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="ciftismoothing", mem_gb=mem_gb)
+            workflow.connect([
+            (alff_compt, smooth_data,[('alff_out','in_file')]),
+            (smooth_data, outputnode,[('out_file','smoothed_alff')]),
+            ])
         
-        workflow.connect([
-           (alff_compt, smooth_data,[('alff_out','in_file')]),
-           (smooth_data, outputnode,[('out_file','smoothed_alff')]),
-           ])
     return workflow
 
 
@@ -70,7 +75,7 @@ def init_surface_reho_wf(
     name="surface_reho_wf",
     ):
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
     
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold']), name='inputnode')
@@ -102,7 +107,7 @@ def init_3d_reho_wf(
     name="afni_reho_wf",
     ):
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
     
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold','bold_mask']), name='inputnode')

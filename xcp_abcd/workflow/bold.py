@@ -14,7 +14,8 @@ from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
-from ..utils import collect_data
+from ..utils import collect_data 
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from  ..workflow import (init_fcon_ts_wf,
     init_post_process_wf,
@@ -30,6 +31,7 @@ def init_boldpostprocess_wf(
      smoothing,
      head_radius,
      params,
+     custom_conf,
      omp_nthreads,
      template='MNI152NLin2009cAsym',
      num_bold=1,
@@ -38,13 +40,13 @@ def init_boldpostprocess_wf(
       ):
     TR = layout.get_tr(bold_file)
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
    
     # get reference and mask
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','custom_conf','mni_to_t1w']),
+        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','mni_to_t1w']),
         name='inputnode')
     
     inputnode.inputs.bold_file = bold_file
@@ -65,16 +67,17 @@ def init_boldpostprocess_wf(
     mem_gbx = _create_mem_gb(bold_file)
     clean_data_wf = init_post_process_wf( mem_gb=mem_gbx['timeseries'], TR=TR,
                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   smoothing=smoothing,params=params,name='clean_data_wf') 
+                   smoothing=smoothing,custom_conf=custom_conf,params=params,
+                   name='clean_data_wf') 
     
     
     fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
                  t1w_to_native=_t12native(bold_file),
                  template=template,bold_file=bold_file,
-                 name="fcons_ts_wf")
+                  name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lowpass,highpass=highpass,smoothing=smoothing,
+                   lowpass=lowpass,highpass=highpass,smoothing=smoothing, surface=False,
                     name="compue_alff_wf" )
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
@@ -82,13 +85,12 @@ def init_boldpostprocess_wf(
 
     workflow.connect([
         (inputnode,clean_data_wf,[('bold_file','inputnode.bold'),
-                                  ('bold_mask','inputnode.bold_mask'),
-                                  ('custom_conf','inputnode.custom_conf')]),
+                                  ('bold_mask','inputnode.bold_mask')]),
 
         (inputnode,fcon_ts_wf,[('bold_file','inputnode.bold_file'),
                                ('ref_file','inputnode.ref_file'),
-                              ('mni_to_t1w','inputnode.mni_to_t1w') ]),
-        (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
+                               ('mni_to_t1w','inputnode.mni_to_t1w') ]),
+        (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold'),]),
 
         (inputnode,alff_compute_wf,['boldmask','inputnode.boldmask']),
         (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),

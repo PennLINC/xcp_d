@@ -13,6 +13,7 @@ from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 def init_post_process_wf(
     mem_gb,
@@ -22,14 +23,15 @@ def init_post_process_wf(
     highpass,
     smoothing,
     params,
+    custom_conf,
     surface=False,
     name="post_process_wf",
      ):
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold', 'bold_mask','custom_conf']), name='inputnode')
+            fields=['bold', 'bold_mask']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold']), name='outputnode')
 
@@ -41,7 +43,7 @@ def init_post_process_wf(
                     name="filter_the_data", mem_gb=mem_gb)
 
     regressy = pe.Node (regress(tr=TR),
-               name="regress_the_data", mem_gb=mem_gb)
+               name="regress_the_data",custom_conf=custom_conf,mem_gb=mem_gb)
     
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 

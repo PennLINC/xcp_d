@@ -16,6 +16,7 @@ from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
 from nipype.interfaces import utility as niu
 from ..utils import CiftiCorrelation, CiftiParcellate
 from pkg_resources import resource_filename as pkgrf
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 
 def init_fcon_ts_wf(
@@ -27,7 +28,7 @@ def init_fcon_ts_wf(
      ):
    
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold_file','clean_bold','ref_file',
@@ -55,18 +56,18 @@ def init_fcon_ts_wf(
         transformfile = [str(inputnode.inputs.mni_to_t1w), str(t1w_to_native)]
 
     sc207_transform = pe.Node(ApplyTransformsx(input_image=sc207atlas,num_threads=2,
-                       transform=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor'),
                        name="apply_tranform_sc27", mem_gb=mem_gb)
     
     sc407_transform = pe.Node(ApplyTransformsx(input_image=sc407atlas,num_threads=2,
-                       transform=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor'),
                        name="apply_tranform_sc47", mem_gb=mem_gb)
     
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,num_threads=2,
-                       transform=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor'),
                        name="apply_tranform_gs36", mem_gb=mem_gb)
     gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,num_threads=2,
-                       transform=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor'),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
 
     nifticonnect_sc27 = pe.Node(nifticonnect(), 
@@ -81,10 +82,10 @@ def init_fcon_ts_wf(
     
     workflow.connect([
              ## tansform atlas to bold space 
-             (inputnode,sc207_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
-             (inputnode,sc407_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
-             (inputnode,gs360_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
-             (inputnode,gd333_transform,[('ref_file','reference_image'),('bold_file','in_file')]),
+             (inputnode,sc207_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
+             (inputnode,sc407_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
+             (inputnode,gs360_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
+             (inputnode,gd333_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
              
              # load bold for timeseries extraction and connectivity
              (inputnode,nifticonnect_sc27, [('clean_bold','regressed_file'),]),
@@ -119,7 +120,7 @@ def init_cifti_conts_wf(
     mem_gb,
     name="cifti_ts_con_wf", 
     ):
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_cifti']), name='inputnode')

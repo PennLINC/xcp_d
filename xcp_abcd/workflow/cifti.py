@@ -15,6 +15,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
 from ..utils import collect_data
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from  ..workflow import (init_cifti_conts_wf,
     init_post_process_wf,
@@ -31,6 +32,7 @@ def init_ciftipostprocess_wf(
     smoothing,
     head_radius,
     params,
+    custom_conf,
     omp_nthreads,
     num_cifti=1,
     layout=None,
@@ -40,10 +42,10 @@ def init_ciftipostprocess_wf(
 
     
 
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
    
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file','custom_conf',]),
+        fields=['cifti_file']),
         name='inputnode')
     
     inputnode.inputs.cifti_file = cifti_file
@@ -60,15 +62,15 @@ def init_ciftipostprocess_wf(
 
     mem_gbx = _create_mem_gb(cifti_file)
 
-    clean_data_wf = init_post_process_wf( mem_gb=mem_gbx['timeseries'], TR=TR,
+    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   smoothing=smoothing,params=params,name='clean_data_wf')
+                   custom_conf=custom_conf,smoothing=smoothing,params=params,name='clean_data_wf')
     
     cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
                       name='cifti_ts_con_wf')
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lowpass,highpass=highpass,smoothing=smoothing,
+                   lowpass=lowpass,highpass=highpass,smoothing=smoothing,surface=True,
                     name="compue_alff_wf" )
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,

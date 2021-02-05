@@ -83,7 +83,7 @@ def get_atlas_nifti(atlasname):
     if atlasname == 'schaefer200x7':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer200x7/schaefer200x7MNI.nii.gz')
     elif atlasname == 'schaefer400x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer400x17/schaefer400x7MNI.nii.gz')
+        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
     elif atlasname == 'gordon333':

@@ -105,7 +105,8 @@ def get_parser():
     
     g_param.add_argument('-r','--head_radius',default=50,
                              type=float, help='head radius for computing FD, it is 40mm for baby')
-    
+    g_param.add_argument('-p','--params', required=True, default='24p',
+                             type=str, help='nuissance parameters to be selected')
     g_param.add_argument('-c','--custom_conf', required=False,
                              type=Path, help='custom confound to be added to nuissance regressors')
 
@@ -302,7 +303,6 @@ def build_workflow(opts, retval):
             'crashdump_dir': str(log_dir),
             'crashfile_format': 'txt',
             'get_linked_libs': False,
-            'stop_on_first_crash': opts.stop_on_first_crash,
         },
         'monitoring': {
             'enabled': opts.resource_monitor,

@@ -18,7 +18,7 @@ from ..utils import collect_data
 
 from  ..workflow import( init_ciftipostprocess_wf, 
             init_boldpostprocess_wf)
-
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 def init_xcpabcd_wf(layout,
                    lowpass,
@@ -43,7 +43,7 @@ def init_xcpabcd_wf(layout,
 
     """
 
-    xcpabcd_wf = pe.Workflow(name='xcpabcd_wf')
+    xcpabcd_wf = Workflow(name='xcpabcd_wf')
     xcpabcd_wf.base_dir = work_dir
 
     for subject_id in subject_list:
@@ -106,7 +106,7 @@ def init_single_subject_wf(
     inputnode.inputs.custom_conf = custom_conf
     inputnode.inputs.mni_to_t1w = regfile[0]
     
-    workflow = pe.Workflow(name=name)
+    workflow = Workflow(name=name)
     if surface:
         for cifti_file in subject_data[1]:
             cifti_postproc_wf = init_ciftipostprocess_wf(cifti_file=cifti_file,
@@ -115,6 +115,7 @@ def init_single_subject_wf(
                                                         smoothing=smoothing,
                                                         head_radius=head_radius,
                                                         params=params,
+                                                        custom_conf=custom_conf,
                                                         omp_nthreads=omp_nthreads,
                                                         num_cifti=1,
                                                         layout=layout,
@@ -137,10 +138,11 @@ def init_single_subject_wf(
                                                        omp_nthreads=omp_nthreads,
                                                        template='MNI152NLin2009cAsym',
                                                        num_bold=1,
+                                                       custom_conf=custom_conf,
                                                        layout=layout,
                                                        name='bold_postprocess_wf')
             workflow.connect([
-                  (inputnode,bold_postproc_wf,[('customs_conf','inputnode.customs_conf'),
+                  (inputnode,bold_postproc_wf,[('custom_conf','inputnode.custom_conf'),
                                                 ('mni_to_t1w','inputnode.mni_to_t1w')]),
             ])
 
