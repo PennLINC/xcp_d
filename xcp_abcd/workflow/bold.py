@@ -25,7 +25,6 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 def init_boldpostprocess_wf(
      bold_file,
-     mni_to_t1w,
      lowpass,
      highpass,
      smoothing,
@@ -45,13 +44,13 @@ def init_boldpostprocess_wf(
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file', 'ref_file','bold_mask','customs_conf','mni_to_t1w']),
+        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','customs_conf','mni_to_t1w']),
         name='inputnode')
     
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.ref_file = ref_file
     inputnode.inputs.bold_mask = mask_file
-    inputnode.inputs.mni_to_t1w = mni_to_t1w
+    #inputnode.inputs.mni_to_t1w = mni_to_t1w
 
 
     outputnode = pe.Node(niu.IdentityInterface(
@@ -96,7 +95,7 @@ def init_boldpostprocess_wf(
         (clean_data_wf, reho_compute_wf,[('processed_bold','clean_bold')]),
          
         #output
-        'processed_bold', 
+    
         (clean_data_wf,outputnode,[('processed_bold','processed_bold'),('smoothed_bold','smoothed_bold')]),
         (alff_compute_wf,outputnode,[('alff_out','alff_out'),('smoothed_alff','smoothed_alff')]),
         (reho_compute_wf,outputnode,[('reho_out','reho_out')]),

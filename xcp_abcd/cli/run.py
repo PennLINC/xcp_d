@@ -13,6 +13,7 @@ import warnings
 import json
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
+from nipype import logging as nlogging, config as ncfg
 from multiprocessing import cpu_count
 from time import strftime
 
@@ -47,7 +48,7 @@ def get_parser():
                             formatter_class=ArgumentDefaultsHelpFormatter)
 
     # important parameters required
-    parser.add_argument('fmirprep_dir', action='store', type=Path,
+    parser.add_argument('fmriprep_dir', action='store', type=Path,
                         help='the root folder of a fmriprep output  with sub-xxxx.')
     parser.add_argument('output_dir', action='store', type=Path,
                         help='the output path for the outcomes of preprocessing')
@@ -103,7 +104,10 @@ def get_parser():
                              type=float, help='smoothing the postprocessed output (fhwm)')
     
     g_param.add_argument('-r','--head_radius',default=50,
-                             type=float, help='head radius for computing FD, it is 40 for baby')
+                             type=float, help='head radius for computing FD, it is 40mm for baby')
+    
+    g_param.add_argument('-c','--custom_conf', required=False,
+                             type=Path, help='custom confound to be added to nuissance regressors')
 
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
@@ -129,7 +133,7 @@ def main():
     warnings.showwarning = _warn_redirect
     opts = get_parser().parse_args()
 
-    exec_env = os.name
+    #exec_env = os.name
 
     # Retrieve logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
@@ -149,13 +153,13 @@ def main():
 
         retcode = p.exitcode or retval.get('return_code', 0)
 
-        fmirprep_dir = Path(retval.get('fmirprep_dir'))
-        output_dir = Path(retval.get('output_dir'))
-        work_dir = Path(retval.get('work_dir'))
+        #fmriprep_dir = Path(retval.get('fmriprep_dir'))
+        #output_dir = Path(retval.get('output_dir'))
+        #work_dir = Path(retval.get('work_dir'))
         plugin_settings = retval.get('plugin_settings', None)
-        subject_list = retval.get('subject_list', None)
+        #subject_list = retval.get('subject_list', None)
         xcpabcd_wf = retval.get('workflow', None)
-        run_uuid = retval.get('run_uuid', None)
+       
 
 
     retcode = retcode or int(xcpabcd_wf is None)
@@ -172,9 +176,11 @@ def main():
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
-
-
+ 
     xcpabcd_wf.run(**plugin_settings)
+    
+
+ 
 
 
 
@@ -209,7 +215,7 @@ def build_workflow(opts, retval):
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
     bids_filters = json.loads(opts.bids_filter_file.read_text()) if opts.bids_filter_file else None
-
+   
 
     retval['return_code'] = 1
     retval['workflow'] = None
@@ -317,27 +323,28 @@ def build_workflow(opts, retval):
     )
 
     retval['workflow'] = init_xcpabcd_wf(
-        debug=opts.sloppy,
-        hires=opts.hires,
-        ignore=opts.ignore,
-        layout=layout,
-        low_mem=opts.low_mem,
-        omp_nthreads=omp_nthreads,
-        output_dir=str(output_dir),
-        run_uuid=run_uuid,
-        subject_list=subject_list,
-        work_dir=str(work_dir),
-        bids_filters=bids_filters,
-        lowpass=opts.lowpass,
-        highpass=opts.highpass,
-        smoothing=opts.smoothing,
-        surface=opts.surface,
-        head_radius=opts.head_radius,
-        template=opts.template
-    )
+              debug=opts.sloppy,
+              hires=opts.hires,
+              ignore=opts.ignore,
+              layout=layout,
+              low_mem=opts.low_mem,
+              omp_nthreads=omp_nthreads,
+              output_dir=str(output_dir),
+              fmirprep_dir=str(fmriprep_dir),
+              subject_list=subject_list,
+              work_dir=str(work_dir),
+              bids_filters=bids_filters,
+              lowpass=opts.lowpass,
+              highpass=opts.highpass,
+              smoothing=opts.smoothing,
+              surface=opts.surface,
+              head_radius=opts.head_radius,
+              template=opts.template,
+              custom_conf=opts.custom_conf
+           )
     retval['return_code'] = 0
 
-    logs_path = Path(output_dir) / 'xcpabcd' / 'logs'
+    #logs_path = Path(output_dir) / 'xcpabcd' / 'logs'
     
     return retval
 

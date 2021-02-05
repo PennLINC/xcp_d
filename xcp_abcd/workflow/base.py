@@ -20,7 +20,24 @@ from  ..workflow import( init_ciftipostprocess_wf,
             init_boldpostprocess_wf)
 
 
-def init_xcpabcd_wf():
+def init_xcpabcd_wf(layout,
+                   lowpass,
+                   highpass,
+                   fmriprep_dir,
+                   omp_nthreads,
+                   subject_id,
+                   task_id,
+                   surface,
+                   head_radius,
+                   params,
+                   template,
+                   subject_list,
+                   smoothing,
+                   customs_conf,
+                   bids_filters,
+                   output_dir,
+                   work_dir,
+                   name):
     
     """
     coming to fix this 
@@ -32,18 +49,24 @@ def init_xcpabcd_wf():
 
     for subject_id in subject_list:
         single_subject_wf = init_single_subject_wf(
-            layout=layout,
-            name="single_subject_" + subject_id + "_wf",
-            omp_nthreads=omp_nthreads,
-            output_dir=output_dir,
-            subject_id=subject_id,
-            task_id=task_id,
-            bids_filters=bids_filters,
-            run_uuid=run_uuid
-        )
+                            layout=layout,
+                            lowpass=lowpass,
+                            highpass=highpass,
+                            fmriprep_dir=fmriprep_dir,
+                            omp_nthreads=omp_nthreads,
+                            subject_id=subject_id,
+                            task_id=task_id,
+                            surface=surface,
+                            head_radius=head_radius,
+                            params=params,
+                            template=template,
+                            smoothing=smoothing,
+                            customs_conf=customs_conf,
+                            bids_filters=bids_filters,
+                            name="single_subject_" + subject_id + "_wf")
 
         single_subject_wf.config['execution']['crashdump_dir'] = (
-            os.path.join(output_dir, "xcpabcd", "sub-" + subject_id, 'log', run_uuid)
+            os.path.join(output_dir, "xcpabcd", "sub-" + subject_id, 'log')
         )
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)
@@ -54,31 +77,56 @@ def init_xcpabcd_wf():
 
 def init_single_subject_wf(
     layout,
-    fmriprep_dir
-    low_mem,
-    name,
+    lowpass,
+    highpass,
+    fmriprep_dir,
     omp_nthreads,
     subject_id,
     task_id,
+    surface,
+    head_radius,
+    params,
+    template,
+    smoothing,
+    customs_conf,
     bids_filters,
-    name='single_subject' + subject_id + '_wf'
-   ):
+    name
+    ):
     """
     
 
     """
-    layout,subject_data,regfile = collect_data(fmriprep_dir,subtject_id, task_id,bids_validate=False, 
-                                    bids_filters=bids_filters,template=template)
+    layout,subject_data,regfile = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
+                                               task=task_id,bids_validate=False, 
+                                               bids_filters=bids_filters,template=template)
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['customs_conf','mni_to_t1w']),
+        name='inputnode')
+    inputnode.inputs.customs_conf = customs_conf
+    inputnode.inputs.mni_to_t1w = regfile[0]
     
-    
-    workflow = pe.workflowWorkflow(name=name)
+    workflow = pe.Workflow(name=name)
     if surface:
         for cifti_file in subject_data[1]:
-            func_postproc_wf = init_ciftipostprocess_wf()
+            cifti_postproc_wf = init_ciftipostprocess_wf(cifti_file=cifti_file,
+                                                        lowpass=lowpass,
+                                                        highpass=highpass,
+                                                        smoothing=smoothing,
+                                                        head_radius=head_radius,
+                                                        params=params,
+                                                        omp_nthreads=omp_nthreads,
+                                                        num_cifti=1,
+                                                        layout=layout,
+                                                        name='cifti_process_wf')
+            workflow.connect([
+                  (inputnode,cifti_postproc_wf,[('customs_conf','inputnode.customs_conf')]),
+            ])
+
+            
     else:
         for bold_file in subject_data[0]:
             mni_to_t1w = regfile[0]
-            func_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
+            bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
                                                        mni_to_t1w=mni_to_t1w,
                                                        lowpass=lowpass,
                                                        highpass=highpass,
@@ -89,7 +137,11 @@ def init_single_subject_wf(
                                                        template='MNI152NLin2009cAsym',
                                                        num_bold=1,
                                                        layout=layout,
-                                                       name='bold_process_wf')
+                                                       name='bold_postprocess_wf')
+            workflow.connect([
+                  (inputnode,bold_postproc_wf,[('customs_conf','inputnode.customs_conf'),
+                                                ('mni_to_t1w','inputnode.mni_to_t1w')]),
+            ])
 
 
     return workflow
