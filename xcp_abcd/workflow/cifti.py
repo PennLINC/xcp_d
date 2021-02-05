@@ -43,7 +43,7 @@ def init_ciftipostprocess_wf(
     workflow = pe.Workflow(name=name)
    
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file','customs_conf',]),
+        fields=['cifti_file','custom_conf',]),
         name='inputnode')
     
     inputnode.inputs.cifti_file = cifti_file
@@ -75,21 +75,23 @@ def init_ciftipostprocess_wf(
                        name="afni_reho_wf")
 
     workflow.connect([
-            (inputnode,clean_data_wf,[('cifti_file','bold'),
-                                ('customs_conf','customs_conf')]),
-            (clean_data_wf, cifti_conts_wf,[('processed_bold','clean_cifti')]),
-            (clean_data_wf, alff_compute_wf,[('processed_bold','clean_bold')]),
-            (clean_data_wf,reho_compute_wf,[('processed_bold','clean_bold')]),
+            (inputnode,clean_data_wf,[('cifti_file','inputnode.bold'),
+                                      ('custom_conf','inputnode.custom_conf')]),
+            (clean_data_wf, cifti_conts_wf,[('outputnode.processed_bold','inputnode.clean_cifti')]),
+            (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
+            (clean_data_wf,reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
         
-            (clean_data_wf,outputnode,[('processed_bold','processed_bold'),
-                                  ('smoothed_bold','smoothed_bold') ]),
-            (alff_compute_wf,outputnode,[('alff_out','alff_out')]),
-            (reho_compute_wf,outputnode,[('reho_lh','reho_lh'),('reho_rh','reho_rh')]),
+            (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
+            
+                                  ('outputnode.smoothed_bold','smoothed_bold') ]),
+                                  
+            (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out')]),
+            (reho_compute_wf,outputnode,[('outputnode.reho_lh','reho_lh'),('reho_rh','reho_rh')]),
 
-            (cifti_conts_wf,outputnode,[('sc207_ts','sc207_ts' ),('sc207_fc','sc207_fc'),
-                        ('sc207_ts','sc207_ts'),('sc207_fc','sc207_fc'),
-                        ('gs360_ts','gs360_ts'),('gs360_fc','gs360_fc'),
-                        ('gd333_ts','gd333_ts'),('gd333_fc','gd333_fc')]),
+            (cifti_conts_wf,outputnode,[('outputnode.sc207_ts','sc207_ts' ),('outputnode.sc207_fc','sc207_fc'),
+                        ('outputnode.sc207_ts','sc207_ts'),('outputnode.sc207_fc','sc207_fc'),
+                        ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
+                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
 
       ])
 

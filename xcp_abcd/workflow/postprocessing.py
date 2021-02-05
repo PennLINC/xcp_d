@@ -29,7 +29,7 @@ def init_post_process_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold', 'bold_mask','customs_conf']), name='inputnode')
+            fields=['bold', 'bold_mask','custom_conf']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold']), name='outputnode')
 
@@ -49,7 +49,7 @@ def init_post_process_wf(
                             
             (inputnode, regressy, [('bold', 'in_file'),
                                 ('bold_mask', 'mask'), 
-                                ('customs_conf','customs_conf')]),
+                                ('custom_conf','custom_conf')]),
             (confoundmat,regressy,[('confound_file','confounds')]),
             (regressy, filterdx,[('res_file','in_file')]),
             (inputnode, filterdx,[('bold_mask','mask')]),

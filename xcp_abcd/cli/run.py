@@ -323,23 +323,23 @@ def build_workflow(opts, retval):
     )
    
     retval['workflow'] = init_xcpabcd_wf (
-              debug=opts.sloppy,
-              hires=opts.hires,
-              ignore=opts.ignore,
               layout=layout,
-              low_mem=opts.low_mem,
               omp_nthreads=omp_nthreads,
-              fmirprep_dir=str(fmriprep_dir),
+              fmriprep_dir=str(fmriprep_dir),
               subject_list=subject_list,
               work_dir=str(work_dir),
               bids_filters=bids_filters,
               lowpass=opts.lowpass,
+              task_id=opts.task_id,
               highpass=opts.highpass,
               smoothing=opts.smoothing,
+              params=opts.params,
               surface=opts.surface,
+              output_dir=str(output_dir),
               head_radius=opts.head_radius,
               template=opts.template,
-              custom_conf=opts.custom_conf
+              custom_conf=opts.custom_conf,
+              name='xcpabcd_wf'
               )
     
     retval['return_code'] = 0

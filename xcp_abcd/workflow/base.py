@@ -26,12 +26,13 @@ def init_xcpabcd_wf(layout,
                    fmriprep_dir,
                    omp_nthreads,
                    surface,
+                   task_id,
                    head_radius,
                    params,
                    template,
                    subject_list,
                    smoothing,
-                   customs_conf,
+                   custom_conf,
                    bids_filters,
                    output_dir,
                    work_dir,
@@ -53,14 +54,15 @@ def init_xcpabcd_wf(layout,
                             fmriprep_dir=fmriprep_dir,
                             omp_nthreads=omp_nthreads,
                             subject_id=subject_id,
-                            task_id=task_id,
                             surface=surface,
                             head_radius=head_radius,
                             params=params,
+                            task_id=task_id,
                             template=template,
                             smoothing=smoothing,
-                            customs_conf=customs_conf,
+                            custom_conf=custom_conf,
                             bids_filters=bids_filters,
+                            output_dir=output_dir,
                             name="single_subject_" + subject_id + "_wf")
 
         single_subject_wf.config['execution']['crashdump_dir'] = (
@@ -80,14 +82,15 @@ def init_single_subject_wf(
     fmriprep_dir,
     omp_nthreads,
     subject_id,
-    task_id,
     surface,
     head_radius,
     params,
+    task_id,
     template,
     smoothing,
-    customs_conf,
+    custom_conf,
     bids_filters,
+    output_dir,
     name
     ):
     """
@@ -98,9 +101,9 @@ def init_single_subject_wf(
                                                task=task_id,bids_validate=False, 
                                                bids_filters=bids_filters,template=template)
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['customs_conf','mni_to_t1w']),
+        fields=['custom_conf','mni_to_t1w']),
         name='inputnode')
-    inputnode.inputs.customs_conf = customs_conf
+    inputnode.inputs.custom_conf = custom_conf
     inputnode.inputs.mni_to_t1w = regfile[0]
     
     workflow = pe.Workflow(name=name)
@@ -124,6 +127,7 @@ def init_single_subject_wf(
     else:
         for bold_file in subject_data[0]:
             mni_to_t1w = regfile[0]
+            inputnode.inputs.mni_to_t1w = mni_to_t1w
             bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
                                                        lowpass=lowpass,
                                                        highpass=highpass,

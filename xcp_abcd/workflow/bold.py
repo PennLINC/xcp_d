@@ -44,7 +44,7 @@ def init_boldpostprocess_wf(
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','customs_conf','mni_to_t1w']),
+        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','custom_conf','mni_to_t1w']),
         name='inputnode')
     
     inputnode.inputs.bold_file = bold_file
@@ -81,28 +81,32 @@ def init_boldpostprocess_wf(
                        name="afni_reho_wf")
 
     workflow.connect([
-        (inputnode,clean_data_wf,[('bold_file','bold'),('bold_mask','bold_mask'),
-                                    ('customs_conf','customs_conf')]),
+        (inputnode,clean_data_wf,[('bold_file','inputnode.bold'),
+                                  ('bold_mask','inputnode.bold_mask'),
+                                  ('custom_conf','inputnode.custom_conf')]),
 
-        (inputnode,fcon_ts_wf,[('bold_file','bold_file'),('ref_file','ref_file'),
-                              ('mni_to_t1w','mni_to_t1w') ]),
-        (clean_data_wf, fcon_ts_wf,[('processed_bold','clean_bold')]),
+        (inputnode,fcon_ts_wf,[('bold_file','inputnode.bold_file'),
+                               ('ref_file','inputnode.ref_file'),
+                              ('mni_to_t1w','inputnode.mni_to_t1w') ]),
+        (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
 
-        (inputnode,alff_compute_wf,['boldmask','boldmask']),
-        (clean_data_wf, alff_compute_wf,[('processed_bold','clean_bold')]),
+        (inputnode,alff_compute_wf,['boldmask','inputnode.boldmask']),
+        (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
 
-        (inputnode,reho_compute_wf,['boldmask','boldmask']),
-        (clean_data_wf, reho_compute_wf,[('processed_bold','clean_bold')]),
+        (inputnode,reho_compute_wf,['boldmask','inputnode.boldmask']),
+        (clean_data_wf, reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
          
         #output
     
-        (clean_data_wf,outputnode,[('processed_bold','processed_bold'),('smoothed_bold','smoothed_bold')]),
-        (alff_compute_wf,outputnode,[('alff_out','alff_out'),('smoothed_alff','smoothed_alff')]),
-        (reho_compute_wf,outputnode,[('reho_out','reho_out')]),
-        (fcon_ts_wf,outputnode,[('sc207_ts','sc207_ts' ),('sc207_fc','sc207_fc'),
-                        ('sc207_ts','sc207_ts'),('sc207_fc','sc207_fc'),
-                        ('gs360_ts','gs360_ts'),('gs360_fc','gs360_fc'),
-                        ('gd333_ts','gd333_ts'),('gd333_fc','gd333_fc')]),
+        (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
+                                   ('outputnode.smoothed_bold','smoothed_bold')]),
+        (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out'),
+                                      ('outputnode.smoothed_alff','smoothed_alff')]),
+        (reho_compute_wf,outputnode,[('outputnode.reho_out','reho_out')]),
+        (fcon_ts_wf,outputnode,[('outputnode.sc207_ts','sc207_ts' ),('outputnode.sc207_fc','sc207_fc'),
+                        ('outputnode.sc207_ts','outputnode.sc207_ts'),('outputnode.sc207_fc','sc207_fc'),
+                        ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
+                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
         ])
     return workflow 
 
