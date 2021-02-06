@@ -20,8 +20,8 @@ def read_ndata(datafile,maskfile=None):
     # or nifiti data, mask is required
     elif datafile.endswith('.nii.gz'):
         datax = nb.load(datafile).get_fdata()
-        mask = nb.load(maskfile)
-        data = datax[mask==1].T
+        mask = nb.load(maskfile).get_fdata()
+        data = datax[mask==1]
     return data
     
 
@@ -46,7 +46,8 @@ def write_ndata(data_matrix,template,filename,mask=None):
     elif template.endswith('.nii.gz'):
         mask_data = nb.load(mask).get_fdata()
         template_file = nb.load(template)
-        dataz = np.zeros_like([mask_data.shape,data_matrix[1]])
+        dataz = np.zeros([mask_data.shape[0],mask_data.shape[1],
+                                     mask_data.shape[2],data_matrix.shape[1]])
         # this need rewriteen in short format
         for i in range(data_matrix.shape[1]):
             tcbfx = np.zeros(mask_data.shape) 

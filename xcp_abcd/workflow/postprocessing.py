@@ -48,10 +48,8 @@ def init_post_process_wf(
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 
             (inputnode, confoundmat, [('bold', 'in_file'),]),
-                            
             (inputnode, regressy, [('bold', 'in_file'),
-                                ('bold_mask', 'mask'), 
-                                ('custom_conf','custom_conf')]),
+                                ('bold_mask', 'mask')]),
             (confoundmat,regressy,[('confound_file','confounds')]),
             (regressy, filterdx,[('res_file','in_file')]),
             (inputnode, filterdx,[('bold_mask','mask')]),

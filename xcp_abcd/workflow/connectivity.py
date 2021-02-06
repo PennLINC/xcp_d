@@ -34,11 +34,11 @@ def init_fcon_ts_wf(
             fields=['bold_file','clean_bold','ref_file',
                    'mni_to_t1w']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['sc207_ts', 'sc207_fc','sc207_ts','sc207_fc',
+        fields=['sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ]), 
                 name='outputnode')
 
-    
+    inputnode.inputs.bold_file=bold_file
 
     # get atlases # ietration will be used later 
     sc207atlas = get_atlas_nifti(atlasname='schaefer200x7')
@@ -125,7 +125,7 @@ def init_cifti_conts_wf(
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_cifti']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['sc207_ts', 'sc207_fc','sc207_ts','sc207_fc',
+        fields=['sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ]), 
                 name='outputnode')
 

@@ -142,8 +142,7 @@ def init_single_subject_wf(
                                                        layout=layout,
                                                        name='bold_postprocess_wf')
             workflow.connect([
-                  (inputnode,bold_postproc_wf,[('custom_conf','inputnode.custom_conf'),
-                                                ('mni_to_t1w','inputnode.mni_to_t1w')]),
+                  (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
             ])
 
 

@@ -45,7 +45,7 @@ def init_ciftipostprocess_wf(
     workflow = Workflow(name=name)
    
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file']),
+        fields=['cifti_file','custom_conf']),
         name='inputnode')
     
     inputnode.inputs.cifti_file = cifti_file
@@ -53,7 +53,7 @@ def init_ciftipostprocess_wf(
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
-                'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc207_ts','sc207_fc',
+                'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc']),
         name='outputnode')
 
@@ -71,14 +71,13 @@ def init_ciftipostprocess_wf(
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=lowpass,highpass=highpass,smoothing=smoothing,surface=True,
-                    name="compue_alff_wf" )
+                    name="compute_alff_wf" )
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
-                       name="afni_reho_wf")
+                       name="surface_reho_wf")
 
     workflow.connect([
-            (inputnode,clean_data_wf,[('cifti_file','inputnode.bold'),
-                                      ('custom_conf','inputnode.custom_conf')]),
+            (inputnode,clean_data_wf,[('cifti_file','inputnode.bold'),]),
             (clean_data_wf, cifti_conts_wf,[('outputnode.processed_bold','inputnode.clean_cifti')]),
             (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
             (clean_data_wf,reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
@@ -88,10 +87,10 @@ def init_ciftipostprocess_wf(
                                   ('outputnode.smoothed_bold','smoothed_bold') ]),
                                   
             (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out')]),
-            (reho_compute_wf,outputnode,[('outputnode.reho_lh','reho_lh'),('reho_rh','reho_rh')]),
+            (reho_compute_wf,outputnode,[('outputnode.lh_reho','reho_lh'),('outputnode.rh_reho','reho_rh')]),
 
             (cifti_conts_wf,outputnode,[('outputnode.sc207_ts','sc207_ts' ),('outputnode.sc207_fc','sc207_fc'),
-                        ('outputnode.sc207_ts','sc207_ts'),('outputnode.sc207_fc','sc207_fc'),
+                        ('outputnode.sc407_ts','sc407_ts'),('outputnode.sc407_fc','sc407_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
 

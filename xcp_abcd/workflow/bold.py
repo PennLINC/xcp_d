@@ -46,18 +46,19 @@ def init_boldpostprocess_wf(
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','mni_to_t1w']),
+        fields=['bold_file','mni_to_t1w','ref_file','bold_mask']),
         name='inputnode')
     
-    inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.ref_file = ref_file
-    inputnode.inputs.bold_mask = mask_file
+    inputnode.inputs.bold_file = str(bold_file)
+    
+    inputnode.inputs.ref_file = str(ref_file)
+    inputnode.inputs.bold_mask = str(mask_file)
     #inputnode.inputs.mni_to_t1w = mni_to_t1w
 
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
-                'reho_out','sc207_ts', 'sc207_fc','sc207_ts','sc207_fc',
+                'reho_out','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc']),
         name='outputnode')
 
@@ -66,15 +67,14 @@ def init_boldpostprocess_wf(
     
     mem_gbx = _create_mem_gb(bold_file)
     clean_data_wf = init_post_process_wf( mem_gb=mem_gbx['timeseries'], TR=TR,
-                   head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   smoothing=smoothing,custom_conf=custom_conf,params=params,
-                   name='clean_data_wf') 
+                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
+                    smoothing=smoothing,custom_conf=custom_conf,params=params,
+                    name='clean_data_wf') 
     
     
     fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
-                 t1w_to_native=_t12native(bold_file),
-                 template=template,bold_file=bold_file,
-                  name="fcons_ts_wf")
+                 t1w_to_native=_t12native(bold_file),bold_file=bold_file,
+                 template=template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=lowpass,highpass=highpass,smoothing=smoothing, surface=False,
@@ -84,21 +84,21 @@ def init_boldpostprocess_wf(
                        name="afni_reho_wf")
 
     workflow.connect([
-        (inputnode,clean_data_wf,[('bold_file','inputnode.bold'),
-                                  ('bold_mask','inputnode.bold_mask')]),
+        (inputnode,clean_data_wf,[('bold_file','inputnode.bold')]),
+        
+        (inputnode,clean_data_wf,[('bold_mask','inputnode.bold_mask')]),                     
 
-        (inputnode,fcon_ts_wf,[('bold_file','inputnode.bold_file'),
+        (inputnode,fcon_ts_wf,[
                                ('ref_file','inputnode.ref_file'),
                                ('mni_to_t1w','inputnode.mni_to_t1w') ]),
         (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold'),]),
 
-        (inputnode,alff_compute_wf,['boldmask','inputnode.boldmask']),
+        (inputnode,alff_compute_wf,[('boldmask','inputnode.bold_mask')]),
         (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
 
-        (inputnode,reho_compute_wf,['boldmask','inputnode.boldmask']),
+        (inputnode,reho_compute_wf,[('boldmask','inputnode.bold_mask'),]),
         (clean_data_wf, reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
-         
-        #output
+        
     
         (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
                                    ('outputnode.smoothed_bold','smoothed_bold')]),
@@ -106,7 +106,7 @@ def init_boldpostprocess_wf(
                                       ('outputnode.smoothed_alff','smoothed_alff')]),
         (reho_compute_wf,outputnode,[('outputnode.reho_out','reho_out')]),
         (fcon_ts_wf,outputnode,[('outputnode.sc207_ts','sc207_ts' ),('outputnode.sc207_fc','sc207_fc'),
-                        ('outputnode.sc207_ts','outputnode.sc207_ts'),('outputnode.sc207_fc','sc207_fc'),
+                        ('outputnode.sc407_ts','sc407_ts'),('outputnode.sc407_fc','sc407_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
         ])
