@@ -36,7 +36,7 @@ def init_boldpostprocess_wf(
      template='MNI152NLin2009cAsym',
      num_bold=1,
      layout=None,
-     name='bold_process_wf',
+     name='bold_postprocess_wf',
       ):
     TR = layout.get_tr(bold_file)
 
@@ -93,10 +93,10 @@ def init_boldpostprocess_wf(
                                ('mni_to_t1w','inputnode.mni_to_t1w') ]),
         (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold'),]),
 
-        (inputnode,alff_compute_wf,[('boldmask','inputnode.bold_mask')]),
+        (inputnode,alff_compute_wf,[('bold_mask','inputnode.bold_mask')]),
         (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
 
-        (inputnode,reho_compute_wf,[('boldmask','inputnode.bold_mask'),]),
+        (inputnode,reho_compute_wf,[('bold_mask','inputnode.bold_mask'),]),
         (clean_data_wf, reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
         
     

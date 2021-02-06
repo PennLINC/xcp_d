@@ -95,7 +95,7 @@ def get_atlas_nifti(atlasname):
 
 def get_atlas_cifti(atlasname):
     if atlasname == 'schaefer200x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlass/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
     elif atlasname == 'schaefer400x7':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels7Networks_atlas.dlabel.nii')
     elif atlasname == 'glasser360':

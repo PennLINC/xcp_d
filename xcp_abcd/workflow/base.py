@@ -108,7 +108,9 @@ def init_single_subject_wf(
     
     workflow = Workflow(name=name)
     if surface:
+        ii=0
         for cifti_file in subject_data[1]:
+            ii = ii+1
             cifti_postproc_wf = init_ciftipostprocess_wf(cifti_file=cifti_file,
                                                         lowpass=lowpass,
                                                         highpass=highpass,
@@ -119,14 +121,16 @@ def init_single_subject_wf(
                                                         omp_nthreads=omp_nthreads,
                                                         num_cifti=1,
                                                         layout=layout,
-                                                        name='cifti_process_wf')
+                                                        name='cifti_postprocess_'+ str(ii) + '_wf')
             workflow.connect([
-                  (inputnode,cifti_postproc_wf,[('customs_conf','inputnode.customs_conf')]),
+                  (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
             ])
 
             
     else:
+        ii = 0
         for bold_file in subject_data[0]:
+            ii = ii+1
             mni_to_t1w = regfile[0]
             inputnode.inputs.mni_to_t1w = mni_to_t1w
             bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
@@ -140,7 +144,7 @@ def init_single_subject_wf(
                                                        num_bold=1,
                                                        custom_conf=custom_conf,
                                                        layout=layout,
-                                                       name='bold_postprocess_wf')
+                                                       name='bold_postprocess_'+ str(ii) + '_wf')
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
             ])

@@ -56,18 +56,22 @@ def init_fcon_ts_wf(
         transformfile = [str(inputnode.inputs.mni_to_t1w), str(t1w_to_native)]
 
     sc207_transform = pe.Node(ApplyTransformsx(input_image=sc207atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor',
+                       input_image_type=3, dimension=3),
                        name="apply_tranform_sc27", mem_gb=mem_gb)
     
     sc407_transform = pe.Node(ApplyTransformsx(input_image=sc407atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor',
+                       input_image_type=3, dimension=3),
                        name="apply_tranform_sc47", mem_gb=mem_gb)
     
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor',
+                       input_image_type=3, dimension=3),
                        name="apply_tranform_gs36", mem_gb=mem_gb)
     gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor'),
+                       transforms=transformfile,interpolation='NearestNeighbor',
+                       input_image_type=3, dimension=3),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
 
     nifticonnect_sc27 = pe.Node(nifticonnect(), 
@@ -82,10 +86,10 @@ def init_fcon_ts_wf(
     
     workflow.connect([
              ## tansform atlas to bold space 
-             (inputnode,sc207_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
-             (inputnode,sc407_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
-             (inputnode,gs360_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
-             (inputnode,gd333_transform,[('ref_file','reference_image'),('bold_file','input_image')]),
+             (inputnode,sc207_transform,[('ref_file','reference_image'),]),
+             (inputnode,sc407_transform,[('ref_file','reference_image'),]),
+             (inputnode,gs360_transform,[('ref_file','reference_image'),]),
+             (inputnode,gd333_transform,[('ref_file','reference_image'),]),
              
              # load bold for timeseries extraction and connectivity
              (inputnode,nifticonnect_sc27, [('clean_bold','regressed_file'),]),

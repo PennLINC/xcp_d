@@ -41,7 +41,7 @@ class surfaceReho(SimpleInterface):
         # get mesh adjacency matrix
         mesh_matrix = mesh_adjacency(self.inputs.surf_bold)
         # compute reho
-        reho_surf = compute_2d_reho(datat= data_matrix, adjacency_matrix=mesh_matrix)
+        reho_surf = compute_2d_reho(datat=data_matrix, adjacency_matrix=mesh_matrix)
         
 
         #write the output out
@@ -86,8 +86,8 @@ class computealff(SimpleInterface):
         
       
         alff_mat = compute_alff(data_matrix=data_matrix,
-                     low_pass=self.inputs.low_pass,
-                     high_pass=self.inputs.high_pass, 
+                     low_pass=self.inputs.lowpass,
+                     high_pass=self.inputs.highpass, 
                      TR=self.inputs.tr)
 
         # writeout the data
@@ -101,7 +101,7 @@ class computealff(SimpleInterface):
                 self.inputs.in_file,
                 suffix=suffix, newpath=runtime.cwd,
                 use_ext=False,)
-        write_ndata(data_matrix= alff_mat, template=self.inputs.in_file, 
+        write_ndata(data_matrix=alff_mat, template=self.inputs.in_file, 
                 filename=self._results['alff_out'],mask=self.inputs.mask)
 
         return runtime

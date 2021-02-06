@@ -46,13 +46,20 @@ def write_ndata(data_matrix,template,filename,mask=None):
     elif template.endswith('.nii.gz'):
         mask_data = nb.load(mask).get_fdata()
         template_file = nb.load(template)
-        dataz = np.zeros([mask_data.shape[0],mask_data.shape[1],
+
+        if len(data_matrix.shape) == 1:
+            dataz = np.zeros(mask_data.shape) 
+            dataz[mask_data==1] = data_matrix
+        
+        else:
+            dataz = np.zeros([mask_data.shape[0],mask_data.shape[1],
                                      mask_data.shape[2],data_matrix.shape[1]])
         # this need rewriteen in short format
-        for i in range(data_matrix.shape[1]):
-            tcbfx = np.zeros(mask_data.shape) 
-            tcbfx[mask_data==1] = data_matrix[:,i]
-            dataz[:,:,:,i] = tcbfx
+            for i in range(data_matrix.shape[1]):
+                tcbfx = np.zeros(mask_data.shape) 
+                tcbfx[mask_data==1] = data_matrix[:,i]
+                dataz[:,:,:,i] = tcbfx
+        
         dataimg = nb.Nifti1Image(dataobj=dataz, affine=template_file.affine, 
                  header=template_file.header)
     
