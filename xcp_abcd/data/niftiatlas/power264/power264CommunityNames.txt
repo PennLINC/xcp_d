@@ -1,0 +1,14 @@
+somatomotorHand
+somatomotorMouth
+cinguloopercular
+auditory
+default
+memoryRetrieval
+visual
+frontoparietal
+salience
+subcortical
+ventralAttention
+dorsalAttention
+cerebellar
+none

@@ -21,7 +21,7 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
-from utils import(read_ndata, write_ndata)
+from ..utils import(read_ndata, write_ndata)
 
 LOGGER = logging.getLogger('nipype.interface') 
 
@@ -31,7 +31,7 @@ class _regressInputSpec(BaseInterfaceInputSpec):
     confounds = File(exists=True, mandatory=True,
                           desc=" confound regressors selected from fmriprep's confound matrix.")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
-    customs_conf = File(exists=False, mandatory=False,
+    custom_conf = File(exists=False, mandatory=False,
                           desc=" custom regressors like task or respiratory with the same length as in_file")
     mask = File(exists=False, mandatory=False,
                           desc=" brain mask nifti file")
@@ -66,7 +66,7 @@ class regress(SimpleInterface):
         
         # get the confound matrix 
         confound = pd.read_csv(self.inputs.confounds,header=None).to_numpy().T
-        if self.inputs.customs_conf:
+        if self.inputs.custom_conf:
             confound_custom = pd.read_csv(self.inputs.customs_conf,
                                 header=None).to_numpy().T
             confound = np.hstack((confound, confound_custom))
