@@ -8,7 +8,6 @@ post processing the bold/cifti
 """
 import numpy as np
 from nipype.pipeline import engine as pe
-from templateflow.api import get as get_template
 from ..interfaces import (computealff, surfaceReho)
 from nipype.interfaces import utility as niu
 from ..utils import CiftiSeparateMetric
@@ -87,8 +86,8 @@ def init_surface_reho_wf(
     rh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_RIGHT',direction="COLUMN"), 
                   name="separate_rh", mem_gb=mem_gb )
 
-    lh_reho = pe.Node(surfaceReho(),name="reho_lh", mem_gb=mem_gb)
-    rh_reho = pe.Node(surfaceReho(),name="reho_rh", mem_gb=mem_gb)
+    lh_reho = pe.Node(surfaceReho(surf_hemi='L'),name="reho_lh", mem_gb=mem_gb)
+    rh_reho = pe.Node(surfaceReho(surf_hemi='R'),name="reho_rh", mem_gb=mem_gb)
 
     workflow.connect([
          (inputnode,lh_surf,[('clean_bold','in_file')]),

@@ -18,6 +18,7 @@ LOGGER = logging.getLogger('nipype.interface')
 # compute 2D reho
 class _surfaceRehoInputSpec(BaseInterfaceInputSpec):
     surf_bold = File(exists=True,mandatory=True, desc="left or right hemisphere gii ")
+    surf_hemi = traits.Str(exists=True,mandatory=True, desc="L or R ")
 
 
 class _surfaceRehoOutputSpec(TraitedSpec):
@@ -39,18 +40,18 @@ class surfaceReho(SimpleInterface):
         data_matrix = read_gii(self.inputs.surf_bold)
 
         # get mesh adjacency matrix
-        mesh_matrix = mesh_adjacency(self.inputs.surf_bold)
+        mesh_matrix = mesh_adjacency(self.inputs.surf_hemi)
         # compute reho
         reho_surf = compute_2d_reho(datat=data_matrix, adjacency_matrix=mesh_matrix)
         
 
         #write the output out
         self._results['surf_gii'] = fname_presuffix(
-                self.inputs.in_file,
-                suffix='reho', newpath=runtime.cwd,
+                self.inputs.surf_bold,
+                suffix='.gii', newpath=runtime.cwd,
                 use_ext=False)
-        write_gii( datat=reho_surf,template= self.inputs.surf_bold,
-            filename=self._results['surf_gii'])
+        write_gii(datat=reho_surf,template=self.inputs.surf_bold,
+            filename=self._results['surf_gii'],hemi=self.inputs.surf_hemi)
         return runtime
 
 
@@ -92,9 +93,9 @@ class computealff(SimpleInterface):
 
         # writeout the data
         if self.inputs.in_file.endswith('.dtseries.nii'):
-            suffix='_reho.dtseries.nii'
+            suffix='_alff.dtseries.nii'
         elif self.inputs.in_file.endswith('.nii.gz'):
-            suffix='_reho.nii.gz'
+            suffix='_alff.nii.gz'
 
         #write the output out
         self._results['alff_out'] = fname_presuffix(

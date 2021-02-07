@@ -8,6 +8,7 @@ import numpy as np
 from scipy.stats import rankdata
 from scipy import signal
 import nibabel as nb 
+from templateflow.api import get as get_template
 
 def extract_timeseries_funct(in_file,
                              atlas,
@@ -53,8 +54,12 @@ def compute_2d_reho(datat,adjacency_matrix):
     return KCC
 
 
-def mesh_adjacency(surf):
-    # surface sphere to be load from templateflow
+def mesh_adjacency(hemi):
+    # surface sphere to be load from templateflow 
+    # either left or right hemisphere 
+
+    surf= str(get_template("fsLR", hemi=hemi,suffix='sphere',density='32k',)[1])
+
     surf = nb.load(surf)
     vertices_faces = surf.agg_data(('pointset', 'triangle'))
 
@@ -80,5 +85,6 @@ def compute_alff(data_matrix,low_pass,high_pass, TR):
         fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='spectrum')
         pxx_sqrt = np.sqrt(Pxx_den)
         ff_alff = [np.argmin(np.abs(fx-high_pass)),np.argmin(np.abs(fx-low_pass))]
-        alff[i] = np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
+        alff[i] = len(ff_alff)*np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
+    alff = np.reshape(alff,[len(alff),1])
     return alff
