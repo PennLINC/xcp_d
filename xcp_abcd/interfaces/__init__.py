@@ -5,6 +5,8 @@ from .connectivity import (nifticonnect, ApplyTransformsx,
                       get_atlas_cifti, get_atlas_nifti)
 from .resting_state import computealff, surfaceReho
 
+from .prepostcleaning import interpolate,censorscrub,removeTR
+
 
 __all__ = [
     'regress',
@@ -15,5 +17,8 @@ __all__ = [
     'surfaceReho',
     'get_atlas_cifti',
     'get_atlas_nifti',
-    'ApplyTransformsx'
+    'ApplyTransformsx',
+    'interpolate',
+    'censorscrub',
+    'removeTR'
 ]

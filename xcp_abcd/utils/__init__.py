@@ -10,7 +10,8 @@ from .cifticonnectivity import CiftiCorrelation
 from .ciftiparcellation import CiftiParcellate
 from .ciftiseparatemetric import CiftiSeparateMetric
 from .bids import (collect_participants, collect_data)
-
+from .modified_data import (interpolate_masked_data, generate_mask,
+                              compute_FD, drop_tseconds_volume)
 __all__ = [
     'read_ndata',
     'write_ndata',
@@ -26,5 +27,9 @@ __all__ = [
     'collect_data',
     'compute_2d_reho', 
     'compute_alff',
-    'mesh_adjacency'
+    'mesh_adjacency',
+    'interpolate_masked_data',
+    'generate_mask',
+    'compute_FD',
+    'drop_tseconds_volume'
 ]

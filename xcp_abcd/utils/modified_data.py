@@ -1,9 +1,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """ compute FD, genetrate mask  """
+
 import numpy as np
 import pandas as pd
-def drop_tsceonds_volume(data_matrix,confound,delets=0,TR=1,custom_conf=None):
+from numpy import matlib
+
+def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1,custom_conf=None):
     
     """
     documentation coming 
@@ -30,9 +33,13 @@ def drop_tsceonds_volume(data_matrix,confound,delets=0,TR=1,custom_conf=None):
 
 
 def compute_FD(confound,head_radius=50):
+    """
+
+    """
     
     confound = confound.replace(np.nan, 0)
-    mpars = confound[["trans_x", "trans_y", "trans_z","rot_x", "rot_y", "rot_z"]].to_numpy()
+    mpars = confound[["trans_x", "trans_y","trans_z",
+           "rot_x", "rot_y", "rot_z"]].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
     diff[:, 3:6] *= head_radius
     fd_res = np.abs(diff).sum(axis=1)
@@ -49,8 +56,9 @@ def generate_mask(fd_res, fd_thresh):
     return tmask
 
 
-from numpy import matlib
-def interpolate_masked_data(img_datax,tmask,mask_data=None,TR=1,ofreq=8,hifreq='Nyquist',voxbin=3000):
+
+def interpolate_masked_data(img_datax,tmask,mask_data=None,
+                     TR=1,ofreq=8,hifreq='Nyquist',voxbin=3000):
     """
     Interpolate data in an unevenly sampled 2-dimensional time series using least
     squares spectral analysis based on the Lomb-Scargle periodogram. This functionality '
