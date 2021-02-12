@@ -195,7 +195,6 @@ class censorscrub(SimpleInterface):
 
 class _interpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc=" censored or clean bold")
-    bold_file = File(exists=True,mandatory=True, desc=" raw in file")
     tmask = File(exists=True,mandatory=True,desc="temporal mask")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
@@ -234,7 +233,7 @@ class interpolate(SimpleInterface):
                 suffix='bold_interpolated', newpath=os.getcwd(),
                 use_ext=True)
         
-        write_ndata(data_matrix=recon_data,template=self.inputs.bold_file,
+        write_ndata(data_matrix=recon_data,template=self.inputs.in_file,
                        mask=self.inputs.mask_file,tr=self.inputs.TR,
                        filename=self._results['bold_interpolated'])
         

@@ -49,30 +49,90 @@ def init_post_process_wf(
                name="regress_the_data",mem_gb=mem_gb)
     
     if dummytime > 0:
-        rm_dummytime = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
+        rm_dummytime = pe.Node(removeTR(time_todrop=dummytime,TR=TR,
+                      custom_conf=custom_conf),
                       name="remove_dummy_time",mem_gb=mem_gb)
     
     if fd_thresh > 0:
         censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
-                       head_radius=head_radius,time_todrop=dummytime),
+                       head_radius=head_radius,custom_conf=custom_conf,
+                       time_todrop=dummytime),
                       name="censor_scrub",mem_gb=mem_gb)
     if not scrub:
-        interpolatedata = pe.Node(interpolate(TR=TR),
+        interpolatewf = pe.Node(interpolate(TR=TR),
                   name="censor_scrub",mem_gb=mem_gb)
-
     
-
-         
-
-    
+    # get the confpund matrix
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 
             (inputnode, confoundmat, [('bold', 'in_file'),]),
-            (inputnode, regressy, [('bold', 'in_file'),
+         ])
+    
+    if dummytime > 0: 
+        workflow.connect([
+            (confoundmat,rm_dummytime,[('confound_file','fmriprep_conf'),]),
+            (inputnode,rm_dummytime,[('bold','bold_file'),
+                   ('bold_mask','mask_file'),]) 
+            ])
+
+        if fd_thresh > 0:
+            workflow.connect([
+              (rm_dummytime,censor_scrubwf,[('bold_file_TR','in_file'),
+                         ('fmrip_confdropTR','fmriprep_conf'),
+                        ('custom_confdropTR','custom_conf')]),
+              (inputnode,censorscrub,[('bold','bold_file'), 
+                                    ('bold_mask','mask_file')]),
+              (censor_scrubwf,regressy,[('bold_censored','in_file'),
+                            ('fmriprepconf_censored','confounds'),
+                            ('customconf_censored','custom_conf')]),
+              (inputnode,regressy,[('bold_mask','maskfile')]),
+              (regressy, filterdx,[('res_file','in_file')]),
+               (inputnode, filterdx,[('bold_mask','mask')])
+                ])
+        else:
+            workflow.connect([
+              (rm_dummytime,regressy,[('bold_file_TR','in_file'),
+                         ('fmrip_confdropTR','confounds'),
+                        ('custom_confdropTR','custom_conf')]),
+              (inputnode,regressy,[('bold_mask','maskfile')]),
+              (regressy, filterdx,[('res_file','in_file')]),
+               (inputnode, filterdx,[('bold_mask','mask')])
+                ])
+    else:
+        if fd_thresh > 0:
+            workflow.connect([
+              (inputnode,censor_scrubwf,[('bold','in_file'),
+                                    ('bold','bold_file'), 
+                                    ('bold_mask','mask_file')]),
+               (confoundmat,censor_scrubwf,[('confound_file','fmriprep_conf')]),
+
+              (censor_scrubwf,regressy,[('bold_censored','in_file'),
+                            ('fmriprepconf_censored','confounds'),
+                            ('customconf_censored','custom_conf')]),
+              (inputnode,regressy,[('bold_mask','maskfile')]),
+              (regressy, filterdx,[('res_file','in_file')]),
+               (inputnode, filterdx,[('bold_mask','mask')])
+                ])
+        else:
+            workflow.connect([
+             # connect bold confound matrix to extract confound matrix 
+             (inputnode, regressy, [('bold', 'in_file'),
                                 ('bold_mask', 'mask')]),
-            (confoundmat,regressy,[('confound_file','confounds')]),
-            (regressy, filterdx,[('res_file','in_file')]),
-            (inputnode, filterdx,[('bold_mask','mask')]),
+             (confoundmat,regressy,[('confound_file','confounds')]),
+             (regressy, filterdx,[('res_file','in_file')]),
+             (inputnode, filterdx,[('bold_mask','mask')]),
+             ])
+    
+    if fd_thresh > 0 and not scrub:
+        workflow.connect([
+             (filterdx,interpolatewf,[('filt_file','in_file'),]),
+             (inputnode,interpolatewf,[('bold_mask','mask_file'),]),
+             (censorscrub,interpolatewf,[('tmask','tmask'),]),
+             (interpolatewf,outputnode,[('bold_interpolated','processed_bold')]),
+        ])
+    else:
+        workflow.connect([
+             # connect bold confound matrix to extract confound matrix 
             (filterdx,outputnode,[('filt_file','processed_bold')]),
         ])
 
@@ -80,26 +140,26 @@ def init_post_process_wf(
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if surface:
-            
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
+
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                   right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti_smoothing", mem_gb=mem_gb)
-            workflow.connect([
-                (filterdx, smooth_data,[('filt_file','in_file')]),
-                (smooth_data, outputnode,[('out_file','smoothed_bold')])       
-            ])
 
         else:
-           smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
+            smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
-           workflow.connect([
-                (filterdx, smooth_data,[('filt_file','in_file')]),
-                (smooth_data, outputnode,[('smoothed_file','smoothed_bold')])       
-            ])
 
-            
-    
+        if fd_thresh > 0 and not scrub:
+            workflow.connect([
+                    (interpolatewf, smooth_data,[('bold_interpolated','in_file')]),
+                   (smooth_data, outputnode,[('out_file','smoothed_bold')])    
+                   ])
+        else:
+            workflow.connect([
+                   (filterdx, smooth_data,[('filt_file','in_file')]),
+                   (smooth_data, outputnode,[('out_file','smoothed_bold')])       
+                     ])
     ## smoothing the datt if requested
         
     return workflow
