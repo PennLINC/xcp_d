@@ -58,7 +58,7 @@ def generate_mask(fd_res, fd_thresh):
 
 
 def interpolate_masked_data(img_datax,tmask,mask_data=None,
-                     TR=1,ofreq=8,hifreq='Nyquist',voxbin=3000):
+                     TR=1,ofreq=8,hifreq=1,voxbin=3000):
     """
     Interpolate data in an unevenly sampled 2-dimensional time series using least
     squares spectral analysis based on the Lomb-Scargle periodogram. This functionality '
@@ -85,8 +85,6 @@ def interpolate_masked_data(img_datax,tmask,mask_data=None,
     """
     
     t_rep=np.asarray(TR, dtype='float64')
-    if hifreq == "Nyquist":
-        hifreq = 0.5*(1/t_rep)
 
     if mask_data:
         img_data = img_datax[mask_data==1] 
@@ -124,8 +122,8 @@ def interpolate_masked_data(img_datax,tmask,mask_data=None,
 
     # Calculate sampling frequencies
     sampling_frequencies = np.arange(start=1/(timespan*ofreq),
-            step=1/(timespan*ofreq), stop=(hifreq*n_samples_seen/
-            (2*timespan)+1/(timespan*ofreq)) )
+            step=1/(timespan*ofreq), 
+            stop=(hifreq*n_samples_seen/(2*timespan)+1/(timespan*ofreq)) )
 
     # Angular frequencies  
     angular_frequencies = 2 * np.pi * sampling_frequencies

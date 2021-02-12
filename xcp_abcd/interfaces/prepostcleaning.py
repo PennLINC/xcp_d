@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import os.path as path
 import nibabel as nb
 import pandas as pd
 from ..utils import (drop_tseconds_volume, read_ndata, 
@@ -99,7 +100,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
 class _censorscrubOutputSpec(TraitedSpec):
     bold_censored  = File(exists=True, manadatory=True,
                                      desc=" fmriprep censored")
-    fmriprepconf_censored  = File(exists=False,mandatory=False, 
+    fmriprepconf_censored  = File(exists=True,mandatory=True, 
                                     desc=" fmriprep_conf censored")
     customconf_censored = File(exists=False,mandatory=False, desc="custom conf censored")
     tmask = File(exists=True,mandatory=True,desc="temporal mask")
@@ -123,36 +124,41 @@ class censorscrub(SimpleInterface):
                            head_radius=self.inputs.head_radius)
 
         ### read confound 
-        datax = read_ndata(datafile=self.inputs.in_file,
-                                maskfile=self.inputs.mask_file)
+        dataxx = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask_file)
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
-        customx_conf =pd.read_csv(self.inputs.custom_conf,header=None) 
-
         
+        if self.inputs.custom_conf:
+            customx_conf = pd.read_csv(self.inputs.custom_conf,header=None) 
+           
         if self.inputs.time_todrop == 0:
             # do censoring staright
             tmask = generate_mask(fd_res=fd_timeseries[0],fd_thresh=self.inputs.fd_thresh)
             if np.sum(tmask) > 0: 
-                datax_censored = datax[:,:,:,tmask==1]
-                fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[[np.where(tmask==1)]]) 
-                customx_censored = customx_conf.drop(customx_conf.index[[np.where(tmask==1)]]) 
+                datax_censored = dataxx[:,tmask==0]
+                fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[np.where(tmask==1)])
+                if self.inputs.custom_conf:
+                    customx_censored = customx_conf.drop(customx_conf.index[np.where(tmask==1)]) 
             else:
-                datax_censored = datax
+                datax_censored = dataxx
                 fmriprepx_censored = fmriprepx_conf
-                customx_censored = customx_conf
+                if self.inputs.custom_conf:
+                    customx_censored = customx_conf
         else:
-            num_vol = np.int(self.inputs.time_todrop/self.inputs.TR)
+            num_vol = np.int(np.divide(self.inputs.time_todrop,self.inputs.TR))
             fd_timeseries2=fd_timeseries[0]
             fd_timeseries2 = fd_timeseries2[num_vol:]
             tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh)
+    
             if np.sum(tmask) > 0:
-                datax_censored = datax[:,:,:,tmask==1]
-                fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[[np.where(tmask==1)]]) 
-                customx_censored = customx_conf.drop(customx_conf.index[[np.where(tmask==1)]]) 
+                datax_censored = dataxx[:,tmask==0]
+                fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[np.where(tmask==1)])
+                if self.inputs.custom_conf:
+                    customx_censored = customx_conf.drop(customx_conf.index[np.where(tmask==1)]) 
             else:
-                datax_censored = datax
+                datax_censored = dataxx
                 fmriprepx_censored = fmriprepx_conf
-                customx_censored = customx_conf
+                if self.inputs.custom_conf:
+                    customx_censored = customx_conf
 
         
         ### get the output
@@ -162,16 +168,16 @@ class censorscrub(SimpleInterface):
                 use_ext=True)
         self._results['fmriprepconf_censored'] = fname_presuffix(
                 self.inputs.in_file,
-                suffix='fmriprepconf_censored', newpath=os.getcwd(),
-                use_ext=True)
-        self._results['customconf_censored '] = fname_presuffix(
+                suffix='fmriprepconf_censored.csv', newpath=os.getcwd(),
+                use_ext=False)
+        self._results['customconf_censored'] = fname_presuffix(
                 self.inputs.in_file,
-                suffix='customconf_censored ', newpath=os.getcwd(),
-                use_ext=True)
+                suffix='customconf_censored.txt', newpath=os.getcwd(),
+                use_ext=False)
         self._results['tmask'] = fname_presuffix(
                 self.inputs.in_file,
-                suffix='tmask_', newpath=os.getcwd(),
-                use_ext=True)
+                suffix='temporalmask.tsv', newpath=os.getcwd(),
+                use_ext=False)
 
 
         write_ndata(data_matrix=datax_censored,template=self.inputs.in_file,
@@ -181,7 +187,7 @@ class censorscrub(SimpleInterface):
         fmriprepx_censored.to_csv(self._results['fmriprepconf_censored'],index=False,header=False)
         np.savetxt(self._results['tmask'],tmask,fmt="%d",delimiter=',')
         if self.inputs.custom_conf:
-            customx_censored.to_csv(self._results['custom_confdropTR'],index=False,header=False)   
+            customx_censored.to_csv(self._results['customconf_censored'],index=False,header=False)   
         return runtime
 
 
@@ -193,7 +199,6 @@ class _interpolateInputSpec(BaseInterfaceInputSpec):
     tmask = File(exists=True,mandatory=True,desc="temporal mask")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
-    hifreq =traits.Float(exists=False,mandatory=False, desc="lowpass frequency")
 
 
 class _interpolateOutputSpec(TraitedSpec):
@@ -217,12 +222,12 @@ class interpolate(SimpleInterface):
 
         if datax.shape[1]!= len(tmask):
             fulldata = np.zeros([datax.shape[0],len(tmask)])
-            fulldata[:,:,:,tmask==0]=datax 
+            fulldata[:,tmask==0]=datax 
         else:
             fulldata = datax
 
         recon_data = interpolate_masked_data(img_datax=fulldata, tmask=tmask, 
-                    TR=self.inputs.TR,hifreq=self.inputs.hifreq)
+                    TR=self.inputs.TR,hifreq=1)
 
         self._results['bold_interpolated'] = fname_presuffix(
                 self.inputs.in_file,
