@@ -34,6 +34,9 @@ def init_ciftipostprocess_wf(
     params,
     custom_conf,
     omp_nthreads,
+    scrub,
+    dummytime,
+    fd_thresh,
     num_cifti=1,
     layout=None,
     name='cifti_process_wf'):
@@ -64,7 +67,9 @@ def init_ciftipostprocess_wf(
 
     clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   custom_conf=custom_conf,smoothing=smoothing,params=params,name='clean_data_wf')
+                   custom_conf=custom_conf,smoothing=smoothing,params=params,
+                   scrub=scrub,dummytime=dummytime,fd_thresh=fd_thresh,
+                   name='clean_data_wf')
     
     cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
                       name='cifti_ts_con_wf')

@@ -110,6 +110,15 @@ def get_parser():
     g_param.add_argument('-c','--custom_conf', required=False,
                              type=Path, help='custom confound to be added to nuissance regressors')
 
+    g_censor = parser.add_argument_group(' Censoring and scrubbing options')
+
+    g_censor.add_argument('-f','--fd-thresh',default=0, type=float, 
+                                help='framewise displacement')
+    g_censor.add_argument('--scrub', action='store_true', default=False,
+                        help='scurbbing')
+    g_censor.add_argument('-d','--dummytime',default=0,
+                             type=float, help='first volume in seconds to drop')
+
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
                          help='path where intermediate results should be stored')
@@ -122,6 +131,8 @@ def get_parser():
 
     g_other.add_argument('--sloppy', action='store_true', default=False,
                          help='Use low-quality tools for speed - TESTING ONLY')
+
+    
 
     return parser
 
@@ -339,6 +350,9 @@ def build_workflow(opts, retval):
               head_radius=opts.head_radius,
               template=opts.template,
               custom_conf=opts.custom_conf,
+              scrub=opts.scrub,
+              dummytime=opts.dummytime,
+              fd_thresh=opts.fd_thresh,
               name='xcpabcd_wf'
               )
     

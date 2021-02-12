@@ -33,6 +33,9 @@ def init_boldpostprocess_wf(
      params,
      custom_conf,
      omp_nthreads,
+     scrub,
+     dummytime,
+     fd_thresh,
      template='MNI152NLin2009cAsym',
      num_bold=1,
      layout=None,
@@ -69,6 +72,7 @@ def init_boldpostprocess_wf(
     clean_data_wf = init_post_process_wf( mem_gb=mem_gbx['timeseries'], TR=TR,
                     head_radius=head_radius,lowpass=lowpass,highpass=highpass,
                     smoothing=smoothing,custom_conf=custom_conf,params=params,
+                    scrub=scrub,dummytime=dummytime,fd_thresh=fd_thresh,
                     name='clean_data_wf') 
     
     
