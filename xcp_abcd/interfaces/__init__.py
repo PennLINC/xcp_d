@@ -6,6 +6,7 @@ from .connectivity import (nifticonnect, ApplyTransformsx,
 from .resting_state import computealff, surfaceReho
 
 from .prepostcleaning import interpolate,censorscrub,removeTR
+from .qc_plot import computeqcplot
 
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     'ApplyTransformsx',
     'interpolate',
     'censorscrub',
-    'removeTR'
+    'removeTR',
+    'computeqcplot'
 ]

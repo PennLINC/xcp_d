@@ -14,7 +14,8 @@ from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
-from ..utils import collect_data 
+from ..utils import collect_data
+from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from  ..workflow import (init_fcon_ts_wf,
@@ -62,7 +63,7 @@ def init_boldpostprocess_wf(
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
                 'reho_out','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc']),
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file']),
         name='outputnode')
 
     
@@ -82,7 +83,7 @@ def init_boldpostprocess_wf(
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=lowpass,highpass=highpass,smoothing=smoothing, surface=False,
-                    name="compue_alff_wf" )
+                    name="compute_alff_wf" )
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
@@ -114,6 +115,17 @@ def init_boldpostprocess_wf(
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
         ])
+
+    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
+                       head_radius=head_radius), name="qc_report")
+    workflow.connect([
+        (inputnode,qcreport,[('bold_mask','mask')]),
+        (clean_data_wf,qcreport,[('outputnode.processed_bold','cleaned_file'),
+                            ('outputnode.tmask','tmask')]),
+        (qcreport,outputnode,[('qc_file','qc_file')]),
+           ])
+
+
     return workflow 
 
 def _create_mem_gb(bold_fname):

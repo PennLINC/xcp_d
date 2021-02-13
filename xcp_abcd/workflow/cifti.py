@@ -16,6 +16,7 @@ from nipype.interfaces import utility as niu
 from nipype import logging
 from ..utils import collect_data
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from ..interfaces import computeqcplot
 
 from  ..workflow import (init_cifti_conts_wf,
     init_post_process_wf,
@@ -57,7 +58,7 @@ def init_ciftipostprocess_wf(
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
                 'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc']),
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file']),
         name='outputnode')
 
     TR = layout.get_tr(cifti_file)
@@ -98,9 +99,17 @@ def init_ciftipostprocess_wf(
                         ('outputnode.sc407_ts','sc407_ts'),('outputnode.sc407_fc','sc407_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
+            
 
       ])
 
+    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=cifti_file,dummytime=dummytime,
+                       head_radius=head_radius), name="qc_report")
+    workflow.connect([
+        (clean_data_wf,qcreport,[('outputnode.processed_bold','cleaned_file'),
+                            ('outputnode.tmask','tmask')]),
+        (qcreport,outputnode,[('qc_file','qc_file')]),
+           ])
 
     return workflow
 

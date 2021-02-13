@@ -11,7 +11,7 @@ from nipype.interfaces.base import (
     SimpleInterface )
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
-LOGGER = logging.getLogger('nipype.interface') 
+
 
 class _removeTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,mandatory=True, desc=" either bold or nifti ")
