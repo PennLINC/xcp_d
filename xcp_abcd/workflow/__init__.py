@@ -9,6 +9,11 @@ from .restingstate import  (init_compute_alff_wf, init_surface_reho_wf,
 from .bold import init_boldpostprocess_wf
 from .cifti import init_ciftipostprocess_wf
 from .base import init_xcpabcd_wf
+from .outputs import init_writederivatives_wf
+
+from niworkflows.interfaces import bids
+class DerivativesDataSink(bids.DerivativesDataSink):
+    out_path_base = 'xcp_abcd'
 
 __all__ = [
     'init_fcon_ts_wf',
@@ -19,5 +24,7 @@ __all__ = [
     'init_3d_reho_wf',
     'init_boldpostprocess_wf',
     'init_ciftipostprocess_wf',
-    'init_xcpabcd_wf'
+    'init_xcpabcd_wf',
+    'DerivativesDataSink',
+    'init_writederivatives_wf'
 ]

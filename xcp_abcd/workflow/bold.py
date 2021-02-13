@@ -21,7 +21,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from  ..workflow import (init_fcon_ts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
-    init_3d_reho_wf)
+    init_3d_reho_wf,
+    init_writederivatives_wf)
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -36,6 +37,7 @@ def init_boldpostprocess_wf(
      omp_nthreads,
      scrub,
      dummytime,
+     output_dir,
      fd_thresh,
      template='MNI152NLin2009cAsym',
      num_bold=1,
@@ -87,6 +89,11 @@ def init_boldpostprocess_wf(
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
+    
+    write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
+                    params=params,scrub=scrub,surface=None,output_dir=output_dir,dummytime=dummytime,
+                    lowpass=lowpass,highpass=highpass,TR=TR,omp_nthreads=omp_nthreads,
+                    name="write_derivative_wf")
 
     workflow.connect([
         (inputnode,clean_data_wf,[('bold_file','inputnode.bold')]),
@@ -124,7 +131,24 @@ def init_boldpostprocess_wf(
                             ('outputnode.tmask','tmask')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
-
+    
+    workflow.connect([
+        (clean_data_wf, write_derivative_wf,[('outputnode.processed_bold','inputnode.processed_bold'),
+                                   ('outputnode.smoothed_bold','inputnode.smoothed_bold')]),
+        (alff_compute_wf,write_derivative_wf,[('outputnode.alff_out','inputnode.alff_out'),
+                                      ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
+        (reho_compute_wf,write_derivative_wf,[('outputnode.reho_out','inputnode.reho_out')]),
+        (fcon_ts_wf,write_derivative_wf,[('outputnode.sc207_ts','inputnode.sc207_ts' ),
+                                ('outputnode.sc207_fc','inputnode.c207_fc'),
+                                ('outputnode.sc407_ts','inputnode.sc407_ts'),
+                                ('outputnode.sc407_fc','inputnode.sc407_fc'),
+                                ('outputnode.gs360_ts','inputnode.gs360_ts'),
+                                ('outputnode.gs360_fc','inputnode.gs360_fc'),
+                                ('outputnode.gd333_ts','inputnode.gd333_ts'),
+                                ('outputnode.gd333_fc','inputnode.gd333_fc')]),
+        (qcreport,outputnode,[('qc_file','inputnode.qc_file')]),
+        
+         ])
 
     return workflow 
 

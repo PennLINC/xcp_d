@@ -133,6 +133,7 @@ def init_single_subject_wf(
                                                         dummytime=dummytime,
                                                         fd_thresh=fd_thresh,
                                                         layout=layout,
+                                                        output_dir=output_dir,
                                                         name='cifti_postprocess_'+ str(ii) + '_wf')
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
@@ -159,6 +160,7 @@ def init_single_subject_wf(
                                                        scrub=scrub,
                                                        dummytime=dummytime,
                                                        fd_thresh=fd_thresh,
+                                                       output_dir=output_dir,
                                                        name='bold_postprocess_'+ str(ii) + '_wf')
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
