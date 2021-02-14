@@ -41,11 +41,11 @@ class nifticonnect(SimpleInterface):
      
         self._results['time_series_tsv'] = fname_presuffix(
                 self.inputs.regressed_file,
-                suffix='time_series', newpath=runtime.cwd,
+                suffix='time_series.tsv', newpath=runtime.cwd,
                 use_ext=False)
         self._results['fcon_matrix_tsv'] = fname_presuffix(
                 self.inputs.regressed_file,
-                suffix='fcon_matrix', newpath=runtime.cwd,
+                suffix='fcon_matrix.tsv', newpath=runtime.cwd,
                 use_ext=False)
     
         self._results['time_series_tsv'],self._results['fcon_matrix_tsv'] = extract_timeseries_funct( 

@@ -21,8 +21,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from  ..workflow import (init_fcon_ts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
-    init_3d_reho_wf,
-    init_writederivatives_wf)
+    init_3d_reho_wf)
+from .outputs import init_writederivatives_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -52,14 +52,14 @@ def init_boldpostprocess_wf(
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','mni_to_t1w','ref_file','bold_mask']),
+        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','cutstom_conf']),
         name='inputnode')
     
     inputnode.inputs.bold_file = str(bold_file)
     
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
-    #inputnode.inputs.mni_to_t1w = mni_to_t1w
+    inputnode.inputs.custom_conf = str(custom_conf)
 
 
     outputnode = pe.Node(niu.IdentityInterface(
@@ -72,9 +72,9 @@ def init_boldpostprocess_wf(
     # get the mem_bg size for each workflow
     
     mem_gbx = _create_mem_gb(bold_file)
-    clean_data_wf = init_post_process_wf( mem_gb=mem_gbx['timeseries'], TR=TR,
+    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                     head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                    smoothing=smoothing,custom_conf=custom_conf,params=params,
+                    smoothing=smoothing,params=params,
                     scrub=scrub,dummytime=dummytime,fd_thresh=fd_thresh,
                     name='clean_data_wf') 
     
@@ -94,7 +94,7 @@ def init_boldpostprocess_wf(
                     params=params,scrub=scrub,surface=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=lowpass,highpass=highpass,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
-
+   
     workflow.connect([
         (inputnode,clean_data_wf,[('bold_file','inputnode.bold')]),
         
@@ -122,11 +122,15 @@ def init_boldpostprocess_wf(
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
         ])
+    if custom_conf:
+        workflow.connect([
+         (inputnode,clean_data_wf,[('custom_conf','inputnode.custom_conf')]),
+        ])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
                        head_radius=head_radius), name="qc_report")
     workflow.connect([
-        (inputnode,qcreport,[('bold_mask','mask')]),
+        (inputnode,qcreport,[('bold_mask','mask_file')]),
         (clean_data_wf,qcreport,[('outputnode.processed_bold','cleaned_file'),
                             ('outputnode.tmask','tmask')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
@@ -139,14 +143,14 @@ def init_boldpostprocess_wf(
                                       ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
         (reho_compute_wf,write_derivative_wf,[('outputnode.reho_out','inputnode.reho_out')]),
         (fcon_ts_wf,write_derivative_wf,[('outputnode.sc207_ts','inputnode.sc207_ts' ),
-                                ('outputnode.sc207_fc','inputnode.c207_fc'),
+                                ('outputnode.sc207_fc','inputnode.sc207_fc'),
                                 ('outputnode.sc407_ts','inputnode.sc407_ts'),
                                 ('outputnode.sc407_fc','inputnode.sc407_fc'),
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
                                 ('outputnode.gd333_fc','inputnode.gd333_fc')]),
-        (qcreport,outputnode,[('qc_file','inputnode.qc_file')]),
+        (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
         
          ])
 

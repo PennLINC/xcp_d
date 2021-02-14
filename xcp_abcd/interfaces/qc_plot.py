@@ -23,7 +23,7 @@ LOGGER = logging.getLogger('nipype.interface')
 
 class _qcInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,mandatory=True, desc=" raw  bold or cifit file from fmirprep")
-    mask_file = File(exists=True,mandatory=True, desc=" mask file")
+    mask_file = File(exists=False,mandatory=False, desc=" mask file")
     cleaned_file = File(exists=True,mandatory=True, desc=" residual and filter file")
     tmask = File(exists=False,mandatory=False, desc="temporal mask")
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
@@ -52,7 +52,7 @@ class computeqcplot(SimpleInterface):
         
         conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
         fd_timeseries = compute_FD(confound=conf_matrix, 
-                           head_radius=self.inputs.head_radius)[0]
+                           head_radius=self.inputs.head_radius)
         fd_timeseries = fd_timeseries[0]
         rmsd = conf_matrix['rmsd']
 
@@ -95,7 +95,7 @@ class computeqcplot(SimpleInterface):
                                dvars_bf[tmask==0] )[0][1]
             motionDVCorrFinal = np.corrcoef(fd_timeseries[tmask==0],
                                dvars_af[tmask==0])[0][1]
-            rms_max = np.max(fd_timeseries[tmask==0])
+            rms_max = np.max(rmsd[tmask==0])
 
             datax = read_ndata(datafile=self.inputs.cleaned_file,
                                   maskfile=self.inputs.mask_file)[:,num_vold:]
@@ -113,7 +113,7 @@ class computeqcplot(SimpleInterface):
                                dvars_bf)[0][1]
             motionDVCorrFinal = np.corrcoef(fd_timeseries,
                                dvars_af)[0][1]
-            rms_max = np.max(fd_timeseries)
+            rms_max = np.max(rmsd)
             datax = read_ndata(datafile=self.inputs.cleaned_file,
                                   maskfile=self.inputs.mask_file)[:,num_vold:]
             plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,tr=self.inputs.TR,
@@ -137,6 +137,4 @@ class computeqcplot(SimpleInterface):
         self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.tsv',
                                                    newpath=runtime.cwd, use_ext=False)
         df.to_csv(self._results['qc_file'], index=False, header=True)
-
-        self.inputs.qc_file = os.path.abspath(self._results['qc_file'])
         return runtime

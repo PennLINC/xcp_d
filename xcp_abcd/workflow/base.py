@@ -72,7 +72,7 @@ def init_xcpabcd_wf(layout,
                             name="single_subject_" + subject_id + "_wf")
 
         single_subject_wf.config['execution']['crashdump_dir'] = (
-            os.path.join(output_dir, "xcpabcd", "sub-" + subject_id, 'log')
+            os.path.join(output_dir, "xcp_abcd", "sub-" + subject_id, 'log')
         )
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)

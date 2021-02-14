@@ -21,8 +21,9 @@ from ..interfaces import computeqcplot
 from  ..workflow import (init_cifti_conts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
-    init_surface_reho_wf,
-    init_writederivatives_wf)
+    init_surface_reho_wf)
+
+from .outputs import init_writederivatives_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -55,6 +56,7 @@ def init_ciftipostprocess_wf(
         name='inputnode')
     
     inputnode.inputs.cifti_file = cifti_file
+    inputnode.inputs.custom_conf = str(custom_conf)
 
 
     outputnode = pe.Node(niu.IdentityInterface(
@@ -64,13 +66,14 @@ def init_ciftipostprocess_wf(
         name='outputnode')
 
     TR = layout.get_tr(cifti_file)
+    
 
 
     mem_gbx = _create_mem_gb(cifti_file)
 
     clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   custom_conf=custom_conf,smoothing=smoothing,params=params,
+                   smoothing=smoothing,params=params,
                    scrub=scrub,dummytime=dummytime,fd_thresh=fd_thresh,
                    name='clean_data_wf')
     
@@ -109,6 +112,10 @@ def init_ciftipostprocess_wf(
             
 
       ])
+    if custom_conf:
+        workflow.connect([
+         (inputnode,clean_data_wf,[('custom_conf','inputnode.custom_conf')]),
+        ])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=cifti_file,dummytime=dummytime,
                        head_radius=head_radius), name="qc_report")
@@ -123,16 +130,17 @@ def init_ciftipostprocess_wf(
                                    ('outputnode.smoothed_bold','inputnode.smoothed_bold')]),
         (alff_compute_wf,write_derivative_wf,[('outputnode.alff_out','inputnode.alff_out'),
                                       ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
-        (reho_compute_wf,write_derivative_wf,[('outputnode.reho_out','inputnode.reho_out')]),
-        (fcon_ts_wf,write_derivative_wf,[('outputnode.sc207_ts','inputnode.sc207_ts' ),
-                                ('outputnode.sc207_fc','inputnode.c207_fc'),
+        (reho_compute_wf,write_derivative_wf,[('outputnode.rh_reho','inputnode.reho_rh'),
+                                     ('outputnode.lh_reho','inputnode.reho_lh')]),
+        (cifti_conts_wf,write_derivative_wf,[('outputnode.sc207_ts','inputnode.sc207_ts' ),
+                                ('outputnode.sc207_fc','inputnode.sc207_fc'),
                                 ('outputnode.sc407_ts','inputnode.sc407_ts'),
                                 ('outputnode.sc407_fc','inputnode.sc407_fc'),
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
                                 ('outputnode.gd333_fc','inputnode.gd333_fc')]),
-        (qcreport,outputnode,[('qc_file','inputnode.qc_file')]),
+        (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
         
          ])
     

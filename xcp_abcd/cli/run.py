@@ -105,7 +105,7 @@ def get_parser():
     
     g_param.add_argument('-r','--head_radius',default=50,
                              type=float, help='head radius for computing FD, it is 40mm for baby')
-    g_param.add_argument('-p','--params', required=True, default='24p',
+    g_param.add_argument('-p','--params', required=False, default='24P',
                              type=str, help='nuissance parameters to be selected')
     g_param.add_argument('-c','--custom_conf', required=False,
                              type=Path, help='custom confound to be added to nuissance regressors')
@@ -298,7 +298,7 @@ def build_workflow(opts, retval):
     retval['plugin_settings'] = plugin_settings
 
     # Set up directories
-    log_dir = output_dir / 'xcpabcd' / 'logs'
+    log_dir = output_dir / 'xcp_abcd' / 'logs'
     # Check and create output and working directories
     output_dir.mkdir(exist_ok=True, parents=True)
     log_dir.mkdir(exist_ok=True, parents=True)
@@ -358,7 +358,7 @@ def build_workflow(opts, retval):
     
     retval['return_code'] = 0
 
-    #logs_path = Path(output_dir) / 'xcpabcd' / 'logs'
+    #logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'
     
     return retval
 

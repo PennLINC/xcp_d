@@ -10,6 +10,7 @@ from .cifticonnectivity import CiftiCorrelation
 from .ciftiparcellation import CiftiParcellate
 from .ciftiseparatemetric import CiftiSeparateMetric
 from .bids import (collect_participants, collect_data)
+from .bids import DerivativesDataSink as bid_derivative
 from .modified_data import (interpolate_masked_data, generate_mask,
                               compute_FD, drop_tseconds_volume)
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     'interpolate_masked_data',
     'generate_mask',
     'compute_FD',
-    'drop_tseconds_volume'
+    'drop_tseconds_volume',
+    'bid_derivative'
 ]
