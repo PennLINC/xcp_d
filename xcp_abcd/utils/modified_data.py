@@ -43,10 +43,10 @@ def compute_FD(confound,head_radius=50):
     diff = mpars[:-1, :6] - mpars[1:, :6]
     diff[:, 3:6] *= head_radius
     fd_res = np.abs(diff).sum(axis=1)
-    mean_fd = np.mean(fd_res)
+    #mean_fd = np.mean(fd_res)
     fdres=np.hstack([0,fd_res])
     
-    return fdres,np.mean(mean_fd)
+    return fdres
 
 def generate_mask(fd_res, fd_thresh):
     

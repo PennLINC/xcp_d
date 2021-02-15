@@ -132,7 +132,7 @@ class censorscrub(SimpleInterface):
            
         if self.inputs.time_todrop == 0:
             # do censoring staright
-            tmask = generate_mask(fd_res=fd_timeseries[0],fd_thresh=self.inputs.fd_thresh)
+            tmask = generate_mask(fd_res=fd_timeseries,fd_thresh=self.inputs.fd_thresh)
             if np.sum(tmask) > 0: 
                 datax_censored = dataxx[:,tmask==0]
                 fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[np.where(tmask==1)])
@@ -145,7 +145,7 @@ class censorscrub(SimpleInterface):
                     customx_censored = customx_conf
         else:
             num_vol = np.int(np.divide(self.inputs.time_todrop,self.inputs.TR))
-            fd_timeseries2=fd_timeseries[0]
+            fd_timeseries2=fd_timeseries
             fd_timeseries2 = fd_timeseries2[num_vol:]
             tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh)
     
@@ -164,7 +164,7 @@ class censorscrub(SimpleInterface):
         ### get the output
         self._results['bold_censored'] = fname_presuffix(
                 self.inputs.in_file,
-                suffix='bold_censored', newpath=os.getcwd(),
+                 newpath=os.getcwd(),
                 use_ext=True)
         self._results['fmriprepconf_censored'] = fname_presuffix(
                 self.inputs.in_file,
@@ -195,6 +195,7 @@ class censorscrub(SimpleInterface):
 
 class _interpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc=" censored or clean bold")
+    bold_file = File(exists=True,mandatory=True, desc=" censored or clean bold")
     tmask = File(exists=True,mandatory=True,desc="temporal mask")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
@@ -230,10 +231,10 @@ class interpolate(SimpleInterface):
 
         self._results['bold_interpolated'] = fname_presuffix(
                 self.inputs.in_file,
-                suffix='bold_interpolated', newpath=os.getcwd(),
+                newpath=os.getcwd(),
                 use_ext=True)
         
-        write_ndata(data_matrix=recon_data,template=self.inputs.in_file,
+        write_ndata(data_matrix=recon_data,template=self.inputs.bold_file,
                        mask=self.inputs.mask_file,tr=self.inputs.TR,
                        filename=self._results['bold_interpolated'])
         

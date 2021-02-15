@@ -53,7 +53,7 @@ class computeqcplot(SimpleInterface):
         conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
         fd_timeseries = compute_FD(confound=conf_matrix, 
                            head_radius=self.inputs.head_radius)
-        fd_timeseries = fd_timeseries[0]
+    
         rmsd = conf_matrix['rmsd']
 
         if self.inputs.dummytime > 0:

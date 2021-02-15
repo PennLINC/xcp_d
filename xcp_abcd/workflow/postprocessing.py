@@ -58,7 +58,7 @@ def init_post_process_wf(
                       name="censor_scrub",mem_gb=mem_gb)
     if not scrub:
         interpolatewf = pe.Node(interpolate(TR=TR),
-                  name="censor_scrub",mem_gb=mem_gb)
+                  name="interpolation",mem_gb=mem_gb)
     
     # get the confpund matrix
     workflow.connect([
@@ -70,23 +70,27 @@ def init_post_process_wf(
         workflow.connect([
             (confoundmat,rm_dummytime,[('confound_file','fmriprep_conf'),]),
             (inputnode,rm_dummytime,[('bold','bold_file'),
-                   ('bold_mask','mask_file'),('custom_conf','custom_conf')]) 
-            ])
+                   ('bold_mask','mask_file'),]) 
+             ])
+        if inputnode.inputs.custom_conf:
+           workflow.connect([ (inputnode,rm_dummytime,[('custom_conf','custom_conf')]),])
 
         if fd_thresh > 0:
             workflow.connect([
               (rm_dummytime,censor_scrubwf,[('bold_file_TR','in_file'),
-                         ('fmrip_confdropTR','fmriprep_conf'),
-                        ('custom_confdropTR','custom_conf')]),
-              (inputnode,censorscrub,[('bold','bold_file'), 
-                                    ('bold_mask','mask_file'),('custom_conf','custom_conf')]),
+                         ('fmrip_confdropTR','fmriprep_conf'),]),
+              (inputnode,censor_scrubwf,[('bold','bold_file'), 
+                                    ('bold_mask','mask_file')]),
               (censor_scrubwf,regressy,[('bold_censored','in_file'),
-                            ('fmriprepconf_censored','confounds'),
-                            ('customconf_censored','custom_conf')]),
-              (inputnode,regressy,[('bold_mask','maskfile'),('custom_conf','custom_conf')]),
+                            ('fmriprepconf_censored','confounds')]),
+              (inputnode,regressy,[('bold_mask','maskfile')]),
               (regressy, filterdx,[('res_file','in_file')]),
                (inputnode, filterdx,[('bold_mask','mask')])
                 ])
+            if inputnode.inputs.custom_conf:
+                workflow.connect([
+                    (rm_dummytime,censor_scrubwf,[('custom_confdropTR','custom_conf')]),
+                     (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
         else:
             workflow.connect([
               (rm_dummytime,regressy,[('bold_file_TR','in_file'),
@@ -94,23 +98,32 @@ def init_post_process_wf(
                         ('custom_confdropTR','custom_conf')]),
               (inputnode,regressy,[('bold_mask','maskfile'),]),
               (regressy, filterdx,[('res_file','in_file')]),
-               (inputnode, filterdx,[('bold_mask','mask')])
-                ])
+               (inputnode, filterdx,[('bold_mask','mask')])])
+            
+            if inputnode.inputs.custom_conf:
+                workflow.connect([
+                    (rm_dummytime,regressy,[('custom_confdropTR','custom_conf')]),])
     else:
         if fd_thresh > 0:
             workflow.connect([
               (inputnode,censor_scrubwf,[('bold','in_file'),
                                     ('bold','bold_file'), 
-                                    ('bold_mask','mask_file'),('custom_conf','custom_conf')]),
+                                    ('bold_mask','mask_file'),]),
                (confoundmat,censor_scrubwf,[('confound_file','fmriprep_conf')]),
 
               (censor_scrubwf,regressy,[('bold_censored','in_file'),
-                            ('fmriprepconf_censored','confounds'),
-                            ('customconf_censored','custom_conf')]),
-              (inputnode,regressy,[('bold_mask','maskfile')]),
+                            ('fmriprepconf_censored','confounds'),]),
+              (inputnode,regressy,[('bold_mask','mask')]),
               (regressy, filterdx,[('res_file','in_file')]),
                (inputnode, filterdx,[('bold_mask','mask')])
                 ])
+            
+            if inputnode.inputs.custom_conf:
+                workflow.connect([
+                    (inputnode,censor_scrubwf,[('custom_conf','custom_conf')]),
+                     (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
+
+
         else:
             workflow.connect([
              # connect bold confound matrix to extract confound matrix 
@@ -120,13 +133,18 @@ def init_post_process_wf(
              (regressy, filterdx,[('res_file','in_file')]),
              (inputnode, filterdx,[('bold_mask','mask')]),
              ])
+            
+            if inputnode.inputs.custom_conf:
+                workflow.connect([
+                    (inputnode,regressy,[('custom_conf','custom_conf')]) ])
     
     if fd_thresh > 0 and not scrub:
         workflow.connect([
              (filterdx,interpolatewf,[('filt_file','in_file'),]),
              (inputnode,interpolatewf,[('bold_mask','mask_file'),]),
-             (censorscrub,interpolatewf,[('tmask','tmask'),]),
-             (censorscrub,outputnode,[('tmask','tmask')]),
+             (censor_scrubwf,interpolatewf,[('tmask','tmask'),]),
+             (censor_scrubwf,outputnode,[('tmask','tmask')]),
+             (inputnode,interpolatewf,[('bold','bold_file')]),
              (interpolatewf,outputnode,[('bold_interpolated','processed_bold')]),
         ])
     else:
