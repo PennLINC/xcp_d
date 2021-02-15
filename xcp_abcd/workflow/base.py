@@ -36,6 +36,9 @@ def init_xcpabcd_wf(layout,
                    bids_filters,
                    output_dir,
                    work_dir,
+                   scrub,
+                   dummytime,
+                   fd_thresh,
                    name):
     
     """
@@ -63,10 +66,13 @@ def init_xcpabcd_wf(layout,
                             custom_conf=custom_conf,
                             bids_filters=bids_filters,
                             output_dir=output_dir,
+                            scrub=scrub,
+                            dummytime=dummytime,
+                            fd_thresh=fd_thresh,
                             name="single_subject_" + subject_id + "_wf")
 
         single_subject_wf.config['execution']['crashdump_dir'] = (
-            os.path.join(output_dir, "xcpabcd", "sub-" + subject_id, 'log')
+            os.path.join(output_dir, "xcp_abcd", "sub-" + subject_id, 'log')
         )
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)
@@ -85,6 +91,9 @@ def init_single_subject_wf(
     surface,
     head_radius,
     params,
+    scrub,
+    dummytime,
+    fd_thresh,
     task_id,
     template,
     smoothing,
@@ -120,7 +129,11 @@ def init_single_subject_wf(
                                                         custom_conf=custom_conf,
                                                         omp_nthreads=omp_nthreads,
                                                         num_cifti=1,
+                                                        scrub=scrub,
+                                                        dummytime=dummytime,
+                                                        fd_thresh=fd_thresh,
                                                         layout=layout,
+                                                        output_dir=output_dir,
                                                         name='cifti_postprocess_'+ str(ii) + '_wf')
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
@@ -144,6 +157,10 @@ def init_single_subject_wf(
                                                        num_bold=1,
                                                        custom_conf=custom_conf,
                                                        layout=layout,
+                                                       scrub=scrub,
+                                                       dummytime=dummytime,
+                                                       fd_thresh=fd_thresh,
+                                                       output_dir=output_dir,
                                                        name='bold_postprocess_'+ str(ii) + '_wf')
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),

@@ -172,10 +172,10 @@ def init_cifti_conts_wf(
                     (gs360parcel,gs360corr ,[('out_file','in_file',)]),
                     (gd333parcel,gd333corr ,[('out_file','in_file',)]),
 
-                    (sc207parcel,outputnode,[('out_file','sc207_fc',)]),
-                    (sc407parcel,outputnode,[('out_file','sc407_fc',)]),
-                    (gs360parcel,outputnode,[('out_file','gs360_fc',)]),
-                    (gd333parcel,outputnode,[('out_file','gd333_fc',)])
+                    (sc207corr,outputnode,[('out_file','sc207_fc',)]),
+                    (sc407corr,outputnode,[('out_file','sc407_fc',)]),
+                    (gs360corr,outputnode,[('out_file','gs360_fc',)]),
+                    (gd333corr,outputnode,[('out_file','gd333_fc',)])
            ])
 
 

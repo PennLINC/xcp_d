@@ -67,7 +67,7 @@ class regress(SimpleInterface):
         # get the confound matrix 
         confound = pd.read_csv(self.inputs.confounds,header=None).to_numpy().T
         if self.inputs.custom_conf:
-            confound_custom = pd.read_csv(self.inputs.customs_conf,
+            confound_custom = pd.read_csv(self.inputs.custom_conf,
                                 header=None).to_numpy().T
             confound = np.hstack((confound, confound_custom))
         

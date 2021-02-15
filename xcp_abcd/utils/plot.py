@@ -54,6 +54,7 @@ def plot_carpet(func_data,detrend=True, nskip=0, size=(950, 800),
     """
     Plot an image representation of voxel intensities across time also know
     as the "carpet plot"
+    from Niworkflows
     Parameters
     ----------
         func_data : 
@@ -152,6 +153,7 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
                  units=None, tr=None, hide_x=True, color='b', nskip=0,
                  cutoff=None, ylims=None):
     '''
+    chnaged niworkflows
     tseries: 
        numpy array
     gs_ts:

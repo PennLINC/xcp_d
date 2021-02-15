@@ -10,6 +10,7 @@ from .bold import init_boldpostprocess_wf
 from .cifti import init_ciftipostprocess_wf
 from .base import init_xcpabcd_wf
 
+
 __all__ = [
     'init_fcon_ts_wf',
     'init_cifti_conts_wf',
@@ -19,5 +20,5 @@ __all__ = [
     'init_3d_reho_wf',
     'init_boldpostprocess_wf',
     'init_ciftipostprocess_wf',
-    'init_xcpabcd_wf'
+    'init_xcpabcd_wf',
 ]
