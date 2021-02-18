@@ -128,7 +128,7 @@ def init_single_subject_wf(
                     name='about', run_without_submitting=True)
 
     ds_report_summary = pe.Node(
-        DerivativesDataSink(base_directory=output_dir, desc='summary', datatype="figures"),
+        DerivativesDataSink(base_directory=output_dir,source_file=subject_data[0][0],desc='summary', datatype="figures"),
                   name='ds_report_summary', run_without_submitting=True)
 
     
