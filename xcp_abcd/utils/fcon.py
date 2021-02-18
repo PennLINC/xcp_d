@@ -15,7 +15,7 @@ def extract_timeseries_funct(in_file,
                              timeseries,
                              fconmatrix):
     
-    masker = NiftiLabelsMasker(labels_img=atlas, standardize=False)
+    masker = NiftiLabelsMasker(labels_img=atlas,smoothing_fwhm=None,standardize=False)
     time_series = masker.fit_transform(in_file)
     correlation_matrices = np.corrcoef(time_series.T)
     

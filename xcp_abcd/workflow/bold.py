@@ -17,6 +17,8 @@ from nipype import logging
 from ..utils import collect_data
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from  ..utils import bid_derivative
+from ..interfaces import  FunctionalSummary
 
 from  ..workflow import (init_fcon_ts_wf,
     init_post_process_wf,
@@ -184,3 +186,6 @@ def _t12native(fname):
     t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
     
     return t12ref
+
+class DerivativesDataSink(bid_derivative):
+    out_path_base = 'xcp_abcd'

@@ -19,6 +19,10 @@ from ..utils import collect_data
 from  ..workflow import( init_ciftipostprocess_wf, 
             init_boldpostprocess_wf)
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from ..interfaces import SubjectSummary, AboutSummary
+from  ..utils import bid_derivative
+
+
 
 def init_xcpabcd_wf(layout,
                    lowpass,
@@ -116,6 +120,21 @@ def init_single_subject_wf(
     inputnode.inputs.mni_to_t1w = regfile[0]
     
     workflow = Workflow(name=name)
+    summary = pe.Node(SubjectSummary(subject_id=subject_id,bold=subject_data[0]),
+                      name='summary', run_without_submitting=True)
+
+    about = pe.Node(AboutSummary(version='trial_Ax',
+                                 command=' '.join(sys.argv)),
+                    name='about', run_without_submitting=True)
+
+    ds_report_summary = pe.Node(
+        DerivativesDataSink(base_directory=output_dir, desc='summary', datatype="figures"),
+                  name='ds_report_summary', run_without_submitting=True)
+
+    ds_report_about = pe.Node(
+        DerivativesDataSink(base_directory=output_dir, desc='about', datatype="figures",),
+        name='ds_report_about', run_without_submitting=True)
+
     if surface:
         ii=0
         for cifti_file in subject_data[1]:
@@ -165,7 +184,14 @@ def init_single_subject_wf(
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
             ])
-
+    workflow.connect([ 
+        (summary,ds_report_summary,[('out_report','in_file')]),
+        (about, ds_report_about, [('out_report', 'in_file')]),
+         
+       ])
+    for node in workflow.list_node_names():
+        if node.split('.')[-1].startswith('ds_'):
+            workflow.get_node(node).interface.out_path_base = 'xcp_abcd'
 
     return workflow
 
@@ -181,3 +207,5 @@ def _pop(inlist):
         return inlist[0]
     return inlist
 
+class DerivativesDataSink(bid_derivative):
+    out_path_base = 'xcp_abcd'
