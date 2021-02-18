@@ -17,7 +17,8 @@ from nipype import logging
 from ..utils import collect_data
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..interfaces import computeqcplot
-
+from  ..utils import bid_derivative
+from ..interfaces import  FunctionalSummary
 from  ..workflow import (init_cifti_conts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
@@ -158,3 +159,7 @@ def _create_mem_gb(bold_fname):
     }
 
     return mem_gbz
+
+
+class DerivativesDataSink(bid_derivative):
+    out_path_base = 'xcp_abcd'
