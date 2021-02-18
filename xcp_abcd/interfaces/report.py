@@ -69,7 +69,10 @@ class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
         File(exists=True), traits.List(File(exists=True))),
         desc='BOLD or CIFTI functional series')
 
-
+class SubjectSummaryOutputSpec(SummaryOutputSpec):
+    # This exists to ensure that the summary is run prior to the first ReconAll
+    # call, allowing a determination whether there is a pre-existing directory
+    subject_id = Str(desc='subject ID')
 
 class SubjectSummary(SummaryInterface):
     input_spec = SubjectSummaryInputSpec

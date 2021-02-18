@@ -131,9 +131,7 @@ def init_single_subject_wf(
         DerivativesDataSink(base_directory=output_dir, desc='summary', datatype="figures"),
                   name='ds_report_summary', run_without_submitting=True)
 
-    ds_report_about = pe.Node(
-        DerivativesDataSink(base_directory=output_dir, desc='about', datatype="figures",),
-        name='ds_report_about', run_without_submitting=True)
+    
 
     if surface:
         ii=0
@@ -154,8 +152,12 @@ def init_single_subject_wf(
                                                         layout=layout,
                                                         output_dir=output_dir,
                                                         name='cifti_postprocess_'+ str(ii) + '_wf')
+            ds_report_about = pe.Node(
+             DerivativesDataSink(base_directory=output_dir, source_file=cifti_file, desc='about', datatype="figures",),
+              name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
+            
             ])
 
             
@@ -181,6 +183,9 @@ def init_single_subject_wf(
                                                        fd_thresh=fd_thresh,
                                                        output_dir=output_dir,
                                                        name='bold_postprocess_'+ str(ii) + '_wf')
+            ds_report_about = pe.Node(
+             DerivativesDataSink(base_directory=output_dir, source_file=bold_file, desc='about', datatype="figures",),
+              name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
             ])
