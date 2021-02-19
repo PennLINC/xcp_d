@@ -8,6 +8,7 @@ from .resting_state import computealff, surfaceReho
 from .prepostcleaning import interpolate,censorscrub,removeTR
 from .qc_plot import computeqcplot
 from .report import SubjectSummary, AboutSummary, FunctionalSummary
+from .report_core import generate_reports
 
 __all__ = [
     'regress',
@@ -25,5 +26,6 @@ __all__ = [
     'computeqcplot',
     'SubjectSummary',
     'AboutSummary',
-    'FunctionalSummary'
+    'FunctionalSummary',
+    'generate_reports'
 ]

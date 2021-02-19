@@ -124,7 +124,7 @@ def get_parser():
                          help='path where intermediate results should be stored')
     g_other.add_argument('--clean-workdir', action='store_true', default=False,
                          help='Clears working directory of contents. Use of this flag is not'
-                              'recommended when running concurrent processes of fMRIPrep.')
+                              'recommended when running concurrent processes of xcp_abcd.')
     g_other.add_argument(
         '--resource-monitor', action='store_true', default=False,
         help='enable Nipype\'s resource monitoring to keep track of memory and CPU usage')
@@ -166,10 +166,11 @@ def main():
         retcode = p.exitcode or retval.get('return_code', 0)
 
         #fmriprep_dir = Path(retval.get('fmriprep_dir'))
-        #output_dir = Path(retval.get('output_dir'))
-        #work_dir = Path(retval.get('work_dir'))
+        output_dir = Path(retval.get('output_dir'))
+        work_dir = Path(retval.get('work_dir'))
         plugin_settings = retval.get('plugin_settings', None)
-        #subject_list = retval.get('subject_list', None)
+        subject_list = retval.get('subject_list', None)
+        run_uuid = retval.get('run_uuid', None)
         xcpabcd_wf = retval.get('workflow', None)
        
 
@@ -190,10 +191,60 @@ def main():
 
  
     xcpabcd_wf.run(**plugin_settings)
+
+    from ..interfaces import generate_reports
+    from subprocess import check_call, CalledProcessError, TimeoutExpired
+    from pkg_resources import resource_filename as pkgrf
+    from shutil import copyfile
+
+    citation_files = {
+        ext: output_dir / 'xcp_abcd' / 'logs' / ('CITATION.%s' % ext)
+            for ext in ('bib', 'tex', 'md', 'html')
+        }
+
+    #if citation_files['md'].exists():
+            # Generate HTML file resolving citations
+    cmd = ['pandoc', '-s', '--bibliography',
+        pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                   '--citeproc',
+                   '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
+                   str(citation_files['md']),
+                   '-o', str(citation_files['html'])]
+
+    logger.info('Generating an HTML version of the citation boilerplate...')
+    try:
+        check_call(cmd, timeout=10)
+    except (FileNotFoundError, CalledProcessError, TimeoutExpired):
+        logger.warning('Could not generate CITATION.html file:\n%s',
+                               ' '.join(cmd))
+
+            # Generate LaTex file resolving citations
+    cmd = ['pandoc', '-s', '--bibliography',
+                   pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                   '--natbib', str(citation_files['md']),
+                   '-o', str(citation_files['tex'])]
+    logger.info('Generating a LaTeX version of the citation boilerplate...')
+    try:
+        check_call(cmd, timeout=10)
+    except (FileNotFoundError, CalledProcessError, TimeoutExpired):
+        logger.warning('Could not generate CITATION.tex file:\n%s',
+                               ' '.join(cmd))
+    else:
+        copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                         citation_files['bib'])
+
+        # Generate reports phase
+    failed_reports = generate_reports(
+            subject_list=subject_list, output_dir=output_dir, run_uuid=run_uuid,
+            config=pkgrf('xcp_abcd', 'data/reports.yml'),
+            packagename='xcp_abcd')
     
-
- 
-
+    #if failed_reports and not opts.notrack:
+            #sentry_sdk.capture_message(
+                #'Report generation failed for %d subjects' % failed_reports,
+                #level='error')
+        #sys.exit(int((errno + failed_reports) > 0))
+    
 
 
 def build_workflow(opts, retval):
@@ -254,7 +305,7 @@ def build_workflow(opts, retval):
     retval['run_uuid'] = run_uuid
 
     # First check that bids_dir looks like a BIDS folder
-    layout = BIDSLayout(str(fmriprep_dir), validate=False, derivatives=True)
+    layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
     retval['subject_list'] = subject_list
@@ -358,8 +409,27 @@ def build_workflow(opts, retval):
     
     retval['return_code'] = 0
 
-    #logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'
-    
+    logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'
+
+    boilerplate = retval['workflow'].visit_desc()
+
+    if boilerplate:
+        citation_files = {
+            ext: logs_path / ('CITATION.%s' % ext)
+            for ext in ('bib', 'tex', 'md', 'html')
+        }
+        # To please git-annex users and also to guarantee consistency
+        # among different renderings of the same file, first remove any
+        # existing one
+        for citation_file in citation_files.values():
+            try:
+                citation_file.unlink()
+            except FileNotFoundError:
+                pass
+
+        citation_files['md'].write_text(boilerplate)
+        build_log.log(25, 'Works derived from this xcp_abcd execution should '
+                      'include the following boilerplate:\n\n%s', boilerplate)
     return retval
 
 

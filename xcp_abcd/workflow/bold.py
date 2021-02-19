@@ -155,6 +155,26 @@ def init_boldpostprocess_wf(
         (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
         
          ])
+    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file,tr=TR),
+                name='qcsummary', run_without_submitting=True)
+        
+    ds_report_qualitycontrol = pe.Node(
+        DerivativesDataSink(base_directory=output_dir, desc='qualitycontrol',source_file=bold_file, datatype="figures"),
+                  name='ds_report_qualitycontrol', run_without_submitting=True)
+
+    ds_report_preprocessing = pe.Node(
+        DerivativesDataSink(base_directory=output_dir, desc='preprocessing',source_file=bold_file, datatype="figures"),
+                  name='ds_report_preprocessing', run_without_submitting=True)
+    ds_report_postprocessing = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='postprocessing', datatype="figures"),
+                  name='ds_report_postprocessing', run_without_submitting=True)
+    
+    workflow.connect([
+        (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
+        (qcreport,ds_report_postprocessing ,[('clean_qcplot','in_file')]), 
+        (qcreport,functional_qc,[('qc_file','qc_file')]),
+        (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')])
+    ])
 
     return workflow 
 
@@ -186,6 +206,7 @@ def _t12native(fname):
     t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
     
     return t12ref
+
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'

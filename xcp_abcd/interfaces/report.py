@@ -31,7 +31,6 @@ QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t\t<li>DVARS Before and After Processing : {dvarsbfaf}</li>
 \t\t\t<li>Correlation between DVARS and FD  Before and After Processing : {corrfddv}</li>
 \t\t\t<li>Number of Volumes Censored : {volcensored}</li>
-
 \t\t</ul>
 """
 
@@ -69,11 +68,14 @@ class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
         File(exists=True), traits.List(File(exists=True))),
         desc='BOLD or CIFTI functional series')
 
-
+class SubjectSummaryOutputSpec(SummaryOutputSpec):
+    # This exists to ensure that the summary is run prior to the first ReconAll
+    # call, allowing a determination whether there is a pre-existing directory
+    subject_id = Str(desc='subject ID')
 
 class SubjectSummary(SummaryInterface):
     input_spec = SubjectSummaryInputSpec
-    
+    output_spec = SubjectSummaryOutputSpec
 
     def _run_interface(self, runtime):
         if isdefined(self.inputs.subject_id):
@@ -105,15 +107,15 @@ class FunctionalSummary(SummaryInterface):
         space = get_space (self.inputs.bold_file)
         tr = self.inputs.tr
         qcfile = pd.read_csv(self.inputs.qc_file)
-        meanFD = "FD : {} ".format(round(qcfile['FD'][0], 4))
-        meanRMS = "MeanRMSMotion : {} ".format(round(qcfile['relMeansRMSMotion'][0], 4))
-        maxRMS = "MaxRMSMotion : {} ".format(round(qcfile['relMaxRMSMotion'][0], 4))
-        dvars = " DVARS: before {}, after {} " .format(
+        meanFD = "{} ".format(round(qcfile['FD'][0], 4))
+        meanRMS = " {} ".format(round(qcfile['relMeansRMSMotion'][0], 4))
+        maxRMS =" {} ".format(round(qcfile['relMaxRMSMotion'][0], 4))
+        dvars = "  {},{} " .format(
                     round(qcfile['DVARS_PB'][0], 4), round(qcfile['DVARS_CB'][0], 4))
-        fddvars = "FD_DVARS_CorrInit  {}, FD_DVARS_COrrFinal {} " .format(
+        fddvars = " {},  {} " .format(
                     round(qcfile['FD_DVARS_CorrInit'][0], 4),
                             round(qcfile['FD_DVARS_COrrFinal'][0], 4))
-        nvolcen = "nVolCensored': {} ".format(round(qcfile['nVolCensored'][0], 4))
+        nvolcen = " {} ".format(round(qcfile['nVolCensored'][0], 4))
         
 
         return QC_TEMPLATE.format(
