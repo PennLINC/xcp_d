@@ -1,15 +1,11 @@
-package: niworkflows
+package: xcp_abcd
 sections:
 - name: Summary
   reportlets:
   - bids: {datatype: figures, desc: summary, suffix: bold}
-- name: BOLD
+- name: Quality Control
   reportlets:
-  - bids:
-      datatype: figures
-      desc: qualitycontrol
-      extension: [.html]
-      suffix: bold
+  - bids: {datatype: figures, desc: qualitycontrol,suffix: bold}
   - bids: {datatype: figures, desc: preprocessing,suffix: bold}
     caption: DVARS and FD are the plot of standardized DVARS
       and framewise-displacement  respectively measures for each data time point. A carpet plot
@@ -19,7 +15,7 @@ sections:
     caption: DVARS and FD are the plot of standardized DVARS
       and framewise-displacement  respectively measures for each data time point. A carpet plot
       shows the time series for all voxels/vertices.
-    subtitle: Carpet Plot after Postprocessing
-
+    subtitle: Carpet Plot after postprocessing
+- name: About
   reportlets:
   - bids: {datatype: figures, desc: about, suffix: bold}
