@@ -27,8 +27,73 @@ def init_fcon_ts_wf(
     name="fcons_ts_wf",
      ):
    
+    """
+    This workflow is for bold timeseries extraction.
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_fcon_ts_wf
+            wf = init_fcon_ts_wf(
+                mem_gb,
+                bold_file,
+                tw1_to_native,
+                template='MNI152NLin2009cAsym',
+                name="fcons_ts_wf",
+             )
+    Parameters
+    ----------
+    bold_file: str
+        bold file for post processing 
+    mem_gb: float
+        memory size in gigabytes
+    template: str
+        template of bold
+    tw1_to_native: str
+        transformation files from tw1 to native space ( from fmriprep)
+    Inputs
+    ------
+    bold_file
+        bold file from frmiprep
+    clean_bold
+        clean bold after regressed out nuisscance and filtering
+    ref_file
+        reference file 
+    mni_tot1w
+        MNI to T1w registration files from fmriprep
 
+    Outputs
+    -------
+    sc207_ts
+        schaefer 200 timeseries
+    sc207_fc
+        schaefer 200 func matrices 
+    sc407_ts
+        schaefer 400 timeseries
+    sc407_fc
+        schaefer 400 func matrices
+    gs360_ts
+        glasser 360 timeseries
+    gs360_fc
+        glasser 360  func matrices
+    gd333_ts
+        gordon 333 timeseries
+    gd333_fc
+        gordon 333 func matrices
+    qc_file
+        quality control files
+
+    """
+    from niworkflows.interfaces.nilearn import NILEARN_VERSION
     workflow = Workflow(name=name)
+    
+    workflow.__desc__ = """ \
+After regressing out the nuissance confound regressors and filtering the data to obtained the clean data, 
+functional timeseries were extratced. The [Shaefer @Schaefer_2017], [Glasser @Glasser_2016] and [Gordon
+[@Gordon_2014] atlases were resampled to bold space before the timeseries extraction with [*Nilearn* {nilearnver} 
+ *NiftiLabelsMasker* @nilearn]. Corresponding functional matrices were computed.
+
+ """.format(nilearn_ver=NILEARN_VERSION)
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold_file','clean_bold','ref_file',
@@ -124,7 +189,58 @@ def init_cifti_conts_wf(
     mem_gb,
     name="cifti_ts_con_wf", 
     ):
+    """
+    This workflow is for cifti timeseries extraction.
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_fcon_ts_wf
+            wf = init_fcon_ts_wf(
+                mem_gb,
+                bold_file,
+                tw1_to_native,
+                template='MNI152NLin2009cAsym',
+                name="fcons_ts_wf",
+             )
+    Parameters
+    ----------
+    
+    mem_gb: float
+        memory size in gigabytes
+    Inputs
+    ------
+    clean_cifti
+        clean cifti after regressed out nuisscance and filtering
+    Outputs
+    -------
+    sc207_ts
+        schaefer 200 timeseries
+    sc207_fc
+        schaefer 200 func matrices 
+    sc407_ts
+        schaefer 400 timeseries
+    sc407_fc
+        schaefer 400 func matrices
+    gs360_ts
+        glasser 360 timeseries
+    gs360_fc
+        glasser 360  func matrices
+    gd333_ts
+        gordon 333 timeseries
+    gd333_fc
+        gordon 333 func matrices
+    qc_file
+        quality control files
+
+    """
     workflow = Workflow(name=name)
+    workflow.__desc__ = """\
+After regressing out the nuissance confound regressors and filtering the data to obtained clean data, 
+functional timeseries were  extratced. The functional timeseries were extracted with workbench (@hcppipelines) for
+Shaefer (@Schaefer_2017), Glasser(@{Glasser_2016) and Gordon (@Gordon_2014) atlases. Corresponding functional matrices 
+were computed for each atlas with the workbench.
+"""
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_cifti']), name='inputnode')

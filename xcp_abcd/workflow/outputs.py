@@ -20,14 +20,97 @@ def init_writederivatives_wf(
      params,
      omp_nthreads,
      scrub,
-     surface,
+     cifti,
      dummytime,
      output_dir,
      TR,
      name='write_derivatives_wf',
      ):
+    """
+    This workflow is for writing out the output in bids
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_writederivatives_wf
+            wf = init_writederivatives_wf(
+                mem_gb,
+                bold_file,
+                lowpass,
+                highpass,
+                smoothing,
+                params,
+                omp_nthreads,
+                scrub,
+                cifti,
+                dummytime,
+                output_dir,
+                TR,
+                name="fcons_ts_wf",
+             )
+    Parameters
+    ----------
     
+    mem_gb: float
+        memory size in gigabytes
+    bold_file: str
+        bold or cifti files 
+    lowpass: float
+        low pass filter
+    highpass: float
+        high pass filter
+    smoothing: float
+        smooth kernel size in fwhm 
+    params: str
+        parameter regressed out from bold
+    omp_nthreads: int
+        number of threads
+    scrub: bool
+        scrubbing 
+    cifti: bool
+        if cifti or bold 
+    dummytime: float
+        volume(s) removed before postprocessing in seconds
+    output_dir: str
+        output directory
+    TR: float
+        repetition time in seconds 
+    
+    Inputs
+    ------
+    sc207_ts
+        schaefer 200 timeseries
+    sc207_fc
+        schaefer 200 func matrices 
+    sc407_ts
+        schaefer 400 timeseries
+    sc407_fc
+        schaefer 400 func matrices
+    gs360_ts
+        glasser 360 timeseries
+    gs360_fc
+        glasser 360  func matrices
+    gd333_ts
+        gordon 333 timeseries
+    gd333_fc
+        gordon 333 func matrices
+    qc_file
+        quality control files
+    processed_bold
+        clean bold after regression and filtering
+    smoothed_bold
+        smoothed clean bold
+    alff_out
+        alff niifti
+    smoothed_alff
+        smoothed alff 
+    reho_lh
+        reho left hemisphere
+    reho_rh
+        reho right hemisphere
+    """
     workflow = Workflow(name=name)
+    
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
@@ -39,7 +122,7 @@ def init_writederivatives_wf(
     smoothed_dict = { 'FWHM': smoothing }
 
 
-    if not surface:
+    if not cifti:
         dv_cleandata_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
                  meta_dict=cleandata_dict,dismiss_entities=['desc'], desc='residual',
                  extension='.nii.gz',source_file=bold_file,compression=True),
@@ -119,7 +202,7 @@ def init_writederivatives_wf(
                 (inputnode,dv_smoothalff_wf,[('smoothed_alff','in_file')]),
             ])
 
-    if surface:
+    if cifti:
         dv_cleandata_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
                  meta_dict=cleandata_dict,dismiss_entities=['desc'], desc='clean',
                  source_file=bold_file,density='91k',extension='.dtseries.nii'),

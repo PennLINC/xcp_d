@@ -29,7 +29,7 @@ def init_xcpabcd_wf(layout,
                    highpass,
                    fmriprep_dir,
                    omp_nthreads,
-                   surface,
+                   cifti,
                    task_id,
                    head_radius,
                    params,
@@ -46,22 +46,89 @@ def init_xcpabcd_wf(layout,
                    name):
     
     """
-    coming to fix this 
-
+    This workflow builds and organizes  execution of  xcp_abcd  pipeline.
+    It is also connect the subworkflows under the xcp_abcd
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            xcp_abcd.workflows.base import init_xcpabcd_wf
+            wf = init_xcpabcd_wf(
+                layout,
+                lowpass,
+                highpass,
+                fmriprep_dir,
+                omp_nthreads,
+                cifti,
+                task_id,
+                head_radius,
+                params,
+                template,
+                subject_list,
+                smoothing,
+                custom_conf,
+                bids_filters,
+                output_dir,
+                work_dir,
+                scrub,
+                dummytime,
+                fd_thresh
+            )
+    Parameters
+    ----------
+    lowpass : float
+        Low pass filter
+    highpass : float
+        High pass filter
+    layout : BIDSLayout object
+        BIDS dataset layout 
+    fmriprep_dir : Path
+        fmriprep output directory
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
+    cifti : bool
+        To postprocessed cifti files instead of nifti
+    task_id : str or None
+        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
+    low_mem : bool
+        Write uncompressed .nii files in some cases to reduce memory usage
+    output_dir : str
+        Directory in which to save xcp_abcd output
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    run_uuid : str
+        Unique identifier for execution instance
+    subject_list : list
+        List of subject labels
+    work_dir : str
+        Directory in which to store workflow execution state and temporary files
+    head_radius : float 
+        radius of the head for FD computation
+    params: str
+        nuissance regressors to be selected from fmriprep regressors
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
+    custom_conf: str
+        path to cusrtom nuissance regressors 
+    scrub: bool 
+        remove the censored volumes 
+    dummytime: float
+        the first vols in seconds to be removed before postprocessing
+    
     """
 
     xcpabcd_wf = Workflow(name='xcpabcd_wf')
     xcpabcd_wf.base_dir = work_dir
 
     for subject_id in subject_list:
-        single_subject_wf = init_single_subject_wf(
+        single_bold_wf = init_single_bold_wf(
                             layout=layout,
                             lowpass=lowpass,
                             highpass=highpass,
                             fmriprep_dir=fmriprep_dir,
                             omp_nthreads=omp_nthreads,
                             subject_id=subject_id,
-                            surface=surface,
+                            cifti=cifti,
                             head_radius=head_radius,
                             params=params,
                             task_id=task_id,
@@ -73,26 +140,26 @@ def init_xcpabcd_wf(layout,
                             scrub=scrub,
                             dummytime=dummytime,
                             fd_thresh=fd_thresh,
-                            name="single_subject_" + subject_id + "_wf")
+                            name="single_bold_" + subject_id + "_wf")
 
-        single_subject_wf.config['execution']['crashdump_dir'] = (
+        single_bold_wf.config['execution']['crashdump_dir'] = (
             os.path.join(output_dir, "xcp_abcd", "sub-" + subject_id, 'log')
         )
-        for node in single_subject_wf._get_all_nodes():
-            node.config = deepcopy(single_subject_wf.config)
-        xcpabcd_wf.add_nodes([single_subject_wf])
+        for node in single_bold_wf._get_all_nodes():
+            node.config = deepcopy(single_bold_wf.config)
+        xcpabcd_wf.add_nodes([single_bold_wf])
 
     return xcpabcd_wf
 
 
-def init_single_subject_wf(
+def init_single_bold_wf(
     layout,
     lowpass,
     highpass,
     fmriprep_dir,
     omp_nthreads,
     subject_id,
-    surface,
+    cifti,
     head_radius,
     params,
     scrub,
@@ -107,7 +174,66 @@ def init_single_subject_wf(
     name
     ):
     """
-    
+    This workflow organizes the postprocessing pipeline for a single bold or cifti.
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows.base import init_single_bold_wf
+            wf = init_single_bold_wf(
+                layout,
+                lowpass,
+                highpass,
+                fmriprep_dir,
+                omp_nthreads,
+                subject_id,
+                cifti,
+                head_radius,
+                params,
+                scrub,
+                dummytime,
+                fd_thresh,
+                task_id,
+                template,
+                smoothing,
+                custom_conf,
+                bids_filters,
+                output_dir
+             )
+    Parameters
+    ----------
+    lowpass : float
+        Low pass filter
+    highpass : float
+        High pass filter
+    layout : BIDSLayout object
+        BIDS dataset layout 
+    fmriprep_dir : Path
+        fmriprep output directory
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
+    cifti : bool
+        To postprocessed cifti files instead of nifti
+    task_id : str or None
+        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
+    low_mem : bool
+        Write uncompressed .nii files in some cases to reduce memory usage
+    output_dir : str
+        Directory in which to save xcp_abcd output
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    head_radius : float 
+        radius of the head for FD computation
+    params: str
+        nuissance regressors to be selected from fmriprep regressors
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
+    custom_conf: str
+        path to cusrtom nuissance regressors 
+    scrub: bool 
+        remove the censored volumes 
+    dummytime: float
+        the first vols in seconds to be removed before postprocessing
 
     """
     layout,subject_data,regfile = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
@@ -123,26 +249,23 @@ def init_single_subject_wf(
     
     workflow.__desc__ = """
 Results included in this manuscript come from preprocessing
-performed using *aslprep* ,
-which is based on *Nipype* 
-(@nipype1; @nipype2; RRID:SCR_002502).
+performed using *xcp_abcd* (@mitigating_2018)  which is based on *Nipype* 
+{nipype_ver} (@nipype1; @nipype2).
 
-"""
+""".format(nipype_ver=nipype_ver)
+
+
     workflow.__postdesc__ = """
 
 
-Many internal operations of *aslprep* use
-*Nilearn* [@nilearn, RRID:SCR_001362],
-mostly within the functional processing workflow.
-For more details of the pipeline, see [the section corresponding
-to workflows in *aslprep*'s documentation]\
-(https://aslprep.readthedocs.io/en/latest/workflows.html \
-"aslprep's documentation").
+Many internal operations of *xcp_abcd* use
+*Nilearn* [@nilearn] and *Scikit-Learn* [@scikit-learn],
+mostly within the functional post-processing workflow.
+For more details of the pipeline, see  the *xcp_abcd* website (coming)").
 
 
 ### Copyright Waiver
-
-The above boilerplate text was automatically generated by aslprep
+The above boilerplate text was automatically generated by xcp_abcd
 with the express intention that users should copy and paste this
 text into their manuscripts *unchanged*.
 It is released under the [CC0]\
@@ -166,7 +289,7 @@ It is released under the [CC0]\
 
     
 
-    if surface:
+    if cifti:
         ii=0
         for cifti_file in subject_data[1]:
             ii = ii+1
@@ -178,7 +301,7 @@ It is released under the [CC0]\
                                                         params=params,
                                                         custom_conf=custom_conf,
                                                         omp_nthreads=omp_nthreads,
-                                                        num_cifti=1,
+                                                        num_cifti=len(subject_data[1]),
                                                         scrub=scrub,
                                                         dummytime=dummytime,
                                                         fd_thresh=fd_thresh,
@@ -208,7 +331,7 @@ It is released under the [CC0]\
                                                        params=params,
                                                        omp_nthreads=omp_nthreads,
                                                        template='MNI152NLin2009cAsym',
-                                                       num_bold=1,
+                                                       num_bold=len(subject_data[0]),
                                                        custom_conf=custom_conf,
                                                        layout=layout,
                                                        scrub=scrub,

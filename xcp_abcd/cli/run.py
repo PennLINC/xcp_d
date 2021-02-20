@@ -16,6 +16,8 @@ from argparse import ArgumentDefaultsHelpFormatter
 from nipype import logging as nlogging, config as ncfg
 from multiprocessing import cpu_count
 from time import strftime
+import warnings
+warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
 
 logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
 logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
@@ -51,7 +53,8 @@ def get_parser():
     parser.add_argument('fmriprep_dir', action='store', type=Path,
                         help='the root folder of a fmriprep output  with sub-xxxx.')
     parser.add_argument('output_dir', action='store', type=Path,
-                        help='the output path for the outcomes of preprocessing')
+                        help='the output path for the outcomes of xcp_abcd')
+    
     parser.add_argument('analysis_level', choices=['participant'],
                         help='processing stage to be run, only "participant')
 
@@ -68,12 +71,11 @@ def get_parser():
 
     g_bidx.add_argument('-t', '--task-id', action='store',
                         help='select a specific task to be selected for postprocessing')
-
-    g_surfx = parser.add_argument_group('Options for cifti processing')
-    g_surfx.add_argument('-s', '--surface', action='store_true', default=False,
-                        help='post process surface instead of nifti')
-
     
+    g_surfx = parser.add_argument_group('Options for cifti processing')
+    g_surfx.add_argument('-s', '--cifti', action='store_true', default=False,
+                        help='post process cifti instead of nifti')
+
     g_perfm = parser.add_argument_group('Options to for resource management ')
     g_perfm.add_argument('--nthreads',  action='store', type=int,
                          help='maximum number of threads across all processes')
@@ -92,7 +94,7 @@ def get_parser():
     g_param = parser.add_argument_group('parameters for postprocessing')
     g_param.add_argument(
         '--template', action='store', default='MNI152NLin2009cAsym',
-        help=" template to be selected from anat to be processed or for normalization")
+        help=" template to be selected from anat to be processed and/or  for normalization")
 
     g_param.add_argument('--lowpass', action='store', default=0.1, type=float,
                         help='low pass filter')
@@ -101,23 +103,23 @@ def get_parser():
                         help='high pass filter')
     
     g_param.add_argument('--smoothing', nargs='?', const=5, default=False,
-                             type=float, help='smoothing the postprocessed output (fhwm)')
+                             type=float, help='smoothing the postprocessed output (fwhm)')
     
     g_param.add_argument('-r','--head_radius',default=50,
                              type=float, help='head radius for computing FD, it is 40mm for baby')
-    g_param.add_argument('-p','--params', required=False, default='24P',
-                             type=str, help='nuissance parameters to be selected')
+    g_param.add_argument('-p','--params', required=False, default='24P', 
+                             type=str, help='nuissance parameters to be selected, other options include 27P and 36P')
     g_param.add_argument('-c','--custom_conf', required=False,
                              type=Path, help='custom confound to be added to nuissance regressors')
 
     g_censor = parser.add_argument_group(' Censoring and scrubbing options')
 
     g_censor.add_argument('-f','--fd-thresh',default=0, type=float, 
-                                help='framewise displacement')
+                                help='framewise displacement threshold for censoring and scrubbing')
     g_censor.add_argument('--scrub', action='store_true', default=False,
-                        help='scurbbing')
+                        help='scrubbed the volume(s) with the FD greater than fd-thresh')
     g_censor.add_argument('-d','--dummytime',default=0,
-                             type=float, help='first volume in seconds to drop')
+                             type=float, help='first volume in seconds to be removed for postprocessing')
 
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
@@ -167,7 +169,7 @@ def main():
 
         #fmriprep_dir = Path(retval.get('fmriprep_dir'))
         output_dir = Path(retval.get('output_dir'))
-        work_dir = Path(retval.get('work_dir'))
+        #work_dir = Path(retval.get('work_dir'))
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
         run_uuid = retval.get('run_uuid', None)
@@ -396,7 +398,7 @@ def build_workflow(opts, retval):
               highpass=opts.highpass,
               smoothing=opts.smoothing,
               params=opts.params,
-              surface=opts.surface,
+              cifti=opts.cifti,
               output_dir=str(output_dir),
               head_radius=opts.head_radius,
               template=opts.template,
@@ -428,8 +430,8 @@ def build_workflow(opts, retval):
                 pass
 
         citation_files['md'].write_text(boilerplate)
-        build_log.log(25, 'Works derived from this xcp_abcd execution should '
-                      'include the following boilerplate:\n\n%s', boilerplate)
+        #build_log.log(25, 'Works derived from this xcp_abcd execution should '
+                      #'include the following boilerplate:\n\n%s', boilerplate)
     return retval
 
 

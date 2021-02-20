@@ -24,12 +24,14 @@ def init_post_process_wf(
     highpass,
     smoothing,
     params,
-    surface=False,
+    cifti=False,
     scrub=False,
     dummytime=0,
     fd_thresh=0,
     name="post_process_wf",
      ):
+
+    
 
     workflow = Workflow(name=name)
 
@@ -156,7 +158,7 @@ def init_post_process_wf(
 
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
-        if surface:
+        if cifti:
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
 
