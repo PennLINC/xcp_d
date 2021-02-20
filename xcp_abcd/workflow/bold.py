@@ -41,14 +41,125 @@ def init_boldpostprocess_wf(
      dummytime,
      output_dir,
      fd_thresh,
+     num_bold,
      template='MNI152NLin2009cAsym',
-     num_bold=1,
      layout=None,
      name='bold_postprocess_wf',
       ):
+
+    """
+    This workflow organizes bold processing workflow.
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows.bold import init_boldpostprocess_wf
+            wf = init_boldpostprocess_wf(
+                bold_file,
+                lowpass,
+                highpass,
+                smoothing,
+                head_radius,
+                params,
+                custom_conf,
+                omp_nthreads,
+                scrub,
+                dummytime,
+                output_dir,
+                fd_thresh,
+                num_bold,
+                template='MNI152NLin2009cAsym',
+                layout=None,
+                name='bold_postprocess_wf',
+             )
+    Parameters
+    ----------
+    bold_file: str
+        bold file for post processing 
+    lowpass : float
+        Low pass filter
+    highpass : float
+        High pass filter
+    layout : BIDSLayout object
+        BIDS dataset layout 
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
+    output_dir : str
+        Directory in which to save xcp_abcd output
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    head_radius : float 
+        radius of the head for FD computation
+    params: str
+        nuissance regressors to be selected from fmriprep regressors
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
+    custom_conf: str
+        path to cusrtom nuissance regressors 
+    scrub: bool 
+        remove the censored volumes 
+    dummytime: float
+        the first vols in seconds to be removed before postprocessing
+
+    Inputs
+    ------
+    bold_file
+        BOLD series NIfTI file
+    mni_to_t1w
+        MNI to T1W ants Transformation file/h5
+    ref_file
+        Bold reference file from fmriprep
+    bold_mask
+        bold_mask from fmriprep 
+    cutstom_conf
+        custom regressors
+    
+    Outputs
+    -------
+    processed_bold
+        clean bold after regression and filtering
+    smoothed_bold
+        smoothed clean bold
+    alff_out
+        alff niifti
+    smoothed_alff
+        smoothed alff 
+    reho_out 
+        reho output computed by afni.3dreho 
+    sc207_ts
+        schaefer 200 timeseries
+    sc207_fc
+        schaefer 200 func matrices 
+    sc407_ts
+        schaefer 400 timeseries
+    sc407_fc
+        schaefer 400 func matrices
+    gs360_ts
+        glasser 360 timeseries
+    gs360_fc
+        glasser 360  func matrices
+    gd333_ts
+        gordon 333 timeseries
+    gd333_fc
+        gordon 333 func matrices
+    qc_file
+        quality control files
+    """
+
+    
     TR = layout.get_tr(bold_file)
 
     workflow = Workflow(name=name)
+
+    workflow.__desc__ = """
+BOLD data postprocessing
+: For each of the {num_bold} BOLD runs found per subject (across all
+tasks and sessions), the following postprocessing was performed.
+""".format(num_bold=num_bold)
+
+    workflow.__postdesc__ = """\
+ending. 
+"""
    
     # get reference and mask
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
