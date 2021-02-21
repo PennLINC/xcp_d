@@ -41,8 +41,23 @@ class _qcOutputSpec(TraitedSpec):
 
 class computeqcplot(SimpleInterface):
     r"""
-    coming up 
-    
+    qc and qc plot
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> computeqcwf = computeqcplot()
+    >>> computeqcwf.inputs.cleaned_file = datafile
+    >>> computeqcwf.inputs.bold_file = rawbold
+    >>> computeqcwf.inputs.TR = TR
+    >>> computeqcwf.inputs.tmask = temporalmask 
+    >>> computeqcwf.inputs.mask_file = mask
+    >>> computeqcwf.inputs.dummytime = dummytime 
+    >>> computeqcwf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
+
     """
 
     input_spec = _qcInputSpec

@@ -27,8 +27,18 @@ class _surfaceRehoOutputSpec(TraitedSpec):
 
 class surfaceReho(SimpleInterface):
     r"""
-
-     testing and documentation open to me 
+    surface reho computation 
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> surfaceRehowf = surfaceReho()
+    >>> surfaceRehowf.inputs.surf_bold= rhhemi.func.gii
+    >>> surfaceRehowf.inputs.surf_hemi = 'R'
+    >>> surfaceRehowf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
 
     """
     input_spec = _surfaceRehoInputSpec
@@ -72,8 +82,21 @@ class _alffOutputSpec(TraitedSpec):
 
 class computealff(SimpleInterface):
     r"""
-
-     testing and documentation open to me 
+    ALFF computation 
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> computealffwf = computealff()
+    >>> computealffwf.inputs.in_file = datafile
+    >>> computealffwf.inputs.lowpass = 0.1
+    >>> computealffwf.inputs.highpass = 0.01 
+    >>> computealffwf.inputs.TR = TR
+    >>> computealffwf.inputs.mask_file = mask
+    >>> computealffwf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
 
     """
     input_spec = _alffInputSpec

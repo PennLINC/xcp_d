@@ -204,7 +204,7 @@ ending.
                        name="afni_reho_wf")
     
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
-                    params=params,scrub=scrub,surface=None,output_dir=output_dir,dummytime=dummytime,
+                    params=params,scrub=scrub,cifti=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=lowpass,highpass=highpass,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
    

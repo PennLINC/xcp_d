@@ -16,8 +16,6 @@ from nipype.interfaces.fsl import Smooth
 from templateflow.api import get as get_template
 from nipype.interfaces.afni import ReHo as ReHo
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
- 
-
 
 def init_compute_alff_wf(
     mem_gb,
@@ -25,11 +23,73 @@ def init_compute_alff_wf(
     lowpass,
     highpass,
     smoothing,
-    surface,
+    cifti,
     name="compute_alff_wf",
     ):
 
+    """
+    This workflow compute alff for both nifit and cifti 
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_compute_alff_wf
+            wf = init_compute_alff_wf(
+                mem_gb,
+                TR,
+                lowpass,
+                highpass,
+                smoothing,
+                cifti,
+                name="compute_alff_wf",
+             )
+    Parameters
+    ----------
+    
+    mem_gb: float
+        memory size in gigabytes
+    TR: float 
+        repetition time 
+    lowpass: float
+        low pass filter
+    highpass: float
+        high pass filter
+    smoothing: float
+        smooth kernel size in fwhm 
+    params: str
+        parameter regressed out from bold
+    omp_nthreads: int
+        number of threads
+    cifti: bool
+        if cifti or bold 
+    
+    Inputs
+    ------
+    clean_bold
+       residual and filtered 
+    bold_mask
+       bold mask if bold is nifti
+
+    Outputs
+    -------
+    alff_out
+        alff output
+    smoothed_alff
+        smoothed alff  output 
+    tmask
+        temporal mask
+    """
+
     workflow = Workflow(name=name)
+
+    workflow.__desc__ = """ \
+The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
+by transfroming the processed timeseries  to the frequency domain and 
+the power spectrum was then obtained. The square root was calculated at each 
+frequency of the power spectrum and the averaged square root was 
+obtained across {highpass} - {lowpass}  Hz at each voxel.
+This averaged square root was taken as the ALFF.
+""" .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold', 'bold_mask']), name='inputnode')
@@ -46,15 +106,22 @@ def init_compute_alff_wf(
             ])
     
     if smoothing:
-        if not surface:
+        if not cifti:
+            workflow.__desc__ = workflow.__desc__ + """ \
+The processed bold was smoothed with FSL and kernel size of {kernelsize} mm. 
+"""         .format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
-                   name="niftismoothing", mem_gb=mem_gb )
+                   name="ciftismoothing", mem_gb=mem_gb )
             workflow.connect([
                (alff_compt, smooth_data,[('alff_out','in_file')]),
                (smooth_data, outputnode,[('smoothed_file','smoothed_alff')]),
              ])
 
-        else: 
+        else:
+            workflow.__desc__ = workflow.__desc__ + """ \
+The ALL  was smoothed with workbench and
+kernel size of {kernelsize} mm. 
+"""         .format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
@@ -74,7 +141,48 @@ def init_surface_reho_wf(
     name="surface_reho_wf",
     ):
 
+    """
+    This workflow compute surface reho
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_surface_reho_wf
+            wf = init_surface_reho_wf(
+                mem_gb,
+                smoothing,
+                name="surface_reho_wf",
+             )
+    Parameters
+    ----------
+    
+    mem_gb: float
+        memory size in gigabytes
+    smoothing: float
+        smooth kernel size in fwhm 
+    
+    Inputs
+    ------
+    clean_bold
+       residual and filtered, cifti 
+
+    Outputs
+    -------
+    lh_reho
+        left hemisphere surface reho
+    rh_reho
+        right hemisphere surface reho
+    """
+
+
     workflow = Workflow(name=name)
+    workflow.__desc__ = """ \
+The left and right hemispheres were extacted from the processed bold with workbench. 
+For each hemisphere, regional homogeneity (ReHo) was computed with surface-based 
+*2dReHo* [@surface_reho] . For a given vertex on the surface, the nearest-neighbor 
+vertices were identified and computed Kendall's coefficient of concordance (KCC) with the timeseries. 
+""" 
+
     
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold']), name='inputnode')
@@ -106,7 +214,44 @@ def init_3d_reho_wf(
     name="afni_reho_wf",
     ):
 
+    """
+    This workflow compute surface reho
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_3d_reho_wf
+            wf = init_3d_reho_wf(
+                mem_gb,
+                smoothing,
+                name="afni_reho_wf",
+             )
+    Parameters
+    ----------
+    
+    mem_gb: float
+        memory size in gigabytes
+    smoothing: float
+        smooth kernel size in fwhm 
+    
+    Inputs
+    ------
+    clean_bold
+       residual and filtered, nifti
+    bold_mask
+       bold mask 
+
+    Outputs
+    -------
+    reho_out
+        reho output
+    """
+
     workflow = Workflow(name=name)
+    workflow.__desc__ = """ \
+The regional homogeneity (ReHo) for the processed bold was computed with 
+AFNI *3dReHo* [@afni]
+""" 
     
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold','bold_mask']), name='inputnode')

@@ -103,7 +103,7 @@ def generate_reports(
             if err
         )
         logger.error(
-            "Preprocessing did not finish successfully. Errors occurred while processing "
+            "Processsing did not finish successfully. Errors occurred while processing "
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )

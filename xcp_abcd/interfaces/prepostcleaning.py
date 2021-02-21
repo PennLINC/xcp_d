@@ -108,8 +108,23 @@ class _censorscrubOutputSpec(TraitedSpec):
 
 class censorscrub(SimpleInterface):
     r"""
-
-     testing and documentation open to me 
+    generate temporal masking with wolumes above fd threshold
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> cscrub = censorscrub()
+    >>> cscrub.inputs.bold_file = cleanbold
+    >>> cscrub.inputs.in_file = datafile
+    >>> cscrub.inputs.TR = TR
+    >>> cscrub.inputs.fd_thresh = fd_thresh
+    >>> cscrub.inputs.fmriprep_conf = fmriprepconf 
+    >>> cscrub.inputs.mask_file = mask
+    >>> cscrub.inputs.time_todrop = dummytime
+    >>> cscrub.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
 
     """
     input_spec = _censorscrubInputSpec
@@ -207,8 +222,21 @@ class _interpolateOutputSpec(TraitedSpec):
 
 class interpolate(SimpleInterface):
     r"""
-
-     testing and documentation open to me 
+    interpolate data over the clean bold 
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> interpolatewf = interpolate()
+    >>> interpolatewf.inputs.in_file = datafile
+    >>> interpolatewf.inputs.bold_file = rawbold
+    >>> interpolatewf.inputs.TR = TR
+    >>> interpolatewf.inputs.tmask = temporalmask 
+    >>> interpolatewf.inputs.mask_file = mask
+    >>> interpolatewf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
 
     """
     input_spec = _interpolateInputSpec
