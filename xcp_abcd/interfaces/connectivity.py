@@ -32,7 +32,19 @@ class _nifticonnectOutputSpec(TraitedSpec):
 
 class nifticonnect(SimpleInterface):
     r"""
-    coming back 
+    extract timeseries and compute connectvtioy matrices.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> conect = nifticonnect()
+    >>> conect.inputs.regressed_file = datafile
+    >>> conf.inputs.atlas = atlas_file
+    >>> conf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
+    
     """
     input_spec = _nifticonnectInputSpec
     output_spec = _nifticonnectOutputSpec
@@ -80,6 +92,15 @@ class ApplyTransformsx(ApplyTransforms):
         return runtime
 
 def get_atlas_nifti(atlasname):
+    r"""
+    select atlas by name from xcp_abcd/data
+    all atlases are in MNI dimension
+    atlas list: 
+      schaefer200x7
+      schaefer400x7
+      glasser360
+      gordon360
+    """
     if atlasname == 'schaefer200x7':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer200x7/schaefer200x7MNI.nii.gz')
     elif atlasname == 'schaefer400x7':
@@ -94,6 +115,15 @@ def get_atlas_nifti(atlasname):
 
 
 def get_atlas_cifti(atlasname):
+    r"""
+    select atlas by name from xcp_abcd/data
+    all atlases are in 91K dimension
+    atlas list: 
+      schaefer200x7
+      schaefer400x7
+      glasser360
+      gordon360
+    """
     if atlasname == 'schaefer200x7':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
     elif atlasname == 'schaefer400x7':

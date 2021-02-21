@@ -14,6 +14,7 @@ from ..interfaces import (interpolate,removeTR,censorscrub)
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
+import sklearn
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 def init_post_process_wf(
@@ -30,10 +31,111 @@ def init_post_process_wf(
     fd_thresh=0,
     name="post_process_wf",
      ):
+    """
+    This workflow is organizing workflows including 
+    selectign confound matrix, regression and filtering
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+            from xcp_abcd.workflows import init_post_process_wf
+            wf = init_init_post_process_wf_wf(
+                mem_gb,
+                lowpass,
+                highpass,
+                smoothing,
+                params,
+                omp_nthreads,
+                scrub,
+                cifti,
+                dummytime,
+                output_dir,
+                fd_thresh,
+                TR,
+                name="post_process_wf",
+             )
+    Parameters
+    ----------
+    
+    mem_gb: float
+        memory size in gigabytes
+    lowpass: float
+        low pass filter
+    highpass: float
+        high pass filter
+    smoothing: float
+        smooth kernel size in fwhm 
+    params: str
+        parameter regressed out from bold
+    omp_nthreads: int
+        number of threads
+    scrub: bool
+        scrubbing 
+    cifti: bool
+        if cifti or bold 
+    dummytime: float
+        volume(s) removed before postprocessing in seconds
+    TR: float
+        repetition time in seconds
+    fd_thresh:
+        threshold for FD for censoring/scrubbing
+    smoothing:
+        smoothing kernel size 
+    
+    Inputs
+    ------
+    bold
+       bold or cifti file 
+    bold_mask
+       bold mask if bold is nifti
+    custom_conf
+       custom regressors 
+
+    Outputs
+    -------
+    processed_bold
+        processed or cleaned bold 
+    smoothed_bold
+        smoothed processed bold 
+    tmask
+        temporal mask
+    """
 
     
 
     workflow = Workflow(name=name)
+    workflow.__desc__ = """ \
+
+"""
+    if dummytime > 0 and fd_thresh > 0:
+        nvolx = str(np.floor(dummytime / TR))
+        workflow.__desc__ = workflow.__desc__ + """ \
+Before nuissance regression and filtering of the data, the first {nvol} were discarded,
+.Furthermore, any volumes with framewise-displacement greater than 
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
+ and excluded from further analyses.
+""".format(nvol=nvolx,fd_thresh=fd_thresh)
+    elif dummytime > 0 and fd_thresh ==0:
+        nvolx = str(np.floor(dummytime / TR))
+        workflow.__desc__ = workflow.__desc__ + """ \
+Before nuissance regression and filtering, the first {nvol} were discarded.
+""".format(nvol=nvolx)
+    elif dummytime == 0 and fd_thresh > 0:
+        workflow.__desc__ = workflow.__desc__ + """ \
+Before nuissance regression and filtering any volumes with framewise-displacement greater than 
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
+ and excluded from further analyses.
+""".format(fd_thresh=fd_thresh)
+
+    workflow.__desc__ = workflow.__desc__ +  """ \
+The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
+from nuissance confound matrices by fmriprep. These nuissance regressors were regressed out 
+from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
+The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz.
+ """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
+             lowpass=lowpass,highpass=highpass)
+
+
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold', 'bold_mask','custom_conf']), name='inputnode')
@@ -141,6 +243,12 @@ def init_post_process_wf(
                     (inputnode,regressy,[('custom_conf','custom_conf')]) ])
     
     if fd_thresh > 0 and not scrub:
+        workflow.__desc__ = workflow.__desc__ + """ \
+After nuissance regression and bandpass filtering of the BOLD data, 
+the flagge volumes were interpolated over the other filtered residual 
+volumes [@power_fd_dvars] using least squares spectral analysis based 
+on the Lomb-Scargle periodogram.
+"""
         workflow.connect([
              (filterdx,interpolatewf,[('filt_file','in_file'),]),
              (inputnode,interpolatewf,[('bold_mask','mask_file'),]),
@@ -150,6 +258,7 @@ def init_post_process_wf(
              (interpolatewf,outputnode,[('bold_interpolated','processed_bold')]),
         ])
     else:
+
         workflow.connect([
              # connect bold confound matrix to extract confound matrix 
             (filterdx,outputnode,[('filt_file','processed_bold')]),
@@ -159,6 +268,10 @@ def init_post_process_wf(
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
+            workflow.__desc__ = workflow.__desc__ + """ \
+The processed bold  was smoothed with the workbench and
+using kernel size (FWHM) of {kernelsize}  mm . 
+"""         .format(kernelsize=str(smoothing))
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
 
@@ -166,6 +279,9 @@ def init_post_process_wf(
                   right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti_smoothing", mem_gb=mem_gb)
 
         else:
+            workflow.__desc__ = workflow.__desc__ + """ \
+The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm. 
+"""         .format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
 
@@ -186,6 +302,22 @@ def init_post_process_wf(
 def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
+def stringforparams(params):
+    if params == '24P':
+        bsignal = "including six motion parameters with their temporal derivatives, \
+            quadratic expansion of both six motion paramters and their derivatives  \
+            to make a total of 24 nuissance regressors "
+    if params == '27P':
+        bsignal = "including six motion parameters with their temporal derivatives, \
+            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
+            white and CSF signal to make total 27 nuissance regressors"
+    if params == '36P':
+        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
+            quadratic expansion of these nuissance regressors and their derivatives  \
+            to make total 36 nuissance regressors"
+    return bsignal
+           
+    
 
 
     

@@ -92,6 +92,18 @@ class CiftiCorrelationOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output CIFTI file")
 
 class CiftiCorrelation(WBCommand):
+    r"""
+    Compute correlation from CIFTI file
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .ptseries or .dtseries,  
+    >>> cifticorr = CiftiCorrelation()
+    >>> cifticorr.inputs.in_file = 'sub-01XX_task-rest.ptseries.nii'
+    >>> cifticorr.inputs.out_file = 'sub_01XX_task-rest.pconn.nii'
+    >>> cifticorr.cmdline
+    wb_command  -cifti-correlation sub-01XX_task-rest.ptseries.nii \
+        'sub_01XX_task-rest.pconn.nii'
+    """
+
     input_spec = CiftiCorrelationInputSpec
     output_spec = CiftiCorrelationOutputSpec
     _cmd = "wb_command  -cifti-correlation" 

@@ -39,7 +39,10 @@ def plot_svg(fdata,fd,dvars,filename,tr=1):
 
 def compute_dvars(datat):
     '''
-     datat : points by timepoints
+    compute standard dvars
+
+    datat : numpy darrays
+        data matrix vertices by timepoints 
      
     '''
     firstcolumn=np.zeros((datat.shape[0]))[...,None]
@@ -153,7 +156,7 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
                  units=None, tr=None, hide_x=True, color='b', nskip=0,
                  cutoff=None, ylims=None):
     '''
-    chnaged niworkflows
+    adapted from niworkflows
     tseries: 
        numpy array
     gs_ts:
@@ -163,7 +166,7 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
     units:
       tseries unit
     tr:
-      repetition time       
+      repetition time
     '''
 
     # Define TR and number of frames

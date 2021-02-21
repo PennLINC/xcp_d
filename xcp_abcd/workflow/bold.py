@@ -152,14 +152,10 @@ def init_boldpostprocess_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-BOLD data postprocessing
-: For each of the {num_bold} BOLD runs found per subject (across all
+For each of the {num_bold} BOLD runs found per subject (across all
 tasks and sessions), the following postprocessing was performed.
 """.format(num_bold=num_bold)
 
-    workflow.__postdesc__ = """\
-ending. 
-"""
    
     # get reference and mask
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
@@ -197,14 +193,14 @@ ending.
                  template=template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lowpass,highpass=highpass,smoothing=smoothing, surface=False,
+                   lowpass=lowpass,highpass=highpass,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
     
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
-                    params=params,scrub=scrub,surface=None,output_dir=output_dir,dummytime=dummytime,
+                    params=params,scrub=scrub,cifti=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=lowpass,highpass=highpass,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
    
@@ -321,3 +317,4 @@ def _t12native(fname):
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
+    

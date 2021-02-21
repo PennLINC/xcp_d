@@ -8,7 +8,7 @@ __version__ = get_versions()['version']
 del get_versions
 
 __packagename__ = 'xcp_abcd'
-__copyright__ = 'Copyright 2020, Penn LINC'
+__copyright__ = 'Copyright 2020, Penn LINC and Damien LAB'
 __credits__ = ('Contributors: please check the ``.zenodo.json`` file at the top-level folder'
                'of the repository')
 __url__ = 'https://github.com/pennlinc/xcp_abcd'

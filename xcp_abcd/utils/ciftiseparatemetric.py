@@ -45,6 +45,22 @@ class CiftiSeparateMetricOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output CIFTI file")
 
 class CiftiSeparateMetric(WBCommand):
+    r"""
+    Extract left or right hemisphere surface from CIFTI file (.dtseries)
+    other structure can also be extracted
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,  
+    >>> ciftiseparate = CiftiSeparateMetric()
+    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftiseparate.inputs.metric = "CORTEX_LEFT" # extract left hemisphere
+    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
+    >>> ciftiseparate.inputs.direction = 'COLUMN'
+    >>> ciftiseparate.cmdline
+    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii'  COLUMN \
+      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    """
     input_spec = CiftiSeparateMetricInputSpec
     output_spec = CiftiSeparateMetricOutputSpec
     _cmd = "wb_command  -cifti-separate "
+
+    

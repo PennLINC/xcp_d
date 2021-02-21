@@ -41,6 +41,7 @@ class _filterdataOutputSpec(TraitedSpec):
 
 class FilteringData(SimpleInterface):
     r"""filter the data.
+    the filtering was setup with scipy signal
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()

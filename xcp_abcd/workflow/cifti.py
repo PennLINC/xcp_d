@@ -143,14 +143,10 @@ def init_ciftipostprocess_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-CIFTI data postprocessing
-: For each of the {num_cifti} CIFTI runs found per subject (across all
+For each of the {num_cifti} CIFTI runs found per subject (across all
 tasks and sessions), the following postprocessing was performed.
 """.format(num_cifti=num_cifti)
 
-    workflow.__postdesc__ = """\
-ending. 
-"""
    
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['cifti_file','custom_conf']),
@@ -182,14 +178,14 @@ ending.
                       name='cifti_ts_con_wf')
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lowpass,highpass=highpass,smoothing=smoothing,surface=True,
+                   lowpass=lowpass,highpass=highpass,smoothing=smoothing,cifti=True,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="surface_reho_wf")
     
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
-                    params=params,scrub=scrub,surface=True,output_dir=output_dir,dummytime=dummytime,
+                    params=params,scrub=scrub,cifti=True,output_dir=output_dir,dummytime=dummytime,
                     lowpass=lowpass,highpass=highpass,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
 

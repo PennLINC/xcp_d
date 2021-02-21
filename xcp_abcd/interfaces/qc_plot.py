@@ -41,8 +41,23 @@ class _qcOutputSpec(TraitedSpec):
 
 class computeqcplot(SimpleInterface):
     r"""
-    coming up 
-    
+    qc and qc plot
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> computeqcwf = computeqcplot()
+    >>> computeqcwf.inputs.cleaned_file = datafile
+    >>> computeqcwf.inputs.bold_file = rawbold
+    >>> computeqcwf.inputs.TR = TR
+    >>> computeqcwf.inputs.tmask = temporalmask 
+    >>> computeqcwf.inputs.mask_file = mask
+    >>> computeqcwf.inputs.dummytime = dummytime 
+    >>> computeqcwf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
+
     """
 
     input_spec = _qcInputSpec
@@ -76,9 +91,9 @@ class computeqcplot(SimpleInterface):
                                   maskfile=self.inputs.mask_file))
 
         ## get qclplot 
-        self._results['raw_qcplot'] = fname_presuffix(self.inputs.cleaned_file, suffix='_raw_qcplot.svg',
+        self._results['raw_qcplot'] = fname_presuffix('preprocess', suffix='_raw_qcplot.svg',
                                                    newpath=runtime.cwd, use_ext=False)
-        self._results['clean_qcplot'] = fname_presuffix(self.inputs.cleaned_file, suffix='_clean_qcplot.svg',
+        self._results['clean_qcplot'] = fname_presuffix('postprocess', suffix='_clean_qcplot.svg',
                                                    newpath=runtime.cwd, use_ext=False) 
         datax = read_ndata(datafile=self.inputs.bold_file,
                                   maskfile=self.inputs.mask_file)[:,num_vold:]
