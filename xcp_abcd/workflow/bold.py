@@ -197,7 +197,7 @@ ending.
                  template=template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lowpass,highpass=highpass,smoothing=smoothing, surface=False,
+                   lowpass=lowpass,highpass=highpass,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
@@ -321,3 +321,4 @@ def _t12native(fname):
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
+    

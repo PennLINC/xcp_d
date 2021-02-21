@@ -11,6 +11,7 @@ import numpy as np
 import os 
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
+import nilearn as nl
 from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti, 
                       get_atlas_cifti,ApplyTransformsx)
 from nipype.interfaces import utility as niu
@@ -93,7 +94,7 @@ functional timeseries were extratced. The [Shaefer @Schaefer_2017], [Glasser @Gl
 [@Gordon_2014] atlases were resampled to bold space before the timeseries extraction with [*Nilearn* {nilearnver} 
  *NiftiLabelsMasker* @nilearn]. Corresponding functional matrices were computed.
 
- """.format(nilearn_ver=NILEARN_VERSION)
+ """.format(nilearnver=nl.__version__)
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold_file','clean_bold','ref_file',
