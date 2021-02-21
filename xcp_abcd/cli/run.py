@@ -17,7 +17,8 @@ from nipype import logging as nlogging, config as ncfg
 from multiprocessing import cpu_count
 from time import strftime
 import warnings
-warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
+from ..utils import sentry_setup
+warnings.filterwarnings("ignore")
 
 logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
 logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
@@ -147,7 +148,10 @@ def main():
     warnings.showwarning = _warn_redirect
     opts = get_parser().parse_args()
 
-    #exec_env = os.name
+    exec_env = os.name
+    import sentry_sdk
+    from ..utils.sentry import sentry_setup
+    sentry_setup(opts, exec_env)
 
     # Retrieve logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
@@ -191,64 +195,67 @@ def main():
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
- 
-    xcpabcd_wf.run(**plugin_settings)
+    from ..utils.sentry import start_ping
+    start_ping(run_uuid, len(subject_list))
 
-    from ..interfaces import generate_reports
-    from subprocess import check_call, CalledProcessError, TimeoutExpired
-    from pkg_resources import resource_filename as pkgrf
-    from shutil import copyfile
+    errno = 1 
+    try:
+        xcpabcd_wf.run(**plugin_settings)
+    except Exception as e:
+        from ..utils.sentry import process_crashfile
+        crashfolders = [output_dir / 'xcp_abcd' / 'sub-{}'.format(s) / 'log' / run_uuid
+                            for s in subject_list]
+        for crashfolder in crashfolders:
+            for crashfile in crashfolder.glob('crash*.*'):
+                process_crashfile(crashfile)
 
-    citation_files = {
+        if "Workflow did not execute cleanly" not in str(e):
+            sentry_sdk.capture_exception(e)
+        logger.critical('xcp_abcd failed: %s', e)
+        raise
+    else:
+        errno = 0
+        logger.log(25, 'xcp_abcd finished without errors!')
+        sentry_sdk.capture_message(' xcp_abcd finished without errors',
+                                       level='info')
+    finally:
+        from ..interfaces import generate_reports
+        from subprocess import check_call, CalledProcessError, TimeoutExpired
+        from pkg_resources import resource_filename as pkgrf
+        from shutil import copyfile
+        
+        citation_files = {
         ext: output_dir / 'xcp_abcd' / 'logs' / ('CITATION.%s' % ext)
             for ext in ('bib', 'tex', 'md', 'html')
         }
 
-    #if citation_files['md'].exists():
-            # Generate HTML file resolving citations
-    cmd = ['pandoc', '-s', '--bibliography',
+        cmd = ['pandoc', '-s', '--bibliography',
         pkgrf('xcp_abcd', 'data/boilerplate.bib'),
                    '--citeproc',
                    '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
                    str(citation_files['md']),
                    '-o', str(citation_files['html'])]
-
-    logger.info('Generating an HTML version of the citation boilerplate...')
-    try:
-        check_call(cmd, timeout=10)
-    except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-        logger.warning('Could not generate CITATION.html file:\n%s',
+        logger.info('Generating an HTML version of the citation boilerplate...')
+        try:
+             check_call(cmd, timeout=10)
+        except (FileNotFoundError, CalledProcessError, TimeoutExpired):
+            logger.warning('Could not generate CITATION.html file:\n%s',
                                ' '.join(cmd))
-
-            # Generate LaTex file resolving citations
-    cmd = ['pandoc', '-s', '--bibliography',
-                   pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--natbib', str(citation_files['md']),
-                   '-o', str(citation_files['tex'])]
-    logger.info('Generating a LaTeX version of the citation boilerplate...')
-    try:
-        check_call(cmd, timeout=10)
-    except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-        logger.warning('Could not generate CITATION.tex file:\n%s',
-                               ' '.join(cmd))
-    else:
-        copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+        else:
+            copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
                          citation_files['bib'])
-
         # Generate reports phase
     failed_reports = generate_reports(
             subject_list=subject_list, output_dir=output_dir, run_uuid=run_uuid,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
     
-    #if failed_reports and not opts.notrack:
-            #sentry_sdk.capture_message(
-                #'Report generation failed for %d subjects' % failed_reports,
-                #level='error')
-        #sys.exit(int((errno + failed_reports) > 0))
+    if failed_reports:
+        sentry_sdk.capture_message(
+                'Report generation failed for %d subjects' % failed_reports,
+                level='error')
+    sys.exit(int((errno + failed_reports) > 0))
     
-
-
 def build_workflow(opts, retval):
     """
     Create the Nipype Workflow that supports the whole execution
@@ -420,9 +427,6 @@ def build_workflow(opts, retval):
             ext: logs_path / ('CITATION.%s' % ext)
             for ext in ('bib', 'tex', 'md', 'html')
         }
-        # To please git-annex users and also to guarantee consistency
-        # among different renderings of the same file, first remove any
-        # existing one
         for citation_file in citation_files.values():
             try:
                 citation_file.unlink()
@@ -430,8 +434,6 @@ def build_workflow(opts, retval):
                 pass
 
         citation_files['md'].write_text(boilerplate)
-        #build_log.log(25, 'Works derived from this xcp_abcd execution should '
-                      #'include the following boilerplate:\n\n%s', boilerplate)
     return retval
 
 

@@ -13,6 +13,7 @@ from .bids import (collect_participants, collect_data)
 from .bids import DerivativesDataSink as bid_derivative
 from .modified_data import (interpolate_masked_data, generate_mask,
                               compute_FD, drop_tseconds_volume)
+from .sentry import sentry_setup
 __all__ = [
     'read_ndata',
     'write_ndata',
@@ -33,5 +34,6 @@ __all__ = [
     'generate_mask',
     'compute_FD',
     'drop_tseconds_volume',
-    'bid_derivative'
+    'bid_derivative',
+    'sentry_setup'
 ]
