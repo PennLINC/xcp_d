@@ -86,7 +86,15 @@ def write_ndata(data_matrix,template,filename,basedir=os.getcwd(),mask=None,tr=1
     return filename
 
 def edit_ciftinifti(in_file,out_file,datax):
-    
+    """
+    this function create a fake nifti file from cifti
+    in_file: 
+       cifti file. .dstreries etc
+    out_file:
+       output fake nifti file 
+    datax: numpy darray 
+      data matrix with vertices by timepoints dimension
+    """
     thdata = nb.load(in_file)
     dataxx = thdata.get_fdata()
     dd = dataxx[:,:,:,0:datax.shape[1]]
@@ -97,7 +105,11 @@ def edit_ciftinifti(in_file,out_file,datax):
 
 def run_shell(cmd,env = os.environ):
     """
-     dfg
+    utilities to run shell in python
+    cmd: 
+     shell command that wanted to be run 
+     
+
     """
     if type(cmd) is list:
         cmd = ' '.join(cmd)
@@ -131,6 +143,9 @@ def write_gii(datat,template,filename,hemi):
 
 
 def read_gii(surf_gii):
+    """
+    using nibabel to read surface file
+    """
     bbx = nb.load(surf_gii)
     datat = bbx.agg_data()
     if not hasattr(datat, '__shape__'):

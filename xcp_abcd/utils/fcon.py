@@ -14,7 +14,19 @@ def extract_timeseries_funct(in_file,
                              atlas,
                              timeseries,
                              fconmatrix):
-    
+    """
+     This function used Nilearn *NiftiLabelsMasker* 
+     to extact timeseries  
+    in_file
+       bold file timeseries
+    atlas
+       atlas in the same space with bold
+    timeseries
+      extracted timesries filename 
+    fconmatrix 
+      functional connectivity matrix filename 
+
+    """
     masker = NiftiLabelsMasker(labels_img=atlas,smoothing_fwhm=None,standardize=False)
     time_series = masker.fit_transform(in_file)
     correlation_matrices = np.corrcoef(time_series.T)
@@ -29,6 +41,13 @@ def extract_timeseries_funct(in_file,
 def compute_2d_reho(datat,adjacency_matrix):
     """
     https://www.sciencedirect.com/science/article/pii/S0165178119305384#bib0045
+    this function compute 2d reho
+
+    datat: numpy darray
+       data matrix in vertices by timepoints
+    adjacency_matrix : numpy matrix 
+       surface adjacency matrix 
+
     """
     KCC = np.zeros(datat.shape[0])
     
@@ -78,6 +97,16 @@ def mesh_adjacency(hemi):
 def compute_alff(data_matrix,low_pass,high_pass, TR):
     """
      https://pubmed.ncbi.nlm.nih.gov/16919409/
+
+     compute ALFF 
+    data_matrix: numpy darray
+        data matrix points by timepoints
+    lowpass: numpy float 
+        low pass frequency in Hz
+    highpass : numpy float
+        high pass frequency in Hz
+    TR: numpy float 
+       repetition time in seconds
     """
     fs=1/TR
     alff = np.zeros(data_matrix.shape[0])

@@ -102,6 +102,20 @@ class CiftiParcellateOutputSpec(TraitedSpec):
 
 
 class CiftiParcellate(WBCommand):
+    r"""
+    Extract timeseries from CIFTI file
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,  
+    >>> ciftiparcel = CiftiParcellate()
+    >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
+    >>>  ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii' 
+    >>> ciftiparcel.inputs.direction = 'COLUMN'
+    >>> ciftiparcel.cmdline
+    wb_command -cifti-parcellate sub-01XX_task-rest.dtseries.nii \
+    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \  
+    sub_01XX_task-rest.ptseries.nii
+    """
     input_spec = CiftiParcellateInputSpec
     output_spec = CiftiParcellateOutputSpec
     _cmd = "wb_command -cifti-parcellate"
