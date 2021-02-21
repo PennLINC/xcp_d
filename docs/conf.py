@@ -25,7 +25,7 @@ sys.path.append(os.path.abspath("sphinxext"))
 sys.path.insert(0, os.path.abspath("../wrapper"))
 sys.path.insert(0, os.path.abspath("../.."))
 
-from sphinxext.github_link import make_linkcode_resolve
+from github_link import make_linkcode_resolve
 
 # -- General configuration ------------------------------------------------
 
@@ -89,7 +89,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "aslprep"
+project = "xcp_abcd"
 author = "Azeez Adebimpe"
 copyright = "2020-%s, %s" % (datetime.now().year, author)
 
@@ -246,7 +246,7 @@ html_static_path = ["_static"]
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "aslprepdoc"
+htmlhelp_basename = "xcp_abcd.doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -268,7 +268,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "aslprep.tex", "ASLprep Documentation",
+    (master_doc, "xcp_abcd.tex", "xcp_abcd Documentation",
      author,
      "manual"),
 ]
@@ -299,7 +299,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, "aslprep", "aslprep Documentation",
+    (master_doc, "xcp_abcd", "xcp_abcd Documentation",
      [author], 1)
 ]
 
@@ -313,8 +313,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, "aslprep", "ASLprep Documentation",
-     author, "aslprep", "One line description of project.",
+    (master_doc, "xcp_abcd", "xcp_abcd Documentation",
+     author, "xcp_abcd", "One line description of project.",
      "Miscellaneous"),
 ]
 
@@ -331,9 +331,9 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 # The following is used by sphinx.ext.linkcode to provide links to github
-linkcode_resolve = make_linkcode_resolve("aslprep",
+linkcode_resolve = make_linkcode_resolve("xcp_abcd",
                                          "https://github.com/pennlinc/"
-                                         "aslprep/blob/{revision}/"
+                                         "xcp_abcd/blob/{revision}/"
                                          "{package}/{path}#L{lineno}")
 
 # Example configuration for intersphinx: refer to the Python standard library.
@@ -346,8 +346,6 @@ intersphinx_mapping = {
     "nibabel": ("https://nipy.org/nibabel/", None),
     "nipype": ("https://nipype.readthedocs.io/en/latest/", None),
     "niworkflows": ("https://www.nipreps.org/niworkflows/", None),
-    "sdcflows": ("https://www.nipreps.org/sdcflows/", None),
-    "smriprep": ("https://poldracklab.github.io/smriprep/", None),
     "templateflow": ("https://www.templateflow.org/python-client", None),
 }
 
