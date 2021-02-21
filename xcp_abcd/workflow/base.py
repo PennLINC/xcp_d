@@ -280,7 +280,7 @@ It is released under the [CC0]\
     summary = pe.Node(SubjectSummary(subject_id=subject_id,bold=subject_data[0]),
                       name='summary', run_without_submitting=True)
 
-    about = pe.Node(AboutSummary(version='trial_Ax',
+    about = pe.Node(AboutSummary(version=__version__,
                                  command=' '.join(sys.argv)),
                     name='about', run_without_submitting=True)
 
