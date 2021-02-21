@@ -84,11 +84,10 @@ def init_compute_alff_wf(
 
     workflow.__desc__ = """ \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
-by transfroming the processed timeseries  to the frequency domain and 
-the power spectrum was then obtained. The square root was calculated at each 
-frequency of the power spectrum and the averaged square root was 
-obtained across {highpass} - {lowpass}  Hz at each voxel.
-This averaged square root was taken as the ALFF.
+by transforming  the processed BOLD timeseries  to the frequency domain. 
+The square root was calculated at each frequency of the power spectrum 
+and the averaged square root was obtained across {highpass} - {lowpass} 
+ Hz at each voxel. This averaged square root was taken as the ALFF.
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -177,10 +176,10 @@ def init_surface_reho_wf(
 
     workflow = Workflow(name=name)
     workflow.__desc__ = """ \
-The left and right hemispheres were extacted from the processed bold with workbench. 
+The left and right hemispheres were extacted from the processed bold with the workbench. 
 For each hemisphere, regional homogeneity (ReHo) was computed with surface-based 
 *2dReHo* [@surface_reho] . For a given vertex on the surface, the nearest-neighbor 
-vertices were identified and computed Kendall's coefficient of concordance (KCC) with the timeseries. 
+vertices were identified and computed Kendall's coefficient of concordance (KCC) as reho. 
 """ 
 
     
@@ -250,7 +249,7 @@ def init_3d_reho_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = """ \
 The regional homogeneity (ReHo) for the processed bold was computed with 
-AFNI *3dReHo* [@afni]
+AFNI *3dReHo* [@afni] with vertices neighborhood. 
 """ 
     
     inputnode = pe.Node(niu.IdentityInterface(

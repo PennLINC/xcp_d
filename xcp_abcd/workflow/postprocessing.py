@@ -106,35 +106,32 @@ def init_post_process_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = """ \
 
-BOLD Postprocessing 
-
 """
     if dummytime > 0 and fd_thresh > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
-Before nuissance regression and filtering, the first {nvol} was removed,
-*reasons for removing volumes*. Any volumes with framewise-displacement greater than 
-{fd_thresh} [@satterthwaite2,@power_fd_dvars,@satterthwaite_2013] are flagged as outlier
- and excluded from further analyses
+Before nuissance regression and filtering of the data, the first {nvol} were discarded,
+.Furthermore, any volumes with framewise-displacement greater than 
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
+ and excluded from further analyses.
 """.format(nvol=nvolx,fd_thresh=fd_thresh)
     elif dummytime > 0 and fd_thresh ==0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
-Before nuissance regression and filtering, the first {nvol} was removed,
-*reasons for removing volumes*.
+Before nuissance regression and filtering, the first {nvol} were discarded.
 """.format(nvol=nvolx)
     elif dummytime == 0 and fd_thresh > 0:
         workflow.__desc__ = workflow.__desc__ + """ \
 Before nuissance regression and filtering any volumes with framewise-displacement greater than 
-{fd_thresh} [@satterthwaite2,@power_fd_dvars,@satterthwaite_2013] are flagged as outlier
- and excluded from further analyses
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
+ and excluded from further analyses.
 """.format(fd_thresh=fd_thresh)
 
     workflow.__desc__ = workflow.__desc__ +  """ \
-The confound nuissance regressors selected {regressors} [@mitigating_2018, @benchmarkp] . 
-These nuissance regressors were regressed out from the bold data with *LinearRegression* as
-implemented in Scikit-Learn {sclver} [@scikit-learn].The residual were then filtered within the 
-frequency band {highpass} {lowpass}.
+The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
+from nuissance confound matrices by fmriprep. These nuissance regressors were regressed out 
+from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
+The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz.
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
              lowpass=lowpass,highpass=highpass)
 
@@ -247,9 +244,10 @@ frequency band {highpass} {lowpass}.
     
     if fd_thresh > 0 and not scrub:
         workflow.__desc__ = workflow.__desc__ + """ \
-After nuissance regression and bandpass filtering, the flagged volumed were 
-interpolated over the other filtered residual volumes [@power_fd_dvars] using 
-using least squares spectral analysis based on the Lomb-Scargle periodogram
+After nuissance regression and bandpass filtering of the BOLD data, 
+the flagge volumes were interpolated over the other filtered residual 
+volumes [@power_fd_dvars] using least squares spectral analysis based 
+on the Lomb-Scargle periodogram.
 """
         workflow.connect([
              (filterdx,interpolatewf,[('filt_file','in_file'),]),
@@ -260,10 +258,7 @@ using least squares spectral analysis based on the Lomb-Scargle periodogram
              (interpolatewf,outputnode,[('bold_interpolated','processed_bold')]),
         ])
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
-After nuissance regression and bandpass filtering, the flagged volumes were 
-scrubbed for further analyses 
-"""
+
         workflow.connect([
              # connect bold confound matrix to extract confound matrix 
             (filterdx,outputnode,[('filt_file','processed_bold')]),
@@ -274,8 +269,8 @@ scrubbed for further analyses
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
             workflow.__desc__ = workflow.__desc__ + """ \
-The processed bold  was smoothed with workbench and
-kernel size of {kernelsize} mm. 
+The processed bold  was smoothed with the workbench and
+using kernel size (FWHM) of {kernelsize}  mm . 
 """         .format(kernelsize=str(smoothing))
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
@@ -285,7 +280,7 @@ kernel size of {kernelsize} mm.
 
         else:
             workflow.__desc__ = workflow.__desc__ + """ \
-The processed bold was smoothed with FSL and kernel size of {kernelsize} mm. 
+The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm. 
 """         .format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )

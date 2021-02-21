@@ -143,14 +143,10 @@ def init_ciftipostprocess_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-CIFTI data postprocessing
-: For each of the {num_cifti} CIFTI runs found per subject (across all
+For each of the {num_cifti} CIFTI runs found per subject (across all
 tasks and sessions), the following postprocessing was performed.
 """.format(num_cifti=num_cifti)
 
-    workflow.__postdesc__ = """\
-ending. 
-"""
    
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['cifti_file','custom_conf']),

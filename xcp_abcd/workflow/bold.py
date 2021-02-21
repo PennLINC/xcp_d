@@ -152,14 +152,10 @@ def init_boldpostprocess_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-BOLD data postprocessing
-: For each of the {num_bold} BOLD runs found per subject (across all
+For each of the {num_bold} BOLD runs found per subject (across all
 tasks and sessions), the following postprocessing was performed.
 """.format(num_bold=num_bold)
 
-    workflow.__postdesc__ = """\
-ending. 
-"""
    
     # get reference and mask
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
