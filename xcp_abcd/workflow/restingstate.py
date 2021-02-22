@@ -122,8 +122,8 @@ The ALL  was smoothed with workbench and
 kernel size of {kernelsize} mm. 
 """         .format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
-            lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
-            rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
+            lh_midthickness = str(get_template("fsLR", hemi='L',suffix='vaavg_midthickness',density='32k'))
+            rh_midthickness = str(get_template("fsLR", hemi='R',suffix='vaavg_midthickness',density='32k'))
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                   right_surf=rh_midthickness, left_surf=lh_midthickness), name="ciftismoothing", mem_gb=mem_gb)
             workflow.connect([
