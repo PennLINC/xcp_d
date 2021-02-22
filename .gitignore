@@ -3,6 +3,5 @@ xcp_surface/.DS_Store
 .DS_Store
 *.pyc
 *.tsv
-*.nii
 *.pyc
 docs/_build
