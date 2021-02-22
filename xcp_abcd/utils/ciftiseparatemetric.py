@@ -49,7 +49,8 @@ class CiftiSeparateMetric(WBCommand):
     Extract left or right hemisphere surface from CIFTI file (.dtseries)
     other structure can also be extracted
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .dtseries,  
+    dimension, columns for .dtseries, 
+     
     >>> ciftiseparate = CiftiSeparateMetric()
     >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
     >>> ciftiseparate.inputs.metric = "CORTEX_LEFT" # extract left hemisphere

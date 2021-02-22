@@ -77,7 +77,7 @@ def mesh_adjacency(hemi):
     # surface sphere to be load from templateflow 
     # either left or right hemisphere 
 
-    surf= str(get_template("fsLR", hemi=hemi,suffix='sphere',density='32k',)[1])
+    surf= str(get_template("fsLR",space='fsaverage',hemi=hemi,suffix='sphere',density='32k'))
 
     surf = nb.load(surf)
     vertices_faces = surf.agg_data(('pointset', 'triangle'))
