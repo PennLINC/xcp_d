@@ -98,7 +98,7 @@ def interpolate_masked_data(img_datax,tmask,mask_data=None,
     # get the  length of masked vols
     t_obs = np.array(np.where(tmask != 0))
      
-    if np.sum(t_obs) < 2:
+    if np.sum(tmask) < 2:
         recondata = img_datax
         print(' flagged volumes is less than 2')
     else:
