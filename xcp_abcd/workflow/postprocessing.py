@@ -264,6 +264,11 @@ on the Lomb-Scargle periodogram.
             (filterdx,outputnode,[('filt_file','processed_bold')]),
             (censor_scrubwf,outputnode,[('tmask','tmask')]),
         ])
+    else:
+        workflow.connect([
+             # connect bold confound matrix to extract confound matrix 
+            (filterdx,outputnode,[('filt_file','processed_bold')]),
+        ])
 
 
     if smoothing:
