@@ -104,7 +104,7 @@ def load_confound_matrix(datafile,head_radius=50,params='24P'):
         motion = load_motion(confoundtsv,head_radius=head_radius)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         confound = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
-    elif  params == 'DB':
+    elif  params == '27P':
         motion = load_motion(confoundtsv,head_radius=head_radius)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         wmcsf = load_WM_CSF(confoundtsv)

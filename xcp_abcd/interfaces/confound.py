@@ -26,7 +26,7 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
     params = traits.Str(exists=True,mandatory=True, 
                             default_value='24P',desc= "nuissance confound model from Ciric etal 2017 \
                              24P: (6P + their derivative) and their square , \
-                             DB: 24P + 2P + global signal \
+                             27P: 24P + 2P + global signal \
                              36P: (9P + their derivative) and their square  ")
 
 class _confoundOutputSpec(TraitedSpec):
