@@ -187,7 +187,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                                     ('bold_mask','mask_file')]),
               (censor_scrubwf,regressy,[('bold_censored','in_file'),
                             ('fmriprepconf_censored','confounds')]),
-              (inputnode,regressy,[('bold_mask','maskfile')]),
+              (inputnode,regressy,[('bold_mask','mask')]),
               (regressy, filterdx,[('res_file','in_file')]),
                (inputnode, filterdx,[('bold_mask','mask')])
                 ])
@@ -200,7 +200,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
               (rm_dummytime,regressy,[('bold_file_TR','in_file'),
                          ('fmrip_confdropTR','confounds'),
                         ('custom_confdropTR','custom_conf')]),
-              (inputnode,regressy,[('bold_mask','maskfile'),]),
+              (inputnode,regressy,[('bold_mask','mask'),]),
               (regressy, filterdx,[('res_file','in_file')]),
                (inputnode, filterdx,[('bold_mask','mask')])])
             
