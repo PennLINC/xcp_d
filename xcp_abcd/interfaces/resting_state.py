@@ -14,6 +14,7 @@ from nipype.interfaces.base import (
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 LOGGER = logging.getLogger('nipype.interface') 
+import os 
 
 # compute 2D reho
 class _surfaceRehoInputSpec(BaseInterfaceInputSpec):
@@ -126,7 +127,8 @@ class computealff(SimpleInterface):
                 suffix=suffix, newpath=runtime.cwd,
                 use_ext=False,)
         write_ndata(data_matrix=alff_mat, template=self.inputs.in_file, 
-                filename=self._results['alff_out'],mask=self.inputs.mask)
+                filename=self._results['alff_out'],mask=self.inputs.mask,
+                basedir=os.path.dirname(self.inputs.in_file))
 
         return runtime
 
