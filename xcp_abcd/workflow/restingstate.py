@@ -85,9 +85,8 @@ def init_compute_alff_wf(
     workflow.__desc__ = """ \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
 by transforming  the processed BOLD timeseries  to the frequency domain. 
-The square root was calculated at each frequency of the power spectrum 
-and the averaged square root was obtained across {highpass} - {lowpass} 
- Hz at each voxel. This averaged square root was taken as the ALFF.
+The power spectral of was computed within freqeuncy band {highpass} - {lowpass} 
+Hz and the averaged square root of power spectral were obtained  at each voxel as ALFF. 
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(

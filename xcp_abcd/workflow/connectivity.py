@@ -240,7 +240,7 @@ def init_cifti_conts_wf(
     workflow.__desc__ = """
 After the nuissance regression and  bandpass filtering of the bold data, 
 functional timeseries were extracted.The functional timeseries were extracted with the 
-Workbench [@hcppipelines] for Shaefer [@Schaefer_2017], Glasser [@{Glasser_2016] 
+Workbench [@hcppipelines] for Shaefer [@Schaefer_2017], Glasser [@Glasser_2016] 
 and Gordon [@Gordon_2014] atlases. Corresponding functional connectivity 
 were computed for each atlas with the Workbench.
 """

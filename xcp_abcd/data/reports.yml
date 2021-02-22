@@ -1,10 +1,9 @@
 package: xcp_abcd
 sections:
-- name: Summary
+- name: Processing Summary
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
   - bids: {datatype: figures, desc: summary, suffix: bold}
-- name: Quality Control
-  reportlets:
   - bids: {datatype: figures, desc: qualitycontrol,suffix: bold}
   - bids: {datatype: figures, desc: preprocessing,suffix: bold}
     caption: DVARS and FD are the plot of standardized DVARS
