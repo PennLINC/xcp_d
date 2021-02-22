@@ -170,7 +170,7 @@ tasks and sessions), the following postprocessing was performed.
 
     clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                   smoothing=smoothing,params=params,
+                   smoothing=smoothing,params=params,cifti=True,
                    scrub=scrub,dummytime=dummytime,fd_thresh=fd_thresh,
                    name='clean_data_wf')
     
