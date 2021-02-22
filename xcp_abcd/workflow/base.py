@@ -248,7 +248,8 @@ def init_single_bold_wf(
     workflow = Workflow(name=name)
     
     workflow.__desc__ = """
-Results included in this manuscript come from postprocessing of fmriprep 
+#### Postprocessing of fMRIPrep outputs
+Results included in this manuscript come from postprocessing offMRIPrep 
 outputs [@fmriprep1;@fmriprep2]. The postprocessing was  performed using 
 *xcp_abcd* [@mitigating_2018;@satterthwaite_2013;@benchmarkp] which is based 
 on *Nipype* {nipype_ver} [@nipype1; @nipype2].
