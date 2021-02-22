@@ -113,12 +113,10 @@ class computeqcplot(SimpleInterface):
             rms_max = np.max(rmsd[tmask==0])
 
             datax = read_ndata(datafile=self.inputs.cleaned_file,
-                                  maskfile=self.inputs.mask_file)[:,num_vold:]
+                                  maskfile=self.inputs.mask_file)
             dataxx = datax[:,tmask==0]
             plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              filename=self._results['clean_qcplot'])
-            
-           
         else:
             mean_fd = np.mean(fd_timeseries)
             mean_rms = np.mean (rmsd)
@@ -130,7 +128,7 @@ class computeqcplot(SimpleInterface):
                                dvars_af)[0][1]
             rms_max = np.max(rmsd)
             datax = read_ndata(datafile=self.inputs.cleaned_file,
-                                  maskfile=self.inputs.mask_file)[:,num_vold:]
+                                  maskfile=self.inputs.mask_file)
             plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              filename=self._results['clean_qcplot'])
 

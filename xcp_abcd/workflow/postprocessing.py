@@ -287,7 +287,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
 
         if fd_thresh > 0 and not scrub:
             workflow.connect([
-                    (interpolatewf, smooth_data,[('bold_interpolated','in_file')]),
+                   (interpolatewf, smooth_data,[('bold_interpolated','in_file')]),
                    (smooth_data, outputnode,[('out_file','smoothed_bold')])    
                    ])
         else:
