@@ -116,7 +116,7 @@ class computeqcplot(SimpleInterface):
             datax = read_ndata(datafile=self.inputs.cleaned_file,
                                   maskfile=self.inputs.mask_file)
             dataxx = datax[:,tmask==0]
-            if self.inputs.scrub:
+            if self.inputs.scrub == True :
                 fd_timeseries = fd_timeseries[tmask==0]
             plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              filename=self._results['clean_qcplot'])

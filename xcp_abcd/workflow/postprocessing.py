@@ -257,11 +257,12 @@ on the Lomb-Scargle periodogram.
              (inputnode,interpolatewf,[('bold','bold_file')]),
              (interpolatewf,outputnode,[('bold_interpolated','processed_bold')]),
         ])
-    else:
+    elif fd_thresh > 0 and  scrub:
 
         workflow.connect([
              # connect bold confound matrix to extract confound matrix 
             (filterdx,outputnode,[('filt_file','processed_bold')]),
+            (censor_scrubwf,outputnode,[('tmask','tmask')]),
         ])
 
 
