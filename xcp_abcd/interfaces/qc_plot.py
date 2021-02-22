@@ -24,6 +24,7 @@ LOGGER = logging.getLogger('nipype.interface')
 class _qcInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,mandatory=True, desc=" raw  bold or cifit file from fmirprep")
     mask_file = File(exists=False,mandatory=False, desc=" mask file")
+    scrub = traits.Bool(exists=False,mandatory=False,default_value=False, desc="if scrub or not")
     cleaned_file = File(exists=True,mandatory=True, desc=" residual and filter file")
     tmask = File(exists=False,mandatory=False, desc="temporal mask")
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
@@ -115,6 +116,8 @@ class computeqcplot(SimpleInterface):
             datax = read_ndata(datafile=self.inputs.cleaned_file,
                                   maskfile=self.inputs.mask_file)
             dataxx = datax[:,tmask==0]
+            if self.inputs.scrub:
+                fd_timeseries = fd_timeseries[tmask==0]
             plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              filename=self._results['clean_qcplot'])
         else:

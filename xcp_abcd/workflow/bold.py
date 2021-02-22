@@ -236,7 +236,7 @@ tasks and sessions), the following postprocessing was performed.
          (inputnode,clean_data_wf,[('custom_conf','inputnode.custom_conf')]),
         ])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
+    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,scrub=scrub,ummytime=dummytime,
                        head_radius=head_radius), name="qc_report")
     workflow.connect([
         (inputnode,qcreport,[('bold_mask','mask_file')]),
