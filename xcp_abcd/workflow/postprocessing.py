@@ -310,11 +310,11 @@ def stringforparams(params):
     if params == '27P':
         bsignal = "including six motion parameters with their temporal derivatives, \
             quadratic expansion of both six motion paramters and their derivatives, global signal,  \
-            white and CSF signal to make total 27 nuissance regressors"
+            white and CSF signal to make a total 27 nuissance regressors"
     if params == '36P':
         bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
             quadratic expansion of these nuissance regressors and their derivatives  \
-            to make total 36 nuissance regressors"
+            to make a total 36 nuissance regressors"
     return bsignal
            
     
