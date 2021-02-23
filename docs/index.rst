@@ -10,3 +10,5 @@ Contents
    :maxdepth: 3
 
    installation
+   usage
+   api

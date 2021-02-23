@@ -3,13 +3,11 @@
 ================
 Developers - API
 ================
-Internal configuration system
------------------------------
 
 
 Workflows
 ---------
 
-.. automodule:: xcp_abcd.workflows.base
-.. automodule:: aslprep.workflows.bold
-.. automodule:: aslprep.workflows.cifti
+.. automodule:: xcp_abcd.workflow.base
+.. automodule:: xcp_abcd.workflow.bold
+.. automodule:: xcp_abcd.workflow.cifti
