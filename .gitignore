@@ -5,3 +5,4 @@ xcp_surface/.DS_Store
 *.tsv
 *.pyc
 docs/_build
+.eggs

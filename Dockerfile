@@ -133,9 +133,6 @@ ARG VERSION=0.0.1
 RUN echo "${VERSION}" > /src/xcp_abcd/xcp_abcd/VERSION && \
     echo "include xcp_abcd/VERSION" >> /src/xcp_abcd/MANIFEST.in && \
     pip install --no-cache-dir "/src/xcp_abcd[all]"
-    rm xcp_abcd-setup.cfg && \
-    find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
-    find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
 
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
