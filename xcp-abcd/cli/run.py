@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""xcp_abcd postprocessing workflow."""
+"""xcp-abcd postprocessing workflow."""
 
 import os
 import re
@@ -44,17 +44,17 @@ def get_parser():
     from ..__about__ import __version__
     from .version import check_latest, is_flagged
 
-    verstr = 'xcp_abcd v{}'.format(__version__)
+    verstr = 'xcp-abcd v{}'.format(__version__)
 
 
-    parser = ArgumentParser(description='xcp_abcd postprocessing workflow of fmriprep outputs',
+    parser = ArgumentParser(description='xcp-abcd postprocessing workflow of fmriprep outputs',
                             formatter_class=ArgumentDefaultsHelpFormatter)
 
     # important parameters required
     parser.add_argument('fmriprep_dir', action='store', type=Path,
                         help='the root folder of a fmriprep output  with sub-xxxx.')
     parser.add_argument('output_dir', action='store', type=Path,
-                        help='the output path for the outcomes of xcp_abcd')
+                        help='the output path for the outcomes of xcp-abcd')
     
     parser.add_argument('analysis_level', choices=['participant'],
                         help='processing stage to be run, only "participant')
@@ -83,7 +83,7 @@ def get_parser():
     g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=0,
                          help='maximum number of threads per-process')
     g_perfm.add_argument('--mem_mb', '--mem-mb', action='store', default=0, type=int,
-                         help='upper bound memory limit for xcp_abcd processes')
+                         help='upper bound memory limit for xcp-abcd processes')
     g_perfm.add_argument('--low-mem', action='store_true',
                          help='attempt to reduce memory usage (will increase disk usage '
                               'in working directory)')
@@ -127,7 +127,7 @@ def get_parser():
                          help='path where intermediate results should be stored')
     g_other.add_argument('--clean-workdir', action='store_true', default=False,
                          help='Clears working directory of contents. Use of this flag is not'
-                              'recommended when running concurrent processes of xcp_abcd.')
+                              'recommended when running concurrent processes of xcp-abcd.')
     g_other.add_argument(
         '--resource-monitor', action='store_true', default=False,
         help='enable Nipype\'s resource monitoring to keep track of memory and CPU usage')
@@ -188,7 +188,7 @@ def main():
     # Check workflow for missing commands
     missing = check_deps(xcpabcd_wf)
     if missing:
-        print("Cannot run xcp_abcd. Missing dependencies:", file=sys.stderr)
+        print("Cannot run xcp-abcd. Missing dependencies:", file=sys.stderr)
         for iface, cmd in missing:
             print("\t{} (Interface: {})".format(cmd, iface))
         sys.exit(2)
@@ -203,7 +203,7 @@ def main():
         xcpabcd_wf.run(**plugin_settings)
     except Exception as e:
         from ..utils.sentry import process_crashfile
-        crashfolders = [output_dir / 'xcp_abcd' / 'sub-{}'.format(s) / 'log' / run_uuid
+        crashfolders = [output_dir / 'xcp-abcd' / 'sub-{}'.format(s) / 'log' / run_uuid
                             for s in subject_list]
         for crashfolder in crashfolders:
             for crashfile in crashfolder.glob('crash*.*'):
@@ -211,12 +211,12 @@ def main():
 
         if "Workflow did not execute cleanly" not in str(e):
             sentry_sdk.capture_exception(e)
-        logger.critical('xcp_abcd failed: %s', e)
+        logger.critical('xcp-abcd failed: %s', e)
         raise
     else:
         errno = 0
-        logger.log(25, 'xcp_abcd finished without errors!')
-        sentry_sdk.capture_message(' xcp_abcd finished without errors',
+        logger.log(25, 'xcp-abcd finished without errors!')
+        sentry_sdk.capture_message(' xcp-abcd finished without errors',
                                        level='info')
     finally:
         from ..interfaces import generate_reports
@@ -225,14 +225,14 @@ def main():
         from shutil import copyfile
         
         citation_files = {
-        ext: output_dir / 'xcp_abcd' / 'logs' / ('CITATION.%s' % ext)
+        ext: output_dir / 'xcp-abcd' / 'logs' / ('CITATION.%s' % ext)
             for ext in ('bib', 'tex', 'md', 'html')
         }
 
         cmd = ['pandoc', '-s', '--bibliography',
-        pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+        pkgrf('xcp-abcd', 'data/boilerplate.bib'),
                    '--citeproc',
-                   '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
+                   '--metadata', 'pagetitle="xcp-abcd citation boilerplate"',
                    str(citation_files['md']),
                    '-o', str(citation_files['html'])]
         logger.info('Generating an HTML version of the citation boilerplate...')
@@ -242,13 +242,13 @@ def main():
             logger.warning('Could not generate CITATION.html file:\n%s',
                                ' '.join(cmd))
         else:
-            copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+            copyfile(pkgrf('xcp-abcd', 'data/boilerplate.bib'),
                          citation_files['bib'])
         # Generate reports phase
     failed_reports = generate_reports(
             subject_list=subject_list, output_dir=output_dir, run_uuid=run_uuid,
-            config=pkgrf('xcp_abcd', 'data/reports.yml'),
-            packagename='xcp_abcd')
+            config=pkgrf('xcp-abcd', 'data/reports.yml'),
+            packagename='xcp-abcd')
     
     if failed_reports:
         sentry_sdk.capture_message(
@@ -276,7 +276,7 @@ def build_workflow(opts, retval):
     build_log = logging.getLogger('nipype.workflow')
 
     INIT_MSG = """
-    Running xcp_abcd version {version}:
+    Running xcp-abcd version {version}:
       * fMRIPrep directory path: {fmriprep_dir}.
       * Participant list: {subject_list}.
       * Run identifier: {uuid}.
@@ -358,7 +358,7 @@ def build_workflow(opts, retval):
     retval['plugin_settings'] = plugin_settings
 
     # Set up directories
-    log_dir = output_dir / 'xcp_abcd' / 'logs'
+    log_dir = output_dir / 'xcp-abcd' / 'logs'
     # Check and create output and working directories
     output_dir.mkdir(exist_ok=True, parents=True)
     log_dir.mkdir(exist_ok=True, parents=True)
@@ -418,7 +418,7 @@ def build_workflow(opts, retval):
     
     retval['return_code'] = 0
 
-    logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'
+    logs_path = Path(output_dir) / 'xcp-abcd' / 'logs'
 
     boilerplate = retval['workflow'].visit_desc()
 
@@ -438,5 +438,5 @@ def build_workflow(opts, retval):
 
 
 if __name__ == '__main__':
-    raise RuntimeError("xcp_abcd/cli/run.py should not be run directly;\n"
-                       "Please `pip install` xcp_abcd and use the `xcp_abcd` command")
+    raise RuntimeError("xcp-abcd/cli/run.py should not be run directly;\n"
+                       "Please `pip install` xcp-abcd and use the `xcp-abcd` command")

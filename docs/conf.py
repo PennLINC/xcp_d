@@ -89,7 +89,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "xcp_abcd"
+project = "xcp-abcd"
 author = "Azeez Adebimpe"
 copyright = "2020-%s, %s" % (datetime.now().year, author)
 
@@ -246,7 +246,7 @@ html_static_path = ["_static"]
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "xcp_abcd.doc"
+htmlhelp_basename = "xcp-abcd.doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -268,7 +268,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "xcp_abcd.tex", "xcp_abcd Documentation",
+    (master_doc, "xcp-abcd.tex", "xcp-abcd Documentation",
      author,
      "manual"),
 ]
@@ -299,7 +299,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, "xcp_abcd", "xcp_abcd Documentation",
+    (master_doc, "xcp-abcd", "xcp-abcd Documentation",
      [author], 1)
 ]
 
@@ -313,8 +313,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, "xcp_abcd", "xcp_abcd Documentation",
-     author, "xcp_abcd", "One line description of project.",
+    (master_doc, "xcp-abcd", "xcp-abcd Documentation",
+     author, "xcp-abcd", "One line description of project.",
      "Miscellaneous"),
 ]
 
@@ -331,9 +331,9 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 # The following is used by sphinx.ext.linkcode to provide links to github
-linkcode_resolve = make_linkcode_resolve("xcp_abcd",
+linkcode_resolve = make_linkcode_resolve("xcp-abcd",
                                          "https://github.com/pennlinc/"
-                                         "xcp_abcd/blob/{revision}/"
+                                         "xcp-abcd/blob/{revision}/"
                                          "{package}/{path}#L{lineno}")
 
 # Example configuration for intersphinx: refer to the Python standard library.

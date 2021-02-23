@@ -18,7 +18,7 @@ def check_latest():
     latest = None
     date = None
     outdated = None
-    cachefile = Path.home() / '.cache' / 'xcp_abcd' / 'latest'
+    cachefile = Path.home() / '.cache' / 'xcp-abcd' / 'latest'
     try:
         cachefile.parent.mkdir(parents=True, exist_ok=True)
     except OSError:
@@ -41,7 +41,7 @@ def check_latest():
 
     if latest is None or outdated is True:
         try:
-            response = requests.get(url='https://pypi.org/pypi/xcp_abcd/json', timeout=1.0)
+            response = requests.get(url='https://pypi.org/pypi/xcp-abcd/json', timeout=1.0)
         except Exception:
             response = None
 
@@ -67,7 +67,7 @@ def is_flagged():
     flagged = tuple()
     try:
         response = requests.get(url="""\
-https://raw.githubusercontent.com/xcp_abcd/xcp_abcd/master/.versions.json""", timeout=1.0)
+https://raw.githubusercontent.com/xcp-abcd/xcp-abcd/master/.versions.json""", timeout=1.0)
     except Exception:
         response = None
 

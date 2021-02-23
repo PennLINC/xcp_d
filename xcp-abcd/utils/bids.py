@@ -39,7 +39,7 @@ from bids.layout.writing import build_path
 from bids.utils import listify
 
 regz = re.compile(r"\.gz$")
-_pybids_spec = loads(Path(_pkgres("xcp_abcd", "data/nipreps.json")).read_text())
+_pybids_spec = loads(Path(_pkgres("xcp-abcd", "data/nipreps.json")).read_text())
 BIDS_DERIV_ENTITIES = frozenset({e["name"] for e in _pybids_spec["entities"]})
 BIDS_DERIV_PATTERNS = tuple(_pybids_spec["default_path_patterns"])
 
