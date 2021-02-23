@@ -3,7 +3,7 @@
 """
  xcp_abcd  postprocessing workflows
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+.. autofunction:: init_xcpabcd_wf
 """
 
 import sys

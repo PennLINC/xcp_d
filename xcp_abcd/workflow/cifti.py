@@ -3,7 +3,7 @@
 """
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_boldpostprocess_wf
+.. autofunction:: init_ciftipostprocess_wf
 
 """
 import sys
