@@ -133,7 +133,7 @@ ARG VERSION=0.0.1
 RUN echo "${VERSION}" > /src/xcp_abcd/xcp_abcd/VERSION && \
     echo "include xcp_abcd/VERSION" >> /src/xcp_abcd/MANIFEST.in && \
     pip install --no-cache-dir "/src/xcp_abcd[all]"
-    rm xcp-abcd-setup.cfg && \
+    rm xcp_abcd-setup.cfg && \
     find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
 
@@ -154,7 +154,7 @@ ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="xcp_abcd" \
       org.label-schema.description="xcp_abcd- postprocessing of fmriprep outputs" \
-      org.label-schema.url="https://xcp-abcd.readthedocs.io/" \
+      org.label-schema.url="https://xcp_abcd.readthedocs.io/" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/PennLINC/xcp_abcd" \
       org.label-schema.version=$VERSION \

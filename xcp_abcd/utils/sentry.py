@@ -32,8 +32,8 @@ def start_ping(run_uuid, npart):
         if run_uuid:
             scope.set_tag('run_uuid', run_uuid)
         scope.set_tag('npart', npart)
-    sentry_sdk.add_breadcrumb(message='xcp-abcd started', level='info')
-    sentry_sdk.capture_message('xcp-abcd started', level='info')
+    sentry_sdk.add_breadcrumb(message='xcp_abcd started', level='info')
+    sentry_sdk.capture_message('xcp_abcd started', level='info')
 
 
 def sentry_setup(opts, exec_env):

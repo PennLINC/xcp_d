@@ -82,12 +82,12 @@ def generate_reports(
         #reportlets_dir = Path(work_dir) / "reportlets"
     report_errors = [
         run_reports(
-            Path(output_dir)/'xcp-abcd',
+            Path(output_dir)/'xcp_abcd',
             subject_label,
             run_uuid,
             config=config,
             packagename=packagename,
-            reportlets_dir=Path(output_dir)/'xcp-abcd',
+            reportlets_dir=Path(output_dir)/'xcp_abcd',
         )
         for subject_label in subject_list
     ]
