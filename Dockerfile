@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+
+FROM ubuntu:xenial-20200706
 
 COPY docker/files/neurodebian.gpg /usr/local/etc/neurodebian.gpg
 
@@ -82,14 +83,14 @@ RUN conda install -y python=3.7.4 \
                      pip=20.1.1 \
                      mkl=2018.0.3 \
                      mkl-service \
-                     numpy=1.18.4 \
+                     numpy=1.18.5 \
                      scipy=1.5.0 \
                      scikit-learn=0.23.1 \
-                     matplotlib=3.2.2 \
                      pandas=1.0.5 \
                      libxml2=2.9.8 \
                      libxslt=1.1.32 \
                      pandoc \
+                     matplotlib \
                      graphviz=2.40.1 \
                      traits=4.6.0 \
                      zlib; sync && \
@@ -104,6 +105,7 @@ ENV MKL_NUM_THREADS=1 \
     OMP_NUM_THREADS=1
 
 # Create a shared $HOME directory
+
 RUN useradd -m -s /bin/bash -G users xcp_abcd
 WORKDIR /home/xcp_abcd
 ENV HOME="/home/xcp_abcd"
@@ -113,6 +115,7 @@ RUN python -c "from matplotlib import font_manager" && \
     sed -i 's/\(backend *: \).*$/\1Agg/g' $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Precaching atlases
+
 COPY setup.cfg xcp_abcd-setup.cfg
 RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs )" && \
     python -c "from templateflow import api as tfapi; \
@@ -130,6 +133,10 @@ ARG VERSION=0.0.1
 RUN echo "${VERSION}" > /src/xcp_abcd/xcp_abcd/VERSION && \
     echo "include xcp_abcd/VERSION" >> /src/xcp_abcd/MANIFEST.in && \
     pip install --no-cache-dir "/src/xcp_abcd[all]"
+    rm xcp-abcd-setup.cfg && \
+    find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
+    find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
+
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
     find $HOME -type f -exec chmod go=u {} + && \
@@ -137,14 +144,16 @@ RUN find $HOME -type d -exec chmod go=u {} + && \
 
 RUN ldconfig
 WORKDIR /tmp/
-ENTRYPOINT ["/usr/local/miniconda/bin/xcp_abcd]
+
+ENTRYPOINT ["/usr/local/miniconda/bin/xcp_abcd"]
+
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="xcp_abcd" \
-      org.label-schema.description="xcp_abcd- postprocessing of fmriprep ouputs" \
+      org.label-schema.description="xcp_abcd- postprocessing of fmriprep outputs" \
       org.label-schema.url="https://xcp-abcd.readthedocs.io/" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/PennLINC/xcp_abcd" \

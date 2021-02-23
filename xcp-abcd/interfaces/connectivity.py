@@ -93,7 +93,7 @@ class ApplyTransformsx(ApplyTransforms):
 
 def get_atlas_nifti(atlasname):
     r"""
-    select atlas by name from xcp_abcd/data
+    select atlas by name from xcp-abcd/data
     all atlases are in MNI dimension
     atlas list: 
       schaefer200x7
@@ -102,13 +102,13 @@ def get_atlas_nifti(atlasname):
       gordon360
     """
     if atlasname == 'schaefer200x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer200x7/schaefer200x7MNI.nii.gz')
+        atlasfile = pkgrf('xcp-abcd', 'data/niftiatlas/schaefer200x7/schaefer200x7MNI.nii.gz')
     elif atlasname == 'schaefer400x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
+        atlasfile = pkgrf('xcp-abcd', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
     elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
+        atlasfile = pkgrf('xcp-abcd', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
+        atlasfile = pkgrf('xcp-abcd', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
@@ -116,7 +116,7 @@ def get_atlas_nifti(atlasname):
 
 def get_atlas_cifti(atlasname):
     r"""
-    select atlas by name from xcp_abcd/data
+    select atlas by name from xcp-abcd/data
     all atlases are in 91K dimension
     atlas list: 
       schaefer200x7
@@ -125,13 +125,13 @@ def get_atlas_cifti(atlasname):
       gordon360
     """
     if atlasname == 'schaefer200x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp-abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
     elif atlasname == 'schaefer400x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels7Networks_atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp-abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels7Networks_atlas.dlabel.nii')
     elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp-abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp-abcd', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile

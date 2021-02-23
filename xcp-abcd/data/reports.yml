@@ -1,4 +1,4 @@
-package: xcp_abcd
+package: xcp-abcd
 sections:
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
