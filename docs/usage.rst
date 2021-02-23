@@ -9,11 +9,11 @@ Usage Notes
 
 XCP_ABCD Execution 
 ------------------
-The *XCP_ABCD* workflow takes as fMRIPRep outputs which is in form of BIDS derivatives.  
-The fMRIPRep outputs  is required to include at anatomical outputs and functional outputs 
+The *XCP_ABCD* workflow takes  fMRIPRep outputs which is in form of BIDS derivatives.  
+The fMRIPRep outputs  is required to include atleast anatomical and functional outputs 
 with atleast one preprocessed BOLD. 
 
-The exact command to run *XCP_ABCD* depends on the Installation_ method and 
+The exact command to run is  *XCP_ABCD* depends on the Installation_ method and 
 required data that needed to be processed
 The basic command of xcp_abcd is as follow
 Example: ::
