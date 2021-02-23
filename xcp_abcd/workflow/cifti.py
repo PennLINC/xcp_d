@@ -2,7 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_ciftipostprocess_wf
 
 """
@@ -47,13 +47,13 @@ def init_ciftipostprocess_wf(
     name='cifti_process_wf'):
 
     """
-    This workflow organizes bold processing workflow.
+    This workflow organizes cifti processing workflow.
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows.bold import init_boldpostprocess_wf
-            wf = init_boldpostprocess_wf(
+            from xcp_abcd.workflow.cifti import init_ciftipostprocess_wf
+            wf = init_ciftipostprocess_wf(
                 bold_file,
                 lowpass,
                 highpass,
@@ -66,10 +66,10 @@ def init_ciftipostprocess_wf(
                 dummytime,
                 output_dir,
                 fd_thresh,
-                num_bold,
+                num_cifti,
                 template='MNI152NLin2009cAsym',
                 layout=None,
-                name='bold_postprocess_wf',
+                name='cifti_postprocess_wf',
              )
     Parameters
     ----------

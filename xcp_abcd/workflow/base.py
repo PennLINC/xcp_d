@@ -2,8 +2,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
  xcp_abcd  postprocessing workflows
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_xcpabcd_wf
+
 """
 
 import sys
@@ -52,7 +53,7 @@ def init_xcpabcd_wf(layout,
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            xcp_abcd.workflows.base import init_xcpabcd_wf
+            xcp_abcd.workflow.base import init_xcpabcd_wf
             wf = init_xcpabcd_wf(
                 layout,
                 lowpass,

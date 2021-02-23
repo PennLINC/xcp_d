@@ -53,7 +53,7 @@ def init_boldpostprocess_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows.bold import init_boldpostprocess_wf
+            from xcp_abcd.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
                 bold_file,
                 lowpass,
