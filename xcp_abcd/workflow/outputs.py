@@ -19,7 +19,6 @@ def init_writederivatives_wf(
      smoothing,
      params,
      omp_nthreads,
-     scrub,
      cifti,
      dummytime,
      output_dir,

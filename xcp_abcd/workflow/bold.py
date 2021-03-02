@@ -30,14 +30,19 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 def init_boldpostprocess_wf(
      bold_file,
-     lowpass,
-     highpass,
+     lower_bpf,
+     upper_bpf,
+     contigvol,
+     bpf_order,
+     motion_filter_order,
+     motion_filter_type,
+     band_stop_min,
+     band_stop_max,
      smoothing,
      head_radius,
      params,
      custom_conf,
      omp_nthreads,
-     scrub,
      dummytime,
      output_dir,
      fd_thresh,
@@ -182,9 +187,11 @@ tasks and sessions), the following postprocessing was performed.
     
     mem_gbx = _create_mem_gb(bold_file)
     clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                    head_radius=head_radius,lowpass=lowpass,highpass=highpass,
-                    smoothing=smoothing,params=params,
-                    scrub=scrub,dummytime=dummytime,fd_thresh=fd_thresh,
+                    head_radius=head_radius,lower_bpf=lower_bpf,upper_bpf=upper_bpf,
+                    bpf_order=bpf_order,band_stop_max=band_stop_max,band_stop_min=band_stop_min,
+                    motion_filter_order=motion_filter_order,motion_filter_type=motion_filter_type,
+                    smoothing=smoothing,params=params,contigvol=contigvol,
+                    dummytime=dummytime,fd_thresh=fd_thresh,
                     name='clean_data_wf') 
     
     
@@ -193,15 +200,15 @@ tasks and sessions), the following postprocessing was performed.
                  template=template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lowpass,highpass=highpass,smoothing=smoothing, cifti=False,
+                   lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
     
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
-                    params=params,scrub=scrub,cifti=None,output_dir=output_dir,dummytime=dummytime,
-                    lowpass=lowpass,highpass=highpass,TR=TR,omp_nthreads=omp_nthreads,
+                    params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
+                    lowpass=lower_bpf,highpass=upper_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
    
     workflow.connect([
@@ -236,7 +243,7 @@ tasks and sessions), the following postprocessing was performed.
          (inputnode,clean_data_wf,[('custom_conf','inputnode.custom_conf')]),
         ])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,scrub=scrub,dummytime=dummytime,
+    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
                        head_radius=head_radius), name="qc_report")
     workflow.connect([
         (inputnode,qcreport,[('bold_mask','mask_file')]),

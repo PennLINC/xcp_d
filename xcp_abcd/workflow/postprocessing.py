@@ -21,8 +21,9 @@ def init_post_process_wf(
     mem_gb,
     TR,
     head_radius,
-    lowpass,
-    highpass,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
     smoothing,
     params,
     motion_filter_type,
@@ -31,7 +32,6 @@ def init_post_process_wf(
     motion_filter_order,
     contigvol,
     cifti=False,
-    scrub=False,
     dummytime=0,
     fd_thresh=0,
     name="post_process_wf",
@@ -134,7 +134,7 @@ from nuissance confound matrices by fmriprep.  These nuissance regressors were r
 from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
 The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
-             lowpass=lowpass,highpass=highpass)
+             lowpass=lower_bpf,highpass=upper_bpf)
 
 
 
@@ -149,12 +149,13 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filterorder=motion_filter_order),
                     name="ConfoundMatrix", mem_gb=mem_gb)
     
-    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=lowpass,highpass=highpass),
+    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=lower_bpf,highpass=upper_bpf,
+                filter_order=bpf_order),
                     name="filter_the_data", mem_gb=mem_gb)
 
     regressy = pe.Node(regress(tr=TR),
                name="regress_the_data",mem_gb=mem_gb)
-               
+
     censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,
                        time_todrop=dummytime),

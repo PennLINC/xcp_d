@@ -28,11 +28,11 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
                                   desc=' filter type for filtering regressors, either lp or notch')
     filterorder = traits.Str(exit=False,mandatory=False,default_value=4, desc=' motion filter order')
 
-    cufoff = traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' cutoff frequency for lp filter')
+    cufoff = traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' cutoff frequency for lp filter in breathe per min (bpm)')
      
-    low_freq= traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' low frequency band for nortch filter')
+    low_freq= traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' low frequency band for nortch filterin breathe per min (bpm)')
 
-    high_freq= traits.Float(exit=False,mandatory=False,default_value=0.4, desc=' high frequency for nortch filter')
+    high_freq= traits.Float(exit=False,mandatory=False,default_value=0.4, desc=' high frequency for nortch filter in breathe per min (bpm)')
     
     params = traits.Str(exists=True,mandatory=True, 
                             default_value='24P',desc= "nuissance confound model from Ciric etal 2017 \
@@ -68,11 +68,15 @@ class ConfoundMatrix(SimpleInterface):
     output_spec = _confoundOutputSpec
 
     def _run_interface(self, runtime):
+
+        cutoff = self.inputs.cutoff/60
+        freqband = [self.inputs.low_freq,self.inputs.high_freq]/60
     
         # get the nifti/cifti into  matrix
-        data_matrix = load_confound_matrix(datafile=self.inputs.in_file,filtertype=self.inputs.filtertype,
-                       freqband=[self.inputs.low_freq,self.inputs.high_freq],cutoff=self.input.cutoff,
-                       params=self.inputs.params,head_radius=self.inputs.head_radius,TR=self.inputs.TR,
+        data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
+                       filtertype=self.inputs.filtertype,
+                       freqband=freqband,cutoff=cutoff,head_radius=self.inputs.head_radius,
+                       params=self.inputs.params,TR=self.inputs.TR,
                        order=self.inputs.filterorder)
         #write the output out
         self._results['confound_file'] = fname_presuffix(
