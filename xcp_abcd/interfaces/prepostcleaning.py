@@ -108,7 +108,7 @@ class _censorscrubOutputSpec(TraitedSpec):
 
 class censorscrub(SimpleInterface):
     r"""
-    generate temporal masking with wolumes above fd threshold
+    generate temporal masking with volumes above fd threshold
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
@@ -147,7 +147,8 @@ class censorscrub(SimpleInterface):
            
         if self.inputs.time_todrop == 0:
             # do censoring staright
-            tmask = generate_mask(fd_res=fd_timeseries,fd_thresh=self.inputs.fd_thresh)
+            tmask = generate_mask(fd_res=fd_timeseries,fd_thresh=self.inputs.fd_thresh,
+            mincontig=self.inputs.contig)
             if np.sum(tmask) > 0: 
                 datax_censored = dataxx[:,tmask==0]
                 fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[np.where(tmask==1)])
@@ -162,7 +163,8 @@ class censorscrub(SimpleInterface):
             num_vol = np.int(np.divide(self.inputs.time_todrop,self.inputs.TR))
             fd_timeseries2=fd_timeseries
             fd_timeseries2 = fd_timeseries2[num_vol:]
-            tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh)
+            tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh,
+                       mincontig=self.inputs.contig)
     
             if np.sum(tmask) > 0:
                 datax_censored = dataxx[:,tmask==0]

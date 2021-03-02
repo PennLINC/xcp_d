@@ -115,7 +115,7 @@ def get_parser():
 
     g_censor = parser.add_argument_group(' Censoring and scrubbing options')
 
-    g_censor.add_argument('-f','--fd-thresh',default=0, type=float, 
+    g_censor.add_argument('-f','--fd-thresh',default=0.3, type=float, 
                                 help='framewise displacement threshold for censoring and scrubbing')
     g_censor.add_argument('--scrub', action='store_true', default=False,
                         help='scrubbed the volume(s) with the FD greater than fd-thresh')

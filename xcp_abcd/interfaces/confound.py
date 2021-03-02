@@ -69,7 +69,7 @@ class ConfoundMatrix(SimpleInterface):
     
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,filtertype=self.inputs.filtertype,
-                       freqband=[self.inputs.lowfreq,self.inputs.highfreq],cutoff=self.input.cutoff,
+                       freqband=[self.inputs.low_freq,self.inputs.high_freq],cutoff=self.input.cutoff,
                        params=self.inputs.params,head_radius=self.inputs.head_radius)
         #write the output out
         self._results['confound_file'] = fname_presuffix(
