@@ -47,7 +47,7 @@ def init_boldpostprocess_wf(
      output_dir,
      fd_thresh,
      num_bold,
-     template='MNI152NLin2009cAsym',
+     brain_template='MNI152NLin2009cAsym',
      layout=None,
      name='bold_postprocess_wf',
       ):
@@ -197,7 +197,7 @@ tasks and sessions), the following postprocessing was performed.
     
     fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
-                 template=template,name="fcons_ts_wf")
+                 template=brain_template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing, cifti=False,
