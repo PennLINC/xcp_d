@@ -114,11 +114,9 @@ def get_parser():
     g_filter.add_argument('--upper-bpf', action='store', default=0.08, type=float,
                          help='upper cut-off frequency (Hz) for the butterworth bandpass filter')
     
-    g_filter.add_argument('--bpf_order', action='store', default=2, type=int,
+    g_filter.add_argument('--bpf-order', action='store', default=2, type=int,
                          help='number of filter coefficients for butterworth bandpass filter')
     
-    g_filter.add_argument('--bpf_order', action='store', default=2, type=int,
-                         help='number of filter coefficients for butterworth bandpass filter')
 
     g_filter.add_argument('--motion-filter-type', action='store', default=None, type=str,
                          choices=['lp','notch'],
@@ -133,9 +131,6 @@ def get_parser():
     g_filter.add_argument(
         '--motion-filter-order',default=4,type=int,
                 help='number of filter coeffecients for the band-stop filter')
-    
-
-                
 
     g_censor = parser.add_argument_group(' Censoring and scrubbing options')
     g_censor.add_argument('-r','--head_radius',default=50,
@@ -146,8 +141,7 @@ def get_parser():
     
     g_censor.add_argument('--contigvol',default=5, type=int, 
                                 help='number of contigious frames  fd thresholding')
-    
-   
+ 
 
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
