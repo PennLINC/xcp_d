@@ -134,7 +134,7 @@ from nuissance confound matrices by fmriprep.  These nuissance regressors were r
 from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
 The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
-             lowpass=lower_bpf,highpass=upper_bpf)
+             lowpass=upper_bpf,highpass=lower_bpf)
 
 
 
@@ -149,7 +149,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filterorder=motion_filter_order),
                     name="ConfoundMatrix", mem_gb=mem_gb)
     
-    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=lower_bpf,highpass=upper_bpf,
+    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
                     name="filter_the_data", mem_gb=mem_gb)
 

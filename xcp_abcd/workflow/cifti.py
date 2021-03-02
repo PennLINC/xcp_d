@@ -193,7 +193,7 @@ tasks and sessions), the following postprocessing was performed.
     
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
                     params=params,cifti=True,output_dir=output_dir,dummytime=dummytime,
-                    lowpass=lower_bpf,highpass=upper_bpf,TR=TR,omp_nthreads=omp_nthreads,
+                    lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
 
     workflow.connect([

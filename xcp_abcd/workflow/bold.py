@@ -200,7 +200,7 @@ tasks and sessions), the following postprocessing was performed.
                  template=brain_template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
-                   lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing, cifti=False,
+                   lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
@@ -208,7 +208,7 @@ tasks and sessions), the following postprocessing was performed.
     
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
                     params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
-                    lowpass=lower_bpf,highpass=upper_bpf,TR=TR,omp_nthreads=omp_nthreads,
+                    lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
    
     workflow.connect([
