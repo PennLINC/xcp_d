@@ -23,8 +23,10 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
                                   fMRIPrep directory")
     head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head radius for to convert rotxyz to arc length \
                                                for baby, 35m is recommended")
+    TR = traits.Float(exit=False,mandatory=False, desc=' repetition time')
     filtertype = traits.Str(exit=False,mandatory=False,default_value=None,choices=['lp','notch'],
                                   desc=' filter type for filtering regressors, either lp or notch')
+    filterorder = traits.Str(exit=False,mandatory=False,default_value=4, desc=' motion filter order')
 
     cufoff = traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' cutoff frequency for lp filter')
      
@@ -70,7 +72,8 @@ class ConfoundMatrix(SimpleInterface):
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,filtertype=self.inputs.filtertype,
                        freqband=[self.inputs.low_freq,self.inputs.high_freq],cutoff=self.input.cutoff,
-                       params=self.inputs.params,head_radius=self.inputs.head_radius)
+                       params=self.inputs.params,head_radius=self.inputs.head_radius,TR=self.inputs.TR,
+                       order=self.inputs.filterorder)
         #write the output out
         self._results['confound_file'] = fname_presuffix(
                 self.inputs.in_file,

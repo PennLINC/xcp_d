@@ -85,6 +85,7 @@ class removeTR(SimpleInterface):
 
 class _censorscrubInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,mandatory=True, desc=" raw bold or nifti real")
+    contig = traits.Int(exists=True,mandatory=True, default_value=5,desc=" contigious volume")
     in_file =File(exists=True,mandatory=True, desc=" bold or nifti")
     fd_thresh = traits.Float(exists=True,mandatory=True, desc ="fd_threshold")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
@@ -104,6 +105,7 @@ class _censorscrubOutputSpec(TraitedSpec):
                                     desc=" fmriprep_conf censored")
     customconf_censored = File(exists=False,mandatory=False, desc="custom conf censored")
     tmask = File(exists=True,mandatory=True,desc="temporal mask")
+    fd_timeseries = File(exists=True,mandatory=True,desc="fd timeseries")
 
 
 class censorscrub(SimpleInterface):
@@ -195,6 +197,10 @@ class censorscrub(SimpleInterface):
                 self.inputs.in_file,
                 suffix='temporalmask.tsv', newpath=os.getcwd(),
                 use_ext=False)
+        self._results['fd_timeseries'] = fname_presuffix(
+                self.inputs.in_file,
+                suffix='fd_timeseries.tsv', newpath=os.getcwd(),
+                use_ext=False)
 
 
         write_ndata(data_matrix=datax_censored,template=self.inputs.in_file,
@@ -203,6 +209,7 @@ class censorscrub(SimpleInterface):
         
         fmriprepx_censored.to_csv(self._results['fmriprepconf_censored'],index=False,header=False)
         np.savetxt(self._results['tmask'],tmask,fmt="%d",delimiter=',')
+        np.savetxt(self._results['fd_timeseries'],fd_timeseries2,fmt="%d",delimiter=',')
         if self.inputs.custom_conf:
             customx_censored.to_csv(self._results['customconf_censored'],index=False,header=False)   
         return runtime
