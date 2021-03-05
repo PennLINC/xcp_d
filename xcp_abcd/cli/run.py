@@ -97,7 +97,8 @@ def get_parser():
     g_param.add_argument('--smoothing', nargs='?', const=5, default=False,
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
-    
+    g_param.add_argument('--despike', action='store_true', default=False,
+                        help='despike the timeseries') 
     g_param.add_argument('-p','--nuissance-regressors', required=False, default='27P', 
                              type=str, help='nuissance parameters to be selected, other options include 24P and 36P \
                                            acompcor and tcompcor, see Ciric etal 2007')
@@ -429,6 +430,7 @@ def build_workflow(opts, retval):
               subject_list=subject_list,
               work_dir=str(work_dir),
               task_id=opts.task_id,
+              despike=opts.despike,
               smoothing=opts.smoothing,
               params=opts.nuissance_regressors,
               cifti=opts.cifti,
