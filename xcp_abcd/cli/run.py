@@ -66,9 +66,6 @@ def get_parser():
     g_bidx.add_argument('--participant_label', '--participant-label', action='store', nargs='+',
                         help='a space delimited list of participant identifiers or a single '
                              'identifier (the sub- prefix can be removed)')
-    g_bidx.add_argument(
-        '--bids-filter-file', action='store', type=Path, metavar='PATH',
-        help='BIDS input filter using pybids ')
 
     g_bidx.add_argument('-t', '--task-id', action='store',
                         help='select a specific task to be selected for postprocessing')
@@ -94,33 +91,57 @@ def get_parser():
 
     g_param = parser.add_argument_group('parameters for postprocessing')
     g_param.add_argument(
-        '--template', action='store', default='MNI152NLin2009cAsym',
+        '--brain-template', action='store', default='MNI152NLin2009cAsym',
         help=" template to be selected from anat to be processed and/or  for normalization")
 
-    g_param.add_argument('--lowpass', action='store', default=0.1, type=float,
-                        help='low pass filter')
-
-    g_param.add_argument('--highpass', action='store', default=0.01, type=float,
-                        help='high pass filter')
-    
     g_param.add_argument('--smoothing', nargs='?', const=5, default=False,
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
-    g_param.add_argument('-r','--head_radius',default=50,
-                             type=float, help='head radius for computing FD, it is 40mm for baby')
-    g_param.add_argument('-p','--params', required=False, default='24P', 
-                             type=str, help='nuissance parameters to be selected, other options include 27P and 36P')
+    
+    g_param.add_argument('-p','--nuissance-regressors', required=False, default='27P', 
+                             type=str, help='nuissance parameters to be selected, other options include 24P and 36P \
+                                           acompcor and tcompcor, see Ciric etal 2007')
     g_param.add_argument('-c','--custom_conf', required=False,
                              type=Path, help='custom confound to be added to nuissance regressors')
+    g_param.add_argument('-d','--dummytime',default=0,
+                             type=float, help='first volume in seconds to be removed for postprocessing') 
+    
+    g_filter = parser.add_argument_group('filtering parameters and default value')
+    
+    g_filter.add_argument('--lower-bpf', action='store', default=0.009, type=float,
+                        help='lower cut-off frequency (Hz) for the butterworth bandpass filter')
+
+    g_filter.add_argument('--upper-bpf', action='store', default=0.08, type=float,
+                         help='upper cut-off frequency (Hz) for the butterworth bandpass filter')
+    
+    g_filter.add_argument('--bpf-order', action='store', default=2, type=int,
+                         help='number of filter coefficients for butterworth bandpass filter')
+    
+
+    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='fif',
+                         choices=['lp','notch'],
+                         help='type of band-stop filter to use for removing respiratory' \
+                                 'artifact from motion regressors')
+    g_filter.add_argument('--band-stop-min', default=0,type=float, 
+                 help='lower frequency (bpm) for the band-stop motion filter.')
+   
+    g_filter.add_argument(
+        '--band-stop-max',default=0,type=float,
+                help='upper frequency (bpm) for the band-stop motion filter.')
+    g_filter.add_argument(
+        '--motion-filter-order',default=4,type=int,
+                help='number of filter coeffecients for the band-stop filter')
 
     g_censor = parser.add_argument_group(' Censoring and scrubbing options')
+    g_censor.add_argument('-r','--head_radius',default=50,
+                             type=float, help='head radius for computing FD, it is 35mm for baby')
 
-    g_censor.add_argument('-f','--fd-thresh',default=0, type=float, 
-                                help='framewise displacement threshold for censoring and scrubbing')
-    g_censor.add_argument('--scrub', action='store_true', default=False,
-                        help='scrubbed the volume(s) with the FD greater than fd-thresh')
-    g_censor.add_argument('-d','--dummytime',default=0,
-                             type=float, help='first volume in seconds to be removed for postprocessing')
+    g_censor.add_argument('-f','--fd-thresh',default=0.3, type=float, 
+                                help='framewise displacement threshold for censoring')
+    
+    g_censor.add_argument('--contigvol',default=5, type=int, 
+                                help='number of contigious frames  fd thresholding')
+ 
 
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
@@ -286,7 +307,7 @@ def build_workflow(opts, retval):
     fmriprep_dir = opts.fmriprep_dir.resolve()
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
-    bids_filters = json.loads(opts.bids_filter_file.read_text()) if opts.bids_filter_file else None
+    
    
 
     retval['return_code'] = 1
@@ -397,20 +418,24 @@ def build_workflow(opts, retval):
               layout=layout,
               omp_nthreads=omp_nthreads,
               fmriprep_dir=str(fmriprep_dir),
+              lower_bpf=opts.lower_bpf,
+              upper_bpf=opts.upper_bpf,
+              contigvol=opts.contigvol,
+              bpf_order=opts.bpf_order,
+              motion_filter_order=opts.motion_filter_order,
+              motion_filter_type=opts.motion_filter_type,
+              band_stop_min=opts.band_stop_min,
+              band_stop_max=opts.band_stop_min,
               subject_list=subject_list,
               work_dir=str(work_dir),
-              bids_filters=bids_filters,
-              lowpass=opts.lowpass,
               task_id=opts.task_id,
-              highpass=opts.highpass,
               smoothing=opts.smoothing,
-              params=opts.params,
+              params=opts.nuissance_regressors,
               cifti=opts.cifti,
               output_dir=str(output_dir),
               head_radius=opts.head_radius,
-              template=opts.template,
+              brain_template=opts.brain_template,
               custom_conf=opts.custom_conf,
-              scrub=opts.scrub,
               dummytime=opts.dummytime,
               fd_thresh=opts.fd_thresh,
               name='xcpabcd_wf'

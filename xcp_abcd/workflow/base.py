@@ -26,22 +26,26 @@ from  ..utils import bid_derivative
 
 
 def init_xcpabcd_wf(layout,
-                   lowpass,
-                   highpass,
+                   lower_bpf,
+                   upper_bpf,
+                   contigvol,
+                   bpf_order,
+                   motion_filter_order,
+                   motion_filter_type,
+                   band_stop_min,
+                   band_stop_max,
                    fmriprep_dir,
                    omp_nthreads,
                    cifti,
                    task_id,
                    head_radius,
                    params,
-                   template,
+                   brain_template,
                    subject_list,
                    smoothing,
                    custom_conf,
-                   bids_filters,
                    output_dir,
                    work_dir,
-                   scrub,
                    dummytime,
                    fd_thresh,
                    name):
@@ -124,8 +128,14 @@ def init_xcpabcd_wf(layout,
     for subject_id in subject_list:
         single_bold_wf = init_single_bold_wf(
                             layout=layout,
-                            lowpass=lowpass,
-                            highpass=highpass,
+                            lower_bpf=lower_bpf,
+                            upper_bpf=upper_bpf,
+                            contigvol=contigvol,
+                            bpf_order=bpf_order,
+                            motion_filter_order=motion_filter_order,
+                            motion_filter_type=motion_filter_type,
+                            band_stop_min=band_stop_min,
+                            band_stop_max=band_stop_max,
                             fmriprep_dir=fmriprep_dir,
                             omp_nthreads=omp_nthreads,
                             subject_id=subject_id,
@@ -133,13 +143,11 @@ def init_xcpabcd_wf(layout,
                             head_radius=head_radius,
                             params=params,
                             task_id=task_id,
-                            template=template,
+                            brain_template=brain_template,
                             smoothing=smoothing,
-                            custom_conf=custom_conf,
-                            bids_filters=bids_filters,
                             output_dir=output_dir,
-                            scrub=scrub,
                             dummytime=dummytime,
+                            custom_conf=custom_conf,
                             fd_thresh=fd_thresh,
                             name="single_bold_" + subject_id + "_wf")
 
@@ -155,22 +163,26 @@ def init_xcpabcd_wf(layout,
 
 def init_single_bold_wf(
     layout,
-    lowpass,
-    highpass,
+    lower_bpf,
+    upper_bpf,
+    contigvol,
+    bpf_order,
+    motion_filter_order,
+    motion_filter_type,
+    band_stop_min,
+    band_stop_max,
     fmriprep_dir,
     omp_nthreads,
     subject_id,
     cifti,
     head_radius,
     params,
-    scrub,
     dummytime,
     fd_thresh,
     task_id,
-    template,
+    brain_template,
     smoothing,
     custom_conf,
-    bids_filters,
     output_dir,
     name
     ):
@@ -239,13 +251,12 @@ def init_single_bold_wf(
     """
     layout,subject_data,regfile = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False, 
-                                               bids_filters=bids_filters,template=template)
+                                               template=brain_template)
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf','mni_to_t1w']),
         name='inputnode')
     inputnode.inputs.custom_conf = custom_conf
-    inputnode.inputs.mni_to_t1w = regfile[0]
-    
+
     workflow = Workflow(name=name)
     
     workflow.__desc__ = """
@@ -297,15 +308,20 @@ It is released under the [CC0]\
         for cifti_file in subject_data[1]:
             ii = ii+1
             cifti_postproc_wf = init_ciftipostprocess_wf(cifti_file=cifti_file,
-                                                        lowpass=lowpass,
-                                                        highpass=highpass,
+                                                        lower_bpf=lower_bpf,
+                                                        upper_bpf=upper_bpf,
+                                                        contigvol=contigvol,
+                                                        bpf_order=bpf_order,
+                                                        motion_filter_order=motion_filter_order,
+                                                        motion_filter_type=motion_filter_type,
+                                                        band_stop_min=band_stop_min,
+                                                        band_stop_max=band_stop_max,
                                                         smoothing=smoothing,
-                                                        head_radius=head_radius,
                                                         params=params,
+                                                        head_radius=head_radius,
                                                         custom_conf=custom_conf,
                                                         omp_nthreads=omp_nthreads,
                                                         num_cifti=len(subject_data[1]),
-                                                        scrub=scrub,
                                                         dummytime=dummytime,
                                                         fd_thresh=fd_thresh,
                                                         layout=layout,
@@ -327,27 +343,33 @@ It is released under the [CC0]\
             mni_to_t1w = regfile[0]
             inputnode.inputs.mni_to_t1w = mni_to_t1w
             bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
-                                                       lowpass=lowpass,
-                                                       highpass=highpass,
+                                                       lower_bpf=lower_bpf,
+                                                       upper_bpf=upper_bpf,
+                                                       contigvol=contigvol,
+                                                       bpf_order=bpf_order,
+                                                       motion_filter_order=motion_filter_order,
+                                                       motion_filter_type=motion_filter_type,
+                                                       band_stop_min=band_stop_min,
+                                                       band_stop_max=band_stop_max,
                                                        smoothing=smoothing,
-                                                       head_radius=head_radius,
                                                        params=params,
+                                                       head_radius=head_radius,
                                                        omp_nthreads=omp_nthreads,
-                                                       template='MNI152NLin2009cAsym',
+                                                       brain_template='MNI152NLin2009cAsym',
                                                        num_bold=len(subject_data[0]),
                                                        custom_conf=custom_conf,
                                                        layout=layout,
-                                                       scrub=scrub,
                                                        dummytime=dummytime,
                                                        fd_thresh=fd_thresh,
                                                        output_dir=output_dir,
+                                                       mni_to_t1w = mni_to_t1w,
                                                        name='bold_postprocess_'+ str(ii) + '_wf')
             ds_report_about = pe.Node(
              DerivativesDataSink(base_directory=output_dir, source_file=bold_file, desc='about', datatype="figures",),
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
-            ])
+             ])
     workflow.connect([ 
         (summary,ds_report_summary,[('out_report','in_file')]),
         (about, ds_report_about, [('out_report', 'in_file')]),

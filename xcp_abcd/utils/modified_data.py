@@ -48,11 +48,23 @@ def compute_FD(confound,head_radius=50):
     
     return fdres
 
-def generate_mask(fd_res, fd_thresh):
+def generate_mask(fd_res, fd_thresh,mincontig=5):
     
     tmask = np.zeros(len(fd_res))
-    tmask[fd_res > fd_thresh] =1
-    
+    tmask[fd_res > fd_thresh] = 1
+
+    marker = 0 
+    contig = 0
+
+    for obs in range(0,len(tmask)):
+        if tmask[obs] == 0 and marker == 0:
+            marker = obs
+        elif tmask[obs] == 0:
+            contig = obs - marker
+        if contig < mincontig:
+            tmask[marker:obs] = [0]
+            marker = 0
+
     return tmask
 
 

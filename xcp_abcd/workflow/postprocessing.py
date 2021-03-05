@@ -21,12 +21,17 @@ def init_post_process_wf(
     mem_gb,
     TR,
     head_radius,
-    lowpass,
-    highpass,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
     smoothing,
     params,
+    motion_filter_type,
+    band_stop_max,
+    band_stop_min,
+    motion_filter_order,
+    contigvol,
     cifti=False,
-    scrub=False,
     dummytime=0,
     fd_thresh=0,
     name="post_process_wf",
@@ -107,20 +112,16 @@ def init_post_process_wf(
     workflow.__desc__ = """ \
 
 """
-    if dummytime > 0 and fd_thresh > 0:
+    if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 Before nuissance regression and filtering of the data, the first {nvol} were discarded,
 .Furthermore, any volumes with framewise-displacement greater than 
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
- and excluded from further analyses.
+ and excluded from nuissance regression.
 """.format(nvol=nvolx,fd_thresh=fd_thresh)
-    elif dummytime > 0 and fd_thresh ==0:
-        nvolx = str(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-Before nuissance regression and filtering, the first {nvol} were discarded.
-""".format(nvol=nvolx)
-    elif dummytime == 0 and fd_thresh > 0:
+
+    else:
         workflow.__desc__ = workflow.__desc__ + """ \
 Before nuissance regression and filtering any volumes with framewise-displacement greater than 
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
@@ -129,40 +130,44 @@ Before nuissance regression and filtering any volumes with framewise-displacemen
 
     workflow.__desc__ = workflow.__desc__ +  """ \
 The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
-from nuissance confound matrices by fmriprep. These nuissance regressors were regressed out 
+from nuissance confound matrices by fmriprep.  These nuissance regressors were regressed out 
 from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
-The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz.
+The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
-             lowpass=lowpass,highpass=highpass)
+             lowpass=upper_bpf,highpass=lower_bpf)
 
 
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold', 'bold_mask','custom_conf']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['processed_bold', 'smoothed_bold','tmask']), name='outputnode')
+        fields=['processed_bold', 'smoothed_bold','tmask','fd']), name='outputnode')
 
-    confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params),
+    confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
+                filtertype=motion_filter_type,cutoff=band_stop_max,
+                low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
+                filterorder=motion_filter_order),
                     name="ConfoundMatrix", mem_gb=mem_gb)
     
-    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=lowpass,highpass=highpass),
+    filterdx  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
+                filter_order=bpf_order),
                     name="filter_the_data", mem_gb=mem_gb)
 
     regressy = pe.Node(regress(tr=TR),
                name="regress_the_data",mem_gb=mem_gb)
-    
+
+    censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
+                       head_radius=head_radius,contig=contigvol,
+                       time_todrop=dummytime),
+                      name="censor_scrub",mem_gb=mem_gb)
+    interpolatewf = pe.Node(interpolate(TR=TR),
+                  name="interpolation",mem_gb=mem_gb)
     if dummytime > 0:
         rm_dummytime = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
                       name="remove_dummy_time",mem_gb=mem_gb)
     
-    if fd_thresh > 0:
-        censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
-                       head_radius=head_radius,
-                       time_todrop=dummytime),
-                      name="censor_scrub",mem_gb=mem_gb)
-    if not scrub:
-        interpolatewf = pe.Node(interpolate(TR=TR),
-                  name="interpolation",mem_gb=mem_gb)
+    
+    
     
     # get the confpund matrix
     workflow.connect([
@@ -177,10 +182,11 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                    ('bold_mask','mask_file'),]) 
              ])
         if inputnode.inputs.custom_conf:
-           workflow.connect([ (inputnode,rm_dummytime,[('custom_conf','custom_conf')]),])
+           workflow.connect([ (inputnode,rm_dummytime,[('custom_conf','custom_conf')]),
+                             (rm_dummytime,censor_scrubwf,[('custom_confdropTR','custom_conf')]),
+                             (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]),])
 
-        if fd_thresh > 0:
-            workflow.connect([
+        workflow.connect([
               (rm_dummytime,censor_scrubwf,[('bold_file_TR','in_file'),
                          ('fmrip_confdropTR','fmriprep_conf'),]),
               (inputnode,censor_scrubwf,[('bold','bold_file'), 
@@ -188,95 +194,48 @@ The residual were then  band pass filtered within the frequency band {highpass}-
               (censor_scrubwf,regressy,[('bold_censored','in_file'),
                             ('fmriprepconf_censored','confounds')]),
               (inputnode,regressy,[('bold_mask','mask')]),
-              (regressy, filterdx,[('res_file','in_file')]),
-               (inputnode, filterdx,[('bold_mask','mask')])
+              (inputnode, filterdx,[('bold_mask','mask')]),
+              (inputnode, interpolatewf,[('bold_mask','mask_file')]),
+              (regressy,interpolatewf,[('res_file','in_file'),]),
+               (censor_scrubwf,interpolatewf,[('tmask','tmask'),]),
+               (censor_scrubwf,outputnode,[('tmask','tmask')]),
+               (inputnode,interpolatewf,[('bold','bold_file')]),
+               (interpolatewf,filterdx,[('bold_interpolated','in_file')]),
+               (filterdx,outputnode,[('filt_file','processed_bold')]),
+               (censor_scrubwf,outputnode,[('fd_timeseries','fd')])
                 ])
-            if inputnode.inputs.custom_conf:
-                workflow.connect([
-                    (rm_dummytime,censor_scrubwf,[('custom_confdropTR','custom_conf')]),
-                     (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
-        else:
-            workflow.connect([
-              (rm_dummytime,regressy,[('bold_file_TR','in_file'),
-                         ('fmrip_confdropTR','confounds'),
-                        ('custom_confdropTR','custom_conf')]),
-              (inputnode,regressy,[('bold_mask','mask'),]),
-              (regressy, filterdx,[('res_file','in_file')]),
-               (inputnode, filterdx,[('bold_mask','mask')])])
-            
-            if inputnode.inputs.custom_conf:
-                workflow.connect([
-                    (rm_dummytime,regressy,[('custom_confdropTR','custom_conf')]),])
     else:
-        if fd_thresh > 0:
-            workflow.connect([
-              (inputnode,censor_scrubwf,[('bold','in_file'),
-                                    ('bold','bold_file'), 
-                                    ('bold_mask','mask_file'),]),
-               (confoundmat,censor_scrubwf,[('confound_file','fmriprep_conf')]),
-
-              (censor_scrubwf,regressy,[('bold_censored','in_file'),
-                            ('fmriprepconf_censored','confounds'),]),
-              (inputnode,regressy,[('bold_mask','mask')]),
-              (regressy, filterdx,[('res_file','in_file')]),
-               (inputnode, filterdx,[('bold_mask','mask')])
-                ])
-            
-            if inputnode.inputs.custom_conf:
+        if inputnode.inputs.custom_conf:
                 workflow.connect([
                     (inputnode,censor_scrubwf,[('custom_conf','custom_conf')]),
                      (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
-
-
-        else:
-            workflow.connect([
-             # connect bold confound matrix to extract confound matrix 
-             (inputnode, regressy, [('bold', 'in_file'),
-                                ('bold_mask', 'mask'),('custom_conf','custom_conf')]),
-             (confoundmat,regressy,[('confound_file','confounds')]),
-             (regressy, filterdx,[('res_file','in_file')]),
-             (inputnode, filterdx,[('bold_mask','mask')]),
-             ])
-            
-            if inputnode.inputs.custom_conf:
-                workflow.connect([
-                    (inputnode,regressy,[('custom_conf','custom_conf')]) ])
-    
-    if fd_thresh > 0 and not scrub:
-        workflow.__desc__ = workflow.__desc__ + """ \
-After nuissance regression and bandpass filtering of the BOLD data, 
-the flagge volumes were interpolated over the other filtered residual 
-volumes [@power_fd_dvars] using least squares spectral analysis based 
-on the Lomb-Scargle periodogram.
-"""
+        
+        
         workflow.connect([
-             (filterdx,interpolatewf,[('filt_file','in_file'),]),
-             (inputnode,interpolatewf,[('bold_mask','mask_file'),]),
-             (censor_scrubwf,interpolatewf,[('tmask','tmask'),]),
-             (censor_scrubwf,outputnode,[('tmask','tmask')]),
-             (inputnode,interpolatewf,[('bold','bold_file')]),
-             (interpolatewf,outputnode,[('bold_interpolated','processed_bold')]),
-        ])
-    elif fd_thresh > 0 and  scrub:
-
-        workflow.connect([
-             # connect bold confound matrix to extract confound matrix 
-            (filterdx,outputnode,[('filt_file','processed_bold')]),
-            (censor_scrubwf,outputnode,[('tmask','tmask')]),
-        ])
-    else:
-        workflow.connect([
-             # connect bold confound matrix to extract confound matrix 
-            (filterdx,outputnode,[('filt_file','processed_bold')]),
-        ])
+              (inputnode,censor_scrubwf,[('bold','in_file'),
+                                    ('bold','bold_file'), 
+                                    ('bold_mask','mask_file'),]),
+               (confoundmat,censor_scrubwf,[('confound_file','fmriprep_conf')]),    
+               (censor_scrubwf,regressy,[('bold_censored','in_file'),
+                            ('fmriprepconf_censored','confounds'),]),
+               (inputnode,regressy,[('bold_mask','mask')]),
+               (inputnode, interpolatewf,[('bold_mask','mask_file')]),
+               (regressy,interpolatewf,[('res_file','in_file'),]),
+               (censor_scrubwf,interpolatewf,[('tmask','tmask'),]),
+               (censor_scrubwf,outputnode,[('tmask','tmask')]),
+               (inputnode,interpolatewf,[('bold','bold_file')]),
+               (interpolatewf,filterdx,[('bold_interpolated','in_file')]),
+               (filterdx,outputnode,[('filt_file','processed_bold')]),
+               (inputnode, filterdx,[('bold_mask','mask')]),
+               (censor_scrubwf,outputnode,[('fd_timeseries','fd')])
+                ])
 
 
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
             workflow.__desc__ = workflow.__desc__ + """ \
-The processed bold  was smoothed with the workbench and
-using kernel size (FWHM) of {kernelsize}  mm . 
+The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """         .format(kernelsize=str(smoothing))
             lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
             rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
@@ -291,13 +250,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
 
-        if fd_thresh > 0 and not scrub:
-            workflow.connect([
-                   (interpolatewf, smooth_data,[('bold_interpolated','in_file')]),
-                   (smooth_data, outputnode,[('out_file','smoothed_bold')])    
-                   ])
-        else:
-            workflow.connect([
+        workflow.connect([
                    (filterdx, smooth_data,[('filt_file','in_file')]),
                    (smooth_data, outputnode,[('out_file','smoothed_bold')])       
                      ])

@@ -25,6 +25,7 @@ LOGGER = logging.getLogger('nipype.interface')
 class _filterdataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc="Input file : either cifti or nifti file")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
+    filter_order = traits.Int(exists=True,mandatory=True,default_value=2,desc="filter order")
     lowpass = traits.Float(exists=True,mandatory=True, 
                             default_value=0.10,desc="lowpass filter in Hz")
     highpass = traits.Float(exists=True,mandatory=True, 
@@ -67,7 +68,8 @@ class FilteringData(SimpleInterface):
                            maskfile=self.inputs.mask)
         # filter the data 
         filt_data = butter_bandpass(data=data_matrix,fs=1/self.inputs.tr,
-                      lowpass=self.inputs.lowpass,highpass=self.inputs.highpass,order=2)
+                      lowpass=self.inputs.lowpass,highpass=self.inputs.highpass,
+                      order=self.inputs.filter_order)
 
         # writeout the data
         if self.inputs.in_file.endswith('.dtseries.nii'):

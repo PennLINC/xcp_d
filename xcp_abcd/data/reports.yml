@@ -7,11 +7,11 @@ sections:
   - bids: {datatype: figures, desc: qualitycontrol,suffix: bold}
   - bids: {datatype: figures, desc: preprocessing,suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
-and then a carpet plot for the time series of each voxel/vertex’s time series of activity.
+             and then a carpet plot for the time series of each voxel/vertex’s time series of activity.
     subtitle: Carpet Plot before Postprocessing
   - bids: {datatype: figures, desc: postprocessing,suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
-and then a carpet plot for the time series of each voxel/vertex’s time series of activity..
+            and then a carpet plot for the time series of each voxel/vertex’s time series of activity..
     subtitle: Carpet Plot after postprocessing
 - name: About
   reportlets:

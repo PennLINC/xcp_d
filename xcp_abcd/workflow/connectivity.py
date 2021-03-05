@@ -23,7 +23,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 def init_fcon_ts_wf(
     mem_gb,
     t1w_to_native,
-    template,
+    mni_to_t1w,
+    brain_template,
     bold_file,
     name="fcons_ts_wf",
      ):
@@ -85,7 +86,7 @@ def init_fcon_ts_wf(
         quality control files
 
     """
-    from niworkflows.interfaces.nilearn import NILEARN_VERSION
+    #from niworkflows.interfaces.nilearn import NILEARN_VERSION
     workflow = Workflow(name=name)
     
     workflow.__desc__ = """ 
@@ -99,13 +100,14 @@ space before the timeseries extraction with *Nilearn* {nilearnver}
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold_file','clean_bold','ref_file',
-                   'mni_to_t1w']), name='inputnode')
+                   ]), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ]), 
                 name='outputnode')
 
     inputnode.inputs.bold_file=bold_file
+    
 
     # get atlases # ietration will be used later 
     sc207atlas = get_atlas_nifti(atlasname='schaefer200x7')
@@ -115,12 +117,13 @@ space before the timeseries extraction with *Nilearn* {nilearnver}
 
 
     file_base = os.path.basename(str(bold_file))
-    if template in file_base:
+
+    if brain_template in file_base:
         transformfile = 'identity'
     elif 'T1w' in file_base: 
-        transformfile = str(inputnode.inputs.mni_to_t1w)
-    elif not  template  or  'T1w' in file_base:
-        transformfile = [str(inputnode.inputs.mni_to_t1w), str(t1w_to_native)]
+        transformfile = str(mni_to_t1w)
+    else:
+        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
 
     sc207_transform = pe.Node(ApplyTransformsx(input_image=sc207atlas,num_threads=2,
                        transforms=transformfile,interpolation='NearestNeighbor',
