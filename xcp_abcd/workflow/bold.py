@@ -20,6 +20,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from  ..utils import bid_derivative
 from ..interfaces import  FunctionalSummary
 
+from nipype.interfaces.afni import Despike
+
 from  ..workflow import (init_fcon_ts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
@@ -48,6 +50,7 @@ def init_boldpostprocess_wf(
      fd_thresh,
      num_bold,
      mni_to_t1w,
+     despike,
      brain_template='MNI152NLin2009cAsym',
      layout=None,
      name='bold_postprocess_wf',
@@ -210,15 +213,24 @@ tasks and sessions), the following postprocessing was performed.
                     params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
+    if despike:
+        despike_wf = pe.Node(Despike( outputtype = 'NIFTI_GZ' ),name="despike_wf",mem_gb=mem_gbx['timeseries'])
+
+        workflow.connect([
+            (inputnode,despike_wf,[('bold_file','in_file')]),
+            (despike_wf,clean_data_wf,[('out_file','inputnode.bold')])
+            ])
+    else:
+        workflow.connect([
+            (inputnode,clean_data_wf,[('bold_file','inputnode.bold')]),
+            ])
+            
    
     workflow.connect([
-        (inputnode,clean_data_wf,[('bold_file','inputnode.bold')]),
-        
         (inputnode,clean_data_wf,[('bold_mask','inputnode.bold_mask')]),                     
 
         (inputnode,fcon_ts_wf,[
-                               ('ref_file','inputnode.ref_file'),
-                               ]),
+                               ('ref_file','inputnode.ref_file'),]),
         (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold'),]),
 
         (inputnode,alff_compute_wf,[('bold_mask','inputnode.bold_mask')]),
@@ -226,8 +238,6 @@ tasks and sessions), the following postprocessing was performed.
 
         (inputnode,reho_compute_wf,[('bold_mask','inputnode.bold_mask'),]),
         (clean_data_wf, reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
-        
-    
         (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
                                    ('outputnode.smoothed_bold','smoothed_bold'),
                                    ('outputnode.fd','fd')]),

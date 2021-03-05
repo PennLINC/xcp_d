@@ -21,7 +21,7 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
-from ..utils import(read_ndata, write_ndata)
+from ..utils import(read_ndata, write_ndata,despikedatacifti)
 
 LOGGER = logging.getLogger('nipype.interface') 
 
@@ -139,4 +139,41 @@ def demean_detrend_data(data,TR,order=1):
         predicted[j,:] = np.polyval(model, x) 
     return demeand - predicted
 
+class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True,mandatory=True, desc=" cifti  file ")
+    tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
 
+class _ciftidespikeOutputSpec(TraitedSpec):
+    des_file = File(exists=True, manadatory=True,
+                                  desc=" despike cifti")
+
+
+class ciftidespike(SimpleInterface):
+    r"""
+    regress the nuissance regressors from cifti or nifti.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> reg = ciftidespike()
+    >>> reg.inputs.in_file = datafile
+    >>> reg.inputs.tr = 3
+    >>> reg.run()
+    
+    
+    """
+
+    input_spec = _ciftidespikeInputSpec
+    output_spec = _ciftidespikeOutputSpec
+
+    def _run_interface(self, runtime):
+
+        #write the output out
+        self._results['des_file'] = fname_presuffix(
+                'ciftidepike',
+                suffix='.dtseries.nii', newpath=runtime.cwd,
+                use_ext=False,)
+        self._results['des_file'] = despikedatacifti(cifti=self.inputs.in_file,
+                                    tr=self.inputs.tr,basedir=runtime.cwd)
+        return runtime
