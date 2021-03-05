@@ -25,6 +25,7 @@ def init_post_process_wf(
     upper_bpf,
     bpf_order,
     smoothing,
+    bold_file,
     params,
     motion_filter_type,
     band_stop_max,
@@ -139,10 +140,11 @@ The residual were then  band pass filtered within the frequency band {highpass}-
 
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold', 'bold_mask','custom_conf']), name='inputnode')
+            fields=['bold','bold_file','bold_mask','custom_conf']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','tmask','fd']), name='outputnode')
-
+    
+    inputnode.inputs.bold_file = bold_file
     confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
@@ -172,7 +174,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     # get the confpund matrix
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 
-            (inputnode, confoundmat, [('bold', 'in_file'),]),
+            (inputnode, confoundmat, [('bold_file', 'in_file'),]),
          ])
     
     if dummytime > 0: 
@@ -189,7 +191,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         workflow.connect([
               (rm_dummytime,censor_scrubwf,[('bold_file_TR','in_file'),
                          ('fmrip_confdropTR','fmriprep_conf'),]),
-              (inputnode,censor_scrubwf,[('bold','bold_file'), 
+              (inputnode,censor_scrubwf,[('bold_file','bold_file'), 
                                     ('bold_mask','mask_file')]),
               (censor_scrubwf,regressy,[('bold_censored','in_file'),
                             ('fmriprepconf_censored','confounds')]),
@@ -199,7 +201,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
               (regressy,interpolatewf,[('res_file','in_file'),]),
                (censor_scrubwf,interpolatewf,[('tmask','tmask'),]),
                (censor_scrubwf,outputnode,[('tmask','tmask')]),
-               (inputnode,interpolatewf,[('bold','bold_file')]),
+               (inputnode,interpolatewf,[('bold_file','bold_file')]),
                (interpolatewf,filterdx,[('bold_interpolated','in_file')]),
                (filterdx,outputnode,[('filt_file','processed_bold')]),
                (censor_scrubwf,outputnode,[('fd_timeseries','fd')])
@@ -213,7 +215,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         
         workflow.connect([
               (inputnode,censor_scrubwf,[('bold','in_file'),
-                                    ('bold','bold_file'), 
+                                    ('bold_file','bold_file'), 
                                     ('bold_mask','mask_file'),]),
                (confoundmat,censor_scrubwf,[('confound_file','fmriprep_conf')]),    
                (censor_scrubwf,regressy,[('bold_censored','in_file'),
@@ -223,7 +225,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                (regressy,interpolatewf,[('res_file','in_file'),]),
                (censor_scrubwf,interpolatewf,[('tmask','tmask'),]),
                (censor_scrubwf,outputnode,[('tmask','tmask')]),
-               (inputnode,interpolatewf,[('bold','bold_file')]),
+               (inputnode,interpolatewf,[('bold_file','bold_file')]),
                (interpolatewf,filterdx,[('bold_interpolated','in_file')]),
                (filterdx,outputnode,[('filt_file','processed_bold')]),
                (inputnode, filterdx,[('bold_mask','mask')]),
