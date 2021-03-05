@@ -18,11 +18,12 @@ from ..utils import collect_data
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..interfaces import computeqcplot
 from  ..utils import bid_derivative
-from ..interfaces import  FunctionalSummary
+from ..interfaces import  FunctionalSummary,ciftidespike
 from  ..workflow import (init_cifti_conts_wf,
     init_post_process_wf,
     init_compute_alff_wf,
     init_surface_reho_wf)
+
 
 from .outputs import init_writederivatives_wf
 
@@ -47,6 +48,7 @@ def init_ciftipostprocess_wf(
     omp_nthreads,
     dummytime,
     fd_thresh,
+    despike,
     num_cifti,
     layout=None,
     name='cifti_process_wf'):
@@ -195,9 +197,21 @@ tasks and sessions), the following postprocessing was performed.
                     params=params,cifti=True,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
+    
+
+    if despike:
+        despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['timeseries'])
+        workflow.connect([
+             (inputnode,despike_wf,[('cifti_file','in_file'),]),
+             (despike_wf,clean_data_wf,[('des_file','in_file'),]),
+             
+        ])
+    else:
+        workflow.connect([
+        (inputnode,clean_data_wf,[('cifti_file','inputnode.bold'),]),
+        ])
 
     workflow.connect([
-            (inputnode,clean_data_wf,[('cifti_file','inputnode.bold'),]),
             (clean_data_wf, cifti_conts_wf,[('outputnode.processed_bold','inputnode.clean_cifti')]),
             (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
             (clean_data_wf,reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
