@@ -180,7 +180,7 @@ tasks and sessions), the following postprocessing was performed.
                     bpf_order=bpf_order,band_stop_max=band_stop_max,band_stop_min=band_stop_min,
                     motion_filter_order=motion_filter_order,motion_filter_type=motion_filter_type,
                     smoothing=smoothing,params=params,contigvol=contigvol,
-                    dummytime=dummytime,fd_thresh=fd_thresh,cifti=True,
+                    dummytime=dummytime,fd_thresh=fd_thresh,cifti=True,bold_file=cifti_file,
                    name='clean_data_wf')
     
     cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
@@ -203,7 +203,7 @@ tasks and sessions), the following postprocessing was performed.
         despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['timeseries'])
         workflow.connect([
              (inputnode,despike_wf,[('cifti_file','in_file'),]),
-             (despike_wf,clean_data_wf,[('des_file','in_file'),]),
+             (despike_wf,clean_data_wf,[('des_file','inputnode.bold'),]),
              
         ])
     else:
