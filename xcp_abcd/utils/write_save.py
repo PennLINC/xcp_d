@@ -153,4 +153,16 @@ def read_gii(surf_gii):
         datat = np.zeros((len(bbx.darrays[0].data), len(bbx.darrays)))
         for arr in range(len(bbx.darrays)):
             datat[:, arr] = bbx.darrays[arr].data
-    return datat 
+    return datat
+
+
+def despikedatacifti(cifti,tr,basedir):
+    """ despiking cifti """
+    fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
+    fake_cifti1_depike = str(basedir+'/fake_niftix_depike.nii.gz')
+    cifti_despike = str(basedir+ '/despike_nifti2cifti.dtseries.nii')
+    run_shell(['wb_command -cifti-convert -to-nifti ',cifti,fake_cifti1])
+    run_shell(['3dDespike -prefix',fake_cifti1_depike,fake_cifti1])
+    run_shell(['wb_command  -cifti-convert -from-nifti  ',fake_cifti1_depike,cifti, 
+                                   cifti_despike,'-reset-timepoints',str(tr),str(0)])
+    return cifti_despike

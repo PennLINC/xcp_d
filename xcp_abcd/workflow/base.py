@@ -256,8 +256,7 @@ def init_single_bold_wf(
         fields=['custom_conf','mni_to_t1w']),
         name='inputnode')
     inputnode.inputs.custom_conf = custom_conf
-    inputnode.inputs.mni_to_t1w = regfile[0]
-    
+
     workflow = Workflow(name=name)
     
     workflow.__desc__ = """
@@ -314,7 +313,7 @@ It is released under the [CC0]\
                                                         contigvol=contigvol,
                                                         bpf_order=bpf_order,
                                                         motion_filter_order=motion_filter_order,
-                                                        motion_filter_type=motion_filter_order,
+                                                        motion_filter_type=motion_filter_type,
                                                         band_stop_min=band_stop_min,
                                                         band_stop_max=band_stop_max,
                                                         smoothing=smoothing,
@@ -349,7 +348,7 @@ It is released under the [CC0]\
                                                        contigvol=contigvol,
                                                        bpf_order=bpf_order,
                                                        motion_filter_order=motion_filter_order,
-                                                       motion_filter_type=motion_filter_order,
+                                                       motion_filter_type=motion_filter_type,
                                                        band_stop_min=band_stop_min,
                                                        band_stop_max=band_stop_max,
                                                        smoothing=smoothing,
@@ -363,13 +362,14 @@ It is released under the [CC0]\
                                                        dummytime=dummytime,
                                                        fd_thresh=fd_thresh,
                                                        output_dir=output_dir,
+                                                       mni_to_t1w = mni_to_t1w,
                                                        name='bold_postprocess_'+ str(ii) + '_wf')
             ds_report_about = pe.Node(
              DerivativesDataSink(base_directory=output_dir, source_file=bold_file, desc='about', datatype="figures",),
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
-            ])
+             ])
     workflow.connect([ 
         (summary,ds_report_summary,[('out_report','in_file')]),
         (about, ds_report_about, [('out_report', 'in_file')]),

@@ -1,7 +1,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from .write_save import (read_ndata,write_ndata,read_gii,write_gii)
+from .write_save import (read_ndata,write_ndata,read_gii,write_gii,
+despikedatacifti)
 from .plot import(plot_svg,compute_dvars)
 from .confounds import load_confound_matrix
 from .fcon import (extract_timeseries_funct, 
@@ -35,5 +36,6 @@ __all__ = [
     'compute_FD',
     'drop_tseconds_volume',
     'bid_derivative',
-    'sentry_setup'
+    'sentry_setup',
+    'despikedatacifti'
 ]

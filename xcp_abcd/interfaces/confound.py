@@ -15,6 +15,7 @@ from nipype.interfaces.base import (
 )
 from ..utils import(read_ndata, write_ndata)
 import pandas as pd
+import numpy as np
 
 LOGGER = logging.getLogger('nipype.interface') 
 
@@ -26,13 +27,13 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(exit=False,mandatory=False, desc=' repetition time')
     filtertype = traits.Str(exit=False,mandatory=False,default_value=None,choices=['lp','notch'],
                                   desc=' filter type for filtering regressors, either lp or notch')
-    filterorder = traits.Str(exit=False,mandatory=False,default_value=4, desc=' motion filter order')
+    filterorder = traits.Int(exit=False,mandatory=False,default_value=4, desc=' motion filter order')
 
-    cufoff = traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' cutoff frequency for lp filter in breathe per min (bpm)')
+    cutoff = traits.Float(exit=False,mandatory=False, desc=' cutoff frequency for lp filter in breathe per min (bpm)')
      
-    low_freq= traits.Float(exit=False,mandatory=False,default_value=0.2, desc=' low frequency band for nortch filterin breathe per min (bpm)')
+    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
 
-    high_freq= traits.Float(exit=False,mandatory=False,default_value=0.4, desc=' high frequency for nortch filter in breathe per min (bpm)')
+    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')
     
     params = traits.Str(exists=True,mandatory=True, 
                             default_value='24P',desc= "nuissance confound model from Ciric etal 2017 \
@@ -69,9 +70,16 @@ class ConfoundMatrix(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        cutoff = self.inputs.cutoff/60
-        freqband = [self.inputs.low_freq,self.inputs.high_freq]/60
-    
+        if self.inputs.cutoff ==float:
+            cutoff = self.inputs.cutoff/60
+        else:
+            cutoff = np.float(0)
+        
+        if self.inputs.low_freq == float and self.inputs.high_freq == float:
+            freqband = [self.inputs.low_freq,self.inputs.high_freq]/60
+        else:
+            freqband = [0,0]
+       
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
                        filtertype=self.inputs.filtertype,

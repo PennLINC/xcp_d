@@ -114,7 +114,7 @@ def init_writederivatives_wf(
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
                 'reho_out','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc','reho_lh','reho_rh',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file']), name='inputnode')
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']), name='inputnode')
     
     cleandata_dict= { 'RepetitionTime': TR, 'Freq Band': [highpass,lowpass],'nuissance parameters': params,  
                     'dummy vols' :  np.int(dummytime/TR)}
@@ -266,6 +266,11 @@ def init_writederivatives_wf(
                  source_file=bold_file),
             name='dv_rehorh_wf', run_without_submitting=True, mem_gb=1)
         
+        dv_fd_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],desc='framewisedisplacement',extension='.tsv',
+                 source_file=bold_file),
+                 name='dv_fd_wf', run_without_submitting=True, mem_gb=1)
+        
         workflow.connect([
          (inputnode,dv_cleandata_wf,[('processed_bold','in_file')]),
          (inputnode,dv_alff_wf,[('alff_out','in_file')]),
@@ -279,7 +284,8 @@ def init_writederivatives_wf(
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
          (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]), 
          (inputnode,dv_reholh_wf,[('reho_lh','in_file')]), 
-         (inputnode,dv_rehorh_wf,[('reho_rh','in_file')]),   
+         (inputnode,dv_rehorh_wf,[('reho_rh','in_file')]), 
+         (inputnode,dv_fd_wf,[('fd','in_file')]),  
            ])
         
         if smoothing:

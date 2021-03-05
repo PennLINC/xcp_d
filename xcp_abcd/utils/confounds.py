@@ -4,7 +4,8 @@
 import numpy as np
 import nibabel as nb
 import pandas as pd
-import sys 
+import sys
+import os  
 
 def load_confound(datafile):
     """`Load confound amd json."""
@@ -16,11 +17,17 @@ def load_confound(datafile):
     confoundjs: 
         confound json file
     '''
-    confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
+    if 'space' in os.path.basename(datafile):
+        confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
                          "_desc-confounds_timeseries.tsv")
-    confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
-    confounds_json = datafile.replace("_space-" + datafile.split("space-")[1],
+        confounds_json = datafile.replace("_space-" + datafile.split("space-")[1],
                          "_desc-confounds_timeseries.json")
+    else:
+        confounds_timeseries = datafile.split('_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.tsv"
+        confounds_json = datafile.split('_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.json"
+            
+    confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
+    
     confoundjs = readjson(confounds_json)
 
     return confoundpd,confoundjs
@@ -32,7 +39,7 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd,TR,head_radius,filtertype=None,
+def load_motion(confoundspd,TR,head_radius,filtertype,
         cutoff=0.1,freqband=[0.1,0.2],order=4):
     """Load the 6 motion regressors."""
     fs = 1/TR
@@ -40,7 +47,7 @@ def load_motion(confoundspd,TR,head_radius,filtertype=None,
     rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]*head_radius
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
     datay = pd.concat([rot_2mm,trans_mm],axis=1).to_numpy()
-    if filtertype is not None:
+    if filtertype == 'lp' or filtertype == 'notch' :
         datay = motion_regression_filter(data=datay,fs=fs,
           filtertype=filtertype,cutoff=cutoff,freqband=freqband,order=order)
     return  pd.DataFrame(datay) 
@@ -96,7 +103,7 @@ def confpower(confound,order=2):
     return confound ** order
 
 
-def load_confound_matrix(datafile,TR,filtertype=None,cutoff=0.1,order=4,
+def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
                         freqband=[0.1,0.2],head_radius=50,params='24P'):
                     
     """ extract confound """
@@ -108,19 +115,19 @@ def load_confound_matrix(datafile,TR,filtertype=None,cutoff=0.1,order=4,
     '''
     confoundtsv,confoundjson = load_confound(datafile)
     if  params == '24P':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype=None,
+        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
         cutoff=0.1,freqband=[0.1,0.2],order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         confound = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
     elif  params == '27P':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype=None,
+        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
         cutoff=0.1,freqband=[0.1,0.2],order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
         confound = pd.concat([mm_dev,confpower(mm_dev),wmcsf,gs],axis=1)
     elif params == '36P':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype=None,
+        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
         cutoff=0.1,freqband=[0.1,0.2],order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         conf24p = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
@@ -128,7 +135,7 @@ def load_confound_matrix(datafile,TR,filtertype=None,cutoff=0.1,order=4,
         gwcs_dev = pd.concat([gswmcsf,derivative(gswmcsf)],axis=1) 
         confound = pd.concat([conf24p,gwcs_dev,confpower(gwcs_dev)],axis=1)
     elif params == 'acompcor':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype=None,
+        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
         cutoff=0.1,freqband=[0.1,0.2],order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)

@@ -137,7 +137,7 @@ class censorscrub(SimpleInterface):
         # get the raw confound matrix  and compute 
         from ..utils.confounds import load_confound
         conf_matrix = load_confound(datafile=self.inputs.bold_file)
-        fd_timeseries= compute_FD(confound=conf_matrix[0], 
+        fd_timeseries = compute_FD(confound=conf_matrix[0], 
                            head_radius=self.inputs.head_radius)
 
         ### read confound 
@@ -161,9 +161,10 @@ class censorscrub(SimpleInterface):
                 fmriprepx_censored = fmriprepx_conf
                 if self.inputs.custom_conf:
                     customx_censored = customx_conf
+            fd_timeseries2 = fd_timeseries
         else:
             num_vol = np.int(np.divide(self.inputs.time_todrop,self.inputs.TR))
-            fd_timeseries2=fd_timeseries
+            fd_timeseries2 = fd_timeseries
             fd_timeseries2 = fd_timeseries2[num_vol:]
             tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh,
                        mincontig=self.inputs.contig)
@@ -209,7 +210,7 @@ class censorscrub(SimpleInterface):
         
         fmriprepx_censored.to_csv(self._results['fmriprepconf_censored'],index=False,header=False)
         np.savetxt(self._results['tmask'],tmask,fmt="%d",delimiter=',')
-        np.savetxt(self._results['fd_timeseries'],fd_timeseries2,fmt="%d",delimiter=',')
+        np.savetxt(self._results['fd_timeseries'],fd_timeseries2,fmt="%1.4f",delimiter=',')
         if self.inputs.custom_conf:
             customx_censored.to_csv(self._results['customconf_censored'],index=False,header=False)   
         return runtime

@@ -141,7 +141,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold', 'bold_mask','custom_conf']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['processed_bold', 'smoothed_bold','tmask']), name='outputnode')
+        fields=['processed_bold', 'smoothed_bold','tmask','fd']), name='outputnode')
 
     confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
                 filtertype=motion_filter_type,cutoff=band_stop_max,
@@ -157,7 +157,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                name="regress_the_data",mem_gb=mem_gb)
 
     censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
-                       head_radius=head_radius,
+                       head_radius=head_radius,contig=contigvol,
                        time_todrop=dummytime),
                       name="censor_scrub",mem_gb=mem_gb)
     interpolatewf = pe.Node(interpolate(TR=TR),
@@ -201,7 +201,8 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                (censor_scrubwf,outputnode,[('tmask','tmask')]),
                (inputnode,interpolatewf,[('bold','bold_file')]),
                (interpolatewf,filterdx,[('bold_interpolated','in_file')]),
-               (filterdx,outputnode,[('filt_file','processed_bold')])
+               (filterdx,outputnode,[('filt_file','processed_bold')]),
+               (censor_scrubwf,outputnode,[('fd_timeseries','fd')])
                 ])
     else:
         if inputnode.inputs.custom_conf:
@@ -226,6 +227,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                (interpolatewf,filterdx,[('bold_interpolated','in_file')]),
                (filterdx,outputnode,[('filt_file','processed_bold')]),
                (inputnode, filterdx,[('bold_mask','mask')]),
+               (censor_scrubwf,outputnode,[('fd_timeseries','fd')])
                 ])
 
 
@@ -248,7 +250,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
 
-    workflow.connect([
+        workflow.connect([
                    (filterdx, smooth_data,[('filt_file','in_file')]),
                    (smooth_data, outputnode,[('out_file','smoothed_bold')])       
                      ])

@@ -118,15 +118,15 @@ def get_parser():
                          help='number of filter coefficients for butterworth bandpass filter')
     
 
-    g_filter.add_argument('--motion-filter-type', action='store', default=None, type=str,
+    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='fif',
                          choices=['lp','notch'],
                          help='type of band-stop filter to use for removing respiratory' \
                                  'artifact from motion regressors')
-    g_filter.add_argument('--band-stop-min', default=None,type=float, 
+    g_filter.add_argument('--band-stop-min', default=0,type=float, 
                  help='lower frequency (bpm) for the band-stop motion filter.')
    
     g_filter.add_argument(
-        '--band-stop-max',default=None,type=float,
+        '--band-stop-max',default=0,type=float,
                 help='upper frequency (bpm) for the band-stop motion filter.')
     g_filter.add_argument(
         '--motion-filter-order',default=4,type=int,
@@ -423,7 +423,7 @@ def build_workflow(opts, retval):
               contigvol=opts.contigvol,
               bpf_order=opts.bpf_order,
               motion_filter_order=opts.motion_filter_order,
-              motion_filter_type=opts.motion_filter_order,
+              motion_filter_type=opts.motion_filter_type,
               band_stop_min=opts.band_stop_min,
               band_stop_max=opts.band_stop_min,
               subject_list=subject_list,

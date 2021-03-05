@@ -164,7 +164,7 @@ tasks and sessions), the following postprocessing was performed.
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
                 'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file']),
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
     TR = layout.get_tr(cifti_file)
@@ -203,6 +203,7 @@ tasks and sessions), the following postprocessing was performed.
             (clean_data_wf,reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
         
             (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
+                                       ('outputnode.fd','fd'),
             
                                   ('outputnode.smoothed_bold','smoothed_bold') ]),
                                   
@@ -231,6 +232,7 @@ tasks and sessions), the following postprocessing was performed.
     
     workflow.connect([
         (clean_data_wf, write_derivative_wf,[('outputnode.processed_bold','inputnode.processed_bold'),
+                                    ('outputnode.fd','inputnode.fd'),
                                    ('outputnode.smoothed_bold','inputnode.smoothed_bold')]),
         (alff_compute_wf,write_derivative_wf,[('outputnode.alff_out','inputnode.alff_out'),
                                       ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),

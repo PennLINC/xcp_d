@@ -47,6 +47,7 @@ def init_boldpostprocess_wf(
      output_dir,
      fd_thresh,
      num_bold,
+     mni_to_t1w,
      brain_template='MNI152NLin2009cAsym',
      layout=None,
      name='bold_postprocess_wf',
@@ -166,11 +167,10 @@ tasks and sessions), the following postprocessing was performed.
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','mni_to_t1w','ref_file','bold_mask','cutstom_conf']),
+        fields=['bold_file','ref_file','bold_mask','cutstom_conf','mni_to_t1w']),
         name='inputnode')
     
     inputnode.inputs.bold_file = str(bold_file)
-    
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
     inputnode.inputs.custom_conf = str(custom_conf)
@@ -179,7 +179,7 @@ tasks and sessions), the following postprocessing was performed.
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
                 'reho_out','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file']),
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
     
@@ -195,9 +195,9 @@ tasks and sessions), the following postprocessing was performed.
                     name='clean_data_wf') 
     
     
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
-                 template=brain_template,name="fcons_ts_wf")
+                 brain_template=brain_template,name="fcons_ts_wf")
     
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
@@ -218,7 +218,7 @@ tasks and sessions), the following postprocessing was performed.
 
         (inputnode,fcon_ts_wf,[
                                ('ref_file','inputnode.ref_file'),
-                               ('mni_to_t1w','inputnode.mni_to_t1w') ]),
+                               ]),
         (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold'),]),
 
         (inputnode,alff_compute_wf,[('bold_mask','inputnode.bold_mask')]),
@@ -229,7 +229,8 @@ tasks and sessions), the following postprocessing was performed.
         
     
         (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
-                                   ('outputnode.smoothed_bold','smoothed_bold')]),
+                                   ('outputnode.smoothed_bold','smoothed_bold'),
+                                   ('outputnode.fd','fd')]),
         (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out'),
                                       ('outputnode.smoothed_alff','smoothed_alff')]),
         (reho_compute_wf,outputnode,[('outputnode.reho_out','reho_out')]),
@@ -254,7 +255,8 @@ tasks and sessions), the following postprocessing was performed.
     
     workflow.connect([
         (clean_data_wf, write_derivative_wf,[('outputnode.processed_bold','inputnode.processed_bold'),
-                                   ('outputnode.smoothed_bold','inputnode.smoothed_bold')]),
+                                   ('outputnode.smoothed_bold','inputnode.smoothed_bold'),
+                                   ('outputnode.fd','inputnode.fd')]),
         (alff_compute_wf,write_derivative_wf,[('outputnode.alff_out','inputnode.alff_out'),
                                       ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
         (reho_compute_wf,write_derivative_wf,[('outputnode.reho_out','inputnode.reho_out')]),
@@ -314,7 +316,7 @@ def _get_ref_mask(fname):
 
 def _t12native(fname):
     directx = os.path.dirname(fname)
-    filename = filename=os.path.basename(fname)
+    filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
     
     t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
