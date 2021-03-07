@@ -158,7 +158,7 @@ jobs:
                 pennlinc/xcp_abcd:latest \
                 /data/fmriprep \
                 /out  participant  \
-                --despike  head_radius 40 \
+                --despike  --head_radius 40 \
                 -w /scrth/wkdir_nifti
 
       - run:
@@ -237,7 +237,7 @@ jobs:
                 pennlinc/xcp_abcd:latest \
                 /data/fmriprep \
                 /out  participant  --cifti \
-                --despike  head_radius 40 \
+                --despike  --head_radius 40 \
                 -w /scrth/wkdir_cifti
 
       - run:
