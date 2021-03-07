@@ -58,36 +58,53 @@ def init_xcpabcd_wf(layout,
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            xcp_abcd.workflow.base import init_xcpabcd_wf
+            from xcp_abcd.workflow.base import init_xcpabcd_wf
             wf = init_xcpabcd_wf(
                 layout,
-                lowpass,
-                highpass,
+                lower_bpf,
+                upper_bpf,
+                contigvol,
+                despike,
+                bpf_order,
+                motion_filter_order,
+                motion_filter_type,
+                band_stop_min,
+                band_stop_max,
                 fmriprep_dir,
                 omp_nthreads,
                 cifti,
                 task_id,
                 head_radius,
                 params,
-                template,
+                brain_template,
                 subject_list,
                 smoothing,
                 custom_conf,
-                bids_filters,
                 output_dir,
                 work_dir,
-                scrub,
                 dummytime,
-                fd_thresh
+                fd_thresh,
             )
     Parameters
     ----------
-    lowpass : float
-        Low pass filter
-    highpass : float
-        High pass filter
+    lower_bpf : float
+        Lower band pass filter
+    upper_bpf : float
+        Upper band pass filter
     layout : BIDSLayout object
-        BIDS dataset layout 
+        BIDS dataset layout
+    contigvol: int 
+        number of contigious volumes
+    despike: bool
+        afni depsike
+    motion_filter_order: int 
+        respiratory motion filter order
+    motion_filter_type: str
+        respiratory motion filter type: lp or notch 
+    band_stop_min: float 
+        respiratory minimum frequency in breathe per minutes(bpm)
+    band_stop_max,: float
+        respiratory maximum frequency in breathe per minutes(bpm)
     fmriprep_dir : Path
         fmriprep output directory
     omp_nthreads : int
@@ -116,8 +133,6 @@ def init_xcpabcd_wf(layout,
         smooth the derivatives output with kernel size (fwhm)
     custom_conf: str
         path to cusrtom nuissance regressors 
-    scrub: bool 
-        remove the censored volumes 
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     
@@ -198,8 +213,14 @@ def init_single_bold_wf(
             from xcp_abcd.workflows.base import init_single_bold_wf
             wf = init_single_bold_wf(
                 layout,
-                lowpass,
-                highpass,
+                lower_bpf,
+                upper_bpf,
+                contigvol,
+                bpf_order,
+                motion_filter_order,
+                motion_filter_type,
+                band_stop_min,
+                band_stop_max,
                 fmriprep_dir,
                 omp_nthreads,
                 subject_id,
@@ -218,12 +239,24 @@ def init_single_bold_wf(
              )
     Parameters
     ----------
-    lowpass : float
-        Low pass filter
-    highpass : float
-        High pass filter
+    lower_bpf : float
+        Lower band pass filter
+    upper_bpf : float
+        Upper band pass filter
     layout : BIDSLayout object
-        BIDS dataset layout 
+        BIDS dataset layout
+    contigvol: int 
+        number of contigious volumes
+    despike: bool
+        afni depsike
+    motion_filter_order: int 
+        respiratory motion filter order
+    motion_filter_type: str
+        respiratory motion filter type: lp or notch 
+    band_stop_min: float 
+        respiratory minimum frequency in breathe per minutes(bpm)
+    band_stop_max,: float
+        respiratory maximum frequency in breathe per minutes(bpm)
     fmriprep_dir : Path
         fmriprep output directory
     omp_nthreads : int
@@ -246,8 +279,6 @@ def init_single_bold_wf(
         smooth the derivatives output with kernel size (fwhm)
     custom_conf: str
         path to cusrtom nuissance regressors 
-    scrub: bool 
-        remove the censored volumes 
     dummytime: float
         the first vols in seconds to be removed before postprocessing
 
@@ -291,7 +322,6 @@ It is released under the [CC0]\
 #### References
 
 """
-
 
     summary = pe.Node(SubjectSummary(subject_id=subject_id,bold=subject_data[0]),
                       name='summary', run_without_submitting=True)

@@ -65,14 +65,19 @@ def init_boldpostprocess_wf(
             from xcp_abcd.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
                 bold_file,
-                lowpass,
-                highpass,
+                lower_bpf,
+                upper_bpf,
+                contigvol,
+                bpf_order,
+                motion_filter_order,
+                motion_filter_type,
+                band_stop_min,
+                band_stop_max,
                 smoothing,
                 head_radius,
                 params,
                 custom_conf,
                 omp_nthreads,
-                scrub,
                 dummytime,
                 output_dir,
                 fd_thresh,
@@ -85,10 +90,24 @@ def init_boldpostprocess_wf(
     ----------
     bold_file: str
         bold file for post processing 
-    lowpass : float
-        Low pass filter
-    highpass : float
-        High pass filter
+    lower_bpf : float
+        Lower band pass filter
+    upper_bpf : float
+        Upper band pass filter
+    layout : BIDSLayout object
+        BIDS dataset layout
+    contigvol: int 
+        number of contigious volumes
+    despike: bool
+        afni depsike
+    motion_filter_order: int 
+        respiratory motion filter order
+    motion_filter_type: str
+        respiratory motion filter type: lp or notch 
+    band_stop_min: float 
+        respiratory minimum frequency in breathe per minutes(bpm)
+    band_stop_max,: float
+        respiratory maximum frequency in breathe per minutes(bpm)
     layout : BIDSLayout object
         BIDS dataset layout 
     omp_nthreads : int
@@ -105,8 +124,6 @@ def init_boldpostprocess_wf(
         smooth the derivatives output with kernel size (fwhm)
     custom_conf: str
         path to cusrtom nuissance regressors 
-    scrub: bool 
-        remove the censored volumes 
     dummytime: float
         the first vols in seconds to be removed before postprocessing
 
