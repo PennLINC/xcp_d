@@ -68,6 +68,7 @@ jobs:
       - run:
           name: Get test data from box
           command: |
+            mkdir -p /tmp/data
             cd /tmp/data
             if [[ ! -d /tmp/data/fmriprep/sub-001  ]]; then
               wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
