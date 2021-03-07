@@ -1,0 +1,354 @@
+version: 2
+jobs:
+  build:
+    environment:
+      TZ: "/usr/share/zoneinfo/America/New_York"
+      SCRATCH: "/scratch"
+    docker:
+      - image: docker:18.06.1-ce-git
+    working_directory: /tmp/src/xcp_abcd
+    steps:
+      - run:
+          name: Install parallel gzip tar and python3
+          command: |
+            apk add --no-cache pigz tar python3
+      - restore_cache:
+          keys:
+            - docker-v2-{{ .Branch }}-{{ epoch }}
+            - docker-v2-{{ .Branch }}-
+            - docker-v2-master-
+            - docker-v2-
+          paths:
+            - /tmp/cache/docker.tar.gz
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+      - run:
+          name: Build Docker image
+          no_output_timeout: 5h
+          command: |
+            # Build docker image
+            e=1 && for i in {1..5}; do
+              docker build \
+                --cache-from=pennlinc/xcp_abcd \
+                --rm=false \
+                -t pennlinc/xcp_abcd:latest . \
+              && e=0 && break || sleep 15
+            done && [ "$e" -eq "0" ]
+      - run:
+          name: Docker save
+          no_output_timeout: 40m
+          command: |
+            mkdir -p /tmp/cache
+            docker save  pennlinc/xcp_abcd:latest \
+            | pigz -8 -p 3 > /tmp/cache/docker.tar.gz
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - cache/docker.tar.gz
+
+  get_data:
+    machine:
+      image: circleci/classic:201711-01
+    working_directory: /home/circleci/data
+    steps:
+      - restore_cache:
+          keys:
+            - data-v1-{{ epoch }}
+            - data-v1-
+      - run:
+          name: Get test data from box
+          command: |
+            cd /tmp/data
+            if [[ ! -d /tmp/data/fmriprep/sub-001  ]]; then
+              wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
+                -O fmriprep.tar.xz "https://upenn.box.com/shared/static/7lbp4v87y4pbauebmniebjqup05eqnu5.xz"
+              tar xvfJ fmriprep.tar.xz 
+              rm -rf fmriprep.tar.xz 
+            else
+              echo "fmriprep data was cached"
+            fi
+            mkdir -p /tmp/wkdir
+
+
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - data
+      - save_cache:
+         key: data-v1-{{ epoch }}
+         paths:
+            - /tmp/data
+
+
+  update_cache:
+    machine:
+      image: circleci/classic:201711-01
+    working_directory: /tmp/src/xcp_abcd
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - save_cache:
+         key: docker-v2-{{ .Branch }}-{{ epoch }}
+         paths:
+           - /tmp/cache/docker.tar.gz
+
+
+  xcpabcd_nifti:
+    machine:
+      image: circleci/classic:201711-01
+    working_directory: /tmp/data
+    steps:
+      - checkout:
+          path: /home/circleci/src/xcp_abcd
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /home/circleci/src/xcp_abcd
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_nifti\]' )" != "" ]]; then
+              echo "Skipping xcpabcd_nifti build"
+              circleci step halt
+            fi
+      - attach_workspace:
+          at: /tmp
+      - restore_cache:
+          keys:
+            - xcpabcd_nifti-v2-{{ .Branch }}-{{ epoch }}
+            - xcpabcd_nifti-v2-{{ .Branch }}
+            - xcpabcd_nifti-v2-master
+            - xcpabcd_nifti-v2-
+      - run:
+          name: Setting up test
+          command: |
+            mkdir -p /tmp/xcpabcd_nifti && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_nifti  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_nifti
+
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 1h
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+      - run:
+          name: Run full xcpd_abcd on nifti 
+          no_output_timeout: 5h
+          command: |
+            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_nifti && \
+                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_nifti
+        
+            docker run --rm -it \
+                -v /tmp/data:/data/ \
+                -v /tmp/wkdir:/wkdir \
+                -v /tmp:/scrth \
+                -v /tmp/xcpabcd_nifti/:/out \
+                pennlinc/xcp_abcd:latest \
+                /data/fmriprep \
+                /out  participant  \
+                --despike  head_radius 40 \
+                -w /scrth/wkdir_nifti
+
+      - run:
+          name: Checking outputs of xcpabcd_nifti
+          command: |
+            qcfile=$(ls -f /tmp/xcpabcd_nifti/xcp_abcd/sub-001/ses-1/func/sub-001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-qc_bold.tsv)
+            if [[ -f ${qcfile} ]]; then 
+            echo "processing complete"
+               exit 0
+            else 
+            echo "there is error "
+                exit 1
+            fi
+
+      - run:
+          name: Clean working directory
+          when: always
+          command: |
+            sudo chown $(id -un):$(id -gn) -R /tmp/wkdir_nifti
+            rm -rf /tmp/wkdir_nifti
+
+      - store_artifacts:
+          path: /tmp/xcpabcd_nifti
+          
+  xcpabcd_cifti:
+    machine:
+      image: circleci/classic:201711-01
+    working_directory: /tmp/data
+    steps:
+      - checkout:
+          path: /home/circleci/src/xcp_abcd
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /home/circleci/src/xcp_abcd
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_cifti\]' )" != "" ]]; then
+              echo "Skipping xcpabcd_cifti build"
+              circleci step halt
+            fi
+      - attach_workspace:
+          at: /tmp
+      - restore_cache:
+          keys:
+            - xcpabcd_cifti-v2-{{ .Branch }}-{{ epoch }}
+            - xcpabcd_cifti-v2-{{ .Branch }}
+            - xcpabcd_cifti-v2-master
+            - xcpabcd_cifti-v2-
+      - run:
+          name: Setting up test
+          command: |
+            mkdir -p /tmp/xcpabcd_cifti && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_cifti  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_cifti
+
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 1h
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+      - run:
+          name: Run full xcpd_abcd on cifti 
+          no_output_timeout: 5h
+          command: |
+            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_cifti && \
+                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_cifti
+        
+            docker run --rm -it \
+                -v /tmp/data:/data/ \
+                -v /tmp/wkdir:/wkdir \
+                -v /tmp:/scrth \
+                -v /tmp/xcpabcd_cifti/:/out \
+                pennlinc/xcp_abcd:latest \
+                /data/fmriprep \
+                /out  participant  --cifti \
+                --despike  head_radius 40 \
+                -w /scrth/wkdir_cifti
+
+      - run:
+          name: Checking outputs of xcpabcd_cifti
+          command: |
+            qcfile=$(ls -f /tmp/xcpabcd_cifti/xcp_abcd/sub-001/ses-1/func/sub-001_ses-1_task-rest_run-1_space-fsLR_desc-qc_bold.tsv)
+            if [[ -f ${qcfile} ]]; then 
+            echo "processing complete"
+               exit 0
+            else 
+            echo "there is error "
+                exit 1
+            fi
+
+      - run:
+          name: Clean working directory
+          when: always
+          command: |
+            sudo chown $(id -un):$(id -gn) -R /tmp/wkdir_cifti
+            rm -rf /tmp/wkdir_cifti
+
+      - store_artifacts:
+          path: /tmp/xcpabcd_cifti
+  
+  deploy_docker:
+    machine:
+      image: circleci/classic:201711-01
+    working_directory: /tmp/src/xcp_abcd
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 2h
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+      - run:
+          name: Deploy to Docker Hub
+          no_output_timeout: 1h
+          command: |
+            if [[ -n "$DOCKER_PASS" ]]; then
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker push pennlinc/xcp_abcd:latest
+            fi
+
+
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+
+      - get_data:
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - update_cache:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - xcpabcd_cifti:
+          requires:
+            - get_data
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+              
+      - xcpabcd_nifti:
+          requires:
+            - get_data
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - deploy_docker:
+          requires:
+            - build
+            - xcpabcd_cifti
+            - xcpabcd_nifti
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /.*/
