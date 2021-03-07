@@ -47,46 +47,66 @@ def init_post_process_wf(
             from xcp_abcd.workflows import init_post_process_wf
             wf = init_init_post_process_wf_wf(
                 mem_gb,
-                lowpass,
-                highpass,
-                smoothing,
-                params,
-                omp_nthreads,
-                scrub,
-                cifti,
-                dummytime,
-                output_dir,
-                fd_thresh,
                 TR,
+                head_radius,
+                lower_bpf,
+                upper_bpf,
+                bpf_order,
+                smoothing,
+                bold_file,
+                params,
+                motion_filter_type,
+                band_stop_max,
+                band_stop_min,
+                motion_filter_order,
+                contigvol,
+                cifti=False,
+                dummytime,
+                fd_thresh,
                 name="post_process_wf",
-             )
+                )
     Parameters
     ----------
-    
-    mem_gb: float
-        memory size in gigabytes
-    lowpass: float
-        low pass filter
-    highpass: float
-        high pass filter
-    smoothing: float
-        smooth kernel size in fwhm 
-    params: str
-        parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
-    scrub: bool
-        scrubbing 
-    cifti: bool
-        if cifti or bold 
-    dummytime: float
-        volume(s) removed before postprocessing in seconds
     TR: float
-        repetition time in seconds
-    fd_thresh:
-        threshold for FD for censoring/scrubbing
-    smoothing:
-        smoothing kernel size 
+         Repetition time in second
+    bold_file: str
+        bold file for post processing 
+    lower_bpf : float
+        Lower band pass filter
+    upper_bpf : float
+        Upper band pass filter
+    layout : BIDSLayout object
+        BIDS dataset layout
+    contigvol: int 
+        number of contigious volumes
+    despike: bool
+        afni depsike
+    motion_filter_order: int 
+        respiratory motion filter order
+    motion_filter_type: str
+        respiratory motion filter type: lp or notch 
+    band_stop_min: float 
+        respiratory minimum frequency in breathe per minutes(bpm)
+    band_stop_max,: float
+        respiratory maximum frequency in breathe per minutes(bpm)
+    layout : BIDSLayout object
+        BIDS dataset layout 
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
+    output_dir : str
+        Directory in which to save xcp_abcd output
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    head_radius : float 
+        radius of the head for FD computation
+    params: str
+        nuissance regressors to be selected from fmriprep regressors
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
+    custom_conf: str
+        path to cusrtom nuissance regressors 
+    dummytime: float
+        the first vols in seconds to be removed before postprocessing
     
     Inputs
     ------

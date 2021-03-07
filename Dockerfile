@@ -64,7 +64,7 @@ RUN apt-get install -y nodejs
 RUN npm install -g svgo
 
 # Installing bids-validator
-RUN npm install -g bids-validator@1.4.0
+RUN npm install -g bids-validator@1.6.2
 
 # Installing and setting up miniconda
 RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh && \
