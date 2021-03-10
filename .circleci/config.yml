@@ -239,6 +239,7 @@ jobs:
                 /out  participant  --cifti \
                 --despike  --head_radius 40 \
                 -w /scrth/wkdir_cifti
+  
 
       - run:
           name: Checking outputs of xcpabcd_cifti
