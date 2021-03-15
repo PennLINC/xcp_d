@@ -218,7 +218,7 @@ def init_writederivatives_wf(
             name='dv_qcfile_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc207ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
-                 dismiss_entities=['desc'],atlas='Schaefer207',check_hdr=False,
+                 dismiss_entities=['desc'],atlas='Schaefer207',check_hdr=False,density='91k',
                  extension='.ptseries.nii',source_file=bold_file),
             name='dv_sc207ts_wf', run_without_submitting=True, mem_gb=1)
 
