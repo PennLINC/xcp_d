@@ -10,5 +10,5 @@ open-source software distribution.
 About
 ------
 
-.. image:: docs/_static/image.png
+.. image:: https://raw.githubusercontent.com/pennlinc/xcp_abcd/main/docs/_static/image.png
 
