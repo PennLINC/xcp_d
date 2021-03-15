@@ -1,5 +1,5 @@
 .. include:: links.rst
-.. include:: ../README.md
+.. include:: ../README.rst
 .. include:: license.rst
 
 
