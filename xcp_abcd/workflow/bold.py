@@ -179,7 +179,7 @@ def init_boldpostprocess_wf(
 
     workflow.__desc__ = """
 For each of the {num_bold} BOLD runs found per subject (across all
-tasks and sessions), the following postprocessing was performed.
+tasks and sessions), the following postprocessing was performed:
 """.format(num_bold=num_bold)
 
    

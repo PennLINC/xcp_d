@@ -295,7 +295,7 @@ def init_single_bold_wf(
     
     workflow.__desc__ = """
 #### Postprocessing of fMRIPrep outputs
-Results included in this manuscript come from postprocessing offMRIPrep 
+Results included in this manuscript come from postprocessing of fMRIPrep 
 outputs [@fmriprep1;@fmriprep2]. The postprocessing was  performed using 
 *xcp_abcd* [@mitigating_2018;@satterthwaite_2013;@benchmarkp] which is based 
 on *Nipype* {nipype_ver} [@nipype1; @nipype2].
@@ -307,8 +307,8 @@ on *Nipype* {nipype_ver} [@nipype1; @nipype2].
 
 
 Many internal operations of *xcp_abcd* use *Nibabel* [@nilearn], *numpy* 
-[@harris2020array] and  *scipy* [@2020SciPy-NMeth], mostly within the 
-functional post-processing workflow.For more details of the pipeline, 
+[@harris2020array] and  *scipy* [@2020SciPy-NMeth], for majority of the functions.
+For more details of the pipeline, 
 see  the *xcp_abcd* website (coming).
 
 

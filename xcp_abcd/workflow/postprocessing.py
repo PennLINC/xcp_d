@@ -151,7 +151,7 @@ Before nuissance regression and filtering any volumes with framewise-displacemen
 
     workflow.__desc__ = workflow.__desc__ +  """ \
 The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
-from nuissance confound matrices by fmriprep.  These nuissance regressors were regressed out 
+from nuissance confound matrices of fMRIPrep output.  These nuissance regressors were regressed out 
 from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
 The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,

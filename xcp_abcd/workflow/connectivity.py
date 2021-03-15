@@ -94,8 +94,8 @@ After the nuissance regression and  bandpass filtering of the bold data,
 functional timeseries were extracted. The Shaefer [@Schaefer_2017], Glasser 
 [@Glasser_2016] and Gordon [@Gordon_2014] atlases were resampled to bold 
 space before the timeseries extraction with *Nilearn* {nilearnver} 
-*NiftiLabelsMasker* [@nilearn]. Corresponding functional connectivity were computed.
-
+*NiftiLabelsMasker* [@nilearn]. Corresponding functional connectivity were for all the atlasess 
+were computed.
  """.format(nilearnver=nl.__version__)
 
     inputnode = pe.Node(niu.IdentityInterface(

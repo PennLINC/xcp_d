@@ -171,7 +171,7 @@ def init_ciftipostprocess_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 For each of the {num_cifti} CIFTI runs found per subject (across all
-tasks and sessions), the following postprocessing was performed.
+tasks and sessions), the following postprocessing was performed:
 """.format(num_cifti=num_cifti)
 
    
