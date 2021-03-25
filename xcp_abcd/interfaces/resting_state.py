@@ -130,6 +130,10 @@ class computealff(SimpleInterface):
                 filename=self._results['alff_out'],mask=self.inputs.mask)
 
         return runtime
+    
+
+    class restingplot():
+        'xcp_abcd/xcp_abcd/data/transform/brainsprite_template.html'
 
 
 
