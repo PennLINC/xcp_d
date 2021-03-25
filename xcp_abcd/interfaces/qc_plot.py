@@ -18,12 +18,15 @@ from nipype.interfaces.base import (
 from ..utils import(read_ndata, write_ndata, compute_FD,compute_dvars)
 from ..utils import plot_svg
 import pandas as pd
+import tempfile
+from niworkflows.viz.plots import fMRIPlot
 LOGGER = logging.getLogger('nipype.interface') 
 
 
 class _qcInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,mandatory=True, desc=" raw  bold or cifit file from fmirprep")
     mask_file = File(exists=False,mandatory=False, desc=" mask file")
+    seg_file = File(exists=False,mandatory=False, desc=" seg file for nifti")
     cleaned_file = File(exists=True,mandatory=True, desc=" residual and filter file")
     tmask = File(exists=False,mandatory=False, desc="temporal mask")
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
@@ -97,9 +100,23 @@ class computeqcplot(SimpleInterface):
                                                    newpath=runtime.cwd, use_ext=False) 
         datax = read_ndata(datafile=self.inputs.bold_file,
                                   maskfile=self.inputs.mask_file)[:,num_vold:]
+        
+        #make tempfile for 
+        if self.inputs.bold_file.endswith('nii.gz'):
+            filex=tempfile.mkdtemp()+'/filex.nii.gz'
+        else:
+            filex=tempfile.mkdtemp()+'/filex.dtseries.nii'
+        write_ndata(data_matrix=datax,template=self.inputs.bold_file,
+                          mask=self.inputs.mask_file,filename=filex,tr=self.inputs.TR)
+        
+        conf = pd.DataFrame({ 'FD': fd_timeseries, 'DVARS': dvars_bf})
 
-        plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,tr=self.inputs.TR,
-                        filename=self._results['raw_qcplot'])
+        fig = fMRIPlot(func_file=filex,seg_file=self.inputs.seg_file,data=conf,
+                    mask_file=self.inputs.mask_file).plot()
+        fig.savefig(self._results['raw_qcplot'], bbox_inches='tight')
+
+        #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,tr=self.inputs.TR,
+                        #filename=self._results['raw_qcplot'])
 
         if nvolcensored > 0 :
             mean_fd = np.mean(fd_timeseries[tmask==0])
@@ -115,8 +132,21 @@ class computeqcplot(SimpleInterface):
             datax = read_ndata(datafile=self.inputs.cleaned_file,
                                   maskfile=self.inputs.mask_file)
             dataxx = datax[:,tmask==0]
-            plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
-                             filename=self._results['clean_qcplot'])
+            confy = pd.DataFrame({ 'FD': fd_timeseries[tmask==0], 
+                         'DVARS': dvars_af[tmask==0]})
+            if self.inputs.bold_file.endswith('nii.gz'):
+                filey = tempfile.mkdtemp()+'/filey.nii.gz'
+            else:
+                filey = tempfile.mkdtemp()+'/filey.dtseries.nii'
+            write_ndata(data_matrix=dataxx,template=self.inputs.bold_file,
+                          mask=self.inputs.mask_file,filename=filey,tr=self.inputs.TR)
+            
+            figy = fMRIPlot(func_file=filey,seg_file=self.inputs.seg_file,data=confy,
+                    mask_file=self.inputs.mask_file).plot()
+            figy.savefig(self._results['clean_qcplot'], bbox_inches='tight')
+            
+            #plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
+                             #filename=self._results['clean_qcplot'])
         else:
             mean_fd = np.mean(fd_timeseries)
             mean_rms = np.mean (rmsd)
@@ -129,8 +159,15 @@ class computeqcplot(SimpleInterface):
             rms_max = np.max(rmsd)
             datax = read_ndata(datafile=self.inputs.cleaned_file,
                                   maskfile=self.inputs.mask_file)
-            plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
-                             filename=self._results['clean_qcplot'])
+            confz = pd.DataFrame({ 'FD': fd_timeseries, 
+                         'DVARS': dvars_af})
+            
+            figz = fMRIPlot(func_file=self.inputs.bold_file,seg_file=self.inputs.seg_file,
+                    data=confz, mask_file=self.inputs.mask_file).plot()
+            figz.savefig(self._results['clean_qcplot'], bbox_inches='tight')
+            
+            #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
+                             #filename=self._results['clean_qcplot'])
 
 
         
