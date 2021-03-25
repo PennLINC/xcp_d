@@ -16,6 +16,10 @@ from nipype.interfaces.base import (
 )
 LOGGER = logging.getLogger('nipype.interface')
 from ..utils import extract_timeseries_funct
+import matplotlib.pyplot as plt
+from nilearn.plotting import plot_matrix
+import nibabel as nb
+import numpy as np
 
 # nifti functional connectivity
 
@@ -135,3 +139,69 @@ def get_atlas_cifti(atlasname):
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
+
+class _connectplotInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True,mandatory=True, desc="bold file")
+    sc207_timeseries = File(exists=True,mandatory=True, desc="sc207 atlas")
+    sc407_timeseries = File(exists=True,mandatory=True, desc="sc407 atlas")
+    gd333_timeseries = File(exists=True,mandatory=True, desc="gordon atlas")
+    gs360_timeseries = File(exists=True,mandatory=True, desc="glasser atlas")
+    
+class _connectplotOutputSpec(TraitedSpec):
+    connectplot = File(exists=True, manadatory=True,)
+
+
+class connectplot(SimpleInterface):
+    r"""
+    extract timeseries and compute connectvtioy matrices.
+    .. testsetup::
+    >>> from tempfile import TemporaryDirectory
+    >>> tmpdir = TemporaryDirectory()
+    >>> os.chdir(tmpdir.name)
+    .. doctest::
+    >>> conect = connectplot()
+    >>> conect.inputs.in_file = bold_file
+    >>> conf.inputs.sc207_timeseries = sc207_timeseries
+    >>> conf.inputs.sc407_timeseries = sc407_timeseries
+    >>> conf.inputs.gd333_timeseries = gd333_timeseries
+    >>> conf.inputs.gs360_timeseries = gs360_timeseries
+    >>> conf.run()
+    .. testcleanup::
+    >>> tmpdir.cleanup()
+    
+    """
+    input_spec = _connectplotInputSpec
+    output_spec = _connectplotOutputSpec
+    
+    def _run_interface(self, runtime):
+        
+        if self.inputs.in_file.endswith('dtseries.nii'):
+            sc207 = np.corrcoef(nb.load(self.inputs.sc207_timeseries).get_fdata().T)
+            sc407 = np.corrcoef(nb.load(self.inputs.sc407_timeseries).get_fdata().T)
+            gd333 = np.corrcoef(nb.load(self.inputs.gd333_timeseries).get_fdata().T)
+            gs360 = np.corrcoef(nb.load(self.inputs.gs360_timeseries).get_fdata().T)
+        else:
+            sc207 = np.corrcoef(np.loadtxt(self.inputs.sc207_timeseries,delimiter=',').T)
+            sc407 = np.corrcoef(np.loadtxt(self.inputs.sc407_timeseries,delimiter=',').T)
+            gd333 = np.corrcoef(np.loadtxt(self.inputs.gd333_timeseries,delimiter=',').T)
+            gs360 = np.corrcoef(np.loadtxt(self.inputs.gs360_timeseries,delimiter=',').T)
+        
+        fig, ax1 = plt.subplots(2,2)
+        fig.set_size_inches(20, 20)
+        font = {'weight': 'normal','size': 20}
+        plot_matrix(mat=sc207, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,0])
+        ax1[0,0].set_title('schaefer 200  7 networks', fontdict=font)
+        plot_matrix(mat=sc407, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,1])
+        ax1[0,1].set_title('schaefer 400  7 networks', fontdict=font)
+        plot_matrix(mat=gd333, colorbar=False,vmax=1, vmin=-1, axes=ax1[1,0])
+        ax1[1,0].set_title('Gordon 333', fontdict=font)
+        plot_matrix(mat=gs360, colorbar=False,vmax=1, vmin=-1, axes=ax1[1,1]) 
+        ax1[1,1].set_title('Glasser 360', fontdict=font)                           
+        
+        self._results['connectplot'] = fname_presuffix('connectivityplot', suffix='_matrixplot.svg',
+                                                   newpath=runtime.cwd, use_ext=False) 
+
+        fig.savefig( self._results['connectplot'],
+                          bbox_inches="tight", pad_inches=None)
+     
+        return runtime
