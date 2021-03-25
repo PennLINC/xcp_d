@@ -162,15 +162,13 @@ class computeqcplot(SimpleInterface):
             confz = pd.DataFrame({ 'FD': fd_timeseries, 
                          'DVARS': dvars_af})
             
-            figz = fMRIPlot(func_file=self.inputs.bold_file,seg_file=self.inputs.seg_file,
+            figz = fMRIPlot(func_file=self.inputs.cleaned_file,seg_file=self.inputs.seg_file,
                     data=confz, mask_file=self.inputs.mask_file).plot()
             figz.savefig(self._results['clean_qcplot'], bbox_inches='tight')
-            
+
             #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              #filename=self._results['clean_qcplot'])
 
-
-        
         qc_pf = {'FD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
                   'DVARS_PB':[mdvars_bf], 'DVARS_CB':[mdvars_af],'nVolCensored':[nvolcensored],
                   'dummyvol':[num_vold],'FD_DVARS_CorrInit':[motionDVCorrInit],
