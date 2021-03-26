@@ -19,6 +19,8 @@ from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from  ..utils import bid_derivative
 from ..interfaces import  FunctionalSummary
+from templateflow.api import get as get_template
+from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 
 from nipype.interfaces.afni import Despike
 
@@ -273,10 +275,30 @@ tasks and sessions), the following postprocessing was performed:
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
                        head_radius=head_radius), name="qc_report")
+    
+    file_base = os.path.basename(str(bold_file))
+
+    if brain_template in file_base:
+        transformfile = 'identity'
+    elif 'T1w' in file_base: 
+        transformfile = str(mni_to_t1w)
+    else:
+        transformfile = [str(mni_to_t1w), str(_t12native(bold_file))]
+
+    resample_parc = pe.Node(ApplyTransforms(
+        dimension=3,
+        input_image=str(get_template(
+            'MNI152NLin2009cAsym', resolution=1, desc='carpet',
+            suffix='dseg', extension=['.nii', '.nii.gz'])),
+        interpolation='MultiLabel',transforms=transformfile),
+        name='resample_parc')
+    
     workflow.connect([
         (inputnode,qcreport,[('bold_mask','mask_file')]),
         (clean_data_wf,qcreport,[('outputnode.processed_bold','cleaned_file'),
                             ('outputnode.tmask','tmask')]),
+        (inputnode,resample_parc,[('ref_file','reference_image')]),
+        (resample_parc,qcreport,[('output_image','seg_file')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
     
