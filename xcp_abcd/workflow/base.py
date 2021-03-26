@@ -330,9 +330,7 @@ It is released under the [CC0]\
                                  command=' '.join(sys.argv)),
                     name='about', run_without_submitting=True)
 
-    ds_report_summary = pe.Node(
-        DerivativesDataSink(base_directory=output_dir,source_file=subject_data[0][0],desc='summary', datatype="figures"),
-                  name='ds_report_summary', run_without_submitting=True)
+    
 
     
 
@@ -364,6 +362,9 @@ It is released under the [CC0]\
             ds_report_about = pe.Node(
              DerivativesDataSink(base_directory=output_dir, source_file=cifti_file, desc='about', datatype="figures",),
               name='ds_report_about', run_without_submitting=True)
+            ds_report_summary = pe.Node(
+             DerivativesDataSink(base_directory=output_dir,source_file=cifti_file,desc='summary', datatype="figures"),
+                  name='ds_report_summary', run_without_submitting=True)
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
             
@@ -402,6 +403,9 @@ It is released under the [CC0]\
             ds_report_about = pe.Node(
              DerivativesDataSink(base_directory=output_dir, source_file=bold_file, desc='about', datatype="figures",),
               name='ds_report_about', run_without_submitting=True)
+            ds_report_summary = pe.Node(
+             DerivativesDataSink(base_directory=output_dir,source_file=bold_file,desc='summary', datatype="figures"),
+                  name='ds_report_summary', run_without_submitting=True)
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
              ])
