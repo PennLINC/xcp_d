@@ -15,6 +15,10 @@ from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 LOGGER = logging.getLogger('nipype.interface') 
 import os 
+import nibabel as nb 
+from brainsprite import viewer_substitute
+import tempfile
+from pkg_resources import resource_filename as pkgrf
 
 # compute 2D reho
 class _surfaceRehoInputSpec(BaseInterfaceInputSpec):
@@ -130,11 +134,76 @@ class computealff(SimpleInterface):
                 filename=self._results['alff_out'],mask=self.inputs.mask)
 
         return runtime
+
+
+
+
+
+class _brainplotInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True,mandatory=True, desc="alff or reho")
+    mask_file = File(exists=True,mandatory=True, desc="mask file ")
+
+
+class _brainplotOutputSpec(TraitedSpec):
+    nifti_html = File(exists=True, manadatory=True,
+                                  desc="zscore html")
+
+class brainplot(SimpleInterface):
+    r"""
+    coming
+
+    """
+    input_spec = _brainplotInputSpec
+    output_spec = _brainplotOutputSpec
+
+    def _run_interface(self, runtime):
+        
+        # convert nifti to zscore
+        tempnifti = tempfile.mkdtemp() + '/zscore.nii.gz'
+        
+        tempnifti = zscore_nifti(img=self.inputs.in_file,mask=self.inputs.mask_file,
+                    outputname=tempnifti)
+                    
+        temptlatehtml = pkgrf('xcp_abcd','data/transform/brainsprite_template.html')
+
+        bsprite = viewer_substitute(threshold=0, opacity=0.5, title="zcore",
+                         cut_coords=[0,0,0])
+
+        bsprite.fit(tempnifti, bg_img=None)
+
+        import tempita
+        template = tempita.Template.from_filename(temptlatehtml, encoding="utf-8")
+        viewer = bsprite.transform(template, javascript='js', html='html', library='bsprite')
+        self._results['nifti_html'] = fname_presuffix(
+                'zscore_nifti_',
+                suffix='stat.html', newpath=runtime.cwd,
+                use_ext=False,)
+
+        viewer.save_as_html(self._results['nifti_html'])
+        return runtime
+
+
+def zscore_nifti(img,outputname,mask=None):
+    """
+    image and mask must be in the same space
+
+    """
+
+    img = nb.load(img)
     
+    if mask:
+        maskdata = nb.load(mask).get_fdata()
+        imgdata  = img.get_fdata()
+        meandata = imgdata[maskdata>0].mean()
+        stddata  = imgdata[maskdata>0].std()
+    else:
+        imgdata  = img.get_fdata()
+        meandata = imgdata[imgdata>0].mean()
+        stddata  = imgdata[imgdata>0].std()
+     
+    zscore_fdata = (imgdata - meandata)/stddata 
 
-    class restingplot():
-        'xcp_abcd/xcp_abcd/data/transform/brainsprite_template.html'
-
-
-
+    dataout = nb.Nifti1Image(zscore_fdata,affine=img.affine,header=img.header)
+    dataout.to_filename(outputname)
+    return outputname
 

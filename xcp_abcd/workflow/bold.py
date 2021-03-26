@@ -334,6 +334,10 @@ tasks and sessions), the following postprocessing was performed:
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='postprocessing', datatype="figures"),
                   name='ds_report_postprocessing', run_without_submitting=True)
     
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='connectvityplot', datatype="figures"),
+                  name='ds_report_connectivity', run_without_submitting=True)
+    
     workflow.connect([
         (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
         (qcreport,ds_report_postprocessing ,[('clean_qcplot','in_file')]), 

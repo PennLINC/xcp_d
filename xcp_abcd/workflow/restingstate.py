@@ -8,7 +8,7 @@ post processing the bold/cifti
 """
 import numpy as np
 from nipype.pipeline import engine as pe
-from ..interfaces import (computealff, surfaceReho)
+from ..interfaces import (computealff, surfaceReho,brainplot)
 from nipype.interfaces import utility as niu
 from ..utils import CiftiSeparateMetric
 from nipype.interfaces.workbench import CiftiSmooth
