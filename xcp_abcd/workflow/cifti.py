@@ -294,14 +294,19 @@ tasks and sessions), the following postprocessing was performed:
     ds_report_postprocessing = pe.Node(
         DerivativesDataSink(base_directory=output_dir,source_file=cifti_file, desc='postprocessing', datatype="figures"),
                   name='ds_report_postprocessing', run_without_submitting=True)
+
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=cifti_file, desc='connectvityplot', datatype="figures"),
+                  name='ds_report_connectivity', run_without_submitting=True)
     
     workflow.connect([
         (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
         (qcreport,ds_report_postprocessing ,[('clean_qcplot','in_file')]), 
         (qcreport,functional_qc,[('qc_file','qc_file')]),
-        (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')])
-    ])
-    
+        (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')]),
+        (cifti_conts_wf,ds_report_connectivity,[('outputnode.connectplot',"in_file")]),
+
+     ])
     return workflow
 
 
