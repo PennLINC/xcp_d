@@ -106,7 +106,8 @@ Hz and the averaged square root of power spectral were obtained  at each voxel a
             ])
     if not cifti:
         workflow.connect([
-            (alff_compt,brain_plot,[('alff_out','in_file'),('bold_mask','mask_file')]),
+            (alff_compt,brain_plot,[('alff_out','in_file')]),
+            (inputnode,brain_plot,[('bold_mask','mask_file')]),
             (brain_plot,outputnode,[('nifti_html','alffhtml')]),
         ])
 
