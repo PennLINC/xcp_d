@@ -3,7 +3,7 @@ from .filtering import FilteringData
 from .regression import regress,ciftidespike
 from .connectivity import (nifticonnect, ApplyTransformsx, 
                       get_atlas_cifti, get_atlas_nifti,connectplot)
-from .resting_state import computealff, surfaceReho
+from .resting_state import computealff, surfaceReho,brainplot
 
 from .prepostcleaning import interpolate,censorscrub,removeTR
 from .qc_plot import computeqcplot
@@ -29,5 +29,6 @@ __all__ = [
     'FunctionalSummary',
     'generate_reports',
     'ciftidespike',
-    'connectplot'
+    'connectplot',
+    'brainplot'
 ]

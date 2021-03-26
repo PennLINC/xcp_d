@@ -8,7 +8,7 @@ post processing the bold/cifti
 """
 import numpy as np
 from nipype.pipeline import engine as pe
-from ..interfaces import (computealff, surfaceReho)
+from ..interfaces import (computealff, surfaceReho,brainplot)
 from nipype.interfaces import utility as niu
 from ..utils import CiftiSeparateMetric
 from nipype.interfaces.workbench import CiftiSmooth
@@ -92,16 +92,25 @@ Hz and the averaged square root of power spectral were obtained  at each voxel a
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold', 'bold_mask']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['alff_out','smoothed_alff']), name='outputnode')
+        fields=['alff_out','smoothed_alff','alffhtml']), name='outputnode')
 
     alff_compt = pe.Node(computealff(tr=TR,lowpass=lowpass,highpass=highpass),
                       mem_gb=mem_gb,name='alff_compt')
+    brain_plot = pe.Node(brainplot(), mem_gb=mem_gb,name='brain_plot')
     
     workflow.connect([ 
             (inputnode,alff_compt,[('clean_bold','in_file'),
                            ('bold_mask','mask')]),
             (alff_compt,outputnode,[('alff_out','alff_out')]),
+            
             ])
+    if not cifti:
+        workflow.connect([
+            (alff_compt,brain_plot,[('alff_out','in_file')]),
+            (inputnode,brain_plot,[('bold_mask','mask_file')]),
+            (brain_plot,outputnode,[('nifti_html','alffhtml')]),
+        ])
+
     
     if smoothing:
         if not cifti:
@@ -254,14 +263,18 @@ AFNI *3dReHo* [@afni] with vertices neighborhood.
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold','bold_mask']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['reho_out']), name='outputnode')
+        fields=['reho_out','rehohtml']), name='outputnode')
 
     compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb)
-
+    brain_plot = pe.Node(brainplot(), mem_gb=mem_gb,name='brain_plot')
     workflow.connect([
          (inputnode, compute_reho,[('clean_bold','in_file'),
                          ('bold_mask','mask_file')]),
          (compute_reho,outputnode,[('out_file','reho_out')]),
+         (compute_reho,brain_plot,[('out_file','in_file'),]),
+         (inputnode,brain_plot,[('bold_mask','mask_file')]),
+         (brain_plot,outputnode,[('nifti_html','rehohtml')]),
+
         ])
 
     return workflow

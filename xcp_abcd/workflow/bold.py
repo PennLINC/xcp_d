@@ -334,11 +334,26 @@ tasks and sessions), the following postprocessing was performed:
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='postprocessing', datatype="figures"),
                   name='ds_report_postprocessing', run_without_submitting=True)
     
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='connectvityplot', datatype="figures"),
+                  name='ds_report_connectivity', run_without_submitting=True)
+    
+    ds_report_rehoplot = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='rehoplot', datatype="figures"),
+                  name='ds_report_rehoplot', run_without_submitting=True)
+    
+    ds_report_afniplot = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='afniplot', datatype="figures"),
+                  name='ds_report_afniplot', run_without_submitting=True)
+    
     workflow.connect([
         (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
         (qcreport,ds_report_postprocessing ,[('clean_qcplot','in_file')]), 
         (qcreport,functional_qc,[('qc_file','qc_file')]),
-        (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')])
+        (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')]),
+        (fcon_ts_wf,ds_report_connectivity,[('outputnode.connectplot','in_file')]),
+        (reho_compute_wf,ds_report_rehoplot,[('outputnode.rehohtml','in_file')]),
+        (alff_compute_wf,ds_report_afniplot ,[('outputnode.alffhtml','in_file')]),
     ])
 
     return workflow 

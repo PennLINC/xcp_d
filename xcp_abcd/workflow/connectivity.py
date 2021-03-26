@@ -14,6 +14,7 @@ from templateflow.api import get as get_template
 import nilearn as nl
 from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti, 
                       get_atlas_cifti,ApplyTransformsx)
+from ..interfaces import connectplot
 from nipype.interfaces import utility as niu
 from ..utils import CiftiCorrelation, CiftiParcellate
 from pkg_resources import resource_filename as pkgrf
@@ -103,7 +104,8 @@ were computed.
                    ]), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ]), 
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,
+                'connectplot']), 
                 name='outputnode')
 
     inputnode.inputs.bold_file=bold_file
@@ -143,6 +145,7 @@ were computed.
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
+    matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf", mem_gb=mem_gb)
 
     nifticonnect_sc27 = pe.Node(nifticonnect(), 
                     name="sc27_connect", mem_gb=mem_gb)
@@ -186,6 +189,14 @@ were computed.
                                           ('fcon_matrix_tsv','gs360_fc')]),
              (nifticonnect_gs36,outputnode,[('time_series_tsv','gd333_ts'),
                                           ('fcon_matrix_tsv','gd333_fc')]),
+              # to qcplot
+             (nifticonnect_sc27,matrix_plot,[('time_series_tsv','sc207_timeseries')]),
+             (nifticonnect_sc47,matrix_plot,[('time_series_tsv','sc407_timeseries')]),
+             (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gd333_timeseries')]),
+             (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gs360_timeseries')]),
+             (matrix_plot,outputnode,[('connectplot','connectplot')])
+              
+             
            ])
     return workflow
 
@@ -252,7 +263,8 @@ were computed for each atlas with the Workbench.
             fields=['clean_cifti']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ]), 
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc',
+                'connectplot' ]), 
                 name='outputnode')
 
     
@@ -271,7 +283,8 @@ were computed for each atlas with the Workbench.
                           mem_gb=mem_gb, name='gs360parcel')
     gd333parcel = pe.Node(CiftiParcellate(atlas_label=gd333atlas,direction='COLUMN'),
                          mem_gb=mem_gb, name='gd333parcel')
-
+    
+    matrix_plot = pe.Node(connectplot(),name="matrix_plot_wf", mem_gb=mem_gb)
     # correlation
     sc207corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc207corr')
     sc407corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc407corr')
@@ -297,7 +310,14 @@ were computed for each atlas with the Workbench.
                     (sc207corr,outputnode,[('out_file','sc207_fc',)]),
                     (sc407corr,outputnode,[('out_file','sc407_fc',)]),
                     (gs360corr,outputnode,[('out_file','gs360_fc',)]),
-                    (gd333corr,outputnode,[('out_file','gd333_fc',)])
+                    (gd333corr,outputnode,[('out_file','gd333_fc',)]),
+                     
+                    (inputnode,matrix_plot,[('clean_cifti','in_file')]),
+                    (sc207parcel,matrix_plot,[('out_file','sc207_timeseries')]),
+                    (sc407parcel,matrix_plot,[('out_file','sc407_timeseries')]),
+                    (gd333parcel,matrix_plot,[('out_file','gd333_timeseries')]),
+                    (gs360parcel,matrix_plot,[('out_file','gs360_timeseries')]),
+                    (matrix_plot,outputnode,[('connectplot','connectplot')])
            ])
 
 
