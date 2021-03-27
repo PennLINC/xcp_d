@@ -198,7 +198,7 @@ def zscore_nifti(img,outputname,mask=None):
         meandata = imgdata[maskdata>0].mean()
         stddata  = imgdata[maskdata>0].std()
         zscore_fdata = (imgdata - meandata)/stddata
-        zscore_fdata[maskdata<0]= 0
+        zscore_fdata[maskdata<1]= 0
     else:
         imgdata  = img.get_fdata()
         meandata = imgdata[np.abs(imgdata)>0].mean()
