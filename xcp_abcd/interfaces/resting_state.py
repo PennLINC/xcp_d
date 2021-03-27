@@ -197,12 +197,14 @@ def zscore_nifti(img,outputname,mask=None):
         imgdata  = img.get_fdata()
         meandata = imgdata[maskdata>0].mean()
         stddata  = imgdata[maskdata>0].std()
-        zscore_fdata = (imgdata[maskdata>0] - meandata)/stddata
+        zscore_fdata = (imgdata - meandata)/stddata
+        zscore_fdata[maskdata>0]= 0
     else:
         imgdata  = img.get_fdata()
         meandata = imgdata[np.abs(imgdata)>0].mean()
         stddata  = imgdata[np.abs(imgdata)>0].std()
-        zscore_fdata = (imgdata[np.abs(imgdata)>0] - meandata)/stddata
+        zscore_fdata = (imgdata - meandata)/stddata
+        zscore_fdata[np.abs(imgdata)>0]= 0
 
     dataout = nb.Nifti1Image(zscore_fdata,affine=img.affine,header=img.header)
     dataout.to_filename(outputname)
