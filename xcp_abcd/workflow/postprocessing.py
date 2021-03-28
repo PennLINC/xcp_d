@@ -259,11 +259,10 @@ The residual were then  band pass filtered within the frequency band {highpass}-
             workflow.__desc__ = workflow.__desc__ + """ \
 The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """         .format(kernelsize=str(smoothing))
-            lh_midthickness = str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k',)[1])
-            rh_midthickness = str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k',)[1])
-
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="cifti_smoothing", mem_gb=mem_gb)
+                  right_surf=str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k')), 
+                  left_surf=str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k'))),
+                   name="cifti_smoothing", mem_gb=mem_gb)
 
         else:
             workflow.__desc__ = workflow.__desc__ + """ \
