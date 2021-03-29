@@ -260,8 +260,8 @@ The residual were then  band pass filtered within the frequency band {highpass}-
 The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """         .format(kernelsize=str(smoothing))
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                  right_surf=str(get_template("fsLR", hemi='R',suffix='midthickness',density='32k')), 
-                  left_surf=str(get_template("fsLR", hemi='L',suffix='midthickness',density='32k'))),
+                  right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
+                  left_surf=str(get_template("fsLR", hemi='L',suffix='sphere',density='32k')[0])),
                    name="cifti_smoothing", mem_gb=mem_gb)
 
         else:
