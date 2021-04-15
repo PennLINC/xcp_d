@@ -94,15 +94,14 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     highpass frequency 
     '''
     
-    #nyq = 0.5 * fs
-    #lowcut = np.float(highpass) / nyq
-    lowcut = np.float(highpass)/fs
-    #highcut = np.float(lowpass) / nyq
-    highcut = np.float(lowpass)/fs
+    nyq = 0.5 * fs
+    lowcut = np.float(highpass) / nyq
+    highcut = np.float(lowpass) / nyq
+    
     b, a = butter(order, [lowcut, highcut], btype='band')
     #mean_data=np.mean(data,axis=1)
     y=np.zeros_like(data)
-    filter_order = np.floor(order/2)
+    filter_dir = np.floor(order/2)
 
     # filter once first 
     for i in range(data.shape[0]):
@@ -110,8 +109,8 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     
     # filter more if order is greater than 2,
     # then filter more 
-    if filter_order > 1:
-        for i in range([filter_order-1]):
+    if filter_dir > 1:
+        for i in range([filter_dir-1]):
             i = i+1
             for kk in range(y.shape[0]):
                 y[kk,:] = filtfilt(b, a, y[kk,:])
