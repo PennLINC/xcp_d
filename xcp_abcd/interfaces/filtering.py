@@ -115,5 +115,5 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
                 y[kk,:] = filtfilt(b, a, y[kk,:])
                 
     #add mean back 
-    mean_datag=np.outer(mean_data, np.ones(data.shape[1]))
-    return y + mean_datag
+    #mean_datag = np.outer(mean_data, np.ones(data.shape[1]))
+    return y 
