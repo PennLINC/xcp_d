@@ -94,11 +94,11 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     highpass frequency 
     '''
     
-    nyq = 0.5 * fs
+    #nyq = 0.5 * fs
     #lowcut = np.float(highpass) / nyq
-    lowcut = np.float(highpass) 
+    lowcut = np.float(highpass)/fs
     #highcut = np.float(lowpass) / nyq
-    highcut = np.float(lowpass) 
+    highcut = np.float(lowpass)/fs
     b, a = butter(order, [lowcut, highcut], btype='band')
     #mean_data=np.mean(data,axis=1)
     y=np.zeros_like(data)
