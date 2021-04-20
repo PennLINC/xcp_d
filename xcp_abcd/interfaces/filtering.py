@@ -98,7 +98,7 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     lowcut = np.float(highpass) / nyq
     highcut = np.float(lowpass) / nyq
     
-    b, a = butter(order, [lowcut, highcut], btype='band')
+    b, a = butter(order/2, [lowcut, highcut], btype='band')
     #mean_data=np.mean(data,axis=1)
     y=np.zeros_like(data)
     filter_dir = np.floor(order/2)
