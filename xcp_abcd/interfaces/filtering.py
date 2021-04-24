@@ -108,12 +108,7 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
         y[i,:] = filtfilt(b, a, data[i,:])
     
     # filter more if order is greater than 2,
-    # then filter more 
-    if filter_dir > 1:
-        for i in range([filter_dir-1]):
-            i = i+1
-            for kk in range(y.shape[0]):
-                y[kk,:] = filtfilt(b, a, y[kk,:])
+    # then filter morei 
                 
     #add mean back 
     #mean_datag = np.outer(mean_data, np.ones(data.shape[1]))
