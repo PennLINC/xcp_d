@@ -101,7 +101,7 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     b, a = butter(order/2, [lowcut, highcut], btype='band')
     #mean_data=np.mean(data,axis=1)
     y=np.zeros_like(data)
-    filter_dir = np.floor(order/2)
+    #filter_dir = np.floor(order/2)
 
     # filter once first 
     for i in range(data.shape[0]):
