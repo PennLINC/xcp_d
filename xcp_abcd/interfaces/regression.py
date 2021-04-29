@@ -76,6 +76,7 @@ class regress(SimpleInterface):
                            maskfile=self.inputs.mask)
         # demean and detrend the data 
         dd_data = demean_detrend_data(data=data_matrix,TR=self.inputs.tr,order=1)
+        confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=1)
         # regress the confound regressors from data
         resid_data = linear_regression(data=dd_data, confound=confound)
         
