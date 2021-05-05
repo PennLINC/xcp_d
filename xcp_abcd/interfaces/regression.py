@@ -74,9 +74,12 @@ class regress(SimpleInterface):
         # get the nifti/cifti  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file,
                            maskfile=self.inputs.mask)
-        # demean and detrend the data 
-        dd_data = demean_detrend_data(data=data_matrix,TR=self.inputs.tr,order=1)
-        confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=1)
+        # demean and detrend the data
+        #
+        # use afni order  
+        orderx =np.floor(1+ data_matrix.shape[1]*self.inputs.tr/150)
+        dd_data = demean_detrend_data(data=data_matrix,TR=self.inputs.tr,order=orderx)
+        confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
         # regress the confound regressors from data
         resid_data = linear_regression(data=dd_data, confound=confound)
         
@@ -115,7 +118,7 @@ def linear_regression(data,confound):
     y_pred = regr.predict(confound.T)
     return data - y_pred.T
 
-def demean_detrend_data(data,TR,order=1):
+def demean_detrend_data(data,TR,order):
     '''
     data should be voxels/vertices by timepoints dimension
     order=1
