@@ -71,7 +71,7 @@ def get_parser():
                         help='select a specific task to be selected for postprocessing')
     
     g_surfx = parser.add_argument_group('Options for cifti processing')
-    g_surfx.add_argument('-s', '--cifti', action='store_true', default=False,
+    g_surfx.add_argument('-s', '--cifti', action='store_true', default=True,
                         help='post process cifti instead of nifti')
 
     g_perfm = parser.add_argument_group('Options to for resource management ')
