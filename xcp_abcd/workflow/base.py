@@ -371,7 +371,7 @@ It is released under the [CC0]\
             ])
 
             
-    else:
+    elif  cifti:
         ii = 0
         for bold_file in subject_data[0]:
             ii = ii+1
