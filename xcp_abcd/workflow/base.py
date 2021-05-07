@@ -334,8 +334,8 @@ It is released under the [CC0]\
 
     
 
-    if cifti:
-        ii=0
+    if  len(subject_data[1]) > 0:
+        ii = 0
         for cifti_file in subject_data[1]:
             ii = ii+1
             cifti_postproc_wf = init_ciftipostprocess_wf(cifti_file=cifti_file,
@@ -371,7 +371,7 @@ It is released under the [CC0]\
             ])
 
             
-    elif  cifti:
+    if len(subject_data[0]) > 0:
         ii = 0
         for bold_file in subject_data[0]:
             ii = ii+1
