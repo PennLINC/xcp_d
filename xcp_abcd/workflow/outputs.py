@@ -173,6 +173,11 @@ def init_writederivatives_wf(
                  dismiss_entities=['desc'],compression=True,desc='reho',source_file=bold_file),
             name='dv_reho_wf', run_without_submitting=True, mem_gb=1)
 
+        dv_fd_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],desc='framewisedisplacement',extension='.tsv',
+                 source_file=bold_file),
+                 name='dv_fd_wf', run_without_submitting=True, mem_gb=1)
+
         workflow.connect([
          (inputnode,dv_cleandata_wf,[('processed_bold','in_file')]),
          (inputnode,dv_alff_wf,[('alff_out','in_file')]),
@@ -185,11 +190,12 @@ def init_writederivatives_wf(
          (inputnode,dv_sc207fc_wf,[('sc207_fc','in_file')]),
          (inputnode,dv_sc407fc_wf,[('sc407_fc','in_file')]),
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
-         (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]),   
+         (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]), 
+         (inputnode,dv_fd_wf,[('fd','in_file')]),    
            ])
         if smoothing:
             dv_smoothcleandata_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
-                 meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='clean_smooth',source_file=bold_file),
+                 meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='residual_smooth',source_file=bold_file),
             name='dv_smoothcleandata_wf', run_without_submitting=True, mem_gb=2)
 
             dv_smoothalff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
@@ -203,7 +209,7 @@ def init_writederivatives_wf(
 
     if cifti:
         dv_cleandata_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
-                 meta_dict=cleandata_dict,dismiss_entities=['desc'], desc='clean',
+                 meta_dict=cleandata_dict,dismiss_entities=['desc'], desc='residual',
                  source_file=bold_file,density='91k',extension='.dtseries.nii'),
             name='dv_cleandata_wf', run_without_submitting=True, mem_gb=2)
             
@@ -291,7 +297,7 @@ def init_writederivatives_wf(
         if smoothing:
             dv_smoothcleandata_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
                  meta_dict=smoothed_dict,dismiss_entities=['desc'], density='91k',
-                 desc='clean_smooth',source_file=bold_file,extension='.dtseries.nii',check_hdr=False),
+                 desc='residual_smooth',source_file=bold_file,extension='.dtseries.nii',check_hdr=False),
             name='dv_smoothcleandata_wf', run_without_submitting=True, mem_gb=2)
 
             dv_smoothalff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
