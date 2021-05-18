@@ -159,7 +159,7 @@ jobs:
                 /data/fmriprep \
                 /out  participant  \
                 --despike  --head_radius 40 \
-                -w /scrth/wkdir_nifti
+                -w /scrth/wkdir_nifti --smoothing 6 
 
       - run:
           name: Checking outputs of xcpabcd_nifti
@@ -238,7 +238,7 @@ jobs:
                 /data/fmriprep \
                 /out  participant  --cifti \
                 --despike  --head_radius 40 \
-                -w /scrth/wkdir_cifti
+                -w /scrth/wkdir_cifti --smoothing 6 
   
 
       - run:

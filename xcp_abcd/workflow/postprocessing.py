@@ -263,6 +263,10 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
                   right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
                   left_surf=str(get_template("fsLR", hemi='L',suffix='sphere',density='32k')[0])),
                    name="cifti_smoothing", mem_gb=mem_gb)
+            workflow.connect([
+                   (filterdx, smooth_data,[('filt_file','in_file')]),
+                   (smooth_data, outputnode,[('out_file','smoothed_bold')])       
+                     ])
 
         else:
             workflow.__desc__ = workflow.__desc__ + """ \
@@ -271,9 +275,9 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
 
-        workflow.connect([
+            workflow.connect([
                    (filterdx, smooth_data,[('filt_file','in_file')]),
-                   (smooth_data, outputnode,[('out_file','smoothed_bold')])       
+                   (smooth_data, outputnode,[('smoothed_file','smoothed_bold')])       
                      ])
     ## smoothing the datt if requested
         

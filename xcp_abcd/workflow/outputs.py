@@ -195,11 +195,13 @@ def init_writederivatives_wf(
            ])
         if smoothing:
             dv_smoothcleandata_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
-                 meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='residual_smooth',source_file=bold_file),
+                 meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='residual_smooth',source_file=bold_file,
+                 extension='.nii.gz',compression=True),
             name='dv_smoothcleandata_wf', run_without_submitting=True, mem_gb=2)
 
             dv_smoothalff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir, 
-                 meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='alff_smooth',source_file=bold_file),
+                 meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='alff_smooth',source_file=bold_file
+                 ,extension='.nii.gz',compression=True),
             name='dv_smoothalff_wf', run_without_submitting=True, mem_gb=1)
   
             workflow.connect([
