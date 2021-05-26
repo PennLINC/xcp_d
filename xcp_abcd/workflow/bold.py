@@ -232,7 +232,7 @@ tasks and sessions), the following postprocessing was performed:
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
     if despike:
-        despike_wf = pe.Node(Despike( outputtype = 'NIFTI_GZ' ),name="despike_wf",mem_gb=mem_gbx['timeseries'])
+        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'])
 
         workflow.connect([
             (inputnode,despike_wf,[('bold_file','in_file')]),
