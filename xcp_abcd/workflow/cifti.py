@@ -87,43 +87,43 @@ def init_ciftipostprocess_wf(
     Parameters
     ----------
     bold_file: str
-        bold file for post processing 
+        bold file for post processing
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
-    contigvol: int 
+    contigvol: int
         number of contigious volumes
     despike: bool
         afni depsike
-    motion_filter_order: int 
+    motion_filter_order: int
         respiratory motion filter order
     motion_filter_type: str
-        respiratory motion filter type: lp or notch 
-    band_stop_min: float 
+        respiratory motion filter type: lp or notch
+    band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
         respiratory maximum frequency in breathe per minutes(bpm)
     layout : BIDSLayout object
-        BIDS dataset layout 
+        BIDS dataset layout
     omp_nthreads : int
         Maximum number of threads an individual process may use
     output_dir : str
         Directory in which to save xcp_abcd output
     fd_thresh
         Criterion for flagging framewise displacement outliers
-    head_radius : float 
+    head_radius : float
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_conf: str
-        path to cusrtom nuissance regressors 
-    scrub: bool 
-        remove the censored volumes 
+        path to cusrtom nuissance regressors
+    scrub: bool
+        remove the censored volumes
     dummytime: float
         the first vols in seconds to be removed before postprocessing
 
@@ -133,7 +133,7 @@ def init_ciftipostprocess_wf(
         CIFTI file
     cutstom_conf
         custom regressors
-    
+
     Outputs
     -------
     processed_bold
@@ -143,7 +143,7 @@ def init_ciftipostprocess_wf(
     alff_out
         alff niifti
     smoothed_alff
-        smoothed alff 
+        smoothed alff
     reho_lh
         reho left hemisphere
     reho_rh
@@ -151,10 +151,10 @@ def init_ciftipostprocess_wf(
     sc207_ts
         schaefer 200 timeseries
     sc207_fc
-        schaefer 200 func matrices 
-    sc407_ts
+        schaefer 200 func matrices
+    sc417_ts
         schaefer 400 timeseries
-    sc407_fc
+    sc417_fc
         schaefer 400 func matrices
     gs360_ts
         glasser 360 timeseries
@@ -174,23 +174,23 @@ For each of the {num_cifti} CIFTI runs found per subject (across all
 tasks and sessions), the following postprocessing was performed:
 """.format(num_cifti=num_cifti)
 
-   
+
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['cifti_file','custom_conf']),
         name='inputnode')
-    
+
     inputnode.inputs.cifti_file = cifti_file
     inputnode.inputs.custom_conf = str(custom_conf)
 
 
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff', 
-                'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc407_ts','sc407_fc',
+        fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff',
+                'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
     TR = layout.get_tr(cifti_file)
-    
+
 
 
     mem_gbx = _create_mem_gb(cifti_file)
@@ -202,7 +202,7 @@ tasks and sessions), the following postprocessing was performed:
                     smoothing=smoothing,params=params,contigvol=contigvol,
                     dummytime=dummytime,fd_thresh=fd_thresh,cifti=True,bold_file=cifti_file,
                    name='clean_data_wf')
-    
+
     cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
                       name='cifti_ts_con_wf')
 
@@ -212,19 +212,19 @@ tasks and sessions), the following postprocessing was performed:
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="surface_reho_wf")
-    
+
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
                     params=params,cifti=True,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
-    
+
 
     if despike:
         despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['timeseries'])
         workflow.connect([
              (inputnode,despike_wf,[('cifti_file','in_file'),]),
              (despike_wf,clean_data_wf,[('des_file','inputnode.bold'),]),
-             
+
         ])
     else:
         workflow.connect([
@@ -235,20 +235,20 @@ tasks and sessions), the following postprocessing was performed:
             (clean_data_wf, cifti_conts_wf,[('outputnode.processed_bold','inputnode.clean_cifti')]),
             (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
             (clean_data_wf,reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
-        
+
             (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
                                        ('outputnode.fd','fd'),
-            
+
                                   ('outputnode.smoothed_bold','smoothed_bold') ]),
-                                  
+
             (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out')]),
             (reho_compute_wf,outputnode,[('outputnode.lh_reho','reho_lh'),('outputnode.rh_reho','reho_rh')]),
 
             (cifti_conts_wf,outputnode,[('outputnode.sc207_ts','sc207_ts' ),('outputnode.sc207_fc','sc207_fc'),
-                        ('outputnode.sc407_ts','sc407_ts'),('outputnode.sc407_fc','sc407_fc'),
+                        ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
-            
+
 
       ])
     if custom_conf:
@@ -263,7 +263,7 @@ tasks and sessions), the following postprocessing was performed:
                             ('outputnode.tmask','tmask')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
-    
+
     workflow.connect([
         (clean_data_wf, write_derivative_wf,[('outputnode.processed_bold','inputnode.processed_bold'),
                                     ('outputnode.fd','inputnode.fd'),
@@ -274,14 +274,14 @@ tasks and sessions), the following postprocessing was performed:
                                      ('outputnode.lh_reho','inputnode.reho_lh')]),
         (cifti_conts_wf,write_derivative_wf,[('outputnode.sc207_ts','inputnode.sc207_ts' ),
                                 ('outputnode.sc207_fc','inputnode.sc207_fc'),
-                                ('outputnode.sc407_ts','inputnode.sc407_ts'),
-                                ('outputnode.sc407_fc','inputnode.sc407_fc'),
+                                ('outputnode.sc417_ts','inputnode.sc417_ts'),
+                                ('outputnode.sc417_fc','inputnode.sc417_fc'),
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
                                 ('outputnode.gd333_fc','inputnode.gd333_fc')]),
         (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
-        
+
          ])
     functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file,tr=TR),
                 name='qcsummary', run_without_submitting=True)
@@ -298,10 +298,10 @@ tasks and sessions), the following postprocessing was performed:
     ds_report_connectivity = pe.Node(
         DerivativesDataSink(base_directory=output_dir,source_file=cifti_file, desc='connectvityplot', datatype="figures"),
                   name='ds_report_connectivity', run_without_submitting=True)
-    
+
     workflow.connect([
         (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
-        (qcreport,ds_report_postprocessing ,[('clean_qcplot','in_file')]), 
+        (qcreport,ds_report_postprocessing ,[('clean_qcplot','in_file')]),
         (qcreport,functional_qc,[('qc_file','qc_file')]),
         (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')]),
         (cifti_conts_wf,ds_report_connectivity,[('outputnode.connectplot',"in_file")]),
