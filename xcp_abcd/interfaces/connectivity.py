@@ -101,7 +101,7 @@ def get_atlas_nifti(atlasname):
     all atlases are in MNI dimension
     atlas list:
       schaefer200x7
-      schaefer400x7
+      schaefer400x17
       glasser360
       gordon360
     """
@@ -124,13 +124,13 @@ def get_atlas_cifti(atlasname):
     all atlases are in 91K dimension
     atlas list:
       schaefer200x7
-      schaefer400x7
+      schaefer400x17
       glasser360
       gordon360
     """
     if atlasname == 'schaefer200x7':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
-    elif atlasname == 'schaefer400x7':
+    elif atlasname == 'schaefer400x17':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_400Parcels_17Networks_order_Tian_Subcortex_S3.dlabel.nii')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
