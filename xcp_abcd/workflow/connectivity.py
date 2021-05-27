@@ -270,7 +270,7 @@ were computed for each atlas with the Workbench.
 
     # get atlas list
     sc207atlas = get_atlas_cifti(atlasname='schaefer200x7')
-    sc417atlas = get_atlas_cifti(atlasname='schaefer400x7')
+    sc417atlas = get_atlas_cifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_cifti(atlasname='glasser360')
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
 
