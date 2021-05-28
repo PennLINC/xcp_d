@@ -254,7 +254,7 @@ jobs:
             fi
 
       - run:
-          name: Clean working directory
+          name: Clean working  directory
           when: always
           command: |
             sudo chown $(id -un):$(id -gn) -R /tmp/wkdir_cifti
