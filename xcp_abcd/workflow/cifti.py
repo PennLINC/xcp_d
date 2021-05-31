@@ -148,9 +148,9 @@ def init_ciftipostprocess_wf(
         reho left hemisphere
     reho_rh
         reho right hemisphere
-    sc207_ts
+    sc217_ts
         schaefer 200 timeseries
-    sc207_fc
+    sc217_fc
         schaefer 200 func matrices
     sc417_ts
         schaefer 400 timeseries
@@ -185,7 +185,7 @@ tasks and sessions), the following postprocessing was performed:
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff',
-                'reho_lh','reho_rh','sc207_ts', 'sc207_fc','sc417_ts','sc417_fc',
+                'reho_lh','reho_rh','sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
@@ -244,7 +244,7 @@ tasks and sessions), the following postprocessing was performed:
             (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out')]),
             (reho_compute_wf,outputnode,[('outputnode.lh_reho','reho_lh'),('outputnode.rh_reho','reho_rh')]),
 
-            (cifti_conts_wf,outputnode,[('outputnode.sc207_ts','sc207_ts' ),('outputnode.sc207_fc','sc207_fc'),
+            (cifti_conts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
                         ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
@@ -272,8 +272,8 @@ tasks and sessions), the following postprocessing was performed:
                                       ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
         (reho_compute_wf,write_derivative_wf,[('outputnode.rh_reho','inputnode.reho_rh'),
                                      ('outputnode.lh_reho','inputnode.reho_lh')]),
-        (cifti_conts_wf,write_derivative_wf,[('outputnode.sc207_ts','inputnode.sc207_ts' ),
-                                ('outputnode.sc207_fc','inputnode.sc207_fc'),
+        (cifti_conts_wf,write_derivative_wf,[('outputnode.sc217_ts','inputnode.sc217_ts' ),
+                                ('outputnode.sc217_fc','inputnode.sc217_fc'),
                                 ('outputnode.sc417_ts','inputnode.sc417_ts'),
                                 ('outputnode.sc417_fc','inputnode.sc417_fc'),
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),

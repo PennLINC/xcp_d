@@ -77,9 +77,9 @@ def init_writederivatives_wf(
 
     Inputs
     ------
-    sc207_ts
+    sc217_ts
         schaefer 200 timeseries
-    sc207_fc
+    sc217_fc
         schaefer 200 func matrices
     sc417_ts
         schaefer 400 timeseries
@@ -113,7 +113,7 @@ def init_writederivatives_wf(
 
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff',
-                'reho_out','sc207_ts', 'sc207_fc','sc417_ts','sc417_fc','reho_lh','reho_rh',
+                'reho_out','sc217_ts', 'sc217_fc','sc417_ts','sc417_fc','reho_lh','reho_rh',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']), name='inputnode')
 
     cleandata_dict= { 'RepetitionTime': TR, 'Freq Band': [highpass,lowpass],'nuissance parameters': params,
@@ -137,9 +137,9 @@ def init_writederivatives_wf(
                  compression=True,extension='.tsv'),
             name='dv_qcfile_wf', run_without_submitting=True, mem_gb=1)
 
-        dv_sc207ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc'],atlas='Schaefer207',desc='timeseries',source_file=bold_file),
-            name='dv_sc207ts_wf', run_without_submitting=True, mem_gb=1)
+        dv_sc217ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='Schaefer217',desc='timeseries',source_file=bold_file),
+            name='dv_sc217ts_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc417ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Schaefer417',desc='timeseries',source_file=bold_file),
@@ -153,9 +153,9 @@ def init_writederivatives_wf(
                  dismiss_entities=['desc'],atlas='Gordon',desc='timeseries',source_file=bold_file),
             name='dv_gd333_wf', run_without_submitting=True, mem_gb=1)
 
-        dv_sc207fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc'],atlas='Schaefer207',desc='connectivity',source_file=bold_file),
-            name='dv_sc207fc_wf', run_without_submitting=True, mem_gb=1)
+        dv_sc217fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='Schaefer217',desc='connectivity',source_file=bold_file),
+            name='dv_sc217fc_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc417fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Schaefer417',desc='connectivity',source_file=bold_file),
@@ -183,11 +183,11 @@ def init_writederivatives_wf(
          (inputnode,dv_alff_wf,[('alff_out','in_file')]),
          (inputnode,dv_reho_wf,[('reho_out','in_file')]),
          (inputnode,dv_qcfile_wf,[('qc_file','in_file')]),
-         (inputnode,dv_sc207ts_wf,[('sc207_ts','in_file')]),
+         (inputnode,dv_sc217ts_wf,[('sc217_ts','in_file')]),
          (inputnode,dv_sc417ts_wf,[('sc417_ts','in_file')]),
          (inputnode,dv_gs360ts_wf,[('gs360_ts','in_file')]),
          (inputnode,dv_gd333ts_wf,[('gd333_ts','in_file')]),
-         (inputnode,dv_sc207fc_wf,[('sc207_fc','in_file')]),
+         (inputnode,dv_sc217fc_wf,[('sc217_fc','in_file')]),
          (inputnode,dv_sc417fc_wf,[('sc417_fc','in_file')]),
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
          (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]),
@@ -225,10 +225,10 @@ def init_writederivatives_wf(
                  density='91k'),
             name='dv_qcfile_wf', run_without_submitting=True, mem_gb=1)
 
-        dv_sc207ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc'],atlas='Schaefer207',check_hdr=False,density='91k',
+        dv_sc217ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='Schaefer217',check_hdr=False,density='91k',
                  extension='.ptseries.nii',source_file=bold_file),
-            name='dv_sc207ts_wf', run_without_submitting=True, mem_gb=1)
+            name='dv_sc217ts_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc417ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Schaefer417',extension='.ptseries.nii',
@@ -245,10 +245,10 @@ def init_writederivatives_wf(
                  source_file=bold_file,check_hdr=False),
             name='dv_gd333_wf', run_without_submitting=True, mem_gb=1)
 
-        dv_sc207fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc'],atlas='Schaefer207',extension='.pconn.nii',
+        dv_sc217fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='Schaefer217',extension='.pconn.nii',
                  density='91k',source_file=bold_file,check_hdr=False),
-            name='dv_sc207fc_wf', run_without_submitting=True, mem_gb=1)
+            name='dv_sc217fc_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc417fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Schaefer417',extension='.pconn.nii',
@@ -283,11 +283,11 @@ def init_writederivatives_wf(
          (inputnode,dv_cleandata_wf,[('processed_bold','in_file')]),
          (inputnode,dv_alff_wf,[('alff_out','in_file')]),
          (inputnode,dv_qcfile_wf,[('qc_file','in_file')]),
-         (inputnode,dv_sc207ts_wf,[('sc207_ts','in_file')]),
+         (inputnode,dv_sc217ts_wf,[('sc217_ts','in_file')]),
          (inputnode,dv_sc417ts_wf,[('sc417_ts','in_file')]),
          (inputnode,dv_gs360ts_wf,[('gs360_ts','in_file')]),
          (inputnode,dv_gd333ts_wf,[('gd333_ts','in_file')]),
-         (inputnode,dv_sc207fc_wf,[('sc207_fc','in_file')]),
+         (inputnode,dv_sc217fc_wf,[('sc217_fc','in_file')]),
          (inputnode,dv_sc417fc_wf,[('sc417_fc','in_file')]),
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
          (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]),

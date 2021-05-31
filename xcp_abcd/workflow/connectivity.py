@@ -67,9 +67,9 @@ def init_fcon_ts_wf(
 
     Outputs
     -------
-    sc207_ts
+    sc217_ts
         schaefer 200 timeseries
-    sc207_fc
+    sc217_fc
         schaefer 200 func matrices
     sc417_ts
         schaefer 400 timeseries
@@ -103,7 +103,7 @@ were computed.
             fields=['bold_file','clean_bold','ref_file',
                    ]), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['sc207_ts', 'sc207_fc','sc417_ts','sc417_fc',
+        fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,
                 'connectplot']),
                 name='outputnode')
@@ -112,7 +112,7 @@ were computed.
 
 
     # get atlases # ietration will be used later
-    sc207atlas = get_atlas_nifti(atlasname='schaefer200x7')
+    sc217atlas = get_atlas_nifti(atlasname='schaefer200x17')
     sc417atlas = get_atlas_nifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_nifti(atlasname='glasser360')
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
@@ -127,7 +127,7 @@ were computed.
     else:
         transformfile = [str(mni_to_t1w), str(t1w_to_native)]
 
-    sc207_transform = pe.Node(ApplyTransformsx(input_image=sc207atlas,num_threads=2,
+    sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,num_threads=2,
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
                        name="apply_tranform_sc27", mem_gb=mem_gb)
@@ -159,7 +159,7 @@ were computed.
 
     workflow.connect([
              ## tansform atlas to bold space
-             (inputnode,sc207_transform,[('ref_file','reference_image'),]),
+             (inputnode,sc217_transform,[('ref_file','reference_image'),]),
              (inputnode,sc417_transform,[('ref_file','reference_image'),]),
              (inputnode,gs360_transform,[('ref_file','reference_image'),]),
              (inputnode,gd333_transform,[('ref_file','reference_image'),]),
@@ -171,7 +171,7 @@ were computed.
              (inputnode,nifticonnect_gs36, [('clean_bold','regressed_file'),]),
 
              # linked atlas
-             (sc207_transform,nifticonnect_sc27,[(
+             (sc217_transform,nifticonnect_sc27,[(
                                          'output_image','atlas'),]),
              (sc417_transform,nifticonnect_sc47,[(
                                          'output_image','atlas'),]),
@@ -181,8 +181,8 @@ were computed.
                                          'output_image','atlas'),]),
 
              # output file
-             (nifticonnect_sc27,outputnode,[('time_series_tsv','sc207_ts'),
-                                          ('fcon_matrix_tsv','sc207_fc')]),
+             (nifticonnect_sc27,outputnode,[('time_series_tsv','sc217_ts'),
+                                          ('fcon_matrix_tsv','sc217_fc')]),
              (nifticonnect_sc47,outputnode,[('time_series_tsv','sc417_ts'),
                                           ('fcon_matrix_tsv','sc417_fc')]),
              (nifticonnect_gs36,outputnode,[('time_series_tsv','gs360_ts'),
@@ -190,7 +190,7 @@ were computed.
              (nifticonnect_gs36,outputnode,[('time_series_tsv','gd333_ts'),
                                           ('fcon_matrix_tsv','gd333_fc')]),
               # to qcplot
-             (nifticonnect_sc27,matrix_plot,[('time_series_tsv','sc207_timeseries')]),
+             (nifticonnect_sc27,matrix_plot,[('time_series_tsv','sc217_timeseries')]),
              (nifticonnect_sc47,matrix_plot,[('time_series_tsv','sc417_timeseries')]),
              (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gd333_timeseries')]),
              (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gs360_timeseries')]),
@@ -230,9 +230,9 @@ def init_cifti_conts_wf(
         clean cifti after regressed out nuisscance and filtering
     Outputs
     -------
-    sc207_ts
+    sc217_ts
         schaefer 200 timeseries
-    sc207_fc
+    sc217_fc
         schaefer 200 func matrices
     sc417_ts
         schaefer 400 timeseries
@@ -262,21 +262,21 @@ were computed for each atlas with the Workbench.
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_cifti']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['sc207_ts', 'sc207_fc','sc417_ts','sc417_fc',
+        fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc',
                 'connectplot' ]),
                 name='outputnode')
 
 
     # get atlas list
-    sc207atlas = get_atlas_cifti(atlasname='schaefer200x7')
+    sc217atlas = get_atlas_cifti(atlasname='schaefer200x17')
     sc417atlas = get_atlas_cifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_cifti(atlasname='glasser360')
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
 
     # timeseries extraction
-    sc207parcel = pe.Node(CiftiParcellate(atlas_label=sc207atlas,direction='COLUMN'),
-                         mem_gb=mem_gb, name='sc207parcel')
+    sc217parcel = pe.Node(CiftiParcellate(atlas_label=sc217atlas,direction='COLUMN'),
+                         mem_gb=mem_gb, name='sc217parcel')
     sc417parcel = pe.Node(CiftiParcellate(atlas_label=sc417atlas,direction='COLUMN'),
                            mem_gb=mem_gb, name='sc417parcel')
     gs360parcel = pe.Node(CiftiParcellate(atlas_label=gs360atlas,direction='COLUMN'),
@@ -286,34 +286,34 @@ were computed for each atlas with the Workbench.
 
     matrix_plot = pe.Node(connectplot(),name="matrix_plot_wf", mem_gb=mem_gb)
     # correlation
-    sc207corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc207corr')
+    sc217corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc217corr')
     sc417corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc417corr')
     gs360corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gs360corr')
     gd333corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gd333corr')
 
     workflow.connect([
-                    (inputnode,sc207parcel,[('clean_cifti','in_file')]),
+                    (inputnode,sc217parcel,[('clean_cifti','in_file')]),
                     (inputnode,sc417parcel,[('clean_cifti','in_file')]),
                     (inputnode,gd333parcel,[('clean_cifti','in_file')]),
                     (inputnode,gs360parcel,[('clean_cifti','in_file')]),
 
-                    (sc207parcel,outputnode,[('out_file','sc207_ts',)]),
+                    (sc217parcel,outputnode,[('out_file','sc217_ts',)]),
                     (sc417parcel,outputnode,[('out_file','sc417_ts',)]),
                     (gs360parcel,outputnode,[('out_file','gs360_ts',)]),
                     (gd333parcel,outputnode,[('out_file','gd333_ts',)]),
 
-                    (sc207parcel,sc207corr ,[('out_file','in_file',)]),
+                    (sc217parcel,sc217corr ,[('out_file','in_file',)]),
                     (sc417parcel,sc417corr ,[('out_file','in_file',)]),
                     (gs360parcel,gs360corr ,[('out_file','in_file',)]),
                     (gd333parcel,gd333corr ,[('out_file','in_file',)]),
 
-                    (sc207corr,outputnode,[('out_file','sc207_fc',)]),
+                    (sc217corr,outputnode,[('out_file','sc217_fc',)]),
                     (sc417corr,outputnode,[('out_file','sc417_fc',)]),
                     (gs360corr,outputnode,[('out_file','gs360_fc',)]),
                     (gd333corr,outputnode,[('out_file','gd333_fc',)]),
 
                     (inputnode,matrix_plot,[('clean_cifti','in_file')]),
-                    (sc207parcel,matrix_plot,[('out_file','sc207_timeseries')]),
+                    (sc217parcel,matrix_plot,[('out_file','sc217_timeseries')]),
                     (sc417parcel,matrix_plot,[('out_file','sc417_timeseries')]),
                     (gd333parcel,matrix_plot,[('out_file','gd333_timeseries')]),
                     (gs360parcel,matrix_plot,[('out_file','gs360_timeseries')]),

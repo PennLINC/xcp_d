@@ -100,13 +100,13 @@ def get_atlas_nifti(atlasname):
     select atlas by name from xcp_abcd/data
     all atlases are in MNI dimension
     atlas list:
-      schaefer200x7
+      schaefer200x17
       schaefer400x17
       glasser360
       gordon360
     """
-    if atlasname == 'schaefer200x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer200x7/schaefer200x7MNI.nii.gz')
+    if atlasname == 'schaefer200x17':
+        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer200x17/schaefer200x17MNI.nii.gz')
     elif atlasname == 'schaefer400x17':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
     elif atlasname == 'glasser360':
@@ -123,13 +123,13 @@ def get_atlas_cifti(atlasname):
     select atlas by name from xcp_abcd/data
     all atlases are in 91K dimension
     atlas list:
-      schaefer200x7
+      schaefer200x17
       schaefer400x17
       glasser360
       gordon360
     """
-    if atlasname == 'schaefer200x7':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels7Networks_atlas.dlabel.nii')
+    if atlasname == 'schaefer200x17':
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_200Parcels_17Networks_order_Tian_Subcortex_S3.dlabel.nii')
     elif atlasname == 'schaefer400x17':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_400Parcels_17Networks_order_Tian_Subcortex_S3.dlabel.nii')
     elif atlasname == 'glasser360':
@@ -142,7 +142,7 @@ def get_atlas_cifti(atlasname):
 
 class _connectplotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc="bold file")
-    sc207_timeseries = File(exists=True,mandatory=True, desc="sc207 atlas")
+    sc217_timeseries = File(exists=True,mandatory=True, desc="sc217 atlas")
     sc417_timeseries = File(exists=True,mandatory=True, desc="sc417 atlas")
     gd333_timeseries = File(exists=True,mandatory=True, desc="gordon atlas")
     gs360_timeseries = File(exists=True,mandatory=True, desc="glasser atlas")
@@ -161,7 +161,7 @@ class connectplot(SimpleInterface):
     .. doctest::
     >>> conect = connectplot()
     >>> conect.inputs.in_file = bold_file
-    >>> conf.inputs.sc207_timeseries = sc207_timeseries
+    >>> conf.inputs.sc217_timeseries = sc217_timeseries
     >>> conf.inputs.sc417_timeseries = sc417_timeseries
     >>> conf.inputs.gd333_timeseries = gd333_timeseries
     >>> conf.inputs.gs360_timeseries = gs360_timeseries
@@ -176,12 +176,12 @@ class connectplot(SimpleInterface):
     def _run_interface(self, runtime):
 
         if self.inputs.in_file.endswith('dtseries.nii'):
-            sc207 = np.corrcoef(nb.load(self.inputs.sc207_timeseries).get_fdata().T)
+            sc217 = np.corrcoef(nb.load(self.inputs.sc217_timeseries).get_fdata().T)
             sc417 = np.corrcoef(nb.load(self.inputs.sc417_timeseries).get_fdata().T)
             gd333 = np.corrcoef(nb.load(self.inputs.gd333_timeseries).get_fdata().T)
             gs360 = np.corrcoef(nb.load(self.inputs.gs360_timeseries).get_fdata().T)
         else:
-            sc207 = np.corrcoef(np.loadtxt(self.inputs.sc207_timeseries,delimiter=',').T)
+            sc217 = np.corrcoef(np.loadtxt(self.inputs.sc217_timeseries,delimiter=',').T)
             sc417 = np.corrcoef(np.loadtxt(self.inputs.sc417_timeseries,delimiter=',').T)
             gd333 = np.corrcoef(np.loadtxt(self.inputs.gd333_timeseries,delimiter=',').T)
             gs360 = np.corrcoef(np.loadtxt(self.inputs.gs360_timeseries,delimiter=',').T)
@@ -189,7 +189,7 @@ class connectplot(SimpleInterface):
         fig, ax1 = plt.subplots(2,2)
         fig.set_size_inches(20, 20)
         font = {'weight': 'normal','size': 20}
-        plot_matrix(mat=sc207, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,0])
+        plot_matrix(mat=sc217, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,0])
         ax1[0,0].set_title('schaefer 200  7 networks', fontdict=font)
         plot_matrix(mat=sc417, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,1])
         ax1[0,1].set_title('schaefer 400  7 networks', fontdict=font)
