@@ -129,13 +129,13 @@ def get_atlas_cifti(atlasname):
       gordon360
     """
     if atlasname == 'schaefer200x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_200Parcels_17Networks_order_Tian_Subcortex_S3.dlabel.nii')
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_200Parcels_17Networks_order.dlabel.nii')
     elif atlasname == 'schaefer400x17':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_400Parcels_17Networks_order_Tian_Subcortex_S3.dlabel.nii')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Gordon333.32k_fs_LR_Tian_Subcortex_S3.dlabel.nii')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
