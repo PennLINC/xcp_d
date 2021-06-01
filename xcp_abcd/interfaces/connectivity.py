@@ -190,9 +190,9 @@ class connectplot(SimpleInterface):
         fig.set_size_inches(20, 20)
         font = {'weight': 'normal','size': 20}
         plot_matrix(mat=sc217, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,0])
-        ax1[0,0].set_title('schaefer 200  7 networks', fontdict=font)
+        ax1[0,0].set_title('schaefer 200  17 networks', fontdict=font)
         plot_matrix(mat=sc417, colorbar=False,vmax=1, vmin=-1, axes=ax1[0,1])
-        ax1[0,1].set_title('schaefer 400  7 networks', fontdict=font)
+        ax1[0,1].set_title('schaefer 400  17 networks', fontdict=font)
         plot_matrix(mat=gd333, colorbar=False,vmax=1, vmin=-1, axes=ax1[1,0])
         ax1[1,0].set_title('Gordon 333', fontdict=font)
         plot_matrix(mat=gs360, colorbar=False,vmax=1, vmin=-1, axes=ax1[1,1])
