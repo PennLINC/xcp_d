@@ -84,7 +84,7 @@ def mesh_adjacency(hemi):
 
     vertices = vertices_faces[0]
     faces = vertices_faces[1]
-    A = np.zeros([len(vertices),len(vertices)],dtype=np.uint16)
+    A = np.zeros([len(vertices),len(vertices)],dtype=np.uint8)
 
     for i in range(1,len(faces)):
         A[faces[i,0],faces[i,2]]=1
