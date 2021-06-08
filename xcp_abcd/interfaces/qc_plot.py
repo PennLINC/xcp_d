@@ -30,7 +30,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     cleaned_file = File(exists=True,mandatory=True, desc=" residual and filter file")
     tmask = File(exists=False,mandatory=False, desc="temporal mask")
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
-    TR= traits.Float(exit=True,mandatory=True,desc="TR")
+    TR = traits.Float(exit=True,mandatory=True,desc="TR")
     head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head raidus for to convert rotxyz to arc length \
                                                for baby, 40m is recommended")
 class _qcOutputSpec(TraitedSpec):
@@ -101,11 +101,11 @@ class computeqcplot(SimpleInterface):
         datax = read_ndata(datafile=self.inputs.bold_file,
                                   maskfile=self.inputs.mask_file)[:,num_vold:]
         
-        #make tempfile for 
+        # avoid tempfile tempfile for 
         if self.inputs.bold_file.endswith('nii.gz'):
-            filex=tempfile.mkdtemp()+'/filex.nii.gz'
+            filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_niftix.nii.gz'
         else:
-            filex=tempfile.mkdtemp()+'/filex.dtseries.nii'
+            filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix.dtseries.nii'
         write_ndata(data_matrix=datax,template=self.inputs.bold_file,
                           mask=self.inputs.mask_file,filename=filex,tr=self.inputs.TR)
         
@@ -135,9 +135,9 @@ class computeqcplot(SimpleInterface):
             confy = pd.DataFrame({ 'FD': fd_timeseries[tmask==0], 
                          'DVARS': dvars_af[tmask==0]})
             if self.inputs.bold_file.endswith('nii.gz'):
-                filey = tempfile.mkdtemp()+'/filey.nii.gz'
+                filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_niftix1.nii.gz'
             else:
-                filey = tempfile.mkdtemp()+'/filey.dtseries.nii'
+                filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix1.dtseries.nii'
             write_ndata(data_matrix=dataxx,template=self.inputs.bold_file,
                           mask=self.inputs.mask_file,filename=filey,tr=self.inputs.TR)
             

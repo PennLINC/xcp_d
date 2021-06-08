@@ -119,7 +119,7 @@ were computed.
 
 
     file_base = os.path.basename(str(bold_file))
-
+    # add MNI6 MNI9 NKI OASIS PNC 
     if brain_template in file_base:
         transformfile = 'identity'
     elif 'T1w' in file_base:

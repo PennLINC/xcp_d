@@ -39,7 +39,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
       mask : mask is not needed
 
     '''
-    basedir=tempfile.mkdtemp()
+    basedir = os.path.split(os.path.abspath(template))[0]
     # write cifti series
     if template.endswith('.dtseries.nii'):
         from nibabel.cifti2 import Cifti2Image
@@ -73,7 +73,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
         else:
             dataz = np.zeros([mask_data.shape[0],mask_data.shape[1],
                                      mask_data.shape[2],data_matrix.shape[1]])
-        # this need rewriteen in short format
+        # this need rewritten short format
             for i in range(data_matrix.shape[1]):
                 tcbfx = np.zeros(mask_data.shape) 
                 tcbfx[mask_data==1] = data_matrix[:,i]

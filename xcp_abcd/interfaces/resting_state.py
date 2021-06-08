@@ -57,6 +57,7 @@ class surfaceReho(SimpleInterface):
 
         # get mesh adjacency matrix
         mesh_matrix = mesh_adjacency(self.inputs.surf_hemi)
+        
         # compute reho
         reho_surf = compute_2d_reho(datat=data_matrix, adjacency_matrix=mesh_matrix)
         
