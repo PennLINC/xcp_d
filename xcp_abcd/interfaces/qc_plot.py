@@ -105,7 +105,7 @@ class computeqcplot(SimpleInterface):
         if self.inputs.bold_file.endswith('nii.gz'):
             filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_niftix.nii.gz'
         else:
-            filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix.nii.gz'
+            filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix.dtseries.nii'
         write_ndata(data_matrix=datax,template=self.inputs.bold_file,
                           mask=self.inputs.mask_file,filename=filex,tr=self.inputs.TR)
         
@@ -137,7 +137,7 @@ class computeqcplot(SimpleInterface):
             if self.inputs.bold_file.endswith('nii.gz'):
                 filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_niftix1.nii.gz'
             else:
-                filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix1.nii.gz'
+                filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix1.dtseries.nii'
             write_ndata(data_matrix=dataxx,template=self.inputs.bold_file,
                           mask=self.inputs.mask_file,filename=filey,tr=self.inputs.TR)
             
