@@ -206,17 +206,17 @@ tasks and sessions), the following postprocessing was performed:
     cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
                       name='cifti_ts_con_wf')
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],TR=TR,
                    lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing,cifti=True,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="surface_reho_wf")
 
-    write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
+    write_derivative_wf = init_writederivatives_wf(mem_gb=2,smoothing=smoothing,bold_file=cifti_file,
                     params=params,cifti=True,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
-                    name="write_derivative_wf")
+                    name="write_derivative_wf",)
 
 
     if despike:
@@ -313,11 +313,12 @@ tasks and sessions), the following postprocessing was performed:
 
 def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
+    #bold_tlen = nb.load(bold_fname).shape[-1]
+    bold_tlen = 100
     mem_gbz = {
         'derivative': bold_size_gb,
         'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'timeseries': 6 + bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
 
     return mem_gbz
