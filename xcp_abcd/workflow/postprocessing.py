@@ -176,12 +176,12 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                     name="filter_the_data", mem_gb=3)
 
     regressy = pe.Node(regress(tr=TR),
-               name="regress_the_data",mem_gb=3)
+               name="regress_the_data",mem_gb=mem_gb)
 
     censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,contig=contigvol,
                        time_todrop=dummytime),
-                      name="censor_scrub",mem_gb=3)
+                      name="censor_scrub",mem_gb=mem_gb)
     interpolatewf = pe.Node(interpolate(TR=TR),
                   name="interpolation",mem_gb=mem_gb)
     if dummytime > 0:

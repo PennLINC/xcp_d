@@ -313,12 +313,11 @@ tasks and sessions), the following postprocessing was performed:
 
 def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    #bold_tlen = nb.load(bold_fname).shape[-1]
-    bold_tlen = 100
+    bold_tlen = nb.load(bold_fname).shape[-1]
     mem_gbz = {
         'derivative': bold_size_gb,
         'resampled': bold_size_gb * 4,
-        'timeseries': 6 + bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
 
     return mem_gbz
