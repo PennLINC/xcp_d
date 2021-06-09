@@ -116,6 +116,7 @@ def linear_regression(data,confound):
     regr = LinearRegression()
     regr.fit(confound.T,data.T)
     y_pred = regr.predict(confound.T)
+    
     return data - y_pred.T
 
 def demean_detrend_data(data,TR,order):

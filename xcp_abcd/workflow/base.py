@@ -355,7 +355,7 @@ It is released under the [CC0]\
                                                         num_cifti=len(subject_data[1]),
                                                         dummytime=dummytime,
                                                         fd_thresh=fd_thresh,
-                                                         despike=despike,
+                                                        despike=despike,
                                                         layout=layout,
                                                         output_dir=output_dir,
                                                         name='cifti_postprocess_'+ str(ii) + '_wf')
