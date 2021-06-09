@@ -227,7 +227,7 @@ tasks and sessions), the following postprocessing was performed:
     reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
 
-    write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
+    write_derivative_wf = init_writederivatives_wf(mem_gb=2,smoothing=smoothing,bold_file=bold_file,
                     params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf")
@@ -359,11 +359,12 @@ tasks and sessions), the following postprocessing was performed:
 
 def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
+    #bold_tlen = nb.load(bold_fname).shape[-1]
+    bold_tlen = 100
     mem_gbz = {
         'derivative': bold_size_gb,
         'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'timeseries': 5 + bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
 
     return mem_gbz
