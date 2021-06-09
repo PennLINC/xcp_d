@@ -244,7 +244,7 @@ jobs:
       - run:
           name: Checking outputs of xcpabcd_cifti
           command: |
-            qcfile=$(ls -f /tmp/xcpabcd_cifti/xcp_abcd/sub-001/ses-1/func/sub-001_ses-1_task-rest_run-1_space-fsLR_desc-qc_bold.tsv)
+            qcfile=$(ls -f /tmp/xcpabcd_cifti/xcp_abcd/sub-001/ses-1/func/sub-001_ses-1_task-rest_run-1_space-fsLR_desc-qc_den-91k_bold.tsv)
             if [[ -f ${qcfile} ]]; then 
             echo "processing complete"
                exit 0
