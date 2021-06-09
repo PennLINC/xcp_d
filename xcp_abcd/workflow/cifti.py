@@ -213,7 +213,7 @@ tasks and sessions), the following postprocessing was performed:
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="surface_reho_wf")
 
-    write_derivative_wf = init_writederivatives_wf(mem_gb=2,smoothing=smoothing,bold_file=cifti_file,
+    write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
                     params=params,cifti=True,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf",)
