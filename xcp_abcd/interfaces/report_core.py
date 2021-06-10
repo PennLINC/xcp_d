@@ -74,12 +74,12 @@ def run_reports(
 
 
 def generate_reports(
-    subject_list, output_dir, run_uuid, config=None, packagename=None
+    subject_list, fmriprep_dir, work_dir,output_dir, run_uuid, config=None, packagename=None
 ):
     """Execute run_reports on a list of subjects."""
     #reportlets_dir = None
-    #if work_dir is not None:
-        #reportlets_dir = Path(work_dir) / "reportlets"
+    if work_dir is not None:
+         print('Path(work_dir) / "reportlets"')
     report_errors = [
         run_reports(
             Path(output_dir)/'xcp_abcd',
@@ -91,7 +91,7 @@ def generate_reports(
         )
         for subject_label in subject_list
     ]
-
+    print('fmriprep_dir :' + str(fmriprep_dir))
     errno = sum(report_errors)
     if errno:
         import logging
