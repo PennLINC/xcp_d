@@ -195,7 +195,7 @@ tasks and sessions), the following postprocessing was performed:
 
     mem_gbx = _create_mem_gb(cifti_file)
 
-    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
+    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries']+1, TR=TR,
                     head_radius=head_radius,lower_bpf=lower_bpf,upper_bpf=upper_bpf,
                     bpf_order=bpf_order,band_stop_max=band_stop_max,band_stop_min=band_stop_min,
                     motion_filter_order=motion_filter_order,motion_filter_type=motion_filter_type,

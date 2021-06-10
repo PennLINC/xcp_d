@@ -207,7 +207,7 @@ tasks and sessions), the following postprocessing was performed:
     # get the mem_bg size for each workflow
 
     mem_gbx = _create_mem_gb(bold_file)
-    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries'], TR=TR, bold_file=bold_file,
+    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries']+2.5, TR=TR, bold_file=bold_file,
                     head_radius=head_radius,lower_bpf=lower_bpf,upper_bpf=upper_bpf,
                     bpf_order=bpf_order,band_stop_max=band_stop_max,band_stop_min=band_stop_min,
                     motion_filter_order=motion_filter_order,motion_filter_type=motion_filter_type,

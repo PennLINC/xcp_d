@@ -169,24 +169,24 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
-                    name="ConfoundMatrix", mem_gb=1)
+                    name="ConfoundMatrix", mem_gb=0.1*mem_gb)
     
     filterdx  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filter_the_data", mem_gb=3)
+                    name="filter_the_data", mem_gb=0.25*mem_gb)
 
     regressy = pe.Node(regress(tr=TR),
-               name="regress_the_data",mem_gb=mem_gb)
+               name="regress_the_data",mem_gb=0.25*mem_gb)
 
     censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,contig=contigvol,
                        time_todrop=dummytime),
-                      name="censor_scrub",mem_gb=mem_gb)
+                      name="censor_scrub",mem_gb=0.1*mem_gb)
     interpolatewf = pe.Node(interpolate(TR=TR),
-                  name="interpolation",mem_gb=mem_gb)
+                  name="interpolation",mem_gb=0.25*mem_gb)
     if dummytime > 0:
         rm_dummytime = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
-                      name="remove_dummy_time",mem_gb=2)
+                      name="remove_dummy_time",mem_gb=0.1*mem_gb)
     
     
     
@@ -282,6 +282,12 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
     ## smoothing the datt if requested
         
     return workflow
+
+
+
+
+
+
 
 def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
