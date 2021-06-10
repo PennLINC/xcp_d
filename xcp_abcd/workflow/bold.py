@@ -363,7 +363,7 @@ def _create_mem_gb(bold_fname):
     mem_gbz = {
         'derivative': bold_size_gb,
         'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(10/ 100, 1.0) + 5),
+        'timeseries': bold_size_gb * (max(bold_tlen/100, 1.0) + 4),
     }
 
     return mem_gbz
