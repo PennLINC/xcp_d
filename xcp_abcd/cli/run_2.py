@@ -145,7 +145,7 @@ def get_parser():
  
 
     g_other = parser.add_argument_group('Other options')
-    g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
+    g_other.add_argument('-w', '--work_dir', action='store', type=Path, default=Path('work'),
                          help='path where intermediate results should be stored')
     g_other.add_argument('--clean-workdir', action='store_true', default=False,
                          help='Clears working directory of contents. Use of this flag is not'
@@ -307,13 +307,13 @@ def build_workflow(opts, retval):
 
     fmriprep_dir = opts.fmriprep_dir.resolve()
     output_dir = opts.output_dir.resolve()
-    work_dir = opts.work_dir.resolve()
+    work_dir = 
     
    
 
     retval['return_code'] = 1
     retval['workflow'] = None
-    retval['bids_dir'] = str(fmriprep_dir)
+    retval['fmriprep_dir'] = str(fmriprep_dir)
     retval['output_dir'] = str(output_dir)
     retval['work_dir'] = str(work_dir)
 

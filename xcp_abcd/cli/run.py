@@ -147,7 +147,7 @@ def get_parser():
  
 
     g_other = parser.add_argument_group('Other options')
-    g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
+    g_other.add_argument('-w', '--work_dir', action='store', type=Path, default=Path('work'),
                          help='path where intermediate results should be stored')
     g_other.add_argument('--clean-workdir', action='store_true', default=False,
                          help='Clears working directory of contents. Use of this flag is not'
@@ -199,10 +199,10 @@ def main():
         p.join()
 
         retcode = p.exitcode or retval.get('return_code', 0)
-
+        
+        work_dir = Path(retval.get('work_dir'))
         fmriprep_dir = Path(retval.get('fmriprep_dir'))
         output_dir = Path(retval.get('output_dir'))
-        work_dir = Path(retval.get('work_dir'))
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
         run_uuid = retval.get('run_uuid', None)
@@ -292,7 +292,8 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=subject_list, output_dir=output_dir, run_uuid=run_uuid,
+            subject_list=subject_list,fmriprep_dir=fmriprep_dir, work_dir=work_dir,
+               output_dir=output_dir, run_uuid=run_uuid,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
 
@@ -333,10 +334,16 @@ def build_workflow(opts, retval):
     fmriprep_dir = opts.fmriprep_dir.resolve()
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
+
+    if opts.clean_workdir:
+        from niworkflows.utils.misc import clean_directory
+        build_log.info("Clearing previous xcp_abcd working directory: %s" % work_dir)
+        if not clean_directory(work_dir):
+            build_log.warning("Could not clear all contents of working directory: %s" % work_dir)
     
     retval['return_code'] = 1
     retval['workflow'] = None
-    retval['bids_dir'] = str(fmriprep_dir)
+    retval['fmriprep_dir'] = str(fmriprep_dir)
     retval['output_dir'] = str(output_dir)
     retval['work_dir'] = str(work_dir)
 
@@ -360,7 +367,7 @@ def build_workflow(opts, retval):
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
 
-    # First check that bids_dir looks like a BIDS folder
+    # First check that fmriprep_dir looks like a BIDS folder
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
@@ -431,6 +438,8 @@ def build_workflow(opts, retval):
 
     if opts.resource_monitor:
         ncfg.enable_resource_monitor()
+    
+    
 
 
     # Build main workflow
@@ -489,7 +498,7 @@ def build_workflow(opts, retval):
                 pass
 
         citation_files['md'].write_text(boilerplate)
-        build_log.log(25, 'Works derived from this fMRIPrep execution should '
+        build_log.log(25, 'Works derived from this xcp execution should '
                       'include the following boilerplate:\n\n%s', boilerplate)
     return retval
 
