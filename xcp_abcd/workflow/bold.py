@@ -305,7 +305,7 @@ tasks and sessions), the following postprocessing was performed:
         ])
     # interpolation workflow
     workflow.connect([
-	      (inputnode,interpolate_wf,[('bold_file','bold_file')]),
+	      (inputnode,interpolate_wf,[('bold_file','bold_file'),('bold_mask','mask_file')]),
 	      (censorscrub_wf,interpolate_wf,[('outputnode.tmask','tmask')]),
 	      (regression_wf,interpolate_wf,[('res_file','in_file')]),     
 	])
