@@ -227,7 +227,7 @@ tasks and sessions), the following postprocessing was performed:
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
                     params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
-                    name="write_derivative_wf",mem_gb=mem_gbx['timeseries'])
+                    name="write_derivative_wf")
 
     confoundmat_wf = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
                 filtertype=motion_filter_type,cutoff=band_stop_max,
