@@ -353,7 +353,7 @@ tasks and sessions), the following postprocessing was performed:
 	(alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out'),
                                       ('outputnode.smoothed_alff','smoothed_alff')]),
         (reho_compute_wf,outputnode,[('outputnode.reho_out','reho_out')]),
-	(fcon_ts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
+	    (fcon_ts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
                         ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
