@@ -8,7 +8,9 @@ post processing the bold
 """
 import sys
 import os
+import numpy as np
 from copy import deepcopy
+from xcp_abcd.workflow import cifti
 import nibabel as nb
 from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
@@ -22,14 +24,19 @@ from ..interfaces import  FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from nipype.interfaces.afni import Despike
+from ..interfaces import (ConfoundMatrix,FilteringData,regress)
+from ..interfaces import interpolate
+from  ..workflow import init_censoring_wf,init_resd_smoohthing
 
 from  ..workflow import (init_fcon_ts_wf,
-    init_post_process_wf,
     init_compute_alff_wf,
     init_3d_reho_wf)
 from .outputs import init_writederivatives_wf
+from xcp_abcd import workflow
 
 LOGGER = logging.getLogger('nipype.workflow')
+
+
 
 def init_boldpostprocess_wf(
      lower_bpf,
@@ -175,7 +182,7 @@ def init_boldpostprocess_wf(
 
 
     TR = layout.get_tr(bold_file)
-
+    file_base = os.path.basename(str(bold_file))
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
@@ -203,17 +210,7 @@ tasks and sessions), the following postprocessing was performed:
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
-
-    # get the mem_bg size for each workflow
-
     mem_gbx = _create_mem_gb(bold_file)
-    clean_data_wf = init_post_process_wf(mem_gb=mem_gbx['timeseries']+2.5, TR=TR, bold_file=bold_file,
-                    head_radius=head_radius,lower_bpf=lower_bpf,upper_bpf=upper_bpf,
-                    bpf_order=bpf_order,band_stop_max=band_stop_max,band_stop_min=band_stop_min,
-                    motion_filter_order=motion_filter_order,motion_filter_type=motion_filter_type,
-                    smoothing=smoothing,params=params,contigvol=contigvol,
-                    dummytime=dummytime,fd_thresh=fd_thresh,
-                    name='clean_data_wf')
 
 
     fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
@@ -231,52 +228,33 @@ tasks and sessions), the following postprocessing was performed:
                     params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
                     lowpass=upper_bpf,highpass=lower_bpf,TR=TR,omp_nthreads=omp_nthreads,
                     name="write_derivative_wf",mem_gb=mem_gbx['timeseries'])
-    if despike:
-        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'])
 
-        workflow.connect([
-            (inputnode,despike_wf,[('bold_file','in_file')]),
-            (despike_wf,clean_data_wf,[('out_file','inputnode.bold')])
-            ])
-    else:
-        workflow.connect([
-            (inputnode,clean_data_wf,[('bold_file','inputnode.bold')]),
-            ])
+    confoundmat_wf = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
+                filtertype=motion_filter_type,cutoff=band_stop_max,
+                low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
+                filterorder=motion_filter_order),
+                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['derivative'])
 
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,head_radius=head_radius,
+                contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
+    
+    resdsmoothing_wf = init_resd_smoohthing(meg_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=cifti,
+                name="resd_smoothing_wf")
+    
+    filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
+                filter_order=bpf_order),
+                    name="filtering_wf", mem_gb=mem_gbx['timeseries'])
 
-    workflow.connect([
-        (inputnode,clean_data_wf,[('bold_mask','inputnode.bold_mask')]),
+    regression_wf = pe.Node(regress(tr=TR),
+               name="regression_wf",mem_gb = mem_gbx['timeseries'])
 
-        (inputnode,fcon_ts_wf,[
-                               ('ref_file','inputnode.ref_file'),]),
-        (clean_data_wf, fcon_ts_wf,[('outputnode.processed_bold','inputnode.clean_bold'),]),
-
-        (inputnode,alff_compute_wf,[('bold_mask','inputnode.bold_mask')]),
-        (clean_data_wf, alff_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
-
-        (inputnode,reho_compute_wf,[('bold_mask','inputnode.bold_mask'),]),
-        (clean_data_wf, reho_compute_wf,[('outputnode.processed_bold','inputnode.clean_bold')]),
-        (clean_data_wf,outputnode,[('outputnode.processed_bold','processed_bold'),
-                                   ('outputnode.smoothed_bold','smoothed_bold'),
-                                   ('outputnode.fd','fd')]),
-        (alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out'),
-                                      ('outputnode.smoothed_alff','smoothed_alff')]),
-        (reho_compute_wf,outputnode,[('outputnode.reho_out','reho_out')]),
-        (fcon_ts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
-                        ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
-                        ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
-                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
-        ])
-    if custom_conf:
-        workflow.connect([
-         (inputnode,clean_data_wf,[('custom_conf','inputnode.custom_conf')]),
-        ])
+    interpolate_wf = pe.Node(interpolate(TR=TR),
+                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
-                       head_radius=head_radius), name="qc_report")
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries'])
 
-    file_base = os.path.basename(str(bold_file))
-
+    # get transform file for resampling and fcon
     if brain_template in file_base:
         transformfile = 'identity'
     elif 'T1w' in file_base:
@@ -291,24 +269,106 @@ tasks and sessions), the following postprocessing was performed:
             suffix='dseg', extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',transforms=transformfile),
         name='resample_parc')
+    
 
     workflow.connect([
+             # connect bold confound matrix to extract confound matrix 
+            (inputnode, confoundmat_wf, [('bold_file', 'in_file'),]),
+         ])
+    
+    # if there is despiking
+    if despike:
+        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'])
+
+        workflow.connect([
+            (inputnode,despike_wf,[('bold_file','in_file')]),
+            (despike_wf,censorscrub_wf,[('out_file','inputnode.bold')])
+            ])
+    else:
+        workflow.connect([
+            (inputnode,censorscrub_wf,[('bold_file','inputnode.bold')]),
+            ])
+     
+    # add neccessary input for censoring if there is one
+    workflow.connect([
+	     (inputnode,censorscrub_wf,[('bold_file','inputnode.bold_file'),
+	        ('bold_mask','inputnode.bold_mask'),('custom_conf','inputnode.custom_conf')]),
+	     (confoundmat_wf,censorscrub_wf,[('confound_file','inputnode.confound_file')])
+     ])
+
+    # regression workflow 
+    workflow.connect([
+	      (inputnode,regression_wf,[('bold_mask','mask')]),
+	      (censorscrub_wf,regression_wf,[('output.bold_censored','in_file'),
+	             ('outputnode.fmriprepconf_censored','confounds'), 
+		      ('outputnode.customconf_censored','custom_conf')])
+        ])
+    # interpolation workflow
+    workflow.connect([
+	      (inputnode,interpolate_wf,[('bold_file','bold_file')]),
+	      (censorscrub_wf,interpolate_wf,[('ouputnode.tmask','tmask')]),
+	      (regression_wf,interpolate_wf,[('res_file','in_file')]),     
+	])
+    # add filtering workflow 
+    workflow.connect([
+             (inputnode,filtering_wf,[('bold_mask','mask')]),
+	     (interpolate_wf,filtering_wf,[('bold_interpolated','in_file')]),
+
+
+    ])
+    
+    # residual smoothing 
+    workflow.connect([
+	   (filtering_wf,resdsmoothing_wf,[('filt_file','bold_file')]) 
+    ])
+
+    #functional connect workflow
+    workflow.connect([
+         (inputnode,fcon_ts_wf,[('ref_file','inputnode.ref_file'),]),
+         (filtering_wf,fcon_ts_wf,[('filt_file','inputnode.clean_bold'),]),
+      ])
+   # reho and alff
+    workflow.connect([ 
+	 (inputnode,alff_compute_wf,[('bold_mask','inputnode.bold_mask')]),
+	 (inputnode,reho_compute_wf,[('bold_mask','inputnode.bold_mask')]),
+	 (filtering_wf, alff_compute_wf,[('filt_file','inputnode.clean_bold')]),
+	 (filtering_wf, reho_compute_wf,[('filt_file','inputnode.clean_bold')]),
+      ])
+
+   # qc report
+    workflow.connect([
         (inputnode,qcreport,[('bold_mask','mask_file')]),
-        (clean_data_wf,qcreport,[('outputnode.processed_bold','cleaned_file'),
-                            ('outputnode.tmask','tmask')]),
+        (filtering_wf,qcreport,[('filt_file','cleaned_file')])
+        (censorscrub_wf,qcreport,[('outputnode.tmask','tmask')]),
         (inputnode,resample_parc,[('ref_file','reference_image')]),
         (resample_parc,qcreport,[('output_image','seg_file')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
 
+   # write  to the outputnode, may be use in future
     workflow.connect([
-        (clean_data_wf, write_derivative_wf,[('outputnode.processed_bold','inputnode.processed_bold'),
-                                   ('outputnode.smoothed_bold','inputnode.smoothed_bold'),
-                                   ('outputnode.fd','inputnode.fd')]),
-        (alff_compute_wf,write_derivative_wf,[('outputnode.alff_out','inputnode.alff_out'),
-                                      ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
-        (reho_compute_wf,write_derivative_wf,[('outputnode.reho_out','inputnode.reho_out')]),
-        (fcon_ts_wf,write_derivative_wf,[('outputnode.sc217_ts','inputnode.sc217_ts' ),
+	(filtering_wf,outputnode,[('filt_file','processed_bold')]),
+	(censorscrub_wf,outputnode,[('outputnode.fd','fd')]),
+	(resdsmoothing_wf,outputnode,[('smoothed_bold','smoothed_bold')]),
+	(alff_compute_wf,outputnode,[('outputnode.alff_out','alff_out'),
+                                      ('outputnode.smoothed_alff','smoothed_alff')]),
+        (reho_compute_wf,outputnode,[('outputnode.reho_out','reho_out')]),
+	(fcon_ts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
+                        ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
+                        ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
+                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
+
+       ])
+   
+    # write derivatives 
+    workflow.connect([
+          (filtering_wf,write_derivative_wf,[('filt_file','inputnode.processed_bold')]),
+	  (resdsmoothing_wf,write_derivative_wf,[('outputnode.smoothed_bold','inputnode.smoothed_bold')]),
+          (censorscrub_wf,write_derivative_wf,[('outputnode.fd','inputnode.fd')]),
+          (alff_compute_wf,write_derivative_wf,[('outputnode.alff_out','inputnode.alff_out'),
+                                   ('outputnode.smoothed_alff','inputnode.smoothed_alff')]),
+          (reho_compute_wf,write_derivative_wf,[('outputnode.reho_out','inputnode.reho_out')]),
+          (fcon_ts_wf,write_derivative_wf,[('outputnode.sc217_ts','inputnode.sc217_ts' ),
                                 ('outputnode.sc217_fc','inputnode.sc217_fc'),
                                 ('outputnode.sc417_ts','inputnode.sc417_ts'),
                                 ('outputnode.sc417_fc','inputnode.sc417_fc'),
@@ -316,11 +376,11 @@ tasks and sessions), the following postprocessing was performed:
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
                                 ('outputnode.gd333_fc','inputnode.gd333_fc')]),
-        (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
+         (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
+
+
 
          ])
-    
-    
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file,tr=TR),
                 name='qcsummary', run_without_submitting=True)
 
@@ -359,6 +419,10 @@ tasks and sessions), the following postprocessing was performed:
 
     return workflow
 
+
+
+
+
 def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
     bold_tlen = nb.load(bold_fname).shape[-1]
@@ -391,3 +455,21 @@ def _t12native(fname):
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
+ 
+def fwhm2sigma(fwhm):
+    return fwhm / np.sqrt(8 * np.log(2))
+
+def stringforparams(params):
+    if params == '24P':
+        bsignal = "including six motion parameters with their temporal derivatives, \
+            quadratic expansion of both six motion paramters and their derivatives  \
+            to make a total of 24 nuissance regressors "
+    if params == '27P':
+        bsignal = "including six motion parameters with their temporal derivatives, \
+            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
+            white and CSF signal to make a total 27 nuissance regressors"
+    if params == '36P':
+        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
+            quadratic expansion of these nuissance regressors and their derivatives  \
+            to make a total 36 nuissance regressors"
+    return bsignal
