@@ -125,6 +125,7 @@ were computed.
     # MNI2006 = 'MNI152NLin6Asym'
     # oasistemplate = 'OASIS'
 
+    MNI9 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
     
     if brain_template in file_base:
         transformfile = 'identity'
