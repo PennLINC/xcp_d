@@ -397,7 +397,7 @@ def init_resd_smoohthing(
   
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = """ \
 The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """     .format(kernelsize=str(smoothing))
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
@@ -410,7 +410,7 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
                      ])
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = """ \
 The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm. 
 """      .format(kernelsize=str(smoothing))
         smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
