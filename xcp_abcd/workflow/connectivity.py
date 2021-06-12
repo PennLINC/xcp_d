@@ -7,8 +7,8 @@ functional connectvity matrix
 .. autofunction:: init_fcon_ts_wf
 .. autofunction:: init_cifti_conts_wf
 """
-import numpy as np
 import os
+import numpy as np  
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 import nilearn as nl
