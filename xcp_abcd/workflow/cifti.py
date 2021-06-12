@@ -253,7 +253,7 @@ tasks and sessions), the following postprocessing was performed:
         despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['timeseries'])
         workflow.connect([
              (inputnode,despike_wf,[('cifti_file','in_file'),]),
-             (despike_wf,censorscrub_wf,[('out_file','inputnode.bold'),]),
+             (despike_wf,censorscrub_wf,[('des_file','inputnode.bold'),]),
 
         ])
     else:
