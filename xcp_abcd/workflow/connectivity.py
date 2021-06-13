@@ -116,23 +116,10 @@ were computed.
     sc417atlas = get_atlas_nifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_nifti(atlasname='glasser360')
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
-
-
-    file_base = os.path.basename(str(bold_file))
-    # add MNI9 MNI6 NKI OASIS PNC
-    # defaulttemplate = 'MNI152NLin2009cAsym'
-    # pnctemplate = 'PNC'
-    # MNI2006 = 'MNI152NLin6Asym'
-    # oasistemplate = 'OASIS'
-
-    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
-
-    if brain_template in file_base:
-        transformfile = 'identity'
-    elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
-    else:
-        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+    
+    #get transfrom file
+    transformfile = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
+                 t1w_to_native=t1w_to_native)
 
     sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,num_threads=2,
                        transforms=transformfile,interpolation='NearestNeighbor',
@@ -329,3 +316,39 @@ were computed for each atlas with the Workbench.
 
 
     return workflow
+
+
+
+def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
+
+    file_base = os.path.basename(str(bold_file))
+    # add MNI9 MNI6 NKI OASIS PNC
+    # defaulttemplate = 'MNI152NLin2009cAsym'
+    # pnctemplate = 'PNC'
+    # MNI2006 = 'MNI152NLin6Asym'
+    # oasistemplate = 'OASIS'
+
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+     
+    if 'MNI152NLin6Asym' in file_base:
+        transformfile = 'identity'
+    elif 'MNI152NLin2009cAsym' in file_base:
+        transformfile = str(MNI6)
+    elif 'PNC' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
+    elif 'NKI' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
+    elif 'OASIS' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
+    elif 'T1w' in file_base:
+        transformfile = str(mni_to_t1w)
+    else:
+        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+
+    return transformfile
