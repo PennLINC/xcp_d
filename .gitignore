@@ -6,3 +6,4 @@ xcp_surface/.DS_Store
 *.pyc
 docs/_build
 .eggs
+.Rhistory
