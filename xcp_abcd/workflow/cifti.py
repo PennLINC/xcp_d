@@ -6,8 +6,8 @@ post processing the bold
 .. autofunction:: init_ciftipostprocess_wf
 
 """
-import sys
 import os
+import sklearn
 import numpy as np
 from copy import deepcopy
 import nibabel as nb
@@ -177,6 +177,31 @@ def init_ciftipostprocess_wf(
 For each of the {num_cifti} CIFTI runs found per subject (across all
 tasks and sessions), the following postprocessing was performed:
 """.format(num_cifti=num_cifti)
+    TR = layout.get_tr(cifti_file)
+    if dummytime > 0:
+        nvolx = str(np.floor(dummytime / TR))
+        workflow.__desc__ = workflow.__desc__ + """ \
+Before nuissance regression and filtering of the data, the first {nvol} were discarded,
+.Furthermore, any volumes with framewise-displacement greater than 
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
+ and excluded from nuissance regression.
+""".format(nvol=nvolx,fd_thresh=fd_thresh)
+
+    else:
+        workflow.__desc__ = workflow.__desc__ + """ \
+Before nuissance regression and filtering any volumes with framewise-displacement greater than 
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
+ and excluded from further analyses.
+""".format(fd_thresh=fd_thresh)
+
+    workflow.__desc__ = workflow.__desc__ +  """ \
+The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
+from nuissance confound matrices of fMRIPrep output.  These nuissance regressors were regressed out 
+from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
+The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
+ """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
+             lowpass=upper_bpf,highpass=lower_bpf)
+
 
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -193,7 +218,7 @@ tasks and sessions), the following postprocessing was performed:
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','ts50_ts','ts50_fc','qc_file','fd']),
         name='outputnode')
 
-    TR = layout.get_tr(cifti_file)
+    
 
 
 
