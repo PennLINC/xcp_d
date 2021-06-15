@@ -113,6 +113,8 @@ def get_atlas_nifti(atlasname):
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
     elif atlasname == 'gordon333':
         atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
+    elif atlasname == 'tiansubcortical':
+        atlasfile = pkgrf('xcp_abcd', 'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
@@ -129,13 +131,15 @@ def get_atlas_cifti(atlasname):
       gordon360
     """
     if atlasname == 'schaefer200x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_200Parcels_17Networks_order.dlabel.nii')
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels17Networks_atlas.dlabel.nii')
     elif atlasname == 'schaefer400x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Schaefer2018_400Parcels_17Networks_order_Tian_Subcortex_S3.dlabel.nii')
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels17Networks_atlas.dlabel.nii')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Gordon333.32k_fs_LR_Tian_Subcortex_S3.dlabel.nii')
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+    elif atlasname == 'tiansubcortical':
+        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
@@ -146,6 +150,7 @@ class _connectplotInputSpec(BaseInterfaceInputSpec):
     sc417_timeseries = File(exists=True,mandatory=True, desc="sc417 atlas")
     gd333_timeseries = File(exists=True,mandatory=True, desc="gordon atlas")
     gs360_timeseries = File(exists=True,mandatory=True, desc="glasser atlas")
+    
 
 class _connectplotOutputSpec(TraitedSpec):
     connectplot = File(exists=True, manadatory=True,)
@@ -180,11 +185,13 @@ class connectplot(SimpleInterface):
             sc417 = np.corrcoef(nb.load(self.inputs.sc417_timeseries).get_fdata().T)
             gd333 = np.corrcoef(nb.load(self.inputs.gd333_timeseries).get_fdata().T)
             gs360 = np.corrcoef(nb.load(self.inputs.gs360_timeseries).get_fdata().T)
+           
         else:
             sc217 = np.corrcoef(np.loadtxt(self.inputs.sc217_timeseries,delimiter=',').T)
             sc417 = np.corrcoef(np.loadtxt(self.inputs.sc417_timeseries,delimiter=',').T)
             gd333 = np.corrcoef(np.loadtxt(self.inputs.gd333_timeseries,delimiter=',').T)
             gs360 = np.corrcoef(np.loadtxt(self.inputs.gs360_timeseries,delimiter=',').T)
+    
 
         fig, ax1 = plt.subplots(2,2)
         fig.set_size_inches(20, 20)

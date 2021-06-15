@@ -114,7 +114,7 @@ def init_writederivatives_wf(
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff',
                 'reho_out','sc217_ts', 'sc217_fc','sc417_ts','sc417_fc','reho_lh','reho_rh',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']), name='inputnode')
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','ts50_ts', 'ts50_fc','qc_file','fd']), name='inputnode')
 
     cleandata_dict= { 'RepetitionTime': TR, 'Freq Band': [highpass,lowpass],'nuissance parameters': params,
                     'dummy vols' :  np.int(dummytime/TR)}
@@ -152,6 +152,9 @@ def init_writederivatives_wf(
         dv_gd333ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Gordon',desc='timeseries',source_file=bold_file),
             name='dv_gd333_wf', run_without_submitting=True, mem_gb=1)
+        dv_ts50ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='subcortical',desc='timeseries',source_file=bold_file),
+            name='dv_ts50_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc217fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Schaefer217',desc='connectivity',source_file=bold_file),
@@ -168,6 +171,10 @@ def init_writederivatives_wf(
         dv_gd333fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Gordon',desc='connectivity',source_file=bold_file),
             name='dv_gd333fc_wf', run_without_submitting=True, mem_gb=1)
+        
+        dv_ts50fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='subcortical',desc='connectivity',source_file=bold_file),
+            name='dv_ts50fc_wf', run_without_submitting=True, mem_gb=1)
 
         dv_reho_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,extension='.nii.gz',
                  dismiss_entities=['desc'],compression=True,desc='reho',source_file=bold_file),
@@ -187,10 +194,12 @@ def init_writederivatives_wf(
          (inputnode,dv_sc417ts_wf,[('sc417_ts','in_file')]),
          (inputnode,dv_gs360ts_wf,[('gs360_ts','in_file')]),
          (inputnode,dv_gd333ts_wf,[('gd333_ts','in_file')]),
+         (inputnode,dv_ts50ts_wf,[('ts50_ts','in_file')]),
          (inputnode,dv_sc217fc_wf,[('sc217_fc','in_file')]),
          (inputnode,dv_sc417fc_wf,[('sc417_fc','in_file')]),
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
          (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]),
+         (inputnode,dv_ts50fc_wf,[('ts50_fc','in_file')]),
          (inputnode,dv_fd_wf,[('fd','in_file')]),
            ])
         if smoothing:
@@ -244,6 +253,10 @@ def init_writederivatives_wf(
                  dismiss_entities=['desc'],atlas='Gordon',density='91k',extension='.ptseries.nii',
                  source_file=bold_file,check_hdr=False),
             name='dv_gd333_wf', run_without_submitting=True, mem_gb=1)
+        dv_ts50ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                 dismiss_entities=['desc'],atlas='subcortical',density='91k',extension='.ptseries.nii',
+                 source_file=bold_file,check_hdr=False),
+            name='dv_ts50_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc217fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],atlas='Schaefer217',extension='.pconn.nii',
@@ -263,6 +276,10 @@ def init_writederivatives_wf(
         dv_gd333fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,extension='.pconn.nii',
                  check_hdr=False,dismiss_entities=['desc'],atlas='Gordon',density='91k',source_file=bold_file),
             name='dv_gd333fc_wf', run_without_submitting=True, mem_gb=1)
+           
+        dv_ts50fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,extension='.pconn.nii',
+                 check_hdr=False,dismiss_entities=['desc'],atlas='subcortical',density='91k',source_file=bold_file),
+            name='dv_ts50fc_wf', run_without_submitting=True, mem_gb=1)
 
         dv_reholh_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,check_hdr=False,
                  dismiss_entities=['desc'],desc='reho',density='32k',hemi='L',extension='.func.gii',
@@ -287,10 +304,12 @@ def init_writederivatives_wf(
          (inputnode,dv_sc417ts_wf,[('sc417_ts','in_file')]),
          (inputnode,dv_gs360ts_wf,[('gs360_ts','in_file')]),
          (inputnode,dv_gd333ts_wf,[('gd333_ts','in_file')]),
+         (inputnode,dv_ts50ts_wf,[('ts50_ts','in_file')]),
          (inputnode,dv_sc217fc_wf,[('sc217_fc','in_file')]),
          (inputnode,dv_sc417fc_wf,[('sc417_fc','in_file')]),
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
          (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]),
+         (inputnode,dv_ts50fc_wf,[('ts50_fc','in_file')]),
          (inputnode,dv_reholh_wf,[('reho_lh','in_file')]),
          (inputnode,dv_rehorh_wf,[('reho_rh','in_file')]),
          (inputnode,dv_fd_wf,[('fd','in_file')]),

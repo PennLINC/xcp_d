@@ -73,12 +73,8 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
         else:
             dataz = np.zeros([mask_data.shape[0],mask_data.shape[1],
                                      mask_data.shape[2],data_matrix.shape[1]])
-        # this need rewritten short format
-            for i in range(data_matrix.shape[1]):
-                tcbfx = np.zeros(mask_data.shape) 
-                tcbfx[mask_data==1] = data_matrix[:,i]
-                dataz[:,:,:,i] = tcbfx
-        
+            dataz[mask_data==1,:] = data_matrix
+  
         dataimg = nb.Nifti1Image(dataobj=dataz, affine=template_file.affine, 
                  header=template_file.header)
     

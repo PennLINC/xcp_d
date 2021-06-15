@@ -18,6 +18,7 @@ from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from multiprocessing import cpu_count
 from time import strftime
+warnings.filterwarnings("ignore")
 
 logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
 logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
@@ -81,7 +82,7 @@ def get_parser():
                          help='maximum number of threads across all processes')
     g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=0,
                          help='maximum number of threads per-process')
-    g_perfm.add_argument('--mem_mb', '--mem-mb', action='store', default=0, type=int,
+    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', default=0, type=int,
                          help='upper bound memory limit for xcp_abcd processes')
     g_perfm.add_argument('--low-mem', action='store_true',
                          help='attempt to reduce memory usage (will increase disk usage '
@@ -96,7 +97,7 @@ def get_parser():
         '--brain-template', action='store', default='MNI152NLin2009cAsym',
         help=" template to be selected from anat to be processed and/or  for normalization")
 
-    g_param.add_argument('--smoothing', nargs='?', const=5, default=False,
+    g_param.add_argument('--smoothing', nargs='?', const=5, default=True,
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
     g_param.add_argument('--despike', action='store_true', default=False,
@@ -398,8 +399,8 @@ def build_workflow(opts, retval):
             nthreads = cpu_count()
         plugin_settings['plugin_args']['n_procs'] = nthreads
 
-    if opts.mem_mb:
-        plugin_settings['plugin_args']['memory_gb'] = opts.mem_mb / 1024
+    if opts.mem_gb:
+        plugin_settings['plugin_args']['memory_gb'] = opts.mem_gb
 
     omp_nthreads = opts.omp_nthreads
     if omp_nthreads == 0:

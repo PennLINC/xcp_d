@@ -7,8 +7,8 @@ functional connectvity matrix
 .. autofunction:: init_fcon_ts_wf
 .. autofunction:: init_cifti_conts_wf
 """
-import numpy as np
 import os
+import numpy as np  
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 import nilearn as nl
@@ -105,7 +105,7 @@ were computed.
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,
-                'connectplot']),
+                'ts50_ts','ts50_fc','connectplot']),
                 name='outputnode')
 
     inputnode.inputs.bold_file=bold_file
@@ -116,22 +116,11 @@ were computed.
     sc417atlas = get_atlas_nifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_nifti(atlasname='glasser360')
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
-
-
-    file_base = os.path.basename(str(bold_file))
-    # add MNI9 MNI6 NKI OASIS PNC
-    # defaulttemplate = 'MNI152NLin2009cAsym'
-    # pnctemplate = 'PNC'
-    # MNI2006 = 'MNI152NLin6Asym'
-    # oasistemplate = 'OASIS'
-
+    ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
     
-    if brain_template in file_base:
-        transformfile = 'identity'
-    elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
-    else:
-        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+    #get transfrom file
+    transformfile = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
+                 t1w_to_native=t1w_to_native)
 
     sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,num_threads=2,
                        transforms=transformfile,interpolation='NearestNeighbor',
@@ -151,6 +140,12 @@ were computed.
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
+    
+    ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,num_threads=2,
+                       transforms=transformfile,interpolation='NearestNeighbor',
+                       input_image_type=3, dimension=3),
+                       name="apply_tranform_tian50", mem_gb=mem_gb)
+
     matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf", mem_gb=mem_gb)
 
     nifticonnect_sc27 = pe.Node(nifticonnect(),
@@ -161,6 +156,8 @@ were computed.
                     name="gd33_connect", mem_gb=mem_gb)
     nifticonnect_gs36 = pe.Node(nifticonnect(),
                     name="gs36_connect", mem_gb=mem_gb)
+    nifticonnect_ts50 = pe.Node(nifticonnect(),
+                    name="tiansub_connect", mem_gb=mem_gb)
 
 
     workflow.connect([
@@ -169,12 +166,14 @@ were computed.
              (inputnode,sc417_transform,[('ref_file','reference_image'),]),
              (inputnode,gs360_transform,[('ref_file','reference_image'),]),
              (inputnode,gd333_transform,[('ref_file','reference_image'),]),
+             (inputnode,ts50_transform,[('ref_file','reference_image'),]),
 
              # load bold for timeseries extraction and connectivity
              (inputnode,nifticonnect_sc27, [('clean_bold','regressed_file'),]),
              (inputnode,nifticonnect_sc47, [('clean_bold','regressed_file'),]),
              (inputnode,nifticonnect_gd33, [('clean_bold','regressed_file'),]),
              (inputnode,nifticonnect_gs36, [('clean_bold','regressed_file'),]),
+             (inputnode,nifticonnect_ts50, [('clean_bold','regressed_file'),]),
 
              # linked atlas
              (sc217_transform,nifticonnect_sc27,[(
@@ -185,6 +184,8 @@ were computed.
                                          'output_image','atlas'),]),
              (gs360_transform,nifticonnect_gs36,[(
                                          'output_image','atlas'),]),
+             (ts50_transform,nifticonnect_ts50,[(
+                                         'output_image','atlas'),]),
 
              # output file
              (nifticonnect_sc27,outputnode,[('time_series_tsv','sc217_ts'),
@@ -193,13 +194,16 @@ were computed.
                                           ('fcon_matrix_tsv','sc417_fc')]),
              (nifticonnect_gs36,outputnode,[('time_series_tsv','gs360_ts'),
                                           ('fcon_matrix_tsv','gs360_fc')]),
-             (nifticonnect_gs36,outputnode,[('time_series_tsv','gd333_ts'),
+             (nifticonnect_gd33,outputnode,[('time_series_tsv','gd333_ts'),
                                           ('fcon_matrix_tsv','gd333_fc')]),
+
+             (nifticonnect_ts50,outputnode,[('time_series_tsv','ts50_ts'),
+                                          ('fcon_matrix_tsv','ts50_fc')]),
               # to qcplot
              (nifticonnect_sc27,matrix_plot,[('time_series_tsv','sc217_timeseries')]),
              (nifticonnect_sc47,matrix_plot,[('time_series_tsv','sc417_timeseries')]),
              (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gd333_timeseries')]),
-             (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gs360_timeseries')]),
+             (nifticonnect_gd33,matrix_plot,[('time_series_tsv','gs360_timeseries')]),
              (matrix_plot,outputnode,[('connectplot','connectplot')])
 
 
@@ -270,7 +274,7 @@ were computed for each atlas with the Workbench.
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc',
-                'connectplot' ]),
+                'ts50_ts','ts50_fc','connectplot' ]),
                 name='outputnode')
 
 
@@ -279,6 +283,7 @@ were computed for each atlas with the Workbench.
     sc417atlas = get_atlas_cifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_cifti(atlasname='glasser360')
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
+    ts50atlas = get_atlas_cifti(atlasname='tiansubcortical')
 
     # timeseries extraction
     sc217parcel = pe.Node(CiftiParcellate(atlas_label=sc217atlas,direction='COLUMN'),
@@ -289,6 +294,8 @@ were computed for each atlas with the Workbench.
                           mem_gb=mem_gb, name='gs360parcel')
     gd333parcel = pe.Node(CiftiParcellate(atlas_label=gd333atlas,direction='COLUMN'),
                          mem_gb=mem_gb, name='gd333parcel')
+    ts50parcel = pe.Node(CiftiParcellate(atlas_label=ts50atlas,direction='COLUMN'),
+                         mem_gb=mem_gb, name='ts50parcel')
 
     matrix_plot = pe.Node(connectplot(),name="matrix_plot_wf", mem_gb=mem_gb)
     # correlation
@@ -296,27 +303,32 @@ were computed for each atlas with the Workbench.
     sc417corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc417corr')
     gs360corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gs360corr')
     gd333corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gd333corr')
+    ts50corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='ts50corr')
 
     workflow.connect([
                     (inputnode,sc217parcel,[('clean_cifti','in_file')]),
                     (inputnode,sc417parcel,[('clean_cifti','in_file')]),
                     (inputnode,gd333parcel,[('clean_cifti','in_file')]),
                     (inputnode,gs360parcel,[('clean_cifti','in_file')]),
+                    (inputnode,ts50parcel,[('clean_cifti','in_file')]),
 
                     (sc217parcel,outputnode,[('out_file','sc217_ts',)]),
                     (sc417parcel,outputnode,[('out_file','sc417_ts',)]),
                     (gs360parcel,outputnode,[('out_file','gs360_ts',)]),
                     (gd333parcel,outputnode,[('out_file','gd333_ts',)]),
+                    (ts50parcel,outputnode,[('out_file','ts50_ts',)]),
 
                     (sc217parcel,sc217corr ,[('out_file','in_file',)]),
                     (sc417parcel,sc417corr ,[('out_file','in_file',)]),
                     (gs360parcel,gs360corr ,[('out_file','in_file',)]),
                     (gd333parcel,gd333corr ,[('out_file','in_file',)]),
+                    (ts50parcel,ts50corr ,[('out_file','in_file',)]),
 
                     (sc217corr,outputnode,[('out_file','sc217_fc',)]),
                     (sc417corr,outputnode,[('out_file','sc417_fc',)]),
                     (gs360corr,outputnode,[('out_file','gs360_fc',)]),
                     (gd333corr,outputnode,[('out_file','gd333_fc',)]),
+                    (ts50corr,outputnode,[('out_file','ts50_fc',)]),
 
                     (inputnode,matrix_plot,[('clean_cifti','in_file')]),
                     (sc217parcel,matrix_plot,[('out_file','sc217_timeseries')]),
@@ -328,3 +340,34 @@ were computed for each atlas with the Workbench.
 
 
     return workflow
+
+
+
+def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
+
+    file_base = os.path.basename(str(bold_file))
+   
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+     
+    if 'MNI152NLin6Asym' in file_base:
+        transformfile = 'identity'
+    elif 'MNI152NLin2009cAsym' in file_base:
+        transformfile = str(MNI6)
+    elif 'PNC' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
+    elif 'NKI' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
+    elif 'OASIS' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
+    elif 'T1w' in file_base:
+        transformfile = str(mni_to_t1w)
+    else:
+        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+
+    return transformfile
