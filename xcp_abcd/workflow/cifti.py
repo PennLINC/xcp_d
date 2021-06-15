@@ -190,7 +190,7 @@ tasks and sessions), the following postprocessing was performed:
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff',
                 'reho_lh','reho_rh','sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','ts50_ts','ts50_fc','qc_file','fd']),
         name='outputnode')
 
     TR = layout.get_tr(cifti_file)
@@ -316,7 +316,8 @@ tasks and sessions), the following postprocessing was performed:
 	    (cifti_conts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
                         ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
-                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
+                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc'),
+                        ('outputnode.ts50_ts','ts50_ts'),('outputnode.ts50_fc','ts50_fc')]),
 
        ])
 
@@ -338,7 +339,9 @@ tasks and sessions), the following postprocessing was performed:
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
-                                ('outputnode.gd333_fc','inputnode.gd333_fc')]),
+                                ('outputnode.gd333_fc','inputnode.gd333_fc'),
+                                ('outputnode.ts50_ts','inputnode.ts50_ts'),
+                                ('outputnode.ts50_fc','inputnode.ts50_fc')]),
          (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
 
 

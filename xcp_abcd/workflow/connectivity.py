@@ -104,8 +104,8 @@ were computed.
                    ]), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,'ts50_ts','ts50_fc'
-                'connectplot']),
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,
+                'ts50_ts','ts50_fc','connectplot']),
                 name='outputnode')
 
     inputnode.inputs.bold_file=bold_file
@@ -141,7 +141,7 @@ were computed.
                        input_image_type=3, dimension=3),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
     
-    ts50_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,num_threads=2,
+    ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,num_threads=2,
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
                        name="apply_tranform_tian50", mem_gb=mem_gb)
@@ -274,7 +274,7 @@ were computed for each atlas with the Workbench.
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc',
-                'connectplot' ]),
+                'ts50_ts','ts50_fc','connectplot' ]),
                 name='outputnode')
 
 
@@ -283,6 +283,7 @@ were computed for each atlas with the Workbench.
     sc417atlas = get_atlas_cifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_cifti(atlasname='glasser360')
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
+    ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
 
     # timeseries extraction
     sc217parcel = pe.Node(CiftiParcellate(atlas_label=sc217atlas,direction='COLUMN'),
@@ -293,6 +294,8 @@ were computed for each atlas with the Workbench.
                           mem_gb=mem_gb, name='gs360parcel')
     gd333parcel = pe.Node(CiftiParcellate(atlas_label=gd333atlas,direction='COLUMN'),
                          mem_gb=mem_gb, name='gd333parcel')
+    ts50parcel = pe.Node(CiftiParcellate(atlas_label=ts50atlas,direction='COLUMN'),
+                         mem_gb=mem_gb, name='ts50parcel')
 
     matrix_plot = pe.Node(connectplot(),name="matrix_plot_wf", mem_gb=mem_gb)
     # correlation
@@ -300,27 +303,32 @@ were computed for each atlas with the Workbench.
     sc417corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc417corr')
     gs360corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gs360corr')
     gd333corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gd333corr')
+    ts50corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='ts50corr')
 
     workflow.connect([
                     (inputnode,sc217parcel,[('clean_cifti','in_file')]),
                     (inputnode,sc417parcel,[('clean_cifti','in_file')]),
                     (inputnode,gd333parcel,[('clean_cifti','in_file')]),
                     (inputnode,gs360parcel,[('clean_cifti','in_file')]),
+                    (inputnode,ts50parcel,[('clean_cifti','in_file')]),
 
                     (sc217parcel,outputnode,[('out_file','sc217_ts',)]),
                     (sc417parcel,outputnode,[('out_file','sc417_ts',)]),
                     (gs360parcel,outputnode,[('out_file','gs360_ts',)]),
                     (gd333parcel,outputnode,[('out_file','gd333_ts',)]),
+                    (ts50parcel,outputnode,[('out_file','ts50_ts',)]),
 
                     (sc217parcel,sc217corr ,[('out_file','in_file',)]),
                     (sc417parcel,sc417corr ,[('out_file','in_file',)]),
                     (gs360parcel,gs360corr ,[('out_file','in_file',)]),
                     (gd333parcel,gd333corr ,[('out_file','in_file',)]),
+                    (ts50parcel,ts50corr ,[('out_file','in_file',)]),
 
                     (sc217corr,outputnode,[('out_file','sc217_fc',)]),
                     (sc417corr,outputnode,[('out_file','sc417_fc',)]),
                     (gs360corr,outputnode,[('out_file','gs360_fc',)]),
                     (gd333corr,outputnode,[('out_file','gd333_fc',)]),
+                    (ts50corr,outputnode,[('out_file','ts50_fc',)]),
 
                     (inputnode,matrix_plot,[('clean_cifti','in_file')]),
                     (sc217parcel,matrix_plot,[('out_file','sc217_timeseries')]),
@@ -338,12 +346,7 @@ were computed for each atlas with the Workbench.
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
     file_base = os.path.basename(str(bold_file))
-    # add MNI9 MNI6 NKI OASIS PNC
-    # defaulttemplate = 'MNI152NLin2009cAsym'
-    # pnctemplate = 'PNC'
-    # MNI2006 = 'MNI152NLin6Asym'
-    # oasistemplate = 'OASIS'
-
+   
     MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
     if 'MNI152NLin6Asym' in file_base:
