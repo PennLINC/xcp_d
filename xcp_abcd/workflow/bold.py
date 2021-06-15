@@ -206,7 +206,7 @@ tasks and sessions), the following postprocessing was performed:
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold','alff_out','smoothed_alff',
-                'reho_out','sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
+                'reho_out','sc217_ts', 'sc217_fc','sc417_ts','sc417_fc','ts50_ts','ts50_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
@@ -356,7 +356,8 @@ tasks and sessions), the following postprocessing was performed:
 	    (fcon_ts_wf,outputnode,[('outputnode.sc217_ts','sc217_ts' ),('outputnode.sc217_fc','sc217_fc'),
                         ('outputnode.sc417_ts','sc417_ts'),('outputnode.sc417_fc','sc417_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
-                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc')]),
+                        ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc'),
+                        ('outputnode.ts50_ts','ts50_ts'),('outputnode.ts50_fc','ts50_fc')]),
 
        ])
    
@@ -375,7 +376,9 @@ tasks and sessions), the following postprocessing was performed:
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
-                                ('outputnode.gd333_fc','inputnode.gd333_fc')]),
+                                ('outputnode.gd333_fc','inputnode.gd333_fc'),
+                                ('outputnode.ts50_ts','inputnode.ts50_ts'),
+                                ('outputnode.ts50_fc','inputnode.ts50_fc')]),
          (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
 
 
@@ -399,13 +402,13 @@ tasks and sessions), the following postprocessing was performed:
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='connectvityplot', datatype="figures"),
                   name='ds_report_connectivity', run_without_submitting=True)
 
-    #ds_report_rehoplot = pe.Node(
-        #DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='rehoplot', datatype="figures"),
-                  #name='ds_report_rehoplot', run_without_submitting=True)
+    ds_report_rehoplot = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='rehoplot', datatype="figures"),
+                  name='ds_report_rehoplot', run_without_submitting=True)
 
-    #ds_report_afniplot = pe.Node(
-        #DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='afniplot', datatype="figures"),
-                  #name='ds_report_afniplot', run_without_submitting=True)
+    ds_report_afniplot = pe.Node(
+        DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='afniplot', datatype="figures"),
+                  name='ds_report_afniplot', run_without_submitting=True)
 
     workflow.connect([
         (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
@@ -413,8 +416,8 @@ tasks and sessions), the following postprocessing was performed:
         (qcreport,functional_qc,[('qc_file','qc_file')]),
         (functional_qc,ds_report_qualitycontrol,[('out_report','in_file')]),
         (fcon_ts_wf,ds_report_connectivity,[('outputnode.connectplot','in_file')]),
-        #(reho_compute_wf,ds_report_rehoplot,[('outputnode.rehohtml','in_file')]),
-        #(alff_compute_wf,ds_report_afniplot ,[('outputnode.alffhtml','in_file')]),
+        (reho_compute_wf,ds_report_rehoplot,[('outputnode.rehohtml','in_file')]),
+        (alff_compute_wf,ds_report_afniplot ,[('outputnode.alffhtml','in_file')]),
     ])
 
     return workflow

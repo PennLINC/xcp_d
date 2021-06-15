@@ -104,7 +104,7 @@ were computed.
                    ]), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['sc217_ts', 'sc217_fc','sc417_ts','sc417_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc' ,'ts50_ts','ts50_fc'
                 'connectplot']),
                 name='outputnode')
 
@@ -116,6 +116,7 @@ were computed.
     sc417atlas = get_atlas_nifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_nifti(atlasname='glasser360')
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
+    ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
     
     #get transfrom file
     transformfile = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
@@ -139,6 +140,12 @@ were computed.
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
                        name="apply_tranform_gd33", mem_gb=mem_gb)
+    
+    ts50_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,num_threads=2,
+                       transforms=transformfile,interpolation='NearestNeighbor',
+                       input_image_type=3, dimension=3),
+                       name="apply_tranform_tian50", mem_gb=mem_gb)
+
     matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf", mem_gb=mem_gb)
 
     nifticonnect_sc27 = pe.Node(nifticonnect(),
@@ -149,6 +156,8 @@ were computed.
                     name="gd33_connect", mem_gb=mem_gb)
     nifticonnect_gs36 = pe.Node(nifticonnect(),
                     name="gs36_connect", mem_gb=mem_gb)
+    nifticonnect_ts50 = pe.Node(nifticonnect(),
+                    name="tiansub_connect", mem_gb=mem_gb)
 
 
     workflow.connect([
@@ -157,12 +166,14 @@ were computed.
              (inputnode,sc417_transform,[('ref_file','reference_image'),]),
              (inputnode,gs360_transform,[('ref_file','reference_image'),]),
              (inputnode,gd333_transform,[('ref_file','reference_image'),]),
+             (inputnode,ts50_transform,[('ref_file','reference_image'),]),
 
              # load bold for timeseries extraction and connectivity
              (inputnode,nifticonnect_sc27, [('clean_bold','regressed_file'),]),
              (inputnode,nifticonnect_sc47, [('clean_bold','regressed_file'),]),
              (inputnode,nifticonnect_gd33, [('clean_bold','regressed_file'),]),
              (inputnode,nifticonnect_gs36, [('clean_bold','regressed_file'),]),
+             (inputnode,nifticonnect_ts50, [('clean_bold','regressed_file'),]),
 
              # linked atlas
              (sc217_transform,nifticonnect_sc27,[(
@@ -172,6 +183,8 @@ were computed.
              (gd333_transform,nifticonnect_gd33,[(
                                          'output_image','atlas'),]),
              (gs360_transform,nifticonnect_gs36,[(
+                                         'output_image','atlas'),]),
+             (ts50_transform,nifticonnect_ts50,[(
                                          'output_image','atlas'),]),
 
              # output file
@@ -183,6 +196,9 @@ were computed.
                                           ('fcon_matrix_tsv','gs360_fc')]),
              (nifticonnect_gs36,outputnode,[('time_series_tsv','gd333_ts'),
                                           ('fcon_matrix_tsv','gd333_fc')]),
+
+             (nifticonnect_ts50,outputnode,[('time_series_tsv','ts50_ts'),
+                                          ('fcon_matrix_tsv','ts50_fc')]),
               # to qcplot
              (nifticonnect_sc27,matrix_plot,[('time_series_tsv','sc217_timeseries')]),
              (nifticonnect_sc47,matrix_plot,[('time_series_tsv','sc417_timeseries')]),
