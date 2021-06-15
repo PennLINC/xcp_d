@@ -194,7 +194,7 @@ were computed.
                                           ('fcon_matrix_tsv','sc417_fc')]),
              (nifticonnect_gs36,outputnode,[('time_series_tsv','gs360_ts'),
                                           ('fcon_matrix_tsv','gs360_fc')]),
-             (nifticonnect_gs36,outputnode,[('time_series_tsv','gd333_ts'),
+             (nifticonnect_gd33,outputnode,[('time_series_tsv','gd333_ts'),
                                           ('fcon_matrix_tsv','gd333_fc')]),
 
              (nifticonnect_ts50,outputnode,[('time_series_tsv','ts50_ts'),
@@ -203,7 +203,7 @@ were computed.
              (nifticonnect_sc27,matrix_plot,[('time_series_tsv','sc217_timeseries')]),
              (nifticonnect_sc47,matrix_plot,[('time_series_tsv','sc417_timeseries')]),
              (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gd333_timeseries')]),
-             (nifticonnect_gs36,matrix_plot,[('time_series_tsv','gs360_timeseries')]),
+             (nifticonnect_gd33,matrix_plot,[('time_series_tsv','gs360_timeseries')]),
              (matrix_plot,outputnode,[('connectplot','connectplot')])
 
 
@@ -283,7 +283,7 @@ were computed for each atlas with the Workbench.
     sc417atlas = get_atlas_cifti(atlasname='schaefer400x17')
     gs360atlas = get_atlas_cifti(atlasname='glasser360')
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
-    ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
+    ts50atlas = get_atlas_cifti(atlasname='tiansubcortical')
 
     # timeseries extraction
     sc217parcel = pe.Node(CiftiParcellate(atlas_label=sc217atlas,direction='COLUMN'),

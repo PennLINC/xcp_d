@@ -162,7 +162,7 @@ class brainplot(SimpleInterface):
         
          #convert nifti to zscore
 
-        tempnifti = os.path.split(os.path.abspath(self.inputs.in_file))[0]
+        tempnifti = os.path.split(os.path.abspath(self.inputs.in_file))[0] + '/zscore.nii.gz'
         
         tempnifti = zscore_nifti(img=self.inputs.in_file,mask=self.inputs.mask_file,
                     outputname=tempnifti)
