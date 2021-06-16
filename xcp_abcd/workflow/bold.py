@@ -239,15 +239,15 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     mem_gbx = _create_mem_gb(bold_file)
 
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['resampled'],mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
                  brain_template=brain_template,name="fcons_ts_wf")
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'], TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
+    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
                        name="afni_reho_wf")
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
@@ -259,26 +259,26 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
-                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['derivative'])
+                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=False,
+    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=False,
                 name="resd_smoothing_wf")
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filtering_wf", mem_gb=mem_gbx['timeseries'])
+                    name="filtering_wf", mem_gb=mem_gbx['resampled'])
 
     regression_wf = pe.Node(regress(tr=TR),
-               name="regression_wf",mem_gb = mem_gbx['timeseries'])
+               name="regression_wf",mem_gb = mem_gbx['resampled'])
 
     interpolate_wf = pe.Node(interpolate(TR=TR),
-                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
+                  name="interpolation_wf",mem_gb = mem_gbx['resampled'])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries'])
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
 
     # get transform file for resampling and fcon
     if brain_template in file_base:
@@ -304,7 +304,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'])
+        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['resampled'])
 
         workflow.connect([
             (inputnode,despike_wf,[('bold_file','in_file')]),
