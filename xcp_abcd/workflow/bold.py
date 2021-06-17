@@ -390,7 +390,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         (inputnode,resample_parc,[('ref_file','reference_image')]),
         (resample_parc,qcreport,[('output_image','seg_file')]),
         (resample_bold2T1w,qcreport,[('output_image','bold2T1w_mask')]),
-        (resample_bold2MNI,qcreport,[('output_image','bold2temp_mask')])
+        (resample_bold2MNI,qcreport,[('output_image','bold2temp_mask')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
 
