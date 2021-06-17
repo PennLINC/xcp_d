@@ -301,13 +301,13 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     resample_bold2T1w = pe.Node(ApplyTransforms(
         dimension=3,
-         input_image=bold_file,reference_image=t1w_mask,
+         input_image=mask_file,reference_image=t1w_mask,
          interpolation='NearestNeighbor',transforms=bold2T1w_trans),
          name='bold2t1_trans')
     
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
-         input_image=bold_file,reference_image=str(get_template(
+         input_image=mask_file,reference_image=str(get_template(
             'MNI152NLin2009cAsym', resolution=2, desc='brain',
             suffix='mask', extension=['.nii', '.nii.gz'])),
          interpolation='NearestNeighbor',transforms=bold2MNI_trans),
