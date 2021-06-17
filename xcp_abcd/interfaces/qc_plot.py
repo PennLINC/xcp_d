@@ -18,9 +18,10 @@ from nipype.interfaces.base import (
 from ..utils import(read_ndata, write_ndata, compute_FD,compute_dvars)
 from ..utils import plot_svg
 import pandas as pd
-import tempfile
 from niworkflows.viz.plots import fMRIPlot
-LOGGER = logging.getLogger('nipype.interface') 
+from utils import regisQ
+LOGGER = logging.getLogger('nipype.interface')
+
 
 
 class _qcInputSpec(BaseInterfaceInputSpec):
@@ -33,6 +34,12 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(exit=True,mandatory=True,desc="TR")
     head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head raidus for to convert rotxyz to arc length \
                                                for baby, 40m is recommended")
+    bold2T1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    bold2temp_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    template_mask =  File(exists=False,mandatory=False, desc="template mask")
+    t1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    
+    
 class _qcOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True,
                                   desc="qc file in tsv")
@@ -180,9 +187,20 @@ class computeqcplot(SimpleInterface):
         for i in range(len(bb)-1):
             qc_x.update({bb[i].split('-')[0]: bb[i].split('-')[1]})
         qc_x.update(qc_pf)
+        if self.inputs.bold2T1w_mask:
+            regq = regisQ(bold2t1w_mask=self.inputs.bold2T1w_mask,
+                    t1w_mask=self.inputs.t1w_mask,
+                    bold2template_mask=self.inputs.bold2temp_mask,
+                    template_mask=self.inputs.template_mask)
+            qc_x.update(regq)
 
         df = pd.DataFrame(qc_x) 
         self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.tsv',
                                                    newpath=runtime.cwd, use_ext=False)
         df.to_csv(self._results['qc_file'], index=False, header=True)
         return runtime
+
+
+
+
+    
