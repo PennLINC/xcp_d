@@ -29,6 +29,7 @@ from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import interpolate
 from  ..workflow import init_censoring_wf,init_resd_smoohthing
 #from postprocessing import stringforparams
+from ..workflow import get_transformfile
 
 from  ..workflow import (init_fcon_ts_wf,
     init_compute_alff_wf,
@@ -281,7 +282,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
 
     # get transform file for resampling and fcon
       
-    from connectivity import get_transformfile 
+    
     
     transformfile = get_transformfile(bold_file=bold_file,
             mni_to_t1w=mni_to_t1w,t1w_to_native=mni_to_t1w)
