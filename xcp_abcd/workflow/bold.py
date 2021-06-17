@@ -284,11 +284,11 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     
     transformfile = get_transformfile(bold_file=bold_file,
-            mni_to_t1w=mni_to_t1w,t1w_to_native=mni_to_t1w)
+            mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file))
     t1w_mask = get_maskfiles(mni_to_t1w=mni_to_t1w)
 
-    bold2MNI_trans, bold2T1w_trans = get_transformfilex(bold_file=bold_file,
-            mni_to_t1w=mni_to_t1w,t1w_to_native=mni_to_t1w) 
+    bold2MNI_trans,bold2T1w_trans = get_transformfilex(bold_file=bold_file,
+            mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file)) 
 
     
     resample_parc = pe.Node(ApplyTransforms(
@@ -311,7 +311,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
             'MNI152NLin2009cAsym', resolution=2, desc='brain',
             suffix='mask', extension=['.nii', '.nii.gz'])),
          interpolation='NearestNeighbor',transforms=bold2MNI_trans),
-         name='bold2t1_trans')
+         name='bold2mni_trans')
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
                        template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
@@ -571,7 +571,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         transformfileT1W = 'identity'
     else:
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
-        native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
+        native_to_t1w = t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI = [str(t1w_to_mni),str(native_to_t1w)]
