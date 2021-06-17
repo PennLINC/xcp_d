@@ -277,17 +277,20 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     interpolate_wf = pe.Node(interpolate(TR=TR),
                   name="interpolation_wf",mem_gb = mem_gbx['resampled'])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
+    
 
     # get transform file for resampling and fcon
-    if brain_template in file_base:
-        transformfile = 'identity'
-    elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
-    else:
-        transformfile = [str(mni_to_t1w), str(_t12native(bold_file))]
+      
+    
+    
+    transformfile = get_transformfile(bold_file=bold_file,
+            mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file))
+    t1w_mask = get_maskfiles(mni_to_t1w=mni_to_t1w)
 
+    bold2MNI_trans,bold2T1w_trans = get_transformfilex(bold_file=bold_file,
+            mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file)) 
+
+    
     resample_parc = pe.Node(ApplyTransforms(
         dimension=3,
         input_image=str(get_template(
@@ -295,6 +298,25 @@ The residual were then  band pass filtered within the frequency band {highpass}-
             suffix='dseg', extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',transforms=transformfile),
         name='resample_parc')
+    
+    resample_bold2T1w = pe.Node(ApplyTransforms(
+        dimension=3,
+         input_image=mask_file,reference_image=t1w_mask,
+         interpolation='NearestNeighbor',transforms=bold2T1w_trans),
+         name='bold2t1_trans')
+    
+    resample_bold2MNI = pe.Node(ApplyTransforms(
+        dimension=3,
+         input_image=mask_file,reference_image=str(get_template(
+            'MNI152NLin2009cAsym', resolution=2, desc='brain',
+            suffix='mask', extension=['.nii', '.nii.gz'])),
+         interpolation='NearestNeighbor',transforms=bold2MNI_trans),
+         name='bold2mni_trans')
+
+    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
+                       template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
+                        suffix='mask', extension=['.nii', '.nii.gz'])),
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
     
 
     workflow.connect([
@@ -340,7 +362,6 @@ The residual were then  band pass filtered within the frequency band {highpass}-
              (inputnode,filtering_wf,[('bold_mask','mask')]),
 	     (interpolate_wf,filtering_wf,[('bold_interpolated','in_file')]),
 
-
     ])
     
     # residual smoothing 
@@ -368,8 +389,12 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         (censorscrub_wf,qcreport,[('outputnode.tmask','tmask')]),
         (inputnode,resample_parc,[('ref_file','reference_image')]),
         (resample_parc,qcreport,[('output_image','seg_file')]),
+        (resample_bold2T1w,qcreport,[('output_image','bold2T1w_mask')]),
+        (resample_bold2MNI,qcreport,[('output_image','bold2temp_mask')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
+
+    
 
    # write  to the outputnode, may be use in future
     workflow.connect([
@@ -503,3 +528,88 @@ def stringforparams(params):
             to make a total 36 nuissance regressors"
     return bsignal
     
+def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
+
+    file_base = os.path.basename(str(bold_file))
+   
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+     
+    if 'MNI152NLin2009cAsym' in file_base:
+        transformfileMNI = 'identity'
+        transformfileT1W  = str(mni_to_t1w)
+
+    elif 'MNI152NLin6Asym' in file_base:
+        transformfileMNI = MNI6
+        transformfileT1W = [str(MNI6),str(mni_to_t1w)]
+
+    elif 'PNC' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        pnc_to_t1w  = mnisf + 'from-PNC_to-T1w_mode-image_xfm.h5'
+        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
+        transformfileMNI =[str(pnc_to_t1w),str(t1w_to_mni)]
+        transformfileT1W = str(pnc_to_t1w)
+
+    elif 'NKI' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        nki_to_t1w  = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
+        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
+        transformfileMNI =[str(nki_to_t1w),str(t1w_to_mni)]
+        transformfileT1W = str(nki_to_t1w)
+
+    elif 'OASIS' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
+        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
+        transformfileMNI =[str(oasis_to_t1w),str(t1w_to_mni)]
+        transformfileT1W = str(oasis_to_t1w)
+
+    elif 'T1w' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
+        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
+        transformfileMNI = str(t1w_to_mni)
+        transformfileT1W = 'identity'
+    else:
+        t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
+        native_to_t1w = t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
+        transformfileMNI = [str(t1w_to_mni),str(native_to_t1w)]
+        transformfileT1W =  str(native_to_t1w)
+  
+    return transformfileMNI, transformfileT1W
+
+
+
+def get_maskfiles(mni_to_t1w):
+    t1mask = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]+'desc-brain_mask.nii.gz'
+    return t1mask
+
+def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
+
+    file_base = os.path.basename(str(bold_file))
+   
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+     
+    if 'MNI152NLin6Asym' in file_base:
+        transformfile = 'identity'
+    elif 'MNI152NLin2009cAsym' in file_base:
+        transformfile = str(MNI6)
+    elif 'PNC' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
+    elif 'NKI' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
+    elif 'OASIS' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
+    elif 'T1w' in file_base:
+        transformfile = str(mni_to_t1w)
+    else:
+        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+
+    return transformfile
