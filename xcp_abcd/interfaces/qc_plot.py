@@ -19,7 +19,7 @@ from ..utils import(read_ndata, write_ndata, compute_FD,compute_dvars)
 from ..utils import plot_svg
 import pandas as pd
 from niworkflows.viz.plots import fMRIPlot
-from utils import regisQ
+from ..utils import regisQ
 LOGGER = logging.getLogger('nipype.interface')
 
 
