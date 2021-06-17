@@ -29,7 +29,6 @@ from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import interpolate
 from  ..workflow import init_censoring_wf,init_resd_smoohthing
 #from postprocessing import stringforparams
-from ..workflow import get_transformfile
 
 from  ..workflow import (init_fcon_ts_wf,
     init_compute_alff_wf,
@@ -585,3 +584,32 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 def get_maskfiles(mni_to_t1w):
     t1mask = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]+'desc-brain_mask.nii.gz'
     return t1mask
+
+def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
+
+    file_base = os.path.basename(str(bold_file))
+   
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+     
+    if 'MNI152NLin6Asym' in file_base:
+        transformfile = 'identity'
+    elif 'MNI152NLin2009cAsym' in file_base:
+        transformfile = str(MNI6)
+    elif 'PNC' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
+    elif 'NKI' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
+    elif 'OASIS' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
+        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
+    elif 'T1w' in file_base:
+        transformfile = str(mni_to_t1w)
+    else:
+        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+
+    return transformfile
