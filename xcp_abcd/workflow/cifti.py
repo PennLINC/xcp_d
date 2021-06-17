@@ -226,14 +226,14 @@ The residual were then  band pass filtered within the frequency band {highpass}-
 
     
 
-    cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
+    cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['resampled'],
                       name='cifti_ts_con_wf')
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'],TR=TR,
                    lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing,cifti=True,
                     name="compute_alff_wf" )
 
-    reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
+    reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
                        name="surface_reho_wf")
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
@@ -245,26 +245,26 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
-                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['derivative'])
+                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=True,
+    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=True,
                 name="resd_smoothing_wf")
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filtering_wf", mem_gb=mem_gbx['timeseries'])
+                    name="filtering_wf", mem_gb=mem_gbx['resampled'])
 
     regression_wf = pe.Node(regress(tr=TR),
-               name="regression_wf",mem_gb = mem_gbx['timeseries'])
+               name="regression_wf",mem_gb = mem_gbx['resampled'])
 
     interpolate_wf = pe.Node(interpolate(TR=TR),
-                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
+                  name="interpolation_wf",mem_gb = mem_gbx['resampled'])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=cifti_file,dummytime=dummytime,
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries'])
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
 
     
 
@@ -275,7 +275,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['timeseries'])
+        despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['resampled'])
         workflow.connect([
              (inputnode,despike_wf,[('cifti_file','in_file'),]),
              (despike_wf,censorscrub_wf,[('des_file','inputnode.bold'),]),
