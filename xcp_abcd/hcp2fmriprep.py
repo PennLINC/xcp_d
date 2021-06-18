@@ -215,4 +215,4 @@ os.system('rm -f -r /{0}/fmriprepdir/{1}'.format(working_dir,subid))
 #submit code
 import os
 subject = 100206
-sge_command='qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmirprep.py {1}'.format(84,subject)
+sge_command='qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py {1}'.format(84,subject)
