@@ -191,8 +191,8 @@ for j in tasklist:
 	xcp_file = '/{0}//S1200/{1}/MNINonLinear/Results/{2}/SBRef_dc.nii.gz'.format(working_dir,subid,j)
 	copyfile(orig,xcp_file)
 	anat1 = datadir +'/' +'/SBRef_dc.nii.gz'
-	mni2t1 = anatdir+'sub-'+subid+'_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5'
-	t1w2mni = anatdir+'sub-'+subid+'_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'
+	mni2t1 = anatdir+'sub-'+subid+'_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5'
+	t1w2mni = anatdir+'sub-'+subid+'_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
 	cmd = 'cp {0} {1}'.format(anat1,mni2t1)
 	os.system(cmd)
 	cmd = 'cp {0} {1}'.format(anat1,t1w2mni)
