@@ -134,7 +134,7 @@ class censorscrub(SimpleInterface):
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
         
         if self.inputs.custom_conf:
-            file_base = os.basename(self.inputs.bold_file.split('-confounds_timeseries.tsv')[0])
+            file_base = os.path.basename(self.inputs.bold_file.split('-confounds_timeseries.tsv')[0])
             custom_file = self.inputs.custom_conf + '/' + file_base + '-custom_timeseries.tsv'
             customx_conf = pd.read_csv(str(custom_file),header=None) 
            
