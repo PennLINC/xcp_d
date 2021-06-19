@@ -18,6 +18,10 @@ from .sentry import sentry_setup
 
 from .qcmetrics import regisQ
 
+from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
+                    stringforparams,fwhm2sigma,get_customfile)
+
+
 __all__ = [
     'read_ndata',
     'write_ndata',
@@ -41,5 +45,11 @@ __all__ = [
     'bid_derivative',
     'sentry_setup',
     'despikedatacifti',
-    'regisQ'
-]
+    'regisQ',
+    'get_maskfiles',
+    'get_transformfile',
+    'get_transformfilex',
+    'stringforparams',
+    'fwhm2sigma',
+    'get_customfile'
+  ]

@@ -18,12 +18,10 @@ from nipype import logging
 from ..utils import collect_data
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..interfaces import computeqcplot
-from  ..utils import bid_derivative
+from  ..utils import bid_derivative,stringforparams
 from ..interfaces import  FunctionalSummary,ciftidespike
-from  ..workflow import (init_cifti_conts_wf,
-    init_post_process_wf,
-    init_compute_alff_wf,
-    init_surface_reho_wf)
+from  ..workflow import (init_cifti_conts_wf,init_compute_alff_wf,
+                         init_surface_reho_wf)
 from ..interfaces import interpolate
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from  ..workflow import init_censoring_wf,init_resd_smoohthing
@@ -209,7 +207,6 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
-    inputnode.inputs.custom_conf = str(custom_conf)
 
 
     outputnode = pe.Node(niu.IdentityInterface(
@@ -247,7 +244,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],custom_conf=custom_conf,TR=TR,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=True,
@@ -288,8 +285,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
 
     # add neccessary input for censoring if there is one
     workflow.connect([
-	     (inputnode,censorscrub_wf,[('cifti_file','inputnode.bold_file'),
-	            ('custom_conf','inputnode.custom_conf')]),
+	     (inputnode,censorscrub_wf,[('cifti_file','inputnode.bold_file')]),
 	     (confoundmat_wf,censorscrub_wf,[('confound_file','inputnode.confound_file')])
      ])
 
@@ -416,21 +412,3 @@ def _create_mem_gb(bold_fname):
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
-
-def fwhm2sigma(fwhm):
-    return fwhm / np.sqrt(8 * np.log(2))
-
-def stringforparams(params):
-    if params == '24P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives  \
-            to make a total of 24 nuissance regressors "
-    if params == '27P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
-            white and CSF signal to make a total 27 nuissance regressors"
-    if params == '36P':
-        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
-            quadratic expansion of these nuissance regressors and their derivatives  \
-            to make a total 36 nuissance regressors"
-    return bsignal

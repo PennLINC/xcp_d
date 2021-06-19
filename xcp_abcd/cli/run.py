@@ -105,7 +105,7 @@ def get_parser():
     g_param.add_argument('-p','--nuissance-regressors', required=False, default='27P', 
                              type=str, help='nuissance parameters to be selected, other options include 24P and 36P \
                                            acompcor and tcompcor, see Ciric etal 2007')
-    g_param.add_argument('-c','--custom_conf', required=False,
+    g_param.add_argument('-c','--custom_conf', required=False,default=None,
                              type=Path, help='custom confound to be added to nuissance regressors')
     g_param.add_argument('-d','--dummytime',default=0,
                              type=float, help='first volume in seconds to be removed for postprocessing') 

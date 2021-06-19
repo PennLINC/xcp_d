@@ -16,7 +16,7 @@ from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
                       get_atlas_cifti,ApplyTransformsx)
 from ..interfaces import connectplot
 from nipype.interfaces import utility as niu
-from ..utils import CiftiCorrelation, CiftiParcellate
+from ..utils import CiftiCorrelation, CiftiParcellate,get_transformfile
 from pkg_resources import resource_filename as pkgrf
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
@@ -343,31 +343,4 @@ were computed for each atlas with the Workbench.
 
 
 
-def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
-    file_base = os.path.basename(str(bold_file))
-   
-    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
-     
-    if 'MNI152NLin6Asym' in file_base:
-        transformfile = 'identity'
-    elif 'MNI152NLin2009cAsym' in file_base:
-        transformfile = str(MNI6)
-    elif 'PNC' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
-    elif 'NKI' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
-    elif 'OASIS' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
-    elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
-    else:
-        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
-
-    return transformfile

@@ -318,6 +318,7 @@ def init_censoring_wf(
     TR,
     head_radius,
     contigvol,
+    custom_conf,
     dummytime=0,
     fd_thresh=0,
     name='censoring'
@@ -325,14 +326,14 @@ def init_censoring_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold','bold_file','bold_mask','confound_file','custom_conf']), name='inputnode')
+            fields=['bold','bold_file','bold_mask','confound_file']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_censored','fmriprepconf_censored','tmask','fd','customconf_censored']), name='outputnode')
 
 
     censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,contig=contigvol,
-                       time_todrop=dummytime),
+                       time_todrop=dummytime,custom_conf=custom_conf),
                        name="censor_scrub",mem_gb=mem_gb)
    
     dummy_scan_wf  = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
@@ -344,11 +345,6 @@ def init_censoring_wf(
             (inputnode,dummy_scan_wf,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]) 
              ])
-        if inputnode.inputs.custom_conf:
-            workflow.connect([ (inputnode,dummy_scan_wf,[('custom_conf','custom_conf')]),
-                             (dummy_scan_wf,censorscrub_wf,[('custom_confdropTR','custom_conf')]),
-                             (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')])
-            ])
 
         workflow.connect([
               (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),
@@ -361,9 +357,8 @@ def init_censoring_wf(
             ])
     
     else:
-        if inputnode.inputs.custom_conf:
+        if custom_conf:
                 workflow.connect([
-                    (inputnode,censorscrub_wf,[('custom_conf','custom_conf')]),
                     (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')]),
                 ])
         
@@ -428,63 +423,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
 
 
 
-def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
-    file_base = os.path.basename(str(bold_file))
-   
-    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
-     
-    if 'MNI152NLin2009cAsym' in file_base:
-        transformfileMNI = 'identity'
-        transformfileT1W  = str(mni_to_t1w)
-
-    elif 'MNI152NLin6Asym' in file_base:
-        transformfileMNI = MNI6
-        transformfileT1W = [str(MNI6),str(mni_to_t1w)]
-
-    elif 'PNC' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        pnc_to_t1w  = mnisf + 'from-PNC_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        transformfileMNI =[str(pnc_to_t1w),str(t1w_to_mni)]
-        transformfileT1W = str(pnc_to_t1w)
-
-    elif 'NKI' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        nki_to_t1w  = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        transformfileMNI =[str(nki_to_t1w),str(t1w_to_mni)]
-        transformfileT1W = str(nki_to_t1w)
-
-    elif 'OASIS' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        transformfileMNI =[str(oasis_to_t1w),str(t1w_to_mni)]
-        transformfileT1W = str(oasis_to_t1w)
-
-    elif 'T1w' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        transformfileMNI = str(t1w_to_mni)
-        transformfileT1W = identity
-    else:
-        t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
-        native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        transformfileMNI = [str(t1w_to_mni),str(native_to_t1w)]
-        transformfileT1W =  str(native_to_t1w)
-  
-    return transformfileMNI, transformfileT1W
-
-
-
-def get_maskfiles(bold_file,mni_to_t1w):
-    boldmask = bold_file.split('desc-preproc_bold.nii.gz')[0]+ 'desc-brain_mask.nii.gz'
-    t1mask = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]+'desc-brain_mask.nii.gz'
-    return boldmask,t1mask
 
 
 
