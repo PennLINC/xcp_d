@@ -133,10 +133,11 @@ class censorscrub(SimpleInterface):
         dataxx = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask_file)
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
         
-        if self.inputs.custom_conf:
-            file_base = os.path.basename(self.inputs.bold_file.split('-confounds_timeseries.tsv')[0])
-            custom_file = self.inputs.custom_conf + '/' + file_base + '-custom_timeseries.tsv'
-            customx_conf = pd.read_csv(str(custom_file),header=None) 
+       
+        if os.path.isdir(self.inputs.custom_conf):
+            custom_file = get_customfile(custom_conf=self.inputs.custom_conf,
+                         bold_file=self.inputs.bold_file)
+            customx_conf = pd.read_csv(custom_file,header=None) 
            
         if self.inputs.time_todrop == 0:
             # do censoring staright
@@ -202,7 +203,7 @@ class censorscrub(SimpleInterface):
         fmriprepx_censored.to_csv(self._results['fmriprepconf_censored'],index=False,header=False)
         np.savetxt(self._results['tmask'],tmask,fmt="%d",delimiter=',')
         np.savetxt(self._results['fd_timeseries'],fd_timeseries2,fmt="%1.4f",delimiter=',')
-        if self.inputs.custom_conf:
+        if  os.path.isdir(self.inputs.custom_conf):
             customx_censored.to_csv(self._results['customconf_censored'],index=False,header=False)   
         return runtime
 
@@ -268,3 +269,13 @@ class interpolate(SimpleInterface):
                        filename=self._results['bold_interpolated'])
         
         return runtime
+
+
+def get_customfile(custom_conf,bold_file):
+    confounds_timeseries = bold_file.replace("_space-" + bold_file.split("space-")[1],
+                         "_desc-confounds_timeseries.tsv")
+    file_base = os.path.basename(confounds_timeseries.split('-confounds_timeseries.tsv')[0])
+    custom_file = custom_conf + '/' + file_base + '-custom_timeseries.tsv'
+
+    return custom_file
+    
