@@ -85,9 +85,9 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
         transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
     elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
+        transformfile = [str(MNI6),str(mni_to_t1w)]
     else:
-        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
+        transformfile = [str(MNI6),str(mni_to_t1w), str(t1w_to_native)]
 
     return transformfile
 
