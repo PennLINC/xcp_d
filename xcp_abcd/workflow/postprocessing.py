@@ -344,11 +344,6 @@ def init_censoring_wf(
             (inputnode,dummy_scan_wf,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]) 
              ])
-        if inputnode.inputs.custom_conf:
-            workflow.connect([ (inputnode,dummy_scan_wf,[('custom_conf','custom_conf')]),
-                             (dummy_scan_wf,censorscrub_wf,[('custom_confdropTR','custom_conf')]),
-                             (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')])
-            ])
 
         workflow.connect([
               (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),

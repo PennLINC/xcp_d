@@ -19,13 +19,11 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     time_todrop = traits.Float(exists=True,mandatory=True, desc="time in seconds to drop")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
-    custom_conf = File(exists=False,mandatory=False, desc=" custom confound")
     fmriprep_conf= File(exists=True,mandatory=False,desc=" confound selected from fmriprep confound matrix ")
 
 class _removeTROutputSpec(TraitedSpec):
     fmrip_confdropTR  = File(exists=True, manadatory=True,
                                   desc=" fmriprep confound after removing TRs,")
-    custom_confdropTR  = File(exists=False,mandatory=False, desc=" custom confound after removing TR")
     
     bold_file_TR = File(exists=True,mandatory=True, desc=" either bold or nifti modified")
 
@@ -46,15 +44,12 @@ class removeTR(SimpleInterface):
         data_matrix = read_ndata(datafile=self.inputs.bold_file,
                                       maskfile=self.inputs.mask_file)
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
-        if self.inputs.custom_conf:
-            custom_confx = pd.read_csv(self.inputs.custom_conf,header=None)
-        else:
-            custom_confx = None
+    
 
         
         data_matrix_TR,fmriprep_confTR,custom_confTR = drop_tseconds_volume (
                         data_matrix=data_matrix,confound=fmriprepx_conf,
-                        custom_conf=custom_confx,delets=self.inputs.time_todrop,
+                        custom_conf=None,delets=self.inputs.time_todrop,
                         TR=self.inputs.TR )
 
         #write the output out
@@ -67,11 +62,6 @@ class removeTR(SimpleInterface):
                 self.inputs.bold_file,
                 suffix='fmriprep_dropTR.txt', newpath=os.getcwd(),
                 use_ext=False)
-
-        self._results['custom_confdropTR'] = fname_presuffix(
-                self.inputs.bold_file,
-                suffix='_custom_conf_dropTR.txt', newpath=os.getcwd(),
-                use_ext=False)
         
         write_ndata(data_matrix=data_matrix_TR,template=self.inputs.bold_file,
                     mask=self.inputs.mask_file, filename=self._results['bold_file_TR'],
@@ -79,8 +69,6 @@ class removeTR(SimpleInterface):
 
         fmriprep_confTR.to_csv(self._results['fmrip_confdropTR'],index=False,header=False)
 
-        if self.inputs.custom_conf:
-            custom_confTR.to_csv(self._results['custom_confdropTR'],index=False,header=False)        
         return runtime
 
 
