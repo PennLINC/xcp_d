@@ -10,7 +10,7 @@ import numpy as np
 from nipype.pipeline import engine as pe
 from ..interfaces import (computealff, surfaceReho,brainplot)
 from nipype.interfaces import utility as niu
-from ..utils import CiftiSeparateMetric
+from ..utils import CiftiSeparateMetric,fwhm2sigma
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
 from templateflow.api import get as get_template
@@ -279,8 +279,5 @@ AFNI *3dReHo* [@afni] with vertices neighborhood.
 
     return workflow
 
-
-def fwhm2sigma(fwhm):
-    return fwhm / np.sqrt(8 * np.log(2))
 
 

@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import os
 import os.path as path
@@ -90,7 +91,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(exists=True,mandatory=True, desc ="fd_threshold")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
-    custom_conf = File(exists=False,mandatory=False, desc=" custom confound")
+    custom_conf = Path(exists=False,mandatory=False, desc=" custom confound")
     fmriprep_conf= File(exists=True,mandatory=True,
                            desc=" confound selected from fmriprep confound matrix ")
     head_radius = traits.Float(exists=False,mandatory=False, default_value=50,
@@ -145,12 +146,14 @@ class censorscrub(SimpleInterface):
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
         
         if self.inputs.custom_conf:
-            customx_conf = pd.read_csv(self.inputs.custom_conf,header=None) 
+            file_base = os.basename(self.inputs.bold_file.split('-confounds_timeseries.tsv')[0])
+            custom_file = self.inputs.custom_conf + '/' + file_base + '-custom_timeseries.tsv'
+            customx_conf = pd.read_csv(str(custom_file),header=None) 
            
         if self.inputs.time_todrop == 0:
             # do censoring staright
             tmask = generate_mask(fd_res=fd_timeseries,fd_thresh=self.inputs.fd_thresh,
-            mincontig=self.inputs.contig)
+            mincontig = self.inputs.contig)
             if np.sum(tmask) > 0: 
                 datax_censored = dataxx[:,tmask==0]
                 fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[np.where(tmask==1)])
