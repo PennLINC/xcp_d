@@ -207,7 +207,6 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
-    inputnode.inputs.custom_conf = str(custom_conf)
 
 
     outputnode = pe.Node(niu.IdentityInterface(
@@ -245,7 +244,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],custom_conf=custom_conf,TR=TR,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=True,
@@ -286,8 +285,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
 
     # add neccessary input for censoring if there is one
     workflow.connect([
-	     (inputnode,censorscrub_wf,[('cifti_file','inputnode.bold_file'),
-	            ('custom_conf','inputnode.custom_conf')]),
+	     (inputnode,censorscrub_wf,[('cifti_file','inputnode.bold_file')]),
 	     (confoundmat_wf,censorscrub_wf,[('confound_file','inputnode.confound_file')])
      ])
 

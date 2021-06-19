@@ -79,7 +79,10 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(exists=True,mandatory=True, desc ="fd_threshold")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
-    custom_conf = Path(exists=False,mandatory=False, desc=" custom confound")
+    custom_conf = traits.Either(
+        traits.Undefined, File,
+        desc="name of output file with field or true",exists=False,mandatory=False)
+    #custom_conf = File(exists=False,mandatory=False,desc=" custom confound")
     fmriprep_conf= File(exists=True,mandatory=True,
                            desc=" confound selected from fmriprep confound matrix ")
     head_radius = traits.Float(exists=False,mandatory=False, default_value=50,
@@ -134,10 +137,8 @@ class censorscrub(SimpleInterface):
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
         
        
-        if os.path.isdir(self.inputs.custom_conf):
-            custom_file = get_customfile(custom_conf=self.inputs.custom_conf,
-                         bold_file=self.inputs.bold_file)
-            customx_conf = pd.read_csv(custom_file,header=None) 
+        if self.inputs.custom_conf:
+            customx_conf = pd.read_csv(self.inputs.custom_conf,header=None) 
            
         if self.inputs.time_todrop == 0:
             # do censoring staright
@@ -203,7 +204,7 @@ class censorscrub(SimpleInterface):
         fmriprepx_censored.to_csv(self._results['fmriprepconf_censored'],index=False,header=False)
         np.savetxt(self._results['tmask'],tmask,fmt="%d",delimiter=',')
         np.savetxt(self._results['fd_timeseries'],fd_timeseries2,fmt="%1.4f",delimiter=',')
-        if  os.path.isdir(self.inputs.custom_conf):
+        if  self.inputs.custom_conf:
             customx_censored.to_csv(self._results['customconf_censored'],index=False,header=False)   
         return runtime
 
@@ -271,11 +272,5 @@ class interpolate(SimpleInterface):
         return runtime
 
 
-def get_customfile(custom_conf,bold_file):
-    confounds_timeseries = bold_file.replace("_space-" + bold_file.split("space-")[1],
-                         "_desc-confounds_timeseries.tsv")
-    file_base = os.path.basename(confounds_timeseries.split('-confounds_timeseries.tsv')[0])
-    custom_file = custom_conf + '/' + file_base + '-custom_timeseries.tsv'
 
-    return custom_file
     

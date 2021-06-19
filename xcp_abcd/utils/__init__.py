@@ -19,7 +19,7 @@ from .sentry import sentry_setup
 from .qcmetrics import regisQ
 
 from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
-                    stringforparams,fwhm2sigma)
+                    stringforparams,fwhm2sigma,get_customfile)
 
 
 __all__ = [
@@ -50,5 +50,6 @@ __all__ = [
     'get_transformfile',
     'get_transformfilex',
     'stringforparams',
-    'fwhm2sigma'
+    'fwhm2sigma',
+    'get_customfile'
   ]

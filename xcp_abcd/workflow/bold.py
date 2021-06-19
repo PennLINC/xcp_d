@@ -262,7 +262,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=False,
@@ -341,7 +341,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     # add neccessary input for censoring if there is one
     workflow.connect([
 	     (inputnode,censorscrub_wf,[('bold_file','inputnode.bold_file'),
-	        ('bold_mask','inputnode.bold_mask'),('custom_conf','inputnode.custom_conf')]),
+	        ('bold_mask','inputnode.bold_mask')]),
 	     (confoundmat_wf,censorscrub_wf,[('confound_file','inputnode.confound_file')])
      ])
 

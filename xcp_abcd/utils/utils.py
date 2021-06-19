@@ -1,4 +1,5 @@
-import os 
+import os
+from nipype.interfaces.base.traits_extension import Undefined 
 from templateflow.api import get as get_template
 import numpy as np
 
@@ -107,3 +108,14 @@ def stringforparams(params):
             quadratic expansion of these nuissance regressors and their derivatives  \
             to make a total 36 nuissance regressors"
     return bsignal
+
+def get_customfile(custom_conf,bold_file):
+    if custom_conf != None:
+        confounds_timeseries = bold_file.replace("_space-" + bold_file.split("space-")[1],
+                         "_desc-confounds_timeseries.tsv")
+        file_base = os.path.basename(confounds_timeseries.split('-confounds_timeseries.tsv')[0])
+        custom_file = os.path.abspath(str(custom_conf) + '/' + file_base + '-custom_timeseries.tsv')
+    else:
+        custom_file = None
+
+    return custom_file

@@ -318,6 +318,7 @@ def init_censoring_wf(
     TR,
     head_radius,
     contigvol,
+    custom_conf,
     dummytime=0,
     fd_thresh=0,
     name='censoring'
@@ -325,14 +326,14 @@ def init_censoring_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold','bold_file','bold_mask','confound_file','custom_conf']), name='inputnode')
+            fields=['bold','bold_file','bold_mask','confound_file']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_censored','fmriprepconf_censored','tmask','fd','customconf_censored']), name='outputnode')
 
 
     censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,contig=contigvol,
-                       time_todrop=dummytime),
+                       time_todrop=dummytime,custom_conf=custom_conf),
                        name="censor_scrub",mem_gb=mem_gb)
    
     dummy_scan_wf  = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
@@ -356,9 +357,8 @@ def init_censoring_wf(
             ])
     
     else:
-        if inputnode.inputs.custom_conf:
+        if custom_conf:
                 workflow.connect([
-                    (inputnode,censorscrub_wf,[('custom_conf','custom_conf')]),
                     (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')]),
                 ])
         
