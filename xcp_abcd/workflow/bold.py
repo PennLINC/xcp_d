@@ -286,7 +286,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     transformfile = get_transformfile(bold_file=bold_file,
             mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file))
-    t1w_mask = get_maskfiles(mni_to_t1w=mni_to_t1w)[1]
+    t1w_mask = get_maskfiles(bold_file=bold_file,mni_to_t1w=mni_to_t1w)[1]
 
     bold2MNI_trans,bold2T1w_trans = get_transformfilex(bold_file=bold_file,
             mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file)) 
