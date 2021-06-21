@@ -31,7 +31,7 @@ if str(subid) == 'sge':
 	for sub in glob.glob('/cbica/projects/HCP_Data_Releases/HCP_1200/**'):
 		sub = sub.split('/')[-1]
 		os.system('qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py {1}'.format(64,sub))
-		1/0
+# 		1/0
 		
 else:
 	os.system('rm -f -r /{0}/S1200/{1}/'.format(working_dir,subid))
