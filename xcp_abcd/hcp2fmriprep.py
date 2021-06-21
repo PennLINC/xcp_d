@@ -30,7 +30,7 @@ subid= sys.argv[1]
 if str(subid) == 'sge':
 	for sub in glob.glob('/cbica/projects/HCP_Data_Releases/HCP_1200/**'):
 		sub = sub.split('/')[-1]
-		os.system('qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py {1}'.format(24,sub))
+		os.system('qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py {1}'.format(64,sub))
 		1/0
 		
 else:
