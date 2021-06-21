@@ -200,7 +200,7 @@ for j in tasklist:
 
 
 # singularity build xcp-abcd-latest.sif docker://pennlinc/xcp_abcd:latest
-cmd = 'singularity run --cleanenv -B ${PWD} ~/xcp_hcp/xcp-abcd-latest.sif /cbica/home/bertolem/xcp_hcp/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ \
+cmd = 'singularity run --cleanenv -B ${pwd} ~/xcp_hcp/xcp-abcd-latest.sif /cbica/home/bertolem/xcp_hcp/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ \
 participant --cifti --despike --lower-bpf 0.01 --upper-bpf 0.08 --participant_label sub-{0} -p 36P -f 10 -w /cbica/home/bertolem/xcp_temp/'.format(subid)
 os.system(cmd)
 
