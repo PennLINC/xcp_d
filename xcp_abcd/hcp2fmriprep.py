@@ -31,7 +31,7 @@ subid= sys.argv[1]
 os.system('rm -f -r /{0}/S1200/{1}/'.format(working_dir,subid))
 os.makedirs('/{0}/S1200/{1}/MNINonLinear/Results/'.format(working_dir,subid),exist_ok=True)
 
-for tdir in glob.glob('/{0}/{1}/MNINonLinear/Results/*REST*LR*'.format(hcp_dir,subid)):
+for tdir in glob.glob('/{0}/{1}/MNINonLinear/Results/*LR*'.format(hcp_dir,subid)):
 	task = tdir.split('/')[-1]
 	tasklist.append(task)
 	task_dir = '/{0}/S1200/{1}/MNINonLinear/Results/{2}'.format(working_dir,subid,task)
@@ -45,7 +45,7 @@ for tdir in glob.glob('/{0}/{1}/MNINonLinear/Results/*REST*LR*'.format(hcp_dir,s
 		command = 'wb_command -cifti-stats {0} -reduce MEAN >> /{1}/{2}_WBS.txt'.format(wbs_file,task_dir,task)
 		os.system(command)
 
-for tdir in glob.glob('/{0}/{1}/MNINonLinear/Results/*REST*RL*'.format(hcp_dir,subid)):
+for tdir in glob.glob('/{0}/{1}/MNINonLinear/Results/*RL*'.format(hcp_dir,subid)):
 	task = tdir.split('/')[-1]
 	tasklist.append(task)
 	task_dir = '/{0}/S1200/{1}/MNINonLinear/Results/{2}'.format(working_dir,subid,task)
@@ -200,7 +200,7 @@ for j in tasklist:
 
 
 # singularity build xcp-abcd-latest.sif docker://pennlinc/xcp_abcd:latest
-cmd = 'singularity run --cleanenv -B ${pwd} ~/xcp_hcp/xcp-abcd-latest.sif /cbica/home/bertolem/xcp_hcp/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ \
+cmd = 'singularity run --cleanenv -B /cbica/home/bertolem/xcp_hcp ~/xcp_hcp/xcp-abcd-latest.sif /cbica/home/bertolem/xcp_hcp/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ \
 participant --cifti --despike --lower-bpf 0.01 --upper-bpf 0.08 --participant_label sub-{0} -p 36P -f 10 -w /cbica/home/bertolem/xcp_temp/'.format(subid)
 os.system(cmd)
 
@@ -212,7 +212,9 @@ os.system(cmd)
 os.system('rm -f -r /{0}/S1200/{1}'.format(working_dir,subid))
 os.system('rm -f -r /{0}/fmriprepdir/{1}'.format(working_dir,subid))
 
-#submit code
-import os
-subject = 100206
-sge_command='qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py {1}'.format(84,subject)
+
+sge():
+	for sub in glob.glob('/cbica/projects/HCP_Data_Releases/HCP_1200/**'):
+		sub = sub.split('/')[-1]
+		os.system('qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -V -j y -b y -o ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py {1}'.format(24,sub))
+		1/0
