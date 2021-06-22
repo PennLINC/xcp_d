@@ -1,12 +1,11 @@
 import nibabel as nb
 import numpy as np
 
-
 def regisQ(bold2t1w_mask,t1w_mask,bold2template_mask,template_mask):
-	reg_qc ={'coregDC': [dc(bold2t1w_mask,t1w_mask)], 'coregJC': [jc(bold2t1w_mask,t1w_mask)],
-              'coregCC': [crosscorr(bold2t1w_mask,t1w_mask)],'coregCOV': [coverage(bold2t1w_mask,t1w_mask)],
-	      'normDC': [dc(bold2template_mask,template_mask)],'normJC': [jc(bold2template_mask,template_mask)], 
-	      'normCC': [crosscorr(bold2template_mask,template_mask)], 'normCOV': [coverage(bold2template_mask,template_mask)],
+	reg_qc ={'coregDice': [dc(bold2t1w_mask,t1w_mask)], 'coregJaccard': [jc(bold2t1w_mask,t1w_mask)],
+              'coregCrossCorr': [crosscorr(bold2t1w_mask,t1w_mask)],'coregCoverag': [coverage(bold2t1w_mask,t1w_mask)],
+	      'normDice': [dc(bold2template_mask,template_mask)],'normJaccard': [jc(bold2template_mask,template_mask)], 
+	      'normCrossCorr': [crosscorr(bold2template_mask,template_mask)], 'normCoverage': [coverage(bold2template_mask,template_mask)],
 	      }
 	return reg_qc
 
