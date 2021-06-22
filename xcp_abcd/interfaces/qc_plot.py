@@ -176,10 +176,10 @@ class computeqcplot(SimpleInterface):
             #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              #filename=self._results['clean_qcplot'])
 
-        qc_pf = {'FD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
-                  'DVARS_PB':[mdvars_bf], 'DVARS_CB':[mdvars_af],'nVolCensored':[nvolcensored],
-                  'dummyvol':[num_vold],'FD_DVARS_CorrInit':[motionDVCorrInit],
-                  'FD_DVARS_COrrFinal':[motionDVCorrFinal]}
+        qc_pf = {'meanFD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
+                  'meanDVInit':[mdvars_bf], 'meanDVFinal':[mdvars_af],'nVolCensored':[nvolcensored],
+                  'dummyvol':[num_vold],'motionDVCorrInit':[motionDVCorrInit],
+                  'motionDVCorrFinal':[motionDVCorrFinal]}
 
         _, file1 = os.path.split(self.inputs.bold_file)
         bb = file1.split('_')
