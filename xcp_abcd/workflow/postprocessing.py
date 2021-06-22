@@ -10,7 +10,7 @@ import numpy as np
 import os
 from nipype.pipeline import engine as pe
 from numpy.core.numeric import identity
-from utils.utils import stringforparams
+from ..utils.utils import stringforparams
 from templateflow.api import get as get_template
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import (interpolate,removeTR,censorscrub)
