@@ -91,12 +91,11 @@ def init_fcon_ts_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-After the nuissance regression and  bandpass filtering of the bold data,
-functional timeseries were extracted. The Shaefer [@Schaefer_2017], Glasser
-[@Glasser_2016] and Gordon [@Gordon_2014] atlases were resampled to bold
-space before the timeseries extraction with *Nilearn* {nilearnver}
-*NiftiLabelsMasker* [@nilearn]. Corresponding functional connectivity were for all the atlasess
-were computed.
+Processed functional timeseries were extracted for the  
+following atlases with  *Nilearn* {nilearnver} *NiftiLabelsMasker* 
+[@nilearn] without smoothing:Shaefer( 200 and 400 resolution) [@Schaefer_2017], 
+Glasser [@Glasser_2016] and Gordon [@Gordon_2014] atlases. 
+Corresponding functional connectivity were computed for each atlas.
  """.format(nilearnver=nl.__version__)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -262,13 +261,12 @@ def init_cifti_conts_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-After the nuissance regression and  bandpass filtering of the bold data,
-functional timeseries were extracted.The functional timeseries were extracted with the
-Workbench [@hcppipelines] for Shaefer [@Schaefer_2017], Glasser [@Glasser_2016]
+Processed functional timeseries were extracted for the  
+following atlases using Connectome Workbench[@hcppipelines] without smoothing:
+Shaefer( 200 and 400 resolution) [@Schaefer_2017], Glasser [@Glasser_2016]
 and Gordon [@Gordon_2014] atlases. Corresponding functional connectivity
 were computed for each atlas with the Workbench.
 """
-
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_cifti']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(

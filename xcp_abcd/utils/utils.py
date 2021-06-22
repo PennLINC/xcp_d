@@ -96,17 +96,24 @@ def fwhm2sigma(fwhm):
 
 def stringforparams(params):
     if params == '24P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives  \
-            to make a total of 24 nuissance regressors "
+        bsignal = "In total, 24 nuisance regressors were from the nuisance \
+        confound matrices of fMRIPrep output. These nuisance regressors included \
+        six motion parameters with their temporal derivatives, \
+        the quadratic expansion of both six motion paramters and their derivatives"
     if params == '27P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
-            white and CSF signal to make a total 27 nuissance regressors"
+        bsignal = "In total, 27 nuisance regressors were from the nuisance \
+        confound matrices of fMRIPrep output. These nuisance regressors included \
+        six motion parameters with their temporal derivatives, \
+        the quadratic expansion of both six motion paramters and  \
+        their derivatives, the global signal, the mean white matter  \
+        signal, and the mean CSF signal"
     if params == '36P':
-        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
-            quadratic expansion of these nuissance regressors and their derivatives  \
-            to make a total 36 nuissance regressors"
+        bsignal= "In total, 36 nuisance regressors were from the nuisance \
+        confound matrices of fMRIPrep output. These nuisance regressors included \
+        six motion parameters, global signal, the mean white matter,  \
+        the mean CSF signal  with their temporal derivatives, \
+        the quadratic expansion of six motion paramters, tissues signals and  \
+        their derivatives"
     return bsignal
 
 def get_customfile(custom_conf,bold_file):

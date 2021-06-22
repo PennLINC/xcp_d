@@ -10,6 +10,7 @@ import numpy as np
 import os
 from nipype.pipeline import engine as pe
 from numpy.core.numeric import identity
+from utils.utils import stringforparams
 from templateflow.api import get as get_template
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import (interpolate,removeTR,censorscrub)
@@ -295,24 +296,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
 def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
-def stringforparams(params):
-    if params == '24P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives  \
-            to make a total of 24 nuissance regressors "
-    if params == '27P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
-            white and CSF signal to make a total 27 nuissance regressors"
-    if params == '36P':
-        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
-            quadratic expansion of these nuissance regressors and their derivatives  \
-            to make a total 36 nuissance regressors"
-    return bsignal
            
-    
-
-
 def init_censoring_wf( 
     mem_gb,
     TR,
@@ -395,7 +379,7 @@ def init_resd_smoohthing(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = """ \
-The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
+The processed bold  was smoothed with the Connectome Workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """     .format(kernelsize=str(smoothing))
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                   right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
