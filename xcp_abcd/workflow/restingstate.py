@@ -82,7 +82,8 @@ def init_compute_alff_wf(
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """ \
+    workflow.__desc__ = """ 
+
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
 by transforming  the processed BOLD timeseries  to the frequency domain. 
 The power spectral was computed within the frequency band of {lowpass}-{highpass}Hz 
@@ -183,7 +184,8 @@ def init_surface_reho_wf(
 
 
     workflow = Workflow(name=name)
-    workflow.__desc__ = """ \
+    workflow.__desc__ = """ 
+
 For each hemisphere, regional homogeneity (ReHo) was computed using surface-based 
 *2dReHo* [@surface_reho] . Specifically, for eachvertex on the surface, nearest-neighbor vertices were identified 
 and the Kendall's coefficient of concordance (KCC) was calculated to yield ReHo. 
@@ -252,7 +254,8 @@ def init_3d_reho_wf(
     """
 
     workflow = Workflow(name=name)
-    workflow.__desc__ = """ \
+    workflow.__desc__ = """ 
+
 The regional homogeneity (ReHo) for the processed bold was computed with 
 AFNI *3dReHo* [@afni] with vertices neighborhood. 
 """ 
