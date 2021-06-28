@@ -75,19 +75,19 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     elif 'PNC' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
+        transformfile = [str(t1w_to_pnc),str(mni_to_t1w),str(MNI6)]
     elif 'NKI' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
+        transformfile = [str(t1w_to_nki),str(mni_to_t1w),str(MNI6)] 
     elif 'OASIS' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
+        transformfile = [str(t1w_to_oasis),str(mni_to_t1w),str(MNI6)] 
     elif 'T1w' in file_base:
-        transformfile = [str(MNI6),str(mni_to_t1w)]
+        transformfile = [str(mni_to_t1w),str(MNI6)]
     else:
-        transformfile = [str(MNI6),str(mni_to_t1w), str(t1w_to_native)]
+        transformfile = [str(t1w_to_native),str(mni_to_t1w),str(MNI6)]
 
     return transformfile
 
