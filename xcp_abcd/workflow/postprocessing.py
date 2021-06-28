@@ -7,7 +7,10 @@ post processing the bold/cifti
 
 """
 import numpy as np
+import os
 from nipype.pipeline import engine as pe
+from numpy.core.numeric import identity
+from ..utils.utils import stringforparams
 from templateflow.api import get as get_template
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import (interpolate,removeTR,censorscrub)
@@ -293,29 +296,13 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
 def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
-def stringforparams(params):
-    if params == '24P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives  \
-            to make a total of 24 nuissance regressors "
-    if params == '27P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
-            white and CSF signal to make a total 27 nuissance regressors"
-    if params == '36P':
-        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
-            quadratic expansion of these nuissance regressors and their derivatives  \
-            to make a total 36 nuissance regressors"
-    return bsignal
            
-    
-
-
 def init_censoring_wf( 
     mem_gb,
     TR,
     head_radius,
     contigvol,
+    custom_conf,
     dummytime=0,
     fd_thresh=0,
     name='censoring'
@@ -323,14 +310,14 @@ def init_censoring_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold','bold_file','bold_mask','confound_file','custom_conf']), name='inputnode')
+            fields=['bold','bold_file','bold_mask','confound_file']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_censored','fmriprepconf_censored','tmask','fd','customconf_censored']), name='outputnode')
 
 
     censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,contig=contigvol,
-                       time_todrop=dummytime),
+                       time_todrop=dummytime,custom_conf=custom_conf),
                        name="censor_scrub",mem_gb=mem_gb)
    
     dummy_scan_wf  = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
@@ -342,11 +329,6 @@ def init_censoring_wf(
             (inputnode,dummy_scan_wf,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]) 
              ])
-        if inputnode.inputs.custom_conf:
-            workflow.connect([ (inputnode,dummy_scan_wf,[('custom_conf','custom_conf')]),
-                             (dummy_scan_wf,censorscrub_wf,[('custom_confdropTR','custom_conf')]),
-                             (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')])
-            ])
 
         workflow.connect([
               (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),
@@ -359,9 +341,8 @@ def init_censoring_wf(
             ])
     
     else:
-        if inputnode.inputs.custom_conf:
+        if custom_conf:
                 workflow.connect([
-                    (inputnode,censorscrub_wf,[('custom_conf','custom_conf')]),
                     (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')]),
                 ])
         
@@ -398,7 +379,7 @@ def init_resd_smoohthing(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = """ \
-The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
+The processed bold  was smoothed with the Connectome Workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """     .format(kernelsize=str(smoothing))
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                   right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
@@ -426,7 +407,12 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
 
 
 
- 
+
+
+
+
+
+
 
 
 

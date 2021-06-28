@@ -21,6 +21,7 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
+from templateflow import conf
 from ..utils import(read_ndata, write_ndata,despikedatacifti)
 
 LOGGER = logging.getLogger('nipype.interface') 
@@ -65,11 +66,14 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
         
         # get the confound matrix 
-        confound = pd.read_csv(self.inputs.confounds,header=None).to_numpy().T
+        confound = pd.read_csv(self.inputs.confounds,header=None)
         if self.inputs.custom_conf:
-            confound_custom = pd.read_csv(self.inputs.custom_conf,
-                                header=None).to_numpy().T
-            confound = np.hstack((confound, confound_custom))
+            confound_custom = pd.read_table(self.inputs.custom_conf,
+                                header=None)
+            confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
+            confound = np.nan_to_num(confound)
+        else:
+            confound = confound.to_numpy().T
         
         # get the nifti/cifti  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file,

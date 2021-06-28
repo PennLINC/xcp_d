@@ -15,7 +15,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from ..__about__ import __version__
 
-from ..utils import collect_data
+from ..utils import collect_data, get_customfile
 
 from  ..workflow import( init_ciftipostprocess_wf, 
             init_boldpostprocess_wf)
@@ -295,10 +295,9 @@ def init_single_bold_wf(
     
     workflow.__desc__ = """
 #### Postprocessing of fMRIPrep outputs
-Results included in this manuscript come from postprocessing of fMRIPrep 
-outputs [@fmriprep1;@fmriprep2]. The postprocessing was  performed using 
-*xcp_abcd* [@mitigating_2018;@satterthwaite_2013;@benchmarkp] which is based 
-on *Nipype* {nipype_ver} [@nipype1; @nipype2].
+Outputs from  fMRIPrep [@fmriprep1;@fmriprep2] were postprocessed using 
+the eXtensible Connectivivty Pipelines (XCP).[@mitigating_2018;@satterthwaite_2013;@benchmarkp].
+XCP is built with *Nipype* {nipype_ver} [@nipype1; @nipype2].
 
 """.format(nipype_ver=nipype_ver)
 
@@ -340,6 +339,7 @@ It is released under the [CC0]\
         ii = 0
         for cifti_file in subject_data[1]:
             ii = ii+1
+            custom_confx = get_customfile(custom_conf=custom_conf,bold_file=cifti_file)
             cifti_postproc_wf = init_ciftipostprocess_wf(cifti_file=cifti_file,
                                                         lower_bpf=lower_bpf,
                                                         upper_bpf=upper_bpf,
@@ -352,7 +352,7 @@ It is released under the [CC0]\
                                                         smoothing=smoothing,
                                                         params=params,
                                                         head_radius=head_radius,
-                                                        custom_conf=custom_conf,
+                                                        custom_conf=custom_confx,
                                                         omp_nthreads=omp_nthreads,
                                                         num_cifti=len(subject_data[1]),
                                                         dummytime=dummytime,
@@ -376,6 +376,7 @@ It is released under the [CC0]\
             ii = ii+1
             mni_to_t1w = regfile[0]
             inputnode.inputs.mni_to_t1w = mni_to_t1w
+            custom_confx = get_customfile(custom_conf=custom_conf,bold_file=bold_file)
             bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
                                                        lower_bpf=lower_bpf,
                                                        upper_bpf=upper_bpf,
@@ -391,7 +392,7 @@ It is released under the [CC0]\
                                                        omp_nthreads=omp_nthreads,
                                                        brain_template='MNI152NLin2009cAsym',
                                                        num_bold=len(subject_data[0]),
-                                                       custom_conf=custom_conf,
+                                                       custom_conf=custom_confx,
                                                        layout=layout,
                                                        despike=despike,
                                                        dummytime=dummytime,

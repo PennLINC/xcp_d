@@ -16,7 +16,7 @@ from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
                       get_atlas_cifti,ApplyTransformsx)
 from ..interfaces import connectplot
 from nipype.interfaces import utility as niu
-from ..utils import CiftiCorrelation, CiftiParcellate
+from ..utils import CiftiCorrelation, CiftiParcellate,get_transformfile
 from pkg_resources import resource_filename as pkgrf
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
@@ -91,12 +91,10 @@ def init_fcon_ts_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-After the nuissance regression and  bandpass filtering of the bold data,
-functional timeseries were extracted. The Shaefer [@Schaefer_2017], Glasser
-[@Glasser_2016] and Gordon [@Gordon_2014] atlases were resampled to bold
-space before the timeseries extraction with *Nilearn* {nilearnver}
-*NiftiLabelsMasker* [@nilearn]. Corresponding functional connectivity were for all the atlasess
-were computed.
+Processed functional timeseries were extracted for the following atlases with  *Nilearn* {nilearnver} *NiftiLabelsMasker* 
+[@nilearn] without smoothing:Shaefer( 200 and 400 resolution) [@Schaefer_2017], 
+Glasser [@Glasser_2016] and Gordon [@Gordon_2014] atlases. 
+Corresponding functional connectivity were computed for each atlas.
  """.format(nilearnver=nl.__version__)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -262,13 +260,11 @@ def init_cifti_conts_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-After the nuissance regression and  bandpass filtering of the bold data,
-functional timeseries were extracted.The functional timeseries were extracted with the
-Workbench [@hcppipelines] for Shaefer [@Schaefer_2017], Glasser [@Glasser_2016]
+Processed functional timeseries were extracted for the following atlases using Connectome Workbench[@hcppipelines] without smoothing:
+Shaefer( 200 and 400 resolution) [@Schaefer_2017], Glasser [@Glasser_2016]
 and Gordon [@Gordon_2014] atlases. Corresponding functional connectivity
 were computed for each atlas with the Workbench.
 """
-
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_cifti']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
@@ -343,31 +339,4 @@ were computed for each atlas with the Workbench.
 
 
 
-def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
-    file_base = os.path.basename(str(bold_file))
-   
-    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
-     
-    if 'MNI152NLin6Asym' in file_base:
-        transformfile = 'identity'
-    elif 'MNI152NLin2009cAsym' in file_base:
-        transformfile = str(MNI6)
-    elif 'PNC' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_pnc)]
-    elif 'NKI' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_nki)] 
-    elif 'OASIS' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
-        transformfile = [str(MNI6),str(mni_to_t1w),str(t1w_to_oasis)] 
-    elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
-    else:
-        transformfile = [str(mni_to_t1w), str(t1w_to_native)]
-
-    return transformfile

@@ -107,14 +107,14 @@ class FunctionalSummary(SummaryInterface):
         space = get_space (self.inputs.bold_file)
         tr = self.inputs.tr
         qcfile = pd.read_csv(self.inputs.qc_file)
-        meanFD = "{} ".format(round(qcfile['FD'][0], 4))
+        meanFD = "{} ".format(round(qcfile['meanFD'][0], 4))
         meanRMS = " {} ".format(round(qcfile['relMeansRMSMotion'][0], 4))
         maxRMS =" {} ".format(round(qcfile['relMaxRMSMotion'][0], 4))
         dvars = "  {},{} " .format(
-                    round(qcfile['DVARS_PB'][0], 4), round(qcfile['DVARS_CB'][0], 4))
+                    round(qcfile['meanDVInit'][0], 4), round(qcfile['meanDVFinal'][0], 4))
         fddvars = " {},  {} " .format(
-                    round(qcfile['FD_DVARS_CorrInit'][0], 4),
-                            round(qcfile['FD_DVARS_COrrFinal'][0], 4))
+                    round(qcfile['motionDVCorrInit'][0], 4),
+                            round(qcfile['motionDVCorrFinal'][0], 4))
         nvolcen = " {} ".format(round(qcfile['nVolCensored'][0], 4))
         
 

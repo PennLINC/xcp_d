@@ -20,7 +20,8 @@ from ..utils import collect_data
 import sklearn
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from  ..utils import bid_derivative
+from  ..utils import (bid_derivative, stringforparams,get_maskfiles,
+      get_transformfilex,get_transformfile)
 from ..interfaces import  FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
@@ -188,7 +189,7 @@ def init_boldpostprocess_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-For each of the {num_bold} BOLD runs found per subject (across all
+For each of the {num_bold} BOLD series found per subject (across all
 tasks and sessions), the following postprocessing was performed:
 """.format(num_bold=num_bold)
 
@@ -205,14 +206,13 @@ Before nuissance regression and filtering of the data, the first {nvol} were dis
         workflow.__desc__ = workflow.__desc__ + """ \
 Before nuissance regression and filtering any volumes with framewise-displacement greater than 
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
- and excluded from further analyses.
+ and excluded from nuissance regression.
 """.format(fd_thresh=fd_thresh)
 
     workflow.__desc__ = workflow.__desc__ +  """ \
-The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
-from nuissance confound matrices of fMRIPrep output.  These nuissance regressors were regressed out 
-from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
-The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
+{regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].  These nuisance regressors were 
+regressed from the bold data using linear regression as implemented iin Scikit-Learn {sclver} [@scikit-learn].
+Residual timeseries from this regression were then band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
              lowpass=upper_bpf,highpass=lower_bpf)
 
@@ -261,7 +261,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=False,
@@ -277,17 +277,20 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     interpolate_wf = pe.Node(interpolate(TR=TR),
                   name="interpolation_wf",mem_gb = mem_gbx['resampled'])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
+    
 
     # get transform file for resampling and fcon
-    if brain_template in file_base:
-        transformfile = 'identity'
-    elif 'T1w' in file_base:
-        transformfile = str(mni_to_t1w)
-    else:
-        transformfile = [str(mni_to_t1w), str(_t12native(bold_file))]
+      
+    
+    
+    transformfile = get_transformfile(bold_file=bold_file,
+            mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file))
+    t1w_mask = get_maskfiles(bold_file=bold_file,mni_to_t1w=mni_to_t1w)[1]
 
+    bold2MNI_trans,bold2T1w_trans = get_transformfilex(bold_file=bold_file,
+            mni_to_t1w=mni_to_t1w,t1w_to_native=_t12native(bold_file)) 
+
+    
     resample_parc = pe.Node(ApplyTransforms(
         dimension=3,
         input_image=str(get_template(
@@ -295,6 +298,25 @@ The residual were then  band pass filtered within the frequency band {highpass}-
             suffix='dseg', extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',transforms=transformfile),
         name='resample_parc')
+    
+    resample_bold2T1w = pe.Node(ApplyTransforms(
+        dimension=3,
+         input_image=mask_file,reference_image=t1w_mask,
+         interpolation='NearestNeighbor',transforms=bold2T1w_trans),
+         name='bold2t1_trans')
+    
+    resample_bold2MNI = pe.Node(ApplyTransforms(
+        dimension=3,
+         input_image=mask_file,reference_image=str(get_template(
+            'MNI152NLin2009cAsym', resolution=2, desc='brain',
+            suffix='mask', extension=['.nii', '.nii.gz'])),
+         interpolation='NearestNeighbor',transforms=bold2MNI_trans),
+         name='bold2mni_trans')
+
+    qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
+                       template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
+                        suffix='mask', extension=['.nii', '.nii.gz'])),
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
     
 
     workflow.connect([
@@ -318,7 +340,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     # add neccessary input for censoring if there is one
     workflow.connect([
 	     (inputnode,censorscrub_wf,[('bold_file','inputnode.bold_file'),
-	        ('bold_mask','inputnode.bold_mask'),('custom_conf','inputnode.custom_conf')]),
+	        ('bold_mask','inputnode.bold_mask')]),
 	     (confoundmat_wf,censorscrub_wf,[('confound_file','inputnode.confound_file')])
      ])
 
@@ -339,7 +361,6 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     workflow.connect([
              (inputnode,filtering_wf,[('bold_mask','mask')]),
 	     (interpolate_wf,filtering_wf,[('bold_interpolated','in_file')]),
-
 
     ])
     
@@ -368,8 +389,12 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         (censorscrub_wf,qcreport,[('outputnode.tmask','tmask')]),
         (inputnode,resample_parc,[('ref_file','reference_image')]),
         (resample_parc,qcreport,[('output_image','seg_file')]),
+        (resample_bold2T1w,qcreport,[('output_image','bold2T1w_mask')]),
+        (resample_bold2MNI,qcreport,[('output_image','bold2temp_mask')]),
         (qcreport,outputnode,[('qc_file','qc_file')]),
            ])
+
+    
 
    # write  to the outputnode, may be use in future
     workflow.connect([
@@ -485,21 +510,5 @@ def _t12native(fname):
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
  
-def fwhm2sigma(fwhm):
-    return fwhm / np.sqrt(8 * np.log(2))
 
-def stringforparams(params):
-    if params == '24P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives  \
-            to make a total of 24 nuissance regressors "
-    if params == '27P':
-        bsignal = "including six motion parameters with their temporal derivatives, \
-            quadratic expansion of both six motion paramters and their derivatives, global signal,  \
-            white and CSF signal to make a total 27 nuissance regressors"
-    if params == '36P':
-        bsignal= "including six motion parameters, white ,CSF and global signals,  with their temporal derivatives, \
-            quadratic expansion of these nuissance regressors and their derivatives  \
-            to make a total 36 nuissance regressors"
-    return bsignal
     

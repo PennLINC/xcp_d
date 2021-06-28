@@ -9,6 +9,7 @@ from .restingstate import  (init_compute_alff_wf, init_surface_reho_wf,
 from .bold import init_boldpostprocess_wf
 from .cifti import init_ciftipostprocess_wf
 from .base import init_xcpabcd_wf
+from .connectivity import get_transformfile
 
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     'init_ciftipostprocess_wf',
     'init_xcpabcd_wf',
     'init_censoring_wf',
-    'init_resd_smoohthing'
+    'init_resd_smoohthing',
+    'get_transformfile'
 ]
