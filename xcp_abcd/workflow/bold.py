@@ -189,7 +189,7 @@ def init_boldpostprocess_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-For each of the {num_bold} BOLD runs found per subject (across all
+For each of the {num_bold} BOLD series found per subject (across all
 tasks and sessions), the following postprocessing was performed:
 """.format(num_bold=num_bold)
 
@@ -206,14 +206,13 @@ Before nuissance regression and filtering of the data, the first {nvol} were dis
         workflow.__desc__ = workflow.__desc__ + """ \
 Before nuissance regression and filtering any volumes with framewise-displacement greater than 
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
- and excluded from further analyses.
+ and excluded from nuissance regression.
 """.format(fd_thresh=fd_thresh)
 
     workflow.__desc__ = workflow.__desc__ +  """ \
-The following nuissance regressors {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected 
-from nuissance confound matrices of fMRIPrep output.  These nuissance regressors were regressed out 
-from the bold data with *LinearRegression* as implemented in Scikit-Learn {sclver} [@scikit-learn].
-The residual were then  band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
+{regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].  These nuisance regressors were 
+regressed from the bold data using linear regression as implemented iin Scikit-Learn {sclver} [@scikit-learn].
+Residual timeseries from this regression were then band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
              lowpass=upper_bpf,highpass=lower_bpf)
 
