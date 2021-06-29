@@ -211,7 +211,7 @@ Before nuissance regression and filtering any volumes with framewise-displacemen
 
     workflow.__desc__ = workflow.__desc__ +  """ \
 {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].  These nuisance regressors were 
-regressed from the bold data using linear regression as implemented iin Scikit-Learn {sclver} [@scikit-learn].
+regressed from the bold data using linear regression as implemented in Scikit-Learn {sclver} [@scikit-learn].
 Residual timeseries from this regression were then band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
              lowpass=upper_bpf,highpass=lower_bpf)
