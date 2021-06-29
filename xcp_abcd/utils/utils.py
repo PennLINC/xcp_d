@@ -96,19 +96,19 @@ def fwhm2sigma(fwhm):
 
 def stringforparams(params):
     if params == '24P':
-        bsignal = "In total, 24 nuisance regressors were from the nuisance \
+        bsignal = "In total, 24 nuisance regressors were selected  from the nuisance \
         confound matrices of fMRIPrep output. These nuisance regressors included \
         six motion parameters with their temporal derivatives, \
         the quadratic expansion of both six motion paramters and their derivatives"
     if params == '27P':
-        bsignal = "In total, 27 nuisance regressors were from the nuisance \
+        bsignal = "In total, 27 nuisance regressors were selected from the nuisance \
         confound matrices of fMRIPrep output. These nuisance regressors included \
         six motion parameters with their temporal derivatives, \
         the quadratic expansion of both six motion paramters and  \
         their derivatives, the global signal, the mean white matter  \
         signal, and the mean CSF signal"
     if params == '36P':
-        bsignal= "In total, 36 nuisance regressors were from the nuisance \
+        bsignal= "In total, 36 nuisance regressors were selected from the nuisance \
         confound matrices of fMRIPrep output. These nuisance regressors included \
         six motion parameters, global signal, the mean white matter,  \
         the mean CSF signal  with their temporal derivatives, \

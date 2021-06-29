@@ -82,12 +82,11 @@ def init_compute_alff_wf(
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """ 
-
+    workflow.__desc__ = """  \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
 by transforming  the processed BOLD timeseries  to the frequency domain. 
 The power spectral was computed within the frequency band of {lowpass}-{highpass}Hz 
-and the mean square root of power spectral was calculated at each voxel to yield ALFF. . 
+and the mean square root of power spectral was calculated at each voxel to yield ALFF.  
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -116,7 +115,7 @@ and the mean square root of power spectral was calculated at each voxel to yield
     if smoothing:
         if not cifti:
             workflow.__desc__ = workflow.__desc__ + """ \
-The processed bold was smoothed with FSL and kernel size of {kernelsize} mm. 
+The ALFF smoothed with FSL and kernel size of {kernelsize} mm. 
 """         .format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="ciftismoothing", mem_gb=mem_gb )
@@ -127,8 +126,7 @@ The processed bold was smoothed with FSL and kernel size of {kernelsize} mm.
 
         else:
             workflow.__desc__ = workflow.__desc__ + """ \
-The ALL  was smoothed with workbench and
-kernel size of {kernelsize} mm. 
+The ALFF was smoothed with the Connectome Workbench and kernel size of {kernelsize} mm. 
 """         .format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
             lh_midthickness = str(get_template("fsLR",hemi='L',suffix='sphere',density='32k')[0])
@@ -187,7 +185,7 @@ def init_surface_reho_wf(
     workflow.__desc__ = """ 
 
 For each hemisphere, regional homogeneity (ReHo) was computed using surface-based 
-*2dReHo* [@surface_reho] . Specifically, for eachvertex on the surface, nearest-neighbor vertices were identified 
+*2dReHo* [@surface_reho]. Specifically, for each vertex on the surface, nearest-neighbor vertices were identified 
 and the Kendall's coefficient of concordance (KCC) was calculated to yield ReHo. 
 """     
     inputnode = pe.Node(niu.IdentityInterface(
