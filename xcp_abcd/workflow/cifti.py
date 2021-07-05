@@ -223,14 +223,14 @@ Residual timeseries from this regression were then band pass filtered within the
     
 
     cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['resampled'],
-                      name='cifti_ts_con_wf')
+                      name='cifti_ts_con_wf',omp_nthreads=2)
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'],TR=TR,
                    lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing,cifti=True,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
-                       name="surface_reho_wf")
+                       name="surface_reho_wf",omp_nthreads=2)
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
                     params=params,cifti=True,output_dir=output_dir,dummytime=dummytime,

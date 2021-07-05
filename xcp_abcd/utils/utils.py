@@ -9,42 +9,42 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
    
     MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
-    if 'MNI152NLin2009cAsym' in file_base:
+    if 'space-MNI152NLin2009cAsym' in file_base:
         transformfileMNI = 'identity'
         transformfileT1W  = str(mni_to_t1w)
 
-    elif 'MNI152NLin6Asym' in file_base:
+    elif 'space-MNI152NLin6Asym' in file_base:
         transformfileMNI = MNI6
         transformfileT1W = [str(MNI6),str(mni_to_t1w)]
 
-    elif 'PNC' in file_base:
+    elif 'space-PNC' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         pnc_to_t1w  = mnisf + 'from-PNC_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(pnc_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(pnc_to_t1w)
 
-    elif 'NKI' in file_base:
+    elif 'space-NKI' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         nki_to_t1w  = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(nki_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(nki_to_t1w)
 
-    elif 'OASIS' in file_base:
+    elif 'space-OASIS' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
+        oasis_to_t1w  = mnisf + 'from-OASIS30ANTs_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(oasis_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(oasis_to_t1w)
 
-    elif 'T1w' in file_base:
+    elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI = str(t1w_to_mni)
         transformfileT1W = 'identity'
-    else:
+    elif 'space' not in file_base:
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
         native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
@@ -68,26 +68,28 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
    
     MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
-    if 'MNI152NLin6Asym' in file_base:
+    if 'space-MNI152NLin6Asym' in file_base:
         transformfile = 'identity'
-    elif 'MNI152NLin2009cAsym' in file_base:
+    elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(MNI6)
-    elif 'PNC' in file_base:
+    elif 'space-PNC' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
         transformfile = [str(t1w_to_pnc),str(mni_to_t1w),str(MNI6)]
-    elif 'NKI' in file_base:
+    elif 'space-NKI' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
         transformfile = [str(t1w_to_nki),str(mni_to_t1w),str(MNI6)] 
-    elif 'OASIS' in file_base:
+    elif 'space-OASIS30ANTs' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS_mode-image_xfm.h5'
+        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
         transformfile = [str(t1w_to_oasis),str(mni_to_t1w),str(MNI6)] 
     elif 'T1w' in file_base:
         transformfile = [str(mni_to_t1w),str(MNI6)]
-    else:
+    elif 'space' not in file_base:
         transformfile = [str(t1w_to_native),str(mni_to_t1w),str(MNI6)]
+    else:
+        RuntimeError('space not implemented')
 
     return transformfile
 
