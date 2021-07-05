@@ -37,6 +37,13 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(oasis_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(oasis_to_t1w)
+    
+    elif 'space-MNI152NLin6Sym' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        mni6c_to_t1w  = mnisf + 'from-MNI152NLin6Sym_to-T1w_mode-image_xfm.h5'
+        t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
+        transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
+        transformfileT1W = str(mni6c_to_t1w)
 
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
@@ -51,7 +58,9 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI = [str(t1w_to_mni),str(native_to_t1w)]
         transformfileT1W =  str(native_to_t1w)
-  
+    else:
+        print('space not supported')
+        
     return transformfileMNI, transformfileT1W
 
 
