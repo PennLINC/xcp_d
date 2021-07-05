@@ -1,0 +1,17 @@
+visualCentral
+visualPeripheral
+somatomotorA
+somatomotorBAuditory
+dorsalAttentionA
+dorsalAttentionB
+salienceVentralAttentionA
+salienceVentralAttentionB
+limbicOrbitofrontal
+limbicTemporopolar
+frontoparietalControlA
+frontoparietalControlB
+frontoparietalControlC
+defaultA
+defaultB
+defaultC
+temporoparietal
