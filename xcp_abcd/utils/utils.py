@@ -84,13 +84,16 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
         transformfile = [str(t1w_to_oasis),str(mni_to_t1w),str(MNI6)] 
+    elif 'space-MNI152NLin6Sym' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
+        transformfile = [str(t1w_to_mni6c),str(mni_to_t1w),str(MNI6)]       
     elif 'T1w' in file_base:
         transformfile = [str(mni_to_t1w),str(MNI6)]
     elif 'space' not in file_base:
         transformfile = [str(t1w_to_native),str(mni_to_t1w),str(MNI6)]
     else:
-        RuntimeError('space not implemented')
-
+        print('space not supported')
     return transformfile
 
 def fwhm2sigma(fwhm):
