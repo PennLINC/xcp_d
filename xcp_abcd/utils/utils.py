@@ -2,11 +2,13 @@ import os
 from nipype.interfaces.base.traits_extension import Undefined 
 from templateflow.api import get as get_template
 import numpy as np
+from pkg_resources import resource_filename as pkgrf
 
 def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
     file_base = os.path.basename(str(bold_file))
-   
+
+
     MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
     if 'space-MNI152NLin2009cAsym' in file_base:
@@ -60,7 +62,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         transformfileT1W =  str(native_to_t1w)
     else:
         print('space not supported')
-        
+
     return transformfileMNI, transformfileT1W
 
 
@@ -74,33 +76,35 @@ def get_maskfiles(bold_file,mni_to_t1w):
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
     file_base = os.path.basename(str(bold_file))
-   
-    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+    FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+  #MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
     if 'space-MNI152NLin6Asym' in file_base:
-        transformfile = 'identity'
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_mni6 = mnisf + 'from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'
+        transformfile = [str(t1w_to_mni6),str(mni_to_t1w),str(FSL2MNI9)]
     elif 'space-MNI152NLin2009cAsym' in file_base:
-        transformfile = str(MNI6)
+        transformfile = str(FSL2MNI9)
     elif 'space-PNC' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_pnc),str(mni_to_t1w),str(MNI6)]
+        transformfile = [str(t1w_to_pnc),str(mni_to_t1w),str(FSL2MNI9)]
     elif 'space-NKI' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_nki),str(mni_to_t1w),str(MNI6)] 
+        transformfile = [str(t1w_to_nki),str(mni_to_t1w),str(FSL2MNI9)] 
     elif 'space-OASIS30ANTs' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_oasis),str(mni_to_t1w),str(MNI6)] 
+        transformfile = [str(t1w_to_oasis),str(mni_to_t1w),str(FSL2MNI9)] 
     elif 'space-MNI152NLin6Sym' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_mni6c),str(mni_to_t1w),str(MNI6)]       
+        transformfile = [str(t1w_to_mni6c),str(mni_to_t1w),str(FSL2MNI9)]       
     elif 'T1w' in file_base:
-        transformfile = [str(mni_to_t1w),str(MNI6)]
+        transformfile = [str(mni_to_t1w),str(FSL2MNI9)]
     elif 'space' not in file_base:
-        transformfile = [str(t1w_to_native),str(mni_to_t1w),str(MNI6)]
+        transformfile = [str(t1w_to_native),str(mni_to_t1w),str(FSL2MNI9)]
     else:
         print('space not supported')
     return transformfile
