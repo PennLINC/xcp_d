@@ -53,7 +53,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI = str(t1w_to_mni)
         transformfileT1W = 'identity'
-    elif 'space' not in file_base:
+    elif 'space-' not in file_base:
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
         native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
@@ -101,9 +101,9 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
         transformfile = [str(t1w_to_mni6c),str(mni_to_t1w),str(FSL2MNI9)]       
-    elif 'T1w' in file_base:
+    elif 'space-T1w' in file_base:
         transformfile = [str(mni_to_t1w),str(FSL2MNI9)]
-    elif 'space' not in file_base:
+    elif 'space-' not in file_base:
         transformfile = [str(t1w_to_native),str(mni_to_t1w),str(FSL2MNI9)]
     else:
         print('space not supported')
