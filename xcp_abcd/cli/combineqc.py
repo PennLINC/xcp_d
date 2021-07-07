@@ -18,8 +18,7 @@ def get_parser():
     
     parser.add_argument('output_prefix', action='store', type=str, help='output prefix for group')
 
-    parser.add_argument('--cifti', action='store_true', default=False,
-                        help=' add cifti qc files')
+    parser.add_argument('--cifti', action='store_true', default=False,help=' add cifti qc files')
 
 
     return parser
@@ -42,7 +41,7 @@ def main():
     else:
 	    for r, d, f in os.walk(allsubj_dir):
 		    for filex in f:
-			    if filex.endswith("quality_control_cbf.csv"):
+			    if filex.endswith("desc-qc_bold.csv"):
 				    qclist.append(r+ '/'+ filex)
 
     datax = pd.read_csv(qclist[0])
