@@ -197,7 +197,7 @@ class computeqcplot(SimpleInterface):
         df = pd.DataFrame(qc_x) 
         self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.csv',
                                                    newpath=runtime.cwd, use_ext=False)
-        df.to_csv(self._results['qc_file'], index=False, header=True,delimiter=",")
+        df.to_csv(self._results['qc_file'], index=False, header=True)
         return runtime
 
 
