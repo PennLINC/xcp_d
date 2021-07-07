@@ -134,7 +134,7 @@ def init_writederivatives_wf(
 
         dv_qcfile_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc'],desc='qc',source_file=bold_file,
-                 compression=True,extension='.tsv'),
+                 compression=True,extension='.csv'),
             name='dv_qcfile_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc217ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
@@ -230,7 +230,7 @@ def init_writederivatives_wf(
             name='dv_alff_wf', run_without_submitting=True, mem_gb=1)
 
         dv_qcfile_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc'],desc='qc',source_file=bold_file,extension='.tsv',
+                 dismiss_entities=['desc'],desc='qc',source_file=bold_file,extension='.csv',
                  density='91k'),
             name='dv_qcfile_wf', run_without_submitting=True, mem_gb=1)
 
