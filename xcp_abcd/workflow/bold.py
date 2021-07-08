@@ -205,14 +205,14 @@ Before nuissance regression and filtering of the data, the first {nvol} were dis
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
 Before nuissance regression and filtering any volumes with framewise-displacement greater than 
-{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
+{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
  and excluded from nuissance regression.
 """.format(fd_thresh=fd_thresh)
 
     workflow.__desc__ = workflow.__desc__ +  """ \
 {regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].  These nuisance regressors were 
-regressed from the bold data using linear regression as implemented in Scikit-Learn {sclver} [@scikit-learn].
-Residual timeseries from this regression were then band pass filtered within the frequency band {highpass}-{lowpass} Hz. 
+regressed from the BOLD data using linear regression as implemented in Scikit-Learn {sclver} [@scikit-learn].
+Residual timeseries from this regression were then band pass filtered within the  {highpass}-{lowpass} Hz frequency band. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
              lowpass=upper_bpf,highpass=lower_bpf)
 
@@ -509,6 +509,4 @@ def _t12native(fname):
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
- 
-
-    
+  
