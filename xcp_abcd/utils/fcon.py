@@ -111,8 +111,8 @@ def compute_alff(data_matrix,low_pass,high_pass, TR):
     fs=1/TR
     alff = np.zeros(data_matrix.shape[0])
     for i in range(data_matrix.shape[0]):
-        #fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='spectrum')
-        fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='density')
+        fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='spectrum')
+        #fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='density')
         pxx_sqrt = np.sqrt(Pxx_den)
         ff_alff = [np.argmin(np.abs(fx-high_pass)),np.argmin(np.abs(fx-low_pass))]
         alff[i] = len(ff_alff)*np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
