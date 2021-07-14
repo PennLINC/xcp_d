@@ -117,12 +117,12 @@ def stringforparams(params):
         bsignal = "In total, 24 nuisance regressors were selected  from the nuisance \
         confound matrices of fMRIPrep output. These nuisance regressors included \
         six motion parameters with their temporal derivatives, \
-         and their quadratic expansion of those six motion paramters and their  temporal derivatives"
+         and their quadratic expansion of those six motion parameters and their  temporal derivatives"
     if params == '27P':
         bsignal = "In total, 27 nuisance regressors were selected from the nuisance \
         confound matrices of fMRIPrep output. These nuisance regressors included \
         six motion parameters with their temporal derivatives, \
-        the quadratic expansion of those six motion paramters and  \
+        the quadratic expansion of those six motion parameters and  \
         their derivatives, the global signal, the mean white matter  \
         signal, and the mean CSF signal"
     if params == '36P':
@@ -130,7 +130,7 @@ def stringforparams(params):
         confound matrices of fMRIPrep output. These nuisance regressors included \
         six motion parameters, global signal, the mean white matter,  \
         the mean CSF signal  with their temporal derivatives, \
-        and the quadratic expansion of six motion paramters, tissues signals and  \
+        and the quadratic expansion of six motion parameters, tissues signals and  \
         their temporal derivatives"
     return bsignal
 
