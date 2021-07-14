@@ -86,7 +86,7 @@ def init_compute_alff_wf(
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
 by transforming  the processed BOLD timeseries  to the frequency domain. 
 The power spectrum was computed within the  {lowpass}-{highpass} Hz frequency band
-and the mean square root of power spectrum was calculated at each voxel to yield voxel-wise ALFF measures.  
+and the mean square root of the power spectrum was calculated at each voxel to yield voxel-wise ALFF measures.  
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -254,8 +254,7 @@ def init_3d_reho_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = """ 
 
-Regional homogeneity (ReHo) for the processed BOLD was computed with 
-AFNI *3dReHo* [@afni] with vertices neighborhood. 
+Regional homogeneity (ReHo) was computed using *3dReHo* in AFNI [@afni] with vertices neighborhood. 
 """ 
     
     inputnode = pe.Node(niu.IdentityInterface(

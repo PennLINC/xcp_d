@@ -296,8 +296,8 @@ def init_single_bold_wf(
     workflow = Workflow(name=name)
     
     workflow.__desc__ = """
-### Postprocessing of fMRIPrep outputs
-Outputs from  fMRIPrep version {fvers} [@fmriprep1;@fmriprep2] were postprocessed using 
+### Post-processing of fMRIPrep outputs
+Post-processing of output from  fMRIPrep version {fvers} [@fmriprep1;@fmriprep2]  using 
 the eXtensible Connectivivty Pipelines (XCP).[@mitigating_2018;@satterthwaite_2013;@benchmarkp].
 XCP is built with *Nipype* {nipype_ver} [@nipype1; @nipype2].
 
@@ -308,8 +308,7 @@ XCP is built with *Nipype* {nipype_ver} [@nipype1; @nipype2].
 
 
 Many internal operations of *XCP* use *Nibabel* [@nilearn], *numpy* 
-[@harris2020array] and  *scipy* [@2020SciPy-NMeth], for majority of the functions.
-For more details of the pipeline, 
+[@harris2020array] and  *scipy* [@2020SciPy-NMeth]. For more details, 
 see  the *xcp_abcd* website https://xcp-abcd.readthedocs.io.
 
 

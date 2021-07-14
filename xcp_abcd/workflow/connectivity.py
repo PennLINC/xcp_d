@@ -91,8 +91,8 @@ def init_fcon_ts_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-Processed functional timeseries were extracted  from residual BOLD  with  *Nilearn* {nilearnver}'s *NiftiLabelsMasker* for the following atlases
-[@nilearn] :Schaefer 200 and 400 resolutions [@Schaefer_2017], Glasser [@Glasser_2016], and Gordon [@Gordon_2014] atlases. 
+Processed functional timeseries were extracted  from  the residual BOLD  with  *Nilearn* {nilearnver}'s *NiftiLabelsMasker* for the following atlases
+[@nilearn] :the Schaefer 200 and 400 parcel resolution atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016], and the Gordon atlas [@Gordon_2014] atlases. 
 .Corresponding pair-wise functional connectivity between all regions was computed for each atlas, which was operationalized as the Pearson’s correlation of each parcel’s (unsmoothed) timeseries
  """.format(nilearnver=nl.__version__)
 
@@ -260,7 +260,7 @@ def init_cifti_conts_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 Processed functional timeseries were extracted from residual BOLD  using Connectome Workbench[@hcppipelines]:
-for the following atlases Schaefer's 200 and 400 resolutions [@Schaefer_2017], Glasser [@Glasser_2016] and Gordon [@Gordon_2014] atlases. 
+for the following atlases: the Schaefer 200 and 400 parcel resolution atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016] and the Gordon atlas [@Gordon_2014]. 
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas, which was operationalized as the
  Pearson’s correlation of each parcel’s (unsmoothed) timeseries with the Connectome Workbench.
 """

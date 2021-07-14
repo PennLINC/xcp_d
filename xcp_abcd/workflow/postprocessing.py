@@ -379,7 +379,7 @@ def init_resd_smoohthing(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = """ \
-The processed BOLD  was smoothed with the Connectome Workbench with a kernel size (FWHM) of {kernelsize}  mm . 
+The processed BOLD  was smoothed with the Connectome Workbench with a kernel size of {kernelsize} mm  (FWHM). 
 """     .format(kernelsize=str(smoothing))
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                   right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
@@ -392,7 +392,7 @@ The processed BOLD  was smoothed with the Connectome Workbench with a kernel siz
 
     else:
         workflow.__desc__ = """ \
-The processed BOLD was smoothed with FSL with a  kernel size (FWHM) of {kernelsize} mm. 
+The processed BOLD was smoothed with FSL with a  kernel size of {kernelsize} mm  (FWHM). 
 """      .format(kernelsize=str(smoothing))
         smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
@@ -402,17 +402,6 @@ The processed BOLD was smoothed with FSL with a  kernel size (FWHM) of {kernelsi
                    (smooth_data, outputnode,[('smoothed_file','smoothed_bold')])       
                      ])
     return workflow
-
-
-
-
-
-
-
-
-
-
-
 
 
 
