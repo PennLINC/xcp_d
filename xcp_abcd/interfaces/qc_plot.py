@@ -178,7 +178,7 @@ class computeqcplot(SimpleInterface):
 
         qc_pf = {'meanFD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
                   'meanDVInit':[mdvars_bf], 'meanDVFinal':[mdvars_af],'nVolCensored':[nvolcensored],
-                  'dummyvol':[num_vold],'motionDVCorrInit':[motionDVCorrInit],
+                  'nVolsRemoved':[num_vold],'motionDVCorrInit':[motionDVCorrInit],
                   'motionDVCorrFinal':[motionDVCorrFinal]}
 
         _, file1 = os.path.split(self.inputs.bold_file)
@@ -195,7 +195,7 @@ class computeqcplot(SimpleInterface):
             qc_x.update(regq)
 
         df = pd.DataFrame(qc_x) 
-        self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.tsv',
+        self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.csv',
                                                    newpath=runtime.cwd, use_ext=False)
         df.to_csv(self._results['qc_file'], index=False, header=True)
         return runtime

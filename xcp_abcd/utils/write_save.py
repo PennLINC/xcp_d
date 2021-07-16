@@ -157,8 +157,8 @@ def despikedatacifti(cifti,tr,basedir):
     fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
     fake_cifti1_depike = str(basedir+'/fake_niftix_depike.nii.gz')
     cifti_despike = str(basedir+ '/despike_nifti2cifti.dtseries.nii')
-    run_shell(['wb_command -cifti-convert -to-nifti ',cifti,fake_cifti1])
+    run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ',cifti,fake_cifti1])
     run_shell(['3dDespike -nomask -NEW -prefix',fake_cifti1_depike,fake_cifti1])
-    run_shell(['wb_command  -cifti-convert -from-nifti  ',fake_cifti1_depike,cifti, 
+    run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',fake_cifti1_depike,cifti, 
                                    cifti_despike,'-reset-timepoints',str(tr),str(0)])
     return cifti_despike
