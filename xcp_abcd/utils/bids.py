@@ -164,6 +164,10 @@ def collect_data(
     queries = {
         'regfile': {'datatype': 'anat','suffix':'xfm'},
         'boldfile': {'datatype':'func','suffix': 'bold'},
+        't1w': {'datatype':'anat','suffix':'T1w'},
+        'seg': {'datatype':'anat','suffix':'dseg'},
+        'pial': { 'datatype': 'anat','suffix':'pial'},
+        'wm': {'datatype': 'anat','suffix':'smoothwm'},
     }
 
     bids_filters = bids_filters or {}
