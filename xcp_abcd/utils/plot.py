@@ -4,20 +4,16 @@
 import numpy as np
 import nibabel as nb
 import pandas as pd
-import sys 
 from nilearn.signal import clean 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
 import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, Normalize
 import seaborn as sns
-from seaborn import color_palette
-from matplotlib.colors import ListedColormap, Normalize
-from matplotlib.colorbar import ColorbarBase
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from niworkflows.viz.plots import _decimate_data
-from nilearn.signal import clean
+from write_save import read_ndata
 
 
 def plot_svg(fdata,fd,dvars,filename,tr=1):
@@ -507,3 +503,65 @@ def plot_carpetx(
     ax1.spines["left"].set_visible(False)
 
     return (ax0, ax1), gs
+
+def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,taskname='rest'):
+    '''
+    generate carpet plot with dvars, fd, and WB
+    ------------
+    rawdata:
+       nifti or cifti
+    regdata: 
+      nifti or cifti after nuissance regression 
+    resddata: 
+      nifti or cifti after regression and filtering
+    mask: 
+         mask for nifti if available
+    seg:
+        3 tissues seg files 
+    tr: 
+        repetition times
+    fd: 
+      framewise displacement
+    filenamebf: 
+      output file svg before processing
+    filenameaf: 
+      output file svg after processing
+    '''
+    
+    rxdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
+    rgdata = compute_dvars(read_ndata(datafile=regdata,maskfile=mask))
+    rsdata = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
+    
+    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
+    fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
+    
+    rw = read_ndata(datafile=rawdata,maskfile=mask)
+    rs = read_ndata(datafile=resddata,maskfile=mask)
+    
+    wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})
+    wbaf = pd.DataFrame({'Mean':np.nanmean(rs,axis=0),'Std':np.nanstd(rs,axis=0)})
+    
+    # plot filex
+    
+    
+    figx = plt.figure(constrained_layout=False, figsize=(15,30))
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
+    plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,500])
+    plotseries(conf=wbbf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-400,800])
+    plot_carpetx(func=rawdata,seg=seg,tr=tr,subplot=grid[2])
+    plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,0.8])
+    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
+    
+    plt.cla()
+    plt.clf()
+    
+    figy = plt.figure(constrained_layout=False, figsize=(15,30))
+   
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
+    plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,500])
+    plotseries(conf=wbaf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-400,800])
+    plot_carpetx(func=resddata,seg=seg,tr=tr,subplot=grid[2])
+    plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,0.8])
+    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
+    
+    return filenamebf,filenameaf
