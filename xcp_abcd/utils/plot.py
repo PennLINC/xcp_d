@@ -12,6 +12,12 @@ import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, Normalize
 import seaborn as sns
 from seaborn import color_palette
+from matplotlib.colors import ListedColormap, Normalize
+from matplotlib.colorbar import ColorbarBase
+from nilearn._utils import check_niimg_4d
+from nilearn._utils.niimg import _safe_get_data
+from niworkflows.viz.plots import _decimate_data
+from nilearn.signal import clean
 
 
 def plot_svg(fdata,fd,dvars,filename,tr=1):
@@ -299,3 +305,205 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
 
         return [ax_ts, ax_dist], gs
     return ax_ts, gs
+
+
+# for executive summmary report
+# Azeez Adebimpe, 2021
+def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
+    colums =conf.columns
+    notr = False
+    if tr is None:
+        notr = True
+        tr = 1.
+        
+    xtick = np.linspace(0,conf.shape[0]*tr,num=conf.shape[0])
+    plt.style.use('seaborn-white')
+    plt.xticks(color='k')
+    plt.yticks(color='k')
+    gs = mgs.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts,
+                                     width_ratios=[1, 100], wspace=0.0)
+
+    ax= plt.subplot(gs[1])
+    ax.grid(False)
+    for k in colums:
+        ax.plot(xtick,conf[k],label=k,linewidth=2)
+    if ylim:
+        ax.set_ylim(ylim)
+    else: 
+        ax.set_ylim([-2*conf[k].max(),2*conf[k].max()])
+    ax.set_ylabel(ylabelx,fontsize=20)    
+    ax.legend(fontsize=20)
+    
+    last = conf.shape[0] - 1
+    ax.set_xlim(0, last)
+    xticks = list(range(0, last)) + [last] if not hide_x else []
+    ax.set_xticks(xticks)
+
+    if not hide_x:
+        if tr is None:
+            ax.set_xlabel("time (frame #)")
+        else:
+            ax.set_xlabel("time (s)")
+            ax.set_xticklabels(["%.01f" % t for t in (tr * np.array(xticks)).tolist()])
+   
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2)
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(20)
+    
+    return ax
+
+
+def plot_carpetx(
+    func,
+    segfile,
+    lut=None,
+    tr=None,
+    subplot=None,
+    detrend=None,
+    legend=True,
+    size=(1800,950),
+  ):
+    
+    
+    img = nb.load(func)
+    if segfile:
+        atlaslabels = np.asanyarray(nb.load(segfile).dataobj)
+
+    if isinstance(img, nb.Cifti2Image):
+        assert (
+            img.nifti_header.get_intent()[0] == "ConnDenseSeries"
+        ), "Not a dense timeseries"
+
+        data = img.get_fdata().T
+        matrix = img.header.matrix
+        struct_map = {
+            "LEFT_CORTEX": 1,
+            "RIGHT_CORTEX": 2,
+            "SUBCORTICAL": 3,
+            "CEREBELLUM": 4,
+        }
+        seg = np.zeros((data.shape[0],), dtype="uint32")
+        for bm in matrix.get_index_map(1).brain_models:
+            if "CORTEX" in bm.brain_structure:
+                lidx = (1, 2)["RIGHT" in bm.brain_structure]
+            elif "CEREBELLUM" in bm.brain_structure:
+                lidx = 4
+            else:
+                lidx = 3
+            index_final = bm.index_offset + bm.index_count
+            seg[bm.index_offset:index_final] = lidx
+        assert len(seg[seg < 1]) == 0, "Unassigned labels"
+
+        # Decimate data
+        data, seg = _decimate_data(data, seg, size)
+        # preserve as much continuity as possible
+        order = seg.argsort(kind="stable")
+
+        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        assert len(cmap.colors) == len(
+            struct_map
+        ), "Mismatch between expected # of structures and colors"
+
+        # ensure no legend for CIFTI
+        legend = False
+
+    else:  # Volumetric NIfTI
+        img_nii = check_niimg_4d(img, dtype="auto",)
+        func_data = _safe_get_data(img_nii, ensure_finite=True)
+        ntsteps = func_data.shape[-1]
+        data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
+        oseg = atlaslabels[atlaslabels > 0].reshape(-1)
+
+        # Map segmentation
+        if lut is None:
+            lut = np.zeros((256,), dtype="int")
+            lut[1:11] = 1
+            lut[255] = 2
+            lut[30:99] = 3
+            lut[100:201] = 4
+        # Apply lookup table
+        seg = lut[oseg.astype(int)]
+
+        # Decimate data
+        data, seg = _decimate_data(data, seg, size)
+        # Order following segmentation labels
+        order = np.argsort(seg)[::-1]
+        # Set colormap
+        cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
+    
+    """Common carpetplot building code for volumetric / CIFTI plots"""
+    notr = False
+    if tr is None:
+        notr = True
+        tr = 1.0
+
+    # Detrend data
+    v = (None, None)
+    if detrend:
+        data = clean(data.T, t_r=tr).T
+        v = (-2, 2)
+
+    # If subplot is not defined
+    if subplot is None:
+        subplot = mgs.GridSpec(1, 1)[0]
+
+    # Define nested GridSpec
+    wratios = [1, 100, 0]
+    gs = mgs.GridSpecFromSubplotSpec(
+        1,
+        2 + int(legend),
+        subplot_spec=subplot,
+        width_ratios=wratios[: 2 + int(legend)],
+        wspace=0.0,
+    )
+
+    # Segmentation colorbar
+    ax0 = plt.subplot(gs[0])
+    ax0.set_yticks([])
+    ax0.set_xticks([])
+    ax0.imshow(seg[order, np.newaxis], interpolation="none", aspect="auto", cmap=cmap)
+
+    ax0.grid(False)
+    ax0.spines["left"].set_visible(False)
+    ax0.spines["bottom"].set_color("none")
+    ax0.spines["bottom"].set_visible(False)
+
+    # Carpet plot
+    ax1 = plt.subplot(gs[1])
+    ax1.imshow(
+        data[order],
+        interpolation="nearest",
+        aspect="auto",
+        cmap="gray",
+        vmin=v[0],
+        vmax=v[1],
+    )
+
+    ax1.grid(False)
+    ax1.set_yticks([])
+    ax1.set_yticklabels([])
+    ax1.set_xticks([])
+
+    if func.endswith('nii.gz'):
+        ax0.set_ylabel('Voxels \n Blue: Cortical GM, Orange: Subcortical GM, \n Green: Cerebellum, Red: CSF and WM',
+                      fontsize=20)
+    elif func.endswith('.dtseries.nii'):
+        ax0.set_ylabel('Grayordinates\n Blue: Left Cortex, Cyan: Right Cortex, \n Orange: Subcortical, Green: Cerebellum',
+                      fontsize=20)
+    # Remove and redefine spines
+    for side in ["top", "right"]:
+        # Toggle the spine objects
+        ax0.spines[side].set_color("none")
+        ax0.spines[side].set_visible(False)
+        ax1.spines[side].set_color("none")
+        ax1.spines[side].set_visible(False)
+
+    ax1.yaxis.set_ticks_position("left")
+    ax1.xaxis.set_ticks_position("bottom")
+    ax1.spines["bottom"].set_visible(False)
+    ax1.spines["left"].set_color("none")
+    ax1.spines["left"].set_visible(False)
+
+    return (ax0, ax1), gs
