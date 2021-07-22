@@ -205,7 +205,7 @@ before nuisance regression and filtering of the data, the first {nvol} were disc
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering any volumes with framewise-displacement greater than 
+before nuisance regression and filtering of the data,any volumes with framewise-displacement greater than 
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
  and excluded from nuisance regression.
 """.format(fd_thresh=fd_thresh)
