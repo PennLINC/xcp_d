@@ -253,7 +253,7 @@ def init_3d_reho_wf(
 
     workflow = Workflow(name=name)
     workflow.__desc__ = """ 
-Regional homogeneity (ReHo) was computed with vertices neighborhood voxels using *3dReHo* in AFNI [@afni]. 
+Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI [@afni]. 
 """ 
     
     inputnode = pe.Node(niu.IdentityInterface(
@@ -274,6 +274,5 @@ Regional homogeneity (ReHo) was computed with vertices neighborhood voxels using
         ])
 
     return workflow
-
 
 

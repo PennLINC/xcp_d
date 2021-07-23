@@ -198,20 +198,20 @@ tasks and sessions), the following post-processing was performed:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data, the first {nvol} were discarded,
-.Furthermore, any volumes with framewise-displacement greater than 
+.Furthermore,volumes with framewise-displacement greater than 
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
  and excluded from nuisance regression.
 """.format(nvol=num2words(nvolx),fd_thresh=fd_thresh)
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data,any volumes with framewise-displacement greater than 
+before nuisance regression and filtering of the data, volumes with framewise-displacement greater than 
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
  and excluded from nuisance regression.
 """.format(fd_thresh=fd_thresh)
 
     workflow.__desc__ = workflow.__desc__ +  """ \
-{regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013]. These nuisance regressors were 
+{regressors} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were 
 regressed from the BOLD data using linear regression - as implemented in Scikit-Learn {sclver} [@scikit-learn].
 Residual timeseries from this regression were then band-pass filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
