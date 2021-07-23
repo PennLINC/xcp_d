@@ -299,7 +299,7 @@ def init_single_bold_wf(
 ### Post-processing of fMRIPrep outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of fMRIPrep version {fvers} [@fmriprep1].
-XCP was built with *Nipype* {nipype_ver} [@nipype1; @nipype2].
+XCP was built with *Nipype* {nipype_ver} [@nipype1].
 """.format(nipype_ver=nipype_ver,fvers=getfmriprepv(fmriprepdir=fmriprep_dir))
 
 
