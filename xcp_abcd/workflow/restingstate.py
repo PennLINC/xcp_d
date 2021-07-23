@@ -114,7 +114,7 @@ and the mean square root of the power spectrum was calculated at each voxel to y
     
     if smoothing:
         if not cifti:
-            workflow.__desc__ = workflow.__desc__ + """ \
+            workflow.__desc__ = workflow.__desc__ + """ 
             The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM). 
         """.format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
@@ -125,7 +125,7 @@ and the mean square root of the power spectrum was calculated at each voxel to y
              ])
 
         else:
-            workflow.__desc__ = workflow.__desc__ + """ \
+            workflow.__desc__ = workflow.__desc__ + """ 
             The ALFF maps were smoothed with the Connectome Workbench using a gaussian kernel size of {kernelsize} mm (FWHM). 
         """.format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
