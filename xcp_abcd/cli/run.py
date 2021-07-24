@@ -261,7 +261,7 @@ def main():
             # Generate HTML file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
             pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--filter', '--citeproc',
+                   '--citeproc',
                    '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
                    str(citation_files['md']),
                    '-o', str(citation_files['html'])]
