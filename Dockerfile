@@ -89,7 +89,6 @@ RUN conda install -y python=3.7.4 \
                      pandas=1.0.5 \
                      libxml2=2.9.8 \
                      libxslt=1.1.32 \
-                     pandoc \
                      matplotlib \
                      graphviz=2.40.1 \
                      traits=4.6.0 \
@@ -104,6 +103,9 @@ RUN conda install -y python=3.7.4 \
 ENV MKL_NUM_THREADS=1 \
     OMP_NUM_THREADS=1 
 
+RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/releases/download/2.2.2.1/pandoc-2.2.2.1-1-amd64.deb" && \
+    dpkg -i pandoc-2.2.2.1-1-amd64.deb && \
+    rm pandoc-2.2.2.1-1-amd64.deb
 # Create a shared $HOME directory
 
 RUN useradd -m -s /bin/bash -G users xcp_abcd
