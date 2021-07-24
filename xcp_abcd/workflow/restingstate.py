@@ -83,10 +83,9 @@ def init_compute_alff_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """  \
-The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
-by transforming  the processed BOLD timeseries  to the frequency domain. 
-The power spectrum was computed within the  {highpass}-{lowpass} Hz frequency band
-and the mean square root of the power spectrum was calculated at each voxel to yield voxel-wise ALFF measures.  
+The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming  the processed BOLD timeseries  to the frequency domain. 
+The power spectrum was computed within the  {highpass}-{lowpass} Hz frequency band and the mean square root of the power spectrum was 
+calculated at each voxel to yield voxel-wise ALFF measures.
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -114,8 +113,8 @@ and the mean square root of the power spectrum was calculated at each voxel to y
     
     if smoothing:
         if not cifti:
-            workflow.__desc__ = workflow.__desc__ + """ 
-            The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM). 
+            workflow.__desc__ = workflow.__desc__ + """ \
+The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM). 
         """.format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="ciftismoothing", mem_gb=mem_gb )
@@ -125,8 +124,8 @@ and the mean square root of the power spectrum was calculated at each voxel to y
              ])
 
         else:
-            workflow.__desc__ = workflow.__desc__ + """ 
-            The ALFF maps were smoothed with the Connectome Workbench using a gaussian kernel size of {kernelsize} mm (FWHM). 
+            workflow.__desc__ = workflow.__desc__ + """ \
+The ALFF maps were smoothed with the Connectome Workbench using a gaussian kernel size of {kernelsize} mm (FWHM). 
         """.format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
             lh_midthickness = str(get_template("fsLR",hemi='L',suffix='sphere',density='32k')[0])
