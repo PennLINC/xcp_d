@@ -226,7 +226,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                       name='cifti_ts_con_wf')
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'],TR=TR,
-                   lowpass=lower_bpf,highpass=upper_bpf,smoothing=smoothing,cifti=True,
+                   lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing,cifti=True,
                     name="compute_alff_wf" )
 
     reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
