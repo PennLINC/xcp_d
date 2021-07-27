@@ -307,8 +307,7 @@ def build_workflow(opts, retval):
 
     fmriprep_dir = opts.fmriprep_dir.resolve()
     output_dir = opts.output_dir.resolve()
-    work_dir = 
-    
+    work_dir = opts.work_dir.resolve()   
    
 
     retval['return_code'] = 1
