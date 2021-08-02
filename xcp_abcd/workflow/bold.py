@@ -240,15 +240,15 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mem_gbx = _create_mem_gb(bold_file)
 
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['resampled'],mni_to_t1w=mni_to_t1w,
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
                  brain_template=brain_template,name="fcons_ts_wf")
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'], TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
+    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
@@ -262,21 +262,21 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=False,
+    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=False,
                 name="resd_smoothing_wf")
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filtering_wf", mem_gb=mem_gbx['resampled'])
+                    name="filtering_wf", mem_gb=mem_gbx['timeseries'])
 
     regression_wf = pe.Node(regress(tr=TR),
-               name="regression_wf",mem_gb = mem_gbx['resampled'])
+               name="regression_wf",mem_gb = mem_gbx['timeseries'])
 
     interpolate_wf = pe.Node(interpolate(TR=TR),
-                  name="interpolation_wf",mem_gb = mem_gbx['resampled'])
+                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
 
     
 
