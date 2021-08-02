@@ -3,8 +3,10 @@ FROM ubuntu:xenial-20200706
 
 COPY docker/files/neurodebian.gpg /usr/local/etc/neurodebian.gpg
 
+# Prepare environment
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+                    apt-utils \
                     curl \
                     bzip2 \
                     ca-certificates \
@@ -13,8 +15,11 @@ RUN apt-get update && \
                     autoconf \
                     libtool \
                     pkg-config \
+                    graphviz \
+                    pandoc \
+                    pandoc-citeproc \
                     git && \
-    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    curl -sSL https://deb.nodesource.com/setup_14.x | bash - && \
     apt-get install -y --no-install-recommends \
                     nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
