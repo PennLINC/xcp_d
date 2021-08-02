@@ -67,37 +67,34 @@ RUN npm install -g svgo
 RUN npm install -g bids-validator@1.6.2
 
 # Installing and setting up miniconda
-RUN curl -sSLO https://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.2-Linux-x86_64.sh && \
-    bash Miniconda3-py38_4.8.2-Linux-x86_64.sh -b -p /usr/local/miniconda && \
-    rm Miniconda3-py38_4.8.2-Linux-x86_64.sh
+RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh && \
+    bash Miniconda3-py38_4.9.2-Linux-x86_64.sh -b -p /usr/local/miniconda && \
+    rm Miniconda3-py38_4.9.2-Linux-x86_64.sh
 
 # Set CPATH for packages relying on compiled libs (e.g. indexed_gzip)
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
-    CPATH="/usr/local/miniconda/include/:$CPATH" \
+    CPATH="/usr/local/miniconda/include:$CPATH" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     PYTHONNOUSERSITE=1
 
 # Installing precomputed python packages
 RUN conda install -y python=3.8 \
-                     pip=20.1.1 \
-                     mkl=2018.0.3 \
-                     mkl-service \
-                     numpy=1.18.5 \
-                     scipy=1.5.0 \
-                     scikit-learn=0.23.1 \
-                     pandas=1.0.5 \
-                     libxml2=2.9.8 \
-                     libxslt=1.1.32 \
-                     pandoc \
-                     matplotlib \
-                     graphviz=2.40.1 \
-                     traits=4.6.0 \
-                     zlib; sync && \
+                     pip=21.0 \
+                     mkl=2021.2 \
+                     mkl-service=2.3 \
+                     numpy=1.20 \
+                     scipy=1.6 \
+                     scikit-learn=0.24 \
+                     matplotlib=3.3 \
+                     pandas=1.2 \
+                     libxslt=1.1 \
+                     traits=6.2 \
+                     zstd=1.4; sync && \
     chmod -R a+rX /usr/local/miniconda; sync && \
     chmod +x /usr/local/miniconda/bin/*; sync && \
-    conda build purge-all; sync && \
-    conda clean -tipsy && sync
+    conda clean -y --all && sync && \
+    rm -rf ~/.conda ~/.cache/pip/*; sync
 
 # Unless otherwise specified each process should only use one thread - nipype
 # will handle parallelization
