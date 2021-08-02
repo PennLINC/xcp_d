@@ -275,7 +275,7 @@ def main():
             # Generate LaTex file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
                    pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--citeproc', str(citation_files['md']),
+                   '--pandoc-citeproc', str(citation_files['md']),
                    '-o', str(citation_files['tex'])]
             logger.info('Generating a LaTeX version of the citation boilerplate...')
             try:
