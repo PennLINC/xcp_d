@@ -79,7 +79,7 @@ ENV PATH="/usr/local/miniconda/bin:$PATH" \
     PYTHONNOUSERSITE=1
 
 # Installing precomputed python packages
-RUN conda install -y python=3.8.0 \
+RUN conda install -y python=3.8 \
                      pip=20.1.1 \
                      mkl=2018.0.3 \
                      mkl-service \
@@ -92,7 +92,7 @@ RUN conda install -y python=3.8.0 \
                      pandoc \
                      matplotlib \
                      graphviz=2.40.1 \
-                     traits=4.6.0 \
+                     traits \
                      zlib; sync && \
     chmod -R a+rX /usr/local/miniconda; sync && \
     chmod +x /usr/local/miniconda/bin/*; sync && \
