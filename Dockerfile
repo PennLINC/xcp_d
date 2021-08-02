@@ -79,7 +79,7 @@ ENV PATH="/usr/local/miniconda/bin:$PATH" \
     PYTHONNOUSERSITE=1
 
 # Installing precomputed python packages
-RUN conda install -y python=3.7.4 \
+RUN conda install -y python=3.8.0 \
                      pip=20.1.1 \
                      mkl=2018.0.3 \
                      mkl-service \
