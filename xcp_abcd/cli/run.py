@@ -261,7 +261,8 @@ def main():
             # Generate HTML file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
             pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--pandoc-citeproc',
+                   "--filter",
+                   'pandoc-citeproc',
                    '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
                    str(citation_files['md']),
                    '-o', str(citation_files['html'])]
@@ -275,7 +276,7 @@ def main():
             # Generate LaTex file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
                    pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--pandoc-citeproc', str(citation_files['md']),
+                    '--natbib',str(citation_files['md']),
                    '-o', str(citation_files['tex'])]
             logger.info('Generating a LaTeX version of the citation boilerplate...')
             try:
