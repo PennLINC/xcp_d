@@ -127,7 +127,10 @@ RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs 
     rm xcp_abcd-setup.cfg && \
     find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
-
+# add pandoc
+RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/releases/download/2.2.2.1/pandoc-2.2.2.1-1-amd64.deb" && \
+    dpkg -i pandoc-2.2.2.1-1-amd64.deb && \
+    rm pandoc-2.2.2.1-1-amd64.deb
 # Installing xcp_abcd
 COPY . /src/xcp_abcd
 ARG VERSION=0.0.1
