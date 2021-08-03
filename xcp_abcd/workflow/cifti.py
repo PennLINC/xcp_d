@@ -174,7 +174,8 @@ def init_ciftipostprocess_wf(
 For each of the {num_cifti} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """.format(num_cifti=num2words(num_cifti))
-    TR = layout.get_tr(cifti_file)
+    TR = get_ciftiTR(cifti_file=cifti_file)
+
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
@@ -411,3 +412,9 @@ def _create_mem_gb(bold_fname):
 
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
+
+def get_ciftiTR(cifti_file):
+    import nibabel as nb
+    ciaxis = nb.load(cifti_file).header.get_axis(0)
+    return ciaxis.step
+
