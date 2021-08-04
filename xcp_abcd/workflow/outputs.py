@@ -225,7 +225,7 @@ def init_writederivatives_wf(
             name='dv_cleandata_wf', run_without_submitting=True, mem_gb=2)
 
         dv_alff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc'],desc='alff',density='91k',extension='.dscalar.nii',
+                 dismiss_entities=['desc'],desc='alff',density='91k',extension='.dtseries.nii',
                  source_file=bold_file,check_hdr=False),
             name='dv_alff_wf', run_without_submitting=True, mem_gb=1)
 
@@ -323,7 +323,7 @@ def init_writederivatives_wf(
 
             dv_smoothalff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  meta_dict=smoothed_dict,dismiss_entities=['desc'], desc='alff_smooth',
-                 density='91k',source_file=bold_file,extension='.dscalar.nii',check_hdr=False),
+                 density='91k',source_file=bold_file,extension='.dtseries.nii',check_hdr=False),
             name='dv_smoothalff_wf', run_without_submitting=True, mem_gb=1)
 
             workflow.connect([
