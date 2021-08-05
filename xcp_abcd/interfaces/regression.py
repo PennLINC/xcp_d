@@ -69,7 +69,7 @@ class regress(SimpleInterface):
         confound = pd.read_csv(self.inputs.confounds,header=None)
         if self.inputs.custom_conf:
             confound_custom = pd.read_table(self.inputs.custom_conf,
-                                header=None)
+                                header=None,delimiter=' ')
             confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
             confound = np.nan_to_num(confound)
         else:
