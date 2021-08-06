@@ -406,3 +406,5 @@ The processed BOLD was smoothed using  FSL with a  gaussian kernel size of {kern
 
 
 
+#right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
+#left_surf=str(get_template("fsLR", hemi='L',suffix='sphere',density='32k')[0])),

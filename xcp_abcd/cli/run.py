@@ -97,7 +97,7 @@ def get_parser():
         '--brain-template', action='store', default='MNI152NLin2009cAsym',
         help=" template to be selected from anat to be processed and/or  for normalization")
 
-    g_param.add_argument('--smoothing', nargs='?', const=5, default=True,
+    g_param.add_argument('--smoothing', default=6, action='store',
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
     g_param.add_argument('--despike', action='store_true', default=False,
