@@ -230,7 +230,9 @@ Convolve task events with the HRF
 ----------------------------------
 Next, the BOLD response to each event is modeled by convolving the task events with a canonical HRF. This can be done by first defining the HRF and then applying it to your array with numpy.convolve. 
 
-.. code:: python
+.. code-block:: python
+   :emphasize-lines: 20,21
+   
     import numpy as np 
     from scipy.stats import gamma
   
@@ -263,7 +265,8 @@ Next, the BOLD response to each event is modeled by convolving the task events w
 
 If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeated for each such that you generate one taskevents Nx2array per condition, and one corresponding realt numpy array. The realt outputs must all be combined into a single space-delimited  ${subid}_${sesid}_task-${taskname}_desc-custom_timeseries.tsv file. A task with 5 conditions (happy, angry, sad, fearful, and neutral faces e.g.) will have 5 columns in the custom .tsv file. Multiple realt outputs can be combined by modifying the example code below.
 
-.. code:: python
+.. code-block:: python
+   
     import pandas as pd 
     taskarray = np.empty(shape=(measurements,0)) # measurements = the number of fMRI volumes
     
