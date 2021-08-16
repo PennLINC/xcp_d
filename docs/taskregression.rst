@@ -5,15 +5,16 @@ Task regression
 ------------------
 
 Regressing out the effects of a task from the BOLD timeseries is performed in 3 steps:
-1. Create a task event timing .txt file
-2. Convolve task events with a gamma-shaped hemodynamic response function
-3. Regress out the effects of task via a general linear model implemented with xcp_abcd
+ 1. Create a task event timing array
+ 2. Convolve task events with a gamma-shaped hemodynamic response function
+ 3. Regress out the effects of task via a general linear model implemented with xcp_abcd
 
-Create a task event file
+Create a task event array
 --------------------------
-First, for each condition (i.e., each separate contrast) in your task, create an Nx2 array where N is equal to the number of measurements (volumes) in your task fMRI run. Values in the first array column should increase sequentially by the length of the TR. Values in the second array column should equal either 0 or 1; each volume during which the condition/contrast was being tested should = 1, all others should = 0.
+First, for each condition (i.e., each separate contrast) in your task, create an Nx2 array where N is equal to the number of measurements (volumes) in your task fMRI run. Values in the first array column should increase sequentially by the length of the TR. Values in the second array column should equal either 0 or 1; each volume during which the condition/contrast was being tested should = 1, all others should = 0. 
 
 For example, for an fMRI task run with 210 measurements and a 3 second TR during which happy faces (events) were presented for 5.5 seconds at time = 36, 54, 90, 174, 234, 276, 285, 339, 390, and 414 seconds::
+
  [  0.   0.]
  [  3.   0.]
  [  6.   0.]
@@ -252,11 +253,13 @@ Next, the BOLD response to each event is modeled by convolving the task events w
     tt=np.convolve(taskevents[:,1],hrf_signal) # taskevents = the array created in the prior step
     realt=tt[:-N] # realt = the output we need!
 
-The code block above contains the following input variables
+| The code block above contains the following input variables
 - *TR*: a variable equal to the repetition time
-- *taskevents*: the Nx2 array created in the prior step
+- *taskevents*: the Nx2 array created in the prior step 
 
-The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**, which will be supplied in the next step to xcp_abcd. 
+
+| The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**, which will be supplied in the next step to xcp_abcd. 
+
 
 If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeated for each such that you generate one taskevents Nx2array per condition, and one corresponding realt numpy array. The realt outputs must all be combined into a single space-delimited  ${subid}_${sesid}_task-${taskname}_desc-custom_timeseries.tsv file. A task with 5 conditions (happy, angry, sad, fearful, and neutral faces e.g.) will have 5 columns in the custom .tsv file. Multiple realt outputs can be combined by modifying the example code below.
 
@@ -271,6 +274,7 @@ If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeat
     df.to_csv("{0}_{1}_task-{2}_desc-custom_timeseries.tsv".format(subid,sesid,taskid),index = False, header = False, sep=' ')
 
 The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may look like::
+
   0.0 0.0 0.0 0.0 0.0
   0.0 0.0 0.0 0.0 0.3957422940438729
   0.0 0.0 0.0 0.0 0.9957422940438729
@@ -481,7 +485,7 @@ The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may 
   0.0 0.0 0.0 0.0 -0.011374842820470351
   0.0 0.0 0.0 0.0 -0.002384853536635064
   0.0 0.0 0.0 0.0 -0.00042413222490445587
-    
+
 GLM task regression with xcp_abcd
 ----------------------------------
 Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv file to xcp_abcd with ``-c`` option. -c should point to the directory where this file exists, rather than to the file itself; xcp_abcd will identify the correct file based on the subid, sesid, and task id. You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call::
