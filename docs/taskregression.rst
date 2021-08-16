@@ -231,7 +231,6 @@ Convolve task events with the HRF
 Next, the BOLD response to each event is modeled by convolving the task events with a canonical HRF. This can be done by first defining the HRF and then applying it to your array with numpy.convolve. 
 
 .. code-block:: python
-   :emphasize-lines: 20,21
    
     import numpy as np 
     from scipy.stats import gamma
