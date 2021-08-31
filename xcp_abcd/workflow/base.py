@@ -17,7 +17,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from ..__about__ import __version__
 from num2words import num2words
-from ..utils import collect_data, get_customfile
+from ..utils import collect_data, get_customfile,select_cifti_bold,select_registrationfile
 
 from  ..workflow import( init_ciftipostprocess_wf, 
             init_boldpostprocess_wf)
@@ -285,9 +285,11 @@ def init_single_bold_wf(
         the first vols in seconds to be removed before postprocessing
 
     """
-    layout,subject_data,regfile = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
+    layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False, 
                                                template=brain_template)
+    regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
+    subject_data = select_cifti_bold(subj_data=subj_data) 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf','mni_to_t1w']),
         name='inputnode')

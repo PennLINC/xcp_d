@@ -192,15 +192,15 @@ def collect_data(
         for dtype, query in queries.items()
     }
     
-    reg_file = select_registrationfile(subj_data,template=template)
+    #reg_file = select_registrationfile(subj_data,template=template)
     
-    bold_file= select_cifti_bold(subj_data)
+    #bold_file= select_cifti_bold(subj_data)
 
-    return layout, bold_file, reg_file
+    return layout, subj_data
 
 
 def select_registrationfile(subj_data,
-                            template):
+                            template='MNI152NLin2009cAsym'):
     
     regfile = subj_data['regfile']
 
@@ -226,7 +226,8 @@ def select_cifti_bold(subj_data):
         if 'bold.dtseries.nii' in  j:
             cifti_file.append(j)
     return bold_file, cifti_file
-    
+
+
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     base_directory = traits.Directory(
