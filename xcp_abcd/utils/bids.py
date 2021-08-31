@@ -164,6 +164,12 @@ def collect_data(
     queries = {
         'regfile': {'datatype': 'anat','suffix':'xfm'},
         'boldfile': {'datatype':'func','suffix': 'bold'},
+        't1w': {'datatype':'anat','suffix':'T1w'},
+        'seg': {'datatype':'anat','suffix':'dseg'},
+        'pial': { 'datatype': 'anat','suffix':'pial'},
+        'wm': {'datatype': 'anat','suffix':'smoothwm'},
+        'midthickness':{'datatype': 'anat','suffix':'midthickness'},
+        'inflated':{'datatype': 'anat','suffix':'inflated'}
     }
 
     bids_filters = bids_filters or {}
@@ -179,22 +185,22 @@ def collect_data(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz","dtseries.nii","h5"],
+                extension=["nii", "nii.gz","dtseries.nii","h5",'gii'],
                 **query,
             )
         )
         for dtype, query in queries.items()
     }
     
-    reg_file = select_registrationfile(subj_data,template=template)
+    #reg_file = select_registrationfile(subj_data,template=template)
     
-    bold_file= select_cifti_bold(subj_data)
+    #bold_file= select_cifti_bold(subj_data)
 
-    return layout, bold_file, reg_file
+    return layout, subj_data
 
 
 def select_registrationfile(subj_data,
-                            template):
+                            template='MNI152NLin2009cAsym'):
     
     regfile = subj_data['regfile']
 
@@ -220,7 +226,8 @@ def select_cifti_bold(subj_data):
         if 'bold.dtseries.nii' in  j:
             cifti_file.append(j)
     return bold_file, cifti_file
-    
+
+
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     base_directory = traits.Directory(

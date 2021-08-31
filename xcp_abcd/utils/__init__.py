@@ -10,7 +10,8 @@ from .fcon import (extract_timeseries_funct,
 from .cifticonnectivity import CiftiCorrelation
 from .ciftiparcellation import CiftiParcellate
 from .ciftiseparatemetric import CiftiSeparateMetric
-from .bids import (collect_participants, collect_data)
+from .bids import (collect_participants, collect_data,
+                      select_registrationfile,select_cifti_bold)
 from .bids import DerivativesDataSink as bid_derivative
 from .modified_data import (interpolate_masked_data, generate_mask,
                               compute_FD, drop_tseconds_volume)
@@ -51,5 +52,7 @@ __all__ = [
     'get_transformfilex',
     'stringforparams',
     'fwhm2sigma',
-    'get_customfile'
+    'get_customfile',
+    'select_registrationfile',
+    'select_cifti_bold'
   ]
