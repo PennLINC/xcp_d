@@ -168,6 +168,8 @@ def collect_data(
         'seg': {'datatype':'anat','suffix':'dseg'},
         'pial': { 'datatype': 'anat','suffix':'pial'},
         'wm': {'datatype': 'anat','suffix':'smoothwm'},
+        'midthickness':{'datatype': 'anat','suffix':'midthickness'},
+        'inflated':{'datatype': 'anat','suffix':'inflated'}
     }
 
     bids_filters = bids_filters or {}
@@ -183,7 +185,7 @@ def collect_data(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz","dtseries.nii","h5"],
+                extension=["nii", "nii.gz","dtseries.nii","h5",'gii'],
                 **query,
             )
         )
