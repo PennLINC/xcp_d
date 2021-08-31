@@ -83,10 +83,9 @@ def init_compute_alff_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """  \
-The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
-by transforming  the processed BOLD timeseries  to the frequency domain. 
-The power spectrum was computed within the  {lowpass}-{highpass} Hz frequency band
-and the mean square root of the power spectrum was calculated at each voxel to yield voxel-wise ALFF measures.  
+The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming  the processed BOLD timeseries  to the frequency domain. 
+The power spectrum was computed within the  {highpass}-{lowpass} Hz frequency band and the mean square root of the power spectrum was 
+calculated at each voxel to yield voxel-wise ALFF measures.
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -115,8 +114,8 @@ and the mean square root of the power spectrum was calculated at each voxel to y
     if smoothing:
         if not cifti:
             workflow.__desc__ = workflow.__desc__ + """ \
-The ALFF maps were smoothed with FSL using a kernel size of {kernelsize} mm (FWHM). 
-"""         .format(kernelsize=str(smoothing))
+The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM). 
+        """.format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="ciftismoothing", mem_gb=mem_gb )
             workflow.connect([
@@ -126,8 +125,8 @@ The ALFF maps were smoothed with FSL using a kernel size of {kernelsize} mm (FWH
 
         else:
             workflow.__desc__ = workflow.__desc__ + """ \
-The ALFF was smoothed with the Connectome Workbench using a kernel size of {kernelsize} mm. 
-"""         .format(kernelsize=str(smoothing))
+The ALFF maps were smoothed with the Connectome Workbench using a gaussian kernel size of {kernelsize} mm (FWHM). 
+        """.format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
             lh_midthickness = str(get_template("fsLR",hemi='L',suffix='sphere',density='32k')[0])
             rh_midthickness = str(get_template("fsLR",hemi='R',suffix='sphere',density='32k')[0])
@@ -185,8 +184,8 @@ def init_surface_reho_wf(
     workflow.__desc__ = """ 
 
 For each hemisphere, regional homogeneity (ReHo) was computed using surface-based 
-*2dReHo* [@surface_reho]. Specifically, for each vertex on the surface, nearest-neighbor vertices were identified 
-and the Kendall's coefficient of concordance (KCC) was calculated to yield ReHo. 
+*2dReHo* [@surface_reho]. Specifically, for each vertex on the surface, 
+the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighbor vertices to yield ReHo. 
 """     
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold']), name='inputnode')
@@ -253,8 +252,7 @@ def init_3d_reho_wf(
 
     workflow = Workflow(name=name)
     workflow.__desc__ = """ 
-
-Regional homogeneity (ReHo) was computed using *3dReHo* in AFNI [@afni] with vertices neighborhood. 
+Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI [@afni]. 
 """ 
     
     inputnode = pe.Node(niu.IdentityInterface(
@@ -275,6 +273,5 @@ Regional homogeneity (ReHo) was computed using *3dReHo* in AFNI [@afni] with ver
         ])
 
     return workflow
-
 
 

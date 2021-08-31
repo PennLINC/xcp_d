@@ -69,7 +69,7 @@ class regress(SimpleInterface):
         confound = pd.read_csv(self.inputs.confounds,header=None)
         if self.inputs.custom_conf:
             confound_custom = pd.read_table(self.inputs.custom_conf,
-                                header=None)
+                                header=None,delimiter=' ')
             confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
             confound = np.nan_to_num(confound)
         else:
@@ -108,7 +108,6 @@ class regress(SimpleInterface):
 
 
 def linear_regression(data,confound):
-    
     '''
      data :
        numpy ndarray- vertices by timepoints
@@ -117,10 +116,10 @@ def linear_regression(data,confound):
      return: 
         residual matrix 
     '''
-    regr = LinearRegression()
-    regr.fit(confound.T,data.T)
+    regr = LinearRegression(n_jobs=1)
+    regr.fit(confound.T, data.T)
     y_pred = regr.predict(confound.T)
-    
+
     return data - y_pred.T
 
 def demean_detrend_data(data,TR,order):

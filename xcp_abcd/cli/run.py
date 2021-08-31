@@ -97,7 +97,7 @@ def get_parser():
         '--brain-template', action='store', default='MNI152NLin2009cAsym',
         help=" template to be selected from anat to be processed and/or  for normalization")
 
-    g_param.add_argument('--smoothing', nargs='?', const=5, default=True,
+    g_param.add_argument('--smoothing', default=6, action='store',
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
     g_param.add_argument('--despike', action='store_true', default=False,
@@ -261,7 +261,8 @@ def main():
             # Generate HTML file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
             pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--citeproc',
+                   '--filter',
+                   'pandoc-citeproc',
                    '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
                    str(citation_files['md']),
                    '-o', str(citation_files['html'])]
@@ -275,7 +276,7 @@ def main():
             # Generate LaTex file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
                    pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--natbib', str(citation_files['md']),
+                    '--natbib',str(citation_files['md']),
                    '-o', str(citation_files['tex'])]
             logger.info('Generating a LaTeX version of the citation boilerplate...')
             try:

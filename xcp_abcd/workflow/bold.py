@@ -29,6 +29,7 @@ from nipype.interfaces.afni import Despike
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import interpolate
 from  ..workflow import init_censoring_wf,init_resd_smoohthing
+from num2words import num2words
 #from postprocessing import stringforparams
 
 from  ..workflow import (init_fcon_ts_wf,
@@ -190,29 +191,29 @@ def init_boldpostprocess_wf(
 
     workflow.__desc__ = """
 For each of the {num_bold} BOLD series found per subject (across all
-tasks and sessions), the following postprocessing was performed:
-""".format(num_bold=num_bold)
+tasks and sessions), the following post-processing was performed:
+""".format(num_bold=num2words(num_bold))
 
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
-Before nuisance regression and filtering of the data, the first {nvol} were discarded,
-.Furthermore, any volumes with framewise-displacement greater than 
-{fd_thresh} mm [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
- and excluded from nuissance regression.
-""".format(nvol=nvolx,fd_thresh=fd_thresh)
+before nuisance regression and filtering of the data, the first {nvol} were discarded,
+.Furthermore,volumes with framewise-displacement greater than 
+{fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
+ and excluded from nuisance regression.
+""".format(nvol=num2words(nvolx),fd_thresh=fd_thresh)
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
-Before nuisance regression and filtering any volumes with framewise-displacement greater than 
-{fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
- and excluded from nuissance regression.
+before nuisance regression and filtering of the data, volumes with framewise-displacement greater than 
+{fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
+ and excluded from nuisance regression.
 """.format(fd_thresh=fd_thresh)
 
     workflow.__desc__ = workflow.__desc__ +  """ \
-{regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].  These nuisance regressors were 
-regressed from the BOLD data using linear regression as implemented in Scikit-Learn {sclver} [@scikit-learn].
-Residual timeseries from this regression were then band-pass filtered to retain signal within the  {highpass}-{lowpass} Hz frequency band. 
+{regressors} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were 
+regressed from the BOLD data using linear regression - as implemented in Scikit-Learn {sclver} [@scikit-learn].
+Residual timeseries from this regression were then band-pass filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band. 
  """.format(regressors=stringforparams(params=params),sclver=sklearn.__version__,
              lowpass=upper_bpf,highpass=lower_bpf)
 
@@ -239,15 +240,15 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mem_gbx = _create_mem_gb(bold_file)
 
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['resampled'],mni_to_t1w=mni_to_t1w,
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
                  brain_template=brain_template,name="fcons_ts_wf")
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'], TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
+    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="afni_reho_wf")
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
@@ -261,21 +262,21 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
     
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=False,
+    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=False,
                 name="resd_smoothing_wf")
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filtering_wf", mem_gb=mem_gbx['resampled'])
+                    name="filtering_wf", mem_gb=mem_gbx['timeseries'])
 
     regression_wf = pe.Node(regress(tr=TR),
-               name="regression_wf",mem_gb = mem_gbx['resampled'])
+               name="regression_wf",mem_gb = mem_gbx['timeseries'])
 
     interpolate_wf = pe.Node(interpolate(TR=TR),
-                  name="interpolation_wf",mem_gb = mem_gbx['resampled'])
+                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
 
     
 

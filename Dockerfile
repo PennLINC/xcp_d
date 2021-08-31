@@ -3,8 +3,10 @@ FROM ubuntu:xenial-20200706
 
 COPY docker/files/neurodebian.gpg /usr/local/etc/neurodebian.gpg
 
+# Prepare environment
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+                    apt-utils \
                     curl \
                     bzip2 \
                     ca-certificates \
@@ -13,8 +15,11 @@ RUN apt-get update && \
                     autoconf \
                     libtool \
                     pkg-config \
+                    graphviz \
+                    pandoc \
+                    pandoc-citeproc \
                     git && \
-    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    curl -sSL https://deb.nodesource.com/setup_14.x | bash - && \
     apt-get install -y --no-install-recommends \
                     nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -67,37 +72,34 @@ RUN npm install -g svgo
 RUN npm install -g bids-validator@1.6.2
 
 # Installing and setting up miniconda
-RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh && \
-    bash Miniconda3-4.5.11-Linux-x86_64.sh -b -p /usr/local/miniconda && \
-    rm Miniconda3-4.5.11-Linux-x86_64.sh
+RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh && \
+    bash Miniconda3-py38_4.9.2-Linux-x86_64.sh -b -p /usr/local/miniconda && \
+    rm Miniconda3-py38_4.9.2-Linux-x86_64.sh
 
 # Set CPATH for packages relying on compiled libs (e.g. indexed_gzip)
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
-    CPATH="/usr/local/miniconda/include/:$CPATH" \
+    CPATH="/usr/local/miniconda/include:$CPATH" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     PYTHONNOUSERSITE=1
 
 # Installing precomputed python packages
-RUN conda install -y python=3.7.4 \
-                     pip=20.1.1 \
-                     mkl=2018.0.3 \
-                     mkl-service \
-                     numpy=1.18.5 \
-                     scipy=1.5.0 \
-                     scikit-learn=0.23.1 \
-                     pandas=1.0.5 \
-                     libxml2=2.9.8 \
-                     libxslt=1.1.32 \
-                     pandoc \
-                     matplotlib \
-                     graphviz=2.40.1 \
-                     traits=4.6.0 \
-                     zlib; sync && \
+RUN conda install -y python=3.8 \
+                     pip=21.0 \
+                     mkl=2021.2 \
+                     mkl-service=2.3 \
+                     numpy=1.20 \
+                     scipy=1.6 \
+                     scikit-learn=0.24 \
+                     matplotlib=3.3 \
+                     pandas=1.2 \
+                     libxslt=1.1 \
+                     traits=6.2 \
+                     zstd=1.4; sync && \
     chmod -R a+rX /usr/local/miniconda; sync && \
     chmod +x /usr/local/miniconda/bin/*; sync && \
-    conda build purge-all; sync && \
-    conda clean -tipsy && sync
+    conda clean -y --all && sync && \
+    rm -rf ~/.conda ~/.cache/pip/*; sync
 
 # Unless otherwise specified each process should only use one thread - nipype
 # will handle parallelization
@@ -125,7 +127,10 @@ RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs 
     rm xcp_abcd-setup.cfg && \
     find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
-
+# add pandoc
+RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/releases/download/2.2.2.1/pandoc-2.2.2.1-1-amd64.deb" && \
+    dpkg -i pandoc-2.2.2.1-1-amd64.deb && \
+    rm pandoc-2.2.2.1-1-amd64.deb
 # Installing xcp_abcd
 COPY . /src/xcp_abcd
 ARG VERSION=0.0.1

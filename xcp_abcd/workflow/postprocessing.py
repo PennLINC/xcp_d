@@ -10,6 +10,7 @@ import numpy as np
 import os
 from nipype.pipeline import engine as pe
 from numpy.core.numeric import identity
+from pkg_resources import resource_filename as pkgrf
 from ..utils.utils import stringforparams
 from templateflow.api import get as get_template
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
@@ -260,7 +261,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
-            workflow.__desc__ = workflow.__desc__ + """ \
+            workflow.__desc__ = workflow.__desc__ + """ 
 The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm . 
 """         .format(kernelsize=str(smoothing))
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
@@ -273,7 +274,7 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
                      ])
 
         else:
-            workflow.__desc__ = workflow.__desc__ + """ \
+            workflow.__desc__ = workflow.__desc__ + """ 
 The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm. 
 """         .format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
@@ -379,12 +380,12 @@ def init_resd_smoohthing(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = """ \
-The processed BOLD  was smoothed with the Connectome Workbench with a kernel size of {kernelsize} mm  (FWHM). 
+The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel size of {kernelsize} mm  (FWHM). 
 """     .format(kernelsize=str(smoothing))
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                  right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
-                  left_surf=str(get_template("fsLR", hemi='L',suffix='sphere',density='32k')[0])),
-                   name="cifti_smoothing", mem_gb=mem_gb)
+                right_surf  = pkgrf('xcp_abcd','data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'),
+                left_surf  = pkgrf('xcp_abcd','data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii')),
+                name="cifti_smoothing", mem_gb=mem_gb)
         workflow.connect([
                    (inputnode, smooth_data,[('bold_file','in_file')]),
                    (smooth_data, outputnode,[('out_file','smoothed_bold')])       
@@ -392,7 +393,7 @@ The processed BOLD  was smoothed with the Connectome Workbench with a kernel siz
 
     else:
         workflow.__desc__ = """ \
-The processed BOLD was smoothed with FSL with a  kernel size of {kernelsize} mm  (FWHM). 
+The processed BOLD was smoothed using  FSL with a  gaussian kernel size of {kernelsize} mm  (FWHM). 
 """      .format(kernelsize=str(smoothing))
         smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="nifti_smoothing", mem_gb=mem_gb )
@@ -405,3 +406,5 @@ The processed BOLD was smoothed with FSL with a  kernel size of {kernelsize} mm 
 
 
 
+#right_surf=str(get_template("fsLR", hemi='R',suffix='sphere',density='32k')[0]), 
+#left_surf=str(get_template("fsLR", hemi='L',suffix='sphere',density='32k')[0])),
