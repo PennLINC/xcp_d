@@ -196,7 +196,7 @@ def collect_data(
     
     bold_file= select_cifti_bold(subj_data)
 
-    return layout, bold_file, reg_file, subj_data 
+    return layout, bold_file, reg_file
 
 
 def select_registrationfile(subj_data,
