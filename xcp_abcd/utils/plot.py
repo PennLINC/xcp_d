@@ -13,7 +13,7 @@ import seaborn as sns
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from niworkflows.viz.plots import _decimate_data
-from utils.write_save import read_ndata
+from ..utils import read_ndata
 
 
 def plot_svg(fdata,fd,dvars,filename,tr=1):
