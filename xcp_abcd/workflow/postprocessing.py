@@ -195,7 +195,7 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     
     
-    # get the confpund matrix
+    # get the confound matrix
 
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 
@@ -287,6 +287,12 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
     ## smoothing the datt if requested
         
     return workflow
+
+
+
+
+
+
 
 
 
