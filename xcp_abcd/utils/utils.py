@@ -81,6 +81,11 @@ def get_maskfiles(bold_file,mni_to_t1w):
 
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
+    """"
+    get transform file to MNI9 to bold space
+
+    """
+
     file_base = os.path.basename(str(bold_file))
     FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
   #MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])

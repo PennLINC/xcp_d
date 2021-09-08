@@ -21,7 +21,7 @@ from .sentry import sentry_setup
 from .qcmetrics import regisQ
 
 from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
-                    stringforparams,fwhm2sigma,get_customfile)
+                    stringforparams,fwhm2sigma,get_customfile,get_transformfileX)
 
 
 __all__ = [
@@ -56,5 +56,6 @@ __all__ = [
     'get_customfile',
     'select_registrationfile',
     'select_cifti_bold',
-    'CiftiSurfaceResample'
+    'CiftiSurfaceResample',
+    'get_transformfileX'
   ]

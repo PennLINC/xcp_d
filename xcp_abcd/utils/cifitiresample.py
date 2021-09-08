@@ -44,7 +44,7 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         keep_extension=True,
         argstr=" %s",
         position=4,
-        desc="The gifti output, iether left and right",
+        desc="The gifti output, either left and right",
     )
 
 class CiftiSurfaceResampleOutputSpec(TraitedSpec):
