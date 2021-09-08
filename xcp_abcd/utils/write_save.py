@@ -39,7 +39,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
       mask : mask is not needed
 
     '''
-    basedir = os.path.split(os.path.abspath(template))[0]
+    basedir = os.path.split(os.path.abspath(filename))[0]
     # write cifti series
     if template.endswith('.dtseries.nii'):
         from nibabel.cifti2 import Cifti2Image
