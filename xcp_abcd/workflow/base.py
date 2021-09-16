@@ -144,7 +144,7 @@ def init_xcpabcd_wf(layout,
     xcpabcd_wf.base_dir = work_dir
 
     for subject_id in subject_list:
-        single_bold_wf = init_single_bold_wf(
+        single_subj_wf = init_subject_wf(
                             layout=layout,
                             lower_bpf=lower_bpf,
                             upper_bpf=upper_bpf,
@@ -170,17 +170,17 @@ def init_xcpabcd_wf(layout,
                             fd_thresh=fd_thresh,
                             name="single_bold_" + subject_id + "_wf")
 
-        single_bold_wf.config['execution']['crashdump_dir'] = (
+        single_subj_wf.config['execution']['crashdump_dir'] = (
             os.path.join(output_dir, "xcp_abcd", "sub-" + subject_id, 'log')
         )
-        for node in single_bold_wf._get_all_nodes():
-            node.config = deepcopy(single_bold_wf.config)
-        xcpabcd_wf.add_nodes([single_bold_wf])
+        for node in single_subj_wf._get_all_nodes():
+            node.config = deepcopy(single_subj_wf.config)
+        xcpabcd_wf.add_nodes([single_subj_wf])
 
     return xcpabcd_wf
 
 
-def init_single_bold_wf(
+def init_subject_wf(
     layout,
     lower_bpf,
     upper_bpf,
