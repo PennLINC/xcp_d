@@ -10,6 +10,7 @@ from .fcon import (extract_timeseries_funct,
 from .cifticonnectivity import CiftiCorrelation
 from .ciftiparcellation import CiftiParcellate
 from .ciftiseparatemetric import CiftiSeparateMetric
+from .cifitiresample import CiftiSurfaceResample
 from .bids import (collect_participants, collect_data,
                       select_registrationfile,select_cifti_bold)
 from .bids import DerivativesDataSink as bid_derivative
@@ -54,5 +55,6 @@ __all__ = [
     'fwhm2sigma',
     'get_customfile',
     'select_registrationfile',
-    'select_cifti_bold'
+    'select_cifti_bold',
+    'CiftiSurfaceResample'
   ]

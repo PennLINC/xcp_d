@@ -229,6 +229,7 @@ def select_cifti_bold(subj_data):
 
 
 
+
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     base_directory = traits.Directory(
         desc="Path to the base directory for storing data."

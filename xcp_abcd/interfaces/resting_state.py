@@ -17,7 +17,6 @@ LOGGER = logging.getLogger('nipype.interface')
 import os 
 import nibabel as nb 
 from brainsprite import viewer_substitute
-import tempfile
 from pkg_resources import resource_filename as pkgrf
 import numpy as np
 

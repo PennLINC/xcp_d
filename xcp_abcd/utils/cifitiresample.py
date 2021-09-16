@@ -9,59 +9,54 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 
-class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
+class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
         argstr="%s ",
         position=0,
-        desc="The input dense series",
+        desc="the gifti file",
     )
-    direction = traits.Enum(
-        "ROW",
-        "COLUMN",
-        mandatory=True,
-        argstr="%s ",
+
+    current_sphere = File(
+        exists=True,
         position=1,
-        desc="which dimension to smooth along, ROW or COLUMN",
+        argstr=" %s",
+        desc=" the current sphere surface in gifti for in_file",
     )
-    metric = traits.Str(
-        mandatory=True,
-        argstr=" -metric %s ",
+    
+    new_sphere = File(
+        exists=True,
         position=2,
-        desc="which of the structure eg CORTEX_LEFT CORTEX_RIGHT" \
-            "check https://www.humanconnectome.org/software/workbench-command/-cifti-separate ",
+        argstr=" %s",
+        desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
     )
+    
+    metric = traits.Str(
+        argstr=" %s ",
+        position=3,
+        desc=" fixed for anatomic",
+        default="  BARYCENTRIC  "
+    )
+    
+
     out_file = File(
         name_source=["in_file"],
-        name_template="correlation_matrix_%s.func.gii",
+        name_template="resampled_%s.surf.gii",
         keep_extension=True,
         argstr=" %s",
-        position=3,
-        desc="The gifti output, iether left and right",
+        position=4,
+        desc="The gifti output, either left and right",
     )
-    
-class CiftiSeparateMetricOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc="output CIFTI file")
 
-class CiftiSeparateMetric(WBCommand):
+class CiftiSurfaceResampleOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="output gifti file")
+
+class CiftiSurfaceResample(WBCommand):
     r"""
-    Extract left or right hemisphere surface from CIFTI file (.dtseries)
-    other structure can also be extracted
-    The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .dtseries, 
-     
-    >>> ciftiseparate = CiftiSeparateMetric()
-    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
-    >>> ciftiseparate.inputs.metric = "CORTEX_LEFT" # extract left hemisphere
-    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
-    >>> ciftiseparate.inputs.direction = 'COLUMN'
-    >>> ciftiseparate.cmdline
-    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii'  COLUMN \
-      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    Resample a surface from one sphere to another.
+    will comeback for documentation  @Azeez Adebimpe
     """
-    input_spec = CiftiSeparateMetricInputSpec
-    output_spec = CiftiSeparateMetricOutputSpec
-    _cmd = "wb_command  -cifti-separate "
-
-    
+    input_spec = CiftiSurfaceResampleInputSpec
+    output_spec = CiftiSurfaceResampleOutputSpec
+    _cmd = "wb_command  -surface-resample"
