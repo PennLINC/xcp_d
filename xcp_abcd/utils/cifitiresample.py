@@ -33,11 +33,13 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     )
     
     metric = traits.Str(
-        mandatory=True,
-        argstr="  BARYCENTRIC  ",
+        argstr=" %s ",
         position=3,
-        desc=" fixed for anatomical ",
+        desc=" fixed for anatomic",
+        default="  BARYCENTRIC  "
     )
+    
+
     out_file = File(
         name_source=["in_file"],
         name_template="resampled_%s.surf.gii",

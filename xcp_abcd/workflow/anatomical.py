@@ -12,13 +12,14 @@ import fnmatch, re
 from pathlib import Path
 import numpy as np
 from templateflow.api import get as get_template
-from ..utils import cifitiresample,collect_data,select_registrationfile
+from ..utils import collect_data,select_registrationfile,CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
+from nipype import MapNode as MapNode
 
 
 def init_anatomical_wf(
@@ -32,7 +33,8 @@ def init_anatomical_wf(
      workflow = Workflow(name=name)
 
      outputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w_mni','seg_mni']),
+        fields=['t1w_mni','seg_mni','wm_surf_left','pial_surf_left','midthick_surf_letf','inf_surf_left',
+        'wm_surf_right','pial_surf_right','midthick_surf_right','inf_surf_right']),
         name='outputnode')
 
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
@@ -67,11 +69,10 @@ def init_anatomical_wf(
           (seg_transform,outputnode,[('output_image','seg_mni')])
          ])
 
-     
      #verify fresurfer directory
 
-     
-     freesufer_path = Path(str(Path(bids_dir))+'/freesurfer')
+     p = Path(bids_dir)
+     freesufer_path = Path(str(p.parent)+'/freesurfer')
      if freesufer_path.is_dir(): 
           all_files  =list(layout.get_files())
           L_inflated_surf  = fnmatch.filter(all_files,'*hemi-L_inflated.surf.gii')
@@ -89,29 +90,58 @@ def init_anatomical_wf(
           else:
                subid = subject_id
           
+          left_sphere = str(freesufer_path)+'/'+subid+'/surf/lh.sphere.reg'
+          right_sphere = str(freesufer_path)+'/'+subid+'/surf/rh.sphere.reg'  
           
+          left_sphere_fsLR = str(get_template(template='fsLR',hemi='L',density='32k',suffix='sphere')[0])
+          right_sphere_fsLR = str(get_template(template='fsLR',hemi='R',density='32k',suffix='sphere')[0]) 
+
+          # nodes for letf and right in node
+          left_sphere_mris = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere')
+          right_sphere_mris = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere')
+          
+         
+          ## surface resample to fsl32k
+          left_wm_surf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=L_wm_surf), name="left_wm_surf",mem_gb=2)
+          left_pial_surf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=L_pial_surf), name="left_pial_surf",mem_gb=2)
+          left_midthick_surf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=L_midthick_surf), name="left_midthick_surf",mem_gb=2)
+          left_inf_surf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=L_inflated_surf), name="left_inflated_surf",mem_gb=2)
           
 
-          
+          right_wm_surf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=R_wm_surf), name="right_wm_surf",mem_gb=2)
+          right_pial_surf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=R_pial_surf), name="right_pial_surf",mem_gb=2)
+          right_midthick_surf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=R_midthick_surf), name="right_midthick_surf",mem_gb=2)
+          right_inf_surf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
+                        metric = ' BARYCENTRIC ',in_file=R_inflated_surf), name="right_inflated_surf",mem_gb=2)
 
-     
-     
-     
-     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','ref_file','bold_mask','cutstom_conf','mni_to_t1w']),
-        name='inputnode')
+          workflow.connect([ 
+               (left_sphere_mris,left_wm_surf,[('out_file','new_sphere')]),
+               (left_sphere_mris,left_pial_surf,[('out_file','new_sphere')]),
+               (left_sphere_mris,left_midthick_surf,[('out_file','new_sphere')]),
+               (left_sphere_mris,left_inf_surf,[('out_file','new_sphere')]),
 
+               (right_sphere_mris,right_wm_surf,[('out_file','new_sphere')]),
+               (right_sphere_mris,right_pial_surf,[('out_file','new_sphere')]),
+               (right_sphere_mris,right_midthick_surf,[('out_file','new_sphere')]),
+               (right_sphere_mris,right_inf_surf,[('out_file','new_sphere')]),
 
+               (left_wm_surf,outputnode,[('out_file','wm_surf_left')]),
+               (left_pial_surf,outputnode,[('out_file','pial_surf_left')]),
+               (left_midthick_surf,outputnode,[('out_file','midthick_surf_left')]),
+               (left_inf_surf,outputnode,[('out_file','inf_surf_left')]),
 
-
-    
-    # 1. workflow for T1w nifti to MNI2006cAsym
-    
-
-    # 2. workfflow for surface if freesufer present
- 
-
- 
+               (right_wm_surf,outputnode,[('out_file','wm_surf_right')]),
+               (right_pial_surf,outputnode,[('out_file','pial_surf_right')]),
+               (right_midthick_surf,outputnode,[('out_file','midthick_surf_right')]),
+               (right_inf_surf,outputnode,[('out_file','inf_surf_right')]),
+              ])          
      return workflow
 
 
