@@ -23,6 +23,8 @@ from .qcmetrics import regisQ
 from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
                     stringforparams,fwhm2sigma,get_customfile)
 
+from .plot  import (plotseries,plot_svgx,plot_carpetx,plot_carpet,confoundplot)
+
 
 __all__ = [
     'read_ndata',
@@ -56,5 +58,8 @@ __all__ = [
     'get_customfile',
     'select_registrationfile',
     'select_cifti_bold',
-    'CiftiSurfaceResample'
+    'CiftiSurfaceResample',
+    'plotseries','plot_svgx',
+    'plot_carpetx','plot_carpet',
+    'confoundplot'
   ]
