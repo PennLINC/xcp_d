@@ -28,7 +28,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.io import add_traits
 from templateflow.api import templates as _get_template_list
-from niworkflows.utils.bids import _init_layout, relative_to_root
+from niworkflows.utils.bids import relative_to_root
 from pkg_resources import resource_filename as _pkgres
 from niworkflows.utils.images import overwrite_header
 from niworkflows.utils.misc import splitext as _splitext, _copy_any
