@@ -25,6 +25,8 @@ from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
 
 from .plot  import (plotseries,plot_svgx,plot_carpetx,plot_carpet,confoundplot)
 
+from .execsummary import (surf2vol,get_regplot,plot_registrationx,generate_brain_sprite)
+
 
 __all__ = [
     'read_ndata',
@@ -61,5 +63,8 @@ __all__ = [
     'CiftiSurfaceResample',
     'plotseries','plot_svgx',
     'plot_carpetx','plot_carpet',
-    'confoundplot'
+    'confoundplot',
+    'surf2vol','get_regplot',
+    'plot_registrationx',
+    'generate_brain_sprite'
   ]
