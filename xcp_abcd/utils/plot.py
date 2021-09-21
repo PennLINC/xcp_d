@@ -16,6 +16,13 @@ from niworkflows.viz.plots import _decimate_data
 from ..utils import read_ndata
 
 
+def plotimage(img,out_file):
+    fig = plt.figure(constrained_layout=False, figsize=(30, 15))
+    from nilearn.plotting import plot_anat
+    plot_anat(img,draw_cross=False)
+    fig.savefig(out_file,bbox_inches="tight", pad_inches=None)
+    return out_file
+
 def plot_svg(fdata,fd,dvars,filename,tr=1):
     '''
     plot carpetplot with fd and dvars
@@ -504,7 +511,7 @@ def plot_carpetx(
 
     return (ax0, ax1), gs
 
-def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,taskname='rest'):
+def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------

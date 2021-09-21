@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 import numpy as np
 import nibabel as nb
-import pandas as pd
 from uuid import uuid4
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
@@ -46,11 +45,11 @@ def surf2vol(template,left_surf, right_surf, filename,scale=1):
 
 
 
-def get_regplot( brain,overlay,outdir,cuts=3,order=("x","y","z")):
+def get_regplot(brain,overlay,out_file,cuts=3,order=("x","y","z")):
     """
    
     """
-    out_file=outdir+"/regplot.svg"
+
     brain = nb.load(brain)
     overlay = nb.load(overlay)
     filex_plot = plot_registrationx(anat_nii=brain, contour=overlay, 
@@ -114,9 +113,9 @@ from brainsprite import viewer_substitute
 from pkg_resources import resource_filename as pkgrf
 import tempita
 
-def generate_brain_sprite(template_image,stat_map,prefix):
+def generate_brain_sprite(template_image,stat_map,out_file):
     
-    filename = prefix+"_brain_sprite.html"
+    
     file_template = pkgrf("xcp_abcd",'data/transform/brainsprite_template.html')
     template = tempita.Template.from_filename(file_template, encoding="utf-8")
     
@@ -125,7 +124,7 @@ def generate_brain_sprite(template_image,stat_map,prefix):
     bsprite.fit(stat_map_img=stat_map,bg_img=template_image)
 
     viewer = bsprite.transform(template=template,javascript='js', html='html', library='bsprite')
-    viewer.save_as_html(filename)
+    viewer.save_as_html(out_file)
 
 
-    return filename
+    return out_file

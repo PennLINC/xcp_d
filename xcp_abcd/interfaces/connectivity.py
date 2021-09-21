@@ -11,7 +11,7 @@ from pkg_resources import resource_filename as pkgrf
 from nipype.interfaces.base import traits, InputMultiObject, File
 from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
 from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
+    traits, TraitedSpec, BaseInterfaceInputSpec, File,isdefined,
     SimpleInterface
 )
 LOGGER = logging.getLogger('nipype.interface')
