@@ -188,7 +188,6 @@ def init_anatomical_wf(
      
      # output the data in anat and figures directories
 
-     
      return workflow
 
 
