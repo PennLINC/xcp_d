@@ -11,4 +11,5 @@ Contents
 
    installation
    usage
+   taskregression
    api
