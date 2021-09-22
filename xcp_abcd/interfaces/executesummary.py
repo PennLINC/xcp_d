@@ -15,7 +15,6 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
-from brainsprite import viewer_substitute
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -64,7 +63,7 @@ class _brainplotxOutputSpec(TraitedSpec):
     out_html = File(exists=True, manadatory=True,
                                   desc="zscore html")
 
-class brainplotx(SimpleInterface):
+class BrainPlotx(SimpleInterface):
     r"""
     coming
 
@@ -148,7 +147,7 @@ class PlotSVGData(SimpleInterface):
                 'carpetplot_before_',
                 suffix='file.svg', newpath=runtime.cwd,
                 use_ext=False)
-                
+
         self._results['after_process'] = fname_presuffix(
                 'carpetplot_after_',
                 suffix='file.svg', newpath=runtime.cwd,
