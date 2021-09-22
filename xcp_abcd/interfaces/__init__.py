@@ -9,6 +9,7 @@ from .prepostcleaning import interpolate,censorscrub,removeTR
 from .qc_plot import computeqcplot
 from .report import SubjectSummary, AboutSummary, FunctionalSummary
 from .report_core import generate_reports
+from .executesummary import SurftoVolume,BrainPlotx,PlotSVGData,RegPlot
 
 __all__ = [
     'regress',
@@ -29,6 +30,10 @@ __all__ = [
     'FunctionalSummary',
     'generate_reports',
     'ciftidespike',
-    'connectplot'
-    'brainplot'
-]
+    'connectplot',
+    'brainplot',
+    'SurftoVolume',
+    'BrainPlotx',
+    'PlotSVGData',
+    'RegPlot'
+   ]

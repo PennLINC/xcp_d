@@ -38,7 +38,7 @@ def surf2vol(template,left_surf, right_surf, filename,scale=1):
     overlay[tuple(indices.tolist())] = 1
     
     overlay_image = nb.Nifti1Image(overlay*scale, affine=t1_image.affine)
-
+    
     nb.save(overlay_image, filename)
     
     return filename

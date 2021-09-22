@@ -20,7 +20,7 @@ from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import MapNode as MapNode
-
+from ..interfaces import SurftoVolume,BrainPlotx
 
 def init_anatomical_wf(
      omp_nthreads,
@@ -34,7 +34,7 @@ def init_anatomical_wf(
 
      outputnode = pe.Node(niu.IdentityInterface(
         fields=['t1w_mni','seg_mni','wm_surf_left','pial_surf_left','midthick_surf_letf','inf_surf_left',
-        'wm_surf_right','pial_surf_right','midthick_surf_right','inf_surf_right']),
+        'wm_surf_right','pial_surf_right','midthick_surf_right','inf_surf_right','brainplot']),
         name='outputnode')
 
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
@@ -52,14 +52,16 @@ def init_anatomical_wf(
           ii=os.path.basename(i)
           if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
                seg = i
-     t1w_to_mni = select_registrationfile(subj_data=subj_data)
+     mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
+
+     MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
-     t1w_transform = pe.Node(ApplyTransformsx(input_image=t1w,num_threads=2,rreference_image=mnitemplate,
+     t1w_transform = pe.Node(ApplyTransformsx(input_image=t1w,num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
                        name="t1w_transform", mem_gb=2)
 
-     seg_transform = pe.Node(ApplyTransformsx(input_image=seg,num_threads=2,rreference_image=mnitemplate,
+     seg_transform = pe.Node(ApplyTransformsx(input_image=seg,num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="seg_transform", mem_gb=2)
@@ -141,8 +143,61 @@ def init_anatomical_wf(
                (right_pial_surf,outputnode,[('out_file','pial_surf_right')]),
                (right_midthick_surf,outputnode,[('out_file','midthick_surf_right')]),
                (right_inf_surf,outputnode,[('out_file','inf_surf_right')]),
-              ])          
+              ]) 
+
+          t1w_mgz  = str(freesufer_path)+'/'+subid+'/mri/orig.mgz'
+          MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+          mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+          fs2t1w = mnisf + 'from-fsnative_to-T1w_mode-image_xfm.txt'
+          pial2vol = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
+               left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')
+          wm2vol = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
+                        left_surf=R_wm_surf,right_surf=L_wm_surf),name='wm2vol')
+          
+          ## combine pial and wm volumes
+          from nipype.interfaces.fsl import MultiImageMaths
+          addwpial = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
+
+          #transform freesurfer space to MNI for brainplot
+          t12mni = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interp='nearestneighbour',
+             transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)],input_image=t1w_mgz),name='tw12mnib')
+          overlay2mni = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interp="MultiLabel",
+                     transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)]),name='overlay2mnib')
+          
+          #brainplot
+          brainspritex = pe.Node(BrainPlotx(),name='brainsprite')
+          
+
+          workflow.connect([
+               (pial2vol,addwpial,[('out_file','in_file')]),
+               (wm2vol,addwpial,[('out_file','operand_files')]),
+               (addwpial,overlay2mni,[('out_file','input_image')]),
+               (overlay2mni,brainspritex,[('output_image','in_file')]),
+               (t12mni,brainspritex,[('output_image','template')]),
+               (brainspritex,outputnode,[('out_html','brainplot')]), 
+          ])
+     
+     else:
+          brainspritex = pe.Node(BrainPlotx(),name='brainsprite')
+          workflow.connect([
+              (t1w_transform,brainspritex,[('output_image','template')]),
+              (seg_transform,brainspritex,[('output_image','in_file')]),
+              (brainspritex,outputnode,[('out_html','brainplot')])
+              ])
+
+     
+     # output the data in anat and figures directories
+
      return workflow
+
+
+
+from ..utils import bid_derivative
+class DerivativesDataSink(bid_derivative):
+     out_path_base = 'xcp_abcd'
+
+
+
 
 
 
