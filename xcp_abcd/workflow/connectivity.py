@@ -17,7 +17,6 @@ from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
 from ..interfaces import connectplot
 from nipype.interfaces import utility as niu
 from ..utils import CiftiCorrelation, CiftiParcellate,get_transformfile
-from pkg_resources import resource_filename as pkgrf
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 
