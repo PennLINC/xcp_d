@@ -28,7 +28,7 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from nipype.interfaces.afni import Despike
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import interpolate
-from  ..workflow import init_censoring_wf,init_resd_smoohthing
+from  ..workflow import init_censoring_wf,init_resd_smoohthing,init_execsummmary_wf
 from num2words import num2words
 #from postprocessing import stringforparams
 

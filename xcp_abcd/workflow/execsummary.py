@@ -22,10 +22,8 @@ class DerivativesDataSink(bid_derivative):
 
 def init_execsummmary_wf(
      omp_nthreads,
-     layout,
      bold_file,
      output_dir,
-     t1w_to_mni,
      mni_to_t1w,
      tr,
      name='execsummary_wf'):
