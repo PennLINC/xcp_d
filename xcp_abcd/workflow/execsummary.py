@@ -15,3 +15,24 @@ from ..utils import bid_derivative
 
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_abcd'
+
+def init_execsummmary_wf(
+     omp_nthreads,
+     bids_dir,
+     bold_file,
+     output_dir,
+     t1w_to_mni,
+     name='anatomical_wf',
+     
+    ):
+
+
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['t1w','seg','resddata','filtdata']), name='inputode')
+
+
+    
+
+    return workflow
