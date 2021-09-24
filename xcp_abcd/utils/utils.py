@@ -6,6 +6,8 @@ from pkg_resources import resource_filename as pkgrf
 
 def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
+    """ obtain transfromation to transfrom MNI6 mask to  any bold space """
+
     file_base = os.path.basename(str(bold_file))
 
 
@@ -53,6 +55,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(mni6c_to_t1w)
+        
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
@@ -82,7 +85,7 @@ def get_maskfiles(bold_file,mni_to_t1w):
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
     """"
-    get transform file to MNI9 to bold space
+      obtain transfromation to transfrom MNI mask to  any bold space
 
     """
 

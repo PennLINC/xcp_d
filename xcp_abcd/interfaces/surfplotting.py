@@ -5,7 +5,7 @@ import os
 from re import template 
 import nibabel as nb
 import numpy as np
-from ..utils import surf2vol,get_regplot,generate_brain_sprite,plot_svgx
+from ..utils import surf2vol,get_regplot,generate_brain_sprite,plot_svgx,plotimage
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from pkg_resources import resource_filename as pkgrf
@@ -18,7 +18,29 @@ from nipype.interfaces.base import (
 
 LOGGER = logging.getLogger('nipype.interface')
 
+class _plotimgInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc='plot image')
 
+class _plotimgOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='out image')
+
+class PlotImage(SimpleInterface):
+    input_spec = _plotimgInputSpec
+    output_spec = _plotimgOutputSpec
+
+    def _run_interface(self, runtime):
+        self._results['outfile'] = fname_presuffix(
+                self.inputs.in_file,
+                suffix='_file.svg', newpath=runtime.cwd,
+                use_ext=False)
+        
+        self._results['outfile'] = plotimage(self.inputs.in_file,
+             self._results['outfile'])
+             
+        return runtime
+
+
+    
 class _surf2volInputSpec(BaseInterfaceInputSpec):
     template= File(exists=True,mandatory=True, desc="t1 image")
     left_surf = File(exists=True,mandatory=True, desc="left hemipshere")
@@ -121,7 +143,7 @@ class RegPlot(SimpleInterface):
 class _plotsvgInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True,mandatory=True, desc="raw data ")
     regdata = File(exists=True,mandatory=True, desc="regression data ")
-    resdata = File(exists=True,mandatory=True, desc="resdiual data ")
+    resddata = File(exists=True,mandatory=True, desc="resdiual data ")
     fd = File(exists=True,mandatory=True, desc="fd")
     mask = File(exists=False,mandatory=False, desc="mask file ")
     seg = File(exists=False,mandatory=False, desc="seg file ")
@@ -154,7 +176,7 @@ class PlotSVGData(SimpleInterface):
                 use_ext=False)
 
         self._results['before_process'], self._results['after_process'] = plot_svgx(
-              rawdata=self.inputs.rawdata,regdata=self.inputs.regdata,resddata=self.inputs.resdata,
+              rawdata=self.inputs.rawdata,regdata=self.inputs.regdata,resddata=self.inputs.resddata,
               tr=self.inputs.tr,mask=self.inputs.mask,fd=self.inputs.fd,seg=self.inputs.seg) 
 
 
