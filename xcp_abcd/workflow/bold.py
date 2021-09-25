@@ -9,8 +9,6 @@ post processing the bold
 import sys
 import os
 import numpy as np
-from copy import deepcopy
-from xcp_abcd.workflow import cifti
 import nibabel as nb
 from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe

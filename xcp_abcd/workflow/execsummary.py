@@ -3,8 +3,6 @@
 
 import os 
 import numpy as np
-import nibabel as nb
-import pandas as pd
 import glob 
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow

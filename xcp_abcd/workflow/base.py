@@ -336,7 +336,7 @@ It is released under the [CC0]\
                   name='ds_report_summary', run_without_submitting=True)
 
     
-    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,bid_dir=fmriprep_dir,
+    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,bids_dir=fmriprep_dir,
                                         subject_id=subject_id,output_dir=output_dir,
                                         t1w_to_mni=regfile[1])
 
