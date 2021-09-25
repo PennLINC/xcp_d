@@ -16,7 +16,6 @@ from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
-from ..utils import collect_data
 import sklearn
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -280,6 +279,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
 
     
+    executivesummary_wf = pe.Node(init_execsummary_wf(tr=TR,bold_file=bold_file,
+                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2),
+                      name="bold_execsummary_wf")    
 
     # get transform file for resampling and fcon
       
@@ -472,6 +474,16 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (reho_compute_wf,ds_report_rehoplot,[('outputnode.rehohtml','in_file')]),
         (alff_compute_wf,ds_report_afniplot ,[('outputnode.alffhtml','in_file')]),
     ])
+
+
+     ## exexetive summary workflow
+    workflow.connect([
+        (inputnode,executivesummary_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg'),
+        ('bold_file','inputnode.bold_file'),]),
+        (regression_wf,executivesummary_wf,[('res_file','inputnode.regdata'),]),
+        (filtering_wf,executivesummary_wf,[('ilt_file','inputnode.resddata')]),
+        (censorscrub_wf,executivesummary_wf,[('outputnode.fd','inputnode.fd')]),
+    ]),
 
     return workflow
 
