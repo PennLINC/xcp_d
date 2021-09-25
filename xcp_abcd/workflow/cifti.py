@@ -9,13 +9,11 @@ post processing the bold
 import os
 import sklearn
 import numpy as np
-from copy import deepcopy
 import nibabel as nb
 from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
-from ..utils import collect_data
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..interfaces import computeqcplot
 from  ..utils import bid_derivative,stringforparams
@@ -50,6 +48,7 @@ def init_ciftipostprocess_wf(
     omp_nthreads,
     dummytime,
     fd_thresh,
+    mni_to_t1w,
     despike,
     num_cifti,
     layout=None,
@@ -265,6 +264,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                        head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
 
     
+    executivesummary_wf = pe.Node(init_execsummary_wf(tr=TR,bold_file=cifti_file,
+                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2),
+                      name="cifti_execsummary_wf")
+
 
     workflow.connect([
              # connect bold confound matrix to extract confound matrix 
@@ -396,6 +399,16 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (cifti_conts_wf,ds_report_connectivity,[('outputnode.connectplot',"in_file")]),
 
      ])
+
+     ## exexetive summary workflow
+    workflow.connect([
+        (inputnode,executivesummary_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg'),
+        ('bold_file','inputnode.cifti_file'),]),
+        (regression_wf,executivesummary_wf,[('res_file','inputnode.regdata'),]),
+        (filtering_wf,executivesummary_wf,[('ilt_file','inputnode.resddata')]),
+        (censorscrub_wf,executivesummary_wf,[('outputnode.fd','inputnode.fd')]),
+    ]),
+
     return workflow
 
 

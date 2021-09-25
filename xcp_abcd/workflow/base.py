@@ -366,6 +366,7 @@ It is released under the [CC0]\
                                                         fd_thresh=fd_thresh,
                                                         despike=despike,
                                                         layout=layout,
+                                                        mni_to_t1w=regfile[0],
                                                         output_dir=output_dir,
                                                         name='cifti_postprocess_'+ str(ii) + '_wf')
             ds_report_about = pe.Node(
