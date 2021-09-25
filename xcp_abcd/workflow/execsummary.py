@@ -20,7 +20,7 @@ from templateflow.api import get as get_template
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_abcd'
 
-def init_execsummmary_wf(
+def init_execsummary_wf(
      omp_nthreads,
      bold_file,
      output_dir,

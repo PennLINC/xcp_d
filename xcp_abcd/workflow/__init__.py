@@ -10,7 +10,7 @@ from .bold import init_boldpostprocess_wf
 from .cifti import init_ciftipostprocess_wf
 from .base import init_xcpabcd_wf
 from .anatomical import init_anatomical_wf
-from .execsummary import init_execsummmary_wf
+from .execsummary import init_execsummary_wf
 
 __all__ = [
     'init_fcon_ts_wf',
@@ -26,5 +26,5 @@ __all__ = [
     'init_resd_smoohthing',
     'get_transformfile',
     'init_anatomical_wf',
-    'init_execsummmary_wf',
+    'init_execsummary_wf'
 ]

@@ -21,7 +21,7 @@ from ..interfaces import computeqcplot
 from  ..utils import bid_derivative,stringforparams
 from ..interfaces import  FunctionalSummary,ciftidespike
 from  ..workflow import (init_cifti_conts_wf,init_compute_alff_wf,
-                         init_surface_reho_wf,init_execsummmary_wf)
+                         init_surface_reho_wf,init_execsummary_wf)
 from ..interfaces import interpolate
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from  ..workflow import init_censoring_wf,init_resd_smoohthing
