@@ -11,8 +11,6 @@ import os
 import fnmatch, re
 from pathlib import Path
 import numpy as np
-from numpy.lib.utils import source
-from requests import check_compatibility
 from templateflow.api import get as get_template
 from ..utils import collect_data,select_registrationfile,CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
@@ -25,8 +23,7 @@ from nipype import MapNode as MapNode
 from ..interfaces import SurftoVolume,BrainPlotx
 from ..utils import bid_derivative
 
-class DerivativesDataSink(bid_derivative):
-     out_path_base = 'xcp_abcd'
+
 
 
 def init_anatomical_wf(
@@ -40,7 +37,7 @@ def init_anatomical_wf(
      workflow = Workflow(name=name)
 
      outputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w_mni','seg_mni']),
+        fields=['t1w','seg']),
         name='outputnode')
 
      
@@ -61,6 +58,8 @@ def init_anatomical_wf(
           ii=os.path.basename(i)
           if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
                seg = i
+     
+     
 
      outputnode.inputs.t1w = t1w
      outputnode.inputs.seg = seg
@@ -70,7 +69,7 @@ def init_anatomical_wf(
      MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
      t1w_transform_wf = pe.Node(ApplyTransformsx(input_image=t1w,num_threads=2,reference_image=mnitemplate,
-                       transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='NearestNeighbor',
+                       transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
                        input_image_type=3, dimension=3),
                        name="t1w_transform", mem_gb=2)
 
@@ -80,11 +79,13 @@ def init_anatomical_wf(
                        name="seg_transform", mem_gb=2)
 
      ds_t1wmni_wf = pe.Node(
-        DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',source_file=all_t1w),
+        DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
+                  extension='.nii.gz',source_file=all_t1w),
                   name='ds_t1wmni_wf', run_without_submitting=True)
      
      ds_t1wseg_wf = pe.Node(
-        DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',suffix='dseg',source_file=all_t1w),
+        DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',suffix='dseg',
+        extension='.nii.gz',source_file=all_t1w),
                   name='ds_t1wseg_wf', run_without_submitting=True)
 
      workflow.connect([
@@ -100,14 +101,14 @@ def init_anatomical_wf(
      freesufer_path = Path(str(p.parent)+'/freesurfer')
      if freesufer_path.is_dir(): 
           all_files  =list(layout.get_files())
-          L_inflated_surf  = fnmatch.filter(all_files,'*hemi-L_inflated.surf.gii')
-          R_inflated_surf  = fnmatch.filter(all_files,'*hemi-R_inflated.surf.gii')
-          L_midthick_surf  = fnmatch.filter(all_files,'*hemi-L_midthickness.surf.gii')
-          R_midthick_surf  = fnmatch.filter(all_files,'*hemi-R_midthickness.surf.gii')
-          L_pial_surf  = fnmatch.filter(all_files,'*hemi-L_pial.surf.gii')
-          R_pial_surf  = fnmatch.filter(all_files,'*hemi-R_pial.surf.gii')
-          L_wm_surf  = fnmatch.filter(all_files,'*hemi-L_smoothwm.surf.gii')
-          R_wm_surf  = fnmatch.filter(all_files,'*hemi-R_smoothwm.surf.gii')
+          L_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*hemi-L_inflated.surf.gii')[0]
+          R_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_inflated.surf.gii')[0]
+          L_midthick_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_midthickness.surf.gii')[0]
+          R_midthick_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_midthickness.surf.gii')[0]
+          L_pial_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_pial.surf.gii')[0]
+          R_pial_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_pial.surf.gii')[0]
+          L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
+          R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
 
           # get sphere surfaces to be converted
           if 'sub-' not in subject_id:
@@ -182,15 +183,15 @@ def init_anatomical_wf(
           
 
           workflow.connect([ 
-               (left_sphere_mris_wf,left_wm_surf_wf,[('out_file','new_sphere')]),
-               (left_sphere_mris_wf,left_pial_surf_wf,[('out_file','new_sphere')]),
-               (left_sphere_mris_wf,left_midthick_surf_wf,[('out_file','new_sphere')]),
-               (left_sphere_mris_wf,left_inf_surf_wf,[('out_file','new_sphere')]),
+               (left_sphere_mris_wf,left_wm_surf_wf,[('converted','new_sphere')]),
+               (left_sphere_mris_wf,left_pial_surf_wf,[('converted','new_sphere')]),
+               (left_sphere_mris_wf,left_midthick_surf_wf,[('converted','new_sphere')]),
+               (left_sphere_mris_wf,left_inf_surf_wf,[('converted','new_sphere')]),
 
-               (right_sphere_mris_wf,right_wm_surf_wf,[('out_file','new_sphere')]),
-               (right_sphere_mris_wf,right_pial_surf_wf,[('out_file','new_sphere')]),
-               (right_sphere_mris_wf,right_midthick_surf_wf,[('out_file','new_sphere')]),
-               (right_sphere_mris_wf,right_inf_surf_wf,[('out_file','new_sphere')]),
+               (right_sphere_mris_wf,right_wm_surf_wf,[('converted','new_sphere')]),
+               (right_sphere_mris_wf,right_pial_surf_wf,[('converted','new_sphere')]),
+               (right_sphere_mris_wf,right_midthick_surf_wf,[('converted','new_sphere')]),
+               (right_sphere_mris_wf,right_inf_surf_wf,[('converted','new_sphere')]),
 
                (left_wm_surf_wf,ds_wmLsurf_wf,[('out_file','in_file')]),
                (left_pial_surf_wf,ds_pialLsurf_wf,[('out_file','in_file')]),
@@ -217,9 +218,9 @@ def init_anatomical_wf(
           addwmpial_wf = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
 
           #transform freesurfer space to MNI for brainplot
-          t12mni_wf = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interp='nearestneighbour',
+          t12mni_wf = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interpolation='NearestNeighbor',
              transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)],input_image=t1w_mgz),name='tw12mnib')
-          overlay2mni_wf = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interp="MultiLabel",
+          overlay2mni_wf = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interpolation="MultiLabel",
                      transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)]),name='overlay2mnib')
           
           #brainplot
@@ -227,7 +228,7 @@ def init_anatomical_wf(
           
           ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir,source_file=t1w, desc='brainsplot',datatype="execsummary"),
-                  name='brainsprite', run_without_submitting=True)
+                  name='brainspriteplot', run_without_submitting=True)
 
           workflow.connect([
                (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
@@ -242,7 +243,7 @@ def init_anatomical_wf(
           brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
           ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir,source_file=t1w, desc='brainsplot', datatype="execsummary"),
-                  name='brainsprite', run_without_submitting=True)
+                  name='brainspriteplot', run_without_submitting=True)
 
           workflow.connect([
               (t1w_transform_wf,brainspritex_wf,[('output_image','template')]),

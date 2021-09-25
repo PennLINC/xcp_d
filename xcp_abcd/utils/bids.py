@@ -154,7 +154,7 @@ def collect_data(
     bids_dir,
     participant_label,
     task=None,
-    template='MNI152NLin2009cAsym',
+    template=None,
     bids_validate=False,
     bids_filters=None,
 ):

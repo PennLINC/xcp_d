@@ -152,7 +152,7 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
 
 class _plotsvgOutputSpec(TraitedSpec):
     before_process = File(exists=True, manadatory=True,desc="svg file before pro")
-    after_process = File(exists=True, manadatory=True,desc="svg file before pro")
+    after_process = File(exists=True, manadatory=True,desc="svg file before after")
 
 
 class PlotSVGData(SimpleInterface):
@@ -177,7 +177,8 @@ class PlotSVGData(SimpleInterface):
 
         self._results['before_process'], self._results['after_process'] = plot_svgx(
               rawdata=self.inputs.rawdata,regdata=self.inputs.regdata,resddata=self.inputs.resddata,
-              tr=self.inputs.tr,mask=self.inputs.mask,fd=self.inputs.fd,seg=self.inputs.seg) 
+              tr=self.inputs.tr,mask=self.inputs.mask,fd=self.inputs.fd,seg=self.inputs.seg,
+              filenameaf=self._results['after_process'],filenamebf=self._results['before_process']) 
 
 
         return runtime
