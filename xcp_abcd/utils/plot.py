@@ -23,6 +23,7 @@ def plotimage(img,out_file):
     fig.savefig(out_file,bbox_inches="tight", pad_inches=None)
     return out_file
 
+
 def plot_svg(fdata,fd,dvars,filename,tr=1):
     '''
     plot carpetplot with fd and dvars

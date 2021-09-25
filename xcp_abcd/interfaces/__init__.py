@@ -9,7 +9,7 @@ from .prepostcleaning import interpolate,censorscrub,removeTR
 from .qc_plot import computeqcplot
 from .report import SubjectSummary, AboutSummary, FunctionalSummary
 from .report_core import generate_reports
-from .executesummary import SurftoVolume,BrainPlotx,PlotSVGData,RegPlot
+from .surfplotting import SurftoVolume,BrainPlotx,PlotSVGData,RegPlot,PlotImage
 
 __all__ = [
     'regress',
@@ -35,5 +35,6 @@ __all__ = [
     'SurftoVolume',
     'BrainPlotx',
     'PlotSVGData',
-    'RegPlot'
+    'RegPlot',
+    'PlotImage'
    ]

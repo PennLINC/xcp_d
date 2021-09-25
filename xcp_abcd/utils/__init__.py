@@ -3,7 +3,7 @@
 
 from .write_save import (read_ndata,write_ndata,read_gii,write_gii,
 despikedatacifti)
-from .plot import(plot_svg,compute_dvars)
+from .plot import(plot_svg,compute_dvars,plotimage)
 from .confounds import load_confound_matrix
 from .fcon import (extract_timeseries_funct, 
               compute_2d_reho, compute_alff,mesh_adjacency)
@@ -66,5 +66,6 @@ __all__ = [
     'confoundplot',
     'surf2vol','get_regplot',
     'plot_registrationx',
-    'generate_brain_sprite'
+    'generate_brain_sprite',
+     'plotimage'
   ]

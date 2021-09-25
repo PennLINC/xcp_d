@@ -20,11 +20,12 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..interfaces import computeqcplot
 from  ..utils import bid_derivative,stringforparams
 from ..interfaces import  FunctionalSummary,ciftidespike
-from  ..workflow import (init_cifti_conts_wf,init_compute_alff_wf,
-                         init_surface_reho_wf)
+from .connectivity import init_cifti_conts_wf
+from .restingstate import init_compute_alff_wf,init_surface_reho_wf
+from .execsummary import init_execsummary_wf
 from ..interfaces import interpolate
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
-from  ..workflow import init_censoring_wf,init_resd_smoohthing
+from .postprocessing import init_censoring_wf, init_resd_smoohthing
 from num2words import num2words
 from .outputs import init_writederivatives_wf
 
