@@ -23,8 +23,7 @@ from nipype import MapNode as MapNode
 from ..interfaces import SurftoVolume,BrainPlotx
 from ..utils import bid_derivative
 
-class DerivativesDataSink(bid_derivative):
-     out_path_base = 'xcp_abcd'
+
 
 
 def init_anatomical_wf(

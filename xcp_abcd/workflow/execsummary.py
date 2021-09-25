@@ -16,7 +16,8 @@ from ..interfaces import PlotSVGData, RegPlot,PlotImage
 from ..utils import bid_derivative, get_transformfile,get_transformfilex
 from templateflow.api import get as get_template
 
-
+class DerivativesDataSink(bid_derivative):
+     out_path_base = 'xcp_abcd'
 
 
 def init_execsummary_wf(
@@ -30,15 +31,8 @@ def init_execsummary_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w','t1seg','regdata','resdata','mask','fd','rawdata']), name='inputnode')
+        fields=['t1w','t1seg','regdata','resddata','mask','fd','rawdata']), name='inputnode')
     inputnode.inputs.bold_file = bold_file
-
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w','t1seg','regdata','resdata','mask','fd',]), name='outputnode')
-
-    
-    transformfilex = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
-                 t1w_to_native=_t12native(bold_file)) 
 
     
     if bold_file.endswith('.nii.gz'):
@@ -56,18 +50,22 @@ def init_execsummary_wf(
     fslfast_wf = pe.Node(FAST(no_bias=True,no_pve=True,output_type='NIFTI_GZ',
                       segments=True), name='fslfast')
     
-    transformfile = get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w)[1]
+    transformfile = get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
+          t1w_to_native=_t12native(bold_file))[1]
     invertion = np.repeat(False,len(transformfile))
     
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
             name='boldtot1w_wf') 
     t1wtobold_wf = pe.Node(ApplyTransformsx(dimension=3,reference_image=boldref,interpolation='MultiLabel',
-             transforms=transformfile,invert_transform_flags=invertion),name='t1wtobold_wf')
+             transforms=transformfile,invert_transform_flags=invertion.tolist()),name='t1wtobold_wf')
         
     t1wonbold_wf = pe.Node(RegPlot(n_cuts=3,in_file=boldref), name='t1wonbold_wf',mem_gb=0.2)
     boldont1w_wf = pe.Node(RegPlot(n_cuts=3), name='boldont1w_wf',mem_gb=0.2) 
         
     plotrefbold_wf = pe.Node(PlotImage(in_file=boldref), name='plotrefbold_wf')
+
+    transformfilex = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
+                 t1w_to_native=_t12native(bold_file)) 
 
     resample_parc = pe.Node(ApplyTransformsx(dimension=3,
              input_image=str(get_template('MNI152NLin2009cAsym', resolution=1, desc='carpet',
@@ -82,7 +80,7 @@ def init_execsummary_wf(
                  name='boldont1w',run_without_submitting=True)
 
     ds_t1wonbold_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='T1wonboldplot'), 
-             bname='t1wonbold',run_without_submitting=True)
+             name='t1wonbold',run_without_submitting=True)
 
     ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='boldref'),
          name='plotboldref',run_without_submitting=True)
@@ -106,7 +104,7 @@ def init_execsummary_wf(
             #t1w on bold 
             (inputnode,t1wtobold_wf,[(('t1seg',_piccsf),'input_image')]),
             (t1wtobold_wf,t1wonbold_wf,[('output_image','overlay')]),
-            (t1wtobold_wf,ds_t1wonbold_wf,[('out_file','in_file')]),
+            (t1wonbold_wf,ds_t1wonbold_wf,[('out_file','in_file')]),
 
             # plotrefbold # output node will be repalced with reportnode
             (plotrefbold_wf,ds_plotboldref_wf,[('out_file','in_file')]),
@@ -116,8 +114,8 @@ def init_execsummary_wf(
             ('regdata','regdata'),('resddata','resddata'),
             ('mask','mask'),('bold_file','rawdata')]),
             (resample_parc,plot_svgx_wf,[('output_image','seg')]),
-            (plot_svgx_wf,ds_plot_svgxbe_wf,[('before_process ','in_file')]),
-            (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process ','in_file')]),
+            (plot_svgx_wf,ds_plot_svgxbe_wf,[('before_process','in_file')]),
+            (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process','in_file')]),
         ])
         
     
