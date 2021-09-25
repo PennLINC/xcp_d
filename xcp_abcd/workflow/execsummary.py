@@ -17,8 +17,7 @@ from ..utils import bid_derivative, get_transformfile,get_transformfilex
 from templateflow.api import get as get_template
 
 
-class DerivativesDataSink(bid_derivative):
-     out_path_base = 'xcp_abcd'
+
 
 def init_execsummary_wf(
      omp_nthreads,
@@ -103,7 +102,7 @@ def init_execsummary_wf(
             (boldtot1w_wf, boldont1w_wf, [('output_image', 'overlay')]),
             (inputnode, boldont1w_wf, [('t1w','in_file')]),
             (boldont1w_wf, ds_boldont1w_wf, [('out_file', 'in_file')]),
-            
+        
             #t1w on bold 
             (inputnode,t1wtobold_wf,[(('t1seg',_piccsf),'input_image')]),
             (t1wtobold_wf,t1wonbold_wf,[('output_image','overlay')]),
@@ -112,52 +111,17 @@ def init_execsummary_wf(
             # plotrefbold # output node will be repalced with reportnode
             (plotrefbold_wf,ds_plotboldref_wf,[('out_file','in_file')]),
 
-
             # plot_svgx_wf node
             (inputnode,plot_svgx_wf,[('fd','fd'), 
             ('regdata','regdata'),('resddata','resddata'),
-            ('mask','mask'),('bold_file','rawdata') ]),
+            ('mask','mask'),('bold_file','rawdata')]),
             (resample_parc,plot_svgx_wf,[('output_image','seg')]),
             (plot_svgx_wf,ds_plot_svgxbe_wf,[('before_process ','in_file')]),
-            (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process ','in_file')])
+            (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process ','in_file')]),
         ])
         
     
     return workflow
-
-
-
-
-
-    
-
-        
-
-     
-     
-        
-        
-        
-        
-        
-        
-
-        
-        
-    
-
-    
-
-    
-
-
-
-    
-
-    return workflow
-
-
-
 
 
 def _t12native(fname):

@@ -17,9 +17,9 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from ..__about__ import __version__
 from ..utils import collect_data, get_customfile,select_cifti_bold,select_registrationfile
-
-from  ..workflow import( init_ciftipostprocess_wf, 
-            init_boldpostprocess_wf,init_anatomical_wf,)
+from .bold import init_boldpostprocess_wf
+from .cifti import init_ciftipostprocess_wf
+from .anatomical import init_anatomical_wf
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..interfaces import SubjectSummary, AboutSummary
 from  ..utils import bid_derivative
