@@ -204,7 +204,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file','custom_conf']),
+        fields=['cifti_file','custom_conf','t1w','t1seg']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file

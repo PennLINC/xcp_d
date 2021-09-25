@@ -223,7 +223,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','ref_file','bold_mask','cutstom_conf','mni_to_t1w']),
+        fields=['bold_file','ref_file','bold_mask','cutstom_conf','mni_to_t1w','t1w','t1seg']),
         name='inputnode')
 
     inputnode.inputs.bold_file = str(bold_file)

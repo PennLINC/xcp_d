@@ -334,6 +334,12 @@ It is released under the [CC0]\
     ds_report_summary = pe.Node(
              DerivativesDataSink(base_directory=output_dir,source_file=subject_data[0][0],desc='summary', datatype="figures"),
                   name='ds_report_summary', run_without_submitting=True)
+
+    
+    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,bid_dir=fmriprep_dir,
+                                        subject_id=subject_id,output_dir=output_dir,
+                                        t1w_to_mni=regfile[1])
+
     
 
     if cifti:
@@ -367,6 +373,8 @@ It is released under the [CC0]\
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
+                  (anatomical_wf,cifti_postproc_wf,[('outputnode.t1w','inputnode.t1w'), 
+                          ('outputnode.seg','inputnode.t1seg')]),
             
             ])
 
@@ -406,6 +414,8 @@ It is released under the [CC0]\
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
+                  (anatomical_wf,bold_postproc_wf,[('outputnode.t1w','inputnode.t1w'),
+                     ('outputnode.seg','inputnode.t1seg')]),                 
              ])
     workflow.connect([ 
         (summary,ds_report_summary,[('out_report','in_file')]),
