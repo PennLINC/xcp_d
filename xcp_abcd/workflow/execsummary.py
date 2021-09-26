@@ -122,6 +122,9 @@ def init_execsummary_wf(
             (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process','in_file')]),
             (inputnode,ds_plot_svgxbe_wf,[('bold_file','source_file')]),
             (inputnode,ds_plot_svgxaf_wf,[('bold_file','source_file')]),
+            (inputnode,ds_plotboldref_wf,[('bold_file','source_file')]),
+            (inputnode,ds_boldont1w_wf,[('bold_file','source_file')]),
+            (inputnode,ds_t1wonbold_wf,[('bold_file','source_file')]),
         ])
         
     
