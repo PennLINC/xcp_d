@@ -37,7 +37,7 @@ def init_anatomical_wf(
      workflow = Workflow(name=name)
 
      outputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w','seg']),
+        fields=['t1w','t1seg']),
         name='outputnode')
 
      
@@ -46,9 +46,9 @@ def init_anatomical_wf(
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id)
      
-     t1w,seg = extract_t1w_seg(subj_data)
+     t1w,t1seg = extract_t1w_seg(subj_data)
      outputnode.inputs.t1w = t1w
-     outputnode.inputs.seg = seg
+     outputnode.inputs.t1seg = t1seg
      
 
      mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
@@ -60,7 +60,7 @@ def init_anatomical_wf(
                        input_image_type=3, dimension=3),
                        name="t1w_transform", mem_gb=2)
 
-     seg_transform_wf = pe.Node(ApplyTransformsx(input_image=seg,num_threads=2,reference_image=mnitemplate,
+     seg_transform_wf = pe.Node(ApplyTransformsx(input_image=t1seg,num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="seg_transform", mem_gb=2)
@@ -149,7 +149,7 @@ def init_anatomical_wf(
                 source_file=t1w,extension='.surf.gii',hemi='L'), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
           ds_pialRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='pial',check_hdr=False,
-               source_file=all_t1w,extension='.surf.gii',hemi='R'), name='ds_pialRsurf_wf', run_without_submitting=True,mem_gb=2)
+               source_file=t1w,extension='.surf.gii',hemi='R'), name='ds_pialRsurf_wf', run_without_submitting=True,mem_gb=2)
 
           ds_infLsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='inflated',check_hdr=False,
@@ -248,11 +248,12 @@ def extract_t1w_seg(subj_data):
           if  not fnmatch.fnmatch(ii,'*_space-*'):
                t1w = i
      
+     
      all_seg = subj_data['seg']
-     for i in all_seg:
+     for j in all_seg:
           ii=os.path.basename(i)
           if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
-               seg  = i
+               t1seg  = j
                
-     return t1w,seg
+     return t1w,t1seg
      

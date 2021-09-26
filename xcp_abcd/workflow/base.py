@@ -375,7 +375,7 @@ It is released under the [CC0]\
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
                   (anatomical_wf,cifti_postproc_wf,[('outputnode.t1w','inputnode.t1w'), 
-                          ('outputnode.seg','inputnode.t1seg')]),
+                          ('outputnode.t1seg','inputnode.t1seg')]),
             
             ])
 
@@ -416,7 +416,7 @@ It is released under the [CC0]\
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
                   (anatomical_wf,bold_postproc_wf,[('outputnode.t1w','inputnode.t1w'),
-                     ('outputnode.seg','inputnode.t1seg')]),                 
+                     ('outputnode.t1seg','inputnode.t1seg')]),                 
              ])
     workflow.connect([ 
         (summary,ds_report_summary,[('out_report','in_file')]),
