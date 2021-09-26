@@ -141,7 +141,7 @@ def _piccsf(file):
     data_csf = np.zeros(datax.shape)
     data_csf [datax.get_fdata() == 1]=1
     img = nb.Nifti1Image(data_csf, affine=datax.affine, header=datax.header)
-    outfile = tempfile.TemporaryDirectory()+'/csf.nii.gz'
+    outfile = tempfile.mkstemp(suffix = 'csf.nii.gz')[1]
     img.to_filename(outfile)
     return outfile
 
