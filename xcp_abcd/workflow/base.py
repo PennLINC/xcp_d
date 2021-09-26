@@ -167,7 +167,7 @@ def init_xcpabcd_wf(layout,
                             dummytime=dummytime,
                             custom_conf=custom_conf,
                             fd_thresh=fd_thresh,
-                            name="single_bold_" + subject_id + "_wf")
+                            name="single_subject_" + subject_id + "_wf")
 
         single_subj_wf.config['execution']['crashdump_dir'] = (
             os.path.join(output_dir, "xcp_abcd", "sub-" + subject_id, 'log')
@@ -346,7 +346,11 @@ It is released under the [CC0]\
                                         subject_id=subject_id,output_dir=output_dir,
                                         t1w_to_mni=regfile[1])
 
-    
+    ## send t1w and t1seg to anatomical workflow
+
+    workflow.connect([ 
+          (inputnode,anatomical_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
+      ])
 
     if cifti:
         ii = 0
@@ -381,7 +385,6 @@ It is released under the [CC0]\
             workflow.connect([
                   (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf'),
                               ('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
-                  (inputnode,anatomical_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
             
             ])
 
@@ -419,8 +422,8 @@ It is released under the [CC0]\
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
                   (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w'),
-                   ('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
-                  (inputnode,anatomical_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),           
+                                   ('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
+                           
              ])
     workflow.connect([ 
         (summary,ds_report_summary,[('out_report','in_file')]),
