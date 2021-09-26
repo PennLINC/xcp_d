@@ -14,13 +14,15 @@ from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from niworkflows.viz.plots import _decimate_data
 from ..utils import read_ndata
+from niworkflows.viz.utils import compose_view
 
 
 def plotimage(img,out_file):
     fig = plt.figure(constrained_layout=False, figsize=(30, 15))
     from nilearn.plotting import plot_anat
-    plot_anat(img,draw_cross=False)
+    filex_plot = plot_anat(img,draw_cross=False)
     fig.savefig(out_file,bbox_inches="tight", pad_inches=None)
+    compose_view(bg_svgs=filex_plot,fg_svgs=None,out_file=out_file)
     return out_file
 
 

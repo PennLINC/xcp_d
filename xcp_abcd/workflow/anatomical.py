@@ -209,7 +209,7 @@ def init_anatomical_wf(
                      transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)]),name='overlay2mnib')
           
           #brainplot
-          brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
+          brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite')
           
           ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainsplot', datatype="figures"),
@@ -219,8 +219,8 @@ def init_anatomical_wf(
                (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
                (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
                (addwmpial_wf,overlay2mni_wf,[('out_file','input_image')]),
-               (overlay2mni_wf,brainspritex_wf,[('output_image','in_file')]),
-               (t12mni_wf,brainspritex_wf,[('output_image','template')]), 
+               (addwmpial_wf,brainspritex_wf,[('output_image','in_file')]),
+               #(t12mni_wf,brainspritex_wf,[('output_image','template')]), 
                (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
           ])
