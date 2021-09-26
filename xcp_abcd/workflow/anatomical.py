@@ -8,7 +8,7 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 """
 
 import os
-import fnmatch, re
+import fnmatch
 from pathlib import Path
 import numpy as np
 from templateflow.api import get as get_template
@@ -50,6 +50,7 @@ def init_anatomical_wf(
      for i in all_t1w:
           ii = os.path.basename(i)
           if  not fnmatch.fnmatch(ii,'*_space-*'):
+               outputnode.inputs.t1w = i
                t1w = i
      
 
@@ -57,12 +58,9 @@ def init_anatomical_wf(
      for i in all_seg:
           ii=os.path.basename(i)
           if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
+               outputnode.inputs.seg  = i
                seg = i
      
-     
-
-     outputnode.inputs.t1w = t1w
-     outputnode.inputs.seg = seg
 
      mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
 
