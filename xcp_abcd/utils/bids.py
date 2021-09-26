@@ -4,7 +4,7 @@
 
 from pathlib import Path
 from collections import defaultdict
-import json
+import fnmatch,os
 import re
 import warnings
 from bids import BIDSLayout
@@ -227,7 +227,22 @@ def select_cifti_bold(subj_data):
             cifti_file.append(j)
     return bold_file, cifti_file
 
-
+def extract_t1w_seg(subj_data):
+     all_t1w = subj_data['t1w'] 
+     for i in all_t1w:
+          ii = os.path.basename(i)
+          if  not fnmatch.fnmatch(ii,'*_space-*'):
+               t1w = i
+     
+     
+     all_seg = subj_data['seg']
+     for j in all_seg:
+          ii=os.path.basename(i)
+          if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
+               t1seg  = j
+               
+     return t1w,t1seg
+     
 
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):

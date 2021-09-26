@@ -36,9 +36,9 @@ def init_anatomical_wf(
       ):
      workflow = Workflow(name=name)
 
-     outputnode = pe.Node(niu.IdentityInterface(
+     inputnode = pe.Node(niu.IdentityInterface(
         fields=['t1w','t1seg']),
-        name='outputnode')
+        name='inputnode')
 
      
 
@@ -46,40 +46,40 @@ def init_anatomical_wf(
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id)
      
-     t1w,t1seg = extract_t1w_seg(subj_data)
-     outputnode.inputs.t1w = t1w
-     outputnode.inputs.t1seg = t1seg
+     
      
 
      mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
 
      MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
-     t1w_transform_wf = pe.Node(ApplyTransformsx(input_image=t1w,num_threads=2,reference_image=mnitemplate,
+     t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
                        input_image_type=3, dimension=3),
                        name="t1w_transform", mem_gb=2)
 
-     seg_transform_wf = pe.Node(ApplyTransformsx(input_image=t1seg,num_threads=2,reference_image=mnitemplate,
+     seg_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="seg_transform", mem_gb=2)
 
      ds_t1wmni_wf = pe.Node(
         DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
-                  extension='.nii.gz',source_file=t1w),
+                  extension='.nii.gz'),
                   name='ds_t1wmni_wf', run_without_submitting=True)
      
      ds_t1wseg_wf = pe.Node(
         DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',suffix='dseg',
-        extension='.nii.gz',source_file=t1w),
+        extension='.nii.gz'),
                   name='ds_t1wseg_wf', run_without_submitting=True)
 
      workflow.connect([
-          (t1w_transform_wf,outputnode,[('output_image','t1w_mni')]),
-          (seg_transform_wf,outputnode,[('output_image','seg_mni')]),
+          (inputnode,t1w_transform_wf, [('t1w', 'input_image')]),
+          (inputnode,seg_transform_wf, [('t1seg', 'input_image')]),
           (t1w_transform_wf,ds_t1wmni_wf,[('output_image','in_file')]),
           (seg_transform_wf,ds_t1wseg_wf,[('output_image','in_file')]),
+          (inputnode,ds_t1wmni_wf,[('t1w','source_file')]),
+          (inputnode,ds_t1wseg_wf,[('t1w','source_file')]),
          ])
 
      #verify fresurfer directory
@@ -138,34 +138,34 @@ def init_anatomical_wf(
           # write report node
           ds_wmLsurf_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir, density='32k',desc='smoothwm',check_hdr=False,
-             source_file=t1w,extension='.surf.gii',hemi='L'), name='ds_wmLsurf_wf', run_without_submitting=True,mem_gb=2)
+             extension='.surf.gii',hemi='L'), name='ds_wmLsurf_wf', run_without_submitting=True,mem_gb=2)
           
           ds_wmRsurf_wf = pe.Node(
                 DerivativesDataSink(base_directory=output_dir, density='32k',desc='smoothwm',check_hdr=False,
-                source_file=t1w,extension='.surf.gii',hemi='R'), name='ds_wmRsur_wf', run_without_submitting=True,mem_gb=2)
+                extension='.surf.gii',hemi='R'), name='ds_wmRsur_wf', run_without_submitting=True,mem_gb=2)
           
           ds_pialLsurf_wf = pe.Node(
                 DerivativesDataSink(base_directory=output_dir, density='32k',desc='pial',check_hdr=False,
-                source_file=t1w,extension='.surf.gii',hemi='L'), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
+                extension='.surf.gii',hemi='L'), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
           ds_pialRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='pial',check_hdr=False,
-               source_file=t1w,extension='.surf.gii',hemi='R'), name='ds_pialRsurf_wf', run_without_submitting=True,mem_gb=2)
+               extension='.surf.gii',hemi='R'), name='ds_pialRsurf_wf', run_without_submitting=True,mem_gb=2)
 
           ds_infLsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='inflated',check_hdr=False,
-               source_file=t1w,extension='.surf.gii',hemi='L'), name='ds_infLsurf_wf', run_without_submitting=True,mem_gb=2)
+               extension='.surf.gii',hemi='L'), name='ds_infLsurf_wf', run_without_submitting=True,mem_gb=2)
 
           ds_infRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='inflated',check_hdr=False,
-               source_file=t1w,extension='.surf.gii',hemi='R'), name='ds_infRsurf_wf', run_without_submitting=True,mem_gb=2)
+               extension='.surf.gii',hemi='R'), name='ds_infRsurf_wf', run_without_submitting=True,mem_gb=2)
 
           ds_midLsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='midthickness',check_hdr=False,
-               source_file=t1w,extension='.surf.gii',hemi='L'), name='ds_midLsurf_wf', run_without_submitting=True,mem_gb=2)
+               extension='.surf.gii',hemi='L'), name='ds_midLsurf_wf', run_without_submitting=True,mem_gb=2)
 
           ds_midRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, density='32k',desc='midthickness',check_hdr=False,
-               source_file=t1w,extension='.surf.gii',hemi='R'), name='ds_midRsurf_wf', run_without_submitting=True,mem_gb=2)
+               extension='.surf.gii',hemi='R'), name='ds_midRsurf_wf', run_without_submitting=True,mem_gb=2)
 
           
 
@@ -189,6 +189,15 @@ def init_anatomical_wf(
                (right_pial_surf_wf,ds_pialRsurf_wf,[('out_file','in_file')]),
                (right_midthick_surf_wf,ds_midRsurf_wf,[('out_file','in_file')]),
                (right_inf_surf_wf,ds_infRsurf_wf,[('out_file','in_file')]),
+
+               (inputnode,ds_wmLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_wmRsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_pialLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_pialRsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_infLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_infRsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_midLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_midRsurf_wf,[('t1w','source_file')]),
               ]) 
 
           t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
@@ -214,7 +223,7 @@ def init_anatomical_wf(
           brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
           
           ds_brainspriteplot_wf = pe.Node(
-            DerivativesDataSink(base_directory=output_dir,source_file=t1w, desc='brainsplot',datatype="execsummary"),
+            DerivativesDataSink(base_directory=output_dir, desc='brainsplot',datatype="execsummary"),
                   name='brainspriteplot', run_without_submitting=True)
 
           workflow.connect([
@@ -224,36 +233,23 @@ def init_anatomical_wf(
                (overlay2mni_wf,brainspritex_wf,[('output_image','in_file')]),
                (t12mni_wf,brainspritex_wf,[('output_image','template')]), 
                (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
+               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
           ])
      
      else:
           brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
           ds_brainspriteplot_wf = pe.Node(
-            DerivativesDataSink(base_directory=output_dir,source_file=t1w, desc='brainsplot', datatype="execsummary"),
+            DerivativesDataSink(base_directory=output_dir, desc='brainsplot', datatype="execsummary"),
                   name='brainspriteplot', run_without_submitting=True)
 
           workflow.connect([
               (t1w_transform_wf,brainspritex_wf,[('output_image','template')]),
               (seg_transform_wf,brainspritex_wf,[('output_image','in_file')]),
               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
+              (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
               ])
 
      return workflow
 
  
-def extract_t1w_seg(subj_data):
-     all_t1w = subj_data['t1w'] 
-     for i in all_t1w:
-          ii = os.path.basename(i)
-          if  not fnmatch.fnmatch(ii,'*_space-*'):
-               t1w = i
-     
-     
-     all_seg = subj_data['seg']
-     for j in all_seg:
-          ii=os.path.basename(i)
-          if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
-               t1seg  = j
-               
-     return t1w,t1seg
-     
+

@@ -16,7 +16,7 @@ from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from ..__about__ import __version__
-from ..utils import collect_data, get_customfile,select_cifti_bold,select_registrationfile
+from ..utils import collect_data, get_customfile,select_cifti_bold,select_registrationfile,extract_t1w_seg
 from .bold import init_boldpostprocess_wf
 from .cifti import init_ciftipostprocess_wf
 from .anatomical import init_anatomical_wf
@@ -288,11 +288,15 @@ def init_subject_wf(
                                                task=task_id,bids_validate=False, 
                                                template=brain_template)
     regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
-    subject_data = select_cifti_bold(subj_data=subj_data) 
+    subject_data = select_cifti_bold(subj_data=subj_data)
+    t1wseg =extract_t1w_seg(subj_data=subj_data)
+    
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf','mni_to_t1w']),
         name='inputnode')
     inputnode.inputs.custom_conf = custom_conf
+    inputnode.inputs.t1w = t1wseg[0]
+    inputnode.inputs.t1seg = t1wseg[1]
 
     workflow = Workflow(name=name)
     
@@ -373,9 +377,9 @@ It is released under the [CC0]\
             DerivativesDataSink(base_directory=output_dir, source_file=cifti_file, desc='about', datatype="figures",),
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
-                  (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf')]),
-                  (anatomical_wf,cifti_postproc_wf,[('outputnode.t1w','inputnode.t1w'), 
-                          ('outputnode.t1seg','inputnode.t1seg')]),
+                  (inputnode,cifti_postproc_wf,[('custom_conf','inputnode.custom_conf'),
+                              ('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
+                  (inputnode,anatomical_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
             
             ])
 
@@ -414,9 +418,9 @@ It is released under the [CC0]\
              DerivativesDataSink(base_directory=output_dir, source_file=bold_file, desc='about', datatype="figures",),
               name='ds_report_about', run_without_submitting=True)
             workflow.connect([
-                  (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w')]),
-                  (anatomical_wf,bold_postproc_wf,[('outputnode.t1w','inputnode.t1w'),
-                     ('outputnode.t1seg','inputnode.t1seg')]),                 
+                  (inputnode,bold_postproc_wf,[ ('mni_to_t1w','inputnode.mni_to_t1w'),
+                   ('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
+                  (inputnode,anatomical_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),           
              ])
     workflow.connect([ 
         (summary,ds_report_summary,[('out_report','in_file')]),
