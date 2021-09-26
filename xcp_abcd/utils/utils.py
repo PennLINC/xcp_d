@@ -214,8 +214,6 @@ def get_transformsX(bold_file,mni_to_t1w,t1w_to_native):
         inversetransfrom = True
         
     elif 'space-T1w' in file_base:
-        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
         transformfileT1W = str(pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt'))
         inversetransfrom = True
 

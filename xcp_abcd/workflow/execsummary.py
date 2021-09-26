@@ -136,12 +136,12 @@ def _t12native(fname):
 def _piccsf(file):
     import nibabel as nb 
     import numpy as np 
-    import os
+    import tempfile
     datax = nb.load(file)
     data_csf = np.zeros(datax.shape)
     data_csf [datax.get_fdata() == 1]=1
     img = nb.Nifti1Image(data_csf, affine=datax.affine, header=datax.header)
-    outfile = os.getcwd()+'/csf.nii.gz'
+    outfile = tempfile.TemporaryDirectory()+'/csf.nii.gz'
     img.to_filename(outfile)
     return outfile
 
