@@ -57,7 +57,7 @@ def init_execsummary_wf(
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
             name='boldtot1w_wf') 
     t1wtobold_wf = pe.Node(ApplyTransformsx(dimension=3,reference_image=boldref,interpolation='MultiLabel',
-             transforms=transformfile,invert_transform_flags=invertionx.tolist()),name='t1wtobold_wf')
+             transforms=transformfile,invert_transform_flags=invertionx),name='t1wtobold_wf')
         
     t1wonbold_wf = pe.Node(RegPlot(n_cuts=3,in_file=boldref), name='t1wonbold_wf',mem_gb=0.2)
     boldont1w_wf = pe.Node(RegPlot(n_cuts=3), name='boldont1w_wf',mem_gb=0.2) 
