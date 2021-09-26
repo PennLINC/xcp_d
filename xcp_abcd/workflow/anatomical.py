@@ -219,7 +219,7 @@ def init_anatomical_wf(
                (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
                (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
                (addwmpial_wf,overlay2mni_wf,[('out_file','input_image')]),
-               (addwmpial_wf,brainspritex_wf,[('output_image','in_file')]),
+               (addwmpial_wf,brainspritex_wf,[('out_file','in_file')]),
                #(t12mni_wf,brainspritex_wf,[('output_image','template')]), 
                (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
