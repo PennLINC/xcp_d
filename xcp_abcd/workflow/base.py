@@ -292,11 +292,13 @@ def init_subject_wf(
     t1wseg =extract_t1w_seg(subj_data=subj_data)
     
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_conf','mni_to_t1w']),
+        fields=['custom_conf','mni_to_t1w','t1w','t1seg']),
         name='inputnode')
     inputnode.inputs.custom_conf = custom_conf
     inputnode.inputs.t1w = t1wseg[0]
     inputnode.inputs.t1seg = t1wseg[1]
+    mni_to_t1w = regfile[0]
+    inputnode.inputs.mni_to_t1w = mni_to_t1w
 
     workflow = Workflow(name=name)
     
@@ -388,8 +390,6 @@ It is released under the [CC0]\
         ii = 0
         for bold_file in subject_data[0]:
             ii = ii+1
-            mni_to_t1w = regfile[0]
-            inputnode.inputs.mni_to_t1w = mni_to_t1w
             custom_confx = get_customfile(custom_conf=custom_conf,bold_file=bold_file)
             bold_postproc_wf = init_boldpostprocess_wf(bold_file=bold_file,
                                                        lower_bpf=lower_bpf,
