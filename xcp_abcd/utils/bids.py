@@ -353,11 +353,11 @@ class DerivativesDataSink(SimpleInterface):
             out_entities.pop(drop_entity, None)
 
         # Override extension with that of the input file(s)
-        #out_entities["extension"] = [
+        out_entities["extension"] = [
             # _splitext does not accept .surf.gii (for instance)
-           # "".join(Path(orig_file).suffixes).lstrip(".")
-            #for orig_file in in_file
-        #]
+            "".join(Path(orig_file).suffixes).lstrip(".")
+            for orig_file in in_file
+        ]
 
         compress = listify(self.inputs.compress) or [None]
         if len(compress) == 1:
