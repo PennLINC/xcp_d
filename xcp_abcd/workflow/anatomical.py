@@ -212,7 +212,7 @@ def init_anatomical_wf(
           brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
           
           ds_brainspriteplot_wf = pe.Node(
-            DerivativesDataSink(base_directory=output_dir, desc='brainsplot',datatype="execsummary"),
+            DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','datatype','suffix'], desc='brainsplot', datatype="figures"),
                   name='brainspriteplot', run_without_submitting=False)
 
           workflow.connect([
