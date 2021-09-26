@@ -18,7 +18,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         transformfileT1W  = str(mni_to_t1w)
 
     elif 'space-MNI152NLin6Asym' in file_base:
-        transformfileMNI = MNI6
+        transformfileMNI = [MNI6]
         transformfileT1W = [str(MNI6),str(mni_to_t1w)]
 
     elif 'space-PNC' in file_base:
@@ -40,35 +40,35 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         oasis_to_t1w  = mnisf + 'from-OASIS30ANTs_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(oasis_to_t1w),str(t1w_to_mni)]
-        transformfileT1W = str(oasis_to_t1w)
+        transformfileT1W = [str(oasis_to_t1w)]
     
     elif 'space-MNI152NLin6Sym' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         mni6c_to_t1w  = mnisf + 'from-MNI152NLin6Sym_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
-        transformfileT1W = str(mni6c_to_t1w)
+        transformfileT1W = [str(mni6c_to_t1w)]
 
     elif 'space-MNIInfant' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         mni6c_to_t1w  = mnisf + 'from-MNIInfant_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
-        transformfileT1W = str(mni6c_to_t1w)
+        transformfileT1W = [str(mni6c_to_t1w)]
         
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        transformfileMNI = str(t1w_to_mni)
-        transformfileT1W = 'identity'
+        transformfileMNI = [str(t1w_to_mni)]
+        transformfileT1W = [str(pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt'))]
     elif 'space-' not in file_base:
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
         native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
         mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni  = mnisf + 'from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         transformfileMNI = [str(t1w_to_mni),str(native_to_t1w)]
-        transformfileT1W =  str(native_to_t1w)
+        transformfileT1W = [str(native_to_t1w)]
     else:
         print('space not supported')
 
