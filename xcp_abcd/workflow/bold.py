@@ -477,7 +477,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
      ## exexetive summary workflow
     workflow.connect([
         (inputnode,executivesummary_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg'),
-        ('bold_file','inputnode.bold_file'),]),
+        ('bold_file','inputnode.bold_file'),('bold_mask','inputnode.mask')]),
+
         (regression_wf,executivesummary_wf,[('res_file','inputnode.regdata'),]),
         (filtering_wf,executivesummary_wf,[('filt_file','inputnode.resddata')]),
         (censorscrub_wf,executivesummary_wf,[('outputnode.fd','inputnode.fd')]),
