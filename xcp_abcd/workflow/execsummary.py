@@ -50,10 +50,14 @@ def init_execsummary_wf(
     
     transformfile = get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
           t1w_to_native=_t12native(bold_file))[1]
-    import itertools   
-    invertionx = list(itertools.repeat(False, len(transformfile)))
+    import itertools
+
+    #invertionx = list(itertools.repeat(False, len(transformfile)))
     #invertionx = np.repeat(False,len(transformfile))
-    
+    invertionx =[]
+    for i in range(len(transformfile)):
+        invertionx.append(False)
+
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
             name='boldtot1w_wf') 
     t1wtobold_wf = pe.Node(ApplyTransformsx(dimension=3,reference_image=boldref,interpolation='MultiLabel',
@@ -76,19 +80,19 @@ def init_execsummary_wf(
     plot_svgx_wf = pe.Node(PlotSVGData(tr=tr,rawdata=bold_file), name='plot_svgx_wf',mem_gb=0.2)
 
 
-    ds_boldont1w_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='boldonT1wplot'),
+    ds_boldont1w_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='boldonT1wplot'),
                  name='boldont1w',run_without_submitting=True)
 
-    ds_t1wonbold_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='T1wonboldplot'), 
+    ds_t1wonbold_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='T1wonboldplot'), 
              name='t1wonbold',run_without_submitting=True)
 
-    ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='boldref'),
+    ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='boldref'),
          name='plotboldref',run_without_submitting=True)
 
-    ds_plot_svgxbe_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='precarpetplot'),
+    ds_plot_svgxbe_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='precarpetplot'),
           name='plot_svgxbe',run_without_submitting=True)
 
-    ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,source_file=bold_file,datatype="execsummary",desc='postcarpetplot'),
+    ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='postcarpetplot'),
          name='plot_svgxaf',run_without_submitting=True)
              
 
@@ -116,6 +120,8 @@ def init_execsummary_wf(
             (resample_parc,plot_svgx_wf,[('output_image','seg')]),
             (plot_svgx_wf,ds_plot_svgxbe_wf,[('before_process','in_file')]),
             (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process','in_file')]),
+            (inputnode,ds_plot_svgxbe_wf,[('bold_file','source_file')]),
+            (inputnode,ds_plot_svgxaf_wf,[('bold_file','source_file')]),
         ])
         
     
