@@ -147,7 +147,7 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
     fd = File(exists=True,mandatory=True, desc="fd")
     mask = File(exists=False,mandatory=False, desc="mask file ")
     seg = File(exists=False,mandatory=False, desc="seg file ")
-    tr = traits.Int(default_value=1, desc="TR")
+    tr = traits.Float(default_value=1, desc="TR")
 
 
 class _plotsvgOutputSpec(TraitedSpec):
