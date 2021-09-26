@@ -80,19 +80,19 @@ def init_execsummary_wf(
     plot_svgx_wf = pe.Node(PlotSVGData(tr=tr,rawdata=bold_file), name='plot_svgx_wf',mem_gb=0.2)
 
 
-    ds_boldont1w_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='boldonT1wplot'),
+    ds_boldont1w_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='boldonT1wplot'),
                  name='boldont1w',run_without_submitting=True)
 
-    ds_t1wonbold_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='T1wonboldplot'), 
+    ds_t1wonbold_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='T1wonboldplot'), 
              name='t1wonbold',run_without_submitting=True)
 
-    ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='boldref'),
+    ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='boldref'),
          name='plotboldref',run_without_submitting=True)
 
-    ds_plot_svgxbe_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='precarpetplot'),
+    ds_plot_svgxbe_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='precarpetplot'),
           name='plot_svgxbe',run_without_submitting=True)
 
-    ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="execsummary",desc='postcarpetplot'),
+    ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='postcarpetplot'),
          name='plot_svgxaf',run_without_submitting=True)
              
 
