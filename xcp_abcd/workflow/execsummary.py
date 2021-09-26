@@ -29,7 +29,7 @@ def init_execsummary_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w','t1seg','regdata','resddata','fd','rawdata']), name='inputnode')
+        fields=['t1w','t1seg','regdata','resddata','fd','rawdata','mask']), name='inputnode')
     inputnode.inputs.bold_file = bold_file
 
     
