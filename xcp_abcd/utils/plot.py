@@ -556,7 +556,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
     plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,500])
     plotseries(conf=wbbf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-400,800])
-    plot_carpetx(func=rawdata,seg=seg,tr=tr,subplot=grid[2])
+    plot_carpetx(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
     plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,0.8])
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
     
@@ -568,7 +568,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
     plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,500])
     plotseries(conf=wbaf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-400,800])
-    plot_carpetx(func=resddata,seg=seg,tr=tr,subplot=grid[2])
+    plot_carpetx(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
     plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,0.8])
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
     

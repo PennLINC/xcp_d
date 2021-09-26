@@ -29,13 +29,13 @@ class PlotImage(SimpleInterface):
     output_spec = _plotimgOutputSpec
 
     def _run_interface(self, runtime):
-        self._results['outfile'] = fname_presuffix(
+        self._results['out_file'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix='_file.svg', newpath=runtime.cwd,
                 use_ext=False)
         
-        self._results['outfile'] = plotimage(self.inputs.in_file,
-             self._results['outfile'])
+        self._results['out_file'] = plotimage(self.inputs.in_file,
+             self._results['out_file'])
              
         return runtime
 
@@ -101,7 +101,7 @@ class BrainPlotx(SimpleInterface):
                 use_ext=False,)
 
         self._results['out_html'] = generate_brain_sprite(
-            template=self.inputs.template,stat_map=self.inputs.in_file,
+            template_image=self.inputs.template,stat_map=self.inputs.in_file,
             out_file=self._results['out_html'])
 
         return runtime
@@ -182,8 +182,3 @@ class PlotSVGData(SimpleInterface):
 
 
         return runtime
-
-
-
-
-

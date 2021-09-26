@@ -50,8 +50,9 @@ def init_execsummary_wf(
     
     transformfile = get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
           t1w_to_native=_t12native(bold_file))[1]
-    
-    invertionx = np.repeat(False,len(transformfile))
+    import itertools   
+    invertionx = list(itertools.repeat(False, len(transformfile)))
+    #invertionx = np.repeat(False,len(transformfile))
     
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
             name='boldtot1w_wf') 
