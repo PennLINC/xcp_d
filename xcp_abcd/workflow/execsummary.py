@@ -11,7 +11,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces.fsl import FAST, MultiImageMaths
 from nipype.interfaces import utility as niu
 from ..interfaces import PlotSVGData, RegPlot,PlotImage
-from ..utils import bid_derivative, get_transformfile,get_transformfilex
+from ..utils import bid_derivative, get_transformfile,get_transformsX
 from templateflow.api import get as get_template
 
 class DerivativesDataSink(bid_derivative):
@@ -48,15 +48,9 @@ def init_execsummary_wf(
     fslfast_wf = pe.Node(FAST(no_bias=True,no_pve=True,output_type='NIFTI_GZ',
                       segments=True), name='fslfast')
     
-    transformfile = get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
+    transformfile,invertionx = get_transformsX(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
           t1w_to_native=_t12native(bold_file))[1]
-    import itertools
-
-    #invertionx = list(itertools.repeat(False, len(transformfile)))
-    #invertionx = np.repeat(False,len(transformfile))
-    invertionx =[]
-    for i in range(len(transformfile)):
-        invertionx.append(False)
+    
 
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
             name='boldtot1w_wf') 

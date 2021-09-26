@@ -162,3 +162,70 @@ def get_customfile(custom_conf,bold_file):
         custom_file = None
 
     return custom_file
+
+
+
+
+def get_transformsX(bold_file,mni_to_t1w,t1w_to_native):
+
+    """ obtain transfromation to transfrom MNI6 t1w"""
+
+    file_base = os.path.basename(str(bold_file))
+
+
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+     
+    if 'space-MNI152NLin2009cAsym' in file_base:
+        transformfileT1W  = str(mni_to_t1w)
+        inversetransfrom = True
+
+    elif 'space-MNI152NLin6Asym' in file_base:
+        transformfileT1W = [str(MNI6),str(mni_to_t1w)]
+        inversetransfrom = [True,True]
+
+    elif 'space-PNC' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        pnc_to_t1w  = mnisf + 'from-PNC_to-T1w_mode-image_xfm.h5'
+        transformfileT1W = str(pnc_to_t1w)
+        inversetransfrom = True
+
+    elif 'space-NKI' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        nki_to_t1w  = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
+        transformfileT1W = str(nki_to_t1w)
+        inversetransfrom = True
+
+    elif 'space-OASIS' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        oasis_to_t1w  = mnisf + 'from-OASIS30ANTs_to-T1w_mode-image_xfm.h5'
+        transformfileT1W = str(oasis_to_t1w)
+        inversetransfrom = True
+    
+    elif 'space-MNI152NLin6Sym' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        mni6c_to_t1w  = mnisf + 'from-MNI152NLin6Sym_to-T1w_mode-image_xfm.h5'
+        transformfileT1W = str(mni6c_to_t1w)
+        inversetransfrom = True
+
+    elif 'space-MNIInfant' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        mni6c_to_t1w  = mnisf + 'from-MNIInfant_to-T1w_mode-image_xfm.h5'
+        transformfileT1W = str(mni6c_to_t1w)
+        inversetransfrom = True
+        
+    elif 'space-T1w' in file_base:
+        mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
+        transformfileT1W = str(pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt'))
+        inversetransfrom = True
+
+    elif 'space-' not in file_base:
+        t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
+        native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
+        transformfileT1W = str(native_to_t1w)
+        inversetransfrom = True
+
+    else:
+        print('space not supported')
+
+    return transformfileT1W,inversetransfrom
