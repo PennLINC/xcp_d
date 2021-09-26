@@ -167,15 +167,15 @@ def init_anatomical_wf(
           
 
           workflow.connect([ 
-               (left_sphere_mris_wf,left_wm_surf_wf,[('converted','new_sphere')]),
-               (left_sphere_mris_wf,left_pial_surf_wf,[('converted','new_sphere')]),
-               (left_sphere_mris_wf,left_midthick_surf_wf,[('converted','new_sphere')]),
-               (left_sphere_mris_wf,left_inf_surf_wf,[('converted','new_sphere')]),
+               (left_sphere_mris_wf,left_wm_surf_wf,[('converted','current_sphere')]),
+               (left_sphere_mris_wf,left_pial_surf_wf,[('converted','current_sphere')]),
+               (left_sphere_mris_wf,left_midthick_surf_wf,[('converted','current_sphere')]),
+               (left_sphere_mris_wf,left_inf_surf_wf,[('converted','current_sphere')]),
 
-               (right_sphere_mris_wf,right_wm_surf_wf,[('converted','new_sphere')]),
-               (right_sphere_mris_wf,right_pial_surf_wf,[('converted','new_sphere')]),
-               (right_sphere_mris_wf,right_midthick_surf_wf,[('converted','new_sphere')]),
-               (right_sphere_mris_wf,right_inf_surf_wf,[('converted','new_sphere')]),
+               (right_sphere_mris_wf,right_wm_surf_wf,[('converted','current_sphere')]),
+               (right_sphere_mris_wf,right_pial_surf_wf,[('converted','current_sphere')]),
+               (right_sphere_mris_wf,right_midthick_surf_wf,[('converted','current_sphere')]),
+               (right_sphere_mris_wf,right_inf_surf_wf,[('converted','current_sphere')]),
 
                (left_wm_surf_wf,ds_wmLsurf_wf,[('out_file','in_file')]),
                (left_pial_surf_wf,ds_pialLsurf_wf,[('out_file','in_file')]),

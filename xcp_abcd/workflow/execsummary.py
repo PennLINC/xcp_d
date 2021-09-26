@@ -48,14 +48,15 @@ def init_execsummary_wf(
     fslfast_wf = pe.Node(FAST(no_bias=True,no_pve=True,output_type='NIFTI_GZ',
                       segments=True), name='fslfast')
     
-    transformfile = get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
-          t1w_to_native=_t12native(bold_file))[1]
-    invertion = np.repeat(False,len(transformfile))
+    transformfile = str(get_transformfilex(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
+          t1w_to_native=_t12native(bold_file))[1])
+    
+    invertionx = np.repeat(False,len(transformfile))
     
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
             name='boldtot1w_wf') 
     t1wtobold_wf = pe.Node(ApplyTransformsx(dimension=3,reference_image=boldref,interpolation='MultiLabel',
-             transforms=transformfile,invert_transform_flags=invertion.tolist()),name='t1wtobold_wf')
+             transforms=transformfile,invert_transform_flags=invertionx.tolist()),name='t1wtobold_wf')
         
     t1wonbold_wf = pe.Node(RegPlot(n_cuts=3,in_file=boldref), name='t1wonbold_wf',mem_gb=0.2)
     boldont1w_wf = pe.Node(RegPlot(n_cuts=3), name='boldont1w_wf',mem_gb=0.2) 

@@ -62,17 +62,17 @@ class SurftoVolume(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        self._results['outfile'] = fname_presuffix(
+        self._results['out_file'] = fname_presuffix(
                 self.inputs.template,
                 suffix='mri_stats_map.nii.gz', newpath=runtime.cwd,
                 use_ext=False)
 
-        self._results['outfile']= surf2vol(
+        self._results['out_file']= surf2vol(
                                  template=self.inputs.template,
                                  left_surf=self.inputs.left_surf,
                                  right_surf=self.inputs.right_surf,
                                   scale=self.inputs.scale,
-                                  filename=self._results['outfile'])
+                                  filename=self._results['out_file'])
         return runtime
 
 
