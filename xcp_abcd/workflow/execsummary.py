@@ -49,7 +49,7 @@ def init_execsummary_wf(
                       segments=True), name='fslfast')
     
     transformfile,invertionx = get_transformsX(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
-          t1w_to_native=_t12native(bold_file))[1]
+          t1w_to_native=_t12native(bold_file))
     
 
     boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
