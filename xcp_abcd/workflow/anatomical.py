@@ -32,6 +32,7 @@ def init_anatomical_wf(
      subject_id,
      output_dir,
      t1w_to_mni,
+     mni_to_t1w,
      name='anatomical_wf',
       ):
      workflow = Workflow(name=name)
@@ -44,12 +45,8 @@ def init_anatomical_wf(
 
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
-     layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id)
+     layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id, template=None,bids_validate=False)
      
-     
-     
-
-     mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
 
      MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
      
