@@ -46,20 +46,9 @@ def init_anatomical_wf(
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id)
      
-     all_t1w = subj_data['t1w'] 
-     for i in all_t1w:
-          ii = os.path.basename(i)
-          if  not fnmatch.fnmatch(ii,'*_space-*'):
-               outputnode.inputs.t1w = i
-               t1w = i
-     
-
-     all_seg = subj_data['seg']
-     for i in all_seg:
-          ii=os.path.basename(i)
-          if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
-               outputnode.inputs.seg  = i
-               seg = i
+     t1w,seg = extract_t1w_seg(subj_data)
+     outputnode.inputs.t1w = t1w
+     outputnode.inputs.seg = seg
      
 
      mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
@@ -78,12 +67,12 @@ def init_anatomical_wf(
 
      ds_t1wmni_wf = pe.Node(
         DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
-                  extension='.nii.gz',source_file=all_t1w),
+                  extension='.nii.gz',source_file=t1w),
                   name='ds_t1wmni_wf', run_without_submitting=True)
      
      ds_t1wseg_wf = pe.Node(
         DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',suffix='dseg',
-        extension='.nii.gz',source_file=all_t1w),
+        extension='.nii.gz',source_file=t1w),
                   name='ds_t1wseg_wf', run_without_submitting=True)
 
      workflow.connect([
@@ -251,32 +240,19 @@ def init_anatomical_wf(
 
      return workflow
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
+def extract_t1w_seg(subj_data):
+     all_t1w = subj_data['t1w'] 
+     for i in all_t1w:
+          ii = os.path.basename(i)
+          if  not fnmatch.fnmatch(ii,'*_space-*'):
+               t1w = i
+     
+     all_seg = subj_data['seg']
+     for i in all_seg:
+          ii=os.path.basename(i)
+          if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
+               seg  = i
+               
+     return t1w,seg
+     
