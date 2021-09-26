@@ -11,6 +11,7 @@ import os
 import fnmatch
 from pathlib import Path
 import numpy as np
+from numpy.lib.utils import source
 from templateflow.api import get as get_template
 from ..utils import collect_data,select_registrationfile,CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
@@ -135,34 +136,34 @@ def init_anatomical_wf(
           # write report node
           ds_wmLsurf_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], density='32k',desc='smoothwm',check_hdr=False,
-             extension='.gii',hemi='L'), name='ds_wmLsurf_wf', run_without_submitting=False,mem_gb=2)
+             extension='.surf.gii',hemi='L',source_file=L_wm_surf), name='ds_wmLsurf_wf', run_without_submitting=False,mem_gb=2)
           
           ds_wmRsurf_wf = pe.Node(
                 DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], density='32k',desc='smoothwm',check_hdr=False,
-                extension='.gii',hemi='R'), name='ds_wmRsur_wf', run_without_submitting=False,mem_gb=2)
+                extension='.surf.gii',hemi='R',source_file=R_wm_surf), name='ds_wmRsur_wf', run_without_submitting=False,mem_gb=2)
           
           ds_pialLsurf_wf = pe.Node(
                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='pial',check_hdr=False,
-                extension='.gii',hemi='L'), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
+                extension='.surf.gii',hemi='L',source_file=L_pial_surf), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
           ds_pialRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='pial',check_hdr=False,
-               extension='.gii',hemi='R'), name='ds_pialRsurf_wf', run_without_submitting=False,mem_gb=2)
+               extension='.surf.gii',hemi='R',source_file=R_pial_surf), name='ds_pialRsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_infLsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],density='32k',desc='inflated',check_hdr=False,
-               extension='.gii',hemi='L'), name='ds_infLsurf_wf', run_without_submitting=False,mem_gb=2)
+               extension='.surf.gii',hemi='L',source_file=L_inflated_surf), name='ds_infLsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_infRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='inflated',check_hdr=False,
-               extension='.gii',hemi='R'), name='ds_infRsurf_wf', run_without_submitting=False,mem_gb=2)
+               extension='.surf.gii',hemi='R',source_file=R_inflated_surf), name='ds_infRsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_midLsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='midthickness',check_hdr=False,
-               extension='.gii',hemi='L'), name='ds_midLsurf_wf', run_without_submitting=False,mem_gb=2)
+               extension='.surf.gii',hemi='L',source_file=L_midthick_surf), name='ds_midLsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_midRsurf_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],density='32k',desc='midthickness',check_hdr=False,
-               extension='.gii',hemi='R'), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
+               extension='.surf.gii',hemi='R',source_file=R_midthick_surf), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
 
           
 
@@ -186,15 +187,6 @@ def init_anatomical_wf(
                (right_pial_surf_wf,ds_pialRsurf_wf,[('out_file','in_file')]),
                (right_midthick_surf_wf,ds_midRsurf_wf,[('out_file','in_file')]),
                (right_inf_surf_wf,ds_infRsurf_wf,[('out_file','in_file')]),
-
-               (inputnode,ds_wmLsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_wmRsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_pialLsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_pialRsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_infLsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_infRsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_midLsurf_wf,[('t1w','source_file')]),
-               (inputnode,ds_midRsurf_wf,[('t1w','source_file')]),
               ]) 
 
           t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
