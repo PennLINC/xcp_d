@@ -264,9 +264,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                        head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
 
     
-    executivesummary_wf = pe.Node(init_execsummary_wf(tr=TR,bold_file=cifti_file,
-                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2),
-                      name="cifti_execsummary_wf")
+    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=cifti_file,
+                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2)
 
 
     workflow.connect([
