@@ -41,7 +41,7 @@ def init_execsummary_wf(
     else:
         prefixbb = filenamex.split('_desc')[0]
     
-    bold_t1w_reg = fnmatch.filter(all_files, prefixbb +'*-bbregister_bold.svg')[0]
+    bold_t1w_reg = fnmatch.filter(all_files, '*' + prefixbb +'*-bbregister_bold.svg')[0]
 
 
     
