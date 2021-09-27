@@ -264,7 +264,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                        head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
 
     
-    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=cifti_file,
+    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=cifti_file,layout=layout,
                       output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2)
 
 
@@ -402,7 +402,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
      ## exexetive summary workflow
     workflow.connect([
         (inputnode,executivesummary_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg'),
-        ('bold_file','inputnode.cifti_file'),]),
+        ('cifti_file','inputnode.bold_file'),]),
         (regression_wf,executivesummary_wf,[('res_file','inputnode.regdata'),]),
         (filtering_wf,executivesummary_wf,[('filt_file','inputnode.resddata')]),
         (censorscrub_wf,executivesummary_wf,[('outputnode.fd','inputnode.fd')]),

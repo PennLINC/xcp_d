@@ -48,9 +48,6 @@ def init_anatomical_wf(
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id, template=None,bids_validate=False)
      
-
-     MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
-     
      t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
                        input_image_type=3, dimension=3),
@@ -190,9 +187,7 @@ def init_anatomical_wf(
               ]) 
 
           t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
-          MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
-          mnisf = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-          fs2t1w = mnisf + 'from-fsnative_to-T1w_mode-image_xfm.txt'
+
           pial2vol_wf = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
                left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')
           wm2vol_wf = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
@@ -202,11 +197,6 @@ def init_anatomical_wf(
           from nipype.interfaces.fsl import MultiImageMaths
           addwmpial_wf = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
 
-          #transform freesurfer space to MNI for brainplot
-          t12mni_wf = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interpolation='NearestNeighbor',
-             transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)],input_image=t1w_mgz),name='tw12mnib')
-          overlay2mni_wf = pe.Node(ApplyTransformsx(reference_image=mnitemplate,interpolation="MultiLabel",
-                     transforms=[str(MNI92FSL),str(t1w_to_mni),str(fs2t1w)]),name='overlay2mnib')
           
           #brainplot
           brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite')
@@ -218,9 +208,8 @@ def init_anatomical_wf(
           workflow.connect([
                (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
                (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
-               (addwmpial_wf,overlay2mni_wf,[('out_file','input_image')]),
                (addwmpial_wf,brainspritex_wf,[('out_file','in_file')]),
-               #(t12mni_wf,brainspritex_wf,[('output_image','template')]), 
+     
                (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
           ])
@@ -232,8 +221,8 @@ def init_anatomical_wf(
                   name='brainspriteplot', run_without_submitting=False)
 
           workflow.connect([
-              (t1w_transform_wf,brainspritex_wf,[('output_image','template')]),
-              (seg_transform_wf,brainspritex_wf,[('output_image','in_file')]),
+              (inputnode,brainspritex_wf,[('t1w','template')]),
+              (inputnode,brainspritex_wf,[(('t1seg',_picwmcsf),'in_file')]),
               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
               ])
@@ -242,3 +231,17 @@ def init_anatomical_wf(
 
  
 
+def _picwmcsf(file):
+    import nibabel as nb 
+    import numpy as np 
+    import tempfile
+    datax = nb.load(file)
+    data_csf = np.zeros(datax.shape)
+    data_wm = np.zeros(datax.shape)
+    data_csf [datax.get_fdata() == 2]=2
+    data_wm [datax.get_fdata() == 3]=3
+
+    img = nb.Nifti1Image(data_csf+data_wm, affine=datax.affine, header=datax.header)
+    outfile = tempfile.mkstemp(suffix = 'csf.nii.gz')[1]
+    img.to_filename(outfile)
+    return outfile

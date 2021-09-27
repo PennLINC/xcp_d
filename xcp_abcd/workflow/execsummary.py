@@ -1,9 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os 
-import numpy as np
-import glob 
+import os,fnmatch
+import glob
+from posixpath import basename 
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
@@ -11,7 +11,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces.fsl import FAST, MultiImageMaths
 from nipype.interfaces import utility as niu
 from ..interfaces import PlotSVGData, RegPlot,PlotImage
-from ..utils import bid_derivative, get_transformfile,get_transformsX
+from ..utils import bid_derivative, get_transformfile
 from templateflow.api import get as get_template
 
 class DerivativesDataSink(bid_derivative):
@@ -24,6 +24,7 @@ def init_execsummary_wf(
      output_dir,
      mni_to_t1w,
      tr,
+     layout,
      name='execsummary_wf'):
    
     workflow = Workflow(name=name)
@@ -31,6 +32,16 @@ def init_execsummary_wf(
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['t1w','t1seg','regdata','resddata','fd','rawdata','mask']), name='inputnode')
     inputnode.inputs.bold_file = bold_file
+
+    ### get bbregsiter file from fmriprep
+    all_files  =list(layout.get_files())
+    filenamex = os.basename(bold_file)
+    if '-space' in os.basename(filenamex):
+        prefixbb = filenamex.split('_space')[0]
+    else:
+        prefixbb = filenamex.split('_desc')[0]
+    bold_t1w_reg = fnmatch.filter(all_files, prefixbb +'*-bbregister_bold.svg')[0]
+
 
     
     if bold_file.endswith('.nii.gz'):
@@ -43,23 +54,7 @@ def init_execsummary_wf(
         mask = glob.glob(bb+'*desc-brain_mask.nii.gz')[0]
         bold_file = glob.glob(bb+'*preproc_bold.nii.gz')[0] 
 
-    fslbet_wf = pe.Node(MultiImageMaths(in_file=boldref, 
-                     operand_files=mask,op_string = " -mul %s "),name = 'fslmasking')
-    fslfast_wf = pe.Node(FAST(no_bias=True,no_pve=True,output_type='NIFTI_GZ',
-                      segments=True), name='fslfast')
-    
-    transformfile,invertionx = get_transformsX(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
-          t1w_to_native=_t12native(bold_file))
-    
 
-    boldtot1w_wf = pe.Node(ApplyTransformsx(dimension=3,interpolation='MultiLabel',transforms=transformfile),
-            name='boldtot1w_wf') 
-    t1wtobold_wf = pe.Node(ApplyTransformsx(dimension=3,reference_image=boldref,interpolation='MultiLabel',
-             transforms=transformfile,invert_transform_flags=invertionx),name='t1wtobold_wf')
-        
-    t1wonbold_wf = pe.Node(RegPlot(n_cuts=3,in_file=boldref), name='t1wonbold_wf',mem_gb=0.2)
-    boldont1w_wf = pe.Node(RegPlot(n_cuts=3), name='boldont1w_wf',mem_gb=0.2) 
-        
     plotrefbold_wf = pe.Node(PlotImage(in_file=boldref), name='plotrefbold_wf')
 
     transformfilex = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
@@ -74,12 +69,6 @@ def init_execsummary_wf(
     plot_svgx_wf = pe.Node(PlotSVGData(tr=tr,rawdata=bold_file), name='plot_svgx_wf',mem_gb=0.2)
 
 
-    ds_boldont1w_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='boldonT1wplot'),
-                 name='boldont1w',run_without_submitting=True)
-
-    ds_t1wonbold_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='T1wonboldplot'), 
-             name='t1wonbold',run_without_submitting=True)
-
     ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='boldref'),
          name='plotboldref',run_without_submitting=True)
 
@@ -88,26 +77,14 @@ def init_execsummary_wf(
 
     ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='postcarpetplot'),
          name='plot_svgxaf',run_without_submitting=True)
+    
+    ds_bbregsister_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,in_ffile=bold_t1w_reg,datatype="figures",desc='bbregister'),
+         name='bbregister',run_without_submitting=True)
              
 
     workflow.connect([
-            # bold on t1w
-            (fslbet_wf, fslfast_wf, [('out_file', 'in_files')]),
-            (fslfast_wf, boldtot1w_wf, [(('tissue_class_map',_piccsf), 'input_image')]),
-            (inputnode, boldtot1w_wf, [('t1w','reference_image')]),
-            (boldtot1w_wf, boldont1w_wf, [('output_image', 'overlay')]),
-            (inputnode, boldont1w_wf, [('t1w','in_file')]),
-            (boldont1w_wf, ds_boldont1w_wf, [('out_file', 'in_file')]),
-        
-            #t1w on bold 
-            (inputnode,t1wtobold_wf,[(('t1seg',_piccsf),'input_image')]),
-            (t1wtobold_wf,t1wonbold_wf,[('output_image','overlay')]),
-            (t1wonbold_wf,ds_t1wonbold_wf,[('out_file','in_file')]),
-
             # plotrefbold # output node will be repalced with reportnode
             (plotrefbold_wf,ds_plotboldref_wf,[('out_file','in_file')]),
-
-            # plot_svgx_wf node
             (inputnode,plot_svgx_wf,[('fd','fd'), 
             ('regdata','regdata'),('resddata','resddata'),
             ('mask','mask'),('bold_file','rawdata')]),
@@ -116,9 +93,8 @@ def init_execsummary_wf(
             (plot_svgx_wf,ds_plot_svgxaf_wf,[('after_process','in_file')]),
             (inputnode,ds_plot_svgxbe_wf,[('bold_file','source_file')]),
             (inputnode,ds_plot_svgxaf_wf,[('bold_file','source_file')]),
-            (inputnode,ds_plotboldref_wf,[('bold_file','source_file')]),
-            (inputnode,ds_boldont1w_wf,[('bold_file','source_file')]),
-            (inputnode,ds_t1wonbold_wf,[('bold_file','source_file')]),
+            (inputnode,ds_plotboldref_wf,[('bold_file','source_file')]), 
+            (inputnode,ds_bbregsister_wf,[('bold_file','source_file')]),  
         ])
         
     
@@ -133,15 +109,5 @@ def _t12native(fname):
     return t12ref
 
 
-def _piccsf(file):
-    import nibabel as nb 
-    import numpy as np 
-    import tempfile
-    datax = nb.load(file)
-    data_csf = np.zeros(datax.shape)
-    data_csf [datax.get_fdata() == 1]=1
-    img = nb.Nifti1Image(data_csf, affine=datax.affine, header=datax.header)
-    outfile = tempfile.mkstemp(suffix = 'csf.nii.gz')[1]
-    img.to_filename(outfile)
-    return outfile
+
 
