@@ -1,10 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from re import template 
-import nibabel as nb
-import numpy as np
 from ..utils import surf2vol,get_regplot,generate_brain_sprite,plot_svgx,plotimage
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
