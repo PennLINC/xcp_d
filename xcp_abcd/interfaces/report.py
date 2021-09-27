@@ -10,7 +10,7 @@ import pandas as pd
 from collections import Counter
 from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec,
-    File, Directory, InputMultiObject, Str, isdefined,
+    File, InputMultiObject, Str, isdefined,
     SimpleInterface)
 
 
