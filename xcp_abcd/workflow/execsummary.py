@@ -36,10 +36,11 @@ def init_execsummary_wf(
     ### get bbregsiter file from fmriprep
     all_files  =list(layout.get_files())
     filenamex = os.path.basename(bold_file)
-    if '-space' in filenamex:
+    if '_space' in filenamex:
         prefixbb = filenamex.split('_space')[0]
     else:
         prefixbb = filenamex.split('_desc')[0]
+    
     bold_t1w_reg = fnmatch.filter(all_files, prefixbb +'*-bbregister_bold.svg')[0]
 
 

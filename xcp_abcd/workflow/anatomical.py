@@ -82,7 +82,7 @@ def init_anatomical_wf(
      p = Path(bids_dir)
      freesufer_path = Path(str(p.parent)+'/freesurfer')
      if freesufer_path.is_dir(): 
-          all_files  =list(layout.get_files())
+          all_files  = list(layout.get_files())
           L_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*hemi-L_inflated.surf.gii')[0]
           R_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_inflated.surf.gii')[0]
           L_midthick_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_midthickness.surf.gii')[0]
