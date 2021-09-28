@@ -170,7 +170,7 @@ RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/relea
 # Installing xcp_abcd
 COPY . /src/xcp_abcd
 
-COPY /src/xcp_abcd/xcp_abcd/data/license.txt  ${FREESURFER_HOME}/license.txt
+RUN  wget -O ${FREESURFER_HOME}/license.txt  https://upenn.box.com/shared/static/ruu7aigti2wzy756a627ej47iw7kqzel.txt  
 
 ARG VERSION=0.0.1
 # Force static versioning within container
