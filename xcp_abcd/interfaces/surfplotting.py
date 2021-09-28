@@ -1,10 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from re import template 
-import nibabel as nb
-import numpy as np
 from ..utils import surf2vol,get_regplot,generate_brain_sprite,plot_svgx,plotimage
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
@@ -29,13 +25,13 @@ class PlotImage(SimpleInterface):
     output_spec = _plotimgOutputSpec
 
     def _run_interface(self, runtime):
-        self._results['outfile'] = fname_presuffix(
+        self._results['out_file'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix='_file.svg', newpath=runtime.cwd,
                 use_ext=False)
         
-        self._results['outfile'] = plotimage(self.inputs.in_file,
-             self._results['outfile'])
+        self._results['out_file'] = plotimage(self.inputs.in_file,
+             self._results['out_file'])
              
         return runtime
 
@@ -62,17 +58,17 @@ class SurftoVolume(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        self._results['outfile'] = fname_presuffix(
+        self._results['out_file'] = fname_presuffix(
                 self.inputs.template,
                 suffix='mri_stats_map.nii.gz', newpath=runtime.cwd,
                 use_ext=False)
 
-        self._results['outfile']= surf2vol(
+        self._results['out_file']= surf2vol(
                                  template=self.inputs.template,
                                  left_surf=self.inputs.left_surf,
                                  right_surf=self.inputs.right_surf,
                                   scale=self.inputs.scale,
-                                  filename=self._results['outfile'])
+                                  filename=self._results['out_file'])
         return runtime
 
 
@@ -101,7 +97,7 @@ class BrainPlotx(SimpleInterface):
                 use_ext=False,)
 
         self._results['out_html'] = generate_brain_sprite(
-            template=self.inputs.template,stat_map=self.inputs.in_file,
+            template_image=self.inputs.template,stat_map=self.inputs.in_file,
             out_file=self._results['out_html'])
 
         return runtime
@@ -147,7 +143,7 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
     fd = File(exists=True,mandatory=True, desc="fd")
     mask = File(exists=False,mandatory=False, desc="mask file ")
     seg = File(exists=False,mandatory=False, desc="seg file ")
-    tr = traits.Int(default_value=1, desc="TR")
+    tr = traits.Float(default_value=1, desc="TR")
 
 
 class _plotsvgOutputSpec(TraitedSpec):
@@ -182,8 +178,3 @@ class PlotSVGData(SimpleInterface):
 
 
         return runtime
-
-
-
-
-

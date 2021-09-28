@@ -9,14 +9,11 @@ post processing the bold
 import sys
 import os
 import numpy as np
-from copy import deepcopy
-from xcp_abcd.workflow import cifti
 import nibabel as nb
 from nipype import __version__ as nipype_ver
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
-from ..utils import collect_data
 import sklearn
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -223,7 +220,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mask_file,ref_file = _get_ref_mask(fname=bold_file)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file','ref_file','bold_mask','cutstom_conf','mni_to_t1w']),
+        fields=['bold_file','ref_file','bold_mask','cutstom_conf','mni_to_t1w','t1w','t1seg']),
         name='inputnode')
 
     inputnode.inputs.bold_file = str(bold_file)
@@ -280,6 +277,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
 
     
+    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,
+                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2)
+                 
 
     # get transform file for resampling and fcon
       
@@ -472,6 +472,17 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (reho_compute_wf,ds_report_rehoplot,[('outputnode.rehohtml','in_file')]),
         (alff_compute_wf,ds_report_afniplot ,[('outputnode.alffhtml','in_file')]),
     ])
+
+
+     ## exexetive summary workflow
+    workflow.connect([
+        (inputnode,executivesummary_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg'),
+        ('bold_file','inputnode.bold_file'),('bold_mask','inputnode.mask')]),
+
+        (regression_wf,executivesummary_wf,[('res_file','inputnode.regdata'),]),
+        (filtering_wf,executivesummary_wf,[('filt_file','inputnode.resddata')]),
+        (censorscrub_wf,executivesummary_wf,[('outputnode.fd','inputnode.fd')]),
+    ]),
 
     return workflow
 

@@ -52,6 +52,8 @@ def get_regplot(brain,overlay,out_file,cuts=3,order=("x","y","z")):
 
     brain = nb.load(brain)
     overlay = nb.load(overlay)
+    from niworkflows.viz.utils import cuts_from_bbox
+    cuts = cuts_from_bbox(overlay, cuts=cuts)
     filex_plot = plot_registrationx(anat_nii=brain, contour=overlay, 
                  div_id='', cuts=cuts,order=order)
     compose_view(bg_svgs=filex_plot,fg_svgs=None,out_file=out_file)
