@@ -176,7 +176,7 @@ jobs:
       - run:
           name: Checking outputs of xcpabcd_niftiW
           command: |
-            qcfile=$(ls -f /tmp/xcpabcd_niftiW/xcp_abcd/xcp_abcd/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
+            qcfile=$(ls -f /tmp/xcpabcd_niftiW/xcp_abcd/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
             if [[ -f ${qcfile} ]]; then 
             echo "processing complete"
                exit 0
