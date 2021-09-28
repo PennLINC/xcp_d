@@ -287,53 +287,53 @@ jobs:
       - store_artifacts:
           path: /tmp/xcpabcd_ciftiF
 
-xcpabcd_niftiF:
-    machine:
-      image: circleci/classic:201711-01
-    working_directory: /tmp/data
-    steps:
-      - checkout:
-          path: /home/circleci/src/xcp_abcd
-      - run:
-          name: Check whether build should be skipped
-          command: |
-            cd /home/circleci/src/xcp_abcd
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_niftiF\]' )" != "" ]]; then
-              echo "Skipping xcpabcd_niftiF build"
-              circleci step halt
-            fi
-      - attach_workspace:
-          at: /tmp
-      - restore_cache:
+    xcpabcd_niftiF:
+      machine:
+        image: circleci/classic:201711-01
+      working_directory: /tmp/data
+      steps:
+        - checkout:
+            path: /home/circleci/src/xcp_abcd
+        - run:
+            name: Check whether build should be skipped
+            command: |
+              cd /home/circleci/src/xcp_abcd
+              if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_niftiF\]' )" != "" ]]; then
+                echo "Skipping xcpabcd_niftiF build"
+               circleci step halt
+              fi
+        - attach_workspace:
+            at: /tmp
+        - restore_cache:
           keys:
             - xcpabcd_niftiF-v2-{{ .Branch }}-{{ epoch }}
             - xcpabcd_niftiF-v2-{{ .Branch }}
             - xcpabcd_niftiF-v2-master
             - xcpabcd_niftiF-v2-
-      - run:
-          name: Setting up test
-          command: |
-            mkdir -p /tmp/xcpabcd_niftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF
+        - run:
+            name: Setting up test
+            command: |
+              mkdir -p /tmp/xcpabcd_niftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF
 
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 1h
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
-      - run:
-          name: Run full xcpd_abcd on cifti with freesurfer 
-          no_output_timeout: 5h
-          command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF
+        - run:
+            name: Load Docker image layer cache
+            no_output_timeout: 1h
+            command: |
+              docker info
+              set +o pipefail
+              if [ -f /tmp/cache/docker.tar.gz ]; then
+                sudo apt update && sudo apt -y install pigz
+                 pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+                docker images
+              fi
+        - run:
+            name: Run full xcpd_abcd on cifti with freesurfer 
+            no_output_timeout: 5h
+            command: |
+              sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF && \
+                 sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF
         
-            docker run --rm -it \
+              docker run --rm -it \
                 -v /tmp/data:/data/ \
                 -v /tmp/wkdir:/wkdir \
                 -v /tmp:/scrth \
@@ -345,55 +345,55 @@ xcpabcd_niftiF:
                 -w /scrth/wkdir_niftiF --smoothing 6 
   
 
-      - run:
-          name: Checking outputs of xcpabcd_niftiF
-          command: |
-            qcfile=$(ls -f /tmp/xcpabcd_niftiF/xcp_abcd/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
-            if [[ -f ${qcfile} ]]; then 
-            echo "processing complete"
-               exit 0
-            else 
-            echo "there is error "
+        - run:
+            name: Checking outputs of xcpabcd_niftiF
+            command: |
+              qcfile=$(ls -f /tmp/xcpabcd_niftiF/xcp_abcd/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
+              if [[ -f ${qcfile} ]]; then 
+                echo "processing complete"
+                exit 0
+              else 
+                echo "there is error "
                 exit 1
-            fi
+              fi
 
-      - run:
-          name: Clean working  directory
-          when: always
-          command: |
-            sudo chown $(id -un):$(id -gn) -R /tmp/wkdir_niftiF
-            rm -rf /tmp/wkdir_niftiF
+        - run:
+            name: Clean working  directory
+            when: always
+            command: |
+              sudo chown $(id -un):$(id -gn) -R /tmp/wkdir_niftiF
+              rm -rf /tmp/wkdir_niftiF
 
-      - store_artifacts:
-          path: /tmp/xcpabcd_niftiF
+        - store_artifacts:
+            path: /tmp/xcpabcd_niftiF
 
 
-deploy_docker:
-    machine:
-      image: circleci/classic:201711-01
-    working_directory: /tmp/src/xcp_abcd
-    steps:
-      - attach_workspace:
-          at: /tmp
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 2h
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
-      - run:
-          name: Deploy to Docker Hub
-          no_output_timeout: 1h
-          command: |
-            if [[ -n "$DOCKER_PASS" ]]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:unstable
-              docker push pennlinc/xcp_abcd:unstable
+    deploy_docker:
+      machine:
+        image: circleci/classic:201711-01
+      working_directory: /tmp/src/xcp_abcd
+      steps:
+        - attach_workspace:
+            at: /tmp
+        - run:
+            name: Load Docker image layer cache
+            no_output_timeout: 2h
+            command: |
+              docker info
+              set +o pipefail
+              if [ -f /tmp/cache/docker.tar.gz ]; then
+                sudo apt update && sudo apt -y install pigz
+                pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+                docker images
+              fi
+        - run:
+            name: Deploy to Docker Hub
+            no_output_timeout: 1h
+            command: |
+              if [[ -n "$DOCKER_PASS" ]]; then
+                docker login -u $DOCKER_USER -p $DOCKER_PASS
+                docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:unstable
+                docker push pennlinc/xcp_abcd:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
                 docker push pennlinc/xcp_abcd:latest
                 docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:$CIRCLE_TAG
