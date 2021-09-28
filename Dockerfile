@@ -105,7 +105,7 @@ RUN apt-get install -y nodejs
 RUN npm install -g svgo
 
 # Installing bids-validator
-RUN npm install -g bids-validator@1.6.2
+RUN npm install -g bids-validator@1.8.0
 
 # Installing and setting up miniconda
 RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh && \
@@ -169,6 +169,9 @@ RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/relea
     rm pandoc-2.2.2.1-1-amd64.deb
 # Installing xcp_abcd
 COPY . /src/xcp_abcd
+
+COPY /src/xcp_abcd/xcp_abcd/data/license.txt  ${FREESURFER_HOME}/license.txt
+
 ARG VERSION=0.0.1
 # Force static versioning within container
 RUN echo "${VERSION}" > /src/xcp_abcd/xcp_abcd/VERSION && \
