@@ -327,12 +327,12 @@ jobs:
                 -v /tmp/data:/data/ \
                 -v /tmp/wkdir:/wkdir \
                 -v /tmp:/scrth \
-                -v /tmp/xcpabcd_ciftiF/:/out \
+                -v /tmp/xcpabcd_niftiF/:/out \
                 pennlinc/xcp_abcd:latest \
                 /data/fmriprepdata/withfreesurfer/fmriprep \
                 /out  participant   \
                 --despike  --head_radius 40 \
-                -w /scrth/wkdir_ciftiF --smoothing 6 
+                -w /scrth/wkdir_niftiF --smoothing 6 
   
 
       - run:
