@@ -400,7 +400,6 @@ jobs:
                 docker push pennlinc/xcp_abcdp:$CIRCLE_TAG
               fi
       
-            fi
 
 
 workflows:
