@@ -57,18 +57,6 @@ jobs:
               && e=0 && break || sleep 15
             done && [ "$e" -eq "0" ]
       - run:
-          name: Smoke test Docker image
-          command: |
-            THISVERSION=$( python3 get_version.py )
-            THISVERSION=${THISVERSION%.dirty*}
-            THISVERSION=${CIRCLE_TAG:-$THISVERSION}
-            DOCKERVERSION=$(docker run --rm -it pennlinc/xcp_abcd:latest --version)
-            DOCKERVERSION=${DOCKERVERSION%$'\r'}
-            DOCKERVERSION=${DOCKERVERSION#*"xcp_abcd v"}
-            echo "VERSION: \"$THISVERSION\""
-            echo "DOCKERVERSION: \"${DOCKERVERSION}\""
-            test "$DOCKERVERSION" = "$THISVERSION"
-      - run:
           name: Docker save
           no_output_timeout: 40m
           command: |
