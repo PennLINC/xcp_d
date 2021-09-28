@@ -34,19 +34,6 @@ jobs:
             fi
       - run:
           name: Build Docker image
-          no_output_timeout: 5h
-          command: |
-
-
-            # Build docker image
-            e=1 && for i in {1..5}; do
-              docker build \
-                --cache-from=pennlinc/xcp_abcd \
-                --rm=false \
-                -t pennlinc/xcp_abcd:latest . \
-              && e=0 && break || sleep 15
-            done && [ "$e" -eq "0" ]
-          name: Build Docker image
           no_output_timeout: 3h
           command: |
             # Get version, update files.
