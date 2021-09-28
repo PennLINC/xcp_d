@@ -168,7 +168,7 @@ jobs:
                 -v /tmp:/scrth \
                 -v /tmp/xcpabcd_niftiW/:/out \
                 pennlinc/xcp_abcd:latest \
-                /data/fmriprepdata/withoutfreesurfer \
+                /data/fmriprepdata/fmriprepdata/withoutfreesurfer \
                 /out  participant  \
                 --despike  --head_radius 40 \
                 -w /scrth/wkdir_niftiW --smoothing 6  -f 100
