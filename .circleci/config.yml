@@ -206,6 +206,7 @@ jobs:
 
       - store_artifacts:
           path: /tmp/xcpabcd_niftiW
+
           
   xcpabcd_ciftiF:
     machine:
@@ -287,7 +288,7 @@ jobs:
       - store_artifacts:
           path: /tmp/xcpabcd_ciftiF
 
-    xcpabcd_niftiF:
+  xcpabcd_niftiF:
       machine:
         image: circleci/classic:201711-01
       working_directory: /tmp/data
@@ -343,8 +344,6 @@ jobs:
                 /out  participant  --nifti \
                 --despike  --head_radius 40 \
                 -w /scrth/wkdir_niftiF --smoothing 6 
-  
-
         - run:
             name: Checking outputs of xcpabcd_niftiF
             command: |
@@ -356,7 +355,6 @@ jobs:
                 echo "there is error "
                 exit 1
               fi
-
         - run:
             name: Clean working  directory
             when: always
@@ -368,7 +366,7 @@ jobs:
             path: /tmp/xcpabcd_niftiF
 
 
-    deploy_docker:
+  deploy_docker:
       machine:
         image: circleci/classic:201711-01
       working_directory: /tmp/src/xcp_abcd
