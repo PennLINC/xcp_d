@@ -432,7 +432,7 @@ workflows:
             tags:
               only: /.*/
 
-      - xcpabcd_cifti:
+      - xcpabcd_ciftiF:
           requires:
             - get_data
             - build
@@ -444,7 +444,19 @@ workflows:
             tags:
               only: /.*/
               
-      - xcpabcd_nifti:
+      - xcpabcd_niftiF:
+          requires:
+            - get_data
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - xcpabcd_niftiW:
           requires:
             - get_data
             - build
