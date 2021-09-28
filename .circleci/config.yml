@@ -381,9 +381,7 @@ xcpabcd_niftiF:
           path: /tmp/xcpabcd_niftiF
 
 
-
-  
-  deploy_docker:
+deploy_docker:
     machine:
       image: circleci/classic:201711-01
     working_directory: /tmp/src/xcp_abcd
