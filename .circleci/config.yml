@@ -383,6 +383,8 @@ jobs:
                 docker login -u $DOCKER_USER -p $DOCKER_PASS
                 docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:unstable
                 docker push pennlinc/xcp_abcd:unstable
+              fi
+              
               if [[ -n "$CIRCLE_TAG" ]]; then
                 docker push pennlinc/xcp_abcd:latest
                 docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:$CIRCLE_TAG
