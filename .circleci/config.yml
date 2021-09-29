@@ -38,7 +38,7 @@ jobs:
           command: |
             # Get version, update files.
             THISVERSION=$( python3 get_version.py )
-            if [[ ${THISVERSION:0:1} == "0" ]] ; then
+            if [[ ${THISVERSION:0:5} == "0" ]] ; then
               echo "WARNING: latest git tag could not be found"
               echo "Please, make sure you fetch all tags from upstream with"
               echo "the command ``git fetch --tags --verbose`` and push"
@@ -384,11 +384,11 @@ jobs:
                 docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:unstable
                 docker push pennlinc/xcp_abcd:unstable
               fi
-              
+
               if [[ -n "$CIRCLE_TAG" ]]; then
                 docker push pennlinc/xcp_abcd:latest
                 docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:$CIRCLE_TAG
-                docker push pennlinc/xcp_abcdp:$CIRCLE_TAG
+                docker push pennlinc/xcp_abcd:$CIRCLE_TAG
               fi
       
 
