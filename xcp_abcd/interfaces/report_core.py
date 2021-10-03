@@ -2,6 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 from pathlib import Path
 from niworkflows.reports.core import Report as _Report
+import glob as glob 
+from xcp_abcd.interfaces.resting_state import brainplot
 
 # this is from niworklfows, a patched will be submitted
 
@@ -69,6 +71,7 @@ def generate_reports(
         )
         for subject_label in subject_list
     ]
+
     fmriprep_dir = fmriprep_dir
     errno = sum(report_errors)
     if errno:
@@ -85,4 +88,27 @@ def generate_reports(
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )
+    else:
+                   
+        from .layout_builder import layout_builder 
+        for subject_label in subject_list:
+            brainplotfile  = glob.glob(output_dir/'xcp_abcd'/'sub-{}'.format(subject_label)+'/*_desc-brainplot_T1w.html')[0]
+            layout_builder(html_path=output_dir, subject_id=subject_label,
+                           session_id= _getsesid(brainplotfile))
+
     return errno
+
+
+
+def _getsesid(filename):
+    import os 
+    ses_id = None
+    filex = os.path.basename(filename)
+
+    file_id = filex.split('_')
+    for k in file_id:             
+        if 'ses' in k: 
+            ses_id = k.split('-')[1]
+            break 
+
+    return ses_id

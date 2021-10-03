@@ -176,14 +176,6 @@ def init_xcpabcd_wf(layout,
             node.config = deepcopy(single_subj_wf.config)
         xcpabcd_wf.add_nodes([single_subj_wf])
 
-        layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
-                                               task=task_id,bids_validate=False, 
-                                               template=brain_template)
-        
-        if not  os.path.isdir(single_subj_wf.config['execution']['crashdump_dir']):
-            session_id=_getsesid(extract_t1w_seg(subj_data)[0])
-            from ..interfaces import layout_builder
-            layout_builder(html_path=output_dir, subject_id=subject_id,session_id=session_id)
 
     return xcpabcd_wf
 
