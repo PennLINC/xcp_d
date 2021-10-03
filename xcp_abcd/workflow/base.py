@@ -50,7 +50,7 @@ def init_xcpabcd_wf(layout,
                    work_dir,
                    dummytime,
                    fd_thresh,
-                   name):
+                   name='xcpabcd_wf'):
     
     """
     This workflow builds and organizes  execution of  xcp_abcd  pipeline.
@@ -175,6 +175,15 @@ def init_xcpabcd_wf(layout,
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
         xcpabcd_wf.add_nodes([single_subj_wf])
+
+        layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
+                                               task=task_id,bids_validate=False, 
+                                               template=brain_template)
+        
+        if not single_subj_wf.config['execution']['crashdump_dir']:
+            session_id=_getsesid(extract_t1w_seg(subj_data)[0])
+            from ..interfaces import layout_builder
+            layout_builder(html_path=output_dir, subject_id=subject_id,session_id=session_id)
 
     return xcpabcd_wf
 
@@ -464,4 +473,17 @@ def getfmriprepv(fmriprepdir):
         fvers = str('Unknown vers')
     
     return fvers
+
+def _getsesid(filename):
+     ses_id = None
+     filex = os.path.basename(filename)
+
+     file_id = filex.split('_')
+     for k in file_id:
+          if 'ses' in k: 
+               ses_id = k.split('-')[1]
+               break 
+
+     return ses_id
+
         

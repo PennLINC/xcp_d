@@ -226,14 +226,6 @@ def init_anatomical_wf(
               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
               ])
-     from ..interfaces import layout_builder
-     
-     layout_builder_wf = pe.Node(layout_builder(html_path=output_dir, subject_id=subject_id),
-                 name = 'layout_builder_wf',run_without_submitting=False)
-     workflow.connect([ 
-          (inputnode,layout_builder_wf,[(('t1w',_getsesid),'session_id')]),
-       ])
-
      return workflow
 
  

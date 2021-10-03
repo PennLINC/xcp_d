@@ -87,5 +87,3 @@ def find_one_file(seek_dir, pattern):
         #print('info: Found %s files with pattern: %s' % (numfiles, glob_pattern))
     one_file = filelist[0]
     return one_file
-
-
