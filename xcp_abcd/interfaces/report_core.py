@@ -92,7 +92,7 @@ def generate_reports(
                    
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
-            brainplotfile  = glob.glob(output_dir/'xcp_abcd'/'sub-{}'.format(subject_label)+'/*_desc-brainplot_T1w.html')[0]
+            brainplotfile  = str(glob.glob( output_dir + '/xcp_abcd/' + 'sub-{}'.format(subject_label)+'/*_desc-brainplot_T1w.html')[0])
             layout_builder(html_path=output_dir, subject_id=subject_label,
                            session_id= _getsesid(brainplotfile))
 
