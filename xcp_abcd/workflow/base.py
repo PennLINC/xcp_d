@@ -180,7 +180,7 @@ def init_xcpabcd_wf(layout,
                                                task=task_id,bids_validate=False, 
                                                template=brain_template)
         
-        if not single_subj_wf.config['execution']['crashdump_dir']:
+        if not  os.path.isdir(single_subj_wf.config['execution']['crashdump_dir']):
             session_id=_getsesid(extract_t1w_seg(subj_data)[0])
             from ..interfaces import layout_builder
             layout_builder(html_path=output_dir, subject_id=subject_id,session_id=session_id)
