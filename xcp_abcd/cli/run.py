@@ -20,6 +20,7 @@ from multiprocessing import cpu_count
 from time import strftime
 warnings.filterwarnings("ignore")
 
+
 logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
 logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
 logger = logging.getLogger('cli')

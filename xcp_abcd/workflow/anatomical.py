@@ -226,6 +226,13 @@ def init_anatomical_wf(
               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
               ])
+     from ..interfaces import layout_builder
+     
+     layout_builder_wf = pe.Node(layout_builder(html_path=output_dir, subject_id=subject_id),
+                 name = 'layout_builder_wf',run_without_submitting=False)
+     workflow.connect([ 
+          (inputnode,layout_builder_wf,[(('t1w',_getsesid),'session_id')]),
+       ])
 
      return workflow
 
@@ -245,3 +252,15 @@ def _picwmcsf(file):
     outfile = tempfile.mkstemp(suffix = 'csf.nii.gz')[1]
     img.to_filename(outfile)
     return outfile
+
+def _getsesid(filename):
+     ses_id = None
+     filex = os.path.basename(filename)
+
+     file_id = filex.split('_')
+     for k in file_id:
+          if 'ses' in k: 
+               ses_id = k.split('-')[1]
+               break 
+
+     return ses_id
