@@ -5,7 +5,7 @@ IMAGE_INFO = {
           'title' : 'T1w BrainSprite'
       },
       't2w_brainplot' : { 
-          'pattern': '*desc-brainplot_T2w.html',
+          'pattern': '*desc-brainplot_T1w.html',
           'title' : 'T2w BrainSprite'
       },
     'task_pre_reg_gray': {
