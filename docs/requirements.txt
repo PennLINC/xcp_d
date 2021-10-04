@@ -5,3 +5,4 @@ svgutils
 sphinx-markdown-tables
 sphinx>=4.2.0
 sphinx_rtd_theme
+nipype
