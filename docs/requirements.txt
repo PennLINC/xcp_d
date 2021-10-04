@@ -8,4 +8,4 @@ nipype
 git+https://github.com/pennlinc/xcp_abcd.git
 doctest-ignore-unicode
 svgutils
-bsphinx
+nbsphinx
