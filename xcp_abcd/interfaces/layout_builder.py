@@ -424,9 +424,7 @@ class layout_builder(object):
     
         # Make sections for 'T1' and 'T2' images. Include pngs slider and
         # BrainSprite for each.
-        print(self.files_path)
        
-
         # Data for this subject/session: i.e., concatenated gray plots and atlas
         # images. (The atlas images will be added to the Registrations slider.)
         #anat_section = AnatSection(**kwargs)
