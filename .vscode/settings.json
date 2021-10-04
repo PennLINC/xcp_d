@@ -1,3 +1,6 @@
 {
-    "restructuredtext.confPath": ""
+    "restructuredtext.confPath": "",
+    "restructuredtext.preview.name": "sphinx",
+    "restructuredtext.preview.docutil.disabled": true
+    
 }
