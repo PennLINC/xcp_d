@@ -29,7 +29,7 @@ def main():
     
     opts = get_parser().parse_args()
 
-    allsubj_dir = os.path.abspath(opts.xcp_abcd)
+    allsubj_dir = os.path.abspath(opts.xcpabcd_dir)
     outputfile  = os.getcwd() + '/' + str(opts.output_prefix) + '_allsubjects_qc.csv'
     
     qclist=[]
