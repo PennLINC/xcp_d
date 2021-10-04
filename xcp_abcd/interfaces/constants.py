@@ -9,19 +9,19 @@ IMAGE_INFO = {
           'title' : 'T2w BrainSprite'
       },
     'task_pre_reg_gray': {
-        'pattern': '*%s*desc-precarpetplot_bold.svg',
+        'pattern': '*%s*desc-precarpetplot*bold.svg',
         'title': 'Pre-Regression'
         },
     'task_post_reg_gray': {
-        'pattern': '*%s*desc-postcarpetplot_bold.svg',
+        'pattern': '*%s*desc-postcarpetplot*bold.svg',
         'title': 'Post-Regression'
         },
     'bold_t1w_reg': {
-        'pattern': '*%s*desc-bbregister_bold.svg',
+        'pattern': '*%s*desc-bbregister*bold.svg',
         'title': 'Bold T1w registration'
         },
     'ref': {
-        'pattern': '*%s*desc-boldref_bold.svg',
+        'pattern': '*%s*desc-boldref*bold.svg',
         'title': 'Reference'
         }
     }
