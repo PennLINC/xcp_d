@@ -358,7 +358,7 @@ class layout_builder(object):
 
         use_path = os.path.join(self.files_path)
         if os.path.isdir(self.files_path):
-            print('\nProcessed tasks will be found in path:\n\t%s' % use_path)
+            print('\n All tasks completed')
     
         filex =  glob.glob(self.files_path + '/*bbregister_bold.svg')
 

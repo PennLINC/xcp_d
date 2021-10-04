@@ -93,9 +93,9 @@ def generate_reports(
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
             brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_abcd/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
-            print(brainplotfile)
             layout_builder(html_path=str(Path(output_dir))+'/xcp_abcd/', subject_id=subject_label,
                            session_id= _getsesid(brainplotfile))
+            print('xcp_abcd finished without errors')
 
     return errno
 
