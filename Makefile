@@ -7,7 +7,7 @@ help:
 	@echo "Premade recipes"
 	@echo
 	@echo "make docker-build [tag=TAG]"
-	@echo "\tBuilds a docker image from source. Defaults to 'aslprep' tag."
+	@echo "\tBuilds a docker image from source. Defaults to 'xcp_abcd' tag."
 
 
 docker-build:
