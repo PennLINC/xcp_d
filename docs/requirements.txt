@@ -1,7 +1,6 @@
 sphinx-argparse
 nbsphinx
 sphinx-markdown-tables
-git+https://github.com/pennlinc/xcp_abcd.git
 svgutils
 sphinx-markdown-tables
 sphinx>=4.2.0
