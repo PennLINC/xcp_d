@@ -5,7 +5,7 @@ svgutils
 sphinx>=4.2.0
 sphinx_rtd_theme
 nipype
-git+https://github.com/pennlinc/xcp_abcd.git
 doctest-ignore-unicode
 svgutils
 nbsphinx
+git+https://github.com/pennlinc/xcp_abcd.git
