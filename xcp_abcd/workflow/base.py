@@ -50,7 +50,7 @@ def init_xcpabcd_wf(layout,
                    work_dir,
                    dummytime,
                    fd_thresh,
-                   name):
+                   name='xcpabcd_wf'):
     
     """
     This workflow builds and organizes  execution of  xcp_abcd  pipeline.
@@ -175,6 +175,7 @@ def init_xcpabcd_wf(layout,
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
         xcpabcd_wf.add_nodes([single_subj_wf])
+
 
     return xcpabcd_wf
 
@@ -345,9 +346,9 @@ It is released under the [CC0]\
     anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,bids_dir=fmriprep_dir,
                                         subject_id=subject_id,output_dir=output_dir,
                                         t1w_to_mni=regfile[1],mni_to_t1w=regfile[0])
-
+    
     ## send t1w and t1seg to anatomical workflow
-
+    
     workflow.connect([ 
           (inputnode,anatomical_wf,[('t1w','inputnode.t1w'),('t1seg','inputnode.t1seg')]),
       ])
@@ -464,4 +465,17 @@ def getfmriprepv(fmriprepdir):
         fvers = str('Unknown vers')
     
     return fvers
+
+def _getsesid(filename):
+     ses_id = None
+     filex = os.path.basename(filename)
+
+     file_id = filex.split('_')
+     for k in file_id:
+          if 'ses' in k: 
+               ses_id = k.split('-')[1]
+               break 
+
+     return ses_id
+
         

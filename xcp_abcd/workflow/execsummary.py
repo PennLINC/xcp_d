@@ -79,7 +79,8 @@ def init_execsummary_wf(
     ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='postcarpetplot'),
          name='plot_svgxaf',run_without_submitting=True)
     
-    ds_bbregsister_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,in_file=bold_t1w_reg,datatype="figures",desc='bbregister'),
+    ds_bbregsister_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,in_file=bold_t1w_reg,
+        dismiss_entities=['desc'],datatype="figures",desc='bbregister'),
          name='bbregister',run_without_submitting=True)
              
 

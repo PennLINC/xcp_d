@@ -20,6 +20,7 @@ from multiprocessing import cpu_count
 from time import strftime
 warnings.filterwarnings("ignore")
 
+
 logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
 logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
 logger = logging.getLogger('cli')
@@ -500,7 +501,7 @@ def build_workflow(opts, retval):
                 pass
 
         citation_files['md'].write_text(boilerplate)
-        build_log.log(25, 'Works derived from this xcp execution should '
+    build_log.log(25, 'Works derived from this xcp execution should '
                       'include the following boilerplate:\n\n%s', boilerplate)
     return retval
 

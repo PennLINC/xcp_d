@@ -10,6 +10,7 @@ from .qc_plot import computeqcplot
 from .report import SubjectSummary, AboutSummary, FunctionalSummary
 from .report_core import generate_reports
 from .surfplotting import SurftoVolume,BrainPlotx,PlotSVGData,RegPlot,PlotImage
+from .layout_builder import layout_builder
 
 __all__ = [
     'regress',
@@ -36,5 +37,6 @@ __all__ = [
     'BrainPlotx',
     'PlotSVGData',
     'RegPlot',
-    'PlotImage'
+    'PlotImage',
+    'layout_builder'
    ]

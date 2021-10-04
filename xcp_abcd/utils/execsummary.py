@@ -9,8 +9,6 @@ from niworkflows.viz.utils import extract_svg,robust_set_limits,compose_view
 from svgutils.transform import fromstring
 
 
-
-
 def surf2vol(template,left_surf, right_surf, filename,scale=1):
     """
     template, t1w image in nii.gz or mgz from freesufer of other subject

@@ -226,7 +226,6 @@ def init_anatomical_wf(
               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
               ])
-
      return workflow
 
  
@@ -245,3 +244,15 @@ def _picwmcsf(file):
     outfile = tempfile.mkstemp(suffix = 'csf.nii.gz')[1]
     img.to_filename(outfile)
     return outfile
+
+def _getsesid(filename):
+     ses_id = None
+     filex = os.path.basename(filename)
+
+     file_id = filex.split('_')
+     for k in file_id:
+          if 'ses' in k: 
+               ses_id = k.split('-')[1]
+               break 
+
+     return ses_id
