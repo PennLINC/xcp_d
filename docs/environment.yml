@@ -9,8 +9,6 @@ dependencies:
 - matplotlib=2.0.0
 - traits=4.6
 - jinja2=2.8
-- sphinx<=2.2.0
-- sphinx_rtd_theme
 - mock
 - future
 - nibabel
@@ -21,7 +19,7 @@ dependencies:
 - python-dateutil
 - pydot>=1.2.3
 - cython
-- nipype>=1.1.1
+
 
 - pip:
     - sphinx-argparse
@@ -30,3 +28,11 @@ dependencies:
     - nitime
     - nilearn
     - sphinx-markdown-tables
+    - git+https://github.com/AleksandarPetrov/napoleon.git@0dc3f28a309ad602be5f44a9049785a1026451b3#egg=sphinxcontrib-napoleon
+    - sphinx-argparse
+    - nipype
+    - nbsphinx
+    - sphinx-markdown-tables
+    - git+https://github.com/pennlinc/xcp_abcd.git
+    - sphinx>=4.2.0
+    - sphinx_rtd_theme

@@ -1,6 +1,9 @@
 git+https://github.com/AleksandarPetrov/napoleon.git@0dc3f28a309ad602be5f44a9049785a1026451b3#egg=sphinxcontrib-napoleon
 sphinx-argparse
-nipype
 nbsphinx
 sphinx-markdown-tables
 git+https://github.com/pennlinc/xcp_abcd.git
+svgutils
+sphinx-markdown-tables
+sphinx>=4.2.0
+sphinx_rtd_theme
