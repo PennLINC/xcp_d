@@ -6,7 +6,6 @@
 .. _FSL: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/
 .. _ANTs: https://stnava.github.io/ANTs/
 .. _AFNI: https://afni.nimh.nih.gov/
-.. _GIFTI: https://www.nitrc.org/projects/gifti/
 .. _`Connectome Workbench`: https://www.humanconnectome.org/software/connectome-workbench.html
 .. _`HCP Pipelines`: https://humanconnectome.org/software/hcp-mr-pipelines/
 .. _`Docker Engine`: https://www.docker.com/products/container-runtime

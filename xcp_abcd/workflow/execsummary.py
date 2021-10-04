@@ -70,17 +70,17 @@ def init_execsummary_wf(
     plot_svgx_wf = pe.Node(PlotSVGData(tr=tr,rawdata=bold_file), name='plot_svgx_wf',mem_gb=0.2)
 
 
-    ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='boldref'),
+    ds_plotboldref_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,dismiss_entities=['den'],datatype="figures",desc='boldref'),
          name='plotboldref',run_without_submitting=True)
 
-    ds_plot_svgxbe_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='precarpetplot'),
+    ds_plot_svgxbe_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,dismiss_entities=['den'],datatype="figures",desc='precarpetplot'),
           name='plot_svgxbe',run_without_submitting=True)
 
-    ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,datatype="figures",desc='postcarpetplot'),
+    ds_plot_svgxaf_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,dismiss_entities=['den'],datatype="figures",desc='postcarpetplot'),
          name='plot_svgxaf',run_without_submitting=True)
     
     ds_bbregsister_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,in_file=bold_t1w_reg,
-        dismiss_entities=['desc'],datatype="figures",desc='bbregister'),
+        dismiss_entities=['den'],datatype="figures",desc='bbregister'),
          name='bbregister',run_without_submitting=True)
              
 
