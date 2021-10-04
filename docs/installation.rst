@@ -6,7 +6,7 @@ Installation
 
 There are two ways to get *xcp_abcd* installed:
 
-* within a `Manually Prepared Environment (Python 3.7+)`_, also known as
+* within a `Manually Prepared Environment (Python 3.8+)`_, also known as
    or
 * with container technologies (RECOMMENDED), such as :ref:`run_docker`
   or :ref:`run_singularity`.
@@ -86,7 +86,7 @@ Check your installation with the ``--version`` argument ::
 External Dependencies
 ---------------------
 
-*XCP_ABCD* is written using Python 3.7 (or above), and is based on
+*XCP_ABCD* is written using Python 3.8 (or above), and is based on
 nipype_.
 
 *XCP_ABCD* requires some other neuroimaging software tools that are
@@ -96,5 +96,5 @@ the ``*XCP_ABCD*`` package:
 - FSL_ (version 5.0.9 or higher)
 - ANTs_ (version 2.2.0 - or higher)
 - AFNI_ (version Debian-16.2.07)
-- `bids-validator <https://github.com/bids-standard/bids-validator>`_ (version 1.4.0)
+- `bids-validator <https://github.com/bids-standard/bids-validator>`_ (version 1.6.0)
 - `connectome-workbench <https://www.humanconnectome.org/software/connectome-workbench>`_ (version Debian-1.3.2)
