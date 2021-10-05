@@ -40,6 +40,7 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
                              24P: (6P + their derivative) and their square , \
                              27P: 24P + 2P + global signal \
                              36P: (9P + their derivative) and their square  ")
+   
     
 
 class _confoundOutputSpec(TraitedSpec):

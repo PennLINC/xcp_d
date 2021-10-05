@@ -2,6 +2,7 @@
 .. _BIDS: http://bids.neuroimaging.io
 .. _`BIDS Derivatives`: https://docs.google.com/document/d/17ebopupQxuRwp7U7TFvS6BH03ALJOgGHufxK8ToAvyI
 .. _Installation: installation.html
+.. _Task Regression taskregression.html
 .. _workflows: workflows.html
 .. _FSL: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/
 .. _ANTs: https://stnava.github.io/ANTs/
