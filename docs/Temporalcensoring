@@ -2,4 +2,27 @@
 censoring, 
 threshold 
 interpolation 
-contigious volume 
+contigious volume
+
+.. list-table:: bb
+        :widths: 10 10 
+        :header-rows: 1
+        * - Age Range
+          - Cutoff Range (Breaths per Minute)
+      * - < 1 year 
+        - 30 to  60
+      * - 1 to 2 years 
+        - 25 - 50
+      * -  2 - 6 years
+        -  20 - 35 
+      * - 6-12 years  
+        - 15 - 25 
+      * - 12 - 18 years
+        - 12 - 20 
+      * - 19 - 65 years
+        - 12 - 18 
+      * - 65 - 80 years
+        - 12 - 28 
+      * - > 80 years
+        - 10 - 30 
+     
