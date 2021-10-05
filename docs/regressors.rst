@@ -1,5 +1,0 @@
-
-Nuisance regressors
-
-
-custom regressors
