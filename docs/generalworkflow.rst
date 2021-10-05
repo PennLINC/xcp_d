@@ -161,10 +161,11 @@ Outputs
 processing results of a single session of a single subject.
 
 2. Visual QA (quality assessment) reports: one HTML per subject, per session (if applicable), that allows the user to conduct a thorough visual assessment 
-of processed data. This also includes QC measures.
-3. Processed BOLD  data: the residual BOLD for each subject and session, functional timeseries and connectvity matrices, and  resting-state derivatives. 
+of processed data. This also includes QC measures. 
+
+3. Processed BOLD data: the residual BOLD for each subject and session, functional timeseries and connectvity matrices, and  resting-state derivatives. 
    
-1. Anatomical data. The anatomical data( processed T1w processed and segmentation files ) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resamspled to MNI space
+4. Anatomical data. The anatomical data( processed T1w processed and segmentation files ) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resamspled to MNI space
 The surfaces (Gifti files) in subjects are also remsapled to standardard space (fsLR-32K). 
 
 See `Outputs`_ for details about xcp_abcd  outputs. 
