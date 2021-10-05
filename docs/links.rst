@@ -2,7 +2,7 @@
 .. _BIDS: http://bids.neuroimaging.io
 .. _`BIDS Derivatives`: https://docs.google.com/document/d/17ebopupQxuRwp7U7TFvS6BH03ALJOgGHufxK8ToAvyI
 .. _Installation: installation.html
-.. _Task Regression taskregression.html
+.. _Task Regression: taskregression.html
 .. _workflows: workflows.html
 .. _FSL: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/
 .. _ANTs: https://stnava.github.io/ANTs/
@@ -13,3 +13,5 @@
 .. _`Docker installation`: https://docs.docker.com/install/
 .. _`Docker Hub`: https://hub.docker.com/r/pennlinc/xcp_abcd/tags
 .. _Singularity: https://github.com/singularityware/singularity
+.. _`Ciric et. al. 2017`: https://pubmed.ncbi.nlm.nih.gov/28302591
+.. _`Fair et. al. 2020`: https://www.sciencedirect.com/science/article/pii/S1053811919309917
