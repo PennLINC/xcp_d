@@ -7,3 +7,4 @@ sphinx_rtd_theme
 nipype
 doctest-ignore-unicode
 svgutils
+git+https://github.com/pennlinc/xcp_abcd.git
