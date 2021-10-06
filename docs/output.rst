@@ -44,7 +44,8 @@ The  ``xcp_abcd`` outputs are written out in BIDS format and consist of three ma
          "RepetitionTime": 2.0,
          "compression": true,
          "dummy vols": 0,
-        "nuissance parameters": "27P" }
+        "nuissance parameters": "27P",
+         }
 
     b. Functional timeseries and connectivity matrices::
 
