@@ -38,7 +38,7 @@ The  ``xcp_abcd`` outputs are written out in BIDS format and consist of three ma
     
    The json/sidecar consist of paramters of the data and processing steps. 
 
-    .. code-block:: JSON
+    .. code-block:: json
      {
         "Freq Band": [ 0.009, 0.08],
          "RepetitionTime": 2.0,
@@ -66,6 +66,8 @@ The  ``xcp_abcd`` outputs are written out in BIDS format and consist of three ma
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-32k_hemi-L_desc-reho_bold.func.gii
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-32k_hemi-R_desc-reho_bold.func.gii
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-91k_desc-alff_bold.dtseries.nii
+    
+    d. 
 
        
 
