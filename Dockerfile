@@ -3,8 +3,11 @@ FROM ubuntu:xenial-20200706
 
 COPY docker/files/neurodebian.gpg /usr/local/etc/neurodebian.gpg
 
+# Prepare environment
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+                    apt-utils \
+                    wget \
                     curl \
                     bzip2 \
                     ca-certificates \
@@ -13,8 +16,11 @@ RUN apt-get update && \
                     autoconf \
                     libtool \
                     pkg-config \
+                    graphviz \
+                    pandoc \
+                    pandoc-citeproc \
                     git && \
-    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    curl -sSL https://deb.nodesource.com/setup_14.x | bash - && \
     apt-get install -y --no-install-recommends \
                     nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -37,6 +43,42 @@ RUN apt-get update && \
                     connectome-workbench=1.3.2-2~nd16.04+1 \
                     git-annex-standalone && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN curl -sSL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.1/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.1.tar.gz | tar zxv --no-same-owner -C /opt \
+    --exclude='freesurfer/diffusion' \
+    --exclude='freesurfer/docs' \
+    --exclude='freesurfer/fsfast' \
+    --exclude='freesurfer/lib/cuda' \
+    --exclude='freesurfer/lib/qt' \
+    --exclude='freesurfer/matlab' \
+    --exclude='freesurfer/mni/share/man' \
+    --exclude='freesurfer/subjects/fsaverage_sym' \
+    --exclude='freesurfer/subjects/fsaverage3' \
+    --exclude='freesurfer/subjects/fsaverage4' \
+    --exclude='freesurfer/subjects/cvs_avg35' \
+    --exclude='freesurfer/subjects/cvs_avg35_inMNI152' \
+    --exclude='freesurfer/subjects/bert' \
+    --exclude='freesurfer/subjects/lh.EC_average' \
+    --exclude='freesurfer/subjects/rh.EC_average' \
+    --exclude='freesurfer/subjects/sample-*.mgz' \
+    --exclude='freesurfer/subjects/V1_average' \
+    --exclude='freesurfer/trctrain'
+
+ENV FSF_OUTPUT_FORMAT="nii.gz" \
+    FREESURFER_HOME="/opt/freesurfer"
+
+ENV SUBJECTS_DIR="$FREESURFER_HOME/subjects" \
+    FUNCTIONALS_DIR="$FREESURFER_HOME/sessions" \
+    MNI_DIR="$FREESURFER_HOME/mni" \
+    LOCAL_DIR="$FREESURFER_HOME/local" \
+    MINC_BIN_DIR="$FREESURFER_HOME/mni/bin" \
+    MINC_LIB_DIR="$FREESURFER_HOME/mni/lib" \
+    MNI_DATAPATH="$FREESURFER_HOME/mni/data"
+    
+ENV PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5" \
+    MNI_PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5" \
+    PATH="$FREESURFER_HOME/bin:$FSFAST_HOME/bin:$FREESURFER_HOME/tktools:$MINC_BIN_DIR:$PATH"
+
 
 ENV FSLDIR="/usr/share/fsl/5.0" \
     FSLOUTPUTTYPE="NIFTI_GZ" \
@@ -64,45 +106,42 @@ RUN apt-get install -y nodejs
 RUN npm install -g svgo
 
 # Installing bids-validator
-RUN npm install -g bids-validator@1.6.2
+RUN npm install -g bids-validator@1.8.0
 
 # Installing and setting up miniconda
-RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh && \
-    bash Miniconda3-4.5.11-Linux-x86_64.sh -b -p /usr/local/miniconda && \
-    rm Miniconda3-4.5.11-Linux-x86_64.sh
+RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh && \
+    bash Miniconda3-py38_4.9.2-Linux-x86_64.sh -b -p /usr/local/miniconda && \
+    rm Miniconda3-py38_4.9.2-Linux-x86_64.sh
 
 # Set CPATH for packages relying on compiled libs (e.g. indexed_gzip)
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
-    CPATH="/usr/local/miniconda/include/:$CPATH" \
+    CPATH="/usr/local/miniconda/include:$CPATH" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     PYTHONNOUSERSITE=1
 
 # Installing precomputed python packages
-RUN conda install -y python=3.7.4 \
-                     pip=20.1.1 \
-                     mkl=2018.0.3 \
-                     mkl-service \
-                     numpy=1.18.5 \
-                     scipy=1.5.0 \
-                     scikit-learn=0.23.1 \
-                     pandas=1.0.5 \
-                     libxml2=2.9.8 \
-                     libxslt=1.1.32 \
-                     pandoc \
-                     matplotlib \
-                     graphviz=2.40.1 \
-                     traits=4.6.0 \
-                     zlib; sync && \
+RUN conda install -y python=3.8 \
+                     pip=21.0 \
+                     mkl=2021.2 \
+                     mkl-service=2.3 \
+                     numpy=1.20 \
+                     scipy=1.6 \
+                     scikit-learn=0.24 \
+                     matplotlib=3.3 \
+                     pandas=1.2 \
+                     libxslt=1.1 \
+                     traits=6.2 \
+                     zstd=1.4; sync && \
     chmod -R a+rX /usr/local/miniconda; sync && \
     chmod +x /usr/local/miniconda/bin/*; sync && \
-    conda build purge-all; sync && \
-    conda clean -tipsy && sync
+    conda clean -y --all && sync && \
+    rm -rf ~/.conda ~/.cache/pip/*; sync
 
 # Unless otherwise specified each process should only use one thread - nipype
 # will handle parallelization
 ENV MKL_NUM_THREADS=1 \
-    OMP_NUM_THREADS=1
+    OMP_NUM_THREADS=1 
 
 # Create a shared $HOME directory
 
@@ -125,9 +164,15 @@ RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs 
     rm xcp_abcd-setup.cfg && \
     find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
-
+# add pandoc
+RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/releases/download/2.2.2.1/pandoc-2.2.2.1-1-amd64.deb" && \
+    dpkg -i pandoc-2.2.2.1-1-amd64.deb && \
+    rm pandoc-2.2.2.1-1-amd64.deb
 # Installing xcp_abcd
 COPY . /src/xcp_abcd
+
+RUN  wget -O ${FREESURFER_HOME}/license.txt  https://upenn.box.com/shared/static/ruu7aigti2wzy756a627ej47iw7kqzel.txt  
+
 ARG VERSION=0.0.1
 # Force static versioning within container
 RUN echo "${VERSION}" > /src/xcp_abcd/xcp_abcd/VERSION && \

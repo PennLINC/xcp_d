@@ -17,7 +17,6 @@ LOGGER = logging.getLogger('nipype.interface')
 import os 
 import nibabel as nb 
 from brainsprite import viewer_substitute
-import tempfile
 from pkg_resources import resource_filename as pkgrf
 import numpy as np
 
@@ -57,6 +56,7 @@ class surfaceReho(SimpleInterface):
 
         # get mesh adjacency matrix
         mesh_matrix = mesh_adjacency(self.inputs.surf_hemi)
+
         # compute reho
         reho_surf = compute_2d_reho(datat=data_matrix, adjacency_matrix=mesh_matrix)
         
@@ -159,8 +159,9 @@ class brainplot(SimpleInterface):
 
     def _run_interface(self, runtime):
         
-        # convert nifti to zscore
-        tempnifti = tempfile.mkdtemp() + '/zscore.nii.gz'
+         #convert nifti to zscore
+
+        tempnifti = os.path.split(os.path.abspath(self.inputs.in_file))[0] + '/zscore.nii.gz'
         
         tempnifti = zscore_nifti(img=self.inputs.in_file,mask=self.inputs.mask_file,
                     outputname=tempnifti)

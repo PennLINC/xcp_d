@@ -4,7 +4,7 @@
 
 from pathlib import Path
 from collections import defaultdict
-import json
+import fnmatch,os
 import re
 import warnings
 from bids import BIDSLayout
@@ -28,7 +28,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.io import add_traits
 from templateflow.api import templates as _get_template_list
-from niworkflows.utils.bids import _init_layout, relative_to_root
+from niworkflows.utils.bids import relative_to_root
 from pkg_resources import resource_filename as _pkgres
 from niworkflows.utils.images import overwrite_header
 from niworkflows.utils.misc import splitext as _splitext, _copy_any
@@ -154,7 +154,7 @@ def collect_data(
     bids_dir,
     participant_label,
     task=None,
-    template='MNI152NLin2009cAsym',
+    template=None,
     bids_validate=False,
     bids_filters=None,
 ):
@@ -164,6 +164,12 @@ def collect_data(
     queries = {
         'regfile': {'datatype': 'anat','suffix':'xfm'},
         'boldfile': {'datatype':'func','suffix': 'bold'},
+        't1w': {'datatype':'anat','suffix':'T1w'},
+        'seg': {'datatype':'anat','suffix':'dseg'},
+        'pial': { 'datatype': 'anat','suffix':'pial'},
+        'wm': {'datatype': 'anat','suffix':'smoothwm'},
+        'midthickness':{'datatype': 'anat','suffix':'midthickness'},
+        'inflated':{'datatype': 'anat','suffix':'inflated'}
     }
 
     bids_filters = bids_filters or {}
@@ -179,22 +185,22 @@ def collect_data(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz","dtseries.nii","h5"],
+                extension=["nii", "nii.gz","dtseries.nii","h5",'gii'],
                 **query,
             )
         )
         for dtype, query in queries.items()
     }
     
-    reg_file = select_registrationfile(subj_data,template=template)
+    #reg_file = select_registrationfile(subj_data,template=template)
     
-    bold_file= select_cifti_bold(subj_data)
+    #bold_file= select_cifti_bold(subj_data)
 
-    return layout, bold_file, reg_file
+    return layout, subj_data
 
 
 def select_registrationfile(subj_data,
-                            template):
+                            template='MNI152NLin2009cAsym'):
     
     regfile = subj_data['regfile']
 
@@ -220,7 +226,24 @@ def select_cifti_bold(subj_data):
         if 'bold.dtseries.nii' in  j:
             cifti_file.append(j)
     return bold_file, cifti_file
-    
+
+def extract_t1w_seg(subj_data):
+    all_t1w = subj_data['t1w'] 
+    for i in all_t1w:
+        ii = os.path.basename(i)
+        if  not fnmatch.fnmatch(ii,'*_space-*'):
+            t1w = i
+     
+     
+    all_seg = subj_data['seg']
+    for j in all_seg:
+        ii=os.path.basename(j)
+        if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
+            t1seg  = j
+               
+    return t1w,t1seg
+     
+
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     base_directory = traits.Directory(

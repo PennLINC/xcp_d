@@ -1,0 +1,100 @@
+HIP-head-m-rh
+1 0 0 255 255
+HIP-head-l-rh
+2 0 0 255 255
+HIP-body-rh
+3 0 0 255 255
+HIP-tail-rh
+4 0 0 255 255
+THA-VPm-rh
+5 0 0 255 255
+THA-VPl-rh
+6 0 0 255 255
+THA-VAi-rh
+7 0 0 255 255
+THA-VAs-rh
+8 0 0 255 255
+THA-DAm-rh
+9 0 0 255 255
+THA-DAl-rh
+10 0 0 255 255
+PUT-VA-rh
+11 0 0 255 255
+PUT-DA-rh
+12 0 0 255 255
+PUT-VP-rh
+13 0 0 255 255
+PUT-DP-rh
+14 0 0 255 255
+CAU-VA-rh
+15 0 0 255 255
+CAU-DA-rh
+16 0 0 255 255
+CAU-body-rh
+17 0 0 255 255
+CAU-tail-rh
+18 0 0 255 255
+lAMY-rh
+19 0 0 255 255
+mAMY-rh
+20 0 0 255 255
+THA-DP-rh
+21 0 0 255 255
+NAc-shell-rh
+22 0 0 255 255
+NAc-core-rh
+23 0 0 255 255
+pGP-rh
+24 0 0 255 255
+aGP-rh
+25 0 0 255 255
+HIP-head-m-lh
+26 0 0 255 255
+HIP-head-l-l
+27 0 0 255 255
+HIP-body-l
+28 0 0 255 255
+HIP-tail-lh
+29 0 0 255 255
+THA-VPm-lh
+30 0 0 255 255
+THA-VPl-lh
+31 0 0 255 255
+THA-VAi-lh
+32 0 0 255 255
+THA-VAs-lh
+33 0 0 255 255
+THA-DAm-lh
+34 0 0 255 255
+THA-DAl-lh
+35 0 0 255 255
+PUT-VA-lh
+36 0 0 255 255
+PUT-DA-l
+37 0 0 255 255
+PUT-VP-lh
+38 0 0 255 255
+PUT-DP-lh
+39 0 0 255 255
+CAU-VA-lh
+40 0 0 255 255
+CAU-DA-lh
+41 0 0 255 255
+CAU-body-lh
+42 0 0 255 255
+CAU-tail-lh
+43 0 0 255 255
+lAMY-lh
+44 0 0 255 255
+mAMY-lh
+45 0 0 255 255
+THA-DP-lh
+46 0 0 255 255
+NAc-shell-lh
+47 0 0 255 255
+NAc-core-lh
+48 0 0 255 255
+pGP-lh
+49 0 0 255 255
+aGP-lh
+50 0 0 255 255

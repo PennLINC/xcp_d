@@ -10,7 +10,7 @@ import numpy as np
 from nipype.pipeline import engine as pe
 from ..interfaces import (computealff, surfaceReho,brainplot)
 from nipype.interfaces import utility as niu
-from ..utils import CiftiSeparateMetric
+from ..utils import CiftiSeparateMetric,fwhm2sigma
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
 from templateflow.api import get as get_template
@@ -82,11 +82,10 @@ def init_compute_alff_wf(
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """ \
-The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed 
-by transforming  the processed BOLD timeseries  to the frequency domain. 
-The power spectral of was computed within freqeuncy band {highpass} - {lowpass} 
-Hz and the averaged square root of power spectral were obtained  at each voxel as ALFF. 
+    workflow.__desc__ = """  \
+The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming  the processed BOLD timeseries  to the frequency domain. 
+The power spectrum was computed within the  {highpass}-{lowpass} Hz frequency band and the mean square root of the power spectrum was 
+calculated at each voxel to yield voxel-wise ALFF measures.
 """ .format(highpass=highpass,lowpass=lowpass)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -115,8 +114,8 @@ Hz and the averaged square root of power spectral were obtained  at each voxel a
     if smoothing:
         if not cifti:
             workflow.__desc__ = workflow.__desc__ + """ \
-The processed bold was smoothed with FSL and kernel size of {kernelsize} mm. 
-"""         .format(kernelsize=str(smoothing))
+The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM). 
+        """.format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
                    name="ciftismoothing", mem_gb=mem_gb )
             workflow.connect([
@@ -126,9 +125,8 @@ The processed bold was smoothed with FSL and kernel size of {kernelsize} mm.
 
         else:
             workflow.__desc__ = workflow.__desc__ + """ \
-The ALL  was smoothed with workbench and
-kernel size of {kernelsize} mm. 
-"""         .format(kernelsize=str(smoothing))
+The ALFF maps were smoothed with the Connectome Workbench using a gaussian kernel size of {kernelsize} mm (FWHM). 
+        """.format(kernelsize=str(smoothing))
             sigma_lx = fwhm2sigma(smoothing)
             lh_midthickness = str(get_template("fsLR",hemi='L',suffix='sphere',density='32k')[0])
             rh_midthickness = str(get_template("fsLR",hemi='R',suffix='sphere',density='32k')[0])
@@ -183,14 +181,12 @@ def init_surface_reho_wf(
 
 
     workflow = Workflow(name=name)
-    workflow.__desc__ = """ \
-The left and right hemispheres were extacted from the processed bold with the workbench. 
-For each hemisphere, regional homogeneity (ReHo) was computed with surface-based 
-*2dReHo* [@surface_reho] . For a given vertex on the surface, the nearest-neighbor 
-vertices were identified and computed Kendall's coefficient of concordance (KCC) as reho. 
-""" 
+    workflow.__desc__ = """ 
 
-    
+For each hemisphere, regional homogeneity (ReHo) was computed using surface-based 
+*2dReHo* [@surface_reho]. Specifically, for each vertex on the surface, 
+the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighbor vertices to yield ReHo. 
+"""     
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['clean_bold']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
@@ -255,9 +251,8 @@ def init_3d_reho_wf(
     """
 
     workflow = Workflow(name=name)
-    workflow.__desc__ = """ \
-The regional homogeneity (ReHo) for the processed bold was computed with 
-AFNI *3dReHo* [@afni] with vertices neighborhood. 
+    workflow.__desc__ = """ 
+Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI [@afni]. 
 """ 
     
     inputnode = pe.Node(niu.IdentityInterface(
@@ -278,9 +273,5 @@ AFNI *3dReHo* [@afni] with vertices neighborhood.
         ])
 
     return workflow
-
-
-def fwhm2sigma(fwhm):
-    return fwhm / np.sqrt(8 * np.log(2))
 
 

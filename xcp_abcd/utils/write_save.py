@@ -39,7 +39,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
       mask : mask is not needed
 
     '''
-    basedir=tempfile.mkdtemp()
+    basedir = os.path.split(os.path.abspath(filename))[0]
     # write cifti series
     if template.endswith('.dtseries.nii'):
         from nibabel.cifti2 import Cifti2Image
@@ -49,11 +49,11 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
                     file_map=template_file.file_map,nifti_header=template_file.nifti_header)
         elif data_matrix.shape[1] != template_file.shape[0]:
             fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
-            run_shell(['wb_command -cifti-convert -to-nifti ',template,fake_cifti1])
+            run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ',template,fake_cifti1])
             fake_cifti0 = str(basedir+ '/edited_cifti_nifti.nii.gz')
             fake_cifti0 = edit_ciftinifti(fake_cifti1,fake_cifti0,data_matrix)
             orig_cifti0 = str(basedir+ '/edited_nifti2cifti.dtseries.nii')
-            run_shell(['wb_command  -cifti-convert -from-nifti  ',fake_cifti0,template, 
+            run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',fake_cifti0,template, 
                                    orig_cifti0,'-reset-timepoints',str(tr),str(0)  ])
             template_file2 = nb.load(orig_cifti0)
             dataimg = Cifti2Image(dataobj=data_matrix.T,header=template_file2.header,
@@ -73,12 +73,8 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
         else:
             dataz = np.zeros([mask_data.shape[0],mask_data.shape[1],
                                      mask_data.shape[2],data_matrix.shape[1]])
-        # this need rewriteen in short format
-            for i in range(data_matrix.shape[1]):
-                tcbfx = np.zeros(mask_data.shape) 
-                tcbfx[mask_data==1] = data_matrix[:,i]
-                dataz[:,:,:,i] = tcbfx
-        
+            dataz[mask_data==1,:] = data_matrix
+  
         dataimg = nb.Nifti1Image(dataobj=dataz, affine=template_file.affine, 
                  header=template_file.header)
     
@@ -161,8 +157,8 @@ def despikedatacifti(cifti,tr,basedir):
     fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
     fake_cifti1_depike = str(basedir+'/fake_niftix_depike.nii.gz')
     cifti_despike = str(basedir+ '/despike_nifti2cifti.dtseries.nii')
-    run_shell(['wb_command -cifti-convert -to-nifti ',cifti,fake_cifti1])
-    run_shell(['3dDespike -prefix',fake_cifti1_depike,fake_cifti1])
-    run_shell(['wb_command  -cifti-convert -from-nifti  ',fake_cifti1_depike,cifti, 
+    run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ',cifti,fake_cifti1])
+    run_shell(['3dDespike -nomask -NEW -prefix',fake_cifti1_depike,fake_cifti1])
+    run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',fake_cifti1_depike,cifti, 
                                    cifti_despike,'-reset-timepoints',str(tr),str(0)])
     return cifti_despike

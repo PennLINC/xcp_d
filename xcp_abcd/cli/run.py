@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""xcp_abcd postprocessing workflow."""
+
+"""
+xcp_abcd preprocessing workflow
+=====
+"""
 
 import os
 import re
@@ -10,15 +14,12 @@ import sys
 import gc
 import uuid
 import warnings
-import json
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
-from nipype import logging as nlogging, config as ncfg
 from multiprocessing import cpu_count
 from time import strftime
-import warnings
-from ..utils import sentry_setup
 warnings.filterwarnings("ignore")
+
 
 logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
 logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
@@ -39,13 +40,16 @@ def check_deps(workflow):
 
 
 def get_parser():
-    """Build parser object."""
+    """Build parser object"""
+    
     from packaging.version import Version
     from ..__about__ import __version__
     from .version import check_latest, is_flagged
 
     verstr = 'xcp_abcd v{}'.format(__version__)
+    currentv = Version(__version__)
 
+    is_release = not any((currentv.is_devrelease, currentv.is_prerelease, currentv.is_postrelease))
 
     parser = ArgumentParser(description='xcp_abcd postprocessing workflow of fmriprep outputs',
                             formatter_class=ArgumentDefaultsHelpFormatter)
@@ -79,7 +83,7 @@ def get_parser():
                          help='maximum number of threads across all processes')
     g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=0,
                          help='maximum number of threads per-process')
-    g_perfm.add_argument('--mem_mb', '--mem-mb', action='store', default=0, type=int,
+    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', default=0, type=int,
                          help='upper bound memory limit for xcp_abcd processes')
     g_perfm.add_argument('--low-mem', action='store_true',
                          help='attempt to reduce memory usage (will increase disk usage '
@@ -94,7 +98,7 @@ def get_parser():
         '--brain-template', action='store', default='MNI152NLin2009cAsym',
         help=" template to be selected from anat to be processed and/or  for normalization")
 
-    g_param.add_argument('--smoothing', nargs='?', const=5, default=False,
+    g_param.add_argument('--smoothing', default=6, action='store',
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
     g_param.add_argument('--despike', action='store_true', default=False,
@@ -102,7 +106,7 @@ def get_parser():
     g_param.add_argument('-p','--nuissance-regressors', required=False, default='27P', 
                              type=str, help='nuissance parameters to be selected, other options include 24P and 36P \
                                            acompcor and tcompcor, see Ciric etal 2007')
-    g_param.add_argument('-c','--custom_conf', required=False,
+    g_param.add_argument('-c','--custom_conf', required=False,default=None,
                              type=Path, help='custom confound to be added to nuissance regressors')
     g_param.add_argument('-d','--dummytime',default=0,
                              type=float, help='first volume in seconds to be removed for postprocessing') 
@@ -145,7 +149,7 @@ def get_parser():
  
 
     g_other = parser.add_argument_group('Other options')
-    g_other.add_argument('-w', '--work-dir', action='store', type=Path, default=Path('work'),
+    g_other.add_argument('-w', '--work_dir', action='store', type=Path, default=Path('work'),
                          help='path where intermediate results should be stored')
     g_other.add_argument('--clean-workdir', action='store_true', default=False,
                          help='Clears working directory of contents. Use of this flag is not'
@@ -153,6 +157,9 @@ def get_parser():
     g_other.add_argument(
         '--resource-monitor', action='store_true', default=False,
         help='enable Nipype\'s resource monitoring to keep track of memory and CPU usage')
+
+    g_other.add_argument('--notrack', action='store_true', default=False,
+                         help='Opt-out of sending tracking information')
 
     g_other.add_argument('--sloppy', action='store_true', default=False,
                          help='Use low-quality tools for speed - TESTING ONLY')
@@ -171,15 +178,17 @@ def main():
     opts = get_parser().parse_args()
 
     exec_env = os.name
-    import sentry_sdk
-    from ..utils.sentry import sentry_setup
-    sentry_setup(opts, exec_env)
+
+    sentry_sdk = None
+    if not opts.notrack:
+        import sentry_sdk
+        from ..utils.sentry import sentry_setup
+        sentry_setup(opts, exec_env)
 
     # Retrieve logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     # Set logging
     logger.setLevel(log_level)
-    logger.addHandler(logging.StreamHandler())
     nlogging.getLogger('nipype.workflow').setLevel(log_level)
     nlogging.getLogger('nipype.interface').setLevel(log_level)
     nlogging.getLogger('nipype.utils').setLevel(log_level)
@@ -192,15 +201,14 @@ def main():
         p.join()
 
         retcode = p.exitcode or retval.get('return_code', 0)
-
-        #fmriprep_dir = Path(retval.get('fmriprep_dir'))
+        
+        work_dir = Path(retval.get('work_dir'))
+        fmriprep_dir = Path(retval.get('fmriprep_dir'))
         output_dir = Path(retval.get('output_dir'))
-        #work_dir = Path(retval.get('work_dir'))
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
         run_uuid = retval.get('run_uuid', None)
         xcpabcd_wf = retval.get('workflow', None)
-       
 
 
     retcode = retcode or int(xcpabcd_wf is None)
@@ -217,14 +225,12 @@ def main():
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
-    from ..utils.sentry import start_ping
-    start_ping(run_uuid, len(subject_list))
-
-    errno = 1 
+    errno = 1  # Default is error exit unless otherwise set
     try:
         xcpabcd_wf.run(**plugin_settings)
     except Exception as e:
-        from ..utils.sentry import process_crashfile
+        if not opts.notrack:
+            from ..utils.sentry import process_crashfile
         crashfolders = [output_dir / 'xcp_abcd' / 'sub-{}'.format(s) / 'log' / run_uuid
                             for s in subject_list]
         for crashfolder in crashfolders:
@@ -237,47 +243,70 @@ def main():
         raise
     else:
         errno = 0
-        logger.log(25, 'xcp_abcd finished without errors!')
-        sentry_sdk.capture_message(' xcp_abcd finished without errors',
+        logger.log(25, 'xcp_abcd finished without errors')
+        if not opts.notrack:
+            sentry_sdk.capture_message('xcp_abcd finished without errors',
                                        level='info')
     finally:
         from ..interfaces import generate_reports
         from subprocess import check_call, CalledProcessError, TimeoutExpired
         from pkg_resources import resource_filename as pkgrf
         from shutil import copyfile
-        
+
         citation_files = {
         ext: output_dir / 'xcp_abcd' / 'logs' / ('CITATION.%s' % ext)
             for ext in ('bib', 'tex', 'md', 'html')
         }
 
-        cmd = ['pandoc', '-s', '--bibliography',
-        pkgrf('xcp_abcd', 'data/boilerplate.bib'),
-                   '--citeproc',
+        if citation_files['md'].exists():
+            # Generate HTML file resolving citations
+            cmd = ['pandoc', '-s', '--bibliography',
+            pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                   '--filter',
+                   'pandoc-citeproc',
                    '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
                    str(citation_files['md']),
                    '-o', str(citation_files['html'])]
-        logger.info('Generating an HTML version of the citation boilerplate...')
-        try:
-             check_call(cmd, timeout=10)
-        except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-            logger.warning('Could not generate CITATION.html file:\n%s',
+            logger.info('Generating an HTML version of the citation boilerplate...')
+            try:
+                check_call(cmd, timeout=10)
+            except (FileNotFoundError, CalledProcessError, TimeoutExpired):
+                logger.warning('Could not generate CITATION.html file:\n%s',
                                ' '.join(cmd))
-        else:
-            copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+
+            # Generate LaTex file resolving citations
+            cmd = ['pandoc', '-s', '--bibliography',
+                   pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                    '--natbib',str(citation_files['md']),
+                   '-o', str(citation_files['tex'])]
+            logger.info('Generating a LaTeX version of the citation boilerplate...')
+            try:
+                check_call(cmd, timeout=10)
+            except (FileNotFoundError, CalledProcessError, TimeoutExpired):
+                logger.warning('Could not generate CITATION.tex file:\n%s',
+                               ' '.join(cmd))
+            else:
+                copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
                          citation_files['bib'])
+        else:
+            logger.warning('xcp_abcd could not find the markdown version of '
+                           'the citation boilerplate (%s). HTML and LaTeX versions'
+                           ' of it will not be available', citation_files['md'])
+
         # Generate reports phase
-    failed_reports = generate_reports(
-            subject_list=subject_list, output_dir=output_dir, run_uuid=run_uuid,
+        failed_reports = generate_reports(
+            subject_list=subject_list,fmriprep_dir=fmriprep_dir, work_dir=work_dir,
+               output_dir=output_dir, run_uuid=run_uuid,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
-    
-    if failed_reports:
-        sentry_sdk.capture_message(
+
+        if failed_reports and not opts.notrack:
+            sentry_sdk.capture_message(
                 'Report generation failed for %d subjects' % failed_reports,
                 level='error')
-    sys.exit(int((errno + failed_reports) > 0))
-    
+        sys.exit(int((errno + failed_reports) > 0))
+
+
 def build_workflow(opts, retval):
     """
     Create the Nipype Workflow that supports the whole execution
@@ -292,10 +321,10 @@ def build_workflow(opts, retval):
     """
     from bids import BIDSLayout
     from ..utils  import collect_participants
+    from nipype import logging as nlogging, config as ncfg
     from ..__about__ import __version__
     from ..workflow.base import init_xcpabcd_wf 
-
-    build_log = logging.getLogger('nipype.workflow')
+    build_log = nlogging.getLogger('nipype.workflow')
 
     INIT_MSG = """
     Running xcp_abcd version {version}:
@@ -308,34 +337,40 @@ def build_workflow(opts, retval):
     fmriprep_dir = opts.fmriprep_dir.resolve()
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
-    
-   
 
+    if opts.clean_workdir:
+        from niworkflows.utils.misc import clean_directory
+        build_log.info("Clearing previous xcp_abcd working directory: %s" % work_dir)
+        if not clean_directory(work_dir):
+            build_log.warning("Could not clear all contents of working directory: %s" % work_dir)
+    
     retval['return_code'] = 1
     retval['workflow'] = None
-    retval['bids_dir'] = str(fmriprep_dir)
+    retval['fmriprep_dir'] = str(fmriprep_dir)
     retval['output_dir'] = str(output_dir)
     retval['work_dir'] = str(work_dir)
 
     if output_dir == fmriprep_dir:
         build_log.error(
-            'The selected output folder is the same as the fmriprep directory. '
-            'Please modify the output path ')
+            'The selected output folder is the same as the input fmriprep output. '
+            'Please modify the output path (suggestion: %s).',
+             fmriprep_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
         retval['return_code'] = 1
         return retval
 
-    if fmriprep_dir in work_dir.parents:
+    if  fmriprep_dir in work_dir.parents:
         build_log.error(
             'The selected working directory is a subdirectory of fmriprep directory. '
             'Please modify the output path.')
         retval['return_code'] = 1
         return retval
 
+
     # Set up some instrumental utilities
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
 
-    # First check that bids_dir looks like a BIDS folder
+    # First check that fmriprep_dir looks like a BIDS folder
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
@@ -357,7 +392,7 @@ def build_workflow(opts, retval):
             }
         }
 
-
+   
     nthreads = plugin_settings['plugin_args'].get('n_procs')
     # Permit overriding plugin config with specific CLI options
     if nthreads is None or opts.nthreads is not None:
@@ -366,8 +401,8 @@ def build_workflow(opts, retval):
             nthreads = cpu_count()
         plugin_settings['plugin_args']['n_procs'] = nthreads
 
-    if opts.mem_mb:
-        plugin_settings['plugin_args']['memory_gb'] = opts.mem_mb / 1024
+    if opts.mem_gb:
+        plugin_settings['plugin_args']['memory_gb'] = opts.mem_gb
 
     omp_nthreads = opts.omp_nthreads
     if omp_nthreads == 0:
@@ -406,6 +441,9 @@ def build_workflow(opts, retval):
 
     if opts.resource_monitor:
         ncfg.enable_resource_monitor()
+    
+    
+
 
     # Build main workflow
     build_log.log(25, INIT_MSG(
@@ -414,7 +452,7 @@ def build_workflow(opts, retval):
         subject_list=subject_list,
         uuid=run_uuid)
     )
-   
+
     retval['workflow'] = init_xcpabcd_wf (
               layout=layout,
               omp_nthreads=omp_nthreads,
@@ -446,7 +484,6 @@ def build_workflow(opts, retval):
     retval['return_code'] = 0
 
     logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'
-
     boilerplate = retval['workflow'].visit_desc()
 
     if boilerplate:
@@ -454,6 +491,9 @@ def build_workflow(opts, retval):
             ext: logs_path / ('CITATION.%s' % ext)
             for ext in ('bib', 'tex', 'md', 'html')
         }
+        # To please git-annex users and also to guarantee consistency
+        # among different renderings of the same file, first remove any
+        # existing one
         for citation_file in citation_files.values():
             try:
                 citation_file.unlink()
@@ -461,8 +501,9 @@ def build_workflow(opts, retval):
                 pass
 
         citation_files['md'].write_text(boilerplate)
+    build_log.log(25, 'Works derived from this xcp execution should '
+                      'include the following boilerplate:\n\n%s', boilerplate)
     return retval
-
 
 if __name__ == '__main__':
     raise RuntimeError("xcp_abcd/cli/run.py should not be run directly;\n"

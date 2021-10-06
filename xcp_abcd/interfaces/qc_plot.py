@@ -18,9 +18,10 @@ from nipype.interfaces.base import (
 from ..utils import(read_ndata, write_ndata, compute_FD,compute_dvars)
 from ..utils import plot_svg
 import pandas as pd
-import tempfile
 from niworkflows.viz.plots import fMRIPlot
-LOGGER = logging.getLogger('nipype.interface') 
+from ..utils import regisQ
+LOGGER = logging.getLogger('nipype.interface')
+
 
 
 class _qcInputSpec(BaseInterfaceInputSpec):
@@ -30,9 +31,15 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     cleaned_file = File(exists=True,mandatory=True, desc=" residual and filter file")
     tmask = File(exists=False,mandatory=False, desc="temporal mask")
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
-    TR= traits.Float(exit=True,mandatory=True,desc="TR")
+    TR = traits.Float(exit=True,mandatory=True,desc="TR")
     head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head raidus for to convert rotxyz to arc length \
                                                for baby, 40m is recommended")
+    bold2T1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    bold2temp_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    template_mask =  File(exists=False,mandatory=False, desc="template mask")
+    t1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    
+    
 class _qcOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True,
                                   desc="qc file in tsv")
@@ -101,11 +108,11 @@ class computeqcplot(SimpleInterface):
         datax = read_ndata(datafile=self.inputs.bold_file,
                                   maskfile=self.inputs.mask_file)[:,num_vold:]
         
-        #make tempfile for 
+        # avoid tempfile tempfile for 
         if self.inputs.bold_file.endswith('nii.gz'):
-            filex=tempfile.mkdtemp()+'/filex.nii.gz'
+            filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_niftix.nii.gz'
         else:
-            filex=tempfile.mkdtemp()+'/filex.dtseries.nii'
+            filex = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix.dtseries.nii'
         write_ndata(data_matrix=datax,template=self.inputs.bold_file,
                           mask=self.inputs.mask_file,filename=filex,tr=self.inputs.TR)
         
@@ -135,9 +142,9 @@ class computeqcplot(SimpleInterface):
             confy = pd.DataFrame({ 'FD': fd_timeseries[tmask==0], 
                          'DVARS': dvars_af[tmask==0]})
             if self.inputs.bold_file.endswith('nii.gz'):
-                filey = tempfile.mkdtemp()+'/filey.nii.gz'
+                filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_niftix1.nii.gz'
             else:
-                filey = tempfile.mkdtemp()+'/filey.dtseries.nii'
+                filey = os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]+'/plot_ciftix1.dtseries.nii'
             write_ndata(data_matrix=dataxx,template=self.inputs.bold_file,
                           mask=self.inputs.mask_file,filename=filey,tr=self.inputs.TR)
             
@@ -169,10 +176,10 @@ class computeqcplot(SimpleInterface):
             #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
                              #filename=self._results['clean_qcplot'])
 
-        qc_pf = {'FD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
-                  'DVARS_PB':[mdvars_bf], 'DVARS_CB':[mdvars_af],'nVolCensored':[nvolcensored],
-                  'dummyvol':[num_vold],'FD_DVARS_CorrInit':[motionDVCorrInit],
-                  'FD_DVARS_COrrFinal':[motionDVCorrFinal]}
+        qc_pf = {'meanFD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
+                  'meanDVInit':[mdvars_bf], 'meanDVFinal':[mdvars_af],'nVolCensored':[nvolcensored],
+                  'nVolsRemoved':[num_vold],'motionDVCorrInit':[motionDVCorrInit],
+                  'motionDVCorrFinal':[motionDVCorrFinal]}
 
         _, file1 = os.path.split(self.inputs.bold_file)
         bb = file1.split('_')
@@ -180,9 +187,20 @@ class computeqcplot(SimpleInterface):
         for i in range(len(bb)-1):
             qc_x.update({bb[i].split('-')[0]: bb[i].split('-')[1]})
         qc_x.update(qc_pf)
+        if self.inputs.bold2T1w_mask:
+            regq = regisQ(bold2t1w_mask=self.inputs.bold2T1w_mask,
+                    t1w_mask=self.inputs.t1w_mask,
+                    bold2template_mask=self.inputs.bold2temp_mask,
+                    template_mask=self.inputs.template_mask)
+            qc_x.update(regq)
 
         df = pd.DataFrame(qc_x) 
-        self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.tsv',
+        self._results['qc_file'] = fname_presuffix(self.inputs.cleaned_file, suffix='qc_bold.csv',
                                                    newpath=runtime.cwd, use_ext=False)
         df.to_csv(self._results['qc_file'], index=False, header=True)
         return runtime
+
+
+
+
+    

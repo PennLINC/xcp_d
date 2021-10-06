@@ -2,6 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 from pathlib import Path
 from niworkflows.reports.core import Report as _Report
+import glob as glob 
+from xcp_abcd.interfaces.resting_state import brainplot
 
 # this is from niworklfows, a patched will be submitted
 
@@ -40,28 +42,6 @@ def run_reports(
     """
     Run the reports.
 
-    .. testsetup::
-
-    >>> cwd = os.getcwd()
-    >>> os.chdir(tmpdir)
-
-    >>> from pkg_resources import resource_filename
-    >>> from shutil import copytree
-    >>> test_data_path = resource_filename('fmriprep', 'data/tests/work')
-    >>> testdir = Path(tmpdir)
-    >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
-    >>> (testdir / 'fmriprep').mkdir(parents=True, exist_ok=True)
-
-    .. doctest::
-
-    >>> run_reports(testdir / 'out', '01', 'madeoutuuid', packagename='fmriprep',
-    ...             reportlets_dir=testdir / 'work' / 'reportlets' / 'fmriprep')
-    0
-
-    .. testcleanup::
-
-    >>> os.chdir(cwd)
-
     """
     return Report(
         out_dir,
@@ -74,12 +54,12 @@ def run_reports(
 
 
 def generate_reports(
-    subject_list, output_dir, run_uuid, config=None, packagename=None
+    subject_list, fmriprep_dir, work_dir,output_dir, run_uuid, config=None, packagename=None
 ):
     """Execute run_reports on a list of subjects."""
     #reportlets_dir = None
-    #if work_dir is not None:
-        #reportlets_dir = Path(work_dir) / "reportlets"
+    if work_dir is not None:
+        work_dir = work_dir
     report_errors = [
         run_reports(
             Path(output_dir)/'xcp_abcd',
@@ -92,6 +72,7 @@ def generate_reports(
         for subject_label in subject_list
     ]
 
+    fmriprep_dir = fmriprep_dir
     errno = sum(report_errors)
     if errno:
         import logging
@@ -107,4 +88,28 @@ def generate_reports(
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )
+    else:
+                   
+        from .layout_builder import layout_builder 
+        for subject_label in subject_list:
+            brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_abcd/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
+            layout_builder(html_path=str(Path(output_dir))+'/xcp_abcd/', subject_id=subject_label,
+                           session_id= _getsesid(brainplotfile))
+            print('xcp_abcd finished without errors')
+
     return errno
+
+
+
+def _getsesid(filename):
+    import os 
+    ses_id = None
+    filex = os.path.basename(filename)
+
+    file_id = filex.split('_')
+    for k in file_id:             
+        if 'ses' in k: 
+            ses_id = k.split('-')[1]
+            break 
+
+    return ses_id

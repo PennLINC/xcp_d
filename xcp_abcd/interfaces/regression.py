@@ -21,6 +21,7 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
     SimpleInterface
 )
+from templateflow import conf
 from ..utils import(read_ndata, write_ndata,despikedatacifti)
 
 LOGGER = logging.getLogger('nipype.interface') 
@@ -65,17 +66,24 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
         
         # get the confound matrix 
-        confound = pd.read_csv(self.inputs.confounds,header=None).to_numpy().T
+        confound = pd.read_csv(self.inputs.confounds,header=None)
         if self.inputs.custom_conf:
-            confound_custom = pd.read_csv(self.inputs.custom_conf,
-                                header=None).to_numpy().T
-            confound = np.hstack((confound, confound_custom))
+            confound_custom = pd.read_table(self.inputs.custom_conf,
+                                header=None,delimiter=' ')
+            confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
+            confound = np.nan_to_num(confound)
+        else:
+            confound = confound.to_numpy().T
         
         # get the nifti/cifti  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file,
                            maskfile=self.inputs.mask)
-        # demean and detrend the data 
-        dd_data = demean_detrend_data(data=data_matrix,TR=self.inputs.tr,order=1)
+        # demean and detrend the data
+        #
+        # use afni order  
+        orderx =np.floor(1+ data_matrix.shape[1]*self.inputs.tr/150)
+        dd_data = demean_detrend_data(data=data_matrix,TR=self.inputs.tr,order=orderx)
+        confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
         # regress the confound regressors from data
         resid_data = linear_regression(data=dd_data, confound=confound)
         
@@ -100,7 +108,6 @@ class regress(SimpleInterface):
 
 
 def linear_regression(data,confound):
-    
     '''
      data :
        numpy ndarray- vertices by timepoints
@@ -109,12 +116,13 @@ def linear_regression(data,confound):
      return: 
         residual matrix 
     '''
-    regr = LinearRegression()
-    regr.fit(confound.T,data.T)
+    regr = LinearRegression(n_jobs=1)
+    regr.fit(confound.T, data.T)
     y_pred = regr.predict(confound.T)
+
     return data - y_pred.T
 
-def demean_detrend_data(data,TR,order=1):
+def demean_detrend_data(data,TR,order):
     '''
     data should be voxels/vertices by timepoints dimension
     order=1

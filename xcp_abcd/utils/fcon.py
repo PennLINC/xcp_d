@@ -84,7 +84,7 @@ def mesh_adjacency(hemi):
 
     vertices = vertices_faces[0]
     faces = vertices_faces[1]
-    A = np.zeros([len(vertices),len(vertices)],dtype=np.uint16)
+    A = np.zeros([len(vertices),len(vertices)],dtype=np.uint8)
 
     for i in range(1,len(faces)):
         A[faces[i,0],faces[i,2]]=1
@@ -112,6 +112,7 @@ def compute_alff(data_matrix,low_pass,high_pass, TR):
     alff = np.zeros(data_matrix.shape[0])
     for i in range(data_matrix.shape[0]):
         fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='spectrum')
+        #fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='density')
         pxx_sqrt = np.sqrt(Pxx_den)
         ff_alff = [np.argmin(np.abs(fx-high_pass)),np.argmin(np.abs(fx-low_pass))]
         alff[i] = len(ff_alff)*np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
