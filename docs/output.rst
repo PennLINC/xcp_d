@@ -60,17 +60,26 @@ The  ``xcp_abcd`` outputs are written out in BIDS format and consist of three ma
        
     c. Resting-state derivatives: ReHo and ALFF::
         
-        #nifti
+        # nifti
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-reho_bold.nii.gz
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-alff_bold.nii.gz
 
-        #cifti
+        # cifti
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-32k_hemi-L_desc-reho_bold.func.gii
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-32k_hemi-R_desc-reho_bold.func.gii
         xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-91k_desc-alff_bold.dtseries.nii
     
-    d. 
+    d. Other outputs inlcude qulaity control and framewise  displacement::
 
+        # nifti
+        xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-qc_bold.csv
+        xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-framewisedisplacement_bold.tsv
+        
+        # cifti
+        xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-qc_bold.csv
+        xcp_abcd/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-framewisedisplacement_den-91k_bold.tsv
+        
+        
        
 
 
