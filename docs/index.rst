@@ -11,5 +11,7 @@ Contents
 
    installation
    usage
+   generalworkflow
    taskregression
+   output
    api
