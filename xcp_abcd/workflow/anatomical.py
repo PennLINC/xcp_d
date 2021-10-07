@@ -10,10 +10,8 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 import os
 import fnmatch
 from pathlib import Path
-import numpy as np
-from numpy.lib.utils import source
 from templateflow.api import get as get_template
-from ..utils import collect_data,select_registrationfile,CiftiSurfaceResample
+from ..utils import collect_data,CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -29,13 +27,52 @@ class DerivativesDataSink(bid_derivative):
 
 def init_anatomical_wf(
      omp_nthreads,
-     bids_dir,
+     fmriprep_dir,
      subject_id,
      output_dir,
      t1w_to_mni,
-     mni_to_t1w,
      name='anatomical_wf',
       ):
+     """
+     This workflow is convert surfaces (gifti) from fmriprep to standard space-fslr-32k
+     It also resmaple t1w t1w segmnetation to standard space, MNI
+
+     Workflow Graph
+          .. workflow::
+               :graph2use: orig
+               :simple_form: yes
+               from xcp_abcd.workflows import init_anatomical_wf
+               wf = init_anatomical_wf(
+                omp_nthreads,
+                fmriprep_dir,
+                subject_id,
+                output_dir,
+                t1w_to_mni,
+                name="anatomical_wf",
+                )
+     Parameters
+     ----------
+     omp_nthreads : int
+          number of threads
+     fmriprep_dir : str
+          fmriprep output directory
+     subject_id : str
+          subject id
+     output_dir : str
+          output directory
+     t1w_to_mni : str
+          t1w to MNI transform
+     name : str
+          workflow name
+
+     Inputs
+     ------
+     t1w: str
+          t1w file
+     t1w_seg: str
+          t1w segmentation file
+    
+     """
      workflow = Workflow(name=name)
 
      inputnode = pe.Node(niu.IdentityInterface(
@@ -46,7 +83,7 @@ def init_anatomical_wf(
 
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
-     layout,subj_data = collect_data(bids_dir=bids_dir,participant_label=subject_id, template=None,bids_validate=False)
+     layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, template=None,bids_validate=False)
      
      t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
@@ -78,9 +115,10 @@ def init_anatomical_wf(
          ])
 
      #verify fresurfer directory
-
-     p = Path(bids_dir)
-     freesufer_path = Path(str(p.parent)+'/freesurfer')
+     
+     p = Path(fmriprep_dir)
+     import glob as glob
+     freesufer_path = str(glob.glob(Path(str(p.parent)+'/freesurfer*'))[0])
      if freesufer_path.is_dir(): 
           all_files  = list(layout.get_files())
           L_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*hemi-L_inflated.surf.gii')[0]

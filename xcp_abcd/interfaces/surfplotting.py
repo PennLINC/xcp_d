@@ -21,6 +21,9 @@ class _plotimgOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc='out image')
 
 class PlotImage(SimpleInterface):
+    """
+    Python class to plot x,y, and z  of image data
+    """
     input_spec = _plotimgInputSpec
     output_spec = _plotimgOutputSpec
 
@@ -51,7 +54,8 @@ class _surf2volOutputSpec(TraitedSpec):
 
 class SurftoVolume(SimpleInterface):
     r"""
-    coming soon
+    this class converts the freesurfer/gifti surface to volume 
+    using ras2vox transform 
     """
     input_spec = _surf2volInputSpec
     output_spec = _surf2volOutputSpec
@@ -83,8 +87,7 @@ class _brainplotxOutputSpec(TraitedSpec):
 
 class BrainPlotx(SimpleInterface):
     r"""
-    coming
-
+    this class create brainsprite with overlay as stats image
     """
     input_spec = _brainplotxInputSpec
     output_spec = _brainplotxOutputSpec
@@ -115,7 +118,7 @@ class _regplotOutputSpec(TraitedSpec):
 
 class RegPlot(SimpleInterface):
     r"""
-    coming
+    abandoned 
 
     """
     input_spec = _regplotInputSpec
@@ -138,7 +141,7 @@ class RegPlot(SimpleInterface):
 
 class _plotsvgInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True,mandatory=True, desc="raw data ")
-    regdata = File(exists=True,mandatory=True, desc="regression data ")
+    regdata = File(exists=True,mandatory=True, desc="data after regreesion data ")
     resddata = File(exists=True,mandatory=True, desc="resdiual data ")
     fd = File(exists=True,mandatory=True, desc="fd")
     mask = File(exists=False,mandatory=False, desc="mask file ")
@@ -153,7 +156,8 @@ class _plotsvgOutputSpec(TraitedSpec):
 
 class PlotSVGData(SimpleInterface):
     r"""
-    coming
+    this class plots of fd, dvars, carpet plots of bold data 
+    before and after regression/filtering
 
     """
     input_spec = _plotsvgInputSpec
