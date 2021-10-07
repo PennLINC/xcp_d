@@ -118,7 +118,7 @@ def init_anatomical_wf(
      
      p = Path(fmriprep_dir)
      import glob as glob
-     freesufer_path = str(glob.glob(Path(str(p.parent)+'/freesurfer*'))[0])
+     freesufer_path = str(glob.glob(str(p.parent)+'/freesurfer*')[0])
      if freesufer_path.is_dir(): 
           all_files  = list(layout.get_files())
           L_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*hemi-L_inflated.surf.gii')[0]
