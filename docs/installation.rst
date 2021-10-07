@@ -62,7 +62,7 @@ The improved security for multi-tenant systems comes at the price of some limita
 and extra steps necessary for execution.
 
 
-Manually Prepared Environment (Python 3.7+)
+Manually Prepared Environment (Python 3.8+)
 ===========================================
 
 .. warning::
