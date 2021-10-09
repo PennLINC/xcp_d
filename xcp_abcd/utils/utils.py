@@ -1,9 +1,8 @@
 import os
-from tempfile import template
-from nipype.interfaces.base.traits_extension import Undefined 
-from templateflow.api import get as get_template
 import numpy as np
 import glob as glob
+from templateflow.api import get as get_template
+
 from pkg_resources import resource_filename as pkgrf
 
 def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):

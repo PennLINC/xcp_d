@@ -21,7 +21,7 @@ from .sentry import sentry_setup
 from .qcmetrics import regisQ
 
 from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
-                    stringforparams,fwhm2sigma,get_customfile,get_transformsX)
+                    stringforparams,fwhm2sigma,get_customfile)
 
 from .plot  import (plotseries,plot_svgx,plot_carpetx,plot_carpet,confoundplot)
 
