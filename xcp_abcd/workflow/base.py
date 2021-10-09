@@ -288,9 +288,10 @@ def init_subject_wf(
     layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False, 
                                                template=brain_template)
+
     regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
     subject_data = select_cifti_bold(subj_data=subj_data)
-    t1wseg =extract_t1w_seg(subj_data=subj_data)
+    t1wseg = extract_t1w_seg(subj_data=subj_data)
     
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf','mni_to_t1w','t1w','t1seg']),
