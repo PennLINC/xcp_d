@@ -107,7 +107,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
         template = 'MNI152NLin2009cAsym'
         FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
-    else:
+    elif 'MNI152NLin6Asym' in os.path.basename(str(mni_to_t1w)):
         template = 'MNI152NLin6Asym'
         FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
     
@@ -115,6 +115,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         mnisf = mni_to_t1w.split('from'+ template +'_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni6 = glob.glob(mnisf + 'from-T1w_to-MNI152NLin6Asym*_mode-image_xfm.h5')[0]
         transformfile = [str(t1w_to_mni6),str(mni_to_t1w),str(FSL2MNI9)]
+        
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
     elif 'space-PNC' in file_base:
