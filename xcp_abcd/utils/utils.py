@@ -86,8 +86,16 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
 
 def get_maskfiles(bold_file,mni_to_t1w):
+    
+    ## get the template  first fmriprep or nibabies
+    if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
+        template = 'MNI152NLin2009cAsym'
+    elif 'MNI152NLin6Asym' in os.path.basename(str(mni_to_t1w)):
+        template = 'MNI152NLin6Asym'
+       
+
     boldmask = bold_file.split('desc-preproc_bold.nii.gz')[0]+ 'desc-brain_mask.nii.gz'
-    t1mask = mni_to_t1w.split('from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]+'desc-brain_mask.nii.gz'
+    t1mask = mni_to_t1w.split('from-' + template +'_to-T1w_mode-image_xfm.h5')[0]+'desc-brain_mask.nii.gz'
     return boldmask,t1mask
 
 
