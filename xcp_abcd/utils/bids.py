@@ -200,16 +200,20 @@ def collect_data(
 
 
 def select_registrationfile(subj_data,
-                            template='MNI152NLin2009cAsym'):
+                            template=None):
     
     regfile = subj_data['regfile']
 
-     # get the file with template name
+    # get the file with the template name
+
     for j in regfile: 
         if 'from-' + template  in j : 
             mni_to_t1w = j
         elif 'to-' + template  in j :
             t1w_to_mni = j
+    ## for validation, we need to check presence of MNI152NLin2009cAsym 
+    ## if not we use MNI152NLin2006cAsym for nibabies 
+    #print(mni_to_t1w)
     return mni_to_t1w, t1w_to_mni
 
 

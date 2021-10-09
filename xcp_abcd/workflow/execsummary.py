@@ -41,18 +41,21 @@ def init_execsummary_wf(
     else:
         prefixbb = filenamex.split('_desc')[0]
     
-    bold_t1w_reg = fnmatch.filter(all_files, '*' + prefixbb +'*-bbregister_bold.svg')[0]
+    # check if there is bbregister or coregister
+    patterns = ('*bbregister_bold.svg','*coreg_bold.svg')
+    coregbbregfile = [pat for pat in patterns if fnmatch.filter(all_files,pat)]
+    bold_t1w_reg = fnmatch.filter(all_files, '*' + prefixbb + coregbbregfile[0])[0]
 
 
     
     if bold_file.endswith('.nii.gz'):
         boldref = bold_file.split('desc-preproc_bold.nii.gz')[0]+'boldref.nii.gz'
-        mask = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
+        #mask = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
     
     else:
         bb = bold_file.split('space-fsLR_den-91k_bold.dtseries.nii')[0]
         boldref = glob.glob(bb+'*boldref.nii.gz')[0]
-        mask = glob.glob(bb+'*desc-brain_mask.nii.gz')[0]
+        #mask = glob.glob(bb+'*desc-brain_mask.nii.gz')[0]
         bold_file = glob.glob(bb+'*preproc_bold.nii.gz')[0] 
 
 
