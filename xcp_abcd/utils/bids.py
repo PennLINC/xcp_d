@@ -213,7 +213,7 @@ def select_registrationfile(subj_data,
             t1w_to_mni = j
     ## for validation, we need to check presence of MNI152NLin2009cAsym 
     ## if not we use MNI152NLin2006cAsym for nibabies 
-    print(mni_to_t1w)
+    #print(mni_to_t1w)
     return mni_to_t1w, t1w_to_mni
 
 

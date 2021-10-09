@@ -113,9 +113,10 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     
     if 'space-MNI152NLin6Asym' in file_base:
         mnisf = mni_to_t1w.split('from'+ template +'_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_mni6 = glob.glob(mnisf + 'from-T1w_to-MNI152NLin6Asym*_mode-image_xfm.h5')[0]
+        t1w_to_mni6 = glob.glob(mnisf + 'from-T1w_to-MNI152NLin6Asym*_mode-image_xfm.h5')
+        print(t1w_to_mni6)
         transformfile = [str(t1w_to_mni6),str(mni_to_t1w),str(FSL2MNI9)]
-        
+
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
     elif 'space-PNC' in file_base:
