@@ -9,18 +9,19 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
     """ obtain transfromation to transfrom MNI6 mask to  any bold space """
 
+    
+    #get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
+    
 
+    # get default template MNI152NLin2009cAsym for fmriprep and 
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
         MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
     elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin2009cAsym'
+        template = 'MNI152NLin6Asym'
         MNI6 = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
-     
-
-
-
+    
     if 'space-MNI152NLin2009cAsym' in file_base:
         transformfileMNI = str(MNI6)
         transformfileT1W  = str(mni_to_t1w)
@@ -66,7 +67,6 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from-'+template+'_to-T1w_mode-image_xfm.h5')[0]
-        oasis_to_t1w  = mnisf + 'from-OASIS_to-T1w_mode-image_xfm.h5'
         t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
         transformfileMNI = [str(t1w_to_mni)]
         transformfileT1W = [str(pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt'))]
@@ -111,7 +111,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
     #MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
     
-    #get the template 
+    #get the template for registration
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
         template = 'MNI152NLin2009cAsym'
         FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
@@ -123,6 +123,8 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         mnisf = mni_to_t1w.split('from-'+ template +'_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni6 = mnisf + 'from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'
         transformfile = [str(t1w_to_mni6),str(mni_to_t1w),str(FSL2MNI9)]
+
+    if 
 
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
