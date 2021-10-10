@@ -124,8 +124,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni6 = mnisf + 'from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'
         transformfile = [str(t1w_to_mni6),str(mni_to_t1w),str(FSL2MNI9)]
 
-    if 
-
+   
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
     elif 'space-PNC' in file_base:
