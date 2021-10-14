@@ -230,6 +230,7 @@ def init_anatomical_wf(
               ]) 
 
           t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
+          ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
 
           pial2vol_wf = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
                left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')

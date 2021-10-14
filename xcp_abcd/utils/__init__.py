@@ -25,7 +25,7 @@ from .utils import (get_maskfiles,get_transformfile,get_transformfilex,
 
 from .plot  import (plotseries,plot_svgx,plot_carpetx,plot_carpet,confoundplot)
 
-from .execsummary import (surf2vol,get_regplot,plot_registrationx,generate_brain_sprite)
+from .execsummary import (surf2vol,get_regplot,plot_registrationx,generate_brain_sprite,ribbon_to_statmap)
 
 
 __all__ = [
