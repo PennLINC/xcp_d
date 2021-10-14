@@ -212,6 +212,6 @@ class RibbontoStatmap(SimpleInterface):
                 use_ext=False)
 
         self._results['out_file'] = ribbon_to_statmap(ribbon=self.inputs.ribbon,
-                                                      out_file=self._results['out_file'])
+                                                      outfile=self._results['out_file'])
 
         return runtime

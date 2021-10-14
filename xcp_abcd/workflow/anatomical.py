@@ -300,10 +300,10 @@ def _picwmcsf(file):
     #binarized
     dataw[dataw>0]=1
     datap[datap>0]=3
-    datax =datap + dataw
-    datax [datax > 3] = 3
+    dataxy =datap + dataw
+    dataxy [dataxy > 3] = 3
      
-    img = nb.Nifti1Image(datax, affine=datax.affine, header=datax.header)
+    img = nb.Nifti1Image(dataxy, affine=datax.affine, header=datax.header)
     outfile = tempfile.mkstemp(suffix = 'pialwm.nii.gz')[1]
     img.to_filename(outfile)
     return outfile
