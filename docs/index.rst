@@ -11,6 +11,8 @@ Contents
 
    installation
    usage
+   docker
+   singularity
    generalworkflow
    taskregression
    output
