@@ -121,7 +121,7 @@ def generate_brain_sprite(template_image,stat_map,out_file):
 
     
     bsprite = viewer_substitute(cmap='hsv', symmetric_cmap=False, black_bg=True,
-                         threshold=-1, vmax=2, value=False)
+                         threshold=-1, vmax=3, value=True)
     bsprite.fit(stat_map_img=stat_map,bg_img=template_image)
 
     viewer = bsprite.transform(template=template,javascript='js', html='html', library='bsprite')
