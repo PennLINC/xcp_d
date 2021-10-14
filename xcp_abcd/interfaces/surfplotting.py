@@ -211,7 +211,7 @@ class RibbontoStatmap(SimpleInterface):
                 suffix='.nii.gz', newpath=runtime.cwd,
                 use_ext=False)
 
-        self._results['out_file'] = ribbon_to_statmap(ribbon_to_statmap=self.inputs.ribbon,
+        self._results['out_file'] = ribbon_to_statmap(ribbon=self.inputs.ribbon,
                                                       out_file=self._results['out_file'])
 
         return runtime

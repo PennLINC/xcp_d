@@ -285,11 +285,26 @@ def _picwmcsf(file):
     datax = nb.load(file)
     data_csf = np.zeros(datax.shape)
     data_wm = np.zeros(datax.shape)
-    data_csf [datax.get_fdata() == 2]=2
-    data_wm [datax.get_fdata() == 3]=3
+    data_csf [datax.get_fdata() == 2]= 3
+    data_wm [datax.get_fdata() == 3]= 1
+    
+    from scipy.ndimage import sobel, generic_gradient_magnitude
+    datap  = generic_gradient_magnitude(data_csf, sobel,mode='constant',cval=-1)
+    dataw = generic_gradient_magnitude(data_wm, sobel,mode='constant',cval=-1)
 
-    img = nb.Nifti1Image(data_csf+data_wm, affine=datax.affine, header=datax.header)
-    outfile = tempfile.mkstemp(suffix = 'csf.nii.gz')[1]
+    t1 =np.percentile(datap[datap>0],30)
+    t2 =np.percentile(dataw[dataw>0],30)
+    dataw[dataw<t1]=0
+    datap[datap<t2]=0
+    
+    #binarized
+    dataw[dataw>0]=1
+    datap[datap>0]=3
+    datax =datap + dataw
+    datax [datax > 3] = 3
+     
+    img = nb.Nifti1Image(datax, affine=datax.affine, header=datax.header)
+    outfile = tempfile.mkstemp(suffix = 'pialwm.nii.gz')[1]
     img.to_filename(outfile)
     return outfile
 
