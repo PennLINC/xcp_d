@@ -11,6 +11,8 @@ import os
 import fnmatch
 from pathlib import Path
 from templateflow.api import get as get_template
+
+from xcp_abcd.utils.execsummary import ribbon_to_statmap
 from ..utils import collect_data,CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
 from ..interfaces.connectivity import ApplyTransformsx
@@ -19,7 +21,7 @@ from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import MapNode as MapNode
-from ..interfaces import SurftoVolume,BrainPlotx
+from ..interfaces import SurftoVolume,BrainPlotx, RibbontoStatmap
 from ..utils import bid_derivative
 
 class DerivativesDataSink(bid_derivative):
@@ -232,14 +234,16 @@ def init_anatomical_wf(
           t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
           ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
 
-          pial2vol_wf = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
-               left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')
-          wm2vol_wf = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
-                        left_surf=R_wm_surf,right_surf=L_wm_surf),name='wm2vol')
+          #pial2vol_wf = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
+               #left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')
+          #wm2vol_wf = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
+                        #left_surf=R_wm_surf,right_surf=L_wm_surf),name='wm2vol')
+          
+          ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap')
           
           ## combine pial and wm volumes
-          from nipype.interfaces.fsl import MultiImageMaths
-          addwmpial_wf = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
+          #from nipype.interfaces.fsl import MultiImageMaths
+          #addwmpial_wf = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
 
           
           #brainplot
@@ -250,9 +254,9 @@ def init_anatomical_wf(
                   name='brainspriteplot', run_without_submitting=True)
 
           workflow.connect([
-               (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
-               (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
-               (addwmpial_wf,brainspritex_wf,[('out_file','in_file')]),
+               #(pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
+               #(wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
+               (ribbon2statmap_wf,brainspritex_wf,[('out_file','in_file')]),
      
                (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
