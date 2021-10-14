@@ -160,3 +160,4 @@ def ribbon_to_statmap(ribbon,outfile):
     ngbdatax.to_filename(outfile)
     
     return outfile
+

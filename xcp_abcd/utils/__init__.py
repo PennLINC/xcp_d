@@ -68,5 +68,6 @@ __all__ = [
     'plot_registrationx',
     'generate_brain_sprite',
     'plotimage',
-    'extract_t1w_seg'
+    'extract_t1w_seg',
+    'ribbon_to_statmap',
   ]
