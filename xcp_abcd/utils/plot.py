@@ -338,9 +338,6 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     ax.set_ylabel(ylabelx,fontsize=20)    
     ax.legend(fontsize=20)
     
-    
-    
-
     last = conf.shape[0] - 1
     interval = max((last // 10, last // 5, 1))
     
@@ -560,8 +557,8 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     # plot filex
     
     
-    figx = plt.figure(constrained_layout=False, figsize=(15,30))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
+    figx = plt.figure(constrained_layout=False, figsize=(40,60))
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,100])
     plotseries(conf=wbbf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-200,400])
     plot_carpetx(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
@@ -571,9 +568,9 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     
-    figy = plt.figure(constrained_layout=False, figsize=(15,30))
+    figy = plt.figure(constrained_layout=False, figsize=(40,60))
    
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,100])
     plotseries(conf=wbaf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-200,400])
     plot_carpetx(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
