@@ -372,7 +372,7 @@ def plot_carpetx(
     subplot=None,
     detrend=None,
     legend=True,
-    size=(1800,950),
+    size=(950,800),
   ):
     
     
@@ -557,7 +557,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     # plot filex
     
     
-    figx = plt.figure(constrained_layout=False, figsize=(40,60))
+    figx = plt.figure(constrained_layout=False)
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,100])
     plotseries(conf=wbbf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-200,400])
@@ -568,7 +568,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     
-    figy = plt.figure(constrained_layout=False, figsize=(40,60))
+    figy = plt.figure(constrained_layout=False)
    
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,100])
