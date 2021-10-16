@@ -396,7 +396,10 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     
     wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})
     wbaf = pd.DataFrame({'Mean':np.nanmean(rs,axis=0),'Std':np.nanstd(rs,axis=0)})
-    
+    if seg is not None:
+        atlaslabels = nb.load(seg).get_fdata()
+    else:
+        atlaslabels = None    
     # 
     plt.cla()
     plt.clf()
@@ -404,7 +407,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,100])
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpetX(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
     
@@ -415,7 +418,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,100])
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpetX(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
     
