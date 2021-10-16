@@ -479,7 +479,7 @@ def confoundplotx(
         ax_ts.plot(tseries[c],label=c, linewidth=2)
         
     ax_ts.set_xlim((0, ntsteps - 1))
-    ax_ts.legend(fontsize=20)
+    ax_ts.legend(fontsize=30)
     
     if ylims:
         ax_ts.set_ylim(ylims)
@@ -488,6 +488,6 @@ def confoundplotx(
         
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
-        item.set_fontsize(20)
+        item.set_fontsize(30)
 
     return ax_ts, gs
