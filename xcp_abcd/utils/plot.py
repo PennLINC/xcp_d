@@ -12,7 +12,7 @@ from matplotlib.colors import ListedColormap, Normalize
 import seaborn as sns
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
-from niworkflows.viz.plots import _decimate_data
+from niworkflows.viz.plots import _decimate_data, plot_carpet
 from ..utils import read_ndata
 
 
@@ -364,159 +364,6 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
-def plot_carpetx(
-    func,
-    segfile,
-    lut=None,
-    tr=None,
-    subplot=None,
-    detrend=None,
-    legend=True,
-    size=(950,800),
-  ):
-    
-    
-    img = nb.load(func)
-    if segfile:
-        atlaslabels = np.asanyarray(nb.load(segfile).dataobj)
-
-    if isinstance(img, nb.Cifti2Image):
-        assert (
-            img.nifti_header.get_intent()[0] == "ConnDenseSeries"
-        ), "Not a dense timeseries"
-
-        data = img.get_fdata().T
-        matrix = img.header.matrix
-        struct_map = {
-            "LEFT_CORTEX": 1,
-            "RIGHT_CORTEX": 2,
-            "SUBCORTICAL": 3,
-            "CEREBELLUM": 4,
-        }
-        seg = np.zeros((data.shape[0],), dtype="uint32")
-        for bm in matrix.get_index_map(1).brain_models:
-            if "CORTEX" in bm.brain_structure:
-                lidx = (1, 2)["RIGHT" in bm.brain_structure]
-            elif "CEREBELLUM" in bm.brain_structure:
-                lidx = 4
-            else:
-                lidx = 3
-            index_final = bm.index_offset + bm.index_count
-            seg[bm.index_offset:index_final] = lidx
-        assert len(seg[seg < 1]) == 0, "Unassigned labels"
-
-        # Decimate data
-        data, seg = _decimate_data(data, seg, size)
-        # preserve as much continuity as possible
-        order = seg.argsort(kind="stable")
-
-        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
-        assert len(cmap.colors) == len(
-            struct_map
-        ), "Mismatch between expected # of structures and colors"
-
-        # ensure no legend for CIFTI
-        legend = False
-
-    else:  # Volumetric NIfTI
-        img_nii = check_niimg_4d(img, dtype="auto",)
-        func_data = _safe_get_data(img_nii, ensure_finite=True)
-        ntsteps = func_data.shape[-1]
-        data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
-        oseg = atlaslabels[atlaslabels > 0].reshape(-1)
-
-        # Map segmentation
-        if lut is None:
-            lut = np.zeros((256,), dtype="int")
-            lut[1:11] = 1
-            lut[255] = 2
-            lut[30:99] = 3
-            lut[100:201] = 4
-        # Apply lookup table
-        seg = lut[oseg.astype(int)]
-
-        # Decimate data
-        data, seg = _decimate_data(data, seg, size)
-        # Order following segmentation labels
-        order = np.argsort(seg)[::-1]
-        # Set colormap
-        cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
-    
-    """Common carpetplot building code for volumetric / CIFTI plots"""
-    notr = False
-    if tr is None:
-        notr = True
-        tr = 1.0
-
-    # Detrend data
-    v = (None, None)
-    if detrend:
-        data = clean(data.T, t_r=tr).T
-        v = (-2, 2)
-
-    # If subplot is not defined
-    if subplot is None:
-        subplot = mgs.GridSpec(1, 1)[0]
-
-    # Define nested GridSpec
-    wratios = [1, 100, 0]
-    gs = mgs.GridSpecFromSubplotSpec(
-        1,
-        2 + int(legend),
-        subplot_spec=subplot,
-        width_ratios=wratios[: 2 + int(legend)],
-        wspace=0.0,
-    )
-
-    # Segmentation colorbar
-    ax0 = plt.subplot(gs[0])
-    ax0.set_yticks([])
-    ax0.set_xticks([])
-    ax0.imshow(seg[order, np.newaxis], interpolation="none", aspect="auto", cmap=cmap)
-
-    ax0.grid(False)
-    ax0.spines["left"].set_visible(False)
-    ax0.spines["bottom"].set_color("none")
-    ax0.spines["bottom"].set_visible(False)
-
-    # Carpet plot
-    ax1 = plt.subplot(gs[1])
-    ax1.imshow(
-        data[order],
-        interpolation="nearest",
-        aspect="auto",
-        cmap="gray",
-        vmin=v[0],
-        vmax=v[1],
-    )
-
-    ax1.grid(False)
-    ax1.set_yticks([])
-    ax1.set_yticklabels([])
-    ax1.set_xticks([])
-
-    if func.endswith('nii.gz'):
-        ax0.set_ylabel('Voxels \n Blue: Cortical GM, Orange: Subcortical GM, \n Green: Cerebellum, Red: CSF and WM',
-                      fontsize=20)
-    elif func.endswith('.dtseries.nii'):
-        ax0.set_ylabel('Grayordinates\n Blue: Left Cortex, Cyan: Right Cortex, \n Orange: Subcortical, Green: Cerebellum',
-                      fontsize=20)
-    # Remove and redefine spines
-    for side in ["top", "right"]:
-        # Toggle the spine objects
-        ax0.spines[side].set_color("none")
-        ax0.spines[side].set_visible(False)
-        ax1.spines[side].set_color("none")
-        ax1.spines[side].set_visible(False)
-
-    ax1.yaxis.set_ticks_position("left")
-    ax1.xaxis.set_ticks_position("bottom")
-    ax1.spines["bottom"].set_visible(False)
-    ax1.spines["left"].set_color("none")
-    ax1.spines["left"].set_visible(False)
-
-    return (ax0, ax1), gs
-
 def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1):
     '''
     generate carpet plot with dvars, fd, and WB
@@ -554,27 +401,94 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})
     wbaf = pd.DataFrame({'Mean':np.nanmean(rs,axis=0),'Std':np.nanstd(rs,axis=0)})
     
-    # plot filex
-    
-    
+    # 
+    plt.cla()
+    plt.clf()
     figx = plt.figure(constrained_layout=False)
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
-    plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,100])
-    plotseries(conf=wbbf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-200,400])
-    plot_carpetx(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
-    plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,1.5])
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
+    confoundplotx(conf=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylim=[0,100])
+    confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
+    plot_carpet(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
     
     plt.cla()
     plt.clf()
     
     figy = plt.figure(constrained_layout=False)
-   
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
-    plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,100])
-    plotseries(conf=wbaf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-200,400])
-    plot_carpetx(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
-    plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,1.5])
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
+    confoundplotx(conf=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylim=[0,100])
+    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
+    plot_carpet(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
     
     return filenamebf,filenameaf
+
+
+
+
+def confoundplotx(
+    tseries,
+    gs_ts,
+    tr=None,
+    hide_x=True,
+    ylims=None,
+    ylabel=None
+   ):
+    import seaborn as sns
+
+    # Define TR and number of frames
+    notr = False
+    if tr is None:
+        notr = True
+        tr = 1.0
+    
+    
+    ntsteps = tseries.shape[0]
+    #tseries = np.array(tseries)
+
+    # Define nested GridSpec
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
+    )
+
+    ax_ts = plt.subplot(gs[1])
+    ax_ts.grid(False)
+
+    # Set 10 frame markers in X axis
+    interval = max((ntsteps // 10, ntsteps // 5, 1))
+    xticks = list(range(0, ntsteps)[::interval])
+    ax_ts.set_xticks(xticks)
+
+    if not hide_x:
+        if notr:
+            ax_ts.set_xlabel("Time (frame #)")
+        else:
+            ax_ts.set_xlabel("Time (s)")
+            labels = tr * np.array(xticks)
+            ax_ts.set_xticklabels(["%.01f" % t for t in labels.tolist()])
+    else:
+        ax_ts.set_xticklabels([])
+
+    if ylabel:
+        ax_ts.set_ylabel(ylabel)
+ 
+    
+    columns= tseries.columns
+    for c in columns:
+        ax_ts.plot(tseries[c],label=c, linewidth=2)
+        
+    ax_ts.set_xlim((0, ntsteps - 1))
+    ax_ts.legend(fontsize=20)
+    
+    if ylims:
+        ax_ts.set_ylim(ylims)
+    else: 
+        ax_ts.set_ylim([-2*tseries.max(),2*tseries.max()])
+        
+    for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
+             ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
+        item.set_fontsize(20)
+
+    return ax_ts, gs
