@@ -402,7 +402,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.clf()
     figx = plt.figure(constrained_layout=False)
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
-    confoundplotx(conf=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylim=[0,100])
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylim=[0,100])
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
     plot_carpet(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
@@ -413,7 +413,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     
     figy = plt.figure(constrained_layout=False)
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
-    confoundplotx(conf=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylim=[0,100])
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylim=[0,100])
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
     plot_carpet(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
