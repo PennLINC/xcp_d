@@ -7,12 +7,8 @@ import pandas as pd
 from nilearn.signal import clean 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
-import matplotlib.cm as cm
-from matplotlib.colors import ListedColormap, Normalize
 import seaborn as sns
-from nilearn._utils import check_niimg_4d
-from nilearn._utils.niimg import _safe_get_data
-from niworkflows.viz.plots import _decimate_data, plot_carpet
+from niworkflows.viz.plots import plot_carpet
 from ..utils import read_ndata
 
 
