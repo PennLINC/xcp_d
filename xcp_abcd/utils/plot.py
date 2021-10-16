@@ -8,7 +8,7 @@ from nilearn.signal import clean
 import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
 import seaborn as sns
-from niworkflows.viz.plots import plot_carpet
+from niworkflows.viz.plots import plot_carpet as plot_carpetX
 from ..utils import read_ndata
 
 
@@ -404,7 +404,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,100])
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpet(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
+    plot_carpetX(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
     
@@ -415,7 +415,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,4,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,100])
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpet(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
+    plot_carpetX(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,3],ylabel='FD[mm]')
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
     
