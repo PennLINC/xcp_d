@@ -404,7 +404,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(30,50))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,2.5,1])
+    grid = mgs.GridSpec(3, 1, wspace=0.0, hspace=0.05,height_ratios=[1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,100])
     #confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
     plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
@@ -415,7 +415,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.clf()
     
     figy = plt.figure(constrained_layout=True, figsize=(30,50))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,2.5,1])
+    grid = mgs.GridSpec(3, 1, wspace=0.0, hspace=0.05,height_ratios=[1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,100])
     #confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
     plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
