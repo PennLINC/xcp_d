@@ -1,7 +1,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from ..utils import surf2vol,get_regplot,generate_brain_sprite,plot_svgx,plotimage
+from ..utils import (surf2vol,get_regplot, 
+           generate_brain_sprite,plot_svgx,plotimage, ribbon_to_statmap)
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from pkg_resources import resource_filename as pkgrf
@@ -180,5 +181,37 @@ class PlotSVGData(SimpleInterface):
               tr=self.inputs.tr,mask=self.inputs.mask,fd=self.inputs.fd,seg=self.inputs.seg,
               filenameaf=self._results['after_process'],filenamebf=self._results['before_process']) 
 
+
+        return runtime
+
+
+class _ribbonstatmapInputSpec(BaseInterfaceInputSpec):
+    ribbon = File(exists=True,mandatory=True, desc="ribbon ")
+    ## other settings or files will be added later from T2 ##
+
+
+class _ribbonstatmapOutputSpec(TraitedSpec):
+    out_file = File(exists=True, manadatory=True,desc="ribbon > pial and white")
+
+
+
+class RibbontoStatmap(SimpleInterface):
+    r"""
+    this class plots of fd, dvars, carpet plots of bold data 
+    before and after regression/filtering
+
+    """
+    input_spec = _ribbonstatmapInputSpec
+    output_spec = _ribbonstatmapOutputSpec
+
+    def _run_interface(self, runtime):
+       
+        self._results['out_file'] = fname_presuffix(
+                'pial_white_',
+                suffix='.nii.gz', newpath=runtime.cwd,
+                use_ext=False)
+
+        self._results['out_file'] = ribbon_to_statmap(ribbon=self.inputs.ribbon,
+                                                      outfile=self._results['out_file'])
 
         return runtime
