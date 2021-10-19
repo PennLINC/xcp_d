@@ -109,7 +109,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
            
 
 
-            sbref = func_dirxx + taskdir +'_SBRef.nii.gz'
+            sbref = func_dirxx + '/'+ taskdir +'_SBRef.nii.gz'
             volume = func_dirxx + '/'+ taskdir + '.nii.gz'
             
             brainmask = func_dirxx + '/brainmask_fs.2.0.nii.gz'
