@@ -95,7 +95,7 @@ def get_parser():
 
     g_outputoption = parser.add_argument_group('output, either fmriprep or dcan')
 
-    g_outputoption.add_argument('--input-type', action='store_true', default='fmriprep',
+    g_outputoption.add_argument('--input-type', required=False, default='fmriprep',type=str,
                        help='input type, either fmriprep or dcan')
 
     g_param = parser.add_argument_group('parameters for postprocessing')
