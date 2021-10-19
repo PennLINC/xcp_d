@@ -330,7 +330,7 @@ def make_hcp():
 		m = []
 		for f in files:
 			run = f.split('/')[8]
-			surf = nib.load(f)
+			surf = nb.load(f)
 			data = surf.get_fdata()
 			command = 'wb_command -cifti-stats {0} -reduce MEAN >> /cbica/home/bertolem/xcp_hcp/WBS.txt'.format(f)
 			os.system(command)

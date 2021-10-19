@@ -285,6 +285,8 @@ def init_subject_wf(
         the first vols in seconds to be removed before postprocessing
 
     """
+
+    
     layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False, 
                                                template=brain_template)
