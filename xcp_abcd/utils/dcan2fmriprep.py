@@ -151,6 +151,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
             boldjson = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.json'
             confreg   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.tsv'
+            confregj   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.json'
             boldref = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+'_space-MNI152NLin6Asym_boldref.nii.gz'
             brainmaskf  = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id +'_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
             dttseriesx = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.nii'
@@ -160,10 +161,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
 
 
             # maske  coreg files here  
-            figdir = out_dir +'/' + sub_id+ '/figures/'
-            os.makedirs(figdir,exist_ok=True)
-            bbreg = figdir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-bbregister_bold.svg'
-            bbreg = bbregplot(fixed_image=tw1,moving_image=boldref,out_file=bbreg,contour=ribbon)
+            
 
             fmfuncfiles = [boldname,boldref,brainmaskf,dttseriesx,native2t1w,t12native]
 
@@ -171,9 +169,15 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             for jj,kk in zip(dcanfunfiles,fmfuncfiles):
                 symlinkfiles(jj,kk)
             
+            figdir = out_dir +'/' + sub_id+ '/figures/'
+            os.makedirs(figdir,exist_ok=True)
+            bbreg = figdir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-bbregister_bold.svg'
+            bbreg = bbregplot(fixed_image=tw1,moving_image=boldref,out_file=bbreg,contour=ribbon)
+            
             # write json
             writejson(jsontis,boldjson)
             writejson(json2,dttseriesj)
+            writejson(json2,confregj)
 
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
@@ -192,14 +196,32 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     return confreg
 
 
-def symlinkfiles(src, dest):
-    if os.path.islink(dest): 
-        os.remove(dest)
-        os.symlink(src,dest)
-    else:
-        os.symlink(src,dest)
+#def symlinkfiles(src, dest):
+    #if os.path.islink(dest): 
+        #os.remove(dest)
+        #os.symlink(src,dest)
+    #else:
+        #os.symlink(src,dest)
     
-    return dest 
+    #return dest 
+
+
+def copyfileobj_example(source, dest, buffer_size=1024*1024):
+    """      
+    Copy a file from source to dest. source and dest
+    must be file-like objects, i.e. any object with a read or
+    write method, like for example StringIO.
+    """
+    while True:
+        copy_buffer = source.read(buffer_size)
+        if not copy_buffer:
+            break
+        dest.write(copy_buffer)
+
+def symlinkfiles(source, dest):
+    # Beware, this example does not handle any edge cases!
+    with open(source, 'rb') as src, open(dest, 'wb') as dst:
+        copyfileobj_example(src, dst)
 
 def extractreg(mask,nifti):
     masker=NiftiMasker(mask_img=mask)
