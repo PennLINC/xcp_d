@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import numpy as np
 import glob as glob
@@ -18,9 +21,13 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
         MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+
     elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin6Asym'
         MNI6 = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
+
+
+        
     
     if 'space-MNI152NLin2009cAsym' in file_base:
         transformfileMNI = str(MNI6)
@@ -115,6 +122,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
         template = 'MNI152NLin2009cAsym'
         FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+
     elif 'MNI152NLin6Asym' in os.path.basename(str(mni_to_t1w)):
         template = 'MNI152NLin6Asym'
         FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
