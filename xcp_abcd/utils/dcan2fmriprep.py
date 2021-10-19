@@ -92,7 +92,7 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
         for ttt in taskd:
             taskdir ='task-'+ttt
             taskname = re.split(r'(\d+)', ttt)[0]
-            run_id = 'run-'+ str(re.split(r'(\d+)', ttt)[1])
+            run_id = '_run-'+ str(re.split(r'(\d+)', ttt)[1])
             func_dirxx = func_dirx + taskdir 
 
 
@@ -102,6 +102,7 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
             dtsereis = func_dirxx + taskdir + '_Atlas.dtseries.nii'
             motionp = func_dirxx + '/Movement_Regressors.txt'
             rmsdx = func_dirxx + '/Movement_AbsoluteRMS.txt'
+            
             
             mvreg = pd.read_csv(motionp,header=None,delimiter=r"\s+")
             mvreg = mvreg.iloc[:,0:6]
@@ -119,6 +120,8 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
             
             brainreg = pd.DataFrame({'global_signal':gsreg,'white_matter':wmreg,'csf':csfreg,'rmsd':rsmd })
             regressors  =  pd.concat([mvreg, brainreg], axis=1)
+
+            dcanfunfiles=[volume,sbref,brainmask,dtsereis,tw1tonative,tw1tonative]
 
 
             tr = nb.load(volume).header.get_zooms()[-1]   # repetition time
@@ -140,18 +143,22 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
             dttseriesj = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.json'
             native2t1w = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-scanner_to-T1w_mode-image_xfm.txt'
             t12native = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-T1w_to-scanner_mode-image_xfm.txt'
+
+            fmfuncfiles = [boldname,boldref,brainmaskf,dttseriesx,native2t1w,t12native]
+
+            # symlink files
+            for jj,kk in zip(dcanfunfiles,fmfuncfiles):
+                symlinkfiles(jj,kk)
             
-              
-              
+            # write json
+            writejson(jsontis,boldjson)
+            writejson(json2,dttseriesj)
 
+            #save confounds
+            regressors.to_csv(confreg,sep='\t',index=False)
+            
 
-   
-    
-
-    
-
-
-
+            
 def symlinkfiles( src, dest):
     if os.path.exists(dest): 
         os.remove(dest)
