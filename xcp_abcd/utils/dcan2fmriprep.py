@@ -1,7 +1,5 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
-
 import os,json,glob,re
 import numpy as np 
 import pandas as pd
@@ -160,6 +158,17 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
 
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
+    dcanjosn = {
+         "Name": "ABCDDCAN",
+         "BIDSVersion": "1.4.0",
+         "DatasetType": "derivative",
+         "GeneratedBy": [
+           {
+            "Name": "DCAN",
+            "Version": "0.0.4",
+            "CodeURL": "https://github.com/DCAN-Labs/abcd-hcp-pipeline"
+            }],}
+    writejson(dcanjosn,out_dir+'/dataset_description.json')
             
     return confreg
 
