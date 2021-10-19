@@ -50,6 +50,7 @@ def init_xcpabcd_wf(layout,
                    work_dir,
                    dummytime,
                    fd_thresh,
+                   input_type='fmriprep',
                    name='xcpabcd_wf'):
     
     """
@@ -167,6 +168,7 @@ def init_xcpabcd_wf(layout,
                             dummytime=dummytime,
                             custom_conf=custom_conf,
                             fd_thresh=fd_thresh,
+                            input_type=input_type,
                             name="single_subject_" + subject_id + "_wf")
 
         single_subj_wf.config['execution']['crashdump_dir'] = (
@@ -204,6 +206,7 @@ def init_subject_wf(
     smoothing,
     custom_conf,
     output_dir,
+    input_type,
     name
     ):
     """
@@ -348,7 +351,7 @@ It is released under the [CC0]\
     
     anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,fmriprep_dir=fmriprep_dir,
                                         subject_id=subject_id,output_dir=output_dir,
-                                        t1w_to_mni=regfile[1])
+                                        t1w_to_mni=regfile[1],input_type=input_type)
     
     ## send t1w and t1seg to anatomical workflow
     

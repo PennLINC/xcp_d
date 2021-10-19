@@ -33,6 +33,7 @@ def init_anatomical_wf(
      subject_id,
      output_dir,
      t1w_to_mni,
+     input_type,
      name='anatomical_wf',
       ):
      """
@@ -80,14 +81,105 @@ def init_anatomical_wf(
      inputnode = pe.Node(niu.IdentityInterface(
         fields=['t1w','t1seg']),
         name='inputnode')
-
      
-
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, template=None,bids_validate=False)
+
+     if input_type == 'dcan':
+          ds_t1wmni_wf = pe.Node(
+               DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
+                  extension='.nii.gz'),
+                  name='ds_t1wmni_wf', run_without_submitting=False)
      
-     t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
+          ds_t1wseg_wf = pe.Node(
+           DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',suffix='dseg',
+              extension='.nii.gz'),
+                  name='ds_t1wseg_wf', run_without_submitting=False)
+          workflow.connect([
+          (inputnode,ds_t1wmni_wf,[('t1w','in_file')]),
+          (inputnode,ds_t1wseg_wf,[('t1seg','in_file')]),
+          (inputnode,ds_t1wmni_wf,[('t1w','source_file')]),
+          (inputnode,ds_t1wseg_wf,[('t1w','source_file')]),
+          ])
+
+          all_files  = list(layout.get_files())
+          L_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*hemi-L_inflated.surf.gii')[0]
+          R_inflated_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_inflated.surf.gii')[0]
+          L_midthick_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_midthickness.surf.gii')[0]
+          R_midthick_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_midthickness.surf.gii')[0]
+          L_pial_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_pial.surf.gii')[0]
+          R_pial_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_pial.surf.gii')[0]
+          L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
+          R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
+
+          ds_wmLsurf_wf = pe.Node(
+            DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], density='32k',desc='smoothwm',check_hdr=False,
+             extension='.surf.gii',hemi='L',in_file=L_wm_surf), name='ds_wmLsurf_wf', run_without_submitting=False,mem_gb=2)
+          
+          ds_wmRsurf_wf = pe.Node(
+                DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], density='32k',desc='smoothwm',check_hdr=False,
+                extension='.surf.gii',hemi='R',in_file=R_wm_surf), name='ds_wmRsur_wf', run_without_submitting=False,mem_gb=2)
+          
+          ds_pialLsurf_wf = pe.Node(
+                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='pial',check_hdr=False,
+                extension='.surf.gii',hemi='L',in_file=L_pial_surf), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
+          ds_pialRsurf_wf = pe.Node(
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='pial',check_hdr=False,
+               extension='.surf.gii',hemi='R',in_file=R_pial_surf), name='ds_pialRsurf_wf', run_without_submitting=False,mem_gb=2)
+
+          ds_infLsurf_wf = pe.Node(
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],density='32k',desc='inflated',check_hdr=False,
+               extension='.surf.gii',hemi='L',in_file=L_inflated_surf), name='ds_infLsurf_wf', run_without_submitting=False,mem_gb=2)
+
+          ds_infRsurf_wf = pe.Node(
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='inflated',check_hdr=False,
+               extension='.surf.gii',hemi='R',in_file=R_inflated_surf), name='ds_infRsurf_wf', run_without_submitting=False,mem_gb=2)
+
+          ds_midLsurf_wf = pe.Node(
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='midthickness',check_hdr=False,
+               extension='.surf.gii',hemi='L',in_file=L_midthick_surf), name='ds_midLsurf_wf', run_without_submitting=False,mem_gb=2)
+
+          ds_midRsurf_wf = pe.Node(
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],density='32k',desc='midthickness',check_hdr=False,
+               extension='.surf.gii',hemi='R',in_file=R_midthick_surf), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
+          
+
+          workflow.connect([ 
+               (inputnode,ds_wmLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_pialLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_midLsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_infLsurf_wf,[('t1w','source_file')]),
+
+               (inputnode,ds_wmRsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_pialRsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_midRsurf_wf,[('t1w','source_file')]),
+               (inputnode,ds_infRsurf_wf,[('t1w','source_file')]),]) 
+
+          ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*ribbon.nii.gz')[0]
+    
+          ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap')
+         
+          brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
+          
+          ds_brainspriteplot_wf = pe.Node(
+            DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
+                  name='brainspriteplot', run_without_submitting=True)
+
+          workflow.connect([
+              
+               (ribbon2statmap_wf,brainspritex_wf,[('out_file','in_file')]),
+                (inputnode,brainspritex_wf,[('t1w','template')]),
+               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
+               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
+          ])
+          
+
+     
+
+     else:
+
+          t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
                        input_image_type=3, dimension=3),
                        name="t1w_transform", mem_gb=2)
@@ -274,6 +366,7 @@ def init_anatomical_wf(
               (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
               (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
               ])
+     
      return workflow
 
  
@@ -307,6 +400,8 @@ def _picwmcsf(file):
     outfile = tempfile.mkstemp(suffix = 'pialwm.nii.gz')[1]
     img.to_filename(outfile)
     return outfile
+
+
 
 def _getsesid(filename):
      ses_id = None

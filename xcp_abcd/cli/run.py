@@ -93,6 +93,11 @@ def get_parser():
     g_perfm.add_argument("-v", "--verbose", dest="verbose_count", action="count", default=0,
                          help="increases log verbosity for each occurence, debug level is -vvv")
 
+    g_outputoption = parser.add_argument_group('output, either fmriprep or dcan')
+
+    g_outputoption.add_argument('--input-type', action='store_true', default='fmriprep',
+                       help='input type, either fmriprep or dcan')
+
     g_param = parser.add_argument_group('parameters for postprocessing')
     g_param.add_argument(
         '--brain-template', action='store', default='MNI152NLin2009cAsym',
@@ -369,8 +374,16 @@ def build_workflow(opts, retval):
     # Set up some instrumental utilities
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
-
+     
+    
     # First check that fmriprep_dir looks like a BIDS folder
+    if opts.input_dir == 'dcan':
+        from ..utils import dcan2fmriprep
+        from ..workflow.base import _prefix
+        dcan_output_dir = work_dir + '/dcanhcp'
+        confile = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(opts.participant_label))
+        fmriprep_dir = dcan_output_dir
+
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
@@ -478,6 +491,7 @@ def build_workflow(opts, retval):
               custom_conf=opts.custom_conf,
               dummytime=opts.dummytime,
               fd_thresh=opts.fd_thresh,
+              input_type=opts.input_type,
               name='xcpabcd_wf'
               )
     
