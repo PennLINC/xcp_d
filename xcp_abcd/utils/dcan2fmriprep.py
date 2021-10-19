@@ -157,8 +157,9 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
             
+    return confreg
 
-            
+
 def symlinkfiles( src, dest):
     if os.path.exists(dest): 
         os.remove(dest)
