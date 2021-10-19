@@ -88,9 +88,61 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
 
         func_dir = out_dir +'/' + sub_id + '/ses-'+ses+ '/func/' 
         os.makedirs(func_dir,exist_ok=True)
+        ses_id = 'ses-'+ses
         for ttt in taskd:
+            taskdir ='task-'+ttt
             taskname = re.split(r'(\d+)', ttt)[0]
-            run_id = re.split(r'(\d+)', ttt)[1] 
+            run_id = 'run-'+ str(re.split(r'(\d+)', ttt)[1])
+            func_dirxx = func_dirx + taskdir 
+
+
+            sbref = func_dirxx + taskdir +'_SBRef.nii.gz'
+            volume = func_dirxx + taskdir + '.nii.gz'
+            brainmask = func_dirxx + '/brainmask_fs.2.0.nii.gz'
+            dtsereis = func_dirxx + taskdir + '_Atlas.dtseries.nii'
+            motionp = func_dirxx + '/Movement_Regressors.txt'
+            rmsdx = func_dirxx + '/Movement_AbsoluteRMS.txt'
+            
+            mvreg = pd.read_csv(motionp,header=None,delimiter=r"\s+")
+            mvreg = mvreg.iloc[:,0:6]
+            mvreg.columns=['trans_x','trans_y','trans_z','rot_x','rot_y','rot_z']
+            # convert rot to rad
+            mvreg['rot_x']=mvreg['rot_x']*np.pi/180
+            mvreg['rot_y']=mvreg['rot_y']*np.pi/180
+            mvreg['rot_z']=mvreg['rot_z']*np.pi/180
+
+
+            csfreg = extractreg(mask=csfmask,nifti=volume)
+            wmreg = extractreg(mask=wmmask,nifti=volume)
+            gsreg = extractreg(mask=brainmask,nifti=volume)
+            rsmd = np.loadtxt(rmsdx)
+            
+            brainreg = pd.DataFrame({'global_signal':gsreg,'white_matter':wmreg,'csf':csfreg,'rmsd':rsmd })
+            regressors  =  pd.concat([mvreg, brainreg], axis=1)
+
+
+            tr = nb.load(volume).header.get_zooms()[-1]   # repetition time
+            jsontis={
+             "RepetitionTime": np.float(tr),
+             "TaskName": taskname}
+
+            json2={
+               "grayordinates": "91k", "space": "HCP grayordinates",
+               "surface": "fsLR","surface_density": "32k",
+                "volume": "MNI152NLin6Asym"}
+            
+            boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
+            boldjson = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.json'
+            confreg   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.tsv'
+            boldref = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+'_space-MNI152NLin6Asym_boldref.nii.gz'
+            brainmaskf  = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id +'_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
+            dttseriesx = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.nii'
+            dttseriesj = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.json'
+            native2t1w = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-scanner_to-T1w_mode-image_xfm.txt'
+            t12native = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-T1w_to-scanner_mode-image_xfm.txt'
+            
+              
+              
 
 
    
