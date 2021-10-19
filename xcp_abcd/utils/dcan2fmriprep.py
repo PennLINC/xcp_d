@@ -6,19 +6,11 @@ import pandas as pd
 import nibabel as nb 
 from nilearn.input_data import NiftiMasker
 
-import os,json,glob,re
-import numpy as np 
-import pandas as pd
-import nibabel as nb 
-from nilearn.input_data import NiftiMasker
-
-def dcan2fmriprep(dcandir,outdir,sub_id=None):
-    
-    dancdir = os.path.abspath(dcandir)
+def dcan2fmriprep(dcandir,outdir):
+    dcandir = os.path.abspath(dcandir)
     outdir = os.path.abspath(outdir)
     sub_idir = glob.glob(dcandir +'/sub*')
-    if sub_id is None:
-        sub_id = [ os.path.basename(j) for j in sub_idir]
+    sub_id = [ os.path.basename(j) for j in sub_idir]
 
     for j in sub_id:
         dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
@@ -116,8 +108,8 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
            
 
 
-            sbref = func_dirxx +'/'+ taskdir +'_SBRef.nii.gz'
-            volume = func_dirxx +'/' + taskdir + '.nii.gz'
+            sbref = func_dirxx + taskdir +'_SBRef.nii.gz'
+            volume = func_dirxx + '/'+ taskdir + '.nii.gz'
             
             brainmask = func_dirxx + '/brainmask_fs.2.0.nii.gz'
             dtsereis = func_dirxx +'/'+ taskdir + '_Atlas.dtseries.nii'
@@ -167,18 +159,17 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
 
 
             # maske  coreg files here  
-            
+            figdir = out_dir +'/' + sub_id+ '/figures/'
+            os.makedirs(figdir,exist_ok=True)
+            bbreg = figdir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-bbregister_bold.svg'
+            bbreg = bbregplot(fixed_image=tw1,moving_image=boldref,out_file=bbreg,contour=ribbon)
 
             fmfuncfiles = [boldname,boldref,brainmaskf,dttseriesx,native2t1w,t12native]
 
             # symlink files
             for jj,kk in zip(dcanfunfiles,fmfuncfiles):
                 symlinkfiles(jj,kk)
-                
-            figdir = out_dir +'/' + sub_id+ '/figures/'
-            os.makedirs(figdir,exist_ok=True)
-            bbreg = figdir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-bbregister_bold.svg'
-            bbreg = bbregplot(fixed_image=tw1,moving_image=sbref,out_file=bbreg,contour=ribbon)
+            
             # write json
             writejson(jsontis,boldjson)
             writejson(json2,dttseriesj)
@@ -200,30 +191,15 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     return confreg
 
 
-#def symlinkfiles(src, dest):
-    #from shutil import copy2
-    #copy2(src,dest)
+def symlinkfiles(src, dest):
+    if os.path.islink(dest): 
+        os.remove(dest)
+        os.symlink(src,dest)
+    else:
+        os.symlink(src,dest)
     
-    #return dest
+    return dest 
 
-def symlinkfiles(src,dest):
-    # Beware, this example does not handle any edge cases!
-    with open(src, 'rb') as srcx, open(dest, 'wb') as dst:
-        copyfileobj_example(srcx, dst)
-
-
-def copyfileobj_example(source, dest, buffer_size=1024*1024):
-    """      
-    Copy a file from source to dest. source and dest
-    must be file-like objects, i.e. any object with a read or
-    write method, like for example StringIO.
-    """
-    while True:
-        copy_buffer = source.read(buffer_size)
-        if not copy_buffer:
-            break
-        dest.write(copy_buffer)
-    
 def extractreg(mask,nifti):
     masker=NiftiMasker(mask_img=mask)
     signals = masker.fit_transform(nifti)

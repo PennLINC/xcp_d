@@ -18,6 +18,8 @@ from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from multiprocessing import cpu_count
 from time import strftime
+
+from nipype.interfaces import workbench
 warnings.filterwarnings("ignore")
 
 
@@ -380,6 +382,7 @@ def build_workflow(opts, retval):
     if opts.input_type == 'dcan':
         from ..utils import dcan2fmriprep
         from ..workflow.base import _prefix
+        print(work_dir)
         dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
         confile = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
