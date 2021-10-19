@@ -6,11 +6,12 @@ import pandas as pd
 import nibabel as nb 
 from nilearn.input_data import NiftiMasker
 
-def dcan2fmriprep(dcandir,outdir):
+def dcan2fmriprep(dcandir,outdir,sub_id=None):
     dcandir = os.path.abspath(dcandir)
     outdir = os.path.abspath(outdir)
-    sub_idir = glob.glob(dcandir +'/sub*')
-    sub_id = [ os.path.basename(j) for j in sub_idir]
+    if sub_id is not None:
+        sub_idir = glob.glob(dcandir +'/sub*')
+        sub_id = [ os.path.basename(j) for j in sub_idir]
 
     for j in sub_id:
         dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
