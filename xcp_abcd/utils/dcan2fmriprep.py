@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+
 import os,json,glob,re
 import numpy as np 
 import pandas as pd
@@ -21,10 +22,10 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
     
     
     for ses in ses_id:
-        anat_dirx = dcan_dir+'/' + sub_id + '/ses-' +sess + '/files/MNINonLinear/'
+        anat_dirx = dcan_dir+'/' + sub_id + '/ses-' +ses + '/files/MNINonLinear/'
         anatdir = out_dir +'/' + sub_id + '/ses-'+ses+ '/anat/'
         os.makedirs(anatdir,exist_ok=True)
-
+        sess='ses-'+ses
         tw1 = anat_dirx +'/T1w.nii.gz'
         brainmask  = anat_dirx + '/brainmask_fs.nii.gz'
         ribbon = anat_dirx + '/ribbon.nii.gz'
@@ -89,17 +90,20 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
         func_dir = out_dir +'/' + sub_id + '/ses-'+ses+ '/func/' 
         os.makedirs(func_dir,exist_ok=True)
         ses_id = 'ses-'+ses
-        for ttt in taskd:
+        for ttt in taskid:
             taskdir ='task-'+ttt
+            
             taskname = re.split(r'(\d+)', ttt)[0]
             run_id = '_run-'+ str(re.split(r'(\d+)', ttt)[1])
             func_dirxx = func_dirx + taskdir 
+           
 
 
             sbref = func_dirxx + taskdir +'_SBRef.nii.gz'
-            volume = func_dirxx + taskdir + '.nii.gz'
+            volume = func_dirxx + '/'+ taskdir + '.nii.gz'
+            
             brainmask = func_dirxx + '/brainmask_fs.2.0.nii.gz'
-            dtsereis = func_dirxx + taskdir + '_Atlas.dtseries.nii'
+            dtsereis = func_dirxx +'/'+ taskdir + '_Atlas.dtseries.nii'
             motionp = func_dirxx + '/Movement_Regressors.txt'
             rmsdx = func_dirxx + '/Movement_AbsoluteRMS.txt'
             
@@ -160,12 +164,13 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
     return confreg
 
 
-def symlinkfiles( src, dest):
-    if os.path.exists(dest): 
+def symlinkfiles(src, dest):
+    if os.path.islink(dest): 
         os.remove(dest)
         os.symlink(src,dest)
     else:
         os.symlink(src,dest)
+    
     return dest 
 
 def extractreg(mask,nifti):
