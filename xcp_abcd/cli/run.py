@@ -382,7 +382,7 @@ def build_workflow(opts, retval):
         from ..workflow.base import _prefix
         dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
-        confile = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(opts.participant_label))
+        confile = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
         fmriprep_dir = dcan_output_dir
 
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
