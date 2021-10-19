@@ -380,7 +380,8 @@ def build_workflow(opts, retval):
     if opts.input_type == 'dcan':
         from ..utils import dcan2fmriprep
         from ..workflow.base import _prefix
-        dcan_output_dir = work_dir + '/dcanhcp'
+        dcan_output_dir = str(work_dir) + '/dcanhcp'
+        os.makedirs(dcan_output_dir, exist_ok=True)
         confile = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(opts.participant_label))
         fmriprep_dir = dcan_output_dir
 
