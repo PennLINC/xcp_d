@@ -9,7 +9,7 @@ from nilearn.input_data import NiftiMasker
 def dcan2fmriprep(dcandir,outdir,sub_id=None):
     dcandir = os.path.abspath(dcandir)
     outdir = os.path.abspath(outdir)
-    if sub_id is not None:
+    if sub_id is  None:
         sub_idir = glob.glob(dcandir +'/sub*')
         sub_id = [ os.path.basename(j) for j in sub_idir]
 
