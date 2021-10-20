@@ -114,18 +114,18 @@ def init_anatomical_wf(
           R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
 
           ds_wmLsurf_wf = pe.Node(
-            DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], density='32k',desc='smoothwm',check_hdr=False,
+            DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc','suffix'], density='32k',desc='smoothwm',check_hdr=False,
              extension='.surf.gii',hemi='L',in_file=L_wm_surf), name='ds_wmLsurf_wf', run_without_submitting=False,mem_gb=2)
           
           ds_wmRsurf_wf = pe.Node(
-                DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], density='32k',desc='smoothwm',check_hdr=False,
+                DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc','suffix'], density='32k',desc='smoothwm',check_hdr=False,
                 extension='.surf.gii',hemi='R',in_file=R_wm_surf), name='ds_wmRsur_wf', run_without_submitting=False,mem_gb=2)
           
           ds_pialLsurf_wf = pe.Node(
-                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='pial',check_hdr=False,
+                DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'], density='32k',desc='pial',check_hdr=False,
                 extension='.surf.gii',hemi='L',in_file=L_pial_surf), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
           ds_pialRsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='pial',check_hdr=False,
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'], density='32k',desc='pial',check_hdr=False,
                extension='.surf.gii',hemi='R',in_file=R_pial_surf), name='ds_pialRsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_infLsurf_wf = pe.Node(
@@ -133,15 +133,15 @@ def init_anatomical_wf(
                extension='.surf.gii',hemi='L',in_file=L_inflated_surf), name='ds_infLsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_infRsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='inflated',check_hdr=False,
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'], density='32k',desc='inflated',check_hdr=False,
                extension='.surf.gii',hemi='R',in_file=R_inflated_surf), name='ds_infRsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_midLsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'], density='32k',desc='midthickness',check_hdr=False,
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'], density='32k',desc='midthickness',check_hdr=False,
                extension='.surf.gii',hemi='L',in_file=L_midthick_surf), name='ds_midLsurf_wf', run_without_submitting=False,mem_gb=2)
 
           ds_midRsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],density='32k',desc='midthickness',check_hdr=False,
+               DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],density='32k',desc='midthickness',check_hdr=False,
                extension='.surf.gii',hemi='R',in_file=R_midthick_surf), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
           
 

@@ -206,7 +206,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     #return dest 
 
 
-def copyfileobj_example(source, dest, buffer_size=1024*1024):
+def copyfileobj_example(source, dest, buffer_size=1024*1024*1024):
     """      
     Copy a file from source to dest. source and dest
     must be file-like objects, i.e. any object with a read or
