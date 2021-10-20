@@ -79,7 +79,7 @@ def init_anatomical_wf(
      workflow = Workflow(name=name)
 
      inputnode = pe.Node(niu.IdentityInterface(
-        fields=['t1w','t1seg','surf']),
+        fields=['t1w','t1seg']),
         name='inputnode')
      
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
@@ -112,52 +112,10 @@ def init_anatomical_wf(
           R_pial_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_pial.surf.gii')[0]
           L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
           R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
-          
-          inputnode.inputs.surf  = R_wm_surf
-          ds_wmLsurf_wf = pe.Node(
-            DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'], density='32k',desc='smoothwm',check_hdr=False,
-             extension='.surf.gii',hemi='L',in_file=L_wm_surf), name='ds_wmLsurf_wf', run_without_submitting=False,mem_gb=2)
-          
-          ds_wmRsurf_wf = pe.Node(
-                DerivativesDataSink(base_directory=output_dir,space='fsLR', dismiss_entities=['desc','suffix'], density='32k',desc='smoothwm',check_hdr=False,
-                extension='.surf.gii',hemi='R',in_file=R_wm_surf), name='ds_wmRsur_wf', run_without_submitting=False,mem_gb=2)
-          
-          ds_pialLsurf_wf = pe.Node(
-                DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'], density='32k',desc='pial',check_hdr=False,
-                extension='.surf.gii',hemi='L',in_file=L_pial_surf), name='ds_pialLsurf_wf', run_without_submitting=True,mem_gb=2)
-          ds_pialRsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'], density='32k',desc='pial',check_hdr=False,
-               extension='.surf.gii',hemi='R',in_file=R_pial_surf), name='ds_pialRsurf_wf', run_without_submitting=False,mem_gb=2)
-
-          ds_infLsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'],density='32k',desc='inflated',check_hdr=False,
-               extension='.surf.gii',hemi='L',in_file=L_inflated_surf), name='ds_infLsurf_wf', run_without_submitting=False,mem_gb=2)
-
-          ds_infRsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'], density='32k',desc='inflated',check_hdr=False,
-               extension='.surf.gii',hemi='R',in_file=R_inflated_surf), name='ds_infRsurf_wf', run_without_submitting=False,mem_gb=2)
-
-          ds_midLsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'], density='32k',desc='midthickness',check_hdr=False,
-               extension='.surf.gii',hemi='L',in_file=L_midthick_surf), name='ds_midLsurf_wf', run_without_submitting=False,mem_gb=2)
-
-          ds_midRsurf_wf = pe.Node(
-               DerivativesDataSink(base_directory=output_dir,space='fsLR',dismiss_entities=['desc','suffix'],density='32k',desc='midthickness',check_hdr=False,
-               extension='.surf.gii',hemi='R',in_file=R_midthick_surf), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
-          
-
-          workflow.connect([ 
-               (inputnode,ds_wmLsurf_wf,[('surf','source_file')]),
-               (inputnode,ds_pialLsurf_wf,[('surf','source_file')]),
-               (inputnode,ds_midLsurf_wf,[('surf','source_file')]),
-               (inputnode,ds_infLsurf_wf,[('surf','source_file')]),
-
-               (inputnode,ds_wmRsurf_wf,[('surf','source_file')]),
-               (inputnode,ds_pialRsurf_wf,[('surf','source_file')]),
-               (inputnode,ds_midRsurf_wf,[('surf','source_file')]),
-               (inputnode,ds_infRsurf_wf,[('surf','source_file')]),]) 
-
+     
           ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon_T1w.nii.gz')[0]
+
+          
     
           ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap')
          

@@ -387,6 +387,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     rxdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
     rgdata = compute_dvars(read_ndata(datafile=regdata,maskfile=mask))
     rsdata = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
+    rgdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
     
     conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
     fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
