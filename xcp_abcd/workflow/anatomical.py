@@ -116,10 +116,10 @@ def init_anatomical_wf(
           ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon_T1w.nii.gz')[0]
 
           ses_id =_getsesid(ribbon) 
-          anatdir = output_dir+'/xcp_abcd/sub-'+ subject_id +'/ses-'+ ses_id+ '*/anat'
+          anatdir = output_dir+'/xcp_abcd/sub-'+ subject_id +'/ses-'+ ses_id+ '/anat'
           if not os.path.exists(anatdir):
                os.makedirs(anatdir)
-               
+
           surf = [L_inflated_surf,R_inflated_surf,L_midthick_surf,R_midthick_surf,L_pial_surf,
                R_pial_surf,L_wm_surf,R_wm_surf]
           
