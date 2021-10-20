@@ -116,7 +116,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
     file_base = os.path.basename(str(bold_file))
     #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
-    #MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+    fMNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
     
     #get the template for registration
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
@@ -128,11 +128,8 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
     
     if 'space-MNI152NLin6Asym' in file_base:
-        mnisf = mni_to_t1w.split('from-'+ template +'_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_mni6 = mnisf + 'from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_mni6),str(mni_to_t1w),str(FSL2MNI9)]
+        transformfile = [str(fMNI6)]
 
-   
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
     elif 'space-PNC' in file_base:

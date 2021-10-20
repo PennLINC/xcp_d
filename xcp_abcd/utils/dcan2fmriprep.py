@@ -6,13 +6,25 @@ import pandas as pd
 import nibabel as nb 
 from nilearn.input_data import NiftiMasker
 
+def dcan2fmriprep(dcandir,outdir,sub_id=None):
+    dcandir = os.path.abspath(dcandir)
+    outdir = os.path.abspath(outdir)
+    if sub_id is  None:
+        sub_idir = glob.glob(dcandir +'/sub*')
+        sub_id = [ os.path.basename(j) for j in sub_idir]
 
-def dcan2fmriprep(dcan_dir,out_dir,sub_id):
+    for j in sub_id:
+        dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
+            
+    return sub_id
+
+
+def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     """
     dcan2fmriprep(dcan_dir,out_dir)
     """
     # get session id if available 
-
+    
     sess =glob.glob(dcan_dir+'/'+sub_id+'/s*')
     ses_id = []
     ses_id = [ j.split('ses-')[1] for j in sess]
@@ -97,7 +109,7 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
            
 
 
-            sbref = func_dirxx + taskdir +'_SBRef.nii.gz'
+            sbref = func_dirxx + '/'+ taskdir +'_SBRef.nii.gz'
             volume = func_dirxx + '/'+ taskdir + '.nii.gz'
             
             brainmask = func_dirxx + '/brainmask_fs.2.0.nii.gz'
@@ -123,7 +135,7 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
             brainreg = pd.DataFrame({'global_signal':gsreg,'white_matter':wmreg,'csf':csfreg,'rmsd':rsmd })
             regressors  =  pd.concat([mvreg, brainreg], axis=1)
 
-            dcanfunfiles=[volume,sbref,brainmask,dtsereis,tw1tonative,tw1tonative]
+            dcanfunfiles=[sbref,dtsereis,tw1tonative,tw1tonative]
 
 
             tr = nb.load(volume).header.get_zooms()[-1]   # repetition time
@@ -136,25 +148,36 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
                "surface": "fsLR","surface_density": "32k",
                 "volume": "MNI152NLin6Asym"}
             
-            boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
+            #boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
             boldjson = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.json'
             confreg   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.tsv'
+            confregj   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.json'
             boldref = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+'_space-MNI152NLin6Asym_boldref.nii.gz'
-            brainmaskf  = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id +'_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
+            #brainmaskf  = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id +'_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
             dttseriesx = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.nii'
             dttseriesj = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.json'
             native2t1w = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-scanner_to-T1w_mode-image_xfm.txt'
             t12native = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-T1w_to-scanner_mode-image_xfm.txt'
 
-            fmfuncfiles = [boldname,boldref,brainmaskf,dttseriesx,native2t1w,t12native]
+
+            # maske  coreg files here  
+            
+
+            fmfuncfiles = [boldref,dttseriesx,native2t1w,t12native]
 
             # symlink files
             for jj,kk in zip(dcanfunfiles,fmfuncfiles):
                 symlinkfiles(jj,kk)
             
+            figdir = out_dir +'/' + sub_id+ '/figures/'
+            os.makedirs(figdir,exist_ok=True)
+            bbreg = figdir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-bbregister_bold.svg'
+            bbreg = bbregplot(fixed_image=tw1,moving_image=boldref,out_file=bbreg,contour=ribbon)
+            
             # write json
             writejson(jsontis,boldjson)
             writejson(json2,dttseriesj)
+            writejson(json2,confregj)
 
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
@@ -170,17 +193,35 @@ def dcan2fmriprep(dcan_dir,out_dir,sub_id):
             }],}
     writejson(dcanjosn,out_dir+'/dataset_description.json')
             
-    return confreg
+    return dcanjosn
 
 
-def symlinkfiles(src, dest):
-    if os.path.islink(dest): 
-        os.remove(dest)
-        os.symlink(src,dest)
-    else:
-        os.symlink(src,dest)
+#def symlinkfiles(src, dest):
+    #if os.path.islink(dest): 
+        #os.remove(dest)
+        #os.symlink(src,dest)
+    #else:
+        #os.symlink(src,dest)
     
-    return dest 
+    #return dest 
+
+
+def copyfileobj_example(source, dest, buffer_size=1024*1024*1024):
+    """      
+    Copy a file from source to dest. source and dest
+    must be file-like objects, i.e. any object with a read or
+    write method, like for example StringIO.
+    """
+    while True:
+        copy_buffer = source.read(buffer_size)
+        if not copy_buffer:
+            break
+        dest.write(copy_buffer)
+
+def symlinkfiles(source, dest):
+    # Beware, this example does not handle any edge cases!
+    with open(source, 'rb') as src, open(dest, 'wb') as dst:
+        copyfileobj_example(src, dst)
 
 def extractreg(mask,nifti):
     masker=NiftiMasker(mask_img=mask)
@@ -190,4 +231,47 @@ def extractreg(mask,nifti):
 def writejson(data,outfile):
     with open(outfile,'w') as f:
         json.dump(data,f)
-    return outfile 
+    return outfile
+
+
+def bbregplot(fixed_image,moving_image, contour, out_file='report.svg'): 
+    from nilearn.image import threshold_img, load_img,resample_img
+    from niworkflows.viz.utils import plot_registration
+    from niworkflows.viz.utils import cuts_from_bbox, compose_view
+    import numpy as np
+
+    fixed_image_nii = load_img(fixed_image)
+    moving_image_nii = load_img(moving_image)
+    moving_image_nii = resample_img(moving_image_nii, target_affine=np.eye(3), interpolation='nearest')
+    contour_nii = load_img(contour) if contour is not None else None
+
+    mask_nii = threshold_img(fixed_image_nii, 1e-3)
+
+    n_cuts = 7
+    if  contour_nii:
+        cuts = cuts_from_bbox(contour_nii, cuts=n_cuts)
+    else:
+        cuts = cuts_from_bbox(mask_nii, cuts=n_cuts)
+
+    compose_view(
+            plot_registration(
+                fixed_image_nii,
+                "fixed-image",
+                estimate_brightness=True,
+                cuts=cuts,
+                label='fixed',
+                contour=contour_nii,
+                compress='auto'
+            ),
+            plot_registration(
+                moving_image_nii,
+                "moving-image",
+                estimate_brightness=True,
+                cuts=cuts,
+                label='moving',
+                contour=contour_nii,
+                compress='auto',
+            ),
+            out_file=out_file,
+        )
+    return out_file
