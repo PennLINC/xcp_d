@@ -7,8 +7,7 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 
 """
 
-import os
-import fnmatch
+import os,fnmatch,shutil
 from pathlib import Path
 from templateflow.api import get as get_template
 
@@ -114,8 +113,13 @@ def init_anatomical_wf(
           R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
      
           ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon_T1w.nii.gz')[0]
+          anatdir = glob.glob(output_dir+'/xcp_abcd/sub-*'+ subject_id+ '*/anat')[0]
 
+          surf = [L_inflated_surf,R_inflated_surf,L_midthick_surf,R_midthick_surf,L_pial_surf,
+               R_pial_surf,L_wm_surf,R_wm_surf]
           
+          for ss in surf:
+               shutil.copy(ss,anatdir)
     
           ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap')
          
