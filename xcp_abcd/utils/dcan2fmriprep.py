@@ -135,7 +135,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             brainreg = pd.DataFrame({'global_signal':gsreg,'white_matter':wmreg,'csf':csfreg,'rmsd':rsmd })
             regressors  =  pd.concat([mvreg, brainreg], axis=1)
 
-            dcanfunfiles=[volume,sbref,brainmask,dtsereis,tw1tonative,tw1tonative]
+            dcanfunfiles=[sbref,dtsereis,tw1tonative,tw1tonative]
 
 
             tr = nb.load(volume).header.get_zooms()[-1]   # repetition time
@@ -148,12 +148,12 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
                "surface": "fsLR","surface_density": "32k",
                 "volume": "MNI152NLin6Asym"}
             
-            boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
+            #boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
             boldjson = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.json'
             confreg   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.tsv'
             confregj   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.json'
             boldref = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+'_space-MNI152NLin6Asym_boldref.nii.gz'
-            brainmaskf  = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id +'_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
+            #brainmaskf  = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id +'_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
             dttseriesx = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.nii'
             dttseriesj = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-fsLR_den-91k_bold.dtseries.json'
             native2t1w = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_from-scanner_to-T1w_mode-image_xfm.txt'
@@ -163,7 +163,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             # maske  coreg files here  
             
 
-            fmfuncfiles = [boldname,boldref,brainmaskf,dttseriesx,native2t1w,t12native]
+            fmfuncfiles = [boldref,dttseriesx,native2t1w,t12native]
 
             # symlink files
             for jj,kk in zip(dcanfunfiles,fmfuncfiles):

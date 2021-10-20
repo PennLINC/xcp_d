@@ -380,6 +380,7 @@ def build_workflow(opts, retval):
     
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type == 'dcan':
+        opts.cifti = True
         from ..utils import dcan2fmriprep
         from ..workflow.base import _prefix
         print(work_dir)
