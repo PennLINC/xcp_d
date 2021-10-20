@@ -193,7 +193,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             }],}
     writejson(dcanjosn,out_dir+'/dataset_description.json')
             
-    return confreg
+    return dcanjosn
 
 
 #def symlinkfiles(src, dest):
