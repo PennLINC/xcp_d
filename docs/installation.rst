@@ -65,6 +65,7 @@ and extra steps necessary for execution.
 Manually Prepared Environment (Python 3.8+)
 ===========================================
 
+
 .. warning::
 
    This method is not recommended! Please checkout container alternatives
@@ -76,7 +77,7 @@ and their binaries available in the system's ``$PATH``.
 On a functional Python 3.8 (or above) environment with ``pip`` installed,
 *xcp_abcd* can be installed using the habitual command ::
 
-    $ python -m pip install xcp_abcd
+    $ pip install git+https://github.com/pennlinc/xcp_abcd.git
 
 Check your installation with the ``--version`` argument ::
 
