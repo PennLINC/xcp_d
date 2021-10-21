@@ -9,13 +9,13 @@ Usage Notes
 
 XCP_ABCD Execution 
 ------------------
-The *XCP_ABCD* workflow takes  fMRIPRep outputs which is in form of BIDS derivatives.  
-The fMRIPRep outputs  is required to include atleast anatomical and functional outputs 
-with atleast one preprocessed BOLD. 
+The *xcp_abcd* workflow takes  fMRIPRep outputs in the form of BIDS derivatives.  
+The fMRIPRep outputs  are required to include at least anatomical and functional outputs 
+with at least one preprocessed BOLD image. 
 
-The exact command to run is  *XCP_ABCD* depends on the Installation_ method and 
-required data that needed to be processed
-The basic command of xcp_abcd is as follow
+The exact command to run in *xcp_abcd* depends on the Installation_ method and 
+data that needs to be processed
+The basic command of *xcp_abcd* is as follow
 Example: ::
 
     xcp_abcd fmriprepdir output participant  # for nifti 
@@ -30,8 +30,6 @@ Command-Line Arguments
    :prog: xcp_abcd
    :nodefault:
    :nodefaultconst:
-
-
 Troubleshooting
 ---------------
 Logs and crashfiles are outputted into the
