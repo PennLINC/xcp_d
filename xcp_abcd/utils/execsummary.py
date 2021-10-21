@@ -141,7 +141,7 @@ def ribbon_to_statmap(ribbon,outfile):
 
     ngbdata = nb.load(ribbon)
     
-    if ribbon.get_fdata().max() > 5:
+    if ngbdata.get_fdata().max() > 5:
         contour_data = ngbdata.get_fdata() % 39
         white = nlimage.new_img_like(ngbdata, contour_data == 2) 
         pial = nlimage.new_img_like(ngbdata, contour_data >= 2)
