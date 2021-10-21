@@ -325,7 +325,7 @@ def init_anatomical_wf(
                ])
      
           else:
-
+               ribbon2statmap_wf = pe.Node(RibbontoStatmap(),name='ribbon2statmap')
                brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
                ds_brainspriteplot_wf = pe.Node(
                  DerivativesDataSink(base_directory=output_dir,check_hdr=False, dismiss_entities=['desc',], desc='brainplot', datatype="figures"),
@@ -333,7 +333,8 @@ def init_anatomical_wf(
 
                workflow.connect([
                 (inputnode,brainspritex_wf,[('t1w','template')]),
-                (inputnode,brainspritex_wf,[('t1seg','in_file')]),
+                (inputnode,ribbon2statmap_wf,[('t1seg','ribbon')]),
+                (ribbon2statmap_wf,brainspritex_wf,[('out_file','in_file')]),
                 (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                 (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
                  ])
