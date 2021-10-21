@@ -7,6 +7,7 @@ from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
 from niworkflows.viz.utils import extract_svg,robust_set_limits,compose_view
 from svgutils.transform import fromstring
+from skimage import measure
 
 
 def surf2vol(template,left_surf, right_surf, filename,scale=1):
@@ -131,33 +132,66 @@ def generate_brain_sprite(template_image,stat_map,out_file):
     return out_file
 
 import nilearn.image  as nlimage
-from scipy.ndimage import sobel, generic_gradient_magnitude
+#from scipy.ndimage import sobel, generic_gradient_magnitude
 
 def ribbon_to_statmap(ribbon,outfile):
+
+    
+    # chek if the data is ribbon or seg files 
+
     ngbdata = nb.load(ribbon)
-    contour_data = ngbdata.get_fdata() % 39
-    white = nlimage.new_img_like(ngbdata, contour_data == 2) 
-    pial = nlimage.new_img_like(ngbdata, contour_data >= 2)
     
-    # get the gradient
-    datap = generic_gradient_magnitude(pial.get_fdata(), sobel,mode='constant',cval=-1)
-    dataw = generic_gradient_magnitude(white.get_fdata(), sobel,mode='constant',cval=-1)
+    if ngbdata.get_fdata().max() > 5: # that is ribbon 
+        contour_data = ngbdata.get_fdata() % 39
+        white = nlimage.new_img_like(ngbdata, contour_data == 2) 
+        pial = nlimage.new_img_like(ngbdata, contour_data >= 2)
+    else:  # then segmentation
+        contour_data = ngbdata.get_fdata()
+        white = nlimage.new_img_like(ngbdata, contour_data == 2)
+        pial = nlimage.new_img_like(ngbdata, contour_data == 1)
     
-    #threshold 
-    t1 = np.percentile(datap[datap>0],30)
-    t2 = np.percentile(dataw[dataw>0],30)
-    dataw[dataw<t1] = 0
-    datap[datap<t2] = 0
     
-    #binarized
-    dataw[dataw>0] = 1 # white matter is 1
-    datap[datap>0] = 3 # pial is 3
-    datax = datap + dataw
-    datax [datax > 3] = 3
+    datapial = _get_contour(pial.get_fdata())
+    datawhite = _get_contour(white.get_fdata())
+
+
+    datax = 2*datapial + datawhite
     
     # save the output 
     ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)
     ngbdatax.to_filename(outfile)
-    
+
     return outfile
+
+
+def _get_contour(datax):
+    dims =datax.shape
+    
+    contour =np.zeros_like(datax)
+    
+    # get y-z plane 
+    for i in range(dims[0]):
+        con = measure.find_contours(datax[i,:,:])
+        conx =np.zeros_like(datax[i,:,:])
+        for cx in con: 
+            conx[np.int64(cx[:, 0]+0.5), np.int64(cx[:, 1]+0.5)]=1
+        contour[i,:,:]= conx 
+
+      #for xz plane
+    for i in range(dims[1]):
+        con = measure.find_contours(datax[:,i,:])
+        conx =np.zeros_like(datax[:,i,:])
+        for cx in con:
+            conx[np.int64(cx[:, 0]+0.5), np.int64(cx[:, 1]+0.5)]=1
+        contour[:,i,:]= conx 
+
+    #for yz plane
+    for i in range(dims[2]):
+        con = measure.find_contours(datax[:,:,i])
+        conx =np.zeros_like(datax[:,:,i])
+        for cx in con:
+            conx[np.int64(cx[:, 0]+0.5), np.int64(cx[:, 1]+0.5)]=1
+        contour[:,:,i]= conx 
+        
+    return contour
 
