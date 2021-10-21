@@ -333,7 +333,7 @@ def init_anatomical_wf(
 
                workflow.connect([
                 (inputnode,brainspritex_wf,[('t1w','template')]),
-                (inputnode,brainspritex_wf,[(('t1seg',_picwmcsf),'in_file')]),
+                (inputnode,brainspritex_wf,[('t1seg','in_file')]),
                 (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                 (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
                  ])
