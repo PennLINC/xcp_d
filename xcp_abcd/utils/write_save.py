@@ -40,6 +40,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
 
     '''
     basedir = os.path.split(os.path.abspath(filename))[0]
+    fileid = os.basename(filename)
     # write cifti series
     if template.endswith('.dtseries.nii'):
         from nibabel.cifti2 import Cifti2Image
@@ -48,11 +49,11 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
             dataimg = Cifti2Image(dataobj=data_matrix.T,header=template_file.header,
                     file_map=template_file.file_map,nifti_header=template_file.nifti_header)
         elif data_matrix.shape[1] != template_file.shape[0]:
-            fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
+            fake_cifti1 = str(basedir + '/'+ fileid + 'fake_niftix.nii.gz')
             run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ',template,fake_cifti1])
-            fake_cifti0 = str(basedir+ '/edited_cifti_nifti.nii.gz')
+            fake_cifti0 = str(basedir+ + '/' + fileid + 'edited_cifti_nifti.nii.gz')
             fake_cifti0 = edit_ciftinifti(fake_cifti1,fake_cifti0,data_matrix)
-            orig_cifti0 = str(basedir+ '/edited_nifti2cifti.dtseries.nii')
+            orig_cifti0 = str(basedir + '/' + fileid + 'edited_nifti2cifti.dtseries.nii')
             run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',fake_cifti0,template, 
                                    orig_cifti0,'-reset-timepoints',str(tr),str(0)  ])
             template_file2 = nb.load(orig_cifti0)
