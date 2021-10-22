@@ -36,7 +36,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
       data matrix : veritices by timepoint 
       template: header and affine
       filename : name of the output
-      mask : mask is not needed
+      mask : mask is not needed for cifti 
 
     '''
     basedir = os.path.split(os.path.abspath(filename))[0]
@@ -51,7 +51,7 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
         elif data_matrix.shape[1] != template_file.shape[0]:
             fake_cifti1 = str(basedir + '/'+ fileid + 'fake_niftix.nii.gz')
             run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ',template,fake_cifti1])
-            fake_cifti0 = str(basedir+ + '/' + fileid + 'edited_cifti_nifti.nii.gz')
+            fake_cifti0 = str(basedir  + '/' + fileid + 'edited_cifti_nifti.nii.gz')
             fake_cifti0 = edit_ciftinifti(fake_cifti1,fake_cifti0,data_matrix)
             orig_cifti0 = str(basedir + '/' + fileid + 'edited_nifti2cifti.dtseries.nii')
             run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',fake_cifti0,template, 
