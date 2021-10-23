@@ -213,7 +213,6 @@ the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighb
 
 def init_3d_reho_wf(
     mem_gb,
-    smoothing,
     name="afni_reho_wf",
     ):
 
@@ -261,7 +260,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         fields=['reho_out','rehohtml']), name='outputnode')
 
     compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb)
-    brain_plot = pe.Node(brainplot(), mem_gb=mem_gb,name='brain_plot')
+    brain_plot = pe.Node(brainplot(), mem_gb=1,name='brain_plot')
     workflow.connect([
          (inputnode, compute_reho,[('clean_bold','in_file'),
                          ('bold_mask','mask_file')]),
