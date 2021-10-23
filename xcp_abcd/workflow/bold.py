@@ -246,7 +246,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf" )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
+    reho_compute_wf = init_3d_reho_wf(mem_gb=2,smoothing=smoothing,
                        name="afni_reho_wf")
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
