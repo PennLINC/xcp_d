@@ -213,6 +213,7 @@ the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighb
 
 def init_3d_reho_wf(
     mem_gb,
+    smoothing,
     name="afni_reho_wf",
     ):
 
