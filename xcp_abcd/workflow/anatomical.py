@@ -34,6 +34,7 @@ def init_anatomical_wf(
      output_dir,
      t1w_to_mni,
      input_type,
+     mem_gb,
      name='anatomical_wf',
       ):
      """
@@ -126,9 +127,9 @@ def init_anatomical_wf(
           for ss in surf:
                shutil.copy(ss,anatdir)
     
-          ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap')
+          ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
          
-          brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
+          brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
           
           ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
@@ -151,12 +152,12 @@ def init_anatomical_wf(
           t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
                        input_image_type=3, dimension=3),
-                       name="t1w_transform", mem_gb=2)
+                       name="t1w_transform", mem_gb=mem_gb,n_procs=omp_nthreads)
 
           seg_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
-                       name="seg_transform", mem_gb=2)
+                       name="seg_transform",mem_gb=mem_gb,n_procs=omp_nthreads)
 
           ds_t1wmni_wf = pe.Node(
            DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
@@ -212,29 +213,29 @@ def init_anatomical_wf(
                right_sphere_fsLR = str(get_template(template='fsLR',hemi='R',density='32k',suffix='sphere')[0]) 
 
           # nodes for letf and right in node
-               left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere')
-               right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere')
+               left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
+               right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
           
          
           ## surface resample to fsl32k
                left_wm_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_wm_surf), name="left_wm_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=L_wm_surf), name="left_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_pial_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_pial_surf), name="left_pial_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=L_pial_surf), name="left_pial_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_midthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_midthick_surf), name="left_midthick_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=L_midthick_surf), name="left_midthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_inf_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_inflated_surf), name="left_inflated_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=L_inflated_surf), name="left_inflated_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
           
 
                right_wm_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_wm_surf), name="right_wm_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=R_wm_surf), name="right_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_pial_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_pial_surf), name="right_pial_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=R_pial_surf), name="right_pial_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_midthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_midthick_surf), name="right_midthick_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=R_midthick_surf), name="right_midthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_inf_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_inflated_surf), name="right_inflated_surf",mem_gb=1)
+                        metric = ' BARYCENTRIC ',in_file=R_inflated_surf), name="right_inflated_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
 
           
           # write report node
@@ -301,7 +302,7 @@ def init_anatomical_wf(
           #wm2vol_wf = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
                         #left_surf=R_wm_surf,right_surf=L_wm_surf),name='wm2vol')
           
-               ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap')
+               ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
           
           ## combine pial and wm volumes
           #from nipype.interfaces.fsl import MultiImageMaths
@@ -309,7 +310,7 @@ def init_anatomical_wf(
 
           
           #brainplot
-               brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite')
+               brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
           
                ds_brainspriteplot_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
@@ -325,8 +326,8 @@ def init_anatomical_wf(
                ])
      
           else:
-               ribbon2statmap_wf = pe.Node(RibbontoStatmap(),name='ribbon2statmap')
-               brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite')
+               ribbon2statmap_wf = pe.Node(RibbontoStatmap(),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
+               brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
                ds_brainspriteplot_wf = pe.Node(
                  DerivativesDataSink(base_directory=output_dir,check_hdr=False, dismiss_entities=['desc',], desc='brainplot', datatype="figures"),
                   name='brainspriteplot', run_without_submitting=False)
@@ -342,37 +343,6 @@ def init_anatomical_wf(
      return workflow
 
  
-
-def _picwmcsf(file):
-    import nibabel as nb 
-    import numpy as np 
-    import tempfile
-    datax = nb.load(file)
-    data_csf = np.zeros(datax.shape)
-    data_wm = np.zeros(datax.shape)
-    data_csf [datax.get_fdata() == 2]= 3
-    data_wm [datax.get_fdata() == 3]= 1
-    
-    from scipy.ndimage import sobel, generic_gradient_magnitude
-    datap  = generic_gradient_magnitude(data_csf, sobel,mode='constant',cval=-1)
-    dataw = generic_gradient_magnitude(data_wm, sobel,mode='constant',cval=-1)
-
-    t1 =np.percentile(datap[datap>0],30)
-    t2 =np.percentile(dataw[dataw>0],30)
-    dataw[dataw<t1]=0
-    datap[datap<t2]=0
-    
-    #binarized
-    dataw[dataw>0]=1
-    datap[datap>0]=3
-    dataxy =datap + dataw
-    dataxy [dataxy > 3] = 3
-     
-    img = nb.Nifti1Image(dataxy, affine=datax.affine, header=datax.header)
-    outfile = tempfile.mkstemp(suffix = 'pialwm.nii.gz')[1]
-    img.to_filename(outfile)
-    return outfile
-
 
 
 def _getsesid(filename):
