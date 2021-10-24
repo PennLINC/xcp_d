@@ -337,16 +337,16 @@ It is released under the [CC0]\
 """
 
     summary = pe.Node(SubjectSummary(subject_id=subject_id,bold=subject_data[0]),
-                      name='summary', run_without_submitting=True)
+                      name='summary')
 
     about = pe.Node(AboutSummary(version=__version__,
                                  command=' '.join(sys.argv)),
-                    name='about', run_without_submitting=True)
+                    name='about',)
 
     
     ds_report_summary = pe.Node(
              DerivativesDataSink(base_directory=output_dir,source_file=subject_data[0][0],desc='summary', datatype="figures"),
-                  name='ds_report_summary', run_without_submitting=True)
+                  name='ds_report_summary')
 
     
     anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,fmriprep_dir=fmriprep_dir,
