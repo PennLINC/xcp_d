@@ -1,6 +1,8 @@
 
 FROM ubuntu:xenial-20200706
 
+FROM neurodebian:stretch
+
 COPY docker/files/neurodebian.gpg /usr/local/etc/neurodebian.gpg
 
 # Prepare environment
@@ -10,6 +12,8 @@ RUN apt-get update && \
                     wget \
                     curl \
                     bzip2 \
+                    locales \
+                    unzip \
                     ca-certificates \
                     xvfb \
                     build-essential \
@@ -25,6 +29,7 @@ RUN apt-get update && \
                     nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+
 ENV FSL_DIR="/usr/share/fsl/5.0" \
     OS="Linux" \
     FS_OVERRIDE=0 \
@@ -34,6 +39,7 @@ ENV FSL_DIR="/usr/share/fsl/5.0" \
 RUN curl -sSL "http://neuro.debian.net/lists/$( lsb_release -c | cut -f2 ).us-ca.full" >> /etc/apt/sources.list.d/neurodebian.sources.list && \
     apt-key add /usr/local/etc/neurodebian.gpg && \
     (apt-key adv --refresh-keys --keyserver hkp://ha.pool.sks-keyservers.net 0xA5D32F012649A5A9 || true)
+
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -101,7 +107,7 @@ RUN mkdir -p $ANTSPATH && \
 ENV PATH=$ANTSPATH:$PATH
 
 # Installing SVGO
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 RUN npm install -g svgo
 
