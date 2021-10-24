@@ -351,7 +351,7 @@ It is released under the [CC0]\
     
     anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,fmriprep_dir=fmriprep_dir,
                                         subject_id=subject_id,output_dir=output_dir,
-                                        t1w_to_mni=regfile[1],input_type=input_type,mem_gb=1) # need to chnage memory isze
+                                        t1w_to_mni=regfile[1],input_type=input_type,mem_gb=2) # need to chnage memory isze
     
     ## send t1w and t1seg to anatomical workflow
     
