@@ -314,7 +314,7 @@ def init_anatomical_wf(
           
                ds_brainspriteplot_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
-                  name='brainspriteplot', run_without_submitting=True)
+                  name='brainspriteplot')
 
                workflow.connect([
                #(pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
@@ -330,7 +330,7 @@ def init_anatomical_wf(
                brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
                ds_brainspriteplot_wf = pe.Node(
                  DerivativesDataSink(base_directory=output_dir,check_hdr=False, dismiss_entities=['desc',], desc='brainplot', datatype="figures"),
-                  name='brainspriteplot', run_without_submitting=False)
+                  name='brainspriteplot')
 
                workflow.connect([
                 (inputnode,brainspritex_wf,[('t1w','template')]),
