@@ -238,7 +238,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mem_gbx = _create_mem_gb(bold_file)
 
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries']*3,mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
                  brain_template=brain_template,name="fcons_ts_wf",omp_nthreads=omp_nthreads)
 
@@ -318,7 +318,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
                        template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
                         suffix='mask', extension=['.nii', '.nii.gz'])),
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'],n_procs=omp_nthreads)
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries']*omp_nthreads,n_procs=omp_nthreads)
     
 
     workflow.connect([
