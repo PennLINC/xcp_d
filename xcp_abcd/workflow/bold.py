@@ -277,7 +277,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="interpolation_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     
-    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,mem_gb=mem_gbx['timeseries'],
+    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,mem_gb=mem_gbx['timeseries']*3*omp_nthreads,
                       output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=omp_nthreads)
                  
 
