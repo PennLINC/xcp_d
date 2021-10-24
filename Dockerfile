@@ -1,8 +1,6 @@
 
 FROM ubuntu:xenial-20200706
 
-FROM neurodebian:stretch
-
 COPY docker/files/neurodebian.gpg /usr/local/etc/neurodebian.gpg
 
 # Prepare environment
