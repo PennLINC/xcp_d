@@ -223,14 +223,14 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     
 
-    cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['resampled'],
+    cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
                       name='cifti_ts_con_wf',omp_nthreads=omp_nthreads)
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['resampled'],TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing,cifti=True,
                     name="compute_alff_wf",omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['resampled'],smoothing=smoothing,
+    reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
                        name="surface_reho_wf",omp_nthreads=omp_nthreads)
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=cifti_file,
@@ -242,30 +242,30 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
-                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'],n_procs=omp_nthreads)
+                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['resampled'],custom_conf=custom_conf,TR=TR,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],custom_conf=custom_conf,TR=TR,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
     
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['resampled'],smoothing=smoothing,cifti=True,
+    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=True,
                 name="resd_smoothing_wf",omp_nthreads=omp_nthreads)
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filtering_wf", mem_gb=mem_gbx['resampled'],n_procs=omp_nthreads)
+                    name="filtering_wf", mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     regression_wf = pe.Node(regress(tr=TR),
-               name="regression_wf",mem_gb = mem_gbx['resampled'],n_procs=omp_nthreads)
+               name="regression_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(interpolate(TR=TR),
-                  name="interpolation_wf",mem_gb = mem_gbx['resampled'],n_procs=omp_nthreads)
+                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=cifti_file,dummytime=dummytime,
                        head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'],n_procs=omp_nthreads)
 
     
     executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=cifti_file,layout=layout,
-                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=omp_nthreads)
+                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=omp_nthreads,mem_gb=mem_gbx['timeseries'])
 
 
     workflow.connect([
@@ -275,7 +275,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['resampled'],n_procs=omp_nthreads)
+        despike_wf = pe.Node(ciftidespike(tr=TR),name="cifti_depike_wf", mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
         workflow.connect([
              (inputnode,despike_wf,[('cifti_file','in_file'),]),
              (despike_wf,censorscrub_wf,[('des_file','inputnode.bold'),]),
