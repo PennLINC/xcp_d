@@ -310,6 +310,7 @@ def init_censoring_wf(
     head_radius,
     contigvol,
     custom_conf,
+    omp_nthreads,
     dummytime=0,
     fd_thresh=0,
     name='censoring'
@@ -325,10 +326,10 @@ def init_censoring_wf(
     censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,contig=contigvol,
                        time_todrop=dummytime,custom_conf=custom_conf),
-                       name="censor_scrub",mem_gb=mem_gb)
+                       name="censor_scrub",mem_gb=mem_gb,n_procs=omp_nthreads)
    
     dummy_scan_wf  = pe.Node(removeTR(time_todrop=dummytime,TR=TR),
-                      name="remove_dummy_time",mem_gb=mem_gb)
+                      name="remove_dummy_time",mem_gb=mem_gb,n_procs=omp_nthreads)
 
     if dummytime > 0: 
         workflow.connect([
@@ -370,6 +371,7 @@ def init_censoring_wf(
 def init_resd_smoohthing(
     mem_gb,
     smoothing,
+    omp_nthreads,
     cifti=False,
     name="smoothing"
 
@@ -391,7 +393,7 @@ The processed BOLD  was smoothed using Connectome Workbench with a gaussian kern
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
                 right_surf  = pkgrf('xcp_abcd','data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'),
                 left_surf  = pkgrf('xcp_abcd','data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii')),
-                name="cifti_smoothing", mem_gb=mem_gb)
+                name="cifti_smoothing", mem_gb=mem_gb,n_procs=omp_nthreads)
         workflow.connect([
                    (inputnode, smooth_data,[('bold_file','in_file')]),
                    (smooth_data, outputnode,[('out_file','smoothed_bold')])       
@@ -402,7 +404,7 @@ The processed BOLD  was smoothed using Connectome Workbench with a gaussian kern
 The processed BOLD was smoothed using  FSL with a  gaussian kernel size of {kernelsize} mm  (FWHM). 
 """      .format(kernelsize=str(smoothing))
         smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
-                   name="nifti_smoothing", mem_gb=mem_gb )
+                   name="nifti_smoothing", mem_gb=mem_gb,n_procs=omp_nthreads )
 
         workflow.connect([
                    (inputnode, smooth_data,[('bold_file','in_file')]),

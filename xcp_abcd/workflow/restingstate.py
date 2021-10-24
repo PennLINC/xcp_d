@@ -24,6 +24,7 @@ def init_compute_alff_wf(
     highpass,
     smoothing,
     cifti,
+    omp_nthreads,
     name="compute_alff_wf",
     ):
 
@@ -94,8 +95,8 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         fields=['alff_out','smoothed_alff','alffhtml']), name='outputnode')
 
     alff_compt = pe.Node(computealff(tr=TR,lowpass=lowpass,highpass=highpass),
-                      mem_gb=mem_gb,name='alff_compt')
-    brain_plot = pe.Node(brainplot(), mem_gb=mem_gb,name='brain_plot')
+                      mem_gb=mem_gb,name='alff_compt',n_procs=omp_nthreads)
+    brain_plot = pe.Node(brainplot(), mem_gb=mem_gb,name='brain_plot',n_procs=omp_nthreads)
     
     workflow.connect([ 
             (inputnode,alff_compt,[('clean_bold','in_file'),
@@ -117,7 +118,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM). 
         """.format(kernelsize=str(smoothing))
             smooth_data  = pe.Node(Smooth(output_type = 'NIFTI_GZ',fwhm = smoothing),
-                   name="ciftismoothing", mem_gb=mem_gb )
+                   name="ciftismoothing", mem_gb=mem_gb, n_procs=omp_nthreads)
             workflow.connect([
                (alff_compt, smooth_data,[('alff_out','in_file')]),
                (smooth_data, outputnode,[('smoothed_file','smoothed_alff')]),
@@ -131,7 +132,7 @@ The ALFF maps were smoothed with the Connectome Workbench using a gaussian kerne
             lh_midthickness = str(get_template("fsLR",hemi='L',suffix='sphere',density='32k')[0])
             rh_midthickness = str(get_template("fsLR",hemi='R',suffix='sphere',density='32k')[0])
             smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="ciftismoothing", mem_gb=mem_gb)
+                  right_surf=rh_midthickness, left_surf=lh_midthickness), name="ciftismoothing", mem_gb=mem_gb,n_procs=omp_nthreads)
             workflow.connect([
             (alff_compt, smooth_data,[('alff_out','in_file')]),
             (smooth_data, outputnode,[('out_file','smoothed_alff')]),
@@ -143,6 +144,7 @@ The ALFF maps were smoothed with the Connectome Workbench using a gaussian kerne
 def init_surface_reho_wf(
     mem_gb,
     smoothing,
+    omp_nthreads,
     name="surface_reho_wf",
     ):
 
@@ -193,12 +195,12 @@ the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighb
         fields=['lh_reho','rh_reho']), name='outputnode')
 
     lh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_LEFT',direction="COLUMN"), 
-                  name="separate_lh", mem_gb=mem_gb)
+                  name="separate_lh", mem_gb=mem_gb,n_procs=omp_nthreads)
     rh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_RIGHT',direction="COLUMN"), 
-                  name="separate_rh", mem_gb=mem_gb )
+                  name="separate_rh", mem_gb=mem_gb,n_procs=omp_nthreads) 
 
-    lh_reho = pe.Node(surfaceReho(surf_hemi='L'),name="reho_lh", mem_gb=mem_gb)
-    rh_reho = pe.Node(surfaceReho(surf_hemi='R'),name="reho_rh", mem_gb=mem_gb)
+    lh_reho = pe.Node(surfaceReho(surf_hemi='L'),name="reho_lh", mem_gb=mem_gb,n_procs=omp_nthreads)
+    rh_reho = pe.Node(surfaceReho(surf_hemi='R'),name="reho_rh", mem_gb=mem_gb,n_procs=omp_nthreads)
 
     workflow.connect([
          (inputnode,lh_surf,[('clean_bold','in_file')]),
@@ -213,7 +215,7 @@ the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighb
 
 def init_3d_reho_wf(
     mem_gb,
-    smoothing,
+    omp_nthreads,
     name="afni_reho_wf",
     ):
 
@@ -260,11 +262,11 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['reho_out','rehohtml']), name='outputnode')
 
-    compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb)
-    brain_plot = pe.Node(brainplot(), mem_gb=1,name='brain_plot')
+    compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb,n_procs=omp_nthreads)
+    brain_plot = pe.Node(brainplot(), mem_gb=mem_gb,name='brain_plot',n_procs=omp_nthreads)
     workflow.connect([
-         (inputnode, compute_reho,[('clean_bold','in_file'),]),
-                         #('bold_mask','mask_file')]),
+         (inputnode, compute_reho,[('clean_bold','in_file'),
+                         ('bold_mask','mask_file')]),
          (compute_reho,outputnode,[('out_file','reho_out')]),
          (compute_reho,brain_plot,[('out_file','in_file'),]),
          (inputnode,brain_plot,[('bold_mask','mask_file')]),
