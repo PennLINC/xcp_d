@@ -176,6 +176,8 @@ tasks and sessions), the following post-processing was performed:
 """.format(num_cifti=num2words(num_cifti))
     metadata = layout.get_metadata(cifti_file)
     TR = metadata['RepetitionTime']
+    if TR is None:
+        TR = get_ciftiTR(cifti_file)
     
     #TR = get_ciftiTR(cifti_file=cifti_file)
 
