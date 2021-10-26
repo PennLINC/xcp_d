@@ -43,7 +43,7 @@ def init_execsummary_wf(
         prefixbb = filenamex.split('_desc')[0]
     
     # check if there is bbregister or coregister
-    patterns = ('*bbregister_bold.svg','*coreg_bold.svg')
+    patterns = ('*bbregister_bold.svg','*coreg_bold.svg','*bbr_bold.svg')
     coregbbregfile = [pat for pat in patterns if fnmatch.filter(all_files,pat)]
     bold_t1w_reg = fnmatch.filter(all_files, '*' + prefixbb + coregbbregfile[0])[0]
 
