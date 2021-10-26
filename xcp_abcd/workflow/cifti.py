@@ -174,10 +174,12 @@ def init_ciftipostprocess_wf(
 For each of the {num_cifti} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """.format(num_cifti=num2words(num_cifti))
-    metadata = layout.get_metadata(cifti_file)
-    TR = metadata['RepetitionTime']
+    
+    
+    TR = get_ciftiTR(cifti_file)
     if TR is None:
-        TR = get_ciftiTR(cifti_file)
+        metadata = layout.get_metadata(cifti_file)
+        TR = metadata['RepetitionTime']
     
     #TR = get_ciftiTR(cifti_file=cifti_file)
 

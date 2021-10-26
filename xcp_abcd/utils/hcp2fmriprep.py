@@ -6,28 +6,29 @@ import pandas as pd
 import nibabel as nb 
 from nilearn.input_data import NiftiMasker
 
-def dcan2fmriprep(dcandir,outdir,sub_id=None):
-    dcandir = os.path.abspath(dcandir)
+
+def hcp2fmriprep(hcpdir,outdir,sub_id=None):
+    dcandir = os.path.abspath(hcpdir)
     outdir = os.path.abspath(outdir)
+
     if sub_id is  None:
-        sub_idir = glob.glob(dcandir +'/sub*')
+        sub_idir = glob.glob(dcandir +'/*')
         sub_id = [ os.path.basename(j) for j in sub_idir]
+    
 
     for j in sub_id:
-        dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
+       hcpfmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
             
     return sub_id
 
-
-def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
+def hcp2fmriprepx(hcpdir,out_dir,sub_id):
     """
     dcan2fmriprep(dcan_dir,out_dir)
     """
     # get session id if available 
     
-    sess =glob.glob(dcan_dir+'/'+sub_id+'/s*')
-    ses_id = []
-    ses_id = [ j.split('ses-')[1] for j in sess]
+    sess =glob.glob(hcpdir+'/'+sub_id+'/s*')
+
     # anat dirx 
     
     
