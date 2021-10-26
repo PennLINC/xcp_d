@@ -404,24 +404,24 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     # 
     plt.cla()
     plt.clf()
-    figx = plt.figure(constrained_layout=True, figsize=(30,50))
+    figx = plt.figure(constrained_layout=True, figsize=(45,60))
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
-    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,500])
-    confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,2],ylabel='FD[mm]')
-    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,)
+    confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     plt.cla()
     plt.clf()
     
-    figy = plt.figure(constrained_layout=True, figsize=(30,50))
+    figy = plt.figure(constrained_layout=True, figsize=(45,60))
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,500])
-    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,2],ylabel='FD[mm]')
-    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
+    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     return filenamebf,filenameaf
 
@@ -477,7 +477,7 @@ def confoundplotx(
     
     columns= tseries.columns
     for c in columns:
-        ax_ts.plot(tseries[c],label=c, linewidth=2)
+        ax_ts.plot(tseries[c],label=c, linewidth=3)
         
     ax_ts.set_xlim((0, ntsteps - 1))
     ax_ts.legend(fontsize=30)
