@@ -476,16 +476,18 @@ def confoundplotx(
  
     
     columns= tseries.columns
+    maxim_value =[]
     for c in columns:
         ax_ts.plot(tseries[c],label=c, linewidth=3)
+        maxim_value.append(max(tseries[c]))
         
     ax_ts.set_xlim((0, ntsteps - 1))
     ax_ts.legend(fontsize=30)
     
     if ylims:
         ax_ts.set_ylim(ylims)
-    else: 
-        ax_ts.set_ylim([-2*tseries.max(),2*tseries.max()])
+    #else:
+        #ax_ts.set_ylim([-1.5*max(maxim_value),1.5*max(maxim_value)])
         
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
