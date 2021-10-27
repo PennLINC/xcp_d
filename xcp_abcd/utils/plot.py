@@ -404,24 +404,24 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     # 
     plt.cla()
     plt.clf()
-    figx = plt.figure(constrained_layout=True, figsize=(30,50))
+    figx = plt.figure(constrained_layout=True, figsize=(45,60))
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
-    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,500])
-    confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,2],ylabel='FD[mm]')
-    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
+    confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True,title='Raw')
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     plt.cla()
     plt.clf()
     
-    figy = plt.figure(constrained_layout=True, figsize=(30,50))
+    figy = plt.figure(constrained_layout=True, figsize=(45,60))
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
-    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,ylims=[0,500])
-    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylims=[-200,400],ylabel='WB')
-    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2])
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,2],ylabel='FD[mm]')
-    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
+    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True,title='Processed')
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     return filenamebf,filenameaf
 
@@ -476,16 +476,23 @@ def confoundplotx(
  
     
     columns= tseries.columns
+    maxim_value =[]
+    minim_value =[]
     for c in columns:
-        ax_ts.plot(tseries[c],label=c, linewidth=2)
-        
+        ax_ts.plot(tseries[c],label=c, linewidth=3)
+        maxim_value.append(max(tseries[c]))
+        minim_value.append(min(tseries[c]))
+    
+    
+    minx_value = [abs(x) for x in minim_value]
+    
     ax_ts.set_xlim((0, ntsteps - 1))
     ax_ts.legend(fontsize=30)
     
     if ylims:
         ax_ts.set_ylim(ylims)
-    else: 
-        ax_ts.set_ylim([-2*tseries.max(),2*tseries.max()])
+    else:
+        ax_ts.set_ylim([-1.5*max(minx_value),1.5*max(maxim_value)])
         
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):

@@ -500,7 +500,6 @@ def build_workflow(opts, retval):
               input_type=opts.input_type,
               name='xcpabcd_wf'
               )
-   
     retval['return_code'] = 0
 
     logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'

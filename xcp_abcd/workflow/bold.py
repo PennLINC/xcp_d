@@ -183,7 +183,12 @@ def init_boldpostprocess_wf(
     """
 
 
-    TR = layout.get_tr(bold_file)
+    metadata = layout.get_metadata(bold_file)
+    TR = metadata['RepetitionTime']
+    
+    if TR is None:
+        TR = layout.get_tr(bold_file)
+        
     file_base = os.path.basename(str(bold_file))
     workflow = Workflow(name=name)
 
