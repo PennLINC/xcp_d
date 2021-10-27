@@ -261,7 +261,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
             fields=['clean_bold','bold_mask']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['reho_out','rehohtml']), name='outputnode')
-    print(str(mem_gb))
+  
     compute_reho = pe.Node(ReHo(neighborhood='vertices'), name="reho_3d", mem_gb=mem_gb*3*omp_nthreads,n_procs=omp_nthreads)
     brain_plot = pe.Node(brainplot(), mem_gb=mem_gb*3*omp_nthreads,name='brain_plot',n_procs=omp_nthreads)
     workflow.connect([
