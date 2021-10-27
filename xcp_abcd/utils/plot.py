@@ -408,7 +408,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True,title='Raw')
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
@@ -419,7 +419,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True,title='Processed')
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
