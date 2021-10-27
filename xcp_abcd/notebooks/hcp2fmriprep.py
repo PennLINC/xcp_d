@@ -138,7 +138,7 @@ if function == 'run':
 
 	for j in tasklist:
 
-		bb = j.split('_')pw
+		bb = j.split('_')
 		taskname = bb[1]
 		acqname = bb[2]
 		datadir = working_dir+'/S1200/'+subid+'/MNINonLinear/Results/'+ j
