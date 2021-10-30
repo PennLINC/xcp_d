@@ -15,6 +15,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
 import sklearn
+from traits.trait_types import Time
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from  ..utils import (bid_derivative, stringforparams,get_maskfiles,
@@ -443,7 +444,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
          ])
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file,tr=TR),
-                name='qcsummary', run_without_submitting=False)
+                name='qcsummary', run_without_submitting=False,mem_gb=mem_gbx['timeseries'],
+                meg_gb=mem_gbx['timeseries']*3*omp_nthreads,)
 
     ds_report_qualitycontrol = pe.Node(
         DerivativesDataSink(base_directory=output_dir, desc='qualitycontrol',source_file=bold_file, datatype="figures"),
