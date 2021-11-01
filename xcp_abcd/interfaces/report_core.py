@@ -74,6 +74,8 @@ def generate_reports(
 
     fmriprep_dir = fmriprep_dir
     errno = sum(report_errors)
+    if not errno:
+        print('xcp_abcd finished without errors')
     if errno:
         import logging
 
@@ -95,8 +97,6 @@ def generate_reports(
             brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_abcd/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
             layout_builder(html_path=str(Path(output_dir))+'/xcp_abcd/', subject_id=subject_label,
                            session_id= _getsesid(brainplotfile))
-            print('xcp_abcd finished without errors')
-
     return errno
 
 
