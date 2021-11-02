@@ -431,6 +431,8 @@ def build_workflow(opts, retval):
     elif omp_nthreads < nthreads:
         nthreads = min(omp_nthreads-1,2)
     
+    plugin_settings['plugin_args']['n_procs'] = nthreads
+    
 
     if 1 < nthreads < omp_nthreads:
         build_log.warning(
