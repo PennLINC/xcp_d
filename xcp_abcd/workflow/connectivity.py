@@ -10,6 +10,7 @@ functional connectvity matrix
 import os
 import numpy as np  
 from nipype.pipeline import engine as pe
+from scipy.ndimage.measurements import mean
 from templateflow.api import get as get_template
 import nilearn as nl
 from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
@@ -118,28 +119,28 @@ Corresponding pair-wise functional connectivity between all regions was computed
     #get transfrom file
     transformfile = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
                  t1w_to_native=t1w_to_native)
-
+    print('antsapply: '+ str(mem_gb))
     sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,
-                       transforms=transformfile,interpolation='NearestNeighbor',
+                       transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="apply_tranform_sc27", mem_gb=mem_gb,n_procs=omp_nthreads)
 
     sc417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,
-                       transforms=transformfile,interpolation='NearestNeighbor',
+                       transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="apply_tranform_sc47",mem_gb=mem_gb,n_procs=omp_nthreads)
 
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
-                       transforms=transformfile,interpolation='NearestNeighbor',
+                       transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3,dimension=3),
                        name="apply_tranform_gs36", mem_gb=mem_gb,n_procs=omp_nthreads)
     gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,
-                       transforms=transformfile,interpolation='NearestNeighbor',
+                       transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="apply_tranform_gd33", mem_gb=mem_gb,n_procs=omp_nthreads)
     
     ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,
-                       transforms=transformfile,interpolation='NearestNeighbor',
+                       transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
                        name="apply_tranform_tian50", mem_gb=mem_gb,n_procs=omp_nthreads)
 
