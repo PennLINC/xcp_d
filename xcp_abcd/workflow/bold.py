@@ -264,7 +264,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
-                  name="ConfoundMatrix_wf", mem_gb=0.3)
+                  name="ConfoundMatrix_wf", mem_gb=0.5)
 
     censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
@@ -445,7 +445,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
          ])
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file,tr=TR),
                 name='qcsummary', run_without_submitting=False,mem_gb=mem_gbx['timeseries'],
-                meg_gb=mem_gbx['timeseries']*3*omp_nthreads,)
+                meg_gb=mem_gbx['timeseries'])
 
     ds_report_qualitycontrol = pe.Node(
         DerivativesDataSink(base_directory=output_dir, desc='qualitycontrol',source_file=bold_file, datatype="figures"),
