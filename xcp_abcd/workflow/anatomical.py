@@ -219,23 +219,23 @@ def init_anatomical_wf(
          
           ## surface resample to fsl32k
                left_wm_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_wm_surf,omp_nthreads=1), name="left_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=L_wm_surf), name="left_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_pial_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_pial_surf,omp_nthreads=1), name="left_pial_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=L_pial_surf), name="left_pial_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_midthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=L_midthick_surf,omp_nthreads=1), name="left_midthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=L_midthick_surf), name="left_midthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_inf_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
                         metric = ' BARYCENTRIC ',in_file=L_inflated_surf), name="left_inflated_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
           
 
                right_wm_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_wm_surf,omp_nthreads=1), name="right_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=R_wm_surf), name="right_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_pial_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_pial_surf,omp_nthreads=1), name="right_pial_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=R_pial_surf), name="right_pial_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_midthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_midthick_surf,omp_nthreads=1), name="right_midthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=R_midthick_surf), name="right_midthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_inf_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                        metric = ' BARYCENTRIC ',in_file=R_inflated_surf,omp_nthreads=1), name="right_inflated_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                        metric = ' BARYCENTRIC ',in_file=R_inflated_surf), name="right_inflated_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
 
           
           # write report node
