@@ -62,6 +62,6 @@ class CiftiSeparateMetric(WBCommand):
     """
     input_spec = CiftiSeparateMetricInputSpec
     output_spec = CiftiSeparateMetricOutputSpec
-    _cmd = "OMP_NUM_THREADS=1 wb_command  -cifti-separate "
+    _cmd = "wb_command  -cifti-separate "
 
     

@@ -118,5 +118,5 @@ class CiftiParcellate(WBCommand):
     """
     input_spec = CiftiParcellateInputSpec
     output_spec = CiftiParcellateOutputSpec
-    _cmd = "OMP_NUM_THREADS=1 wb_command -cifti-parcellate"
+    _cmd = "wb_command -cifti-parcellate"
 

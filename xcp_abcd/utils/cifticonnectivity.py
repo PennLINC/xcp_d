@@ -106,4 +106,4 @@ class CiftiCorrelation(WBCommand):
 
     input_spec = CiftiCorrelationInputSpec
     output_spec = CiftiCorrelationOutputSpec
-    _cmd = "OMP_NUM_THREADS=1 wb_command  -cifti-correlation" 
+    _cmd = "wb_command  -cifti-correlation" 
