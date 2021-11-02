@@ -82,11 +82,11 @@ def get_parser():
                         help='post process cifti instead of nifti')
 
     g_perfm = parser.add_argument_group('Options to for resource management ')
-    g_perfm.add_argument('--nthreads',  action='store', type=int,
+    g_perfm.add_argument('--nthreads',  action='store', type=int, default=2,
                          help='maximum number of threads across all processes')
-    g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=2,
+    g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=1,
                          help='maximum number of threads per-process')
-    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', default=4, type=int,
+    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', type=int,
                          help='upper bound memory limit for xcp_abcd processes')
     g_perfm.add_argument('--low-mem', action='store_true',
                          help='attempt to reduce memory usage (will increase disk usage '
@@ -412,20 +412,25 @@ def build_workflow(opts, retval):
         }
 
    
-    nthreads = plugin_settings['plugin_args'].get('n_procs')
+    #nthreads = plugin_settings['plugin_args'].get('n_procs')
     # Permit overriding plugin config with specific CLI options
-    if nthreads is None or opts.nthreads is not None:
-        nthreads = opts.nthreads
-        if nthreads is None or nthreads < 1:
-            nthreads = cpu_count()
-        plugin_settings['plugin_args']['n_procs'] = nthreads
+    #if nthreads is None or opts.nthreads is not None:
+    nthreads = opts.nthreads
+        #if nthreads is None or nthreads < 1:
+            #nthreads = cpu_count()
+        #plugin_settings['plugin_args']['n_procs'] = nthreads
 
     if opts.mem_gb:
         plugin_settings['plugin_args']['memory_gb'] = opts.mem_gb
 
     omp_nthreads = opts.omp_nthreads
-    if omp_nthreads == 0:
-        omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
+    #if omp_nthreads == 0:
+        #omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
+    if nthreads == 1: 
+        omp_nthreads = 1
+    elif omp_nthreads < nthreads:
+        nthreads = min(omp_nthreads-1,2)
+    
 
     if 1 < nthreads < omp_nthreads:
         build_log.warning(
