@@ -426,14 +426,11 @@ def build_workflow(opts, retval):
     omp_nthreads = opts.omp_nthreads
     #if omp_nthreads == 0:
         #omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
-    if nthreads == 1: 
+    if (nthreads == 1) or (omp_nthreads > nthreads): 
         omp_nthreads = 1
-    elif omp_nthreads < nthreads:
-        nthreads = min(omp_nthreads-1,2)
-    
+
     plugin_settings['plugin_args']['n_procs'] = nthreads
     
-
     if 1 < nthreads < omp_nthreads:
         build_log.warning(
             'Per-process threads (--omp-nthreads=%d) exceed total '
