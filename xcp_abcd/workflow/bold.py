@@ -505,8 +505,16 @@ def _create_mem_gb(bold_fname):
         'resampled': bold_size_gb * 4,
         'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
-
+    
+    if mem_gbz['timeseries'] < 1.0:
+        mem_gbz['timeseries'] = 2.0
+        mem_gbz['resampled'] = 1
+    elif mem_gbz['timeseries'] > 8.0:
+        mem_gbz['timeseries'] = 5.0
+        mem_gbz['resampled'] = 2
+    
     return mem_gbz
+    
 
 def _get_ref_mask(fname):
     directx = os.path.dirname(fname)
