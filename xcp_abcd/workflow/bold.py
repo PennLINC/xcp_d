@@ -244,15 +244,15 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mem_gbx = _create_mem_gb(bold_file)
 
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=4,mni_to_t1w=mni_to_t1w,
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
                  brain_template=brain_template,name="fcons_ts_wf",omp_nthreads=omp_nthreads)
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=4, TR=TR,
+    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
                     name="compute_alff_wf",omp_nthreads=omp_nthreads )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=4,
+    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],
                        name="afni_reho_wf",omp_nthreads=omp_nthreads)
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
@@ -266,10 +266,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 filterorder=motion_filter_order),
                   name="ConfoundMatrix_wf", mem_gb=0.3)
 
-    censorscrub_wf = init_censoring_wf(mem_gb=4,TR=TR,custom_conf=custom_conf,head_radius=head_radius,
+    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
                 contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
     
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=4,smoothing=smoothing,cifti=False,
+    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=False,
                 name="resd_smoothing_wf",omp_nthreads=omp_nthreads)
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
@@ -283,7 +283,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="interpolation_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     
-    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,mem_gb=2,
+    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,mem_gb=mem_gbx['timeseries'],
                       output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=omp_nthreads)
                  
 
@@ -305,13 +305,13 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             'MNI152NLin2009cAsym', resolution=1, desc='carpet',
             suffix='dseg', extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',transforms=transformfile),
-        name='resample_parc',n_procs=omp_nthreads)
+        name='resample_parc',n_procs=omp_nthreads,mem_gb=mem_gbx['timeseries'])
     
     resample_bold2T1w = pe.Node(ApplyTransforms(
         dimension=3,
          input_image=mask_file,reference_image=t1w_mask,
          interpolation='NearestNeighbor',transforms=bold2T1w_trans),
-         name='bold2t1_trans',n_procs=omp_nthreads)
+         name='bold2t1_trans',n_procs=omp_nthreads,mem_gb=mem_gbx['timeseries'])
     
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
@@ -319,12 +319,12 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             'MNI152NLin2009cAsym', resolution=2, desc='brain',
             suffix='mask', extension=['.nii', '.nii.gz'])),
          interpolation='NearestNeighbor',transforms=bold2MNI_trans),
-         name='bold2mni_trans',n_procs=omp_nthreads)
+         name='bold2mni_trans',n_procs=omp_nthreads,mem_gb=mem_gbx['timeseries'])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
                        template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
                         suffix='mask', extension=['.nii', '.nii.gz'])),
-                       head_radius=head_radius), name="qc_report",n_procs=omp_nthreads)
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
     
 
     workflow.connect([

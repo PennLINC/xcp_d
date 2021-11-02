@@ -123,12 +123,12 @@ Corresponding pair-wise functional connectivity between all regions was computed
     sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,
                        transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_sc27",n_procs=omp_nthreads)
+                       name="apply_tranform_sc27", mem_gb=mem_gb,n_procs=omp_nthreads)
 
     sc417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,
                        transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_sc47",n_procs=omp_nthreads)
+                       name="apply_tranform_sc47",mem_gb=mem_gb,n_procs=omp_nthreads)
 
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
                        transforms=transformfile,interpolation="MultiLabel",
@@ -137,25 +137,25 @@ Corresponding pair-wise functional connectivity between all regions was computed
     gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,
                        transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_gd33",n_procs=omp_nthreads)
+                       name="apply_tranform_gd33", mem_gb=mem_gb,n_procs=omp_nthreads)
     
     ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,
                        transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_tian50",n_procs=omp_nthreads)
+                       name="apply_tranform_tian50", mem_gb=mem_gb,n_procs=omp_nthreads)
 
-    matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf")
+    matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf", mem_gb=mem_gb)
 
     nifticonnect_sc27 = pe.Node(nifticonnect(),
-                    name="sc27_connect")
+                    name="sc27_connect", mem_gb=mem_gb)
     nifticonnect_sc47 = pe.Node(nifticonnect(),
-                    name="sc47_connect")
+                    name="sc47_connect", mem_gb=mem_gb)
     nifticonnect_gd33 = pe.Node(nifticonnect(),
-                    name="gd33_connect")
+                    name="gd33_connect", mem_gb=mem_gb)
     nifticonnect_gs36 = pe.Node(nifticonnect(),
-                    name="gs36_connect")
+                    name="gs36_connect", mem_gb=mem_gb)
     nifticonnect_ts50 = pe.Node(nifticonnect(),
-                    name="tiansub_connect")
+                    name="tiansub_connect", mem_gb=mem_gb)
 
 
     workflow.connect([
