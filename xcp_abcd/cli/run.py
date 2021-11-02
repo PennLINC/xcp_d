@@ -86,7 +86,7 @@ def get_parser():
                          help='maximum number of threads across all processes')
     g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=1,
                          help='maximum number of threads per-process')
-    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', default=4, type=int,
+    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', type=int,
                          help='upper bound memory limit for xcp_abcd processes')
     g_perfm.add_argument('--low-mem', action='store_true',
                          help='attempt to reduce memory usage (will increase disk usage '

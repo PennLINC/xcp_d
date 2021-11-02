@@ -244,7 +244,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     mem_gbx = _create_mem_gb(bold_file)
 
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries']*3,mni_to_t1w=mni_to_t1w,
+    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries']*4,mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
                  brain_template=brain_template,name="fcons_ts_wf",omp_nthreads=omp_nthreads)
 

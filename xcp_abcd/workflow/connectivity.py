@@ -127,11 +127,11 @@ Corresponding pair-wise functional connectivity between all regions was computed
     sc417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_sc47", mem_gb=mem_gb,n_procs=omp_nthreads)
+                       name="apply_tranform_sc47",mem_gb=mem_gb,n_procs=omp_nthreads)
 
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
                        transforms=transformfile,interpolation='NearestNeighbor',
-                       input_image_type=3, dimension=3),
+                       input_image_type=3,dimension=3),
                        name="apply_tranform_gs36", mem_gb=mem_gb,n_procs=omp_nthreads)
     gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,
                        transforms=transformfile,interpolation='NearestNeighbor',
@@ -141,7 +141,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
     ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,
                        transforms=transformfile,interpolation='NearestNeighbor',
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_tian50", mem_gb=mem_gb)
+                       name="apply_tranform_tian50", mem_gb=mem_gb,n_procs=omp_nthreads)
 
     matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf", mem_gb=mem_gb)
 
