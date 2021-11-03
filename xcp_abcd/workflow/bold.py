@@ -510,8 +510,8 @@ def _create_mem_gb(bold_fname):
         mem_gbz['timeseries'] = 5.0
         mem_gbz['resampled'] = 2
     elif mem_gbz['timeseries'] > 8.0:
-        mem_gbz['timeseries'] = 5.0
-        mem_gbz['resampled'] = 2
+        mem_gbz['timeseries'] = 8.0
+        mem_gbz['resampled'] = 3
     
     return mem_gbz
     
