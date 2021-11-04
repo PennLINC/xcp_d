@@ -6,7 +6,6 @@ post processing the bold
 .. autofunction:: init_boldpostprocess_wf
 
 """
-import sys
 import os
 import numpy as np
 import nibabel as nb
@@ -15,7 +14,6 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
 import sklearn
-from traits.trait_types import Time
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from  ..utils import (bid_derivative, stringforparams,get_maskfiles,
