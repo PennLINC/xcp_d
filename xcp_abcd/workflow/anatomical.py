@@ -85,7 +85,7 @@ def init_anatomical_wf(
      
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
-     layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, template=None,bids_validate=False)
+     layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id,bids_validate=False)
 
      if input_type == 'dcan':
           ds_t1wmni_wf = pe.Node(

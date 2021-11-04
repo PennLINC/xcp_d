@@ -74,7 +74,7 @@ def generate_reports(
 
     fmriprep_dir = fmriprep_dir
     errno = sum(report_errors)
-    if not errno:
+    if errno == 0:
         print('xcp_abcd finished without errors')
     if errno:
         import logging
