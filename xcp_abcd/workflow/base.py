@@ -293,7 +293,7 @@ def init_subject_wf(
     layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False)
 
-    regfile = select_registrationfile(subj_data=subj_data)
+    regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
     subject_data = select_cifti_bold(subj_data=subj_data)
     t1wseg = extract_t1w_seg(subj_data=subj_data)
     
