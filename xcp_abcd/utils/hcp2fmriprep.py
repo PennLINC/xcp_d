@@ -19,4 +19,4 @@ def hcp2fmriprep(hcpdir,outdir,sub_id=None):
     #for j in sub_id:
        #hcpfmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
             
-    return sub_id
+    return sub_id 

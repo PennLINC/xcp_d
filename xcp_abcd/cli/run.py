@@ -88,9 +88,6 @@ def get_parser():
                          help='maximum number of threads per-process')
     g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', type=int,
                          help='upper bound memory limit for xcp_abcd processes')
-    g_perfm.add_argument('--low-mem', action='store_true',
-                         help='attempt to reduce memory usage (will increase disk usage '
-                              'in working directory)')
     g_perfm.add_argument('--use-plugin', action='store', default=None,
                          help='nipype plugin configuration file')
     g_perfm.add_argument("-v", "--verbose", dest="verbose_count", action="count", default=0,
@@ -169,8 +166,6 @@ def get_parser():
     g_other.add_argument('--notrack', action='store_true', default=False,
                          help='Opt-out of sending tracking information')
 
-    g_other.add_argument('--sloppy', action='store_true', default=False,
-                         help='Use low-quality tools for speed - TESTING ONLY')
 
     
 
