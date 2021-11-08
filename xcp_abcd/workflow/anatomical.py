@@ -87,7 +87,7 @@ def init_anatomical_wf(
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id,bids_validate=False)
 
-     if input_type == 'dcan':
+     if input_type == 'dcan' or input_type == 'hcp':
           ds_t1wmni_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
                   extension='.nii.gz'),
