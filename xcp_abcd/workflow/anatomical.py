@@ -297,17 +297,10 @@ def init_anatomical_wf(
                t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
                ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
 
-          #pial2vol_wf = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
-               #left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')
-          #wm2vol_wf = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
-                        #left_surf=R_wm_surf,right_surf=L_wm_surf),name='wm2vol')
+      
           
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
-          
-          ## combine pial and wm volumes
-          #from nipype.interfaces.fsl import MultiImageMaths
-          #addwmpial_wf = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
-
+     
           
           #brainplot
                brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
