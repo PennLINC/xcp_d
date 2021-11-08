@@ -385,6 +385,17 @@ def build_workflow(opts, retval):
         dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
         fmriprep_dir = dcan_output_dir
 
+    elif opts.input_type == 'hcp':
+        opts.cifti = True
+        from ..utils import hcp2fmriprep
+        from ..workflow.base import _prefix
+        NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
+        hcp_output_dir = str(work_dir) + '/hcphcp'
+        os.makedirs(hcp_output_dir, exist_ok=True)
+        hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
+        fmriprep_dir = hcp_output_dir
+
+
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
