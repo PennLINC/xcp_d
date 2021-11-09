@@ -181,10 +181,9 @@ def init_anatomical_wf(
      
           p = Path(fmriprep_dir)
           import glob as glob
-          freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*')
-          if freesufer_paths is None:
-               freesufer_paths = glob.glob(str(p.parent)+'/sourcedata/*freesurfer*')
-          
+          freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*') # for fmriprep
+          if len(freesufer_paths)  == 0 :
+               freesufer_paths = glob.glob(str(p)+'/sourcedata/*freesurfer*') # nibabies
 
           if len(freesufer_paths) > 0 and 'freesurfer' in os.path.basename(freesufer_paths[0]):
                freesufer_path = freesufer_paths[0]
