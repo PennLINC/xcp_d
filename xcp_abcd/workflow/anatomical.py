@@ -82,6 +82,9 @@ def init_anatomical_wf(
      inputnode = pe.Node(niu.IdentityInterface(
         fields=['t1w','t1seg']),
         name='inputnode')
+
+     
+
      
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
@@ -143,11 +146,7 @@ def init_anatomical_wf(
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
           ])
           
-
-     
-
      else:
-
 
           t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
@@ -183,6 +182,10 @@ def init_anatomical_wf(
           p = Path(fmriprep_dir)
           import glob as glob
           freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*')
+          if freesufer_paths is None:
+               freesufer_paths = glob.glob(str(p.parent)+'/sourcedata/*freesurfer*')
+          
+
           if len(freesufer_paths) > 0 and 'freesurfer' in os.path.basename(freesufer_paths[0]):
                freesufer_path = freesufer_paths[0]
           else:
