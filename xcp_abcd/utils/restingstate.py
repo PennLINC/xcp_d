@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from nipype.interfaces.afni import ReHoInputSpec, ReHoOutputSpec
+from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import SimpleInterface
 import os 
 
