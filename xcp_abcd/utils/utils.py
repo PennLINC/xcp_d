@@ -74,7 +74,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
     elif 'space-MNIPediatricAsym' in file_base:
         mnisf = mni_to_t1w.split('from-'+template+'_to-T1w_mode-image_xfm.h5')[0]
-        mni6c_to_t1w  = glob.glob(mnisf + 'MNIPediatricAsym*_to-T1w_mode-image_xfm.h5')[0]
+        mni6c_to_t1w  = glob.glob(mnisf + 'from-MNIPediatricAsym*_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
         transformfileT1W = [str(mni6c_to_t1w)]
