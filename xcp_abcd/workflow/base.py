@@ -459,9 +459,10 @@ class DerivativesDataSink(bid_derivative):
 
 def getfmriprepv(fmriprepdir):
 
-    datax = glob.glob(fmriprepdir+'/dataset_description.json')[0]
+    datax = glob.glob(fmriprepdir+'/dataset_description.json')
 
     if datax:
+        datax =datax[0]
         with open(datax) as f:
             datay = json.load(f)
         
