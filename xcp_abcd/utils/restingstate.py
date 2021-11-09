@@ -35,5 +35,5 @@ class ReHoNamePatch(SimpleInterface):
         os.system(new_inset)
         os.system(new_mask)
         os.system("3dReHo -inset inset.nii.gz -mask mask.nii.gz -nneigh 27 -prefix prefix.nii.gz")
-        self.results['out_file'] = outfile
+        self._results['out_file'] = outfile
 
