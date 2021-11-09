@@ -71,6 +71,13 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
         transformfileT1W = [str(mni6c_to_t1w)]
+
+    elif 'space-MNIPediatricAsym' in file_base:
+        mnisf = mni_to_t1w.split('from-'+template+'_to-T1w_mode-image_xfm.h5')[0]
+        mni6c_to_t1w  = glob.glob(mnisf + 'MNIPediatricAsym*_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
+        transformfileT1W = [str(mni6c_to_t1w)]
         
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from-'+template+'_to-T1w_mode-image_xfm.h5')[0]
@@ -151,7 +158,11 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     elif 'space-MNIInfant' in file_base:
         mnisf = mni_to_t1w.split('from-'+ template +'_to-T1w_mode-image_xfm.h5')[0]
         t1w_to_mni6cx = glob.glob(mnisf + 'from-T1w_to-MNIInfant*_mode-image_xfm.h5')[0]
-        transformfile = [str(t1w_to_mni6cx),str(mni_to_t1w),str(FSL2MNI9)]   
+        transformfile = [str(t1w_to_mni6cx),str(mni_to_t1w),str(FSL2MNI9)]
+    elif 'space-MNIPediatricAsym' in file_base:
+        mnisf = mni_to_t1w.split('from-'+ template +'_to-T1w_mode-image_xfm.h5')[0]
+        t1w_to_mni6cx = glob.glob(mnisf + 'from-T1w_to-MNIPediatricAsym*_mode-image_xfm.h5')[0]
+        transformfile = [str(t1w_to_mni6cx),str(mni_to_t1w),str(FSL2MNI9)]
     elif 'space-T1w' in file_base:
         transformfile = [str(mni_to_t1w),str(FSL2MNI9)]
     elif 'space-' not in file_base:
