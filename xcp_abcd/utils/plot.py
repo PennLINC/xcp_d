@@ -8,7 +8,7 @@ from nilearn.signal import clean
 import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
 import seaborn as sns
-#from niworkflows.viz.plots import plot_carpet as plot_carpetX
+from niworkflows.viz.plots import plot_carpet as plot_carpetX
 from ..utils import read_ndata
 from matplotlib.colors import ListedColormap, Normalize
 import matplotlib.cm as cm
@@ -33,7 +33,7 @@ def plot_svg(fdata,fd,dvars,filename,tr=1):
       4D ndarray
     fd:
       framewise displacement
-    dvars: 
+    dvars: x
       dvars
     filename
       filename
@@ -413,7 +413,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetx(func=rawdata,segfile=seg,tr=tr,subplot=grid[2],legend=True)
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
@@ -424,7 +424,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetx(func=resddata,segfile=seg,tr=tr,subplot=grid[2],legend=True)
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
