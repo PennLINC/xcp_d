@@ -28,7 +28,7 @@ from .plot  import (plotseries,plot_svgx,plot_carpet,confoundplot)
 from .execsummary import (surf2vol,get_regplot,plot_registrationx,generate_brain_sprite,ribbon_to_statmap)
 from .dcan2fmriprep import dcan2fmriprep
 from .hcp2fmriprep import hcp2fmriprep
-from .restingstate import ReHoNamePatch
+from .restingstate import ReHoNamePatch,DespikePatch
 
 __all__ = [
     'read_ndata',
@@ -74,4 +74,6 @@ __all__ = [
     'ribbon_to_statmap',
     'dcan2fmriprep',
     'hcp2fmriprep',
+    'ReHoNamePatch',
+    'DespikePatch',
   ]
