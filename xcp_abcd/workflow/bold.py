@@ -332,7 +332,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
+        from ..utils import DespikePatch
+        despike_wf = pe.Node(DespikePatch(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
         workflow.connect([
             (inputnode,despike_wf,[('bold_file','in_file')]),

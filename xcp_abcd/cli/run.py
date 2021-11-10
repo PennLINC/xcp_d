@@ -88,9 +88,6 @@ def get_parser():
                          help='maximum number of threads per-process')
     g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', type=int,
                          help='upper bound memory limit for xcp_abcd processes')
-    g_perfm.add_argument('--low-mem', action='store_true',
-                         help='attempt to reduce memory usage (will increase disk usage '
-                              'in working directory)')
     g_perfm.add_argument('--use-plugin', action='store', default=None,
                          help='nipype plugin configuration file')
     g_perfm.add_argument("-v", "--verbose", dest="verbose_count", action="count", default=0,
@@ -169,8 +166,6 @@ def get_parser():
     g_other.add_argument('--notrack', action='store_true', default=False,
                          help='Opt-out of sending tracking information')
 
-    g_other.add_argument('--sloppy', action='store_true', default=False,
-                         help='Use low-quality tools for speed - TESTING ONLY')
 
     
 
@@ -389,6 +384,17 @@ def build_workflow(opts, retval):
         os.makedirs(dcan_output_dir, exist_ok=True)
         dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
         fmriprep_dir = dcan_output_dir
+
+    elif opts.input_type == 'hcp':
+        opts.cifti = True
+        from ..utils import hcp2fmriprep
+        from ..workflow.base import _prefix
+        NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
+        hcp_output_dir = str(work_dir) + '/hcphcp'
+        os.makedirs(hcp_output_dir, exist_ok=True)
+        hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
+        fmriprep_dir = hcp_output_dir
+
 
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(

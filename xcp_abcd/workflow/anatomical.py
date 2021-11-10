@@ -82,12 +82,15 @@ def init_anatomical_wf(
      inputnode = pe.Node(niu.IdentityInterface(
         fields=['t1w','t1seg']),
         name='inputnode')
+
+     
+
      
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id,bids_validate=False)
 
-     if input_type == 'dcan':
+     if input_type == 'dcan' or input_type == 'hcp':
           ds_t1wmni_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir, space='MNI152NLin6Asym',desc='preproc',suffix='T1w',
                   extension='.nii.gz'),
@@ -143,11 +146,7 @@ def init_anatomical_wf(
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
           ])
           
-
-     
-
      else:
-
 
           t1w_transform_wf = pe.Node(ApplyTransformsx(num_threads=2,reference_image=mnitemplate,
                        transforms=[str(t1w_to_mni),str(MNI92FSL)],interpolation='LanczosWindowedSinc',
@@ -182,7 +181,10 @@ def init_anatomical_wf(
      
           p = Path(fmriprep_dir)
           import glob as glob
-          freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*')
+          freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*') # for fmriprep
+          if len(freesufer_paths)  == 0 :
+               freesufer_paths = glob.glob(str(p)+'/sourcedata/*freesurfer*') # nibabies
+
           if len(freesufer_paths) > 0 and 'freesurfer' in os.path.basename(freesufer_paths[0]):
                freesufer_path = freesufer_paths[0]
           else:
@@ -297,17 +299,10 @@ def init_anatomical_wf(
                t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
                ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
 
-          #pial2vol_wf = pe.Node(SurftoVolume(scale=1,template=t1w_mgz,
-               #left_surf=R_pial_surf,right_surf=L_pial_surf),name='pial2vol')
-          #wm2vol_wf = pe.Node(SurftoVolume(scale=2,template=t1w_mgz,
-                        #left_surf=R_wm_surf,right_surf=L_wm_surf),name='wm2vol')
+      
           
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
-          
-          ## combine pial and wm volumes
-          #from nipype.interfaces.fsl import MultiImageMaths
-          #addwmpial_wf = pe.Node(MultiImageMaths(op_string = " -add %s "),name='addwpial')
-
+     
           
           #brainplot
                brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
