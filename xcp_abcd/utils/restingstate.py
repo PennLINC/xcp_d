@@ -2,7 +2,7 @@
 
 from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import SimpleInterface
-import os 
+import os, shutil
 
 
 class ReHoNamePatch(SimpleInterface):
@@ -28,13 +28,9 @@ class ReHoNamePatch(SimpleInterface):
 
 
     def _run_interface(self, runtime):
-
-        new_inset ="cp " +  self.inputs.in_file + " " + runtime.cwd + "/inset.nii.gz"
-        new_mask ="cp " + self.inputs.mask_file + " " + runtime.cwd + "/mask.nii.gz"
         outfile = runtime.cwd + "/reho.nii.gz"
-        os.system(new_inset)
-        os.system(new_mask)
+        shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
+        shutil.copyfile(self.inputs.mask_file, runtime.cwd+"/mask.nii.gz")
         os.system("3dReHo -inset inset.nii.gz -mask mask.nii.gz -nneigh 27 -prefix reho.nii.gz")
-
         self._results['out_file'] = outfile
 
