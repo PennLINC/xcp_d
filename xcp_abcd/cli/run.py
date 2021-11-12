@@ -378,14 +378,13 @@ def build_workflow(opts, retval):
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
         dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
-        print(fmriprep_dir)
-        print(str(opts.participant_label))
+        
         if opts.participant_label is not None:
             sub_id = dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
-            print(sub_id)
+            
         else:
-            sub_id=dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir)
-            print(sub_id)
+            sub_id = dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir)
+        
         fmriprep_dir = dcan_output_dir
 
         
@@ -399,7 +398,7 @@ def build_workflow(opts, retval):
         
         hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
          
-        if opts.participant_label is None:
+        if opts.participant_label is not None:
             hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
         else:
             hcp2fmriprep(fmriprep_dir,hcp_output_dir)
