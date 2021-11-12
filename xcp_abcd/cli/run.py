@@ -187,6 +187,29 @@ def main():
         import sentry_sdk
         from ..utils.sentry import sentry_setup
         sentry_setup(opts, exec_env)
+    
+    # First check that fmriprep_dir looks like a BIDS folder
+    if opts.input_type == 'dcan':
+        opts.cifti = True
+        from ..utils import dcan2fmriprep
+        from ..workflow.base import _prefix
+        NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
+        dcan_output_dir = str(opts.fmriprep_dir) + '/dcanhcp'
+        os.makedirs(dcan_output_dir, exist_ok=True)
+        sub_id = dcan2fmriprep(opts.fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
+        if len(sub_id) > 0:
+            opts.fmriprep_dir = dcan_output_dir
+        
+    elif opts.input_type == 'hcp':
+        opts.cifti = True
+        from ..utils import hcp2fmriprep
+        from ..workflow.base import _prefix
+        NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
+        hcp_output_dir = str(opts.fmriprep_dir) + '/hcphcp'
+        os.makedirs(hcp_output_dir, exist_ok=True)
+        sub_id = hcp2fmriprep(opts.fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
+        if len(sub_id) > 0:
+            opts.fmriprep_dir = hcp_output_dir
 
     # Retrieve logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
@@ -227,7 +250,7 @@ def main():
         sys.exit(2)
     # Clean up master process before running workflow, which may create forks
     gc.collect()
-
+    
     errno = 1  # Default is error exit unless otherwise set
     try:
         xcpabcd_wf.run(**plugin_settings)
@@ -373,38 +396,6 @@ def build_workflow(opts, retval):
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
      
-    
-    # First check that fmriprep_dir looks like a BIDS folder
-    if opts.input_type == 'dcan':
-        opts.cifti = True
-        from ..utils import dcan2fmriprep
-        from ..workflow.base import _prefix
-        NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
-        dcan_output_dir = str(work_dir) + '/dcanhcp'
-        os.makedirs(dcan_output_dir, exist_ok=True)
-        sub_id = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
-        if len(sub_id) > 0:
-            fmriprep_dir = dcan_output_dir
-        else:
-            build_log.error('Could not convert dcan to fmriprep format')
-            retval['return_code'] = 1
-            
-
-    elif opts.input_type == 'hcp':
-        opts.cifti = True
-        from ..utils import hcp2fmriprep
-        from ..workflow.base import _prefix
-        NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
-        hcp_output_dir = str(work_dir) + '/hcphcp'
-        os.makedirs(hcp_output_dir, exist_ok=True)
-        sub_id = hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
-        if len(sub_id) > 0:
-            fmriprep_dir = hcp_output_dir
-        else:
-            build_log.error('Could not convert hcp to fmriprep format')
-            retval['return_code'] = 1
-
-
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
