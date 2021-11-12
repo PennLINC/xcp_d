@@ -16,8 +16,7 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
         sub_id = [sub_id]
 
     for j in sub_id:
-        dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
-            
+        dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)       
     return sub_id
 
 
