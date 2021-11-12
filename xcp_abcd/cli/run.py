@@ -379,6 +379,7 @@ def build_workflow(opts, retval):
         dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
         print(fmriprep_dir)
+        print(str(opts.participant_label))
         if opts.participant_label is None:
             sub_id = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
             print(sub_id)
