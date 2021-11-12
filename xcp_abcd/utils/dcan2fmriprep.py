@@ -15,7 +15,7 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
     
     if len(sub_id) == 0:
         raise ValueError('No subject found in %s'%dcandir)
-    elif len(sub_id) > 1:
+    elif len(sub_id) > 0:
         for j in sub_id:
             dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
         
