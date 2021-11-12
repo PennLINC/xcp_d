@@ -382,8 +382,13 @@ def build_workflow(opts, retval):
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
         dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
-        dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
-        fmriprep_dir = dcan_output_dir
+        sub_id = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
+        if len(sub_id) > 0:
+            fmriprep_dir = dcan_output_dir
+        else:
+            build_log.error('Could not convert dcan to fmriprep format')
+            retval['return_code'] = 1
+            
 
     elif opts.input_type == 'hcp':
         opts.cifti = True
@@ -392,8 +397,12 @@ def build_workflow(opts, retval):
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
         hcp_output_dir = str(work_dir) + '/hcphcp'
         os.makedirs(hcp_output_dir, exist_ok=True)
-        hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
-        fmriprep_dir = hcp_output_dir
+        sub_id = hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
+        if len(sub_id) > 0:
+            fmriprep_dir = hcp_output_dir
+        else:
+            build_log.error('Could not convert hcp to fmriprep format')
+            retval['return_code'] = 1
 
 
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
