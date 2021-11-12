@@ -31,10 +31,13 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     sess =glob.glob(dcan_dir+'/'+sub_id+'/s*')
     ses_id = []
     ses_id = [ j.split('ses-')[1] for j in sess]
+    print(ses_id)
+    print(sub_id)
     # anat dirx 
     
     
     for ses in ses_id:
+        print(ses)
         anat_dirx = dcan_dir+'/' + sub_id + '/ses-' +ses + '/files/MNINonLinear/'
         anatdir = out_dir +'/' + sub_id + '/ses-'+ses+ '/anat/'
         os.makedirs(anatdir,exist_ok=True)
