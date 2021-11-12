@@ -376,8 +376,9 @@ def build_workflow(opts, retval):
         from ..utils import dcan2fmriprep
         from ..workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
-        dcan_output_dir = str(fmriprep_dir) + '/dcanhcp'
+        dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
+        print(fmriprep_dir)
         sub_id = dcan2fmriprep(fmriprep_dir,dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
         if len(sub_id) > 0:
             fmriprep_dir = dcan_output_dir
@@ -387,7 +388,7 @@ def build_workflow(opts, retval):
         from ..utils import hcp2fmriprep
         from ..workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
-        hcp_output_dir = str(fmriprep_dir) + '/hcphcp'
+        hcp_output_dir = str(work_dir) + '/hcphcp'
         os.makedirs(hcp_output_dir, exist_ok=True)
         sub_id = hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
         if len(sub_id) > 0:
