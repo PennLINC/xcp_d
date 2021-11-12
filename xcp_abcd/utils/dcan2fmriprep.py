@@ -12,12 +12,13 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
     if sub_id is  None:
         sub_idir = glob.glob(dcandir +'/sub*')
         sub_id = [ os.path.basename(j) for j in sub_idir]
-    else:
-        sub_id = [sub_id]
-
-    for j in sub_id:
-        dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
-            
+    
+    if len(sub_id) == 0:
+        raise ValueError('No subject found in %s'%dcandir)
+    elif len(sub_id) > 0:
+        for j in sub_id:
+            dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
+        
     return sub_id
 
 
@@ -27,13 +28,15 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     """
     # get session id if available 
     
-    sess =glob.glob(dcan_dir+'/'+sub_id+'/s*')
+    sess = glob.glob(dcan_dir+'/'+sub_id+'/s*')
     ses_id = []
-    ses_id = [ j.split('ses-')[1] for j in sess]
+    ses_id = [j.split('ses-')[1] for j in sess]
+  
     # anat dirx 
     
     
     for ses in ses_id:
+  
         anat_dirx = dcan_dir+'/' + sub_id + '/ses-' +ses + '/files/MNINonLinear/'
         anatdir = out_dir +'/' + sub_id + '/ses-'+ses+ '/anat/'
         os.makedirs(anatdir,exist_ok=True)
@@ -137,7 +140,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             brainreg = pd.DataFrame({'global_signal':gsreg,'white_matter':wmreg,'csf':csfreg,'rmsd':rsmd })
             regressors  =  pd.concat([mvreg, brainreg], axis=1)
 
-            dcanfunfiles=[sbref,dtsereis,tw1tonative,tw1tonative]
+            dcanfunfiles=[sbref,dtsereis,tw1tonative,tw1tonative,volume]
 
 
             tr = nb.load(volume).header.get_zooms()[-1]   # repetition time
@@ -150,7 +153,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
                "surface": "fsLR","surface_density": "32k",
                 "volume": "MNI152NLin6Asym"}
             
-            #boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
+            boldname = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
             boldjson = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_space-MNI152NLin6Asym_desc-preproc_bold.json'
             confreg   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.tsv'
             confregj   = func_dir + sub_id+'_'+ ses_id + '_task-'+taskname + run_id+ '_desc-confounds_timeseries.json'
@@ -165,7 +168,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             # maske  coreg files here  
             
 
-            fmfuncfiles = [boldref,dttseriesx,native2t1w,t12native]
+            fmfuncfiles = [boldref,dttseriesx,native2t1w,t12native,boldname]
 
             # symlink files
             for jj,kk in zip(dcanfunfiles,fmfuncfiles):
@@ -184,7 +187,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
 
-    dcanjosn = {
+        dcanjosn = {
          "Name": "ABCDDCAN",
          "BIDSVersion": "1.4.0",
          "DatasetType": "derivative",
@@ -193,10 +196,8 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             "Name": "DCAN",
             "Version": "0.0.4",
             "CodeURL": "https://github.com/DCAN-Labs/abcd-hcp-pipeline"
-            }],}
-    writejson(dcanjosn,out_dir+'/dataset_description.json')
-            
-    return dcanjosn
+             }],}
+        writejson(dcanjosn,out_dir+'/dataset_description.json')
 
 
 #def symlinkfiles(src, dest):
