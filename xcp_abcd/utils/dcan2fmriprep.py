@@ -199,8 +199,6 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             "CodeURL": "https://github.com/DCAN-Labs/abcd-hcp-pipeline"
             }],}
     writejson(dcanjosn,out_dir+'/dataset_description.json')
-            
-    return dcanjosn
 
 
 #def symlinkfiles(src, dest):
