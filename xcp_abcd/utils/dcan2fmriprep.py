@@ -188,7 +188,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
 
-    dcanjosn = {
+        dcanjosn = {
          "Name": "ABCDDCAN",
          "BIDSVersion": "1.4.0",
          "DatasetType": "derivative",
@@ -197,8 +197,8 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             "Name": "DCAN",
             "Version": "0.0.4",
             "CodeURL": "https://github.com/DCAN-Labs/abcd-hcp-pipeline"
-            }],}
-    writejson(dcanjosn,out_dir+'/dataset_description.json')
+             }],}
+        writejson(dcanjosn,out_dir+'/dataset_description.json')
 
 
 #def symlinkfiles(src, dest):
