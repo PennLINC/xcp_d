@@ -380,7 +380,8 @@ def build_workflow(opts, retval):
         os.makedirs(dcan_output_dir, exist_ok=True)
         
         if opts.participant_label is not None:
-           dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
+           print(fmriprep_dir)
+           dcan2fmriprep(dcandir=str(fmriprep_dir),outdir=dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))
             
         else:
             sub_id = dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir)

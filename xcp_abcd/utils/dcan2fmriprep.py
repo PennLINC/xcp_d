@@ -28,9 +28,9 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     """
     # get session id if available 
     
-    sess =glob.glob(dcan_dir+'/'+sub_id+'/s*')
+    sess = glob.glob(dcan_dir+'/'+sub_id+'/s*')
     ses_id = []
-    ses_id = [ j.split('ses-')[1] for j in sess]
+    ses_id = [j.split('ses-')[1] for j in sess]
     print(ses_id)
     print(sub_id)
     # anat dirx 
