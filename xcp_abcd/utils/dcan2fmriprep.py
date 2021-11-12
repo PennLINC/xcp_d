@@ -12,6 +12,8 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
     if sub_id is  None:
         sub_idir = glob.glob(dcandir +'/sub*')
         sub_id = [ os.path.basename(j) for j in sub_idir]
+    else:
+        sub_id = [sub_id]
 
     for j in sub_id:
         dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
@@ -84,7 +86,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
 
         wmmask =glob.glob(anat_dirx + '/wm_2mm_*_mask_eroded.nii.gz')[0]
         csfmask =glob.glob(anat_dirx + '/vent_2mm_*_mask_eroded.nii.gz')[0]
-        tw1tonative = anat_dirx +'xfms/T1w_to_MNI_0GenericAffine.mat'
+        tw1tonative = wmmask
 
         # get task and idx  run 01 
         func_dirx  = dcan_dir +'/' + sub_id + '/ses-' +ses_id[0] + '/files/MNINonLinear/Results/'
@@ -181,6 +183,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
 
             #save confounds
             regressors.to_csv(confreg,sep='\t',index=False)
+
     dcanjosn = {
          "Name": "ABCDDCAN",
          "BIDSVersion": "1.4.0",
