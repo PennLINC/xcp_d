@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from numpy import matlib
 
-def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1,custom_conf=None):
+def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1):
     
     """
     documentation coming 
@@ -18,18 +18,12 @@ def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1,custom_conf=None):
         
         data_matrixn = data_matrix[:,num_vol:]
         confoundn = confound.iloc[num_vol:]
-        
-        if custom_conf and custom_conf.shape[0] == data_matrix[0]:
-            custom_confx = custom_conf.iloc[num_vol:]
-        else:
-            custom_confx = None
     else:
         
         data_matrixn = data_matrix
         confoundn = confound
-        custom_confx = custom_conf
 
-    return data_matrixn, confoundn, custom_confx
+    return data_matrixn, confoundn
 
 
 def compute_FD(confound,head_radius=50):
