@@ -380,7 +380,8 @@ def build_workflow(opts, retval):
         os.makedirs(dcan_output_dir, exist_ok=True)
         
         if opts.participant_label is not None:
-           dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir,sub_id=_prefix(str(opts.participant_label)))  
+            for kk in opts.participant_label:
+                dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir,sub_id=_prefix(str(kk)))
         else:
            dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir)
         
@@ -395,7 +396,8 @@ def build_workflow(opts, retval):
         hcp_output_dir = str(work_dir) + '/hcphcp'
         os.makedirs(hcp_output_dir, exist_ok=True) 
         if opts.participant_label is not None:
-            hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(opts.participant_label)))
+            for kk in opts.participant_label:
+                hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(kk)))
         else:
             hcp2fmriprep(fmriprep_dir,hcp_output_dir)
         fmriprep_dir = hcp_output_dir
