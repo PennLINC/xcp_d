@@ -12,13 +12,13 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
     if sub_id is  None:
         sub_idir = glob.glob(dcandir +'/sub*')
         sub_id = [ os.path.basename(j) for j in sub_idir]
-    
-    if len(sub_id) == 0:
-        raise ValueError('No subject found in %s'%dcandir)
-    elif len(sub_id) > 0:
-        for j in sub_id:
-            dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
-        
+        if len(sub_id) == 0:
+            raise ValueError('No subject found in %s'%dcandir)
+        elif len(sub_id) > 0:
+            for j in sub_id:
+                dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=j)
+    else:
+        dcan2fmriprepx(dcan_dir=dcandir,out_dir=outdir,sub_id=str(sub_id))
     return sub_id
 
 
