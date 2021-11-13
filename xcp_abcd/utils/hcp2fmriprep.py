@@ -21,7 +21,7 @@ def hcp2fmriprep(hcpdir,outdir,sub_id=None):
             for j in sub_id:
                 hcpfmriprepx(hcp_dir=hcpdir,out_dir=outdir,sub_id=j)
     else: 
-        hcpfmriprepx(hcp_dir=hcpdir,out_dir=outdir,sub_id=sub_id)
+        hcpfmriprepx(hcp_dir=hcpdir,out_dir=outdir,sub_id=str(sub_id))
     
         
     return sub_id
