@@ -19,11 +19,11 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     time_todrop = traits.Float(exists=True,mandatory=True, desc="time in seconds to drop")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
-    fmriprep_conf= File(exists=True,mandatory=False,desc=" confound selected from fmriprep confound matrix ")
+    fmriprep_conf = File(exists=True,mandatory=False,desc="confound selected from fmriprep confound matrix")
 
 class _removeTROutputSpec(TraitedSpec):
     fmrip_confdropTR  = File(exists=True, manadatory=True,
-                                  desc=" fmriprep confound after removing TRs,")
+                                  desc="fmriprep confound after removing TRs,")
     
     bold_file_TR = File(exists=True,mandatory=True, desc=" either bold or nifti modified")
 
@@ -55,7 +55,7 @@ class removeTR(SimpleInterface):
         #write the output out
         self._results['bold_file_TR'] = fname_presuffix(
                 self.inputs.bold_file,
-                suffix='bold_dropTR', newpath=os.getcwd(),
+                newpath=os.getcwd(),
                 use_ext=True)
 
         self._results['fmrip_confdropTR'] = fname_presuffix(
@@ -132,7 +132,10 @@ class censorscrub(SimpleInterface):
         fd_timeseries = compute_FD(confound=conf_matrix[0], 
                            head_radius=self.inputs.head_radius)
 
-        ### read confound 
+        ### read confound
+
+    
+        
         dataxx = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask_file)
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
         
