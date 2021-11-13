@@ -335,15 +335,13 @@ def init_censoring_wf(
         workflow.connect([
             (inputnode,dummy_scan_wf,[('confound_file','fmriprep_conf'),]),
             (inputnode,dummy_scan_wf,[('bold','bold_file'),
-                   ('bold_mask','mask_file'),]) 
-             ])
+                   ('bold_mask','mask_file'),]),
 
-        workflow.connect([
-              (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),
-                         ('fmrip_confdropTR','fmriprep_conf'),]),
-              (inputnode,censorscrub_wf,[('bold_file','bold_file'), 
-                                    ('bold_mask','mask_file')]),
-              (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
+            (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),
+                                ('fmrip_confdropTR','fmriprep_conf'),]),
+            (inputnode,censorscrub_wf,[('bold_file','bold_file'), 
+                                    ('bold_mask','mask_file'),]),
+            (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
                                    ('fmriprepconf_censored','fmriprepconf_censored'),
                                    ('tmask','tmask'),('fd_timeseries','fd')]),
             ])
