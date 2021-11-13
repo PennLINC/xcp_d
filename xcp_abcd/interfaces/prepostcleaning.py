@@ -47,7 +47,7 @@ class removeTR(SimpleInterface):
     
 
         
-        data_matrix_TR,fmriprep_confTR,custom_confTR = drop_tseconds_volume (
+        data_matrix_TR,fmriprep_confTR = drop_tseconds_volume (
                         data_matrix=data_matrix,confound=fmriprepx_conf,
                         custom_conf=None,delets=self.inputs.time_todrop,
                         TR=self.inputs.TR )
