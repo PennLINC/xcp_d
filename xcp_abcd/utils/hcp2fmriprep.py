@@ -12,16 +12,19 @@ from pkg_resources import resource_filename as pkgrf
 def hcp2fmriprep(hcpdir,outdir,sub_id=None):
     hcpdir = os.path.abspath(hcpdir)
     outdir = os.path.abspath(outdir)
-
     if sub_id is  None:
         sub_idir = glob.glob(hcpdir +'/*')
         sub_id = [ os.path.basename(j) for j in sub_idir]
+        if len(sub_id) == 0:
+            raise ValueError('No subject found in %s'%hcpdir)
+        elif len(sub_id) > 0:
+            for j in sub_id:
+                hcpfmriprepx(hcp_dir=hcpdir,out_dir=outdir,sub_id=j)
+    else: 
+        hcpfmriprepx(hcp_dir=hcpdir,out_dir=outdir,sub_id=sub_id)
     
-
-    for j in sub_id:
-       hcpfmriprepx(hcp_dir=hcpdir,out_dir=outdir,subid=j)
-            
-    return sub_id 
+        
+    return sub_id
 
 
 def hcpfmriprepx(hcp_dir,out_dir,subid):

@@ -394,11 +394,21 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     rsdata = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
     rgdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
     
+    #load files 
+    rw = read_ndata(datafile=rawdata,maskfile=mask)
+    rs = read_ndata(datafile=resddata,maskfile=mask)
+    
+    # remove first n deleted 
+    if len(rxdata) > len(rsdata):
+        rxdata = rxdata[0:len(rsdata)]
+        rgdata = rxdata
+        rw = rw[:,0:len(rsdata)]
+    
+    
     conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
     fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
     
-    rw = read_ndata(datafile=rawdata,maskfile=mask)
-    rs = read_ndata(datafile=resddata,maskfile=mask)
+    
     
     wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})
     wbaf = pd.DataFrame({'Mean':np.nanmean(rs,axis=0),'Std':np.nanstd(rs,axis=0)})
