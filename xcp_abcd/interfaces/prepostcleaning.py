@@ -55,12 +55,12 @@ class removeTR(SimpleInterface):
         #write the output out
         self._results['bold_file_TR'] = fname_presuffix(
                 self.inputs.bold_file,
-                suffix='bold_dropTR', newpath=runtime.cwd,
+                newpath=os.getcwd(),
                 use_ext=True)
 
         self._results['fmrip_confdropTR'] = fname_presuffix(
                 self.inputs.bold_file,
-                suffix='fmriprep_dropTR.txt', newpath=runtime.cwd,
+                suffix='fmriprep_dropTR.txt', newpath=os.getcwd(),
                 use_ext=False)
         
         write_ndata(data_matrix=data_matrix_TR,template=self.inputs.bold_file,
