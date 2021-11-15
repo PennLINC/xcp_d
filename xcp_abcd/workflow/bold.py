@@ -6,7 +6,6 @@ post processing the bold
 .. autofunction:: init_boldpostprocess_wf
 
 """
-import sys
 import os
 import numpy as np
 import nibabel as nb
@@ -183,7 +182,12 @@ def init_boldpostprocess_wf(
     """
 
 
-    TR = layout.get_tr(bold_file)
+    metadata = layout.get_metadata(bold_file)
+    TR = metadata['RepetitionTime']
+    
+    if TR is None:
+        TR = layout.get_tr(bold_file)
+        
     file_base = os.path.basename(str(bold_file))
     workflow = Workflow(name=name)
 
@@ -240,14 +244,14 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],mni_to_t1w=mni_to_t1w,
                  t1w_to_native=_t12native(bold_file),bold_file=bold_file,
-                 brain_template=brain_template,name="fcons_ts_wf")
+                 brain_template=brain_template,name="fcons_ts_wf",omp_nthreads=omp_nthreads)
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'], TR=TR,
                    lowpass=upper_bpf,highpass=lower_bpf,smoothing=smoothing, cifti=False,
-                    name="compute_alff_wf" )
+                    name="compute_alff_wf",omp_nthreads=omp_nthreads )
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,
-                       name="afni_reho_wf")
+    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],
+                       name="afni_reho_wf",omp_nthreads=omp_nthreads)
 
     write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,bold_file=bold_file,
                     params=params,cifti=None,output_dir=output_dir,dummytime=dummytime,
@@ -258,27 +262,27 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
-                  name="ConfoundMatrix_wf", mem_gb=mem_gbx['resampled'])
+                  name="ConfoundMatrix_wf", mem_gb=0.5)
 
     censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
-                contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring')
+                contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=False,
-                name="resd_smoothing_wf")
+                name="resd_smoothing_wf",omp_nthreads=omp_nthreads)
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
                 filter_order=bpf_order),
-                    name="filtering_wf", mem_gb=mem_gbx['timeseries'])
+                    name="filtering_wf", mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     regression_wf = pe.Node(regress(tr=TR),
-               name="regression_wf",mem_gb = mem_gbx['timeseries'])
+               name="regression_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(interpolate(TR=TR),
-                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'])
+                  name="interpolation_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     
-    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,
-                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=2)
+    executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=bold_file,layout=layout,mem_gb=mem_gbx['timeseries'],
+                      output_dir=output_dir,mni_to_t1w=mni_to_t1w,omp_nthreads=omp_nthreads)
                  
 
     # get transform file for resampling and fcon
@@ -299,13 +303,13 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             'MNI152NLin2009cAsym', resolution=1, desc='carpet',
             suffix='dseg', extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',transforms=transformfile),
-        name='resample_parc')
+        name='resample_parc',n_procs=omp_nthreads,mem_gb=mem_gbx['timeseries'])
     
     resample_bold2T1w = pe.Node(ApplyTransforms(
         dimension=3,
          input_image=mask_file,reference_image=t1w_mask,
          interpolation='NearestNeighbor',transforms=bold2T1w_trans),
-         name='bold2t1_trans')
+         name='bold2t1_trans',n_procs=omp_nthreads,mem_gb=mem_gbx['timeseries'])
     
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
@@ -313,12 +317,12 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             'MNI152NLin2009cAsym', resolution=2, desc='brain',
             suffix='mask', extension=['.nii', '.nii.gz'])),
          interpolation='NearestNeighbor',transforms=bold2MNI_trans),
-         name='bold2mni_trans')
+         name='bold2mni_trans',n_procs=omp_nthreads,mem_gb=mem_gbx['timeseries'])
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
                        template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
                         suffix='mask', extension=['.nii', '.nii.gz'])),
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'])
+                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
     
 
     workflow.connect([
@@ -328,7 +332,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(Despike(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['resampled'])
+        from ..utils import DespikePatch
+        despike_wf = pe.Node(DespikePatch(outputtype='NIFTI_GZ',args='-NEW'),name="despike_wf",mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
         workflow.connect([
             (inputnode,despike_wf,[('bold_file','in_file')]),
@@ -438,30 +443,31 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
          ])
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file,tr=TR),
-                name='qcsummary', run_without_submitting=True)
+                name='qcsummary', run_without_submitting=False,mem_gb=mem_gbx['timeseries'],
+                meg_gb=mem_gbx['timeseries'])
 
     ds_report_qualitycontrol = pe.Node(
         DerivativesDataSink(base_directory=output_dir, desc='qualitycontrol',source_file=bold_file, datatype="figures"),
-                  name='ds_report_qualitycontrol', run_without_submitting=True)
+                  name='ds_report_qualitycontrol', run_without_submitting=False)
 
     ds_report_preprocessing = pe.Node(
         DerivativesDataSink(base_directory=output_dir, desc='preprocessing',source_file=bold_file, datatype="figures"),
-                  name='ds_report_preprocessing', run_without_submitting=True)
+                  name='ds_report_preprocessing', run_without_submitting=False)
     ds_report_postprocessing = pe.Node(
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='postprocessing', datatype="figures"),
-                  name='ds_report_postprocessing', run_without_submitting=True)
+                  name='ds_report_postprocessing', run_without_submitting=False)
 
     ds_report_connectivity = pe.Node(
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='connectvityplot', datatype="figures"),
-                  name='ds_report_connectivity', run_without_submitting=True)
+                  name='ds_report_connectivity', run_without_submitting=False)
 
     ds_report_rehoplot = pe.Node(
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='rehoplot', datatype="figures"),
-                  name='ds_report_rehoplot', run_without_submitting=True)
+                  name='ds_report_rehoplot', run_without_submitting=False)
 
     ds_report_afniplot = pe.Node(
         DerivativesDataSink(base_directory=output_dir,source_file=bold_file, desc='afniplot', datatype="figures"),
-                  name='ds_report_afniplot', run_without_submitting=True)
+                  name='ds_report_afniplot', run_without_submitting=False)
 
     workflow.connect([
         (qcreport,ds_report_preprocessing,[('raw_qcplot','in_file')]),
@@ -496,10 +502,18 @@ def _create_mem_gb(bold_fname):
     mem_gbz = {
         'derivative': bold_size_gb,
         'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen/100, 1.0) + 4),
+        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
-
+    
+    if mem_gbz['timeseries'] < 4.0:
+        mem_gbz['timeseries'] = 6.0
+        mem_gbz['resampled'] = 2
+    elif mem_gbz['timeseries'] > 8.0:
+        mem_gbz['timeseries'] = 8.0
+        mem_gbz['resampled'] = 3
+    
     return mem_gbz
+    
 
 def _get_ref_mask(fname):
     directx = os.path.dirname(fname)

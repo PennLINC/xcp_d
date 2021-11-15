@@ -18,6 +18,9 @@ from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from multiprocessing import cpu_count
 from time import strftime
+
+from nipype.interfaces import workbench
+from niworkflows import NIWORKFLOWS_LOG
 warnings.filterwarnings("ignore")
 
 
@@ -79,19 +82,21 @@ def get_parser():
                         help='post process cifti instead of nifti')
 
     g_perfm = parser.add_argument_group('Options to for resource management ')
-    g_perfm.add_argument('--nthreads',  action='store', type=int,
+    g_perfm.add_argument('--nthreads',  action='store', type=int, default=2,
                          help='maximum number of threads across all processes')
-    g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=0,
+    g_perfm.add_argument('--omp-nthreads', action='store', type=int, default=1,
                          help='maximum number of threads per-process')
-    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', default=0, type=int,
+    g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', type=int,
                          help='upper bound memory limit for xcp_abcd processes')
-    g_perfm.add_argument('--low-mem', action='store_true',
-                         help='attempt to reduce memory usage (will increase disk usage '
-                              'in working directory)')
     g_perfm.add_argument('--use-plugin', action='store', default=None,
                          help='nipype plugin configuration file')
     g_perfm.add_argument("-v", "--verbose", dest="verbose_count", action="count", default=0,
                          help="increases log verbosity for each occurence, debug level is -vvv")
+
+    g_outputoption = parser.add_argument_group('output, either fmriprep or dcan')
+
+    g_outputoption.add_argument('--input-type', required=False, default='fmriprep',type=str,
+                       help='input type, either fmriprep or dcan')
 
     g_param = parser.add_argument_group('parameters for postprocessing')
     g_param.add_argument(
@@ -161,8 +166,6 @@ def get_parser():
     g_other.add_argument('--notrack', action='store_true', default=False,
                          help='Opt-out of sending tracking information')
 
-    g_other.add_argument('--sloppy', action='store_true', default=False,
-                         help='Use low-quality tools for speed - TESTING ONLY')
 
     
 
@@ -184,6 +187,8 @@ def main():
         import sentry_sdk
         from ..utils.sentry import sentry_setup
         sentry_setup(opts, exec_env)
+    
+    
 
     # Retrieve logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
@@ -224,7 +229,7 @@ def main():
         sys.exit(2)
     # Clean up master process before running workflow, which may create forks
     gc.collect()
-
+    
     errno = 1  # Default is error exit unless otherwise set
     try:
         xcpabcd_wf.run(**plugin_settings)
@@ -365,12 +370,44 @@ def build_workflow(opts, retval):
         retval['return_code'] = 1
         return retval
 
+    # First check that fmriprep_dir looks like a BIDS folder
+    if opts.input_type == 'dcan':
+        opts.cifti = True
+        from ..utils import dcan2fmriprep
+        from ..workflow.base import _prefix
+        NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
+        dcan_output_dir = str(work_dir) + '/dcanhcp'
+        os.makedirs(dcan_output_dir, exist_ok=True)
+        
+        if opts.participant_label is not None:
+            for kk in opts.participant_label:
+                dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir,sub_id=_prefix(str(kk)))
+        else:
+           dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir)
+        
+        fmriprep_dir = dcan_output_dir
+
+        
+    elif opts.input_type == 'hcp':
+        opts.cifti = True
+        from ..utils import hcp2fmriprep
+        from ..workflow.base import _prefix
+        NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
+        hcp_output_dir = str(work_dir) + '/hcphcp'
+        os.makedirs(hcp_output_dir, exist_ok=True) 
+        if opts.participant_label is not None:
+            for kk in opts.participant_label:
+                hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(kk)))
+        else:
+            hcp2fmriprep(fmriprep_dir,hcp_output_dir)
+        fmriprep_dir = hcp_output_dir
+    
+
 
     # Set up some instrumental utilities
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
-
-    # First check that fmriprep_dir looks like a BIDS folder
+     
     layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
@@ -393,21 +430,25 @@ def build_workflow(opts, retval):
         }
 
    
-    nthreads = plugin_settings['plugin_args'].get('n_procs')
+    #nthreads = plugin_settings['plugin_args'].get('n_procs')
     # Permit overriding plugin config with specific CLI options
-    if nthreads is None or opts.nthreads is not None:
-        nthreads = opts.nthreads
-        if nthreads is None or nthreads < 1:
-            nthreads = cpu_count()
-        plugin_settings['plugin_args']['n_procs'] = nthreads
+    #if nthreads is None or opts.nthreads is not None:
+    nthreads = opts.nthreads
+        #if nthreads is None or nthreads < 1:
+            #nthreads = cpu_count()
+        #plugin_settings['plugin_args']['n_procs'] = nthreads
 
     if opts.mem_gb:
         plugin_settings['plugin_args']['memory_gb'] = opts.mem_gb
 
     omp_nthreads = opts.omp_nthreads
-    if omp_nthreads == 0:
-        omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
+    #if omp_nthreads == 0:
+        #omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
+    if (nthreads == 1) or (omp_nthreads > nthreads): 
+        omp_nthreads = 1
 
+    plugin_settings['plugin_args']['n_procs'] = nthreads
+    
     if 1 < nthreads < omp_nthreads:
         build_log.warning(
             'Per-process threads (--omp-nthreads=%d) exceed total '
@@ -478,9 +519,9 @@ def build_workflow(opts, retval):
               custom_conf=opts.custom_conf,
               dummytime=opts.dummytime,
               fd_thresh=opts.fd_thresh,
+              input_type=opts.input_type,
               name='xcpabcd_wf'
               )
-    
     retval['return_code'] = 0
 
     logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'

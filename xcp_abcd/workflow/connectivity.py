@@ -10,6 +10,7 @@ functional connectvity matrix
 import os
 import numpy as np  
 from nipype.pipeline import engine as pe
+from scipy.ndimage.measurements import mean
 from templateflow.api import get as get_template
 import nilearn as nl
 from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
@@ -24,6 +25,7 @@ def init_fcon_ts_wf(
     mem_gb,
     t1w_to_native,
     mni_to_t1w,
+    omp_nthreads,
     brain_template,
     bold_file,
     name="fcons_ts_wf",
@@ -117,30 +119,30 @@ Corresponding pair-wise functional connectivity between all regions was computed
     #get transfrom file
     transformfile = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1w,
                  t1w_to_native=t1w_to_native)
-
-    sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor',
-                       input_image_type=3, dimension=3),
-                       name="apply_tranform_sc27", mem_gb=mem_gb)
-
-    sc417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor',
-                       input_image_type=3, dimension=3),
-                       name="apply_tranform_sc47", mem_gb=mem_gb)
-
-    gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor',
-                       input_image_type=3, dimension=3),
-                       name="apply_tranform_gs36", mem_gb=mem_gb)
-    gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor',
-                       input_image_type=3, dimension=3),
-                       name="apply_tranform_gd33", mem_gb=mem_gb)
     
-    ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,num_threads=2,
-                       transforms=transformfile,interpolation='NearestNeighbor',
+    sc217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,
+                       transforms=transformfile,interpolation="MultiLabel",
                        input_image_type=3, dimension=3),
-                       name="apply_tranform_tian50", mem_gb=mem_gb)
+                       name="apply_tranform_sc27", mem_gb=mem_gb,n_procs=omp_nthreads)
+
+    sc417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,
+                       transforms=transformfile,interpolation="MultiLabel",
+                       input_image_type=3, dimension=3),
+                       name="apply_tranform_sc47",mem_gb=mem_gb,n_procs=omp_nthreads)
+
+    gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
+                       transforms=transformfile,interpolation="MultiLabel",
+                       input_image_type=3,dimension=3),
+                       name="apply_tranform_gs36", mem_gb=mem_gb,n_procs=omp_nthreads)
+    gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,
+                       transforms=transformfile,interpolation="MultiLabel",
+                       input_image_type=3, dimension=3),
+                       name="apply_tranform_gd33", mem_gb=mem_gb,n_procs=omp_nthreads)
+    
+    ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,
+                       transforms=transformfile,interpolation="MultiLabel",
+                       input_image_type=3, dimension=3),
+                       name="apply_tranform_tian50", mem_gb=mem_gb,n_procs=omp_nthreads)
 
     matrix_plot = pe.Node(connectplot(in_file=bold_file),name="matrix_plot_wf", mem_gb=mem_gb)
 
@@ -209,6 +211,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
 
 def init_cifti_conts_wf(
     mem_gb,
+    omp_nthreads,
     name="cifti_ts_con_wf",
     ):
     """
@@ -281,23 +284,23 @@ Corresponding pair-wise functional connectivity between all regions was computed
 
     # timeseries extraction
     sc217parcel = pe.Node(CiftiParcellate(atlas_label=sc217atlas,direction='COLUMN'),
-                         mem_gb=mem_gb, name='sc217parcel')
+                         mem_gb=mem_gb, name='sc217parcel',n_procs=omp_nthreads)
     sc417parcel = pe.Node(CiftiParcellate(atlas_label=sc417atlas,direction='COLUMN'),
-                           mem_gb=mem_gb, name='sc417parcel')
+                           mem_gb=mem_gb, name='sc417parcel',n_procs=omp_nthreads)
     gs360parcel = pe.Node(CiftiParcellate(atlas_label=gs360atlas,direction='COLUMN'),
-                          mem_gb=mem_gb, name='gs360parcel')
+                          mem_gb=mem_gb, name='gs360parcel',n_procs=omp_nthreads)
     gd333parcel = pe.Node(CiftiParcellate(atlas_label=gd333atlas,direction='COLUMN'),
-                         mem_gb=mem_gb, name='gd333parcel')
+                         mem_gb=mem_gb, name='gd333parcel',n_procs=omp_nthreads)
     ts50parcel = pe.Node(CiftiParcellate(atlas_label=ts50atlas,direction='COLUMN'),
-                         mem_gb=mem_gb, name='ts50parcel')
+                         mem_gb=mem_gb, name='ts50parcel',n_procs=omp_nthreads)
 
     matrix_plot = pe.Node(connectplot(),name="matrix_plot_wf", mem_gb=mem_gb)
     # correlation
-    sc217corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc217corr')
-    sc417corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc417corr')
-    gs360corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gs360corr')
-    gd333corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gd333corr')
-    ts50corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='ts50corr')
+    sc217corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc217corr',n_procs=omp_nthreads)
+    sc417corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc417corr',n_procs=omp_nthreads)
+    gs360corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gs360corr',n_procs=omp_nthreads)
+    gd333corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gd333corr',n_procs=omp_nthreads)
+    ts50corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='ts50corr',n_procs=omp_nthreads)
 
     workflow.connect([
                     (inputnode,sc217parcel,[('clean_cifti','in_file')]),

@@ -9,18 +9,30 @@ Usage Notes
 
 XCP_ABCD Execution 
 ------------------
-The *XCP_ABCD* workflow takes  fMRIPRep outputs which is in form of BIDS derivatives.  
-The fMRIPRep outputs  is required to include atleast anatomical and functional outputs 
-with atleast one preprocessed BOLD. 
+The *xcp_abcd* workflow takes  fMRIPRep, NiBabies, and abcd-hcp-pipeline outputs in the form of BIDS derivatives.  
+The outputs  are required to include at least anatomical and functional outputs 
+with at least one preprocessed BOLD image. 
 
-The exact command to run is  *XCP_ABCD* depends on the Installation_ method and 
-required data that needed to be processed
-The basic command of xcp_abcd is as follow
+The exact command to run in *xcp_abcd* depends on the Installation_ method and 
+data that needs to be processed
+The basic command of *xcp_abcd* is as follow
 Example: ::
 
-    xcp_abcd fmriprepdir output participant  # for nifti 
+    xcp_abcd inputpdir output participant  # for nifti 
 
-    xcp_abcd fmriprepdir output participant  --cifti  # for cifti
+    xcp_abcd inputpdir output participant  --cifti  # for cifti
+
+The NiBabies is using different default  brain template from fmriprep, it requires the brain template to 
+be specifies  in the command line :: 
+
+    xcp_abcd inputpdir output participant --brain-template MNI152NLin6Asym
+
+
+The abcd-hcp-pipeline outputs is not in the form of bids derivatives and required to be specified in the command line :: 
+
+    xcp_abcd inputpdir output participant  --input-type dcan 
+
+It is advisable process  abcd-hcp-pipeline outputs by participant by adding `--participant-label` to the command line.
 
 
 Command-Line Arguments
@@ -30,7 +42,6 @@ Command-Line Arguments
    :prog: xcp_abcd
    :nodefault:
    :nodefaultconst:
-
 
 Troubleshooting
 ---------------

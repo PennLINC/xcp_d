@@ -50,6 +50,7 @@ def init_xcpabcd_wf(layout,
                    work_dir,
                    dummytime,
                    fd_thresh,
+                   input_type='fmriprep',
                    name='xcpabcd_wf'):
     
     """
@@ -167,6 +168,7 @@ def init_xcpabcd_wf(layout,
                             dummytime=dummytime,
                             custom_conf=custom_conf,
                             fd_thresh=fd_thresh,
+                            input_type=input_type,
                             name="single_subject_" + subject_id + "_wf")
 
         single_subj_wf.config['execution']['crashdump_dir'] = (
@@ -204,6 +206,7 @@ def init_subject_wf(
     smoothing,
     custom_conf,
     output_dir,
+    input_type,
     name
     ):
     """
@@ -285,12 +288,14 @@ def init_subject_wf(
         the first vols in seconds to be removed before postprocessing
 
     """
+
+    
     layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
-                                               task=task_id,bids_validate=False, 
-                                               template=brain_template)
+                                               task=task_id,bids_validate=False)
+
     regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
     subject_data = select_cifti_bold(subj_data=subj_data)
-    t1wseg =extract_t1w_seg(subj_data=subj_data)
+    t1wseg = extract_t1w_seg(subj_data=subj_data)
     
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf','mni_to_t1w','t1w','t1seg']),
@@ -331,21 +336,21 @@ It is released under the [CC0]\
 """
 
     summary = pe.Node(SubjectSummary(subject_id=subject_id,bold=subject_data[0]),
-                      name='summary', run_without_submitting=True)
+                      name='summary')
 
     about = pe.Node(AboutSummary(version=__version__,
                                  command=' '.join(sys.argv)),
-                    name='about', run_without_submitting=True)
+                    name='about',)
 
     
     ds_report_summary = pe.Node(
              DerivativesDataSink(base_directory=output_dir,source_file=subject_data[0][0],desc='summary', datatype="figures"),
-                  name='ds_report_summary', run_without_submitting=True)
+                  name='ds_report_summary')
 
     
-    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,bids_dir=fmriprep_dir,
+    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,fmriprep_dir=fmriprep_dir,
                                         subject_id=subject_id,output_dir=output_dir,
-                                        t1w_to_mni=regfile[1],mni_to_t1w=regfile[0])
+                                        t1w_to_mni=regfile[1],input_type=input_type,mem_gb=5) # need to chnage memory isze
     
     ## send t1w and t1seg to anatomical workflow
     
@@ -454,9 +459,10 @@ class DerivativesDataSink(bid_derivative):
 
 def getfmriprepv(fmriprepdir):
 
-    datax = glob.glob(fmriprepdir+'/dataset_description.json')[0]
+    datax = glob.glob(fmriprepdir+'/dataset_description.json')
 
     if datax:
+        datax =datax[0]
         with open(datax) as f:
             datay = json.load(f)
         

@@ -7,13 +7,14 @@ import pandas as pd
 from nilearn.signal import clean 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
-import matplotlib.cm as cm
-from matplotlib.colors import ListedColormap, Normalize
 import seaborn as sns
+from niworkflows.viz.plots import plot_carpet as plot_carpetX
+from ..utils import read_ndata
+from matplotlib.colors import ListedColormap, Normalize
+import matplotlib.cm as cm
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from niworkflows.viz.plots import _decimate_data
-from ..utils import read_ndata
 
 
 def plotimage(img,out_file):
@@ -32,7 +33,7 @@ def plot_svg(fdata,fd,dvars,filename,tr=1):
       4D ndarray
     fd:
       framewise displacement
-    dvars: 
+    dvars: x
       dvars
     filename
       filename
@@ -339,10 +340,15 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     ax.legend(fontsize=20)
     
     last = conf.shape[0] - 1
+    interval = max((last // 10, last // 5, 1))
+    
     ax.set_xlim(0, last)
-    xticks = list(range(0, last)) + [last] if not hide_x else []
-    ax.set_xticks(xticks)
+    if not hide_x:
+        xticks = list(range(0, last)[::interval])
+    else:
+        xticks = []
 
+    ax.set_xticks(xticks)
     if not hide_x:
         if tr is None:
             ax.set_xlabel("time (frame #)")
@@ -359,6 +365,158 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
+def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1):
+    '''
+    generate carpet plot with dvars, fd, and WB
+    ------------
+    rawdata:
+       nifti or cifti
+    regdata: 
+      nifti or cifti after nuissance regression 
+    resddata: 
+      nifti or cifti after regression and filtering
+    mask: 
+         mask for nifti if available
+    seg:
+        3 tissues seg files 
+    tr: 
+        repetition times
+    fd: 
+      framewise displacement
+    filenamebf: 
+      output file svg before processing
+    filenameaf: 
+      output file svg after processing
+    '''
+    
+    rxdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
+    rgdata = compute_dvars(read_ndata(datafile=regdata,maskfile=mask))
+    rsdata = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
+    rgdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
+    
+    #load files 
+    rw = read_ndata(datafile=rawdata,maskfile=mask)
+    rs = read_ndata(datafile=resddata,maskfile=mask)
+    
+    # remove first n deleted 
+    if len(rxdata) > len(rsdata):
+        rxdata = rxdata[0:len(rsdata)]
+        rgdata = rxdata
+        rw = rw[:,0:len(rsdata)]
+    
+    
+    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
+    fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
+    
+    
+    
+    wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})
+    wbaf = pd.DataFrame({'Mean':np.nanmean(rs,axis=0),'Std':np.nanstd(rs,axis=0)})
+    if seg is not None:
+        atlaslabels = nb.load(seg).get_fdata()
+    else:
+        atlaslabels = None    
+    # 
+    plt.cla()
+    plt.clf()
+    figx = plt.figure(constrained_layout=True, figsize=(45,60))
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
+    confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
+    
+    plt.cla()
+    plt.clf()
+    
+    figy = plt.figure(constrained_layout=True, figsize=(45,60))
+    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
+    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
+    
+    return filenamebf,filenameaf
+
+
+
+
+def confoundplotx(
+    tseries,
+    gs_ts,
+    tr=None,
+    hide_x=True,
+    ylims=None,
+    ylabel=None
+   ):
+    import seaborn as sns
+
+    # Define TR and number of frames
+    notr = False
+    if tr is None:
+        notr = True
+        tr = 1.0
+    
+    
+    ntsteps = tseries.shape[0]
+    #tseries = np.array(tseries)
+
+    # Define nested GridSpec
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
+    )
+
+    ax_ts = plt.subplot(gs[1])
+    ax_ts.grid(False)
+
+    # Set 10 frame markers in X axis
+    interval = max((ntsteps // 10, ntsteps // 5, 1))
+    xticks = list(range(0, ntsteps)[::interval])
+    ax_ts.set_xticks(xticks)
+
+    if not hide_x:
+        if notr:
+            ax_ts.set_xlabel("Time (frame #)")
+        else:
+            ax_ts.set_xlabel("Time (s)")
+            labels = tr * np.array(xticks)
+            ax_ts.set_xticklabels(["%.01f" % t for t in labels.tolist()])
+    else:
+        ax_ts.set_xticklabels([])
+
+    if ylabel:
+        ax_ts.set_ylabel(ylabel)
+ 
+    
+    columns= tseries.columns
+    maxim_value =[]
+    minim_value =[]
+    for c in columns:
+        ax_ts.plot(tseries[c],label=c, linewidth=3)
+        maxim_value.append(max(tseries[c]))
+        minim_value.append(min(tseries[c]))
+    
+    
+    minx_value = [abs(x) for x in minim_value]
+    
+    ax_ts.set_xlim((0, ntsteps - 1))
+    ax_ts.legend(fontsize=30)
+    
+    if ylims:
+        ax_ts.set_ylim(ylims)
+    else:
+        ax_ts.set_ylim([-1.5*max(minx_value),1.5*max(maxim_value)])
+        
+    for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
+             ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
+        item.set_fontsize(30)
+
+    return ax_ts, gs
+
+
+
 def plot_carpetx(
     func,
     segfile,
@@ -367,7 +525,7 @@ def plot_carpetx(
     subplot=None,
     detrend=None,
     legend=True,
-    size=(1800,950),
+    size=(950,800),
   ):
     
     
@@ -511,65 +669,3 @@ def plot_carpetx(
     ax1.spines["left"].set_visible(False)
 
     return (ax0, ax1), gs
-
-def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1):
-    '''
-    generate carpet plot with dvars, fd, and WB
-    ------------
-    rawdata:
-       nifti or cifti
-    regdata: 
-      nifti or cifti after nuissance regression 
-    resddata: 
-      nifti or cifti after regression and filtering
-    mask: 
-         mask for nifti if available
-    seg:
-        3 tissues seg files 
-    tr: 
-        repetition times
-    fd: 
-      framewise displacement
-    filenamebf: 
-      output file svg before processing
-    filenameaf: 
-      output file svg after processing
-    '''
-    
-    rxdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
-    rgdata = compute_dvars(read_ndata(datafile=regdata,maskfile=mask))
-    rsdata = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
-    
-    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
-    fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
-    
-    rw = read_ndata(datafile=rawdata,maskfile=mask)
-    rs = read_ndata(datafile=resddata,maskfile=mask)
-    
-    wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})
-    wbaf = pd.DataFrame({'Mean':np.nanmean(rs,axis=0),'Std':np.nanstd(rs,axis=0)})
-    
-    # plot filex
-    
-    
-    figx = plt.figure(constrained_layout=False, figsize=(15,30))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
-    plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,500])
-    plotseries(conf=wbbf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-400,800])
-    plot_carpetx(func=rawdata,segfile=seg,tr=tr,subplot=grid[2])
-    plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,0.8])
-    figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None)
-    
-    plt.cla()
-    plt.clf()
-    
-    figy = plt.figure(constrained_layout=False, figsize=(15,30))
-   
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,1.5,1])
-    plotseries(conf=conf,gs_ts=grid[0],tr=tr,ylabelx='DVARS',hide_x=True,ylim=[0,500])
-    plotseries(conf=wbaf,gs_ts=grid[1],tr=tr,ylabelx='WB',hide_x=True,ylim=[-400,800])
-    plot_carpetx(func=resddata,segfile=seg,tr=tr,subplot=grid[2])
-    plotseries(conf=fdx,gs_ts=grid[3],tr=tr,ylabelx='FD',hide_x=False,ylim=[0,0.8])
-    figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None)
-    
-    return filenamebf,filenameaf
