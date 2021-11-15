@@ -2,9 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """confound matrix selection based on Ciric et al 2007."""
 import numpy as np
-import nibabel as nb
 import pandas as pd
-import sys
 import os  
 
 def load_confound(datafile):
@@ -47,10 +45,11 @@ def load_motion(confoundspd,TR,head_radius,filtertype,
     rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]*head_radius
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
     datay = pd.concat([rot_2mm,trans_mm],axis=1).to_numpy()
+    datay = datay.T 
     if filtertype == 'lp' or filtertype == 'notch' :
         datay = motion_regression_filter(data=datay,fs=fs,
           filtertype=filtertype,cutoff=cutoff,freqband=freqband,order=order)
-    return  pd.DataFrame(datay) 
+    return  pd.DataFrame(datay.T) 
 
 def load_globalS(confoundspd):
     """select global signal."""

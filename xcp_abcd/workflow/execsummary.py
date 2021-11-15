@@ -1,16 +1,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os,fnmatch
-import glob
-from posixpath import basename 
+import os,fnmatch,glob
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
-from nipype.interfaces.fsl import FAST, MultiImageMaths
 from nipype.interfaces import utility as niu
-from ..interfaces import PlotSVGData, RegPlot,PlotImage
+from ..interfaces import PlotSVGData,PlotImage
 from ..utils import bid_derivative, get_transformfile
 from templateflow.api import get as get_template
 
