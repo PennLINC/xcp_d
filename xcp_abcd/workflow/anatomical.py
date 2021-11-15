@@ -115,7 +115,7 @@ def init_anatomical_wf(
           L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
           R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
      
-          ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon_T1w.nii.gz')[0]
+          ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon.nii.gz')[0]
 
           ses_id =_getsesid(ribbon) 
           anatdir = output_dir+'/xcp_abcd/sub-'+ subject_id +'/ses-'+ ses_id+ '/anat'

@@ -61,7 +61,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
         
         t1wim = anatdir + sub_id + '_' + sess + '_desc-preproc_T1w.nii.gz'
         t1seg = anatdir + sub_id + '_' + sess + '_dseg.nii.gz'
-        t1ribbon = anatdir + sub_id + '_' + sess + '_desc-ribbon_T1w.nii.gz'
+        t1ribbon = anatdir + sub_id + '_' + sess + '_desc-ribbon.nii.gz'
         t1brainm =  anatdir + sub_id + '_' + sess + '_desc-brain_mask.nii.gz'
         regfile1  =  anatdir + sub_id + '_' + sess + '_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         regfile2  =  anatdir + sub_id + '_' + sess + '_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5'
