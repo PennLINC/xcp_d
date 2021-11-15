@@ -44,6 +44,7 @@ __all__ = [
     'collect_participants', 
     'collect_data',
     'compute_2d_reho', 
+    'extract_timeseries_funct',
     'compute_alff',
     'mesh_adjacency',
     'interpolate_masked_data',

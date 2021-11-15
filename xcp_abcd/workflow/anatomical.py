@@ -11,8 +11,6 @@ import os,fnmatch,shutil
 import glob as glob
 from pathlib import Path
 from templateflow.api import get as get_template
-
-from xcp_abcd.utils.execsummary import ribbon_to_statmap
 from ..utils import collect_data,CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
 from ..interfaces.connectivity import ApplyTransformsx
@@ -21,7 +19,7 @@ from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import MapNode as MapNode
-from ..interfaces import SurftoVolume,BrainPlotx, RibbontoStatmap
+from ..interfaces import BrainPlotx, RibbontoStatmap
 from ..utils import bid_derivative
 
 class DerivativesDataSink(bid_derivative):
