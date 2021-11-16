@@ -36,7 +36,7 @@ def init_xcpabcd_wf(layout,
                    motion_filter_type,
                    band_stop_min,
                    band_stop_max,
-                   fmriprep_dir,
+                   fmri_dir,
                    omp_nthreads,
                    cifti,
                    task_id,
@@ -154,7 +154,7 @@ def init_xcpabcd_wf(layout,
                             motion_filter_type=motion_filter_type,
                             band_stop_min=band_stop_min,
                             band_stop_max=band_stop_max,
-                            fmriprep_dir=fmriprep_dir,
+                            fmri_dir=fmri_dir,
                             omp_nthreads=omp_nthreads,
                             subject_id=subject_id,
                             cifti=cifti,
@@ -192,7 +192,7 @@ def init_subject_wf(
     motion_filter_type,
     band_stop_min,
     band_stop_max,
-    fmriprep_dir,
+    fmri_dir,
     omp_nthreads,
     subject_id,
     cifti,
@@ -290,7 +290,7 @@ def init_subject_wf(
     """
 
     
-    layout,subj_data= collect_data(bids_dir=fmriprep_dir,participant_label=subject_id, 
+    layout,subj_data= collect_data(bids_dir=fmri_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False)
 
     regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
@@ -309,11 +309,11 @@ def init_subject_wf(
     workflow = Workflow(name=name)
     
     workflow.__desc__ = """
-### Post-processing of fMRIPrep outputs
+### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of fMRIPrep version {fvers} [@fmriprep1].
 XCP was built with *Nipype* {nipype_ver} [@nipype1].
-""".format(nipype_ver=nipype_ver,fvers=getfmriprepv(fmriprepdir=fmriprep_dir))
+""".format(input_type=input_type,nipype_ver=nipype_ver,fvers=getfmriprepv(fmri_dir=fmri_dir))
 
 
     workflow.__postdesc__ = """
@@ -348,7 +348,7 @@ It is released under the [CC0]\
                   name='ds_report_summary')
 
     
-    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,fmriprep_dir=fmriprep_dir,
+    anatomical_wf = init_anatomical_wf(omp_nthreads=omp_nthreads,fmri_dir=fmri_dir,
                                         subject_id=subject_id,output_dir=output_dir,
                                         t1w_to_mni=regfile[1],input_type=input_type,mem_gb=5) # need to chnage memory isze
     
@@ -457,9 +457,9 @@ def _pop(inlist):
 class DerivativesDataSink(bid_derivative):
     out_path_base = 'xcp_abcd'
 
-def getfmriprepv(fmriprepdir):
+def getfmriprepv(fmri_dir):
 
-    datax = glob.glob(fmriprepdir+'/dataset_description.json')
+    datax = glob.glob(fmri_dir+'/dataset_description.json')
 
     if datax:
         datax =datax[0]
