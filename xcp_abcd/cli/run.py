@@ -208,7 +208,7 @@ def main():
         retcode = p.exitcode or retval.get('return_code', 0)
         
         work_dir = Path(retval.get('work_dir'))
-        fmriprep_dir = Path(retval.get('fmri_dir'))
+        fmri_dir = Path(retval.get('fmri_dir'))
         output_dir = Path(retval.get('output_dir'))
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
@@ -300,7 +300,7 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=subject_list,fmriprep_dir=fmriprep_dir, work_dir=work_dir,
+            subject_list=subject_list,fmrip_dir=fmri_dir, work_dir=work_dir,
                output_dir=output_dir, run_uuid=run_uuid,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
@@ -351,7 +351,7 @@ def build_workflow(opts, retval):
     
     retval['return_code'] = 1
     retval['workflow'] = None
-    retval['fmriprep_dir'] = str(fmri_dir)
+    retval['fmri_dir'] = str(fmri_dir)
     retval['output_dir'] = str(output_dir)
     retval['work_dir'] = str(work_dir)
 
@@ -385,7 +385,7 @@ def build_workflow(opts, retval):
         else:
            dcan2fmriprep(dcandir=fmri_dir,outdir=dcan_output_dir)
         
-        fmriprep_dir = dcan_output_dir
+        fmri_dir = dcan_output_dir
 
         
     elif opts.input_type == 'hcp':
@@ -400,7 +400,7 @@ def build_workflow(opts, retval):
                 hcp2fmriprep(fmri_dir,hcp_output_dir,sub_id=_prefix(str(kk)))
         else:
             hcp2fmriprep(fmri_dir,hcp_output_dir)
-        fmriprep_dir = hcp_output_dir
+        fmri_dir = hcp_output_dir
     
 
 
@@ -408,7 +408,7 @@ def build_workflow(opts, retval):
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
      
-    layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
+    layout = BIDSLayout(str(fmri_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
     retval['subject_list'] = subject_list
