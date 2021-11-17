@@ -300,7 +300,7 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=subject_list,fmrip_dir=fmri_dir, work_dir=work_dir,
+            subject_list=subject_list,fmri_dir=fmri_dir, work_dir=work_dir,
                output_dir=output_dir, run_uuid=run_uuid,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
