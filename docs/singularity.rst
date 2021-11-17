@@ -23,8 +23,7 @@ If the data to be preprocessed is also on the HPC or a personal computer,
 you are ready to run *xcp_abcd*. ::
 
     $ singularity run --cleanenv xcp_abcd.simg \
-        path/to/data/fmriprep_dir  path/to/output/dir \
-        participant \
+        path/to/data/fmri_dir  path/to/output/dir \
         --participant-label label
 
 

@@ -7,6 +7,9 @@ import nibabel as nb
 from nilearn.input_data import NiftiMasker
 
 def dcan2fmriprep(dcandir,outdir,sub_id=None):
+    """
+    loop over all subjects in dcan dir and convert to fmriprep format
+    """
     dcandir = os.path.abspath(dcandir)
     outdir = os.path.abspath(outdir)
     if sub_id is  None:
@@ -25,6 +28,7 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
 def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     """
     dcan2fmriprep(dcan_dir,out_dir)
+    this script convert dcan data to fmriprep format
     """
     # get session id if available 
     

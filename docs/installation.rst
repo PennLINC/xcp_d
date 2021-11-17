@@ -16,7 +16,7 @@ command line. The command-line options are documented in the :ref:`usage`
 section.
 
 ``xcp_abcd`` processes the fMRIPrep outputs using the following command-line structure::
-   $ xcp_abcd <fmriprepdir> <outputdir> <analysis_level> <options>
+   $ xcp_abcd <fmri_pdir> <outputdir>  <options>
 
 
 With either singularity or docker, the command-line will be composed of a 
@@ -25,7 +25,7 @@ command-line options.
 
 The command-line structure above is then modified as follows::
   $<container_command_and_options> <container_image> \
-      <fmriprepdir> <outputdir> <analysis_level> <options>
+      <fmri_dir> <outputdir><options>
 
 Therefore, once a user specifies the container options and the image to be run
 the command line is the same as for the ordinary installation, but dropping
