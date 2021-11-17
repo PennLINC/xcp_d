@@ -53,7 +53,7 @@ def get_parser():
     currentv = Version(__version__)
 
     parser = ArgumentParser(description='xcp_abcd postprocessing workflow of fMRI data',
-                            help='see https://xcp-abcd.readthedocs.io/en/latest/generalworkflow.html',
+                           epilog='see https://xcp-abcd.readthedocs.io/en/latest/generalworkflow.html',
                             formatter_class=ArgumentDefaultsHelpFormatter)
 
     # important parameters required
