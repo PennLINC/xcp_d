@@ -134,7 +134,7 @@ Processesing Steps
 8.  Resting-state derivatives: For each BOLD data, the resting-state derivatives are computed. These includes regional homogeneity (ReHo) 
     and amplitude of low-frequency fluctuation (ALFF).  
 
-9. Residual BOLD and resting-state derivatives smoothing: A smoothing kernel of 5mm is implemented as default for smoothing residual BOLD, ReHo 
+9. Residual BOLD and resting-state derivatives smoothing: A smoothing kernel of 6mm is implemented as default for smoothing residual BOLD, ReHo 
    and ALFF. Kernel size can be modified in the command line arguments. 
 
 10. Quality control. The quality control (QC) in ``xcp_abcd`` estimates the quality of BOLD data before and after regression and also estimates BOLD-T1w coregistration  and
