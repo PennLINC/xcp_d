@@ -18,19 +18,13 @@ data that needs to be processed
 The basic command of *xcp_abcd* is as follow
 Example: ::
 
-    xcp_abcd inputpdir output participant  # for nifti 
+    xcp_abcd inputpdir output  # for nifti 
 
-    xcp_abcd inputpdir output participant  --cifti  # for cifti
-
-The NiBabies is using different default  brain template from fmriprep, it requires the brain template to 
-be specifies  in the command line :: 
-
-    xcp_abcd inputpdir output participant --brain-template MNI152NLin6Asym
-
+    xcp_abcd inputpdir output  --cifti  # for cifti
 
 The abcd-hcp-pipeline outputs is not in the form of bids derivatives and required to be specified in the command line :: 
 
-    xcp_abcd inputpdir output participant  --input-type dcan 
+    xcp_abcd inputpdir output  --input-type dcan 
 
 It is advisable process  abcd-hcp-pipeline outputs by participant by adding `--participant-label` to the command line.
 

@@ -145,13 +145,13 @@ def get_parser():
 
     g_censor = parser.add_argument_group(' Censoring and scrubbing options')
     g_censor.add_argument('-r','--head_radius',default=50,
-                             type=float, help='head radius for computing FD, 35mm  is recommended for baby')
+                             type=float, help='head radius for computing FD, deafult is 50mm, 35mm  is recommended for baby')
 
     g_censor.add_argument('-f','--fd-thresh',default=0.3, type=float, 
-                                help='framewise displacement threshold for censoring')
+                                help='framewise displacement threshold for censoring, default is 0.3mm')
     
     g_censor.add_argument('--contigvol',default=5, type=int, 
-                                help='number of contigious frames  fd thresholding')
+                                help='number of contigious frames  FD thresholding, the deafult is 5 ')
  
 
     g_other = parser.add_argument_group('Other options')
@@ -550,3 +550,4 @@ def build_workflow(opts, retval):
 if __name__ == '__main__':
     raise RuntimeError("xcp_abcd/cli/run.py should not be run directly;\n"
                        "Please `pip install` xcp_abcd and use the `xcp_abcd` command")
+
