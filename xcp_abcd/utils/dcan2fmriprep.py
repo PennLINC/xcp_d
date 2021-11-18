@@ -221,7 +221,9 @@ def copyfileobj_example(source, dest):
     write method, like for example StringIO.
     """
     import shutil
-    shutil.copy(source, dest,dirs_exist_ok=False,follow_symlinks=True)
+    if not os.path.exists(dest):
+        os.makedirs(dest)  
+    shutil.copy(source, dest,follow_symlinks=True)
 
 def symlinkfiles(source, dest):
     # Beware, this example does not handle any edge cases!
