@@ -213,10 +213,15 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     
     #return dest 
 
-import shutil,filecmp
-def copyfileobj_example(src, dst):
-    if not os.path.exists(dst) or not filecmp.cmp(src, dst):
-        shutil.copyfile(src, dst)
+
+def copyfileobj_example(source, dest):
+    """      
+    Copy a file from source to dest. source and dest
+    must be file-like objects, i.e. any object with a read or
+    write method, like for example StringIO.
+    """
+    import shutil
+    shutil.copy(source, dest,dirs_exist_ok=False,follow_symlinks=True)
 
 def symlinkfiles(source, dest):
     # Beware, this example does not handle any edge cases!
