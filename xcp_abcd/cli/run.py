@@ -358,16 +358,9 @@ def build_workflow(opts, retval):
 
     if output_dir == fmri_dir:
         build_log.error(
-            'The selected output folder is the same as the input fmriprep output. '
+            'The selected output folder is the same as the input fmri input. '
             'Please modify the output path (suggestion: %s).',
              fmri_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
-        retval['return_code'] = 1
-        return retval
-
-    if  fmri_dir in work_dir.parents:
-        build_log.error(
-            'The selected working directory is a subdirectory of fmriprep directory. '
-            'Please modify the output path.')
         retval['return_code'] = 1
         return retval
 
@@ -377,9 +370,7 @@ def build_workflow(opts, retval):
         from ..utils import dcan2fmriprep
         from ..workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
-        from pathlib import Path
-        p = Path(work_dir)
-        dcan_output_dir = str(p.parent) + '/dcanhcp'
+        dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
         
         if opts.participant_label is not None:
@@ -396,9 +387,7 @@ def build_workflow(opts, retval):
         from ..utils import hcp2fmriprep
         from ..workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
-        from pathlib import Path
-        p = Path(work_dir)
-        hcp_output_dir = str(p.parent) + '/hcphcp'
+        hcp_output_dir = str(work_dir) + '/hcphcp'
         os.makedirs(hcp_output_dir, exist_ok=True) 
         if opts.participant_label is not None:
             for kk in opts.participant_label:
