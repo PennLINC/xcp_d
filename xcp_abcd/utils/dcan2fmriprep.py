@@ -220,9 +220,7 @@ def copyfileobj_example(source, dest):
     must be file-like objects, i.e. any object with a read or
     write method, like for example StringIO.
     """
-    import shutil
-    if not os.path.exists(dest):
-        os.makedirs(dest)  
+    import shutil  
     shutil.copy(source, dest,follow_symlinks=True)
 
 def symlinkfiles(source, dest):
