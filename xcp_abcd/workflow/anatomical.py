@@ -27,7 +27,7 @@ class DerivativesDataSink(bid_derivative):
 
 def init_anatomical_wf(
      omp_nthreads,
-     fmriprep_dir,
+     fmri_dir,
      subject_id,
      output_dir,
      t1w_to_mni,
@@ -36,7 +36,7 @@ def init_anatomical_wf(
      name='anatomical_wf',
       ):
      """
-     This workflow is convert surfaces (gifti) from fmriprep to standard space-fslr-32k
+     This workflow is convert surfaces (gifti) from fMRI to standard space-fslr-32k
      It also resmaple t1w t1w segmnetation to standard space, MNI
 
      Workflow Graph
@@ -46,7 +46,7 @@ def init_anatomical_wf(
                from xcp_abcd.workflows import init_anatomical_wf
                wf = init_anatomical_wf(
                 omp_nthreads,
-                fmriprep_dir,
+                fmri_dir,
                 subject_id,
                 output_dir,
                 t1w_to_mni,
@@ -56,8 +56,8 @@ def init_anatomical_wf(
      ----------
      omp_nthreads : int
           number of threads
-     fmriprep_dir : str
-          fmriprep output directory
+     fmri_dir : str
+          fmri output directory
      subject_id : str
           subject id
      output_dir : str
@@ -86,7 +86,7 @@ def init_anatomical_wf(
      
      MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
-     layout,subj_data = collect_data(bids_dir=fmriprep_dir,participant_label=subject_id,bids_validate=False)
+     layout,subj_data = collect_data(bids_dir=fmri_dir,participant_label=subject_id,bids_validate=False)
 
      if input_type == 'dcan' or input_type == 'hcp':
           ds_t1wmni_wf = pe.Node(
@@ -115,7 +115,7 @@ def init_anatomical_wf(
           L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
           R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
      
-          ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon_T1w.nii.gz')[0]
+          ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon.nii.gz')[0]
 
           ses_id =_getsesid(ribbon) 
           anatdir = output_dir+'/xcp_abcd/sub-'+ subject_id +'/ses-'+ ses_id+ '/anat'
@@ -177,9 +177,9 @@ def init_anatomical_wf(
 
      #verify fresurfer directory
      
-          p = Path(fmriprep_dir)
+          p = Path(fmri_dir)
           import glob as glob
-          freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*') # for fmriprep
+          freesufer_paths = glob.glob(str(p.parent)+'/freesurfer*') # for fmriprep and nibabies
           if len(freesufer_paths)  == 0 :
                freesufer_paths = glob.glob(str(p)+'/sourcedata/*freesurfer*') # nibabies
 

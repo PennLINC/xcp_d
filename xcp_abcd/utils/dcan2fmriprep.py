@@ -7,6 +7,9 @@ import nibabel as nb
 from nilearn.input_data import NiftiMasker
 
 def dcan2fmriprep(dcandir,outdir,sub_id=None):
+    """
+    loop over all subjects in dcan dir and convert to fmriprep format
+    """
     dcandir = os.path.abspath(dcandir)
     outdir = os.path.abspath(outdir)
     if sub_id is  None:
@@ -25,6 +28,7 @@ def dcan2fmriprep(dcandir,outdir,sub_id=None):
 def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     """
     dcan2fmriprep(dcan_dir,out_dir)
+    this script convert dcan data to fmriprep format
     """
     # get session id if available 
     
@@ -61,7 +65,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
         
         t1wim = anatdir + sub_id + '_' + sess + '_desc-preproc_T1w.nii.gz'
         t1seg = anatdir + sub_id + '_' + sess + '_dseg.nii.gz'
-        t1ribbon = anatdir + sub_id + '_' + sess + '_desc-ribbon_T1w.nii.gz'
+        t1ribbon = anatdir + sub_id + '_' + sess + '_desc-ribbon.nii.gz'
         t1brainm =  anatdir + sub_id + '_' + sess + '_desc-brain_mask.nii.gz'
         regfile1  =  anatdir + sub_id + '_' + sess + '_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
         regfile2  =  anatdir + sub_id + '_' + sess + '_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5'
@@ -210,17 +214,14 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
     #return dest 
 
 
-def copyfileobj_example(source, dest, buffer_size=1024*1024*1024):
+def copyfileobj_example(source, dest):
     """      
     Copy a file from source to dest. source and dest
     must be file-like objects, i.e. any object with a read or
     write method, like for example StringIO.
     """
-    while True:
-        copy_buffer = source.read(buffer_size)
-        if not copy_buffer:
-            break
-        dest.write(copy_buffer)
+    import shutil  
+    shutil.copy(source, dest,follow_symlinks=True)
 
 def symlinkfiles(source, dest):
     # Beware, this example does not handle any edge cases!

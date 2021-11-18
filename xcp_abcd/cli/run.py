@@ -52,19 +52,16 @@ def get_parser():
     verstr = 'xcp_abcd v{}'.format(__version__)
     currentv = Version(__version__)
 
-    is_release = not any((currentv.is_devrelease, currentv.is_prerelease, currentv.is_postrelease))
-
-    parser = ArgumentParser(description='xcp_abcd postprocessing workflow of fmriprep outputs',
+    parser = ArgumentParser(description='xcp_abcd postprocessing workflow of fMRI data',
+                           epilog='see https://xcp-abcd.readthedocs.io/en/latest/generalworkflow.html',
                             formatter_class=ArgumentDefaultsHelpFormatter)
 
     # important parameters required
-    parser.add_argument('fmriprep_dir', action='store', type=Path,
-                        help='the root folder of a fmriprep output  with sub-xxxx.')
+    parser.add_argument('fmri_dir', action='store', type=Path,
+                        help='the root folder of a preprocessed fMRI output .')
     parser.add_argument('output_dir', action='store', type=Path,
-                        help='the output path for the outcomes of xcp_abcd')
-    
-    parser.add_argument('analysis_level', choices=['participant'],
-                        help='processing stage to be run, only "participant')
+                        help='the output path for the xcp_abcd')
+
 
     # optional arguments
     parser.add_argument('--version', action='version', version=verstr)
@@ -75,11 +72,13 @@ def get_parser():
                              'identifier (the sub- prefix can be removed)')
 
     g_bidx.add_argument('-t', '--task-id', action='store',
-                        help='select a specific task to be selected for postprocessing')
+                        help='select a specific task to be selected for the postprocessing '
+                             )
     
     g_surfx = parser.add_argument_group('Options for cifti processing')
     g_surfx.add_argument('-s', '--cifti', action='store_true', default=False,
-                        help='post process cifti instead of nifti')
+                        help='postprocess cifti instead of nifti'
+                        'this is set default for dcan and hpc')
 
     g_perfm = parser.add_argument_group('Options to for resource management ')
     g_perfm.add_argument('--nthreads',  action='store', type=int, default=2,
@@ -89,14 +88,16 @@ def get_parser():
     g_perfm.add_argument('--mem_gb', '--mem_gb', action='store', type=int,
                          help='upper bound memory limit for xcp_abcd processes')
     g_perfm.add_argument('--use-plugin', action='store', default=None,
-                         help='nipype plugin configuration file')
+                         help='nipype plugin configuration file. for more information see'
+                          'https://nipype.readthedocs.io/en/0.11.0/users/plugins.html')
     g_perfm.add_argument("-v", "--verbose", dest="verbose_count", action="count", default=0,
                          help="increases log verbosity for each occurence, debug level is -vvv")
 
-    g_outputoption = parser.add_argument_group('output, either fmriprep or dcan')
+    g_outputoption = parser.add_argument_group('fmriprep/nibabies are default')
 
     g_outputoption.add_argument('--input-type', required=False, default='fmriprep',type=str,
-                       help='input type, either fmriprep or dcan')
+                      choices=['fmirprep', 'dcan', 'hpc'],
+                       help='input type,fmriprep/nibabies are default,dcan and hcp are optional ')
 
     g_param = parser.add_argument_group('parameters for postprocessing')
     g_param.add_argument(
@@ -107,14 +108,15 @@ def get_parser():
                              type=float, help='smoothing the postprocessed output (fwhm)')
     
     g_param.add_argument('--despike', action='store_true', default=False,
-                        help='despike the timeseries') 
+                        help='despike the nifti/cifti before postprocessing') 
     g_param.add_argument('-p','--nuissance-regressors', required=False, default='27P', 
+                           choices=['27P', '36P', '24P', 'acompcor','tcompcor'],
                              type=str, help='nuissance parameters to be selected, other options include 24P and 36P \
                                            acompcor and tcompcor, see Ciric etal 2007')
     g_param.add_argument('-c','--custom_conf', required=False,default=None,
                              type=Path, help='custom confound to be added to nuissance regressors')
     g_param.add_argument('-d','--dummytime',default=0,
-                             type=float, help='first volume in seconds to be removed for postprocessing') 
+                             type=float, help='first volume in seconds to be removed or skipped before postprocessing') 
     
     g_filter = parser.add_argument_group('filtering parameters and default value')
     
@@ -128,29 +130,28 @@ def get_parser():
                          help='number of filter coefficients for butterworth bandpass filter')
     
 
-    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='fif',
+    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='None',
                          choices=['lp','notch'],
                          help='type of band-stop filter to use for removing respiratory' \
                                  'artifact from motion regressors')
     g_filter.add_argument('--band-stop-min', default=0,type=float, 
-                 help='lower frequency (bpm) for the band-stop motion filter.')
+                 help='lower frequency (bpm) for the band-stop motion filter. see documentation for more details')
    
-    g_filter.add_argument(
-        '--band-stop-max',default=0,type=float,
-                help='upper frequency (bpm) for the band-stop motion filter.')
-    g_filter.add_argument(
-        '--motion-filter-order',default=4,type=int,
+    g_filter.add_argument('--band-stop-max',default=0,type=float,
+                help='upper frequency (bpm) for the band-stop motion filter.see documentation for more details')
+
+    g_filter.add_argument( '--motion-filter-order',default=4,type=int,
                 help='number of filter coeffecients for the band-stop filter')
 
     g_censor = parser.add_argument_group(' Censoring and scrubbing options')
     g_censor.add_argument('-r','--head_radius',default=50,
-                             type=float, help='head radius for computing FD, it is 35mm for baby')
+                             type=float, help='head radius for computing FD, deafult is 50mm, 35mm  is recommended for baby')
 
     g_censor.add_argument('-f','--fd-thresh',default=0.3, type=float, 
-                                help='framewise displacement threshold for censoring')
+                                help='framewise displacement threshold for censoring, default is 0.3mm')
     
     g_censor.add_argument('--contigvol',default=5, type=int, 
-                                help='number of contigious frames  fd thresholding')
+                                help='number of contigious frames  FD thresholding, the deafult is 5 ')
  
 
     g_other = parser.add_argument_group('Other options')
@@ -208,7 +209,7 @@ def main():
         retcode = p.exitcode or retval.get('return_code', 0)
         
         work_dir = Path(retval.get('work_dir'))
-        fmriprep_dir = Path(retval.get('fmriprep_dir'))
+        fmri_dir = Path(retval.get('fmri_dir'))
         output_dir = Path(retval.get('output_dir'))
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
@@ -300,7 +301,7 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=subject_list,fmriprep_dir=fmriprep_dir, work_dir=work_dir,
+            subject_list=subject_list,fmri_dir=fmri_dir, work_dir=work_dir,
                output_dir=output_dir, run_uuid=run_uuid,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
@@ -333,13 +334,13 @@ def build_workflow(opts, retval):
 
     INIT_MSG = """
     Running xcp_abcd version {version}:
-      * fMRIPrep directory path: {fmriprep_dir}.
+      * fMRI directory path: {fmri_dir}.
       * Participant list: {subject_list}.
       * Run identifier: {uuid}.
 
     """.format
 
-    fmriprep_dir = opts.fmriprep_dir.resolve()
+    fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
 
@@ -351,19 +352,19 @@ def build_workflow(opts, retval):
     
     retval['return_code'] = 1
     retval['workflow'] = None
-    retval['fmriprep_dir'] = str(fmriprep_dir)
+    retval['fmri_dir'] = str(fmri_dir)
     retval['output_dir'] = str(output_dir)
     retval['work_dir'] = str(work_dir)
 
-    if output_dir == fmriprep_dir:
+    if output_dir == fmri_dir:
         build_log.error(
             'The selected output folder is the same as the input fmriprep output. '
             'Please modify the output path (suggestion: %s).',
-             fmriprep_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
+             fmri_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
         retval['return_code'] = 1
         return retval
 
-    if  fmriprep_dir in work_dir.parents:
+    if  fmri_dir in work_dir.parents:
         build_log.error(
             'The selected working directory is a subdirectory of fmriprep directory. '
             'Please modify the output path.')
@@ -381,11 +382,11 @@ def build_workflow(opts, retval):
         
         if opts.participant_label is not None:
             for kk in opts.participant_label:
-                dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir,sub_id=_prefix(str(kk)))
+                dcan2fmriprep(dcandir=fmri_dir,outdir=dcan_output_dir,sub_id=_prefix(str(kk)))
         else:
-           dcan2fmriprep(dcandir=fmriprep_dir,outdir=dcan_output_dir)
+           dcan2fmriprep(dcandir=fmri_dir,outdir=dcan_output_dir)
         
-        fmriprep_dir = dcan_output_dir
+        fmri_dir = dcan_output_dir
 
         
     elif opts.input_type == 'hcp':
@@ -397,10 +398,10 @@ def build_workflow(opts, retval):
         os.makedirs(hcp_output_dir, exist_ok=True) 
         if opts.participant_label is not None:
             for kk in opts.participant_label:
-                hcp2fmriprep(fmriprep_dir,hcp_output_dir,sub_id=_prefix(str(kk)))
+                hcp2fmriprep(fmri_dir,hcp_output_dir,sub_id=_prefix(str(kk)))
         else:
-            hcp2fmriprep(fmriprep_dir,hcp_output_dir)
-        fmriprep_dir = hcp_output_dir
+            hcp2fmriprep(fmri_dir,hcp_output_dir)
+        fmri_dir = hcp_output_dir
     
 
 
@@ -408,7 +409,7 @@ def build_workflow(opts, retval):
     run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
     retval['run_uuid'] = run_uuid
      
-    layout = BIDSLayout(str(fmriprep_dir),validate=False, derivatives=True)
+    layout = BIDSLayout(str(fmri_dir),validate=False, derivatives=True)
     subject_list = collect_participants(
         layout, participant_label=opts.participant_label)
     retval['subject_list'] = subject_list
@@ -489,7 +490,7 @@ def build_workflow(opts, retval):
     # Build main workflow
     build_log.log(25, INIT_MSG(
         version=__version__,
-        fmriprep_dir=fmriprep_dir,
+        fmri_dir=fmri_dir,
         subject_list=subject_list,
         uuid=run_uuid)
     )
@@ -497,7 +498,7 @@ def build_workflow(opts, retval):
     retval['workflow'] = init_xcpabcd_wf (
               layout=layout,
               omp_nthreads=omp_nthreads,
-              fmriprep_dir=str(fmriprep_dir),
+              fmri_dir=str(fmri_dir),
               lower_bpf=opts.lower_bpf,
               upper_bpf=opts.upper_bpf,
               contigvol=opts.contigvol,
@@ -549,3 +550,4 @@ def build_workflow(opts, retval):
 if __name__ == '__main__':
     raise RuntimeError("xcp_abcd/cli/run.py should not be run directly;\n"
                        "Please `pip install` xcp_abcd and use the `xcp_abcd` command")
+

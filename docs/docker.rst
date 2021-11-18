@@ -32,7 +32,6 @@ A ``docker`` container can be created using the following command::
         -v path/to/data:/fmriprep_output:ro \
         -v path/to/output:/out \
         pennlinc/xcp_abcd:<latest-version> \
-        /data /out/out \
-        participant
+        /data /out/out 
 
 See :ref:`usage` for more information.

@@ -9,7 +9,8 @@ General Workflow
 
 Input data
 -----------
-The main inputs to `xpc_abcd` are the outputs of  `fMRIPrep`. An optional input is the custom task or physiological timeseries that a user may want to
+The default inputs to `xpc_abcd` are the outputs of  `fMRIPrep` and `Nibabies`.  The `xcp_abcd` can aslo process `ABCD-DCAN` and minimal processing of `HCP` data which 
+require `input-type` flag ( 'dcan'  and 'hcp' for `ABCD-DCAN` and `HCP` respectively).  An optional input is the custom task or physiological timeseries that a user may want to
 regress from the  BOLD data. This custom timeseries can be arranged as described in `Task Regression`_. 
 
 
@@ -17,7 +18,7 @@ Processesing Steps
 ------------------
 
 1. Skip volumes [Optional]: The ``xcp_abcd`` allows the first N number of volumes to be skipped or deleted before processing.
-   These volumes are usually refered to as dummy scans. It can be added to command line with ``-d X`` where X is measured in seconds
+   These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds
 
 
 2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_abcd`` with 27P as the default. 
@@ -101,7 +102,8 @@ Processesing Steps
 3. Despiking [Optional]: Despiking is a process in which large spikes in the BOLD times series are truncated. 
    Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those data 
    points with an imputed reduced amplitude. Despiking is  done before  regression and filtering 
-   to minimize the impact of spike. It can be added to the command line arguments with ``--despike``.
+   to minimize the impact of spike. Despiking is applied to whole volumes  and data, and different from temporal censoring. 
+   It can be added to the command line arguments with ``--despike``.
 
 4. Temporal Censoring: Temporal Censoring is a process in which data points with excessive motion outliers are identified/flagged. 
    The censored data points are removed from the data before regression. This is effective for removing spurious sources of connectivity in fMRI data
@@ -134,7 +136,7 @@ Processesing Steps
 8.  Resting-state derivatives: For each BOLD data, the resting-state derivatives are computed. These includes regional homogeneity (ReHo) 
     and amplitude of low-frequency fluctuation (ALFF).  
 
-9. Residual BOLD and resting-state derivatives smoothing: A smoothing kernel of 5mm is implemented as default for smoothing residual BOLD, ReHo 
+9. Residual BOLD and resting-state derivatives smoothing: A smoothing kernel of 6mm is implemented as default for smoothing residual BOLD, ReHo 
    and ALFF. Kernel size can be modified in the command line arguments. 
 
 10. Quality control. The quality control (QC) in ``xcp_abcd`` estimates the quality of BOLD data before and after regression and also estimates BOLD-T1w coregistration  and
