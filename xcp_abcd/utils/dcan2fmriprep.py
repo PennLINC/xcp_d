@@ -86,7 +86,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
                      lwhite,rwhite,linf,rinf]
         
         for i,j in zip(dcanimages,newanatfiles):
-            symlinkfiles(i,j)
+            copyfileobj_example(i,j)
         
 
         # get masks and transforms 
@@ -176,7 +176,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
 
             # symlink files
             for jj,kk in zip(dcanfunfiles,fmfuncfiles):
-                symlinkfiles(jj,kk)
+                copyfileobj_example(jj,kk)
             
             figdir = out_dir +'/' + sub_id+ '/figures/'
             os.makedirs(figdir,exist_ok=True)
