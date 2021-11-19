@@ -133,7 +133,7 @@ def demean_detrend_data(data,TR,order):
     '''
     
     # demean the data first, check if it has been demean
-    if abs(np.mean(data)) > 1e-8:
+    if abs(np.mean(data)) > 1:
         mean_data =np.mean(data,axis=1)
         means_expanded = np.outer(mean_data, np.ones(data.shape[1]))
         demeand = data - means_expanded
