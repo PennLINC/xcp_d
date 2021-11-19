@@ -358,16 +358,9 @@ def build_workflow(opts, retval):
 
     if output_dir == fmri_dir:
         build_log.error(
-            'The selected output folder is the same as the input fmriprep output. '
+            'The selected output folder is the same as the input fmri input. '
             'Please modify the output path (suggestion: %s).',
              fmri_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
-        retval['return_code'] = 1
-        return retval
-
-    if  fmri_dir in work_dir.parents:
-        build_log.error(
-            'The selected working directory is a subdirectory of fmriprep directory. '
-            'Please modify the output path.')
         retval['return_code'] = 1
         return retval
 

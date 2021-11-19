@@ -129,6 +129,7 @@ RUN conda install -y python=3.8 \
                      pip=21.0 \
                      mkl=2021.2 \
                      mkl-service=2.3 \
+                     numpy=1.18.1 \
                      scipy=1.6 \
                      scikit-learn=0.24 \
                      matplotlib=3.3 \
@@ -140,7 +141,7 @@ RUN conda install -y python=3.8 \
     chmod +x /usr/local/miniconda/bin/*; sync && \
     conda clean -y --all && sync && \
     rm -rf ~/.conda ~/.cache/pip/*; sync
-RUN pip install numpy==1.19.3 
+#RUN pip install numpy==1.18.1 
 # Unless otherwise specified each process should only use one thread - nipype
 # will handle parallelization
 ENV MKL_NUM_THREADS=1 \
