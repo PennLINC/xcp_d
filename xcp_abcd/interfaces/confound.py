@@ -71,15 +71,15 @@ class ConfoundMatrix(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        if self.inputs.cutoff ==float:
+        if self.inputs.cutoff == float:
             cutoff = self.inputs.cutoff/60
         else:
-            cutoff = np.float(0)
+            cutoff = np.float(0.1)
         
         if self.inputs.low_freq == float and self.inputs.high_freq == float:
             freqband = [self.inputs.low_freq,self.inputs.high_freq]/60
         else:
-            freqband = [0,0]
+            freqband = [0.1,0.2] # use default band
        
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
