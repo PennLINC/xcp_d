@@ -3,7 +3,6 @@
 """ compute FD, genetrate mask  """
 
 import numpy as np
-import pandas as pd
 from numpy import matlib
 
 def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1):

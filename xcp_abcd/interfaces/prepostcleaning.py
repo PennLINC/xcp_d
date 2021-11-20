@@ -5,10 +5,8 @@ import os.path as path
 import nibabel as nb
 import pandas as pd
 from ..utils import (drop_tseconds_volume, read_ndata, 
-                  write_ndata,load_confound_matrix,compute_FD,
-                  generate_mask,interpolate_masked_data)
-from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
+                  write_ndata,compute_FD,generate_mask,interpolate_masked_data)
+from nipype.interfaces.base import (traits, TraitedSpec, BaseInterfaceInputSpec, File,
     SimpleInterface )
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix

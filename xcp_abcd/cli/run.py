@@ -7,7 +7,6 @@ xcp_abcd preprocessing workflow
 """
 
 import os
-import re
 from pathlib import Path
 import logging
 import sys
@@ -16,10 +15,7 @@ import uuid
 import warnings
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
-from multiprocessing import cpu_count
 from time import strftime
-
-from nipype.interfaces import workbench
 from niworkflows import NIWORKFLOWS_LOG
 warnings.filterwarnings("ignore")
 

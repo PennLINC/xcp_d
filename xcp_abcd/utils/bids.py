@@ -8,7 +8,6 @@ import fnmatch,os
 import re
 import warnings
 from bids import BIDSLayout
-from packaging.version import Version
 from json import dumps, loads
 
 from nipype import logging
@@ -16,11 +15,10 @@ from nipype.interfaces.base import (
     traits,
     isdefined,
     Undefined,
-    TraitedSpec,
     BaseInterfaceInputSpec,
     DynamicTraitedSpec,
     File,
-    Directory,
+    TraitedSpec,
     InputMultiObject,
     OutputMultiObject,
     Str,

@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """aggregate qc of all the subjects"""
 import os
-import glob as glob 
 import pandas as pd
 from pathlib import Path 
 

@@ -9,12 +9,11 @@ __version__ = "2.0.0"
 
 import os
 from os import (path, getcwd, chmod, listdir)
-import stat
 import re
 import glob as glob
 from pathlib import Path
 from .constants import *
-from .helpers import (find_one_file, find_files, find_and_copy_files)
+from .helpers import (find_one_file,find_and_copy_files)
 
 
 class ModalContainer(object):

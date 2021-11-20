@@ -5,17 +5,15 @@ selection of confound matrices
     .. testsetup::
     # will comeback
 """
-
+import pandas as pd
+import numpy as np
 from ..utils import load_confound_matrix
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
-    SimpleInterface
+    traits, TraitedSpec, BaseInterfaceInputSpec, File, SimpleInterface
 )
-from ..utils import(read_ndata, write_ndata)
-import pandas as pd
-import numpy as np
+
 
 LOGGER = logging.getLogger('nipype.interface') 
 

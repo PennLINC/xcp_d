@@ -6,11 +6,9 @@ from ..utils import (surf2vol,get_regplot,
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from pkg_resources import resource_filename as pkgrf
-from nipype.interfaces.base import traits, InputMultiObject, File
-from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
+from nipype.interfaces.base import traits,File
 from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
-    SimpleInterface
+    traits, TraitedSpec, BaseInterfaceInputSpec, File,SimpleInterface
 )
 
 LOGGER = logging.getLogger('nipype.interface')

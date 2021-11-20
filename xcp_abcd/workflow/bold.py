@@ -21,7 +21,6 @@ from  ..utils import (bid_derivative, stringforparams,get_maskfiles,
 from ..interfaces import  FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
-from nipype.interfaces.afni import Despike
 from ..interfaces import (ConfoundMatrix,FilteringData,regress)
 from ..interfaces import interpolate
 from .postprocessing import init_censoring_wf,init_resd_smoohthing
