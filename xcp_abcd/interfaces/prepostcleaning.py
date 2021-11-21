@@ -1,8 +1,6 @@
-from pathlib import Path
+
 import numpy as np
 import os
-import os.path as path
-import nibabel as nb
 import pandas as pd
 from ..utils import (drop_tseconds_volume, read_ndata, 
                   write_ndata,compute_FD,generate_mask,interpolate_masked_data)
