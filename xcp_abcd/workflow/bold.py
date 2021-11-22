@@ -41,7 +41,6 @@ LOGGER = logging.getLogger('nipype.workflow')
 def init_boldpostprocess_wf(
      lower_bpf,
      upper_bpf,
-     contigvol,
      bpf_order,
      motion_filter_order,
      motion_filter_type,
@@ -264,7 +263,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="ConfoundMatrix_wf", mem_gb=0.5)
 
     censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],TR=TR,custom_conf=custom_conf,head_radius=head_radius,
-                contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
+                 dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=False,
                 name="resd_smoothing_wf",omp_nthreads=omp_nthreads)

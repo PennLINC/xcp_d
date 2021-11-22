@@ -34,7 +34,6 @@ def init_ciftipostprocess_wf(
     cifti_file,
     lower_bpf,
     upper_bpf,
-    contigvol,
     bpf_order,
     motion_filter_order,
     motion_filter_type,
@@ -65,7 +64,6 @@ def init_ciftipostprocess_wf(
                 bold_file,
                 lower_bpf,
                 upper_bpf,
-                contigvol,
                 bpf_order,
                 motion_filter_order,
                 motion_filter_type,
@@ -252,7 +250,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="ConfoundMatrix_wf", mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],custom_conf=custom_conf,TR=TR,head_radius=head_radius,
-                contigvol=contigvol,dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
+                dummytime=dummytime,fd_thresh=fd_thresh,name='censoring',omp_nthreads=omp_nthreads)
     
     resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],smoothing=smoothing,cifti=True,
                 name="resd_smoothing_wf",omp_nthreads=omp_nthreads)

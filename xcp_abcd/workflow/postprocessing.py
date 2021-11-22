@@ -307,7 +307,6 @@ def init_censoring_wf(
     mem_gb,
     TR,
     head_radius,
-    contigvol,
     custom_conf,
     omp_nthreads,
     dummytime=0,
@@ -323,7 +322,7 @@ def init_censoring_wf(
 
 
     censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
-                       head_radius=head_radius,contig=contigvol,
+                       head_radius=head_radius,
                        time_todrop=dummytime,custom_conf=custom_conf),
                        name="censor_scrub",mem_gb=mem_gb,n_procs=omp_nthreads)
    
