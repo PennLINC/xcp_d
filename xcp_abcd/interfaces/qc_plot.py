@@ -12,11 +12,9 @@ from ..utils.confounds import load_confound
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
-    SimpleInterface
+    traits, TraitedSpec, BaseInterfaceInputSpec, File,SimpleInterface
 )
 from ..utils import(read_ndata, write_ndata, compute_FD,compute_dvars)
-from ..utils import plot_svg
 import pandas as pd
 from niworkflows.viz.plots import fMRIPlot
 from ..utils import regisQ

@@ -6,22 +6,16 @@ Handling regression.
     # will comeback
 """
 
-import os
-import sys 
-import re
-import shutil
 import nibabel as nb
 import numpy as np
 import pandas as pd
 from nipype import logging
-from sklearn.linear_model import LinearRegression
-from nilearn.signal import clean 
+from sklearn.linear_model import LinearRegression 
 from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
-    SimpleInterface
+    traits, TraitedSpec, BaseInterfaceInputSpec, File, SimpleInterface
 )
-from templateflow import conf
+
 from ..utils import(read_ndata, write_ndata,despikedatacifti)
 
 LOGGER = logging.getLogger('nipype.interface') 

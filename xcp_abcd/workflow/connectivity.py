@@ -7,11 +7,8 @@ functional connectvity matrix
 .. autofunction:: init_fcon_ts_wf
 .. autofunction:: init_cifti_conts_wf
 """
-import os
-import numpy as np  
+ 
 from nipype.pipeline import engine as pe
-from scipy.ndimage.measurements import mean
-from templateflow.api import get as get_template
 import nilearn as nl
 from ..interfaces.connectivity import (nifticonnect,get_atlas_nifti,
                       get_atlas_cifti,ApplyTransformsx)

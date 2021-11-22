@@ -5,7 +5,6 @@ import os
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from niworkflows.interfaces import bids
 from ..utils import bid_derivative
 
 class DerivativesDataSink(bid_derivative):

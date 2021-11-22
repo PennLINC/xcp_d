@@ -3,7 +3,6 @@
 from pathlib import Path
 from niworkflows.reports.core import Report as _Report
 import glob as glob 
-from xcp_abcd.interfaces.resting_state import brainplot
 
 # this is from niworklfows, a patched will be submitted
 

@@ -8,7 +8,6 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 """
 
 import os,fnmatch,shutil
-import glob as glob
 from pathlib import Path
 from templateflow.api import get as get_template
 from ..utils import collect_data,CiftiSurfaceResample

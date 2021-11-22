@@ -10,7 +10,7 @@ from matplotlib import gridspec as mgs
 import seaborn as sns
 from niworkflows.viz.plots import plot_carpet as plot_carpetX
 from ..utils import read_ndata
-from matplotlib.colors import ListedColormap, Normalize
+from matplotlib.colors import ListedColormap 
 import matplotlib.cm as cm
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data

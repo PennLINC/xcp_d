@@ -5,20 +5,21 @@ Handling computation of reho and alff.
     .. testsetup::
     # will comeback
 """
+import os 
+import nibabel as nb 
+import numpy as np
+from brainsprite import viewer_substitute
+from pkg_resources import resource_filename as pkgrf
 from ..utils import (write_gii, read_gii, read_ndata, write_ndata)
 from ..utils import (compute_2d_reho, compute_alff,mesh_adjacency)
 from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
-    SimpleInterface
+    traits, TraitedSpec, BaseInterfaceInputSpec, File, SimpleInterface
 )
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 LOGGER = logging.getLogger('nipype.interface') 
-import os 
-import nibabel as nb 
-from brainsprite import viewer_substitute
-from pkg_resources import resource_filename as pkgrf
-import numpy as np
+
+
 
 # compute 2D reho
 class _surfaceRehoInputSpec(BaseInterfaceInputSpec):

@@ -1,14 +1,10 @@
-from pathlib import Path
+
 import numpy as np
 import os
-import os.path as path
-import nibabel as nb
 import pandas as pd
 from ..utils import (drop_tseconds_volume, read_ndata, 
-                  write_ndata,load_confound_matrix,compute_FD,
-                  generate_mask,interpolate_masked_data)
-from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, Directory, isdefined,
+                  write_ndata,compute_FD,generate_mask,interpolate_masked_data)
+from nipype.interfaces.base import (traits, TraitedSpec, BaseInterfaceInputSpec, File,
     SimpleInterface )
 from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
@@ -74,7 +70,6 @@ class removeTR(SimpleInterface):
 
 class _censorscrubInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,mandatory=True, desc=" raw bold or nifti real")
-    contig = traits.Int(exists=True,mandatory=True, default_value=5,desc=" contigious volume")
     in_file =File(exists=True,mandatory=True, desc=" bold or nifti")
     fd_thresh = traits.Float(exists=True,mandatory=True, desc ="fd_threshold")
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
@@ -145,8 +140,7 @@ class censorscrub(SimpleInterface):
            
         if self.inputs.time_todrop == 0:
             # do censoring staright
-            tmask = generate_mask(fd_res=fd_timeseries,fd_thresh=self.inputs.fd_thresh,
-            mincontig = self.inputs.contig)
+            tmask = generate_mask(fd_res=fd_timeseries,fd_thresh=self.inputs.fd_thresh)
             if np.sum(tmask) > 0: 
                 datax_censored = dataxx[:,tmask==0]
                 fmriprepx_censored = fmriprepx_conf.drop(fmriprepx_conf.index[np.where(tmask==1)])
@@ -162,8 +156,7 @@ class censorscrub(SimpleInterface):
             num_vol = np.int(np.divide(self.inputs.time_todrop,self.inputs.TR))
             fd_timeseries2 = fd_timeseries
             fd_timeseries2 = fd_timeseries2[num_vol:]
-            tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh,
-                       mincontig=self.inputs.contig)
+            tmask = generate_mask(fd_res=fd_timeseries2,fd_thresh=self.inputs.fd_thresh)
     
             if np.sum(tmask) > 0:
                 datax_censored = dataxx[:,tmask==0]

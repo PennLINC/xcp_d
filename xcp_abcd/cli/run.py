@@ -7,7 +7,6 @@ xcp_abcd preprocessing workflow
 """
 
 import os
-import re
 from pathlib import Path
 import logging
 import sys
@@ -16,10 +15,7 @@ import uuid
 import warnings
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
-from multiprocessing import cpu_count
 from time import strftime
-
-from nipype.interfaces import workbench
 from niworkflows import NIWORKFLOWS_LOG
 warnings.filterwarnings("ignore")
 
@@ -150,10 +146,6 @@ def get_parser():
     g_censor.add_argument('-f','--fd-thresh',default=0.3, type=float, 
                                 help='framewise displacement threshold for censoring, default is 0.3mm')
     
-    g_censor.add_argument('--contigvol',default=5, type=int, 
-                                help='number of contigious frames  FD thresholding, the deafult is 5 ')
- 
-
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument('-w', '--work_dir', action='store', type=Path, default=Path('work'),
                          help='path where intermediate results should be stored')
@@ -494,7 +486,6 @@ def build_workflow(opts, retval):
               fmri_dir=str(fmri_dir),
               lower_bpf=opts.lower_bpf,
               upper_bpf=opts.upper_bpf,
-              contigvol=opts.contigvol,
               bpf_order=opts.bpf_order,
               motion_filter_order=opts.motion_filter_order,
               motion_filter_type=opts.motion_filter_type,
