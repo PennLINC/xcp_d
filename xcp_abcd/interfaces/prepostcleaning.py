@@ -254,7 +254,7 @@ class interpolate(SimpleInterface):
             fulldata = datax
 
         recon_data = interpolate_masked_data(img_datax=fulldata, tmask=tmask, 
-                    TR=self.inputs.TR,hifreq=1)
+                    TR=self.inputs.TR)
 
         self._results['bold_interpolated'] = fname_presuffix(
                 self.inputs.in_file,
