@@ -61,7 +61,7 @@ def generate_mask(fd_res, fd_thresh,):
 
     return tmask
 
-def interpolate_data(datax,tmask,TR=1):
+def interpolate_masked_data(datax,tmask,TR=1):
     from scipy.interpolate import interp1d
     
     if np.mean(tmask) == 0:
