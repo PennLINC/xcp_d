@@ -103,7 +103,7 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
 
     # filter once first 
     for i in range(data.shape[0]):
-        y[i,:] = filtfilt(b, a, data[i,:],padlen=100,padtype='even')
+        y[i,:] = filtfilt(b, a, data[i,:],padlen=data.shape[0]/4,padtype='even')
     
     # filter more if order is greater than 2,
     # then filter morei 
