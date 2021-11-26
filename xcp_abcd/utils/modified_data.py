@@ -61,9 +61,9 @@ def generate_mask(fd_res, fd_thresh,):
 
     return tmask
 
-def interpolate_masked_data(datax,tmask,TR=1):
+def interpolate_masked_data(img_datax,tmask,TR=1):
     from scipy.interpolate import interp1d
-    
+    datax = img_datax
     if np.mean(tmask) == 0:
         datax_int = datax
         print('no flagged volume, interpolation will not be done .')
