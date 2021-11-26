@@ -4,6 +4,7 @@
 
 import numpy as np
 from numpy import matlib
+from scipy.interpolate import interp1d
 
 def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1):
     
@@ -60,28 +61,29 @@ def generate_mask(fd_res, fd_thresh,):
 
     return tmask
 
-def interpolate_masked_data(img_datax,tmask,TR=1):
+def interpolate_data(datax,tmask,TR=1):
     from scipy.interpolate import interp1d
     
     if np.mean(tmask) == 0:
-        datax_int = img_datax
+        datax_int = datax
         print('no flagged volume, interpolation will not be done .')
     elif np.mean(tmask) > 0.5: 
-        datax_int = img_datax
-        print('more than 50 percent  of the volumes are flagged, interpolation will not be done ')
+        datax_int = datax
+        print('more than 50% of volumes are flagged, interpolation will not be done ')
     else:
         # get clea  volume to interpolate over
-        tt= TR*np.arange(0, (img_datax.shape[1]), 1 )
-        tf = tt[tmask==0]
-        clean_volume = img_datax[:,(tmask==0)]
-        datax_int  = img_datax
+        tt= TR*np.arange(0, (datax.shape[1]), 1 )
+        tf=np.append(tt[tmask==0],tt[-1])
+        clean_volume = np.hstack((datax[:,(tmask==0)],np.reshape(datax[:,-1],[datax.shape[0],1])))
+        datax_int  = datax
         
-        for k in range(0,img_datax.shape[0]):
+        for k in range(0,datax.shape[0]):
             interP_func = interp1d(tf,clean_volume[k,:])
             interp_data = interP_func(tt)
+            print(k)
             datax_int[k,(tmask==1)]= interp_data[tmask==1]
-            
     return datax_int
+
 
 def interpolate_masked_datax(img_datax,tmask,mask_data=None,
                      TR=1,ofreq=8,hifreq=1,voxbin=3000):
