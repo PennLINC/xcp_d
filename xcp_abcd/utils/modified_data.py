@@ -80,8 +80,8 @@ def interpolate_masked_data(img_datax,tmask,TR=1):
         for k in range(0,datax.shape[0]):
             interP_func = interp1d(tf,clean_volume[k,:])
             interp_data = interP_func(tt)
-            print(k)
             datax_int[k,(tmask==1)]= interp_data[tmask==1]
+            
     return datax_int
 
 
