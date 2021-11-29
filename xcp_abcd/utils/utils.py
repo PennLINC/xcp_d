@@ -25,8 +25,6 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
     elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin6Asym'
         MNI6 = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
-
-
         
     
     if 'space-MNI152NLin2009cAsym' in file_base:
