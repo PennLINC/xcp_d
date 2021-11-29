@@ -20,7 +20,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
     # get default template MNI152NLin2009cAsym for fmriprep and 
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
-        MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+        MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'))
 
     elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin6Asym'
@@ -123,7 +123,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
     file_base = os.path.basename(str(bold_file))
     #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
-    fMNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm')[0])
+    fMNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'))
     
     #get the template for registration
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
