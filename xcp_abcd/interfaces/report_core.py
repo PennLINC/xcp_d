@@ -90,6 +90,7 @@ def generate_reports(
             error_list,
         )
     else:
+        # concate cifi and nifti here for multiple runs
                    
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
