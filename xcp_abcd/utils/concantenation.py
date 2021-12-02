@@ -89,57 +89,6 @@ def contentate_nifti(subid,fmridir,outputdir,ses=None):
             shutil.copy(bb1ref,bboldref)
 
 
-    
-    
-
-     
-    
-
- 
-
-
-datadir = '/Users/adebimpe/Library/CloudStorage/Box-Box/projects/xcpengine/xcpoutfm/xcp_abcd/sub-01/func'
-dirx =glob.glob(datadir + '/*')
-
-
-
-task='mixedgamblestask'
-bx = sorted(fnmatch.filter(dirx,'*'+task+'*run*_desc-residual_bold.nii.gz'))
-
-#for b in bx 
-for by in bx:
-    d = by.split('run-')[1].partition('_')[-1]
-    for j in  datafile:
-        fileid = by.split('run-')[0]+ d.partition('_desc')[0]
-        fileout = fileid+j
-        filex = sorted(glob.glob(by.split('run-')[0] +'*run*' + d.partition('_desc')[0]+ j))
-        if j.endswith('.tsv'):
-            combine_fd(filex,fileout)
-        elif j.endswith('nii.gz'):
-            combinefile = "  ".join(filex)
-            os.system('fslmerge -t ' + fileout + '  ' + combinefile)
-   
-    filey = sorted(glob.glob(inputdir +  os.path.basename(by.split('run-')[0]) 
-                    +'*'+ d.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
-
-    mask = sorted(glob.glob(inputdir +  os.path.basename(by.split('run-')[0]) 
-                    +'*'+ d.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
-
-    segfile = get_segfile(filey[0])
-    tr =nb.load(filey[0]).header.get_zooms()[-1]
-    #sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-bbregister_bold.svg
-    #sub-01/figures/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-boldref_bold.svg
-    precarpet = fileid + '_desc-precarpetplot_bold.svg'
-    postcarpet = fileid + '_postcarpetplot_bold.svg'
-    combinefiley = "  ".join(filey)
-    os.system('fslmerge -t ' + fileyb + '  ' + combinefiley)
-    
-    #sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-bbregister_bold.svg
-    sub-01/figures/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-boldref_bold.svg
-    
-    plot_svgx(rawdata=fileid +'combinerawsidualbold.nii.gz',regdata=fileid+'_desc-residual_bold.nii.gz',
-              resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
-             filenameaf=postcarpet,filenamebf=precarpet,mask=mask,seg=segfile)
 
 
 
