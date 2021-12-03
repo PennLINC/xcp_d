@@ -31,7 +31,7 @@ def concatenate_nifti(subid,fmridir,outputdir):
     
     # filex to be concatenated
     
-     ses = _getsesid(str(glob.glob(outputdir + '/' + subid + '*')[0]))
+    ses = _getsesid(str(glob.glob(outputdir + '/' + subid + '*')[0]))
 
 
     datafile = ['_atlas-Glasser_desc-timeseries_bold.tsv', '_atlas-Gordon_desc-timeseries_bold.tsv',
