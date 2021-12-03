@@ -14,7 +14,9 @@ from nipype.interfaces.ants import ApplyTransforms
 
 
 def concatenatebold(subjlist,fmridir,outputdir,cifti=False,):
-
+    print(subjlist)
+    print(fmridir)
+    print(outputdir)
     if cifti is False:
         for s in subjlist:
             print(s)
@@ -31,7 +33,7 @@ def concatenate_nifti(subid,fmridir,outputdir):
     
     # filex to be concatenated
     
-    ses = _getsesid(str(glob.glob(outputdir + '/' + subid + '*')[0]))
+    ses = _getsesid(str(glob.glob(str(outputdir) + '/' + subid + '*')[0]))
 
 
     datafile = ['_atlas-Glasser_desc-timeseries_bold.tsv', '_atlas-Gordon_desc-timeseries_bold.tsv',
@@ -40,13 +42,13 @@ def concatenate_nifti(subid,fmridir,outputdir):
             '_desc-residual_bold.nii.gz','_desc-residual_smooth_bold.nii.gz']
 
     if ses is None:
-        all_func_files = glob.glob(outputdir + '/' + subid + '/func/*')
-        fmri_files = fmridir +'/' + subid + '/func/'
-        figure_files = outputdir + '/' + subid + '/figures/'
+        all_func_files = glob.glob(str(outputdir) + '/' + subid + '/func/*')
+        fmri_files = str(fmridir) +'/' + subid + '/func/'
+        figure_files = str(outputdir) + '/' + subid + '/figures/'
     else: 
         all_func_files = glob.glob(outputdir + '/' + subid + '/ses-%s/func/*' % ses)
-        fmri_files = fmridir +'/' + subid + '/ses-%s/func/' % ses
-        figure_files = outputdir + '/' + subid + '/ses-%s/figures/' % ses
+        fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
+        figure_files = str(outputdir) + '/' + subid + '/ses-%s/figures/' % ses
    
     #extract the task list
     tasklist=[os.path.basename(j).split('task-')[1].split('_')[0]  for j in fnmatch.filter(all_func_files,'_desc-residual_bold.nii.gz') ]
@@ -104,7 +106,7 @@ def concatenate_nifti(subid,fmridir,outputdir):
 
 def concatenate_cifti(subid,fmridir,outputdir):
 
-    ses = _getsesid(str(glob.glob(outputdir + '/' + subid + '*')[0]))
+    ses = _getsesid(str(glob.glob(str(outputdir) + '/' + subid + '*')[0]))
 
     datafile =['_space-fsLR_den-91k_desc-residual_bold.dtseries.nii',
          '_space-fsLR_den-91k_desc-residual_smooth_bold.dtseries.nii',
@@ -117,13 +119,13 @@ def concatenate_cifti(subid,fmridir,outputdir):
          '_space-fsLR_atlas-subcortical_den-91k_bold.ptseries.nii']
 
     if ses is None:
-        all_func_files = glob.glob(outputdir + '/' + subid + '/func/*')
-        fmri_files = fmridir +'/' + subid + '/func/'
-        figure_files = outputdir + '/' + subid + '/figures/'
+        all_func_files = glob.glob(str(outputdir) + '/' + subid + '/func/*')
+        fmri_files = str(fmridir) +'/' + subid + '/func/'
+        figure_files = str(outputdir) + '/' + subid + '/figures/'
     else: 
         all_func_files = glob.glob(outputdir + '/' + subid + '/ses-%s/func/*' % ses)
-        fmri_files = fmridir +'/' + subid + '/ses-%s/func/' % ses
-        figure_files = outputdir + '/' + subid + '/ses-%s/figures/' % ses
+        fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
+        figure_files = str(outputdir) + '/' + subid + '/ses-%s/figures/' % ses
    
     #extract the task list
     tasklist = [os.path.basename(j).split('task-')[1].split('_')[0]  
