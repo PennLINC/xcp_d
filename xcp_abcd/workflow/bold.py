@@ -197,7 +197,8 @@ tasks and sessions), the following post-processing was performed:
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data, the first {nvol} were discarded,
+before nuisance regression and filtering of the data, the first {nvol} were discarded, then both the nuisance regressors and volumes 
+were demean and detrended
 .Furthermore,volumes with framewise-displacement greater than 
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
  and excluded from nuisance regression.
@@ -205,7 +206,7 @@ before nuisance regression and filtering of the data, the first {nvol} were disc
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data, volumes with framewise-displacement greater than 
+before nuisance regression and filtering of the data, both the nuisance regressors and volumes were demean and detrended. Volumes with framewise-displacement greater than 
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were  flagged as outliers
  and excluded from nuisance regression.
 """.format(fd_thresh=fd_thresh)

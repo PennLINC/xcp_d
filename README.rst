@@ -3,6 +3,9 @@
 *XCP-ABCD*: A Robust Postprocessing Pipeline of  fMRI data
 ===========================================================
 
+.. image:: https://zenodo.org/badge/309485627.svg
+   :target: https://zenodo.org/badge/latestdoi/309485627
+
 This pipeline is developed by the `Satterthwaite lab at the University of Pennysilvania
 <https://www.satterthwaitelab.com/>`_  and `Developmental Cognition and Neuroimaaging lab  at the University of Minnesota 
 <https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/>`_ for 

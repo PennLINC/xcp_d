@@ -163,7 +163,11 @@ COPY setup.cfg xcp_abcd-setup.cfg
 RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs )" && \
     python -c "from templateflow import api as tfapi; \
                tfapi.get('MNI152NLin2009cAsym', resolution=2, suffix='T1w', desc=None); \
-               tfapi.get('fsLR', density='32k'); \
+                tfapi.get(template='MNI152NLin6Asym',resolution=2, suffix='T1w'); \
+                tfapi.get(template='fsLR',density='32k',suffix='sphere'); \
+                tfapi.get('MNI152NLin2009cAsym', resolution=1, desc='carpet',suffix='dseg'); \
+                tfapi.get(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'); \
+                tfapi.get('fsLR', density='32k'); \
                  " && \
     rm xcp_abcd-setup.cfg && \
     find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
