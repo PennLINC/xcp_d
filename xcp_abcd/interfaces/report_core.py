@@ -53,8 +53,8 @@ def run_reports(
 
 
 def generate_reports(
-    subject_list, fmri_dir, work_dir,output_dir, run_uuid, config=None, packagename=None,cifti=False
-):
+    subject_list, fmri_dir, work_dir,output_dir, run_uuid, config=None, packagename=None,
+    cifti=False,combineruns=False):
     """Execute run_reports on a list of subjects."""
     #reportlets_dir = None
     if work_dir is not None:
@@ -90,13 +90,10 @@ def generate_reports(
         )
     else:
         # concate cifi and nifti here for multiple runs
-        from ..utils import concatenatebold
-        concatenatebold(subjlist=subject_list,fmridir=fmri_dir,outputdir=Path(output_dir)/'xcp_abcd',cifti=cifti)
-
-         
-
-     
-                   
+        if combineruns:
+            from ..utils import concatenatebold
+            concatenatebold(subjlist=subject_list,fmridir=fmri_dir,outputdir=Path(output_dir)/'xcp_abcd/',cifti=cifti)
+        
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
             brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_abcd/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
