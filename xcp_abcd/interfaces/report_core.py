@@ -90,9 +90,9 @@ def generate_reports(
         )
     else:
         # concate cifi and nifti here for multiple runs
-        if combineruns:
+        if combineruns == True:
             from ..utils import concatenatebold
-            concatenatebold(subjlist=subject_list,fmridir=fmri_dir,outputdir=Path(output_dir)/'xcp_abcd/',cifti=cifti)
+            concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_abcd/',cifti=cifti)
         
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
