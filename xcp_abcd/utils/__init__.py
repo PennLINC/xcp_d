@@ -29,6 +29,7 @@ from .execsummary import (surf2vol,get_regplot,plot_registrationx,generate_brain
 from .dcan2fmriprep import dcan2fmriprep
 from .hcp2fmriprep import hcp2fmriprep
 from .restingstate import ReHoNamePatch,DespikePatch
+from .concantenation import concatenatebold
 
 __all__ = [
     'read_ndata',
@@ -77,4 +78,5 @@ __all__ = [
     'hcp2fmriprep',
     'ReHoNamePatch',
     'DespikePatch',
+    'concatenatebold',
   ]

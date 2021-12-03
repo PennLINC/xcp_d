@@ -13,9 +13,9 @@ from nipype.interfaces.ants import ApplyTransforms
 
 
 
-def concatenatebold(subjlist,fmridir,outputdir,cifti=None):
+def concatenatebold(subjlist,fmridir,outputdir,cifti=False,):
 
-    if cifti is None:
+    if cifti is False:
         for s in subjlist:
             print(s)
             concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
