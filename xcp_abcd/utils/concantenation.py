@@ -1,42 +1,48 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+
 import os,glob,fnmatch,tempfile,shutil
 import numpy as np
 import nibabel as nb
 from pathlib import Path
-from ..utils.plot import plot_svgx
-from ..utils import get_transformfile
+from xcp_abcd.utils.plot import plot_svgx
+from xcp_abcd.utils import get_transformfile
 from templateflow.api import get as get_template
 from nipype.interfaces.ants import ApplyTransforms
 
 
-
-
-def concatenatebold(subjlist,fmridir,outputdir,cifti=False,):
-    print(subjlist)
-    print(fmridir)
-    print(outputdir)
-
+def concatenatebold(subjlist,fmridir,outputdir,cifti=False):
+    outdir = outputdir
     if not cifti:
         for s in subjlist:
-            print(s)
-            listout = concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+            
+            # get seission if there
+            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual_bold.nii.gz')
+            if sed: 
+                ses = list(set([_getsesid(j) for j in sed]))
+                for kses in ses:
+                    listout = concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)    
+            else:
+                ses = None 
+                listout = concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
     else:
         for s in subjlist:
-            print(s)
-            listout = concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual_bold.dtseries.nii')
+            if sed:
+                ses = list(set([_getsesid(j) for j in sed]))
+                for kses in ses:
+                    listout = concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)
+            else:
+                 listout = concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
 
     return listout
 
     
 
 
-def concatenate_nifti(subid,fmridir,outputdir):
+def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     
     # filex to be concatenated
-    
-    ses = _getsesid(str(glob.glob(str(outputdir) + '/' + subid + '*')[0]))
-
 
     datafile = ['_atlas-Glasser_desc-timeseries_bold.tsv', '_atlas-Gordon_desc-timeseries_bold.tsv',
             '_atlas-Schaefer217_desc-timeseries_bold.tsv','_atlas-Schaefer417_desc-timeseries_bold.tsv',
@@ -50,11 +56,13 @@ def concatenate_nifti(subid,fmridir,outputdir):
     else: 
         all_func_files = glob.glob(outputdir + '/' + subid + '/ses-%s/func/*' % ses)
         fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
-        figure_files = str(outputdir) + '/' + subid + '/ses-%s/figures/' % ses
-   
+        figure_files = str(outputdir) + '/' + subid + '/figures/' 
+    
+    
+    
     #extract the task list
-    tasklist=[os.path.basename(j).split('task-')[1].split('_')[0]  for j in fnmatch.filter(all_func_files,'_desc-residual_bold.nii.gz') ]
-
+    tasklist=[os.path.basename(j).split('task-')[1].split('_')[0]  for j in fnmatch.filter(all_func_files,'*_desc-residual_bold.nii.gz') ]
+    tasklist = list(set(tasklist))
 
     # do for each task
     for task in tasklist:
@@ -65,12 +73,14 @@ def concatenate_nifti(subid,fmridir,outputdir):
             for j in  datafile:
                 fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
                 outfile = fileid + j
+               
                 filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
-            if res.endswith('.tsv'):
-                combine_fd(filex,outfile)
-            elif j.endswith('nii.gz'):
-                combinefile = "  ".join(filex)
-                os.system('fslmerge -t ' + outfile + '  ' + combinefile)
+               
+                if j.endswith('tsv'):
+                    combine_fd(filex,outfile)
+                elif j.endswith('nii.gz'):
+                    combinefile = "  ".join(filex)
+                    os.system('fslmerge -t ' + outfile + '  ' + combinefile)
    
             filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) 
                     +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
@@ -86,7 +96,7 @@ def concatenate_nifti(subid,fmridir,outputdir):
             os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
 
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
-            postcarpet = figure_files  + os.path.basename(fileid) +  + '_postcarpetplot_bold.svg'
+            postcarpet = figure_files  + os.path.basename(fileid) +  '_des-postcarpetplot_bold.svg'
 
             plot_svgx(rawdata=rawdata,regdata=fileid+'_desc-residual_bold.nii.gz',
                 resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
@@ -98,29 +108,30 @@ def concatenate_nifti(subid,fmridir,outputdir):
             gboldbbreg = figure_files  + os.path.basename(fileid) + '_desc-bbregister_bold.svg'
             bboldref  = figure_files  + os.path.basename(fileid) + '_desc-boldref_bold.svg'
         
-            bb1reg = figure_files  + os.path.basename(filey[0].split('_desc-preproc_bold.nii.gz')) + '_desc-bbregister_bold_1.svg'
-            bb1ref = figure_files  + os.path.basename(filey[0].split('_desc-preproc_bold.nii.gz')) + '_desc-boldref_bold.svg'
+            bb1reg = figure_files  + os.path.basename(filey[0]).split('_desc-preproc_bold.nii.gz')[0] + '_desc-bbregister_bold.svg'
+            bb1ref = figure_files  + os.path.basename(filey[0]).split('_desc-preproc_bold.nii.gz')[0] + '_desc-boldref_bold.svg'
              
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
-        return [precarpet,postcarpet,gboldbbreg,bboldref]
+            
+    return [precarpet,postcarpet,gboldbbreg,bboldref]
         
 
 
 
-def concatenate_cifti(subid,fmridir,outputdir):
+def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
-    ses = _getsesid(str(glob.glob(str(outputdir) + '/' + subid + '*')[0]))
+    
 
-    datafile =['_space-fsLR_den-91k_desc-residual_bold.dtseries.nii',
-         '_space-fsLR_den-91k_desc-residual_smooth_bold.dtseries.nii',
-         '_space-fsLR_atlas-subcortical_den-91k_bold.ptseries.nii', 
-         '_space-fsLR_atlas-Glasser_den-91k_bold.ptseries.nii',
-         '_space-fsLR_atlas-Gordon_den-91k_bold.ptseries.nii', 
-         '_space-fsLR_atlas-Schaefer217_den-91k_bold.ptseries.nii',
-         '_space-fsLR_atlas-Schaefer417_den-91k_bold.ptseries.nii',
-         '_space-fsLR_desc-framewisedisplacement_bold.tsv',
-         '_space-fsLR_atlas-subcortical_den-91k_bold.ptseries.nii']
+    datafile =['_desc-residual_bold.dtseries.nii',
+         '_desc-residual_smooth_bold.dtseries.nii',
+         '_atlas-subcortical_den-91k_bold.ptseries.nii', 
+         '_atlas-Glasser_den-91k_bold.ptseries.nii',
+         '_atlas-Gordon_den-91k_bold.ptseries.nii', 
+         '_atlas-Schaefer217_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer417_den-91k_bold.ptseries.nii',
+         '_desc-framewisedisplacement_bold.tsv',
+         '_atlas-subcortical_den-91k_bold.ptseries.nii']
 
     if ses is None:
         all_func_files = glob.glob(str(outputdir) + '/' + subid + '/func/*')
@@ -129,54 +140,61 @@ def concatenate_cifti(subid,fmridir,outputdir):
     else: 
         all_func_files = glob.glob(outputdir + '/' + subid + '/ses-%s/func/*' % ses)
         fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
-        figure_files = str(outputdir) + '/' + subid + '/ses-%s/figures/' % ses
+        figure_files = str(outputdir) + '/' + subid + '/figures/' 
+        
    
     #extract the task list
     tasklist = [os.path.basename(j).split('task-')[1].split('_')[0]  
-                  for j in fnmatch.filter(all_func_files,'den-91k_desc-residual_bold.dtseries.nii') ]
+                  for j in fnmatch.filter(all_func_files,'*den-91k_desc-residual_bold.dtseries.nii') ]
+    tasklist = list(set(tasklist))
 
    # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual_bold.dtseries.nii'))
-        # resbold may be in different space like native space or MNI space or T1w or MNI
+        
         for res in resbold:
             resid = res.split('run-')[1].partition('_')[-1]
+            #print(resid)
             for j in  datafile:
                 fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
                 outfile = fileid + j
                 filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
-
-            if res.endswith('.tsv'):
-                combine_fd(filex,outfile)
-            elif j.endswith('series.nii'):
-                combinefile = " -cifti ".join(filex)
-                os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
+                
+                if j.endswith('ptseries.nii')  or j.endswith('framewisedisplacement_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
+            
+                if j.endswith('.tsv'):
+                    combine_fd(filex,outfile)
+                elif j.endswith('series.nii'):
+                    combinefile = " -cifti ".join(filex)
+                    os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
    
-            filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) 
-                    +'*'+ resid.partition('_desc')[0] +'*_space-fsLR_den-91k_bold.dtseries.nii'))
-
-           
-
+            filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) 
+                    +'*run*'+'*_den-91k_bold.dtseries.nii'))
+    
             rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
-            os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
+            os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' + combinefile)
             
             tr =  get_ciftiTR(filey[0])
-            precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
-            postcarpet = figure_files  + os.path.basename(fileid) +  + '_postcarpetplot_bold.svg'
+         
+            precarpet = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-precarpetplot_bold.svg'
+            postcarpet = figure_files  + os.path.basename(fileid) + '_space-fsLR_des-postcarpetplot_bold.svg'
 
-            plot_svgx(rawdata=rawdata,regdata=fileid+'_space-fsLR_den-91k_desc-residual_bold.dtseries.nii',
-                resddata=fileid+'_space-fsLR_den-91k_desc-residual_bold.dtseries.nii',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
+            plot_svgx(rawdata=rawdata,regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
+                resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
+                fd=res.split('run-')[0]+ resid.partition('_desc')[0]+'_desc-framewisedisplacement_bold.tsv',
                 filenameaf=postcarpet,filenamebf=precarpet,tr=tr)
 
 
 
             # link or copy bb svgs
-            gboldbbreg = figure_files  + os.path.basename(fileid) + '_desc-bbregister_bold.svg'
-            bboldref  = figure_files  + os.path.basename(fileid) + '_desc-boldref_bold.svg'
-            bb1reg = figure_files  + os.path.basename(filey[0].split('_space-fsLR_den-91k_bold.dtseries.nii')) + '_desc-bbregister_bold_1.svg'
-            bb1ref = figure_files  + os.path.basename(filey[0].split('_space-fsLR_den-91k_bold.dtseries.nii')) + '_desc-boldref_bold.svg'
+            gboldbbreg = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-bbregister_bold.svg'
+            bboldref  = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-boldref_bold.svg'
+            bb1reg = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_space-fsLR_desc-bbregister_bold.svg'
+            bb1ref = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_space-fsLR_desc-boldref_bold.svg'
 
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
