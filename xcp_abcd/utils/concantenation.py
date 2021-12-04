@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 import os,glob,fnmatch,tempfile,shutil
-from matplotlib.pyplot import get
 import numpy as np
 import nibabel as nb
 from pathlib import Path
@@ -21,11 +20,13 @@ def concatenatebold(subjlist,fmridir,outputdir,cifti=False,):
     if not cifti:
         for s in subjlist:
             print(s)
-            concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+            listout = concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
     else:
         for s in subjlist:
             print(s)
-            concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+            listout = concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+
+    return listout
 
     
 
@@ -102,6 +103,8 @@ def concatenate_nifti(subid,fmridir,outputdir):
              
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
+        return [precarpet,postcarpet,gboldbbreg,bboldref]
+        
 
 
 
@@ -177,6 +180,8 @@ def concatenate_cifti(subid,fmridir,outputdir):
 
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
+
+    return [precarpet,postcarpet,gboldbbreg,bboldref]
 
 
 
