@@ -365,7 +365,10 @@ class layout_builder(object):
             task_re = re.compile('task-([^_\d]+)\D*(\d+).*')
             match = task_re.search(name)
             if match is not None:
-                taskset.add(match.group(1,2))
+                if 'run-'+ match.group(1,2)[1] in os.path.basename(name):
+                    taskset.add(match.group(1,2))
+                else:
+                    taskset.add(match.group(1))
 
         return sorted(taskset)
 
