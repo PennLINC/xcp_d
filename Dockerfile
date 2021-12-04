@@ -27,7 +27,6 @@ RUN apt-get update && \
                     nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-
 ENV FSL_DIR="/usr/share/fsl/5.0" \
     OS="Linux" \
     FS_OVERRIDE=0 \

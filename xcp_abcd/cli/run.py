@@ -70,6 +70,8 @@ def get_parser():
     g_bidx.add_argument('-t', '--task-id', action='store',
                         help='select a specific task to be selected for the postprocessing '
                              )
+    g_bidx.add_argument('-m','--combineruns', action='store_true',default=False, 
+          help='this option combines all runs into one file')
     
     g_surfx = parser.add_argument_group('Options for cifti processing')
     g_surfx.add_argument('-s', '--cifti', action='store_true', default=False,
@@ -295,6 +297,7 @@ def main():
         failed_reports = generate_reports(
             subject_list=subject_list,fmri_dir=fmri_dir, work_dir=work_dir,
                output_dir=output_dir, run_uuid=run_uuid,cifti=opts.cifti,
+               combineruns=opts.combineruns,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
 
