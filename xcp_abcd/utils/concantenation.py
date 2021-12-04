@@ -160,13 +160,18 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                 outfile = fileid + j
                 filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                 
-                if j.endswith('ptseries.nii')  or j.endswith('framewisedisplacement_bold.tsv'):
+                if j.endswith('ptseries.nii'):
                     fileid = fileid.split('_den-91k')[0]
+                    outfile = fileid + j
                     filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
-            
-                if j.endswith('.tsv'):
+                    combinefile = " -cifti ".join(filex)
+                    os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
+                elif j.endswith('framewisedisplacement_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    outfile = fileid + j
+                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combine_fd(filex,outfile)
-                elif j.endswith('series.nii'):
+                elif j.endswith('dseries.nii'):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
@@ -180,8 +185,8 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             
             tr =  get_ciftiTR(filey[0])
          
-            precarpet = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-precarpetplot_bold.svg'
-            postcarpet = figure_files  + os.path.basename(fileid) + '_space-fsLR_des-postcarpetplot_bold.svg'
+            precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
+            postcarpet = figure_files  + os.path.basename(fileid) + '_des-postcarpetplot_bold.svg'
 
             plot_svgx(rawdata=rawdata,regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
                 resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
@@ -193,8 +198,8 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             # link or copy bb svgs
             gboldbbreg = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-bbregister_bold.svg'
             bboldref  = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-boldref_bold.svg'
-            bb1reg = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_space-fsLR_desc-bbregister_bold.svg'
-            bb1ref = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_space-fsLR_desc-boldref_bold.svg'
+            bb1reg = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_desc-bbregister_bold.svg'
+            bb1ref = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_desc-boldref_bold.svg'
 
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
