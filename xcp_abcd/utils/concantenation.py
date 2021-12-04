@@ -17,7 +17,8 @@ def concatenatebold(subjlist,fmridir,outputdir,cifti=False,):
     print(subjlist)
     print(fmridir)
     print(outputdir)
-    if cifti is False:
+
+    if not cifti:
         for s in subjlist:
             print(s)
             concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)

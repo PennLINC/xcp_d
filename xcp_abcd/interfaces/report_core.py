@@ -90,7 +90,7 @@ def generate_reports(
         )
     else:
         # concate cifi and nifti here for multiple runs
-        if combineruns == True:
+        if combineruns:
             from ..utils import concatenatebold
             concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_abcd/',cifti=cifti)
         
