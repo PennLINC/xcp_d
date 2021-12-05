@@ -368,7 +368,7 @@ class layout_builder(object):
                 if 'run-'+ match.group(1,2)[1] in os.path.basename(name):
                     taskset.add(match.group(1,2))
                 else:
-                    taskset.add(match.group(1))
+                    taskset.add((match.group(1),))
 
         return sorted(taskset)
 
