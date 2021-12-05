@@ -171,7 +171,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                     outfile = fileid + j
                     filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combine_fd(filex,outfile)
-                elif j.endswith('dseries.nii'):
+                elif j.endswith('dtseries.nii'):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
