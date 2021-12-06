@@ -141,7 +141,34 @@ def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
         confound = pd.concat([mm_dev,acompc],axis=1)
     elif params == 'tcompcor':
         confound = load_tcompcor(confoundspd=confoundtsv,confoundjs=confoundjson)
+    elif params == 'aroma':
+        confound = load_aroma(datafile=datafile,wmcsf=load_WM_CSF(confoundtsv))
+        
     return confound
+
+def load_aroma(datafile,wmscf):
+    """ extract aroma confound."""
+    #_AROMAnoiseICs.csv
+    #_desc-MELODIC_mixing.tsv
+    #
+    if 'space' in os.path.basename(datafile):
+        aroma_noise = datafile.replace("_space-" + datafile.split("space-")[1],
+                         "_AROMAnoiseICs.csv")
+        melodic_ts = datafile.replace("_space-" + datafile.split("space-")[1],
+                         "_desc-MELODIC_mixing.tsv")
+    else:
+        aroma_noise = datafile.split('_desc-preproc_bold.nii.gz')[0]+"_AROMAnoiseICs.csv"
+        melodic_ts = datafile.split('_desc-preproc_bold.nii.gz')[0]+"_desc-MELODIC_mixing.tsv"
+
+    aroma_noise =np.genfromtxt(aroma_noise,delimiter=',',)
+    aroma_noise = [np.int(i) -1  for i in  aroma_noise] # change to 0-based index
+    melodic = pd.read_csv(melodic_ts,header=None, delimiter="\t", encoding="utf-8")
+    melodic_drop = melodic.drop(aroma_noise, axis=1)
+    aroma = pd.concat([melodic_drop,wmscf],axis=1) # add wmscf
+
+    return aroma
+
+    
 
 
 

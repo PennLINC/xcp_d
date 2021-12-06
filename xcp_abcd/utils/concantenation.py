@@ -56,6 +56,9 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     else: 
         all_func_files = glob.glob(str(outputdir)  + '/' + subid + '/ses-%s/func/*' % ses)
         fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
+
+
+        
         figure_files = str(outputdir) + '/' + subid + '/figures/' 
     
     
