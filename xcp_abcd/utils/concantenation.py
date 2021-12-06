@@ -88,7 +88,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
             filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) 
                     +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
 
-            mask = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) 
+            mask = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) 
                     +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
         
             segfile = get_segfile(filey[0])
