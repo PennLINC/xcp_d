@@ -96,7 +96,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
             os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
 
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
-            postcarpet = figure_files  + os.path.basename(fileid) +  '_des-postcarpetplot_bold.svg'
+            postcarpet = figure_files  + os.path.basename(fileid) +  '_desc-postcarpetplot_bold.svg'
 
             plot_svgx(rawdata=rawdata,regdata=fileid+'_desc-residual_bold.nii.gz',
                 resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
@@ -186,11 +186,11 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             tr =  get_ciftiTR(filey[0])
          
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
-            postcarpet = figure_files  + os.path.basename(fileid) + '_des-postcarpetplot_bold.svg'
+            postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
 
             plot_svgx(rawdata=rawdata,regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
                 resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
-                fd=res.split('run-')[0]+ resid.partition('_desc')[0]+'_desc-framewisedisplacement_bold.tsv',
+                fd=res.split('run-')[0]+ resid.partition('_den-91k')[0]+'_desc-framewisedisplacement_bold.tsv',
                 filenameaf=postcarpet,filenamebf=precarpet,tr=tr)
 
 
