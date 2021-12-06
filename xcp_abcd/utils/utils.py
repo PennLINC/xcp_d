@@ -192,6 +192,16 @@ def stringforparams(params):
         the mean CSF signal  with their temporal derivatives, \
         and the quadratic expansion of six motion parameters, tissues signals and  \
         their temporal derivatives"
+    if params == 'aroma':
+        bsignal= "All the clean aroma components with the mean white matter  \
+        signal, and the mean CSF signal were selected as nuisance regressors"
+    if params == 'acompcor':
+        bsignal= "All the components of the aCompCor algorithm were selected as \
+        nuisance regressors"
+    if params == 'tcompcor':
+        bsignal= "All the components of the tCompCor algorithm were selected as \
+        nuisance regressors"
+
     return bsignal
 
 def get_customfile(custom_conf,bold_file):
