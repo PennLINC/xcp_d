@@ -56,6 +56,9 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     else: 
         all_func_files = glob.glob(str(outputdir)  + '/' + subid + '/ses-%s/func/*' % ses)
         fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
+
+
+
         figure_files = str(outputdir) + '/' + subid + '/figures/' 
     
     
@@ -196,10 +199,10 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
 
             # link or copy bb svgs
-            gboldbbreg = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-bbregister_bold.svg'
-            bboldref  = figure_files  + os.path.basename(fileid) + '_space-fsLR_desc-boldref_bold.svg'
-            bb1reg = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_desc-bbregister_bold.svg'
-            bb1ref = figure_files  + os.path.basename(filey[0]).split('_space-fsLR_den-91k_bold.dtseries.nii')[0] + '_desc-boldref_bold.svg'
+            gboldbbreg = figure_files  + os.path.basename(fileid) + '_desc-bbregister_bold.svg'
+            bboldref  = figure_files  + os.path.basename(fileid) + '_desc-boldref_bold.svg'
+            bb1reg = figure_files  + os.path.basename(filey[0]).split('_den-91k_bold.dtseries.nii')[0] + '_desc-bbregister_bold.svg'
+            bb1ref = figure_files  + os.path.basename(filey[0]).split('_den-91k_bold.dtseries.nii')[0] + '_desc-boldref_bold.svg'
 
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
