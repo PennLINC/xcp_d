@@ -214,7 +214,7 @@ class TasksSection(Section):
 
         # Using glob patterns to find the files for this task; start
         # with a pattern for the task/run itself.
-        task_pattern = task_name + '*' + task_num
+        task_pattern = task_name 
 
         # For the processed files, it's as simple as looking for the pattern in
         # the source-directory. When found and copied to the directory of images,
@@ -240,7 +240,7 @@ class TasksSection(Section):
 
         # Using glob patterns to find the files for this task; start
         # with a pattern for the task/run itself.
-        task_pattern = task_name + '*' + task_num
+        task_pattern = task_name 
 
         # Make the first half of the row - bold and ref data.
         self.section += BOLD_GRAY_START
@@ -299,7 +299,12 @@ class TasksSection(Section):
 
         # Each entry in task_entries is a tuple of the task-name (without
         # task-) and run number (without run-).
-        for task_name, task_num in tasks:
+        for task_name  in tasks:
+            if 'run-' in task_name:
+                task_num= task_name.split('_run-')[1].split('_')[0]
+            else:
+                task_num = 'ALL'
+
             self.write_T1_reg_rows(task_name, task_num)
             self.write_bold_gray_row(task_name, task_num)
 
@@ -360,15 +365,10 @@ class layout_builder(object):
             print('\n All tasks completed')
     
         filex =  glob.glob(self.files_path + '/*bbregister_bold.svg')
-
+        
         for name in filex:
-            task_re = re.compile('task-([^_\d]+)\D*(\d+).*')
-            match = task_re.search(name)
-            if match is not None:
-                if 'run-'+ match.group(1,2)[1] in os.path.basename(name):
-                    taskset.add(match.group(1,2))
-                else:
-                    taskset.add((match.group(1),))
+            taskbase = os.path.basename(name)
+            taskset.add(taskbase.split('_task-')[1].split('_desc')[0])
 
         return sorted(taskset)
 
