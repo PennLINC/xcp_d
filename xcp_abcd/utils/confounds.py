@@ -168,13 +168,12 @@ def load_aroma(datafile,wmscf):
 
     return aroma
 
-    
 
 
 
 def motion_regression_filter(data,fs,filtertype,cutoff,freqband,order=4):
     """
-
+    apply motion filter to 6 motion.
     """
 
 
