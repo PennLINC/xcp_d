@@ -5,8 +5,8 @@ import os,glob,fnmatch,tempfile,shutil
 import numpy as np
 import nibabel as nb
 from pathlib import Path
-from xcp_abcd.utils.plot import plot_svgx
-from xcp_abcd.utils import get_transformfile
+from ..utils.plot import plot_svgx
+from ..utils import get_transformfile
 from templateflow.api import get as get_template
 from nipype.interfaces.ants import ApplyTransforms
 
@@ -99,7 +99,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
             os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
 
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
-            postcarpet = figure_files  + os.path.basename(fileid) +  '_desc-postcarpetplot_bold.svg'
+            postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
 
             plot_svgx(rawdata=rawdata,regdata=fileid+'_desc-residual_bold.nii.gz',
                 resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
