@@ -18,7 +18,7 @@ from niworkflows.viz.plots import _decimate_data
 
 
 def plotimage(img,out_file):
-    fig = plt.figure(constrained_layout=False, figsize=(30, 15))
+    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
     from nilearn.plotting import plot_anat
     plot_anat(img,draw_cross=False,figure=fig)
     fig.savefig(out_file,bbox_inches="tight", pad_inches=None)
