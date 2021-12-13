@@ -338,7 +338,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
         ax.set_ylim(ylim)
     else: 
         ax.set_ylim([-2*conf[k].max(),2*conf[k].max()])
-    ax.set_ylabel(ylabelx,fontsize=20)    
+    ax.set_ylabel(ylabelx,fontsize=40)    
     ax.legend(fontsize=20)
     
     last = conf.shape[0] - 1
@@ -422,20 +422,22 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
+    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
+    plot_text(imgdata=rawdata,gs_ts=grid[2])
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     plt.cla()
     plt.clf()
     
     figy = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
+    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    plot_text(imgdata=rawdata,gs_ts=grid[2])
     plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
     confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
@@ -522,9 +524,9 @@ def confoundplotx(
             ax_ts.axhline(y=0.2,color='blue',linestyle='-')
             ax_ts.axhline(y=0.5,color='green',linestyle='-')
 
-            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=20)
-            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=20)
-            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=20)
+            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=30)
     else:
         for c in columns:
             ax_ts.plot(tseries[c],label=c, linewidth=3)
@@ -534,7 +536,7 @@ def confoundplotx(
     minx_value = [abs(x) for x in minim_value]
     
     ax_ts.set_xlim((0, ntsteps - 1))
-    ax_ts.legend(fontsize=30)
+    ax_ts.legend(fontsize=40)
     
     if ylims:
         ax_ts.set_ylim(ylims)
@@ -543,7 +545,7 @@ def confoundplotx(
         
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
-        item.set_fontsize(30)
+        item.set_fontsize(40)
 
     return ax_ts, gs
 
@@ -702,4 +704,21 @@ def plot_carpetx(
 
     return (ax0, ax1), gs
 
-def plot_text(imgdata,)
+def plot_text(imgdata):
+    """
+    
+    """
+    
+    tm = nb.load(imgdata).shape[-1]
+    if imgdata.endswith('nii.gz'):
+        label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
+    else:
+        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
+    
+    text_kwargs = dict(ha='center', va='center', fontsize=30)
+    
+    ax2 = plt.figure(figsize=(50, 0.5))
+    ax2.text(0.5, 0.1, label, **text_kwargs)
+    plt.axis('off')
+    
+    return ax2 
