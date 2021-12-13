@@ -704,11 +704,13 @@ def plot_carpetx(
 
     return (ax0, ax1), gs
 
-def plot_text(imgdata):
+def plot_text(imgdata,gs_ts):
     """
     
     """
-    
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
+    )
     tm = nb.load(imgdata).shape[-1]
     if imgdata.endswith('nii.gz'):
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
@@ -721,4 +723,4 @@ def plot_text(imgdata):
     ax2.text(0.5, 0.1, label, **text_kwargs)
     plt.axis('off')
     
-    return ax2 
+    return ax2, gs
