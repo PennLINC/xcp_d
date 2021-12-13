@@ -166,12 +166,12 @@ class PlotSVGData(SimpleInterface):
        
         self._results['before_process'] = fname_presuffix(
                 'carpetplot_before_',
-                suffix='file.svg', newpath=runtime.cwd,
+                suffix='file.png', newpath=runtime.cwd,
                 use_ext=False)
 
         self._results['after_process'] = fname_presuffix(
                 'carpetplot_after_',
-                suffix='file.svg', newpath=runtime.cwd,
+                suffix='file.png', newpath=runtime.cwd,
                 use_ext=False)
 
         self._results['before_process'], self._results['after_process'] = plot_svgx(
