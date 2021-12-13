@@ -103,7 +103,7 @@ def confpower(confound,order=2):
 
 
 def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
-                        freqband=[0.1,0.2],head_radius=50,params='24P'):
+                        freqband=[0.1,0.2],head_radius=50,params='27P'):
                     
     """ extract confound """
     '''
