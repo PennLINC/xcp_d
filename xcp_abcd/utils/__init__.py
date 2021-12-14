@@ -14,7 +14,7 @@ from .cifitiresample import CiftiSurfaceResample
 from .bids import (collect_participants, collect_data,
                       select_registrationfile,select_cifti_bold,extract_t1w_seg)
 from .bids import DerivativesDataSink as bid_derivative
-from .modified_data import (interpolate_masked_data, generate_mask,
+from .modified_data import (interpolate_masked_data, interpolate_masked_datax, generate_mask,
                               compute_FD, drop_tseconds_volume)
 from .sentry import sentry_setup
 
@@ -79,4 +79,5 @@ __all__ = [
     'ReHoNamePatch',
     'DespikePatch',
     'concatenatebold',
+     'interpolate_masked_datax'
   ]

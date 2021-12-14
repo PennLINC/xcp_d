@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """ploting tools."""
+from re import A
 import numpy as np
 import nibabel as nb
 import pandas as pd
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
 import seaborn as sns
 from niworkflows.viz.plots import plot_carpet as plot_carpetX
+from traits.traits import Color
 from ..utils import read_ndata
 from matplotlib.colors import ListedColormap 
 import matplotlib.cm as cm
@@ -336,7 +338,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
         ax.set_ylim(ylim)
     else: 
         ax.set_ylim([-2*conf[k].max(),2*conf[k].max()])
-    ax.set_ylabel(ylabelx,fontsize=20)    
+    ax.set_ylabel(ylabelx,fontsize=40)    
     ax.legend(fontsize=20)
     
     last = conf.shape[0] - 1
@@ -420,22 +422,24 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
+    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    plot_text(imgdata=rawdata,gs_ts=grid[2])
+    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     plt.cla()
     plt.clf()
     
     figy = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(4, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,2.5,1])
+    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
-    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]')
+    plot_text(imgdata=rawdata,gs_ts=grid[2])
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     return filenamebf,filenameaf
@@ -449,7 +453,8 @@ def confoundplotx(
     tr=None,
     hide_x=True,
     ylims=None,
-    ylabel=None
+    ylabel=None,
+    FD=False
    ):
     import seaborn as sns
 
@@ -493,16 +498,46 @@ def confoundplotx(
     columns= tseries.columns
     maxim_value =[]
     minim_value =[]
-    for c in columns:
-        ax_ts.plot(tseries[c],label=c, linewidth=3)
-        maxim_value.append(max(tseries[c]))
-        minim_value.append(min(tseries[c]))
-    
-    
+
+    if FD is True:
+        for c in columns:
+            ax_ts.plot(tseries[c],label=c, linewidth=3,color='black')
+            maxim_value.append(max(tseries[c]))
+            minim_value.append(min(tseries[c]))
+            
+            #threshold fd at 0.1,0.2 and 0.5
+            fd01 = tseries[c].copy() 
+            fd01[fd01 > 0.1] = 1
+
+            fd02 = tseries[c].copy() 
+            fd02[fd02 > 0.2] = 1
+
+            fd05 = tseries[c].copy() 
+            fd05[fd05 > 0.5] = 1
+            
+            #plot all of them 
+            
+            ax_ts.plot(fd05,'.',color='green',markersize=20)
+            ax_ts.plot(fd02,'.',color='blue',markersize=20)
+            ax_ts.plot(fd01,'.',color='red',markersize=20)
+
+            ax_ts.axhline(y=0.1,color='red',linestyle='-')
+            ax_ts.axhline(y=0.2,color='blue',linestyle='-')
+            ax_ts.axhline(y=0.5,color='green',linestyle='-')
+
+            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=30)
+    else:
+        for c in columns:
+            ax_ts.plot(tseries[c],label=c, linewidth=3)
+            maxim_value.append(max(tseries[c]))
+            minim_value.append(min(tseries[c]))
+   
     minx_value = [abs(x) for x in minim_value]
     
     ax_ts.set_xlim((0, ntsteps - 1))
-    ax_ts.legend(fontsize=30)
+    ax_ts.legend(fontsize=40)
     
     if ylims:
         ax_ts.set_ylim(ylims)
@@ -511,7 +546,7 @@ def confoundplotx(
         
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
-        item.set_fontsize(30)
+        item.set_fontsize(40)
 
     return ax_ts, gs
 
@@ -669,3 +704,24 @@ def plot_carpetx(
     ax1.spines["left"].set_visible(False)
 
     return (ax0, ax1), gs
+
+def plot_text(imgdata,gs_ts):
+    """
+    
+    """
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
+    )
+    tm = nb.load(imgdata).shape[-1]
+    if imgdata.endswith('nii.gz'):
+        label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
+    else:
+        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
+    
+    text_kwargs = dict(ha='center', va='center', fontsize=30)
+    
+    ax2 = plt.subplot(gs[1])
+    ax2.text(0.5, 0.1, label, **text_kwargs)
+    plt.axis('off')
+    
+    return ax2, gs
