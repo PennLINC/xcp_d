@@ -438,8 +438,8 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
-    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[2],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[3],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
+    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     return filenamebf,filenameaf
