@@ -719,7 +719,7 @@ def plot_text(imgdata,gs_ts):
     
     text_kwargs = dict(ha='center', va='center', fontsize=30)
     
-    ax2 = plt.figure(figsize=(50, 0.5))
+    ax2 = plt.figure(gs)
     ax2.text(0.5, 0.1, label, **text_kwargs)
     plt.axis('off')
     
