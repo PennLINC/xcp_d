@@ -9,11 +9,11 @@ IMAGE_INFO = {
           'title' : 'T2w BrainSprite'
       },
     'task_pre_reg_gray': {
-        'pattern': '*%s*desc-precarpetplot*bold.png',
+        'pattern': '*%s*desc-precarpetplot*bold.svg',
         'title': 'Pre-Regression'
         },
     'task_post_reg_gray': {
-        'pattern': '*%s*desc-postcarpetplot*bold.png',
+        'pattern': '*%s*desc-postcarpetplot*bold.svg',
         'title': 'Post-Regression'
         },
     'bold_t1w_reg': {
