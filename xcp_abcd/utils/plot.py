@@ -516,17 +516,18 @@ def confoundplotx(
             fd05[fd05 > 0.5] = 1
             
             #plot all of them 
-            ax_ts.plot(fd01,'.',color='red')
-            ax_ts.plot(fd02,'.',color='blue')
-            ax_ts.plot(fd05,'.',color='green')
+            
+            ax_ts.plot(fd05,'.',color='green',markersize=20)
+            ax_ts.plot(fd02,'.',color='blue',markersize=20)
+            ax_ts.plot(fd01,'.',color='red',markersize=20)
 
             ax_ts.axhline(y=0.1,color='red',linestyle='-')
             ax_ts.axhline(y=0.2,color='blue',linestyle='-')
             ax_ts.axhline(y=0.5,color='green',linestyle='-')
 
-            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=30)
-            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=30)
-            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01) - len(fd01[fd01<1])) + ' frames',color='red',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02) - len(fd02[fd02<1])) + ' frames',color='blue',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05) - len(fd05[fd05<1])) + ' frames',color='green',fontsize=30)
     else:
         for c in columns:
             ax_ts.plot(tseries[c],label=c, linewidth=3)
