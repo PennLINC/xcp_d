@@ -517,20 +517,20 @@ def confoundplotx(
             
             #plot all of them 
             
-            ax_ts.plot(fd05,'.',color='green',markersize=20)
-            ax_ts.plot(fd02,'.',color='blue',markersize=20)
-            ax_ts.plot(fd01,'.',color='red',markersize=20)
+            ax_ts.plot(fd05,'.',color='green',markersize=40)
+            ax_ts.plot(fd02,'.',color='blue',markersize=40)
+            ax_ts.plot(fd01,'.',color='red',markersize=40)
 
-            ax_ts.axhline(y=0.1,color='red',linestyle='-')
-            ax_ts.axhline(y=0.2,color='blue',linestyle='-')
-            ax_ts.axhline(y=0.5,color='green',linestyle='-')
+            ax_ts.axhline(y=0.1,color='red',linestyle='-',linewidth=5)
+            ax_ts.axhline(y=0.2,color='blue',linestyle='-',linewidth=5)
+            ax_ts.axhline(y=0.5,color='green',linestyle='-',linewidth=5)
 
-            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=30)
-            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=30)
-            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=30)
+            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=50)
+            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=50)
+            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=50)
     else:
         for c in columns:
-            ax_ts.plot(tseries[c],label=c, linewidth=3)
+            ax_ts.plot(tseries[c],label=c, linewidth=5)
             maxim_value.append(max(tseries[c]))
             minim_value.append(min(tseries[c]))
    
@@ -546,7 +546,10 @@ def confoundplotx(
         
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
-        item.set_fontsize(40)
+        item.set_fontsize(60)
+    
+    for axis in ['top','bottom','left','right']:
+        ax_ts.spines[axis].set_linewidth(4)
 
     return ax_ts, gs
 
@@ -718,7 +721,7 @@ def plot_text(imgdata,gs_ts):
     else:
         label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
     
-    text_kwargs = dict(ha='center', va='center', fontsize=30)
+    text_kwargs = dict(ha='center', va='center', fontsize=50)
     
     ax2 = plt.subplot(gs[1])
     ax2.text(0.5, 0.1, label, **text_kwargs)
