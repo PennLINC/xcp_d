@@ -548,7 +548,7 @@ def confoundplotx(
              ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
         item.set_fontsize(60)
     
-    ax_ts.tick_params(width=4)
+    ax_ts.tick_params(width=10)
 
     return ax_ts, gs
 
