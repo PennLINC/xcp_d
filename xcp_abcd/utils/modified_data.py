@@ -167,7 +167,8 @@ def interpolate_masked_datax(img_datax,tmask,
                                           stop=current_bin*voxbin)
             bin_index           =   np.intersect1d(bin_index, range(0,nvox))
 
-            voxel_bin           =   img_data[bin_index,:][:,t_obs]
+            voxel_bin           =   img_data[bin_index,:]
+            #[:,t_obs]
    
 
             n_features              =   voxel_bin.shape[0]
@@ -210,7 +211,7 @@ def interpolate_masked_datax(img_datax,tmask,
           
 
             s_recon          =   np.sum(term_recon,0)
-            #print(s_recon)
+         
 
             term_prod           =   np.cos(np.outer(angular_frequencies, all_samples))
             term_recon          =   np.zeros(shape=(angular_frequencies.shape[0],
@@ -221,18 +222,17 @@ def interpolate_masked_datax(img_datax,tmask,
     
             recon                   =   (c_recon + s_recon).T
             del c_recon, s_recon
-            print(recon.shape)
         
     ##########################################################################
     # Normalise the reconstructed spectrum. This is necessary when the
     # oversampling frequency exceeds 1.
     ##########################################################################
-            #std_recon               =   np.std(recon,1,ddof=1)
-            #std_orig                =   np.std(voxel_bin,1,ddof=1)
-            #norm_fac                =   std_recon/std_orig
-            #del std_recon, std_orig
-            #recon                   =   (recon.T/norm_fac).T
-            #del norm_fac
+            std_recon               =   np.std(recon,1,ddof=1)
+            std_orig                =   np.std(voxel_bin,1,ddof=1)
+            norm_fac                =   std_recon/std_orig
+            del std_recon, std_orig
+            recon                   =   (recon.T/norm_fac).T
+            del norm_fac
         ##################################################################
         # Write the current bin into the image matrix. Replace only unseen
         # observations with their interpolated values.
