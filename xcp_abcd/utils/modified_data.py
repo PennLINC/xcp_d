@@ -210,7 +210,7 @@ def interpolate_masked_datax(img_datax,tmask,
           
 
             s_recon          =   np.sum(term_recon,0)
-            #print(s_recon)
+         
 
             term_prod           =   np.cos(np.outer(angular_frequencies, all_samples))
             term_recon          =   np.zeros(shape=(angular_frequencies.shape[0],
@@ -221,7 +221,6 @@ def interpolate_masked_datax(img_datax,tmask,
     
             recon                   =   (c_recon + s_recon).T
             del c_recon, s_recon
-            print(recon.shape)
         
     ##########################################################################
     # Normalise the reconstructed spectrum. This is necessary when the
