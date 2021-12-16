@@ -167,7 +167,8 @@ def interpolate_masked_datax(img_datax,tmask,
                                           stop=current_bin*voxbin)
             bin_index           =   np.intersect1d(bin_index, range(0,nvox))
 
-            voxel_bin           =   img_data[bin_index,:][:,t_obs]
+            voxel_bin           =   img_data[bin_index,:]
+            #[:,t_obs]
    
 
             n_features              =   voxel_bin.shape[0]
@@ -226,12 +227,12 @@ def interpolate_masked_datax(img_datax,tmask,
     # Normalise the reconstructed spectrum. This is necessary when the
     # oversampling frequency exceeds 1.
     ##########################################################################
-            #std_recon               =   np.std(recon,1,ddof=1)
-            #std_orig                =   np.std(voxel_bin,1,ddof=1)
-            #norm_fac                =   std_recon/std_orig
-            #del std_recon, std_orig
-            #recon                   =   (recon.T/norm_fac).T
-            #del norm_fac
+            std_recon               =   np.std(recon,1,ddof=1)
+            std_orig                =   np.std(voxel_bin,1,ddof=1)
+            norm_fac                =   std_recon/std_orig
+            del std_recon, std_orig
+            recon                   =   (recon.T/norm_fac).T
+            del norm_fac
         ##################################################################
         # Write the current bin into the image matrix. Replace only unseen
         # observations with their interpolated values.
