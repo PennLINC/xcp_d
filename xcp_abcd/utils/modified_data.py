@@ -89,34 +89,30 @@ def interpolate_masked_data(img_datax,tmask,TR=1):
 def interpolate_masked_datax(img_datax,tmask,
                      TR=1,ofreq=4,hifreq=1,voxbin=1000):
     
-
     img_data = img_datax.copy()
-
     t_rep           =   np.float(TR)
-    hifreq =  2/t_rep
+    hifreq =2/t_rep
 
     nvox                =   img_data.shape[0]
     nvol                =   img_data.shape[1]
 
-   
+    indices = tmask.shape[-1]
     t_obs = np.array(np.where(tmask != 0))[0]
 
-
+    tmask2 = np.where(tmask != 0)
     ##########################################################################
     # Total timespan of seen observations, in seconds
     ##########################################################################
-    seen_samples            =   (t_obs + 1) * t_rep
-    timespan                =   np.max(seen_samples) - np.min(seen_samples)
-    n_samples_seen          =   seen_samples.shape[-1]
 
-    if timespan == 0:
-        print('No timepoints in mask')
-    elif n_samples_seen == nvol:
-        print('No interpolation is necessary for this dataset.')
+    if len(t_obs) <  3:
+        print('no flagged volume')
     else:
     ##########################################################################
     # Temoral indices of all observations, seen and unseen
     ##########################################################################
+        seen_samples            =   (t_obs + 1) * t_rep
+        timespan                =   np.max(seen_samples) - np.min(seen_samples)
+        n_samples_seen          =   seen_samples.shape[-1]
         all_samples             =   np.arange(start=t_rep,stop=t_rep*(nvol+1),step=t_rep)
         
     ##########################################################################
@@ -198,7 +194,7 @@ def interpolate_masked_datax(img_datax,tmask,
             numerator           =   np.sum(mult,1)
             denominator         =   np.sum(sine_term**2,1)
             s               =   (numerator.T/denominator).T
-            print(s.shape)
+           
     
     
     ##########################################################################
