@@ -11,11 +11,16 @@ from templateflow.api import get as get_template
 from nipype.interfaces.ants import ApplyTransforms
 
 
-def concatenatebold(subjlist,fmridir,outputdir,cifti=False):
+def concatenatebold(subjlist,fmridir,outputdir):
     outdir = outputdir
+    fmr = glob.glob(str(outdir) + '/' + _prefix(subjlist[0])+'/*/func/*_desc-residual_bold*nii*')[0]
+    if fmr.endswith('nii.gz'):
+        cifti = False
+    else:
+        cifti = True
+    
     if not cifti:
-        for s in subjlist:
-            
+        for s in subjlist:  
             # get seission if there
             sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual_bold.nii.gz')
             if sed: 
