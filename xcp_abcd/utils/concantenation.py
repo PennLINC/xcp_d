@@ -123,11 +123,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                 shutil.copy(bb1reg,gboldbbreg)
                 shutil.copy(bb1ref,bboldref)
             
-    
-        
-
-
-
+  
 def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
     
@@ -160,7 +156,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
    # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual_bold.dtseries.nii'))
-
+        print(len(resbold))
         if len(resbold) > 1:
             for res in resbold:
                 resid = res.split('run-')[1].partition('_')[-1]
