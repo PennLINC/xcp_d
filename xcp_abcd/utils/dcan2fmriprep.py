@@ -113,7 +113,7 @@ def dcan2fmriprepx(dcan_dir,out_dir,sub_id):
             taskdir ='task-'+ttt
             
             taskname = re.split(r'(\d+)', ttt)[0]
-            run_id = '_run-'+ str(re.split(r'(\d+)', ttt)[1])
+            run_id = '_run-'+ str(int(re.split(r'(\d+)', ttt)[1]))
             func_dirxx = func_dirx + taskdir 
            
 
