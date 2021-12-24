@@ -73,6 +73,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     tasklist = list(set(tasklist))
 
     # do for each task
+    print(tasklist)
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual_bold.nii.gz'))
         # resbold may be in different space like native space or MNI space or T1w or MNI
@@ -154,7 +155,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
    # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual_bold.dtseries.nii'))
-        print(len(resbold))
+        print(len(task))
         if len(resbold) > 1:
             for res in resbold:
                 resid = res.split('run-')[1].partition('_')[-1]
