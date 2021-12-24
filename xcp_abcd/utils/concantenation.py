@@ -71,24 +71,24 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     tasklist = list(set(tasklist))
 
     # do for each task
-    print(tasklist)
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual_bold.nii.gz'))
+        
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold)>1:
-            for res in resbold:
-                resid = res.split('run-')[1].partition('_')[-1]
-                for j in  datafile:
-                    fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
-                    outfile = fileid + j
+            res = resbold[0]
+            resid = res.split('run-')[1].partition('_')[-1]
+            for j in  datafile:
+                fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
+                outfile = fileid + j
                
-                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
+                filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                
-                    if j.endswith('tsv'):
-                        combine_fd(filex,outfile)
-                    elif j.endswith('nii.gz'):
-                        combinefile = "  ".join(filex)
-                        os.system('fslmerge -t ' + outfile + '  ' + combinefile)
+                if j.endswith('tsv'):
+                    combine_fd(filex,outfile)
+                elif j.endswith('nii.gz'):
+                    combinefile = "  ".join(filex)
+                    os.system('fslmerge -t ' + outfile + '  ' + combinefile)
    
             filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
 
@@ -120,7 +120,11 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
             
-  
+    
+        
+
+
+
 def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
     
@@ -149,51 +153,52 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
     tasklist = [os.path.basename(j).split('task-')[1].split('_')[0]  
                   for j in fnmatch.filter(all_func_files,'*den-91k_desc-residual_bold.dtseries.nii') ]
     tasklist = list(set(tasklist))
-    print(tasklist)
 
    # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual_bold.dtseries.nii'))
-        print(len(task))
+        print(resbold)
+        print(len(resbold))
         if len(resbold) > 1:
-            for res in resbold:
-                resid = res.split('run-')[1].partition('_')[-1]
+            res=resbold[0]
+            resid = res.split('run-')[1].partition('_')[-1]
             #print(resid)
-                for j in  datafile:
-                    fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
-                    outfile = fileid + j
-                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
+            for j in  datafile:
+                fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
+                outfile = fileid + j
+                filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                 
-                    if j.endswith('ptseries.nii'):
-                        fileid = fileid.split('_den-91k')[0]
-                        outfile = fileid + j
-                        filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
-                        combinefile = " -cifti ".join(filex)
-                        os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
-                    elif j.endswith('framewisedisplacement_bold.tsv'):
-                        fileid = fileid.split('_den-91k')[0]
-                        outfile = fileid + j
-                        filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
-                        combine_fd(filex,outfile)
-                    elif j.endswith('dtseries.nii'):
-                        combinefile = " -cifti ".join(filex)
-                        os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
+                if j.endswith('ptseries.nii'):
+                    fileid = fileid.split('_den-91k')[0]
+                    outfile = fileid + j
+                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
+                    combinefile = " -cifti ".join(filex)
+                    os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
+                elif j.endswith('framewisedisplacement_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    outfile = fileid + j
+                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
+                    combine_fd(filex,outfile)
+                elif j.endswith('dtseries.nii'):
+                    combinefile = " -cifti ".join(filex)
+                    os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
    
             filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
-            print(filey)
-            tr =  get_ciftiTR(filey[0])
+    
             rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' + combinefile)
             
+            tr =  get_ciftiTR(filey[0])
+         
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
             postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
 
             plot_svgx(rawdata=rawdata,regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
-                 resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
-                 fd=res.split('run-')[0]+ resid.partition('_den-91k')[0]+'_desc-framewisedisplacement_bold.tsv',
-                 filenameaf=postcarpet,filenamebf=precarpet,tr=tr)
+            resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
+            fd=res.split('run-')[0]+ resid.partition('_den-91k')[0]+'_desc-framewisedisplacement_bold.tsv',
+            filenameaf=postcarpet,filenamebf=precarpet,tr=tr)
 
 
 
