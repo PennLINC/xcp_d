@@ -91,8 +91,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                         combinefile = "  ".join(filex)
                         os.system('fslmerge -t ' + outfile + '  ' + combinefile)
    
-                filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) 
-                    +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
+                filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
 
                 mask = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) 
                     +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
@@ -182,8 +181,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                         os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
    
-                filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) 
-                    +'*run*'+'*_den-91k_bold.dtseries.nii'))
+                filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
     
                 rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
                 combinefile = " -cifti ".join(filey)
