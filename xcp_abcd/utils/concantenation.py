@@ -26,21 +26,19 @@ def concatenatebold(subjlist,fmridir,outputdir):
             if sed: 
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
-                    listout = concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)    
+                    concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)    
             else:
                 ses = None 
-                listout = concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+                concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
     else:
         for s in subjlist:
             sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual_bold.dtseries.nii')
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
-                    listout = concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)
+                    concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)
             else:
-                 listout = concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
-
-    return listout
+                concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
 
     
 
