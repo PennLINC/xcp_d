@@ -151,6 +151,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
     tasklist = [os.path.basename(j).split('task-')[1].split('_')[0]  
                   for j in fnmatch.filter(all_func_files,'*den-91k_desc-residual_bold.dtseries.nii') ]
     tasklist = list(set(tasklist))
+    print(tasklist)
 
    # do for each task
     for task in tasklist:
