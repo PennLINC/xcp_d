@@ -57,11 +57,8 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
         fmri_files = str(fmridir) +'/' + subid + '/func/'
         figure_files = str(outputdir) + '/' + subid + '/figures/'
     else: 
-        all_func_files = glob.glob(str(outputdir)  + '/' + subid + '/ses-%s/func/*' % ses)
-        fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
-
-
-
+        all_func_files = glob.glob(str(outputdir)  + '/' + subid + '/ses-' +str(ses)+'/func/*')
+        fmri_files = str(fmridir) +'/' + subid + '/ses-' +str(ses)+'/func/' 
         figure_files = str(outputdir) + '/' + subid + '/figures/' 
     
     
@@ -144,8 +141,8 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
         fmri_files = str(fmridir) +'/' + subid + '/func/'
         figure_files = str(outputdir) + '/' + subid + '/figures/'
     else: 
-        all_func_files = glob.glob(str(outputdir)  + '/' + subid + '/ses-%s/func/*' % ses)
-        fmri_files = str(fmridir) +'/' + subid + '/ses-%s/func/' % ses
+        all_func_files = glob.glob(str(outputdir)  + '/' + subid + '/ses-' +str(ses)+'/func/*')
+        fmri_files = str(fmridir) +'/' + subid + '/ses-' +str(ses)+'/func/' 
         figure_files = str(outputdir) + '/' + subid + '/figures/' 
         
    
@@ -185,6 +182,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
    
             filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
+            print(filey)
             tr =  get_ciftiTR(filey[0])
             rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
