@@ -166,6 +166,7 @@ RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs 
                 tfapi.get(template='fsLR',density='32k',suffix='sphere'); \
                 tfapi.get('MNI152NLin2009cAsym', resolution=1, desc='carpet',suffix='dseg'); \
                 tfapi.get(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'); \
+                tfapi.get(template='fsLR',density='32k',desc='vaavg', suffix='midthickness extension='.gii'); \
                 tfapi.get('fsLR', density='32k'); \
                  " && \
     rm xcp_abcd-setup.cfg && \
