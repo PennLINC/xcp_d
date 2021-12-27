@@ -294,10 +294,11 @@ def main():
                            ' of it will not be available', citation_files['md'])
 
         # Generate reports phase
+    
         failed_reports = generate_reports(
             subject_list=subject_list,fmri_dir=fmri_dir, work_dir=work_dir,
-               output_dir=output_dir, run_uuid=run_uuid,cifti=opts.cifti,
-               combineruns=opts.combineruns,
+               output_dir=output_dir, run_uuid=run_uuid,
+               combineruns=opts.combineruns,input_type=opts.input_type,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
 
@@ -365,6 +366,7 @@ def build_workflow(opts, retval):
         from ..utils import dcan2fmriprep
         from ..workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
+        print('checking the DCAN files')
         dcan_output_dir = str(work_dir) + '/dcanhcp'
         os.makedirs(dcan_output_dir, exist_ok=True)
         
@@ -382,6 +384,7 @@ def build_workflow(opts, retval):
         from ..utils import hcp2fmriprep
         from ..workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
+        print('checking the HCP files')
         hcp_output_dir = str(work_dir) + '/hcphcp'
         os.makedirs(hcp_output_dir, exist_ok=True) 
         if opts.participant_label is not None:

@@ -54,7 +54,7 @@ def run_reports(
 
 def generate_reports(
     subject_list, fmri_dir, work_dir,output_dir, run_uuid, config=None, packagename=None,
-    cifti=False,combineruns=False):
+    combineruns=False,input_type='fmriprep'):
     """Execute run_reports on a list of subjects."""
     #reportlets_dir = None
     if work_dir is not None:
@@ -91,14 +91,21 @@ def generate_reports(
     else:
         # concate cifi and nifti here for multiple runs
         if combineruns:
+            if input_type == 'dcan':
+                fmri_dir = str(work_dir) + '/dcanhcp'
+            elif input_type == 'hcp':
+                fmri_dir = str(work_dir) + '/hcp/hcp'
             from ..utils import concatenatebold
+            print('Concatenating bold files ...')
             concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_abcd/')
+            print('Concatenation complete!')
         
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
             brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_abcd/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
             layout_builder(html_path=str(Path(output_dir))+'/xcp_abcd/', subject_id=subject_label,
                            session_id= _getsesid(brainplotfile))
+                           
         print('Reports generated successfully')
     return errno
 
