@@ -156,8 +156,6 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
    # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual_bold.dtseries.nii'))
-        print(resbold)
-        print(len(resbold))
         if len(resbold) > 1:
             res=resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
@@ -184,7 +182,6 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
    
             filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
-            print(filey)
             tr =  get_ciftiTR(filey[0])
             rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
