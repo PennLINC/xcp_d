@@ -185,12 +185,12 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
    
             filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
-    
+            tr =  get_ciftiTR(filey[0])
             rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' + combinefile)
             
-            tr =  get_ciftiTR(filey[0])
+            
          
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
             postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
