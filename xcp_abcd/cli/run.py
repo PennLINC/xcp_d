@@ -294,10 +294,11 @@ def main():
                            ' of it will not be available', citation_files['md'])
 
         # Generate reports phase
+    
         failed_reports = generate_reports(
             subject_list=subject_list,fmri_dir=fmri_dir, work_dir=work_dir,
-               output_dir=output_dir, run_uuid=run_uuid,cifti=opts.cifti,
-               combineruns=opts.combineruns,
+               output_dir=output_dir, run_uuid=run_uuid,
+               combineruns=opts.combineruns,input_type=opts.input_type,
             config=pkgrf('xcp_abcd', 'data/reports.yml'),
             packagename='xcp_abcd')
 
