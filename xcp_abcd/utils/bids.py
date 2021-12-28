@@ -201,20 +201,15 @@ def select_registrationfile(subj_data):
     regfile = subj_data['regfile']
 
     # get the file with the template name
-    template = 'MNI152NLin2006cAsym' # default template for fmriprep,dcan and hcp
+    template1 = 'MNI152NLin2006cAsym' # default template for fmriprep,dcan and hcp
+
+    template2 = 'MNIInfant' # nibabies
     
-    # check for default template first, if not that is niabies
-    regfile = [f for f in regfile if template in f]
-     
-    # that is Niabies
-    if len(regfile) == 0:
-        template = 'MNIInfant'
-        regfile = [f for f in regfile if template in f]
 
     for j in regfile: 
-        if 'from-' + template  in j : 
+        if 'from-' + template1  in j or 'from-' + template2 in j: 
             mni_to_t1w = j
-        elif 'to-' + template  in j :
+        elif 'to-' + template1 in j or 'to-' + template2 in j:
             t1w_to_mni = j
     ## for validation, we need to check presence of MNI152NLin2009cAsym 
     ## if not we use MNI152NLin2006cAsym for nibabies 
