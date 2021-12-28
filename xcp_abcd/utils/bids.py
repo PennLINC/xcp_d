@@ -201,7 +201,7 @@ def select_registrationfile(subj_data):
     regfile = subj_data['regfile']
 
     # get the file with the template name
-    template1 = 'MNI152NLin2006cAsym' # default template for fmriprep,dcan and hcp
+    template1 = 'MNI152NLin2009cAsym'  # default template for fmriprep,dcan and hcp
 
     template2 = 'MNIInfant' # nibabies
     
