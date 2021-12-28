@@ -196,12 +196,20 @@ def collect_data(
     return layout, subj_data
 
 
-def select_registrationfile(subj_data,
-                            template=None):
+def select_registrationfile(subj_data):
     
     regfile = subj_data['regfile']
 
     # get the file with the template name
+    template = 'MNI152NLin2006cAsym' # default template for fmriprep,dcan and hcp
+    
+    # check for default template first, if not that is niabies
+    regfile = [f for f in regfile if template in f]
+     
+    # that is Niabies
+    if len(regfile) == 0:
+        template = 'MNIInfant'
+        regfile = [f for f in regfile if template in f]
 
     for j in regfile: 
         if 'from-' + template  in j : 

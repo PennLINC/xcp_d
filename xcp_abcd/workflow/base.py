@@ -41,7 +41,6 @@ def init_xcpabcd_wf(layout,
                    task_id,
                    head_radius,
                    params,
-                   brain_template,
                    subject_list,
                    smoothing,
                    custom_conf,
@@ -160,7 +159,6 @@ def init_xcpabcd_wf(layout,
                             head_radius=head_radius,
                             params=params,
                             task_id=task_id,
-                            brain_template=brain_template,
                             smoothing=smoothing,
                             output_dir=output_dir,
                             dummytime=dummytime,
@@ -199,7 +197,6 @@ def init_subject_wf(
     dummytime,
     fd_thresh,
     task_id,
-    brain_template,
     smoothing,
     custom_conf,
     output_dir,
@@ -290,7 +287,7 @@ def init_subject_wf(
     layout,subj_data= collect_data(bids_dir=fmri_dir,participant_label=subject_id, 
                                                task=task_id,bids_validate=False)
 
-    regfile = select_registrationfile(subj_data=subj_data,template=brain_template)
+    regfile = select_registrationfile(subj_data=subj_data)
     subject_data = select_cifti_bold(subj_data=subj_data)
     t1wseg = extract_t1w_seg(subj_data=subj_data)
     
