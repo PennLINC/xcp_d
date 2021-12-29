@@ -98,9 +98,6 @@ def get_parser():
                        help='input type,fmriprep/nibabies are default,dcan and hcp are optional ')
 
     g_param = parser.add_argument_group('parameters for postprocessing')
-    g_param.add_argument(
-        '--brain-template', action='store', default='MNI152NLin2009cAsym',
-        help=" template to be selected from anat to be processed and/or  for normalization")
 
     g_param.add_argument('--smoothing', default=6, action='store',
                              type=float, help='smoothing the postprocessed output (fwhm)')
@@ -506,7 +503,6 @@ def build_workflow(opts, retval):
               cifti=opts.cifti,
               output_dir=str(output_dir),
               head_radius=opts.head_radius,
-              brain_template=opts.brain_template,
               custom_conf=opts.custom_conf,
               dummytime=opts.dummytime,
               fd_thresh=opts.fd_thresh,
