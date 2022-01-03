@@ -15,15 +15,15 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
     
     #get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
-    
+    MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'))
 
     # get default template MNI152NLin2009cAsym for fmriprep and 
-    if 'MNI152NLin2009cAsym'  or 'MNIInfant' in os.path.basename(mni_to_t1w):
+    if 'MNI152NLin2009cAsym'  in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
-        MNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'))
+        
 
-    #elif 'MNI1' in os.path.basename(mni_to_t1w):
-        #template = 'MNI152NLin6Asym'
+    elif 'MNIInfant' in os.path.basename(mni_to_t1w):
+        template = 'MNIInfant'
         #MNI6 = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
         
     
@@ -38,28 +38,28 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
     elif 'space-PNC' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         pnc_to_t1w  = mnisf + 'from-PNC*_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI =[str(pnc_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(pnc_to_t1w)
 
     elif 'space-NKI' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         nki_to_t1w  = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI =[str(nki_to_t1w),str(t1w_to_mni)]
         transformfileT1W = str(nki_to_t1w)
 
     elif 'space-OASIS' in file_base:
         mnisf = mni_to_t1w.split('from')[0]
         oasis_to_t1w  = mnisf + 'from-OASIS30ANTs_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI =[str(oasis_to_t1w),str(t1w_to_mni)]
         transformfileT1W = [str(oasis_to_t1w)]
     
     elif 'space-MNI152NLin6Sym' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         mni6c_to_t1w  = mnisf + 'from-MNI152NLin6Sym_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
         transformfileT1W = [str(mni6c_to_t1w)]
 
@@ -70,13 +70,13 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
     elif 'space-MNIPediatricAsym' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         mni6c_to_t1w  = glob.glob(mnisf + 'from-MNIPediatricAsym*_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI =[str(mni6c_to_t1w),str(t1w_to_mni)]
         transformfileT1W = [str(mni6c_to_t1w)]
         
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from')[0]
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(t1w_to_mni)]
         transformfileT1W = [str(pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt'))]
 
@@ -84,7 +84,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
         native_to_t1w =t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
         mnisf = mni_to_t1w.split('from')[0]
-        t1w_to_mni  = mnisf + 'from-T1w_to-'+template+'_mode-image_xfm.h5'
+        t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(t1w_to_mni),str(native_to_t1w)]
         transformfileT1W = [str(native_to_t1w)]
     else:
@@ -119,14 +119,15 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
     file_base = os.path.basename(str(bold_file))
     #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
     fMNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'))
-    
-    #get the template for registration
-    if 'MNI152NLin2009cAsym'  or  'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-        template = 'MNI152NLin2009cAsym'
-        FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+    FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
 
-    #elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-        #template = 'MNIInfant'
+    #get the template for registration
+    if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
+        template = 'MNI152NLin2009cAsym'
+        
+
+    elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
+        template = 'MNIInfant'
         #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
 
 
