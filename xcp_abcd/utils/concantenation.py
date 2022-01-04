@@ -13,7 +13,7 @@ from nipype.interfaces.ants import ApplyTransforms
 
 def concatenatebold(subjlist,fmridir,outputdir):
     outdir = outputdir
-    fmr = glob.glob(str(outdir) + '/' + _prefix(subjlist[0])+'/*/func/*_desc-residual_bold*nii*')[0]
+    fmr = glob.glob(str(outdir) + '/' + _prefix(subjlist[0])+'/*/func/*_desc-residual*bold*nii*')[0]
     if fmr.endswith('nii.gz'):
         cifti = False
     else:
@@ -22,7 +22,7 @@ def concatenatebold(subjlist,fmridir,outputdir):
     if not cifti:
         for s in subjlist:  
             # get seission if there
-            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual_bold.nii.gz')
+            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual*bold*.nii.gz')
             if sed: 
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
@@ -32,7 +32,7 @@ def concatenatebold(subjlist,fmridir,outputdir):
                 concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
     else:
         for s in subjlist:
-            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual_bold.dtseries.nii')
+            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual*bold*.dtseries.nii')
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
@@ -71,7 +71,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
 
     # do for each task
     for task in tasklist:
-        resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual_bold.nii.gz'))
+        resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual*bold*.nii.gz'))
         
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold)>1:
@@ -150,12 +150,12 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
     fmri_files = str(fmri_files)
     #extract the task list
     tasklist = [os.path.basename(j).split('task-')[1].split('_')[0]  
-                  for j in fnmatch.filter(all_func_files,'*den-91k_desc-residual_bold.dtseries.nii') ]
+                  for j in fnmatch.filter(all_func_files,'*den-91k_desc-residual*bold.dtseries.nii') ]
     tasklist = list(set(tasklist))
 
    # do for each task
     for task in tasklist:
-        resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual_bold.dtseries.nii'))
+        resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual*bold.dtseries.nii'))
         if len(resbold) > 1:
             res=resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
