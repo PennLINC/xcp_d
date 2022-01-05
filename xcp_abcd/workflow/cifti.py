@@ -59,6 +59,7 @@ def init_ciftipostprocess_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_abcd.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
                 bold_file,
@@ -81,8 +82,9 @@ def init_ciftipostprocess_wf(
                 num_cifti,
                 template='MNI152NLin2009cAsym',
                 layout=None,
-                name='cifti_postprocess_wf',
-             )
+                name='cifti_postprocess_wf',)
+
+                
     Parameters
     ----------
     bold_file: str

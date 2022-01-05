@@ -60,15 +60,16 @@ def init_boldpostprocess_wf(
      despike,
      brain_template='MNI152NLin2009cAsym',
      layout=None,
-     name='bold_postprocess_wf',
-      ):
+     name='bold_postprocess_wf'):
 
     """
     This workflow organizes bold processing workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+            
             from xcp_abcd.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
                 bold_file,
@@ -91,8 +92,9 @@ def init_boldpostprocess_wf(
                 num_bold,
                 template='MNI152NLin2009cAsym',
                 layout=None,
-                name='bold_postprocess_wf',
-             )
+                name='bold_postprocess_wf')
+
+
     Parameters
     ----------
     bold_file: str
