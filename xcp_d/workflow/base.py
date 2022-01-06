@@ -26,7 +26,7 @@ from  ..utils import bid_derivative
 
 
 
-def init_xcpabcd_wf(layout,
+def init_xcpd_wf(layout,
                    lower_bpf,
                    upper_bpf,
                    despike,
