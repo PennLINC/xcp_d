@@ -13,22 +13,21 @@ BOLD Workflow
     
     import os
     from pkg_resources import resource_filename as pkgrf
-    from xcp_abcd.utils import collect_data,select_cifti_bold,select_registrationfile
+    from xcp_abcd.utils import collect_data,select_registrationfile,extract_t1w_seg
 
     fmri_dir =  pkgrf('xcp_abcd','data/fmriprep')
     layout,subj_data = collect_data(bids_dir=fmri_dir,participant_label='sub-colornest001',
                                                task='rest',bids_validate=False)
+    regfile = pkgrf('xcp_abcd','data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')
 
-    regfile = select_registrationfile(subj_data=subj_data)
-    mni_to_t1w = regfile[0]
-     
     bold_file = pkgrf('xcp_abcd','data/fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz')
     custom_conf = pkgrf('xcp_abcd','data/fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv')
 
-
+    tseg = pkgrf('xcp_abcd','data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_desc-preproc_T1w.nii.gz')
+    t1w = pkgrf('xcp_abcd','data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_dseg.nii.gz')
     from xcp_abcd.workflow.bold import init_boldpostprocess_wf
     wf = init_boldpostprocess_wf(
-                bold_file=bold_file,
+                bold_file = str(bold_file),
                 upper_bpf=0.08,
                 lower_bpf =0.01,
                 bpf_order=2,
@@ -46,6 +45,9 @@ BOLD Workflow
                 fd_thresh=0.3,
                 num_bold=1,
                 layout=layout,
-                mni_to_t1w=regfile[0],
+                mni_to_t1w=regfile,
                 despike=None,
                 name='bold_postprocess_wf')
+    wf.inputs.inputnode.t1w = t1w
+    wf.inputs.inputnode.t1seg = tseg
+    
