@@ -8,8 +8,7 @@ Developers - API
 Workflows
 ---------
 
-.. automodule:: xcp_abcd.workflow.base
-    
+
 .. automodule:: xcp_abcd.workflow.bold
 
 .. workflow::
