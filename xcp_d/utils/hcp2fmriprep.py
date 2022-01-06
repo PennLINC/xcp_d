@@ -91,8 +91,8 @@ def hcpfmriprepx(hcp_dir,out_dir,subid):
         if  j.endswith('RL') or j.endswith('LR'):
             tasklistx.append(j)
     
-    csf_mask = pkgrf('xcp_abcd', 'masks/csf.nii.gz')
-    wm_mask = pkgrf('xcp_abcd', 'masks/wm.nii.gz')
+    csf_mask = pkgrf('xcp_d', 'masks/csf.nii.gz')
+    wm_mask = pkgrf('xcp_d', 'masks/wm.nii.gz')
 
 
     for k in tasklistx:

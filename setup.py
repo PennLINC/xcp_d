@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" xcp_abcd setup script """
+""" xcp_d setup script """
 import sys
 from setuptools import setup
 import versioneer
@@ -16,7 +16,7 @@ SETUP_REQUIRES += ["wheel"] if "bdist_wheel" in sys.argv else []
 
 if __name__ == "__main__":
     setup(
-        name="xcp_abcd",
+        name="xcp_d",
         version=versioneer.get_version(),
         cmdclass=versioneer.get_cmdclass(),
         setup_requires=SETUP_REQUIRES,

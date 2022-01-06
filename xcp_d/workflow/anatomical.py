@@ -22,7 +22,7 @@ from ..interfaces import BrainPlotx, RibbontoStatmap
 from ..utils import bid_derivative
 
 class DerivativesDataSink(bid_derivative):
-     out_path_base = 'xcp_abcd'
+     out_path_base = 'xcp_d'
 
 def init_anatomical_wf(
      omp_nthreads,
@@ -42,7 +42,7 @@ def init_anatomical_wf(
           .. workflow::
                :graph2use: orig
                :simple_form: yes
-               from xcp_abcd.workflows import init_anatomical_wf
+               from xcp_d.workflows import init_anatomical_wf
                wf = init_anatomical_wf(
                 omp_nthreads,
                 fmri_dir,
@@ -83,7 +83,7 @@ def init_anatomical_wf(
      
 
      
-     MNI92FSL  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+     MNI92FSL  = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
      mnitemplate = str(get_template(template='MNI152NLin6Asym',resolution=2, suffix='T1w')[-1])
      layout,subj_data = collect_data(bids_dir=fmri_dir,participant_label=subject_id,bids_validate=False)
 
@@ -117,7 +117,7 @@ def init_anatomical_wf(
           ribbon = fnmatch.filter(all_files,'*sub-*'+ subject_id + '*desc-ribbon.nii.gz')[0]
 
           ses_id =_getsesid(ribbon) 
-          anatdir = output_dir+'/xcp_abcd/sub-'+ subject_id +'/ses-'+ ses_id+ '/anat'
+          anatdir = output_dir+'/xcp_d/sub-'+ subject_id +'/ses-'+ ses_id+ '/anat'
           if not os.path.exists(anatdir):
                os.makedirs(anatdir)
 

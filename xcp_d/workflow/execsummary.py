@@ -11,7 +11,7 @@ from ..utils import bid_derivative, get_transformfile
 from templateflow.api import get as get_template
 
 class DerivativesDataSink(bid_derivative):
-     out_path_base = 'xcp_abcd'
+     out_path_base = 'xcp_d'
 
 
 def init_execsummary_wf(

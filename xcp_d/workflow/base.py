@@ -52,13 +52,13 @@ def init_xcpabcd_wf(layout,
                    name='xcpabcd_wf'):
     
     """
-    This workflow builds and organizes  execution of  xcp_abcd  pipeline.
-    It is also connect the subworkflows under the xcp_abcd
+    This workflow builds and organizes  execution of  xcp_d  pipeline.
+    It is also connect the subworkflows under the xcp_d
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflow.base import init_xcpabcd_wf
+            from xcp_d.workflow.base import init_xcpabcd_wf
             wf = init_xcpabcd_wf(
                 layout,
                 lower_bpf,
@@ -116,7 +116,7 @@ def init_xcpabcd_wf(layout,
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
     output_dir : str
-        Directory in which to save xcp_abcd output
+        Directory in which to save xcp_d output
     fd_thresh
         Criterion for flagging framewise displacement outliers
     run_uuid : str
@@ -168,7 +168,7 @@ def init_xcpabcd_wf(layout,
                             name="single_subject_" + subject_id + "_wf")
 
         single_subj_wf.config['execution']['crashdump_dir'] = (
-            os.path.join(output_dir, "xcp_abcd", "sub-" + subject_id, 'log')
+            os.path.join(output_dir, "xcp_d", "sub-" + subject_id, 'log')
         )
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
@@ -209,7 +209,7 @@ def init_subject_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows.base import init_single_bold_wf
+            from xcp_d.workflows.base import init_single_bold_wf
             wf = init_single_bold_wf(
                 layout,
                 lower_bpf,
@@ -267,7 +267,7 @@ def init_subject_wf(
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
     output_dir : str
-        Directory in which to save xcp_abcd output
+        Directory in which to save xcp_d output
     fd_thresh
         Criterion for flagging framewise displacement outliers
     head_radius : float 
@@ -315,7 +315,7 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1].
 
 Many internal operations of *XCP* use *Nibabel* [@nilearn], *numpy* 
 [@harris2020array], and  *scipy* [@2020SciPy-NMeth]. For more details, 
-see the *xcp_abcd* website https://xcp-abcd.readthedocs.io.
+see the *xcp_d* website https://xcp-abcd.readthedocs.io.
 
 
 #### Copyright Waiver
@@ -430,7 +430,7 @@ It is released under the [CC0]\
        ])
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
-            workflow.get_node(node).interface.out_path_base = 'xcp_abcd'
+            workflow.get_node(node).interface.out_path_base = 'xcp_d'
 
     return workflow
 
@@ -457,7 +457,7 @@ class DerivativesDataSink(bid_derivative):
     """
     defines the data sink for the workflow 
     """
-    out_path_base = 'xcp_abcd'
+    out_path_base = 'xcp_d'
 
 def getfmriprepv(fmri_dir):
 

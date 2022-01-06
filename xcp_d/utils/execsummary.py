@@ -117,7 +117,7 @@ import tempita
 def generate_brain_sprite(template_image,stat_map,out_file):
     
     
-    file_template = pkgrf("xcp_abcd",'data/transform/brainsprite_template.html')
+    file_template = pkgrf("xcp_d",'data/transform/brainsprite_template.html')
     template = tempita.Template.from_filename(file_template, encoding="utf-8")
 
     

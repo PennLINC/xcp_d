@@ -167,7 +167,7 @@ class brainplot(SimpleInterface):
         tempnifti = zscore_nifti(img=self.inputs.in_file,mask=self.inputs.mask_file,
                     outputname=tempnifti)
                     
-        temptlatehtml = pkgrf('xcp_abcd','data/transform/brainsprite_template.html')
+        temptlatehtml = pkgrf('xcp_d','data/transform/brainsprite_template.html')
 
         bsprite = viewer_substitute(threshold=0, opacity=0.5, title="zcore",
                          cut_coords=[0,0,0])

@@ -45,11 +45,11 @@ def get_parser():
     from ..__about__ import __version__
     from .version import check_latest, is_flagged
 
-    verstr = 'xcp_abcd v{}'.format(__version__)
+    verstr = 'xcp_d v{}'.format(__version__)
     currentv = Version(__version__)
 
-    parser = ArgumentParser(description='xcp_abcd postprocessing workflow of fMRI data',
-                           epilog='see https://xcp-abcd.readthedocs.io/en/latest/generalworkflow.html',
+    parser = ArgumentParser(description='xcp_d postprocessing workflow of fMRI data',
+                           epilog='see https://xcp-d.readthedocs.io/en/latest/generalworkflow.html',
                             formatter_class=ArgumentDefaultsHelpFormatter)
 
     # important parameters required
@@ -215,7 +215,7 @@ def main():
     # Check workflow for missing commands
     missing = check_deps(xcpabcd_wf)
     if missing:
-        print("Cannot run xcp_abcd. Missing dependencies:", file=sys.stderr)
+        print("Cannot run xcp_d. Missing dependencies:", file=sys.stderr)
         for iface, cmd in missing:
             print("\t{} (Interface: {})".format(cmd, iface))
         sys.exit(2)
@@ -228,7 +228,7 @@ def main():
     except Exception as e:
         if not opts.notrack:
             from ..utils.sentry import process_crashfile
-        crashfolders = [output_dir / 'xcp_abcd' / 'sub-{}'.format(s) / 'log' / run_uuid
+        crashfolders = [output_dir / 'xcp_d' / 'sub-{}'.format(s) / 'log' / run_uuid
                             for s in subject_list]
         for crashfolder in crashfolders:
             for crashfile in crashfolder.glob('crash*.*'):
@@ -240,7 +240,7 @@ def main():
         raise
     else:
         errno = 0
-        logger.log(25, 'xcp_abcd finished without errors')
+        logger.log(25, 'xcp_d finished without errors')
         if not opts.notrack:
             sentry_sdk.capture_message('xcp_abcd finished without errors',
                                        level='info')
@@ -251,14 +251,14 @@ def main():
         from shutil import copyfile
 
         citation_files = {
-        ext: output_dir / 'xcp_abcd' / 'logs' / ('CITATION.%s' % ext)
+        ext: output_dir / 'xcp_d' / 'logs' / ('CITATION.%s' % ext)
             for ext in ('bib', 'tex', 'md', 'html')
         }
 
         if citation_files['md'].exists():
             # Generate HTML file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
-            pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+            pkgrf('xcp_d', 'data/boilerplate.bib'),
                    '--filter',
                    'pandoc-citeproc',
                    '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
@@ -273,7 +273,7 @@ def main():
 
             # Generate LaTex file resolving citations
             cmd = ['pandoc', '-s', '--bibliography',
-                   pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                   pkgrf('xcp_d', 'data/boilerplate.bib'),
                     '--natbib',str(citation_files['md']),
                    '-o', str(citation_files['tex'])]
             logger.info('Generating a LaTeX version of the citation boilerplate...')
@@ -283,7 +283,7 @@ def main():
                 logger.warning('Could not generate CITATION.tex file:\n%s',
                                ' '.join(cmd))
             else:
-                copyfile(pkgrf('xcp_abcd', 'data/boilerplate.bib'),
+                copyfile(pkgrf('xcp_d', 'data/boilerplate.bib'),
                          citation_files['bib'])
         else:
             logger.warning('xcp_abcd could not find the markdown version of '
@@ -296,8 +296,8 @@ def main():
             subject_list=subject_list,fmri_dir=fmri_dir, work_dir=work_dir,
                output_dir=output_dir, run_uuid=run_uuid,
                combineruns=opts.combineruns,input_type=opts.input_type,
-            config=pkgrf('xcp_abcd', 'data/reports.yml'),
-            packagename='xcp_abcd')
+            config=pkgrf('xcp_d', 'data/reports.yml'),
+            packagename='xcp_d')
 
         if failed_reports and not opts.notrack:
             sentry_sdk.capture_message(
@@ -322,7 +322,7 @@ def build_workflow(opts, retval):
     from ..utils  import collect_participants
     from nipype import logging as nlogging, config as ncfg
     from ..__about__ import __version__
-    from ..workflow.base import init_xcpabcd_wf 
+    from ..workflow.base import init_xcpd_wf 
     build_log = nlogging.getLogger('nipype.workflow')
 
     INIT_MSG = """
@@ -339,7 +339,7 @@ def build_workflow(opts, retval):
 
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
-        build_log.info("Clearing previous xcp_abcd working directory: %s" % work_dir)
+        build_log.info("Clearing previous xcp_d working directory: %s" % work_dir)
         if not clean_directory(work_dir):
             build_log.warning("Could not clear all contents of working directory: %s" % work_dir)
     
@@ -445,7 +445,7 @@ def build_workflow(opts, retval):
     retval['plugin_settings'] = plugin_settings
 
     # Set up directories
-    log_dir = output_dir / 'xcp_abcd' / 'logs'
+    log_dir = output_dir / 'xcp_d' / 'logs'
     # Check and create output and working directories
     output_dir.mkdir(exist_ok=True, parents=True)
     log_dir.mkdir(exist_ok=True, parents=True)
@@ -483,7 +483,7 @@ def build_workflow(opts, retval):
         uuid=run_uuid)
     )
 
-    retval['workflow'] = init_xcpabcd_wf (
+    retval['workflow'] = init_xcpd_wf (
               layout=layout,
               omp_nthreads=omp_nthreads,
               fmri_dir=str(fmri_dir),
@@ -511,7 +511,7 @@ def build_workflow(opts, retval):
               )
     retval['return_code'] = 0
 
-    logs_path = Path(output_dir) / 'xcp_abcd' / 'logs'
+    logs_path = Path(output_dir) / 'xcp_d' / 'logs'
     boilerplate = retval['workflow'].visit_desc()
 
     if boilerplate:
@@ -529,11 +529,11 @@ def build_workflow(opts, retval):
                 pass
 
         citation_files['md'].write_text(boilerplate)
-    build_log.log(25, 'Works derived from this xcp execution should '
+    build_log.log(25, 'Works derived from this xcp_d execution should '
                       'include the following boilerplate:\n\n%s', boilerplate)
     return retval
 
 if __name__ == '__main__':
-    raise RuntimeError("xcp_abcd/cli/run.py should not be run directly;\n"
-                       "Please `pip install` xcp_abcd and use the `xcp_abcd` command")
+    raise RuntimeError("xcp_d/cli/run.py should not be run directly;\n"
+                       "Please `pip install` xcp_abcd and use the `xcp_d` command")
 
