@@ -96,7 +96,7 @@ class ApplyTransformsx(ApplyTransforms):
 
 def get_atlas_nifti(atlasname):
     r"""
-    select atlas by name from xcp_abcd/data
+    select atlas by name from xcp_d/data
     all atlases are in MNI dimension
     atlas list:
       schaefer200x17
@@ -105,15 +105,15 @@ def get_atlas_nifti(atlasname):
       gordon360
     """
     if atlasname == 'schaefer200x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer200x17/schaefer200x17MNI.nii.gz')
+        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/schaefer200x17/schaefer200x17MNI.nii.gz')
     elif atlasname == 'schaefer400x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
+        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
     elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
+        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_abcd', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
+        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
     elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf('xcp_abcd', 'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
+        atlasfile = pkgrf('xcp_d', 'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
@@ -121,7 +121,7 @@ def get_atlas_nifti(atlasname):
 
 def get_atlas_cifti(atlasname):
     r"""
-    select atlas by name from xcp_abcd/data
+    select atlas by name from xcp_d/data
     all atlases are in 91K dimension
     atlas list:
       schaefer200x17
@@ -130,15 +130,15 @@ def get_atlas_cifti(atlasname):
       gordon360
     """
     if atlasname == 'schaefer200x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels17Networks_atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels17Networks_atlas.dlabel.nii')
     elif atlasname == 'schaefer400x17':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels17Networks_atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels17Networks_atlas.dlabel.nii')
     elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf('xcp_abcd', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
+        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile

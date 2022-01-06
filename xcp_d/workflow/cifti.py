@@ -60,7 +60,7 @@ def init_ciftipostprocess_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_abcd.workflow.cifti import init_ciftipostprocess_wf
+            from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
                 bold_file,
                 lower_bpf,
@@ -112,7 +112,7 @@ def init_ciftipostprocess_wf(
     omp_nthreads : int
         Maximum number of threads an individual process may use
     output_dir : str
-        Directory in which to save xcp_abcd output
+        Directory in which to save xcp_d output
     fd_thresh
         Criterion for flagging framewise displacement outliers
     head_radius : float
@@ -431,7 +431,7 @@ def _create_mem_gb(bold_fname):
     return mem_gbz
 
 class DerivativesDataSink(bid_derivative):
-    out_path_base = 'xcp_abcd'
+    out_path_base = 'xcp_d'
 
 def get_ciftiTR(cifti_file):
     import nibabel as nb

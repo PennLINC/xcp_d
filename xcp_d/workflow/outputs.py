@@ -8,7 +8,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..utils import bid_derivative
 
 class DerivativesDataSink(bid_derivative):
-    out_path_base = 'xcp_abcd'
+    out_path_base = 'xcp_d'
 
 
 def init_writederivatives_wf(
@@ -30,7 +30,7 @@ def init_writederivatives_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows import init_writederivatives_wf
+            from xcp_d.workflows import init_writederivatives_wf
             wf = init_writederivatives_wf(
                 mem_gb,
                 bold_file,

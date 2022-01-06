@@ -9,7 +9,7 @@ General Workflow
 
 Input data
 -----------
-The default inputs to `xpc_abcd` are the outputs of  `fMRIPrep` and `Nibabies`.  The `xcp_abcd` can aslo process `ABCD-DCAN` and minimal processing of `HCP` data which 
+The default inputs to `xpc_abcd` are the outputs of  `fMRIPrep` and `Nibabies`.  The `xcp_d` can aslo process `ABCD-DCAN` and minimal processing of `HCP` data which 
 require `input-type` flag ( 'dcan'  and 'hcp' for `ABCD-DCAN` and `HCP` respectively).  An optional input is the custom task or physiological timeseries that a user may want to
 regress from the  BOLD data. This custom timeseries can be arranged as described in `Task Regression`_. 
 
@@ -17,11 +17,11 @@ regress from the  BOLD data. This custom timeseries can be arranged as described
 Processesing Steps
 ------------------
 
-1. Skip volumes [Optional]: The ``xcp_abcd`` allows the first N number of volumes to be skipped or deleted before processing.
+1. Skip volumes [Optional]: The ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing.
    These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds
 
 
-2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_abcd`` with 27P as the default. 
+2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_d`` with 27P as the default. 
    In addition to the standard confound regressors selected from fMRIPrep outputs, the custom timeseries can be added as described in `Task Regression`_.
    
 
@@ -109,7 +109,7 @@ Processesing Steps
    The censored data points are removed from the data before regression. This is effective for removing spurious sources of connectivity in fMRI data
    but must be applied very carefully. The Framewise displacement (FD) threshold  is used to identify the censored volumes or outliers 
    which are obtained from the FMRIPREP nuissance matrix. 
-   The default FD threshold implemented in ``xcp_abcd`` is 0.3 mm.  This can be modifeid in the commmand line argument with ``--fd-threshold X`` where X is the FD threshold in mm.
+   The default FD threshold implemented in ``xcp_d`` is 0.3 mm.  This can be modifeid in the commmand line argument with ``--fd-threshold X`` where X is the FD threshold in mm.
    Any volume with FD above the threshold will be flagged as an outlier before the regession.
    Please refer to `Satterthwaite et al. 2013`_ and `Power et. al. 2012`_ for more information. 
 
@@ -120,13 +120,13 @@ Processesing Steps
    as outliers during censoring step, these volumes are excluded from the regression. In addtion, if there is custom confound regressors,
    these are combined with the confound regressors selected in step 2. 
 
-6. Bandpass fitering: The ``xcp_abcd`` implements a butterworth bandpass filter to filter BOLD signal after regression. 
+6. Bandpass fitering: The ``xcp_d`` implements a butterworth bandpass filter to filter BOLD signal after regression. 
    The bandpass filter parameters are set to  0.009 to 0.08 Hz with order of 2  by default and can be modified in the command line. 
    If there are any flagged volumes or timepoints during Temporal Censoring, these volumes are interpolated before bandpass filtering. 
 
-7. Functional timeseries and connectivity matrices: ``xcp_abcd`` implements  a module that extracts voxelwise timeseries with
+7. Functional timeseries and connectivity matrices: ``xcp_d`` implements  a module that extracts voxelwise timeseries with
    the brain atlases. The local mean timeseries within each brain atlas's region  of interest (ROI) is extracted. Currently, static connectivity is estimated using 
-   the Pearson correlation between all ROIs for a particular atlas. The following atlases are implemented in  ``xcp_abcd``:
+   the Pearson correlation between all ROIs for a particular atlas. The following atlases are implemented in  ``xcp_d``:
      
   a. Schaefer 200 and 400
   b. Glasser 360 
@@ -139,7 +139,7 @@ Processesing Steps
 9. Residual BOLD and resting-state derivatives smoothing: A smoothing kernel of 6mm is implemented as default for smoothing residual BOLD, ReHo 
    and ALFF. Kernel size can be modified in the command line arguments. 
 
-10. Quality control. The quality control (QC) in ``xcp_abcd`` estimates the quality of BOLD data before and after regression and also estimates BOLD-T1w coregistration  and
+10. Quality control. The quality control (QC) in ``xcp_d`` estimates the quality of BOLD data before and after regression and also estimates BOLD-T1w coregistration  and
      BOLD-Template normalization qualites. The QC metrics include: 
 
       a. Motion parameters summary: mean FD, mean and maximum RMS 
@@ -152,16 +152,16 @@ Processesing Steps
 Outputs
 -------
 
-``xcp_abcd`` generates the following ouputs following the successful execution: 
+``xcp_d`` generates the following ouputs following the successful execution: 
 
 1. Executive summary: The executive summary reveals some very important information of BOLD data before and after regression. 
 It also shows some key files to allow a quick QC of the image processing results of a single session of a single subject.
 
-2. Visual QA (quality assessment) reports: ``xcp_abcd`` generates one HTML per subject, per session (if applicable), that allows the user to conduct a thorough visual assessment 
+2. Visual QA (quality assessment) reports: ``xcp_d`` generates one HTML per subject, per session (if applicable), that allows the user to conduct a thorough visual assessment 
 of processed data. This also includes QC measures. 
 
 3. Processed BOLD data: residual BOLD for each subject and session, functional timeseries and connectvity matrices, and  resting-state derivatives. 
    
 4. Anatomical data. The anatomical data (processed T1w processed and segmentation files) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resamspled to MNI space. The surfaces (Gifti files) in each subject are also remsapled to standardard space (fsLR-32K). 
 
-See Outputs_ for details about xcp_abcd outputs. 
+See Outputs_ for details about xcp_d outputs. 

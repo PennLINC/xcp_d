@@ -61,12 +61,12 @@ def generate_reports(
         work_dir = work_dir
     report_errors = [
         run_reports(
-            Path(output_dir)/'xcp_abcd',
+            Path(output_dir)/'xcp_d',
             subject_label,
             run_uuid,
             config=config,
             packagename=packagename,
-            reportlets_dir=Path(output_dir)/'xcp_abcd',
+            reportlets_dir=Path(output_dir)/'xcp_d',
         )
         for subject_label in subject_list
     ]
@@ -97,13 +97,13 @@ def generate_reports(
                 fmri_dir = str(work_dir) + '/hcp/hcp'
             from ..utils import concatenatebold
             print('Concatenating bold files ...')
-            concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_abcd/')
+            concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_d/')
             print('Concatenation complete!')
         
         from .layout_builder import layout_builder 
         for subject_label in subject_list:
-            brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_abcd/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
-            layout_builder(html_path=str(Path(output_dir))+'/xcp_abcd/', subject_id=subject_label,
+            brainplotfile  = str(glob.glob(str(Path(output_dir))+ '/xcp_d/sub-'+ str(subject_label)+'/figures/*_desc-brainplot_T1w.html')[0])
+            layout_builder(html_path=str(Path(output_dir))+'/xcp_d/', subject_id=subject_label,
                            session_id= _getsesid(brainplotfile))
                            
         print('Reports generated successfully')

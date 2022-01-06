@@ -148,9 +148,9 @@ ENV MKL_NUM_THREADS=1 \
 
 # Create a shared $HOME directory
 
-RUN useradd -m -s /bin/bash -G users xcp_abcd
-WORKDIR /home/xcp_abcd
-ENV HOME="/home/xcp_abcd"
+RUN useradd -m -s /bin/bash -G users xcp_d
+WORKDIR /home/xcp_d
+ENV HOME="/home/xcp_d"
 
 # Precaching fonts, set 'Agg' as default backend for matplotlib
 RUN python -c "from matplotlib import font_manager" && \
@@ -158,8 +158,8 @@ RUN python -c "from matplotlib import font_manager" && \
 
 # Precaching atlases
 
-COPY setup.cfg xcp_abcd-setup.cfg
-RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs )" && \
+COPY setup.cfg xcp_d-setup.cfg
+RUN pip install --no-cache-dir "$( grep templateflow xcp_d-setup.cfg | xargs )" && \
     python -c "from templateflow import api as tfapi; \
                tfapi.get('MNI152NLin2009cAsym', resolution=2, suffix='T1w', desc=None); \
                 tfapi.get(template='MNI152NLin6Asym',resolution=2, suffix='T1w'); \
@@ -169,23 +169,23 @@ RUN pip install --no-cache-dir "$( grep templateflow xcp_abcd-setup.cfg | xargs 
                 tfapi.get(template='fsLR',density='32k',desc='vaavg', suffix='midthickness',extension='.gii'); \
                 tfapi.get('fsLR', density='32k'); \
                  " && \
-    rm xcp_abcd-setup.cfg && \
+    rm xcp_d-setup.cfg && \
     find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
 # add pandoc
 RUN curl -o pandoc-2.2.2.1-1-amd64.deb -sSL "https://github.com/jgm/pandoc/releases/download/2.2.2.1/pandoc-2.2.2.1-1-amd64.deb" && \
     dpkg -i pandoc-2.2.2.1-1-amd64.deb && \
     rm pandoc-2.2.2.1-1-amd64.deb
-# Installing xcp_abcd
-COPY . /src/xcp_abcd
+# Installing xcp_d
+COPY . /src/xcp_d
 
 RUN  wget -O ${FREESURFER_HOME}/license.txt  https://upenn.box.com/shared/static/ruu7aigti2wzy756a627ej47iw7kqzel.txt  
 
 ARG VERSION=0.0.1
 # Force static versioning within container
-RUN echo "${VERSION}" > /src/xcp_abcd/xcp_abcd/VERSION && \
-    echo "include xcp_abcd/VERSION" >> /src/xcp_abcd/MANIFEST.in && \
-    pip install --no-cache-dir "/src/xcp_abcd[all]"
+RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
+    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in && \
+    pip install --no-cache-dir "/src/xcp_d[all]"
 
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
@@ -195,17 +195,17 @@ RUN find $HOME -type d -exec chmod go=u {} + && \
 RUN ldconfig
 WORKDIR /tmp/
 
-ENTRYPOINT ["/usr/local/miniconda/bin/xcp_abcd"]
+ENTRYPOINT ["/usr/local/miniconda/bin/xcp_d"]
 
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
-      org.label-schema.name="xcp_abcd" \
-      org.label-schema.description="xcp_abcd- postprocessing of fmriprep outputs" \
+      org.label-schema.name="xcp_d" \
+      org.label-schema.description="xcp_d- postprocessing of fmriprep outputs" \
       org.label-schema.url="https://xcp-abcd.readthedocs.io/" \
       org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/PennLINC/xcp_abcd" \
+      org.label-schema.vcs-url="https://github.com/PennLINC/xcp_d" \
       org.label-schema.version=$VERSION \
       org.label-schema.schema-version="1.0"

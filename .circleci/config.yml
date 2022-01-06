@@ -6,7 +6,7 @@ jobs:
       SCRATCH: "/scratch"
     docker:
       - image: docker:18.06.1-ce-git
-    working_directory: /tmp/src/xcp_abcd
+    working_directory: /tmp/src/xcp_d
     steps:
       - run:
           name: Install parallel gzip tar and python3
@@ -44,13 +44,13 @@ jobs:
               echo "the command ``git fetch --tags --verbose`` and push"
               echo "them to your fork with ``git push origin --tags``"
             fi
-            sed -i "s/title = {xcp_abcd}/title = {xcp_abcd ${CIRCLE_TAG:-$THISVERSION}}/" xcp_abcd/data/boilerplate.bib
+            sed -i "s/title = {xcp_d}/title = {xcp_d ${CIRCLE_TAG:-$THISVERSION}}/" xcp_d/data/boilerplate.bib
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
-                --cache-from=pennlinc/xcp_abcd \
+                --cache-from=pennlinc/xcp_d \
                 --rm=false \
-                -t pennlinc/xcp_abcd:latest \
+                -t pennlinc/xcp_d:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                 --build-arg VCS_REF=`git rev-parse --short HEAD` \
                 --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
@@ -61,7 +61,7 @@ jobs:
           no_output_timeout: 40m
           command: |
             mkdir -p /tmp/cache
-            docker save  pennlinc/xcp_abcd:latest \
+            docker save  pennlinc/xcp_d:latest \
             | pigz -8 -p 3 > /tmp/cache/docker.tar.gz
       - persist_to_workspace:
           root: /tmp
@@ -106,7 +106,7 @@ jobs:
   update_cache:
     machine:
       image: circleci/classic:201711-01
-    working_directory: /tmp/src/xcp_abcd
+    working_directory: /tmp/src/xcp_d
     steps:
       - attach_workspace:
           at: /tmp
@@ -116,33 +116,33 @@ jobs:
            - /tmp/cache/docker.tar.gz
 
 
-  xcpabcd_niftiW:
+  xcpd_niftiW:
     machine:
       image: circleci/classic:201711-01
     working_directory: /tmp/data
     steps:
       - checkout:
-          path: /home/circleci/src/xcp_abcd
+          path: /home/circleci/src/xcp_d
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci/src/xcp_abcd
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_niftiW\]' )" != "" ]]; then
-              echo "Skipping xcpabcd_nifti build"
+            cd /home/circleci/src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpd_niftiW\]' )" != "" ]]; then
+              echo "Skipping xcpd_nifti build"
               circleci step halt
             fi
       - attach_workspace:
           at: /tmp
       - restore_cache:
           keys:
-            - xcpabcd_niftiW-v2-{{ .Branch }}-{{ epoch }}
-            - xcpabcd_niftiW-v2-{{ .Branch }}
-            - xcpabcd_niftiW-v2-master
-            - xcpabcd_niftiW-v2-
+            - xcpd_niftiW-v2-{{ .Branch }}-{{ epoch }}
+            - xcpd_niftiW-v2-{{ .Branch }}
+            - xcpd_niftiW-v2-master
+            - xcpd_niftiW-v2-
       - run:
           name: Setting up test
           command: |
-            mkdir -p /tmp/xcpabcd_niftiW && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiW  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiW
+            mkdir -p /tmp/xcpd_niftiW && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiW  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiW
 
       - run:
           name: Load Docker image layer cache
@@ -159,24 +159,24 @@ jobs:
           name: Run full xcpd_abcd on nifti without freesurfer 
           no_output_timeout: 5h
           command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiW && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiW
+            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiW && \
+                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiW
         
             docker run --rm -it \
                 -v /tmp/data:/data/ \
                 -v /tmp/wkdir:/wkdir \
                 -v /tmp:/scrth \
-                -v /tmp/xcpabcd_niftiW/:/out \
-                pennlinc/xcp_abcd:latest \
+                -v /tmp/xcpd_niftiW/:/out \
+                pennlinc/xcp_d:latest \
                 /data/fmriprepdata/fmriprepdata/withoutfreesurfer \
                 /out   \
                 --despike  --head_radius 40 \
                 -w /scrth/wkdir_niftiW --smoothing 6  -f 100
 
       - run:
-          name: Checking outputs of xcpabcd_niftiW
+          name: Checking outputs of xcpd_niftiW
           command: |
-            qcfile=$(ls -f /tmp/xcpabcd_niftiW/xcp_abcd/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
+            qcfile=$(ls -f /tmp/xcpd_niftiW/xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
             if [[ -f ${qcfile} ]]; then 
             echo "processing complete"
                exit 0
@@ -193,36 +193,36 @@ jobs:
             rm -rf /tmp/wkdir_niftiW
 
       - store_artifacts:
-          path: /tmp/xcpabcd_niftiW
+          path: /tmp/xcpd_niftiW
 
           
-  xcpabcd_ciftiF:
+  xcpd_ciftiF:
     machine:
       image: circleci/classic:201711-01
     working_directory: /tmp/data
     steps:
       - checkout:
-          path: /home/circleci/src/xcp_abcd
+          path: /home/circleci/src/xcp_d
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci/src/xcp_abcd
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_ciftiF\]' )" != "" ]]; then
-              echo "Skipping xcpabcd_ciftiF build"
+            cd /home/circleci/src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpd_ciftiF\]' )" != "" ]]; then
+              echo "Skipping xcpd_ciftiF build"
               circleci step halt
             fi
       - attach_workspace:
           at: /tmp
       - restore_cache:
           keys:
-            - xcpabcd_ciftiF-v2-{{ .Branch }}-{{ epoch }}
-            - xcpabcd_ciftiF-v2-{{ .Branch }}
-            - xcpabcd_ciftiF-v2-master
-            - xcpabcd_ciftiF-v2-
+            - xcpd_ciftiF-v2-{{ .Branch }}-{{ epoch }}
+            - xcpd_ciftiF-v2-{{ .Branch }}
+            - xcpd_ciftiF-v2-master
+            - xcpd_ciftiF-v2-
       - run:
           name: Setting up test
           command: |
-            mkdir -p /tmp/xcpabcd_ciftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_ciftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_ciftiF
+            mkdir -p /tmp/xcpd_ciftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_ciftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_ciftiF
 
       - run:
           name: Load Docker image layer cache
@@ -239,15 +239,15 @@ jobs:
           name: Run full xcpd_abcd on cifti with freesurfer 
           no_output_timeout: 5h
           command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_ciftiF && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_ciftiF
+            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_ciftiF && \
+                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_ciftiF
         
             docker run --rm -it \
                 -v /tmp/data:/data/ \
                 -v /tmp/wkdir:/wkdir \
                 -v /tmp:/scrth \
-                -v /tmp/xcpabcd_ciftiF/:/out \
-                pennlinc/xcp_abcd:latest \
+                -v /tmp/xcpd_ciftiF/:/out \
+                pennlinc/xcp_d:latest \
                 /data/fmriprepdata/withfreesurfer/fmriprep \
                 /out   --cifti \
                 --despike  --head_radius 40 \
@@ -255,9 +255,9 @@ jobs:
   
 
       - run:
-          name: Checking outputs of xcpabcd_ciftiF
+          name: Checking outputs of xcpd_ciftiF
           command: |
-            qcfile=$(ls -f /tmp/xcpabcd_ciftiF/xcp_abcd/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_desc-qc_bold.csv)
+            qcfile=$(ls -f /tmp/xcpd_ciftiF/xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_desc-qc_bold.csv)
             if [[ -f ${qcfile} ]]; then 
             echo "processing complete"
                exit 0
@@ -274,36 +274,36 @@ jobs:
             rm -rf /tmp/wkdir_ciftiF
 
       - store_artifacts:
-          path: /tmp/xcpabcd_ciftiF
+          path: /tmp/xcpd_ciftiF
 
 
-  xcpabcd_niftiF:
+  xcpd_niftiF:
     machine:
       image: circleci/classic:201711-01
     working_directory: /tmp/data
     steps:
       - checkout:
-          path: /home/circleci/src/xcp_abcd
+          path: /home/circleci/src/xcp_d
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci/src/xcp_abcd
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpabcd_niftiF\]' )" != "" ]]; then
-              echo "Skipping xcpabcd_niftiF build"
+            cd /home/circleci/src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?xcpd_niftiF\]' )" != "" ]]; then
+              echo "Skipping xcpd_niftiF build"
               circleci step halt
             fi
       - attach_workspace:
           at: /tmp
       - restore_cache:
           keys:
-            - xcpabcd_niftiF-v2-{{ .Branch }}-{{ epoch }}
-            - xcpabcd_niftiF-v2-{{ .Branch }}
-            - xcpabcd_niftiF-v2-master
-            - xcpabcd_niftiF-v2-
+            - xcpd_niftiF-v2-{{ .Branch }}-{{ epoch }}
+            - xcpd_niftiF-v2-{{ .Branch }}
+            - xcpd_niftiF-v2-master
+            - xcpd_niftiF-v2-
       - run:
           name: Setting up test
           command: |
-            mkdir -p /tmp/xcpabcd_niftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF
+            mkdir -p /tmp/xcpd_niftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiF
 
       - run:
           name: Load Docker image layer cache
@@ -320,15 +320,15 @@ jobs:
           name: Run full xcpd_abcd on nifti with freesurfer 
           no_output_timeout: 5h
           command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpabcd_niftiF
+            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiF && \
+                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiF
         
             docker run --rm -it \
                 -v /tmp/data:/data/ \
                 -v /tmp/wkdir:/wkdir \
                 -v /tmp:/scrth \
-                -v /tmp/xcpabcd_niftiF/:/out \
-                pennlinc/xcp_abcd:latest \
+                -v /tmp/xcpd_niftiF/:/out \
+                pennlinc/xcp_d:latest \
                 /data/fmriprepdata/withfreesurfer/fmriprep \
                 /out   \
                 --despike  --head_radius 40 \
@@ -336,9 +336,9 @@ jobs:
   
 
       - run:
-          name: Checking outputs of xcpabcd_niftiF
+          name: Checking outputs of xcpd_niftiF
           command: |
-            qcfile=$(ls -f /tmp/xcpabcd_niftiF/xcp_abcd/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
+            qcfile=$(ls -f /tmp/xcpd_niftiF/xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
             if [[ -f ${qcfile} ]]; then 
             echo "processing complete"
                exit 0
@@ -355,12 +355,12 @@ jobs:
             rm -rf /tmp/wkdir_niftiF
 
       - store_artifacts:
-          path: /tmp/xcpabcd_niftiF
+          path: /tmp/xcpd_niftiF
 
   deploy_docker:
       machine:
         image: circleci/classic:201711-01
-      working_directory: /tmp/src/xcp_abcd
+      working_directory: /tmp/src/xcp_d
       steps:
         - attach_workspace:
             at: /tmp
@@ -381,14 +381,14 @@ jobs:
             command: |
               if [[ -n "$DOCKER_PASS" ]]; then
                 docker login -u $DOCKER_USER -p $DOCKER_PASS
-                docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:unstable
-                docker push pennlinc/xcp_abcd:unstable
+                docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
+                docker push pennlinc/xcp_d:unstable
               fi
 
               if [[ -n "$CIRCLE_TAG" ]]; then
-                docker push pennlinc/xcp_abcd:latest
-                docker tag pennlinc/xcp_abcd pennlinc/xcp_abcd:$CIRCLE_TAG
-                docker push pennlinc/xcp_abcd:$CIRCLE_TAG
+                docker push pennlinc/xcp_d:latest
+                docker tag pennlinc/xcp_d pennlinc/xcp_d:$CIRCLE_TAG
+                docker push pennlinc/xcp_d:$CIRCLE_TAG
               fi
       
 workflows:
@@ -420,7 +420,7 @@ workflows:
             tags:
               only: /.*/
 
-      - xcpabcd_ciftiF:
+      - xcpd_ciftiF:
           requires:
             - get_data
             - build
@@ -432,7 +432,7 @@ workflows:
             tags:
               only: /.*/
               
-      - xcpabcd_niftiF:
+      - xcpd_niftiF:
           requires:
             - get_data
             - build
@@ -444,7 +444,7 @@ workflows:
             tags:
               only: /.*/
 
-      - xcpabcd_niftiW:
+      - xcpd_niftiW:
           requires:
             - get_data
             - build
@@ -459,9 +459,9 @@ workflows:
       - deploy_docker:
           requires:
             - build
-            - xcpabcd_ciftiF
-            - xcpabcd_niftiF
-            - xcpabcd_niftiW
+            - xcpd_ciftiF
+            - xcpd_niftiF
+            - xcpd_niftiW
           filters:
             branches:
               only: main

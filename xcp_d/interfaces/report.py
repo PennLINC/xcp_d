@@ -34,9 +34,9 @@ QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 """
 
 ABOUT_TEMPLATE = """\t<ul>
-\t\t<li>xcp_abcd version: {version}</li>
-\t\t<li>xcp_abcd: <code>{command}</code></li>
-\t\t<li>xcp_abcd preprocessed: {date}</li>
+\t\t<li>xcp_d version: {version}</li>
+\t\t<li>xcp_d: <code>{command}</code></li>
+\t\t<li>xcp_d preprocessed: {date}</li>
 \t</ul>
 </div>
 """
@@ -124,8 +124,8 @@ class FunctionalSummary(SummaryInterface):
 
 
 class AboutSummaryInputSpec(BaseInterfaceInputSpec):
-    version = Str(desc='xcp_abcd version')
-    command = Str(desc='xcp_abcd command')
+    version = Str(desc='xcp_d version')
+    command = Str(desc='xcp_d command')
     # Date not included - update timestamp only if version or command changes
 
 

@@ -24,7 +24,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
 
     elif 'MNIInfant' in os.path.basename(mni_to_t1w):
         template = 'MNIInfant'
-        #MNI6 = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
+        #MNI6 = pkgrf('xcp_d', 'data/transform/oneratiotransform.txt')
         
     
     if 'space-MNI152NLin2009cAsym' in file_base:
@@ -78,7 +78,7 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         mnisf = mni_to_t1w.split('from')[0]
         t1w_to_mni  = glob.glob(mnisf + 'from-T1w_to-'+template+'*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(t1w_to_mni)]
-        transformfileT1W = [str(pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt'))]
+        transformfileT1W = [str(pkgrf('xcp_d', 'data/transform/oneratiotransform.txt'))]
 
     elif 'space-' not in file_base:
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
@@ -117,9 +117,9 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
 
     file_base = os.path.basename(str(bold_file))
-    #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+    #FSL2MNI9  = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
     fMNI6 = str(get_template(template='MNI152NLin2009cAsym',mode='image',suffix='xfm',extension='.h5'))
-    FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/FSL2MNI9Composite.h5')
+    FSL2MNI9  = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
 
     #get the template for registration
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
@@ -128,7 +128,7 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
     elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
         template = 'MNIInfant'
-        #FSL2MNI9  = pkgrf('xcp_abcd', 'data/transform/oneratiotransform.txt')
+        #FSL2MNI9  = pkgrf('xcp_d', 'data/transform/oneratiotransform.txt')
 
 
     # now get transform files for bold file

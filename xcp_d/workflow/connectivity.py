@@ -34,7 +34,7 @@ def init_fcon_ts_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows import init_fcon_ts_wf
+            from xcp_d.workflows import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
                 mem_gb,
                 bold_file,
@@ -217,7 +217,7 @@ def init_cifti_conts_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows import init_fcon_ts_wf
+            from xcp_d.workflows import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
                 mem_gb,
                 bold_file,

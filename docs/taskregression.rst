@@ -7,7 +7,7 @@ Task regression
 Regression of task effects from the BOLD timeseries is performed in 3 steps:
  1. Create a task event timing array
  2. Convolve task events with a gamma-shaped hemodynamic response function (HRF)
- 3. Regress out the effects of task via a general linear model implemented with xcp_abcd
+ 3. Regress out the effects of task via a general linear model implemented with xcp_d
 
 Create a task event array
 --------------------------
@@ -85,7 +85,7 @@ Next, the BOLD response to each event is modeled by convolving the task events w
 - *taskevents*: the Nx2 array created in the prior step 
 
 
-| The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**. This tsv file will be used in the next step of ``xcp_abcd``. 
+| The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**. This tsv file will be used in the next step of ``xcp_d``. 
 
 
 If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeated for each such that you generate one taskevents Nx2array per condition, and one corresponding realt numpy array. The realt outputs must all be combined into one space-delimited  ${subid}_${sesid}_task-${taskname}_desc-custom_timeseries.tsv file. A task with 5 conditions (e.g. happy, angry, sad, fearful, and neutral faces) will have 5 columns in the custom .tsv file. Multiple realt outputs can be combined by modifying the example code below.
@@ -143,9 +143,9 @@ The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may 
   0.5979640661963432 -0.04378800242207828 -0.22350241191186113 0.0 0.0
   
 
-GLM task regression with ``xcp_abcd``
+GLM task regression with ``xcp_d``
 ----------------------------------
-Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv file to xcp_abcd with ``-c`` option. -c should point to the directory where this file exists, rather than to the file itself; ``xcp_abcd`` will identify the correct file based on the subid, sesid, and taskid. You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call::
+Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv file to xcp_d with ``-c`` option. -c should point to the directory where this file exists, rather than to the file itself; ``xcp_d`` will identify the correct file based on the subid, sesid, and taskid. You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call::
 
   singularity run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
   /mnt/input/fmriprep /mnt/output/directory participant --despike \

@@ -13,7 +13,7 @@ def get_parser():
 
     parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument('xcpabcd_dir', action='store', type=Path, help='xcp_abcd output dir')
+    parser.add_argument('xcpd_dir', action='store', type=Path, help='xcp_d output dir')
     
     parser.add_argument('output_prefix', action='store', type=str, help='output prefix for group')
 
@@ -51,5 +51,5 @@ def main():
     datax.to_csv(outputfile,index=None)
 
 if __name__ == '__main__':
-    raise RuntimeError("this should be run after xcp_abcd;\n"
-                       " run xcp-abcd first")
+    raise RuntimeError("this should be run after xcp_d;\n"
+                       " run xcp-d first")

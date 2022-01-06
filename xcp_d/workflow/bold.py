@@ -32,7 +32,7 @@ from  ..workflow import (init_fcon_ts_wf,
     init_compute_alff_wf,
     init_3d_reho_wf)
 from .outputs import init_writederivatives_wf
-from xcp_abcd import workflow
+from xcp_d import workflow
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -69,8 +69,8 @@ def init_boldpostprocess_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            
-            from xcp_abcd.workflow.bold import init_boldpostprocess_wf
+
+            from xcp_d.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
                 bold_file,
                 lower_bpf,
@@ -122,7 +122,7 @@ def init_boldpostprocess_wf(
     omp_nthreads : int
         Maximum number of threads an individual process may use
     output_dir : str
-        Directory in which to save xcp_abcd output
+        Directory in which to save xcp_d output
     fd_thresh
         Criterion for flagging framewise displacement outliers
     head_radius : float
@@ -536,5 +536,5 @@ def _t12native(fname):
 
 
 class DerivativesDataSink(bid_derivative):
-    out_path_base = 'xcp_abcd'
+    out_path_base = 'xcp_d'
   

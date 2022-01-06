@@ -1,6 +1,6 @@
-# xcp_abcd
+# xcp_d
 
-*XCP-ABCD*: A Robust Postprocessing Pipeline of  fMRI data
+*XCP-D*: A Robust Postprocessing Pipeline of  fMRI data
 ===========================================================
 
 .. image:: https://zenodo.org/badge/309485627.svg
@@ -24,5 +24,5 @@ This pipeline is a robust postprocessing pipeline for  fMRI data. It is desined 
 See the `documentation <https://xcp-abcd.readthedocs.io/en>`_ for more details.
 
 
-.. image:: https://raw.githubusercontent.com/pennlinc/xcp_abcd/main/docs/_static/image.png
+.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/image.png
 

@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('nipype.interface')
 
 class _confoundInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,mandatory=True, desc="Input file: either cifti or nifti file from \
-                                  fMRIPrep directory")
+                                  fMRI directory")
     head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head radius for to convert rotxyz to arc length \
                                                for baby, 35m is recommended")
     TR = traits.Float(exit=False,mandatory=False, desc=' repetition time')

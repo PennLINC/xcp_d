@@ -47,7 +47,7 @@ def init_post_process_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_abcd.workflows import init_post_process_wf
+            from xcp_d.workflows import init_post_process_wf
             wf = init_init_post_process_wf_wf(
                 mem_gb,
                 TR,
@@ -97,7 +97,7 @@ def init_post_process_wf(
     omp_nthreads : int
         Maximum number of threads an individual process may use
     output_dir : str
-        Directory in which to save xcp_abcd output
+        Directory in which to save xcp_d output
     fd_thresh
         Criterion for flagging framewise displacement outliers
     head_radius : float 
@@ -387,8 +387,8 @@ def init_resd_smoohthing(
 The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel size of {kernelsize} mm  (FWHM). 
 """     .format(kernelsize=str(smoothing))
         smooth_data = pe.Node(CiftiSmooth(sigma_surf = sigma_lx, sigma_vol=sigma_lx, direction ='COLUMN',
-                right_surf  = pkgrf('xcp_abcd','data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'),
-                left_surf  = pkgrf('xcp_abcd','data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii')),
+                right_surf  = pkgrf('xcp_d','data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'),
+                left_surf  = pkgrf('xcp_d','data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii')),
                 name="cifti_smoothing", mem_gb=mem_gb,n_procs=omp_nthreads)
         workflow.connect([
                    (inputnode, smooth_data,[('bold_file','in_file')]),
