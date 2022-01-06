@@ -4,23 +4,23 @@
 Installation
 ------------
 
-There are two ways to get *xcp_abcd* installed:
+There are two ways to get *xcp_d* installed:
 
 * within a `Manually Prepared Environment (Python 3.8+)`_,
    or
 * with container technologies (RECOMMENDED), such as :ref:`run_docker`
   or :ref:`run_singularity`.
 
-After the setup of the environment, ``xcp_abcd`` can be executed on the 
+After the setup of the environment, ``xcp_d`` can be executed on the 
 command line. The command-line options are documented in the :ref:`usage`
 section.
 
-``xcp_abcd`` processes the fMRIPrep outputs using the following command-line structure::
-   $ xcp_abcd <fmri_pdir> <outputdir>  <options>
+``xcp_d`` processes the fMRIPrep outputs using the following command-line structure::
+   $ xcp_d <fmri_pdir> <outputdir>  <options>
 
 
 With either singularity or docker, the command-line will be composed of a 
-preamble to configure the container execution followed by the ``xcp_abcd``
+preamble to configure the container execution followed by the ``xcp_d``
 command-line options.
 
 The command-line structure above is then modified as follows::
@@ -29,7 +29,7 @@ The command-line structure above is then modified as follows::
 
 Therefore, once a user specifies the container options and the image to be run
 the command line is the same as for the ordinary installation, but dropping
-the ``xcp_abcd`` executable name.
+the ``xcp_d`` executable name.
 
 Container technologies: Docker and Singularity
 ==============================================
@@ -42,7 +42,7 @@ This is a lightweight approach to virtualization, as compared to virtual machine
 
 Docker (recommended for PC/laptop and commercial cloud)
 -------------------------------------------------------
-XCP_ABCD runs fast and easily with less memory requiremen on 
+xcp_d runs fast and easily with less memory requiremen on 
 PC/laptop with Docker. The instructions (`Docker installation`_) are easier to follow.
 Check  `docker <https://docs.docker.com/get-started/>`_ for more information about
 installtion of docker and how to get started. The list of Docker images that are ready to 
@@ -67,28 +67,28 @@ Manually Prepared Environment (Python 3.8+)
    This method is not recommended! Please checkout container alternatives
    in :ref:`run_docker`, and :ref:`run_singularity`.
 
-XCP_ABCD requires some `External Dependencies`_. These tools must be installed 
+xcp_d requires some `External Dependencies`_. These tools must be installed 
 and their binaries available in the system's ``$PATH``.
 
 On a functional Python 3.8 (or above) environment with ``pip`` installed,
-*xcp_abcd* can be installed using the habitual command ::
+*xcp_d* can be installed using the habitual command ::
 
-    $ pip install git+https://github.com/pennlinc/xcp_abcd.git
+    $ pip install git+https://github.com/pennlinc/xcp_d.git
 
 Check your installation with the ``--version`` argument ::
 
-    $ xcp_abcd --version
+    $ xcp_d --version
 
 
 External Dependencies
 ---------------------
 
-*XCP_ABCD* is written using Python 3.8 (or above), and is based on
+*xcp_d* is written using Python 3.8 (or above), and is based on
 nipype_.
 
-*XCP_ABCD* requires some other neuroimaging software tools that are
+*xcp_d* requires some other neuroimaging software tools that are
 not handled by the Python's packaging system (Pypi) used to deploy
-the ``*XCP_ABCD*`` package:
+the ``*xcp_d*`` package:
 
 - FSL_ (version 5.0.9 or higher)
 - ANTs_ (version 2.2.0 - or higher)

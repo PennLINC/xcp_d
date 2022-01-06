@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# xcp_abcd  documentation build configuration file, created by
+# xcp_d  documentation build configuration file, created by
 # sphinx-quickstart on Mon May  9 09:04:25 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -22,7 +22,7 @@ from packaging import version as pver  # Avoid distutils.LooseVersion which is d
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.append(os.path.abspath('sphinxext'))
-sys.path.insert(0, os.path.abspath('../xcp_abcd'))
+sys.path.insert(0, os.path.abspath('../xcp_d'))
 
 from github_link import make_linkcode_resolve
 
@@ -77,8 +77,8 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = 'xcp_abcd'
-author = 'xcp_abcd team'
+project = 'xcp_d'
+author = 'xcp_d team'
 copyright = '2021-%s, %s' % (datetime.now().year, author)
 
 # The version info for the project you're documenting, acts as replacement for
@@ -152,7 +152,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
-# html_title = u'xcp_abcd vversion'
+# html_title = u'xcp_d vversion'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 # html_short_title = None
@@ -234,7 +234,7 @@ html_static_path = ['_static']
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'xcp_abcd_doc'
+htmlhelp_basename = 'xcp_d_doc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -256,7 +256,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'xcp_abcd.tex', u'xcp_abcd Documentation',
+    (master_doc, 'xcp_d.tex', u'xcp_d Documentation',
      author,
      'manual'),
 ]
@@ -287,7 +287,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'xcp_abcd', u'xcp_abcd Documentation',
+    (master_doc, 'xcp_d', u'xcp_d Documentation',
      [author], 1)
 ]
 
@@ -301,7 +301,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'xcp_abcd', u'XCP_ABCD Documentation',
+    (master_doc, 'xcp_d', u'xcp_d Documentation',
      author, 'Azeez Adebimpe and Team', 'One line description of project.',
      'Miscellaneous'),
 ]
@@ -319,9 +319,9 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 # The following is used by sphinx.ext.linkcode to provide links to github
-linkcode_resolve = make_linkcode_resolve('xcp_abcd',
+linkcode_resolve = make_linkcode_resolve('xcp_d',
                                          u'https://github.com/pennlinc/'
-                                         'xcp_abcd/blob/{revision}/'
+                                         'xcp_d/blob/{revision}/'
                                          '{package}/{path}#L{lineno}')
 
 # Example configuration for intersphinx: refer to the Python standard library.

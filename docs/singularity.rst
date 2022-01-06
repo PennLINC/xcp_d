@@ -3,7 +3,7 @@
 
 .. _run_singularity:
 
-Running *xcp_abcd* via Singularity containers
+Running *xcp_d* via Singularity containers
 =============================================
 Preparing a Singularity Image
 -----------------------------
@@ -12,7 +12,7 @@ If the version of Singularity installed on your :abbr:`HPC (High-Performance Com
 system is modern enough, you can create a Singularity image directly on the system
 using the following command: ::
 
-    $ singularity build xcp_abcd-<version>.simg docker://pennlinc/xcp_abcd:<version>
+    $ singularity build xcp_d-<version>.simg docker://pennlinc/xcp_d:<version>
 
 where ``<version>`` should be replaced with the desired version of *xcp-abcd* that you
 want to download.
@@ -20,9 +20,9 @@ want to download.
 Running a Singularity Image
 ---------------------------
 If the data to be preprocessed is also on the HPC or a personal computer,
-you are ready to run *xcp_abcd*. ::
+you are ready to run *xcp_d*. ::
 
-    $ singularity run --cleanenv xcp_abcd.simg \
+    $ singularity run --cleanenv xcp_d.simg \
         path/to/data/fmri_dir  path/to/output/dir \
         --participant-label label
 
@@ -39,4 +39,4 @@ specification, combining the bind mounts argument (``-B``) with the home overwri
 argument (``--home``) as follows: ::
 
     $ singularity run -B $HOME:/home/xcp --home /home/xcp \
-          --cleanenv xcp_abcd.simg <xcp_abcd arguments>
+          --cleanenv xcp_d.simg <xcp_d arguments>
