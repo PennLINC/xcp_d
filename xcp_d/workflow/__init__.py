@@ -7,7 +7,7 @@ from .restingstate import  init_compute_alff_wf, init_surface_reho_wf,init_3d_re
 
 from .bold import init_boldpostprocess_wf
 from .cifti import init_ciftipostprocess_wf
-from .base import init_xcpabcd_wf
+from .base import init_xcpd_wf
 from .anatomical import init_anatomical_wf
 from .execsummary import init_execsummary_wf
 
@@ -20,7 +20,7 @@ __all__ = [
     'init_3d_reho_wf',
     'init_boldpostprocess_wf',
     'init_ciftipostprocess_wf',
-    'init_xcpabcd_wf',
+    'init_xcpd_wf',
     'init_censoring_wf',
     'init_resd_smoohthing',
     'get_transformfile',
