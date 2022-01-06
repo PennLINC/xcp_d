@@ -32,7 +32,7 @@ from  ..workflow import (init_fcon_ts_wf,
     init_compute_alff_wf,
     init_3d_reho_wf)
 from .outputs import init_writederivatives_wf
-from xcp_abcd import workflow
+from xcp_d import workflow
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -69,7 +69,7 @@ def init_boldpostprocess_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            
+
             from xcp_abcd.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
                 bold_file,
