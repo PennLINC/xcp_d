@@ -292,12 +292,19 @@ def init_anatomical_wf(
                 (right_midthick_surf_wf,ds_midRsurf_wf,[('out_file','in_file')]),
                 (right_inf_surf_wf,ds_infRsurf_wf,[('out_file','in_file')]),
                 ]) 
-
-               t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
+               
+               
                ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
+               
+               t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
+               t1w_file = Path(t1w_mgz)
+               
+               #nibabies output do not  have ori.mgz, ori is the same as norm.mgz
+               if t1w_file.is_file():
+                    t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/ori.mgz'
+               else:
+                    t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/norm.mgz'
 
-      
-          
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
      
           
