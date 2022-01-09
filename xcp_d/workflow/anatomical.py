@@ -301,15 +301,15 @@ def init_anatomical_wf(
                
                #nibabies outputs do not  have ori.mgz, ori is the same as norm.mgz
                if Path(t1w_mgz).is_file():
-                    t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/ori.mgz'
+                    t1w_mgz  = Path(str(freesufer_path) + '/'+subid+'/mri/ori.mgz')
                else:
-                    t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/norm.mgz'
+                    t1w_mgz  = Path(str(freesufer_path) + '/'+subid+'/mri/norm.mgz')
 
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
      
           
           #brainplot
-               brainspritex_wf = pe.Node(BrainPlotx(template=t1w_mgz),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
+               brainspritex_wf = pe.Node(BrainPlotx(template=str(t1w_mgz)),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
           
                ds_brainspriteplot_wf = pe.Node(
                DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
