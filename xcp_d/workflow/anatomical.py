@@ -297,10 +297,10 @@ def init_anatomical_wf(
                ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
                
                t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/orig.mgz'
-               t1w_file = Path(t1w_mgz)
+           
                
-               #nibabies output do not  have ori.mgz, ori is the same as norm.mgz
-               if t1w_file.is_file():
+               #nibabies outputs do not  have ori.mgz, ori is the same as norm.mgz
+               if t1w_mgz.is_file():
                     t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/ori.mgz'
                else:
                     t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/norm.mgz'
