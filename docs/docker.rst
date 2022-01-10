@@ -14,6 +14,8 @@ more recent version of the image: ::
 
     $ docker pull pennlinc/xcp_d:<latest-version>
 
+The image can also be found here: https://registry.hub.docker.com/r/pennlinc/xcp_d
+
 *xcp_d* can be run interacting directly with the Docker Engine via the `docker run`
 command, or through a lightweight wrapper that was created for convenience.
 
