@@ -64,7 +64,8 @@ def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
         transformfileT1W = [str(mni6c_to_t1w)]
 
     elif 'space-MNIInfant' in file_base:
-        transformfileMNI = str(MNI6)
+
+        transformfileMNI = str(pkgrf('xcp_d', 'data/transform/infant_to_2009_Compoiste.h5'))
         transformfileT1W  = str(mni_to_t1w)
 
     elif 'space-MNIPediatricAsym' in file_base:
@@ -154,7 +155,8 @@ def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
         t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
         transformfile = [str(t1w_to_mni6c),str(mni_to_t1w),str(FSL2MNI9)]
     elif 'space-MNIInfant' in file_base:
-        transformfile = str(FSL2MNI9)
+        infant2mni9 = pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5')
+        transformfile = [str(infant2mni9),str(FSL2MNI9)]
     elif 'space-MNIPediatricAsym' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6cx = glob.glob(mnisf + 'from-T1w_to-MNIPediatricAsym*_mode-image_xfm.h5')[0]
