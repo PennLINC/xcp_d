@@ -73,8 +73,8 @@ def interpolate_masked_data(img_datax,tmask,TR=1):
         print('more than 50% of volumes are flagged, interpolation will not be done ')
     else:
         # get clea  volume to interpolate over
-        tt= TR*np.arange(0, (datax.shape[1]), 1 )
-        tf=np.append(tt[tmask==0],tt[-1])
+        tt = TR*np.arange(0, (datax.shape[1]), 1 )
+        tf = np.append(tt[tmask==0],tt[-1])
         clean_volume = np.hstack((datax[:,(tmask==0)],np.reshape(datax[:,-1],[datax.shape[0],1])))
         datax_int  = datax
         

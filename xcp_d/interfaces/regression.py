@@ -77,7 +77,7 @@ class regress(SimpleInterface):
         # use afni order  
         orderx =np.floor(1+ data_matrix.shape[1]*self.inputs.tr/150)
         dd_data = demean_detrend_data(data=data_matrix,TR=self.inputs.tr,order=orderx)
-        confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
+        #confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
         # regress the confound regressors from data
         resid_data = linear_regression(data=dd_data, confound=confound)
         
@@ -127,12 +127,11 @@ def demean_detrend_data(data,TR,order):
     '''
     
     # demean the data first, check if it has been demean
-    if abs(np.mean(data)) > 5e-3:
-        mean_data =np.mean(data,axis=1)
-        means_expanded = np.outer(mean_data, np.ones(data.shape[1]))
-        demeand = data - means_expanded
-    else:
-        demeand=data
+    
+    mean_data =np.mean(data,axis=1)
+    means_expanded = np.outer(mean_data, np.ones(data.shape[1]))
+    demeand = data - means_expanded
+    
 
     x = np.linspace(0,(data.shape[1]-1)*TR,num=data.shape[1])
     predicted=np.zeros_like(demeand)
