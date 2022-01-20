@@ -182,6 +182,7 @@ COPY . /src/xcp_d
 RUN  wget -O ${FREESURFER_HOME}/license.txt  https://upenn.box.com/shared/static/ruu7aigti2wzy756a627ej47iw7kqzel.txt  
 
 ARG VERSION=0.0.1
+
 # Force static versioning within container
 RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
     echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in && \

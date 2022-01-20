@@ -1,13 +1,13 @@
 .PHONY: help docker-build
 .DEFAULT: help
 
-tag="aslprep"
+tag="xcp_d"
 
 help:
 	@echo "Premade recipes"
 	@echo
 	@echo "make docker-build [tag=TAG]"
-	@echo "\tBuilds a docker image from source. Defaults to 'xcp_abcd' tag."
+	@echo "\tBuilds a docker image from source. Defaults to 'xcp_d' tag."
 
 
 docker-build:
