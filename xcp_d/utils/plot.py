@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec as mgs
 import seaborn as sns
 from niworkflows.viz.plots import plot_carpet as plot_carpetX
-from traits.traits import Color
-from ..utils import read_ndata
+from ..utils import read_ndata,write_ndata
 from matplotlib.colors import ListedColormap 
 import matplotlib.cm as cm
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from niworkflows.viz.plots import _decimate_data
+import tempfile
 
 
 def plotimage(img,out_file):
@@ -419,6 +419,23 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     else:
         atlaslabels = None    
     # 
+    
+    # the plot going to carpet plot will be rescaled to [-600,600]
+    rawdatax = read_ndata(datafile=rawdata,maskfile=mask,scale=600)
+    resddatax = read_ndata(datafile=resddata,maskfile=mask,scale=600)
+
+    if rawdata.endswith('.nii.gz'):
+        scaledrawdata = tempfile.mkdtemp() + '/filex_raw.nii.gz'
+        scaledresdata = tempfile.mkdtemp() + '/filex_red.nii.gz'
+    else:
+        scaledrawdata = tempfile.mkdtemp() + '/filex_raw.dtseries.nii'
+        scaledresdata = tempfile.mkdtemp() + '/filex_red.dtseries.nii'
+
+    scaledrawdata = write_ndata(data_matrix=rawdatax,template=rawdata,filename=scaledrawdata,mask=mask,tr=tr)
+    scaledresdata = write_ndata(data_matrix=resddatax,template=resddata,filename=scaledresdata,mask=mask,tr=tr)
+
+    
+
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45,60))
@@ -426,7 +443,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
-    plot_carpetX(func=rawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
+    plot_carpetX(func=scaledrawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
     confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
@@ -438,7 +455,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
-    plot_carpetX(func=resddata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
+    plot_carpetX(func=scaledresdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
     confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
@@ -506,21 +523,24 @@ def confoundplotx(
             minim_value.append(min(tseries[c]))
             
             #threshold fd at 0.1,0.2 and 0.5
+            
+           
+            fd05 = tseries[c].copy() 
+            fd05[fd05 < 0.5] = 1
+            fd05x = tseries[c].copy()
+            fd05x[fd05x < 0.5] = 1
+             
+
+            fd02 = tseries[c].copy() 
+            fd02[fd02 < 0.2] = 1
+            fd02x = tseries[c].copy()
+            fd02x[fd02x < 0.2] = 1
+
             fd01 = tseries[c].copy() 
             fd01[fd01 < 0.1] = 1
             fd01x = tseries[c].copy()
             fd01x[fd01x < 0.1] = 1
-            
 
-            fd02 = tseries[c].copy() 
-            fd02[fd02 > 0.2] = 1
-            fd02x = tseries[c].copy()
-            fd02x[fd02x < 0.2] = 1
-
-            fd05 = tseries[c].copy() 
-            fd05[fd05 > 0.5] = 1
-            fd05x = tseries[c].copy()
-            fd05x[fd05x < 0.1] = 1
             
             #plot all of them 
             ax_ts.plot(fd01,'.',color='red',markersize=40)

@@ -8,7 +8,7 @@ import subprocess
 from templateflow.api import get as get_template
 import tempfile 
 
-def read_ndata(datafile,maskfile=None):
+def read_ndata(datafile,maskfile=None,scale=0):
     '''
     read nifti or cifti
     input: 
@@ -26,11 +26,13 @@ def read_ndata(datafile,maskfile=None):
         datax = nb.load(datafile).get_fdata()
         mask = nb.load(maskfile).get_fdata()
         data = datax[mask==1]
+    if scale > 0 :
+        data = scalex(data,-scale,scale)
     return data
     
 
 
-def write_ndata(data_matrix,template,filename,mask=None,tr=1):
+def write_ndata(data_matrix,template,filename,mask=None,tr=1,scale=0):
     '''
     input:
       data matrix : veritices by timepoint 
@@ -41,6 +43,10 @@ def write_ndata(data_matrix,template,filename,mask=None,tr=1):
     '''
     basedir = os.path.split(os.path.abspath(filename))[0]
     fileid = str(os.path.basename(filename))
+
+    if scale > 0: 
+        data_matrix = scalex(data_matrix,-scale,scale)
+
     # write cifti series
     if template.endswith('.dtseries.nii'):
         from nibabel.cifti2 import Cifti2Image
@@ -163,3 +169,14 @@ def despikedatacifti(cifti,tr,basedir):
     run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',fake_cifti1_depike,cifti, 
                                    cifti_despike,'-reset-timepoints',str(tr),str(0)])
     return cifti_despike
+
+
+
+
+
+def scalex(X, x_min, x_max):
+    nom = (X-X.min())*(x_max-x_min)
+    denom = X.max() - X.min()
+    if denom == 0:
+        denom = 1
+    return x_min + nom/denom
