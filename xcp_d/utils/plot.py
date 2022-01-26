@@ -528,18 +528,18 @@ def confoundplotx(
             fd05 = tseries[c].copy() 
             fd05[fd05 < 0.5] = 1
             fd05x = tseries[c].copy()
-            fd05x[fd05x < 0.5] = 1
+            fd05x[fd05x > 0.5] = 0
              
 
             fd02 = tseries[c].copy() 
             fd02[fd02 < 0.2] = 1
             fd02x = tseries[c].copy()
-            fd02x[fd02x < 0.2] = 1
+            fd02x[fd02x > 0.2] = 0
 
             fd01 = tseries[c].copy() 
             fd01[fd01 < 0.1] = 1
             fd01x = tseries[c].copy()
-            fd01x[fd01x < 0.1] = 1
+            fd01x[fd01x > 0.1] = 0
 
             
             #plot all of them 
