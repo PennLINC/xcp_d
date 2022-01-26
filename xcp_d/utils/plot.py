@@ -540,7 +540,9 @@ def confoundplotx(
             fd01[fd01 < 0.1] = 1
             fd01x = tseries[c].copy()
             fd01x[fd01x > 0.1] = 0
+            
 
+            
             
             #plot all of them 
             ax_ts.plot(fd01,'.',color='red',markersize=40)
@@ -549,6 +551,8 @@ def confoundplotx(
             ax_ts.plot(fd02x,'.',color='blue',markersize=40)
             ax_ts.plot(fd05,'.',color='green',markersize=40)
             ax_ts.plot(fd05x,'.',color='green',markersize=40)
+            fd01x[fd01x > 0] = 0
+            ax_ts.plot(fd01x,'.',color='black',markersize=1)
             
             
 
