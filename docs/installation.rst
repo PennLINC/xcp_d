@@ -34,33 +34,20 @@ Container technologies are operating-system-level virtualization methods to run 
 
 Docker (recommended for PC/laptop and commercial cloud)
 -------------------------------------------------------
-xcp_d runs fast and easily with less memory requiremen on 
-PC/laptop with Docker. The instructions (`Docker installation`_) are easier to follow.
-Check  `docker <https://docs.docker.com/get-started/>`_ for more information about
-installtion of docker and how to get started. The list of Docker images that are ready to 
-use is found at the `Docker Hub`_,
+``xcp_d`` runs fast and easily with less memory requirements on a PC/laptop with Docker. Installation documentation is available here: (`Docker installation`_).
 
-
-Singularity (recommended for HPC)
+Singularity (recommended for High Performance Computing clusters)
 ---------------------------------
-
-For security reasons, many :abbr:`HPCs (High-Performance Computing)`
-do not allow Docker containers, but do allow Singularity_ containers.
-The improved security for multi-tenant systems comes at the price of some limitations
-and extra steps necessary for execution.
-
+For security reasons, many :abbr:`HPCs (High-Performance Computing)` do not allow Docker containers, but do allow Singularity_ containers. The improved security for multi-tenant systems comes at the price of some limitations and extra steps necessary for execution.
 
 Manually Prepared Environment (Python 3.8+)
 ===========================================
-
-
 .. warning::
 
    This method is not recommended! Please checkout container alternatives
    in :ref:`run_docker`, and :ref:`run_singularity`.
 
-xcp_d requires some `External Dependencies`_. These tools must be installed 
-and their binaries available in the system's ``$PATH``.
+xcp_d requires some `External Dependencies`_. These tools must be installed  and their binaries available in the system's ``$PATH``.
 
 On a functional Python 3.8 (or above) environment with ``pip`` installed,
 *xcp_d* can be installed using the habitual command ::
