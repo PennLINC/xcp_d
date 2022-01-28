@@ -7,14 +7,13 @@ Usage Notes
 
 XCP-D Execution 
 ------------------
-The *xcp_d* workflow takes  `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
-The outputs  are required to include at least anatomical and functional outputs 
-with at least one preprocessed BOLD image. 
+The *xcp_d* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
+The outputs  are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. 
 
-The exact command to run in *xcp_d* depends on the :ref:`Installation` method and 
-data that needs to be processed
-The basic command of *xcp_d* is as follow
-Example: ::
+The exact command to run in *xcp_d* depends on the :ref:`Installation` method and data that needs to be processed
+
+The basic command of *xcp_d* is:
+::
 
     xcp_d inputpdir output  # for nifti 
 
@@ -25,8 +24,7 @@ The `abcd-hcp-pipeline` and `HCP` outputs are  not in the form of bids derivativ
     xcp_d inputpdir output  --input-type dcan  # for abcd-hcp-pipeline
     xcp_d inputpdir output  --input-type hcp  # for HCP
 
-It is advisable process  abcd-hcp-pipeline outputs by participant by adding `--participant-label` to the command line.
-
+It is advisable process abcd-hcp-pipeline outputs by participant by adding `--participant-label` to the command line.
 
 Command-Line Arguments
 ----------------------
