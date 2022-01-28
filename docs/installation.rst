@@ -1,9 +1,8 @@
 .. include:: links.rst
 
-.. _Installation :
-
+------------
 Installation
-============
+------------
 
 There are two ways to install *XCP-D*:
 
