@@ -10,7 +10,7 @@ There are two ways to get *XCP-D* installed:
   *bare-metal installation*; or
 * using container technologies (RECOMMENDED).
 
-The command-line options are documented in the :ref:`Usage` section.
+The command-line options are documented in the :ref:`_Usage` section.
 After the setup of the environment, ``xcp_d`` can be executed on the 
 command line, processesing fMRIPrep outputs, using the following command-line structure
 ::
