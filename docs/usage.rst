@@ -1,6 +1,6 @@
 .. include:: links.rst
 
-.. _Usage :
+.. _Usage:
 
 Usage Notes
 ===========
