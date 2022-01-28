@@ -3,7 +3,7 @@
 .. _Installation:
 
 Installation
-===========
+============
 
 There are two ways to install *XCP-D*:
 
