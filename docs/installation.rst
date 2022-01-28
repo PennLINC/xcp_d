@@ -4,7 +4,7 @@
 Installation
 ------------
 
-There are two ways to get *xcp_d* installed:
+There are two ways to get *XCP-D* installed:
 
 * within a `Manually Prepared Environment (Python 3.8+)`_,
    or
