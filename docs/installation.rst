@@ -52,10 +52,8 @@ Check your installation with the ``--version`` argument
 External Dependencies
 ---------------------
 
-*XCP-D* is written using Python 3.8 (or above), and is based on
-nipype_.
-
-*XCP-D* requires some other neuroimaging software tools that are
+*XCP-D* is written using Python 3.8 (or above), is based on
+nipype_, and requires some other neuroimaging software tools that are
 not handled by the Python's packaging system (Pypi) used to deploy
 the ``xcp_d`` package:
 
