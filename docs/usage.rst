@@ -10,7 +10,7 @@ XCP-D Execution
 The *xcp_d* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
 The outputs  are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. 
 
-The exact command to run in *xcp_d* depends on the :ref:`Installation` method and data that needs to be processed
+The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed
 
 The basic command of *xcp_d* is:
 ::
