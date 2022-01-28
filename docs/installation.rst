@@ -6,7 +6,7 @@ Installation
 
 There are two ways to get *XCP-D* installed:
 
-* within a `Manually Prepared Environment (Python 3.7+)`, also known as
+* within a `Manually Prepared Environment (Python 3.7+)`_, also known as
   *bare-metal installation*; or
 * using container technologies (RECOMMENDED).
 
