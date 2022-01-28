@@ -18,14 +18,13 @@ section:
 ::
    $ xcp_d <fmri_pdir> <outputdir>  <options>
 
-
 With either singularity or docker, the command-line will be composed of a 
 preamble to configure the container execution followed by the ``xcp_d``
 command-line options.
 
-The command-line structure above is then modified as follows::
-  $<container_command_and_options> <container_image> \
-      <fmri_dir> <outputdir><options>
+The command-line structure above is then modified as follows
+::
+  $<container_command_and_options> <container_image> <fmri_dir> <outputdir><options>
 
 Therefore, once a user specifies the container options and the image to be run
 the command line is the same as for the ordinary installation, but dropping
