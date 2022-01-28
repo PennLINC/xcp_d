@@ -1,11 +1,9 @@
 .. include:: links.rst
 
-.. _Usage :
+.. _Usage:
 
 Usage Notes
 ===========
-
-
 
 xcp_d Execution 
 ------------------
