@@ -36,17 +36,19 @@ Manually Prepared Environment (Python 3.8+)
 ===========================================
 .. warning::
 
-   This method is not recommended! Please checkout container alternatives
+   This method is not recommended! Please use container alternatives
    in :ref:`run_docker`, and :ref:`run_singularity`.
 
-xcp_d requires some `External Dependencies`_. These tools must be installed  and their binaries available in the system's ``$PATH``.
+``xcp_d`` requires some `External Dependencies`_. These tools must be installed and their binaries available in the system's ``$PATH``.
 
 On a functional Python 3.8 (or above) environment with ``pip`` installed,
-*xcp_d* can be installed using the habitual command ::
+``xcp_d`` can be installed using the habitual command
+::
 
     $ pip install git+https://github.com/pennlinc/xcp_d.git
 
-Check your installation with the ``--version`` argument ::
+Check your installation with the ``--version`` argument
+::
 
     $ xcp_d --version
 
@@ -54,12 +56,12 @@ Check your installation with the ``--version`` argument ::
 External Dependencies
 ---------------------
 
-*xcp_d* is written using Python 3.8 (or above), and is based on
+*XCP-D* is written using Python 3.8 (or above), and is based on
 nipype_.
 
-*xcp_d* requires some other neuroimaging software tools that are
+*XCP-D* requires some other neuroimaging software tools that are
 not handled by the Python's packaging system (Pypi) used to deploy
-the ``*xcp_d*`` package:
+the ``xcp_d`` package:
 
 - FSL_ (version 5.0.9 or higher)
 - ANTs_ (version 2.2.0 - or higher)
