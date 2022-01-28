@@ -27,17 +27,9 @@ Therefore, once a user specifies the container options and the image to be run, 
 
 Container technologies: Docker and Singularity
 ==============================================
-Container technologies are operating-system-level virtualization methods to run Linux systems using the host's Linux kernel. This is a lightweight approach to virtualization, as compared to virtual machines.
+*XCP-D* is a *NiPreps* application, and therefore follows some overarching principles of containerized execution drawn from the BIDS-Apps protocols. For detailed information of containerized execution of *NiPreps*, please visit the corresponding `Docker <https://www.nipreps.org/apps/docker/>`__ or `Singularity <https://www.nipreps.org/apps/singularity/>`__ subsections.
+The *NiPreps* portal also containes `extended details of execution with the Docker wrapper <https://www.nipreps.org/apps/docker/#running-a-niprep-with-a-lightweight-wrapper>`__.
 
-
-.. _docker_installation:
-
-Docker (recommended for PC/laptop and commercial cloud)
--------------------------------------------------------
-``xcp_d`` runs fast and easily with less memory requirements on a PC/laptop with Docker. Installation documentation is available here: (`Docker installation`_).
-
-Singularity (recommended for High Performance Computing clusters)
----------------------------------
 For security reasons, many :abbr:`HPCs (High-Performance Computing)` do not allow Docker containers, but do allow Singularity_ containers. The improved security for multi-tenant systems comes at the price of some limitations and extra steps necessary for execution.
 
 Manually Prepared Environment (Python 3.8+)
