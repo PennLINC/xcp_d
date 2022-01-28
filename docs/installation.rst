@@ -15,7 +15,7 @@ section:
 After the setup of the environment, ``xcp_d`` can be executed on the 
 command line, processesing fMRIPrep outputs, using the following command-line structure
 ::
-   $ xcp_d <fmri_pdir> <outputdir>  <options>
+   $ xcp_d <fmri_pdir> <outputdir> <options>
 
 However, we strongly recommend using a container infrastructure. Here,
 the command-line will be composed of a preamble to configure the
