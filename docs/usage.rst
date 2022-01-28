@@ -1,5 +1,7 @@
 .. include:: links.rst
 
+.. _Usage :
+
 Usage Notes
 ===========
 
