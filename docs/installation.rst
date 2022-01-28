@@ -6,16 +6,16 @@ Installation
 
 There are two ways to get *XCP-D* installed:
 
-* within a `Manually Prepared Environment (Python 3.8+)`_,
-   or
-* with container technologies (RECOMMENDED), such as :ref:`run_docker`
-  or :ref:`run_singularity`.
+* within a `Manually Prepared Environment (Python 3.7+)`_, also known as
+  *bare-metal installation*; or
+* using container technologies (RECOMMENDED).
 
 After the setup of the environment, ``xcp_d`` can be executed on the 
 command line. The command-line options are documented in the :ref:`usage`
-section.
+section:
 
-``xcp_d`` processes the fMRIPrep outputs using the following command-line structure::
+``xcp_d`` processes the fMRIPrep outputs using the following command-line structure
+::
    $ xcp_d <fmri_pdir> <outputdir>  <options>
 
 
