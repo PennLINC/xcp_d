@@ -5,7 +5,7 @@
 Usage Notes
 ===========
 
-xcp_d Execution 
+XCP-D Execution 
 ------------------
 The *xcp_d* workflow takes  `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
 The outputs  are required to include at least anatomical and functional outputs 
