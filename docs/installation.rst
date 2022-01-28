@@ -1,6 +1,6 @@
 .. include:: links.rst
 
-.. _Installation :
+.. _Installation:
 
 ------------
 Installation
