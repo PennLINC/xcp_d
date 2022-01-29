@@ -526,23 +526,22 @@ def confoundplotx(
             
            
             fd05 = tseries[c].copy() 
-            fd05[fd05 <= 0.5] = 1
+            fd05[fd05 >= 0.5] = 1
+            fd05[fd05 < 0.5] = np.nan
             fd05x = tseries[c].copy()
-            fd05x[fd05x >= 0.5] = 0
+            fd05x[fd05x < 0.5] = np.nan
              
 
             fd02 = tseries[c].copy() 
-            fd02[fd02 <= 0.2] = 1
+            fd02[fd02 >= 0.2] = 1
+            fd02[fd02 < 0.2] = np.nan
             fd02x = tseries[c].copy()
-            fd02x[fd02x >= 0.2] = 0
+            fd02x[fd02x < 0.2] = np.nan
 
             fd01 = tseries[c].copy() 
-            fd01[fd01 <= 0.1] = 1
+            fd01[fd01 > 0 ] = 1
             fd01x = tseries[c].copy()
-            fd01x[fd01x >= 0.1] = 0
-            
-
-            
+        
             
             #plot all of them 
             ax_ts.plot(fd01,'.',color='red',markersize=40)
@@ -551,11 +550,8 @@ def confoundplotx(
             ax_ts.plot(fd02x,'.',color='blue',markersize=40)
             ax_ts.plot(fd05,'.',color='green',markersize=40)
             ax_ts.plot(fd05x,'.',color='green',markersize=40)
-            fd01x[fd01x >= 0] = 0
-            ax_ts.plot(fd01x,'.',color='black',markersize=1)
             
             
-
             ax_ts.axhline(y=0.1,color='red',linestyle='-',linewidth=5)
             ax_ts.axhline(y=0.2,color='blue',linestyle='-',linewidth=5)
             ax_ts.axhline(y=0.5,color='green',linestyle='-',linewidth=5)
