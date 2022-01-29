@@ -523,39 +523,47 @@ def confoundplotx(
             minim_value.append(min(tseries[c]))
             
             #threshold fd at 0.1,0.2 and 0.5
-            fd05 = tseries[c].copy() 
-            fd05[fd05 >= 0.5 ] = 1
-            fd05[fd05 < 0.5] = np.nan
+            fda = tseries[c].copy()
+            fdx = tseries[c].copy()
+            fdx [fdx>0]=1
+            ax_ts.plot(fda,'.',color='gray',markersize=40)
+            ax_ts.plot(fdx,'.',color='gray',markersize=40)
+            ax_ts.axhline(y=0.05,color='gray',linestyle='-',linewidth=5)
 
-            fd05x = tseries[c].copy()
-            fd05x[fd05x < 0.5] = np.nan
-             
+          
+            fda[fda < 0.05] = np.nan 
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.05] = 1
+            fdx[fdx < 0.05] = np.nan 
+            ax_ts.plot(fda,'.',color='blue',markersize=40)
+            ax_ts.plot(fdx,'.',color='blue',markersize=40)
+            ax_ts.axhline(y=0.1,color='blue',linestyle='-',linewidth=5)
 
-            fd02 = tseries[c].copy() 
-            fd02[fd02 >= 0.2] = 1
-            fd02[fd02 < 0.2] = np.nan
-            fd02x = tseries[c].copy()
-            fd02x[fd02x < 0.2] = np.nan
+            fda[fda < 0.1 ] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.1] = 1
+            fdx[fdx < 0.1] = np.nan 
+            ax_ts.plot(fda,'.',color='green',markersize=40)
+            ax_ts.plot(fdx,'.',color='green',markersize=40)
+            ax_ts.axhline(y=0.2,color='green',linestyle='-',linewidth=5)
 
-            fd01 = tseries[c].copy() 
-            fd01[fd01 > 0] = 1
-            fd01x = tseries[c].copy()
-            
+            fda[fda < 0.2 ] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.2] = 1
+            fdx[fdx < 0.2] = np.nan 
+            ax_ts.plot(fda,'.',color='m',markersize=40)
+            ax_ts.plot(fdx,'.',color='m',markersize=40)
+            ax_ts.axhline(y=0.5,color='m',linestyle='-',linewidth=5)
+
+            fda[fda < 0.5 ] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.5] = 1
+            fdx[fdx < 0.5] = np.nan 
+            ax_ts.plot(fda,'.',color='r',markersize=40)
+            ax_ts.plot(fdx,'.',color='r',markersize=40)
+
 
             #plot all of them 
-            ax_ts.plot(fd01,'.',color='red',markersize=40)
-            ax_ts.plot(fd01x,'.',color='red',markersize=40)
-            ax_ts.plot(fd02,'.',color='blue',markersize=40)
-            ax_ts.plot(fd02x,'.',color='blue',markersize=40)
-            ax_ts.plot(fd05,'.',color='green',markersize=40)
-            ax_ts.plot(fd05x,'.',color='green',markersize=40)
-            
-            
-            ax_ts.axhline(y=0.1,color='red',linestyle='-',linewidth=5)
-            ax_ts.axhline(y=0.2,color='blue',linestyle='-',linewidth=5)
-            ax_ts.axhline(y=0.5,color='green',linestyle='-',linewidth=5)
-
-            #ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=50)
             #ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=50)
             #ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=50)
     else:
