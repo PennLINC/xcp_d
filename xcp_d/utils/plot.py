@@ -764,8 +764,8 @@ def plot_text(imgdata,gs_ts):
     from ..utils.write_save import scalex    
     data = scalex(np.random.rand(40),-600,600)
     ax2 = plt.subplot(gs[1])
-    ax2.scatter(data,data,cmap="gray",c=data)
-    cbar = plt.colorbar( orientation="horizontal",shrink=100)
+    PCM = ax2.scatter(data,data,cmap="gray",c=data)
+    cbar = plt.colorbar(PCM,orientation="horizontal",ax =ax2,pad=2,fraction=0.7,shrink=150)
     for t in cbar.ax.get_xticklabels():
         t.set_fontsize(30)
 
@@ -774,3 +774,4 @@ def plot_text(imgdata,gs_ts):
     plt.axis('off')
     
     return ax2, gs
+
