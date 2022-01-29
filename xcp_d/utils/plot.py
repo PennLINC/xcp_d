@@ -529,14 +529,14 @@ def confoundplotx(
             fd05[fd05 >= 0.5] = 1
             fd05[fd05 < 0.5] = np.nan
             fd05x = tseries[c].copy()
-            fd05x[fd05x < 0.5] = np.nan
+            fd05x[fd05x < 0.2] = np.nan
              
 
             fd02 = tseries[c].copy() 
             fd02[fd02 >= 0.2] = 1
             fd02[fd02 < 0.2] = np.nan
             fd02x = tseries[c].copy()
-            fd02x[fd02x < 0.2] = np.nan
+            fd02x[fd02x < 0.1] = np.nan
 
             fd01 = tseries[c].copy() 
             fd01[fd01 > 0 ] = 1
@@ -755,6 +755,7 @@ def plot_text(imgdata,gs_ts):
     text_kwargs = dict(ha='center', va='center', fontsize=50)
     
     ax2 = plt.subplot(gs[1])
+
     ax2.text(0.5, 0.1, label, **text_kwargs)
     plt.axis('off')
     
