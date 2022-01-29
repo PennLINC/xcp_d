@@ -439,7 +439,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
+    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.4,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
@@ -451,7 +451,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.clf()
     
     figy = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
+    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.4,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
