@@ -556,9 +556,9 @@ def confoundplotx(
             ax_ts.axhline(y=0.2,color='blue',linestyle='-',linewidth=5)
             ax_ts.axhline(y=0.5,color='green',linestyle='-',linewidth=5)
 
-            ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=50)
-            ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=50)
-            ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=50)
+            #ax_ts.text(len(tseries[c])/4,0.1, str(len(fd01[fd01<1])) + ' frames',color='red',fontsize=50)
+            #ax_ts.text(len(tseries[c])/4,0.2, str(len(fd02[fd02<1])) + ' frames',color='blue',fontsize=50)
+            #ax_ts.text(len(tseries[c])/4,0.5, str(len(fd05[fd05<1])) + ' frames',color='green',fontsize=50)
     else:
         for c in columns:
             ax_ts.plot(tseries[c],label=c, linewidth=5)
@@ -739,6 +739,7 @@ def plot_carpetx(
 
     return (ax0, ax1), gs
 
+
 def plot_text(imgdata,gs_ts):
     """
     
@@ -746,17 +747,23 @@ def plot_text(imgdata,gs_ts):
     gs = mgs.GridSpecFromSubplotSpec(
         1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
     )
-    tm = nb.load(imgdata).shape[-1]
+    #tm = nb.load(imgdata).shape[-1]
     if imgdata.endswith('nii.gz'):
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
     else:
-        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
+        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum" 
     
     text_kwargs = dict(ha='center', va='center', fontsize=50)
-    
+    from ..utils.write_save import scalex    
+    data = scalex(np.random.rand(40),-600,600)
     ax2 = plt.subplot(gs[1])
+    ax2.scatter(data,data,cmap="gray",c=data)
+    cbar = plt.colorbar( orientation="horizontal",shrink=100)
+    for t in cbar.ax.get_xticklabels():
+        t.set_fontsize(30)
 
-    ax2.text(0.5, 0.1, label, **text_kwargs)
+    ax2.set_ylim([-720, -650])
+    ax2.text(0, -700, label, **text_kwargs)
     plt.axis('off')
     
     return ax2, gs
