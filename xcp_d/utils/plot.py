@@ -439,24 +439,26 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.4,2.5,1])
+    grid = mgs.GridSpec(6, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,0.2,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbbf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
-    plot_carpetX(func=scaledrawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
+    display_cb(gs_ts=grid[3])
+    plot_carpetX(func=scaledrawdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[4],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[5],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figx.savefig(filenamebf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     plt.cla()
     plt.clf()
     
     figy = plt.figure(constrained_layout=True, figsize=(45,60))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.4,2.5,1])
+    grid = mgs.GridSpec(6, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,0.2,2.5,1])
     confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
     confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
     plot_text(imgdata=rawdata,gs_ts=grid[2])
-    plot_carpetX(func=scaledresdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
+    display_cb(gs_ts=grid[3])
+    plot_carpetX(func=scaledresdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[4],legend=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[5],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     return filenamebf,filenameaf
@@ -760,18 +762,31 @@ def plot_text(imgdata,gs_ts):
     else:
         label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum" 
     
-    text_kwargs = dict(ha='center', va='center', fontsize=50)
-    from ..utils.write_save import scalex    
-    data = scalex(np.random.rand(40),-600,600)
+    text_kwargs = dict(ha='center', va='center', fontsize=50)   
     ax2 = plt.subplot(gs[1])
-    PCM = ax2.scatter(data,data,cmap="gray",c=data)
-    cbar = plt.colorbar(PCM,orientation="horizontal",ax =ax2,pad=2,fraction=0.7,shrink=150)
-    for t in cbar.ax.get_xticklabels():
-        t.set_fontsize(30)
-
-    ax2.set_ylim([-720, -650])
-    ax2.text(0, -700, label, **text_kwargs)
+    ax2.text(0.5,1, label, **text_kwargs)
     plt.axis('off')
     
     return ax2, gs
 
+def display_cb(gs_ts):
+    """
+    
+    """
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
+    )
+    #tm = nb.load(imgdata).shape[-1]
+
+    from ..utils.write_save import scalex
+    data = scalex(np.random.rand(40),-600,600)
+    ax2 = plt.subplot(gs[1])
+    PCM = ax2.scatter(data,data,cmap="gray",c=data)
+    cbar = plt.colorbar(PCM,orientation="horizontal",shrink=1,fraction=12)
+    for t in cbar.ax.get_xticklabels():
+        t.set_fontsize(20)
+
+    ax2.set_ylim([-700, -650])
+    plt.axis('off')
+    
+    return ax2, gs
