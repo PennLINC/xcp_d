@@ -1,9 +1,8 @@
 .. include:: links.rst
 
-.. _Usage:
-
+------------
 Running XCP-D
-===========
+------------
 
 XCP-D Execution 
 ------------------
@@ -16,6 +15,8 @@ The exact command to run in *xcp_d* depends on the Installation_ method and data
 
 However, we strongly recommend using `Container Technologies: Docker and Singularity`_. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
+Docker
+------------------
 If you are computing locally, we recommend Docker
 ::
    $ docker run --rm -it \
@@ -27,6 +28,8 @@ If you are computing locally, we recommend Docker
    /data/fmriprep /out \
    --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
+Singularity
+------------------
 If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity
 ::
 
@@ -51,8 +54,6 @@ argument (``--home``) as follows: ::
 
 
 Therefore, once a user specifies the container options and the image to be run, the command line options are the same as the *bare-metal* installation.
-
-
 
 Command-Line Arguments
 ----------------------
