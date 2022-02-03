@@ -4,7 +4,7 @@
 .. image:: https://zenodo.org/badge/309485627.svg
    :target: https://zenodo.org/badge/latestdoi/309485627
 
-This pipeline is developed by the `Satterthwaite lab at the University of Pennslyvania <https://www.satterthwaitelab.com/>`_ (**XCP**\; eXtensible Connectivity Pipeline)  and `Developmental Cognition and Neuroimaging lab at the University of Minnesota  <https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/>`_ (**-D**\CAN) for open-source software distribution.
+This fMRI post-processing and noise regression pipeline is developed by the `Satterthwaite lab at the University of Pennslyvania <https://www.satterthwaitelab.com/>`_ (**XCP**\; eXtensible Connectivity Pipeline)  and `Developmental Cognition and Neuroimaging lab at the University of Minnesota  <https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/>`_ (**-D**\CAN) for open-source software distribution.
 
 About
 ------
