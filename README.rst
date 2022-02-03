@@ -1,4 +1,4 @@
-*XCP-D*: A Robust Postprocessing Pipeline of  fMRI data
+*XCP-D* : A Robust Postprocessing Pipeline of  fMRI data
 ===========================================================
 
 .. image:: https://zenodo.org/badge/309485627.svg
