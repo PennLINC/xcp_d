@@ -760,14 +760,16 @@ def plot_text(imgdata,gs_ts):
     if imgdata.endswith('nii.gz'):
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
     else:
-        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum" 
+        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
     
-    text_kwargs = dict(ha='center', va='center', fontsize=50)   
+    text_kwargs = dict(ha='center', va='center', fontsize=50)
+    
     ax2 = plt.subplot(gs[1])
-    ax2.text(0.5,1, label, **text_kwargs)
+    ax2.text(0.5, 0.1, label, **text_kwargs)
     plt.axis('off')
     
     return ax2, gs
+
 
 def display_cb(gs_ts):
     """
