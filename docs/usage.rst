@@ -4,11 +4,12 @@
 Running XCP-D
 ------------
 
-XCP-D Execution 
+Inputs
 ------------------
-The *xcp_d* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
-The outputs  are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. 
+The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives. The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. In these examples, we use an fmriprep output directory.
 
+General Command Structure
+------------------
 The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* :ref:`Manually Prepared Environment (Python 3.8+)` installation, as the command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
 ::
    $ xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
