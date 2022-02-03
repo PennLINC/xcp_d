@@ -10,20 +10,6 @@ There are two ways to install *XCP-D*:
   *bare-metal installation*; or
 * using container technologies (RECOMMENDED).
 
-The command-line options are documented in the :ref:`Usage` section.
-After the setup of the environment, ``xcp_d`` can be executed on the 
-command line, processesing fMRIPrep outputs, using the following command-line structure
-::
-   $ xcp_d <fmri_pdir> <outputdir> <options>
-
-However, we strongly recommend using a container infrastructure. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
-
-The command-line structure above is then modified as follows:
-::
-  $<container_command_and_options> <xcp_d_container_image> <fmri_dir> <outputdir> <options>
-
-Therefore, once a user specifies the container options and the image to be run, the command line is the same as for the ordinary installation, but dropping the ``xcp_d`` executable name.
-
 Container technologies: Docker and Singularity
 ==============================================
 *XCP-D* is ideally run via a Docker or Singularity container. If you are running *XCP-D* locally, we suggest Docker_. However, for security reasons, many :abbr:`HPCs (High-Performance Computing)` do not allow Docker containers, but do allow Singularity_ containers. The improved security for multi-tenant systems comes at the price of some limitations and extra steps necessary for execution.
