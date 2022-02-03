@@ -20,6 +20,8 @@ from nipype.interfaces import utility as niu
 from nipype import MapNode as MapNode
 from ..interfaces import BrainPlotx, RibbontoStatmap
 from ..utils import bid_derivative
+from nipype.interfaces.afni  import Unifize
+
 
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_d'
@@ -128,17 +130,19 @@ def init_anatomical_wf(
                shutil.copy(ss,anatdir)
     
           ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
+          3
          
           brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
-          
+          enhancet1w_wf = pe.Node(Unifize(outputtype="NIFTI_GZ"),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
           ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
                   name='brainspriteplot', run_without_submitting=True)
 
           workflow.connect([
-              
+            
                (ribbon2statmap_wf,brainspritex_wf,[('out_file','in_file')]),
-                (inputnode,brainspritex_wf,[('t1w','template')]),
+                (inputnode,enhancet1w_wf,[('t1w','in_file')]),
+                (enhancet1w_wf,brainspritex_wf,[('out_file','template')]),
                (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
                (inputnode,ds_brainspriteplot_wf,[('t1w','source_file')]),
           ])
@@ -322,6 +326,7 @@ def init_anatomical_wf(
                ])
      
           else:
+               enhancet1w_wf = pe.Node(Unifize(outputtype="NIFTI_GZ"),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
                brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
                ds_brainspriteplot_wf = pe.Node(
@@ -329,7 +334,8 @@ def init_anatomical_wf(
                   name='brainspriteplot')
 
                workflow.connect([
-                (inputnode,brainspritex_wf,[('t1w','template')]),
+                (inputnode,enhancet1w_wf,[('t1w','in_file')]),
+                (enhancet1w_wf,brainspritex_wf,[('out_file','template')]),
                 (inputnode,ribbon2statmap_wf,[('t1seg','ribbon')]),
                 (ribbon2statmap_wf,brainspritex_wf,[('out_file','in_file')]),
                 (brainspritex_wf,ds_brainspriteplot_wf,[('out_html','in_file')]),
