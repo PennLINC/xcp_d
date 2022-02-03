@@ -10,33 +10,50 @@ XCP-D Execution
 The *xcp_d* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
 The outputs  are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. 
 
-The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed
-
-Using the *bare-metal* installation, ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure
+The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* `Manually Prepared Environment (Python 3.8+)`_ installation, as teh command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure
 ::
-   $ xcp_d <fmri_pdir> <outputdir> <options>
+   $ xcp_d <fmriprep_dir> <outputdir> <xcp_d_options>
 
-However, we strongly recommend using a container infrastructure. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
+However, we strongly recommend using `Container Technologies: Docker and Singularity`_. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
 The command-line structure above is then modified as follows:
 ::
-  $<container_command_and_options> <xcp_d_container_image> <fmri_dir> <outputdir> <options>
 
-Therefore, once a user specifies the container options and the image to be run, the command line is the same as for the ordinary installation, but dropping the ``xcp_d`` executable name.
+$ docker run --rm -it \
+-v /fmriprepdata:/data/ \
+-v /tmp/wkdir:/wkdir \
+-v /tmp:/scrth \
+-v /tmp/xcpd_ciftiF/:/out \
+pennlinc/xcp_d:latest \
+/data/fmriprep /out \
+--cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
-The basic command of *xcp_d* is:
+If the data to be preprocessed is also on the HPC, we recommend Singularity
 ::
 
-    xcp_d inputpdir output  # for nifti 
+    $ singularity run --cleanenv xcp_d.simg \
+        path/to/data/fmri_dir  path/to/output/dir \
+        --participant-label label
 
-    xcp_d inputpdir output  --cifti  # for cifti
 
-The `abcd-hcp-pipeline` and `HCP` outputs are  not in the form of bids derivatives and required to be specified in the command line :: 
+**Relevant aspects of the** ``$HOME`` **directory within the container**.
+By default, Singularity will bind the user's ``$HOME`` directory on the host
+into the ``/home/$USER`` directory (or equivalent) in the container.
+Most of the time, it will also redefine the ``$HOME`` environment variable and
+update it to point to the corresponding mount point in ``/home/$USER``.
+However, these defaults can be overwritten in your system.
+It is recommended that you check your settings with your system's administrator.
+If your Singularity installation allows it, you can work around the ``$HOME``
+specification, combining the bind mounts argument (``-B``) with the home overwrite
+argument (``--home``) as follows: ::
 
-    xcp_d inputpdir output  --input-type dcan  # for abcd-hcp-pipeline
-    xcp_d inputpdir output  --input-type hcp  # for HCP
+    $ singularity run -B $HOME:/home/xcp --home /home/xcp \
+          --cleanenv xcp_d.simg <xcp_d arguments>
 
-It is advisable process abcd-hcp-pipeline outputs by participant by adding `--participant-label` to the command line.
+
+Therefore, once a user specifies the container options and the image to be run, the command line options are the same as the *bare-metal* installation.
+
+
 
 Command-Line Arguments
 ----------------------
