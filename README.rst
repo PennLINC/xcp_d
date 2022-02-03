@@ -13,7 +13,9 @@ open-source software distribution.
 
 About
 ------
-This pipeline is a robust postprocessing pipeline for  fMRI data. It is desined to denoised the preprocessed fMRI data from 
+XCP-D paves the final section of the reproducible and scalable route from the MRI scanner to functional connectivity data in the hands of neuroscientists. We developed XCP-D to extend the BIDS and NiPrep apparatus to the point where data is most commonly consumed and analyzed by neuroscientists studying functional connectivity. Thus, with the development of XCP-D, data can be automatically preprocessed and analyzed in BIDS format, using NiPrep-style containerized code, all the way from the from the scanner to functional connectivity matrices.
+
+XCP-D picks up right where _fMRIPrep ends, directly consuming the outputs of fMRIPrep. XCP-D leverages the BIDS and NiPrep frameworks to automatically generate denoised BOLD images, parcellated time series, functional connectivity matrices, and quality assessment reports. 
 
 1. `fMRIprep <https://fmriprep.org>`_
 2. `NiBabies <https://nibabies.readthedocs.io>`_
