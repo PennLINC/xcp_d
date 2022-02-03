@@ -10,13 +10,13 @@ XCP-D Execution
 The *xcp_d* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives.  
 The outputs  are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. 
 
-The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* `Manually Prepared Environment (Python 3.8+)`_ installation, as teh command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure
+The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* `Manually Prepared Environment (Python 3.8+)`_ installation, as the command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
 ::
-   $ xcp_d <fmriprep_dir> <outputdir> <xcp_d_options>
+   $ xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using `Container Technologies: Docker and Singularity`_. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
-The command-line structure above is then modified as follows:
+If you are computing locally, we recommend Docker
 ::
    $ docker run --rm -it \
    -v /fmriprepdata:/data/ \
@@ -27,12 +27,12 @@ The command-line structure above is then modified as follows:
    /data/fmriprep /out \
    --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
-If the data to be preprocessed is also on the HPC, we recommend Singularity
+If you are computiong on a HPC, we recommend Singularity
 ::
 
     $ singularity run --cleanenv xcp_d.simg \
-        path/to/data/fmri_dir  path/to/output/dir \
-        --participant-label label
+      path/to/data/fmri_dir  path/to/output/dir \
+      --participant-label label
 
 
 **Relevant aspects of the** ``$HOME`` **directory within the container**.
