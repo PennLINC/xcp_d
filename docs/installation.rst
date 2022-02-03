@@ -15,7 +15,7 @@ Container technologies: Docker and Singularity
 *XCP-D* is ideally run via a Docker or Singularity container. If you are running *XCP-D* locally, we suggest Docker_. However, for security reasons, many :abbr:`HPCs (High-Performance Computing)` do not allow Docker containers, but do allow Singularity_ containers. The improved security for multi-tenant systems comes at the price of some limitations and extra steps necessary for execution.
 
 Docker
---------------------------------------------------------------
+---------
 For every new version of *xcp_d* that is released, a corresponding Docker image is generated.
 
 In order to run *xcp_d* via Docker images, the Docker Engine must be installed.
@@ -29,7 +29,7 @@ The image can also be found here: https://registry.hub.docker.com/r/pennlinc/xcp
 *xcp_d* can be run interacting directly with the Docker Engine via the `docker run` command, or through a lightweight wrapper that was created for convenience.
 
 Singularity
------------------------------
+-------------
 **Singularity version >= 2.5**:
 If the version of Singularity installed on your :abbr:`HPC (High-Performance Computing)`
 system is modern enough, you can create a Singularity image directly on the system
