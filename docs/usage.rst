@@ -12,6 +12,18 @@ The outputs  are required to include at least anatomical and functional outputs 
 
 The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed
 
+Using the *bare-metal* installation, ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure
+::
+   $ xcp_d <fmri_pdir> <outputdir> <options>
+
+However, we strongly recommend using a container infrastructure. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
+
+The command-line structure above is then modified as follows:
+::
+  $<container_command_and_options> <xcp_d_container_image> <fmri_dir> <outputdir> <options>
+
+Therefore, once a user specifies the container options and the image to be run, the command line is the same as for the ordinary installation, but dropping the ``xcp_d`` executable name.
+
 The basic command of *xcp_d* is:
 ::
 
