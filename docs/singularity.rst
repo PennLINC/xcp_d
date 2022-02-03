@@ -5,22 +5,8 @@
 
 Running *xcp_d* via Singularity containers
 =============================================
-Preparing a Singularity Image
------------------------------
-**Singularity version >= 2.5**:
-If the version of Singularity installed on your :abbr:`HPC (High-Performance Computing)`
-system is modern enough, you can create a Singularity image directly on the system
-using the following command: ::
 
-    $ singularity build xcp_d-<version>.simg docker://pennlinc/xcp_d:<version>
-
-where ``<version>`` should be replaced with the desired version of *xcp-d* that you
-want to download.
-
-Running a Singularity Image
----------------------------
-If the data to be preprocessed is also on the HPC or a personal computer,
-you are ready to run *xcp_d*. ::
+If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run *xcp_d*. ::
 
     $ singularity run --cleanenv xcp_d.simg \
         path/to/data/fmri_dir  path/to/output/dir \
