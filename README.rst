@@ -24,5 +24,5 @@ This pipeline is a robust postprocessing pipeline for  fMRI data. It is desined 
 See the `documentation <https://xcp-abcd.readthedocs.io/en>`_ for more details.
 
 
-.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/image.png
+.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/schematic_land-01.png
 
