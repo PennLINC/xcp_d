@@ -27,7 +27,7 @@ If you are computing locally, we recommend Docker
    /data/fmriprep /out \
    --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
-If you are computiong on a HPC, we recommend Singularity
+If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity
 ::
 
     $ singularity run --cleanenv xcp_d.simg \
