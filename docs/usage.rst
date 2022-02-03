@@ -18,15 +18,14 @@ However, we strongly recommend using `Container Technologies: Docker and Singula
 
 The command-line structure above is then modified as follows:
 ::
-
-$ docker run --rm -it \
--v /fmriprepdata:/data/ \
--v /tmp/wkdir:/wkdir \
--v /tmp:/scrth \
--v /tmp/xcpd_ciftiF/:/out \
-pennlinc/xcp_d:latest \
-/data/fmriprep /out \
---cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   $ docker run --rm -it \
+   -v /fmriprepdata:/data/ \
+   -v /tmp/wkdir:/wkdir \
+   -v /tmp:/scrth \
+   -v /tmp/xcpd_ciftiF/:/out \
+   pennlinc/xcp_d:latest \
+   /data/fmriprep /out \
+   --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 If the data to be preprocessed is also on the HPC, we recommend Singularity
 ::
