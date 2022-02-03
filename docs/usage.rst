@@ -2,7 +2,7 @@
 
 .. _Usage:
 
-Usage Notes
+Running XCP-D
 ===========
 
 XCP-D Execution 
