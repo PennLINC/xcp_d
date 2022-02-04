@@ -130,10 +130,11 @@ def init_anatomical_wf(
                shutil.copy(ss,anatdir)
     
           ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
-          3
+          
          
           brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
-          enhancet1w_wf = pe.Node(Unifize(outputtype="NIFTI_GZ"),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
+          from ..utils import ContrastEnhancement
+          enhancet1w_wf = pe.Node(ContrastEnhancement(),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
           ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(base_directory=output_dir,check_hdr=False,dismiss_entities=['desc'], desc='brainplot', datatype="figures"),
                   name='brainspriteplot', run_without_submitting=True)
@@ -306,8 +307,8 @@ def init_anatomical_wf(
                if not Path(t1w_mgz).is_file():
                     t1w_mgz  = str(freesufer_path) + '/'+subid+'/mri/norm.mgz'
 
-
-               enhancet1w_wf = pe.Node(Unifize(in_file=t1w_mgz,outputtype="NIFTI_GZ"),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
+               from ..utils import ContrastEnhancement
+               enhancet1w_wf = pe.Node(ContrastEnhancement(in_file=t1w_mgz),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
 
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
      
@@ -329,7 +330,8 @@ def init_anatomical_wf(
                ])
      
           else:
-               enhancet1w_wf = pe.Node(Unifize(outputtype="NIFTI_GZ"),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
+               from ..utils import ContrastEnhancement
+               enhancet1w_wf = pe.Node(ContrastEnhancement(),name='enhancet1w',mem_gb=mem_gb,n_procs=omp_nthreads)
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
                brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
                ds_brainspriteplot_wf = pe.Node(
@@ -361,3 +363,6 @@ def _getsesid(filename):
                break 
 
      return ses_id
+
+
+

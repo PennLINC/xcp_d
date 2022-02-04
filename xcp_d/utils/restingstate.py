@@ -2,7 +2,7 @@
 
 from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.afni.preprocess import DespikeInputSpec,AFNICommandOutputSpec
-from nipype.interfaces.base import SimpleInterface
+from nipype.interfaces.base import SimpleInterface, CommandLineInputSpec,TraitedSpec, File, traits
 import os, shutil
 
 
@@ -64,3 +64,39 @@ class DespikePatch(SimpleInterface):
         self._results['out_file'] = outfile
 
 
+
+class ConstrastEnahncementInput(CommandLineInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr=" -input %s ",
+        desc="The input file ",
+    )
+    out_file = File(
+        mandatory=True,
+        argstr="-prefix %s ",
+        desc="out file",
+    )
+
+class ConstrastEnahncementOutput(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="out file",
+    )
+
+
+class ContrastEnhancement(SimpleInterface):
+    """contrast enhancement with afni
+    3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
+    """
+
+    _cmd = "3dUnifize"
+    input_spec = ConstrastEnahncementInput
+    output_spec = ConstrastEnahncementOutput
+
+
+    def _run_interface(self, runtime):
+        outfile = runtime.cwd + "/3dunfixed.nii.gz"
+        shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
+        os.system("3dUnifize  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")
+        self._results['out_file'] = outfile
