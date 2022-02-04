@@ -67,20 +67,15 @@ class DespikePatch(SimpleInterface):
 
 class ConstrastEnahncementInput(CommandLineInputSpec):
     in_file = File(
-        exists=True,
         mandatory=True,
-        argstr=" -input %s ",
         desc="The input file ",
     )
     out_file = File(
-        mandatory=True,
-        argstr="-prefix %s ",
         desc="out file",
     )
 
 class ConstrastEnahncementOutput(TraitedSpec):
     out_file = File(
-        exists=True,
         desc="out file",
     )
 
