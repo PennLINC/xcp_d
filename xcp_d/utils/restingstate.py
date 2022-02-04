@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
+from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec,UnifizeOutputSpec,UnifizeInputSpec 
 from nipype.interfaces.afni.preprocess import DespikeInputSpec,AFNICommandOutputSpec
-from nipype.interfaces.base import SimpleInterface, CommandLineInputSpec,TraitedSpec, File, traits
+from nipype.interfaces.base import SimpleInterface
 import os, shutil
 
 
@@ -65,29 +65,14 @@ class DespikePatch(SimpleInterface):
 
 
 
-class ConstrastEnahncementInput(CommandLineInputSpec):
-    in_file = File(
-        mandatory=True,
-        desc="The input file ",
-    )
-    out_file = File(
-        desc="out file",
-    )
-
-class ConstrastEnahncementOutput(TraitedSpec):
-    out_file = File(
-        desc="out file",
-    )
-
-
 class ContrastEnhancement(SimpleInterface):
     """contrast enhancement with afni
     3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
     """
 
     _cmd = "3dUnifize"
-    input_spec = ConstrastEnahncementInput
-    output_spec = ConstrastEnahncementOutput
+    input_spec = UnifizeInputSpec
+    output_spec = UnifizeOutputSpec
 
 
     def _run_interface(self, runtime):
