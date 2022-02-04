@@ -8,7 +8,7 @@ Inputs
 ===============
 The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives. The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. In these examples, we use an fmriprep output directory.
 
-General Command Structure
+Command Structure
 ===============
 The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* :ref:`Manually Prepared Environment (Python 3.8+)` installation, as the command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
 ::
@@ -17,7 +17,7 @@ The exact command to run in *xcp_d* depends on the Installation_ method and data
 However, we strongly recommend using :ref:`Installation: Container Technologies`. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
 Docker
-===============
+--------------------
 If you are computing locally, we recommend Docker. See :ref:`Installation:Docker Installation` for installation questions.
 ::
    $ docker run --rm -it \
@@ -30,7 +30,7 @@ If you are computing locally, we recommend Docker. See :ref:`Installation:Docker
    --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 Singularity
-===============
+--------------------
 If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity. See :ref:`Installation:Singularity Installation` for installation questions.
 ::
 
