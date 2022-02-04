@@ -14,11 +14,11 @@ The exact command to run in *xcp_d* depends on the Installation_ method and data
 ::
    $ xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
-However, we strongly recommend using :ref:`container-tech`. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
+However, we strongly recommend using :any:`container-tech`. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
 Docker
 ===============
-If you are computing locally, we recommend Docker. See :ref:`docker-install` for installation questions.
+If you are computing locally, we recommend Docker. See :any:`docker-install` for installation questions.
 ::
    $ docker run --rm -it \
    -v /fmriprepdata:/data/ \
@@ -31,7 +31,7 @@ If you are computing locally, we recommend Docker. See :ref:`docker-install` for
 
 Singularity
 ===============
-If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity. See :ref:`singularity-install` for installation questions.
+If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity. See :any:`singularity-install` for installation questions.
 ::
 
     $ singularity run --cleanenv xcp_d.simg \
