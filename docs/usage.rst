@@ -1,11 +1,11 @@
 .. include:: links.rst
 
-------------
+===============
 Running XCP-D
-------------
+===============
 
 Inputs
-------------------
+===============
 The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `abcd-hcp-pipeline` and `HCP` outputs in the form of BIDS derivatives. The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. In these examples, we use an fmriprep output directory.
 
 General Command Structure
@@ -17,7 +17,7 @@ The exact command to run in *xcp_d* depends on the Installation_ method and data
 However, we strongly recommend using :ref:`container-tech`. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
 Docker
-------------------
+===============
 If you are computing locally, we recommend Docker. See :ref:`docker-install` for installation questions.
 ::
    $ docker run --rm -it \
@@ -30,7 +30,7 @@ If you are computing locally, we recommend Docker. See :ref:`docker-install` for
    --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 Singularity
-------------------
+===============
 If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity. See :ref:`singularity-install` for installation questions.
 ::
 
@@ -57,7 +57,7 @@ argument (``--home``) as follows: ::
 Therefore, once a user specifies the container options and the image to be run, the command line options are the same as the *bare-metal* installation.
 
 Command-Line Arguments
-----------------------
+===============
 .. argparse::
    :ref: xcp_d.cli.run.get_parser
    :prog: xcp_d
@@ -65,7 +65,7 @@ Command-Line Arguments
    :nodefaultconst:
 
 Troubleshooting
----------------
+===============
 Logs and crashfiles are outputted into the
 ``<output dir>/xcp_d/sub-<participant_label>/log`` directory.
 Information on how to customize and understand these files can be found on the
