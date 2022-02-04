@@ -1,8 +1,8 @@
 .. include:: links.rst
 
-------------
+===============
 Installation
-------------
+===============
 
 There are two ways to install *XCP-D*:
 
@@ -16,7 +16,7 @@ Container Technologies: Docker and Singularity
 
 .. _docker-install:
 Docker Installation
----------
+--------------------
 For every new version of *xcp_d* that is released, a corresponding Docker image is generated.
 
 In order to run *xcp_d* via Docker images, the Docker Engine must be installed.
@@ -31,7 +31,7 @@ The image can also be found here: https://registry.hub.docker.com/r/pennlinc/xcp
 
 .. _singularity-install:
 Singularity Installation
--------------
+-------------------------
 **Singularity version >= 2.5**:
 If the version of Singularity installed on your :abbr:`HPC (High-Performance Computing)` system is modern enough, you can create a Singularity image directly on the system using the following command: ::
 
