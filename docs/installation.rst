@@ -6,27 +6,38 @@ Installation
 
 There are two ways to install *XCP-D*:
 
-* within a `Manually Prepared Environment (Python 3.8+)`_, also known as
-  *bare-metal installation*; or
-* using container technologies (RECOMMENDED).
+* using `Container Technologies: Docker and Singularity`_ (RECOMMENDED)
+* within a `Manually Prepared Environment (Python 3.8+)`_, also known as *bare-metal installation*
 
-The command-line options are documented in the :ref:`Usage` section.
-After the setup of the environment, ``xcp_d`` can be executed on the 
-command line, processesing fMRIPrep outputs, using the following command-line structure
-::
-   $ xcp_d <fmri_pdir> <outputdir> <options>
-
-However, we strongly recommend using a container infrastructure. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
-
-The command-line structure above is then modified as follows:
-::
-  $<container_command_and_options> <xcp_d_container_image> <fmri_dir> <outputdir> <options>
-
-Therefore, once a user specifies the container options and the image to be run, the command line is the same as for the ordinary installation, but dropping the ``xcp_d`` executable name.
-
-Container technologies: Docker and Singularity
+.. _container-tech:
+Container Technologies: Docker and Singularity
 ==============================================
 *XCP-D* is ideally run via a Docker or Singularity container. If you are running *XCP-D* locally, we suggest Docker_. However, for security reasons, many :abbr:`HPCs (High-Performance Computing)` do not allow Docker containers, but do allow Singularity_ containers. The improved security for multi-tenant systems comes at the price of some limitations and extra steps necessary for execution.
+
+.. _docker-install:
+Docker Installation
+---------
+For every new version of *xcp_d* that is released, a corresponding Docker image is generated.
+
+In order to run *xcp_d* via Docker images, the Docker Engine must be installed.
+
+If you have used *xcp_d* via Docker in the past, you might need to pull down a more recent version of the image: ::
+
+    $ docker pull pennlinc/xcp_d:<latest-version>
+
+The image can also be found here: https://registry.hub.docker.com/r/pennlinc/xcp_d
+
+*xcp_d* can be run interacting directly with the Docker Engine via the `docker run` command, or through a lightweight wrapper that was created for convenience.
+
+.. _singularity-install:
+Singularity Installation
+-------------
+**Singularity version >= 2.5**:
+If the version of Singularity installed on your :abbr:`HPC (High-Performance Computing)` system is modern enough, you can create a Singularity image directly on the system using the following command: ::
+
+    $ singularity build xcp_d-<version>.simg docker://pennlinc/xcp_d:<version>
+
+where ``<version>`` should be replaced with the desired version of *xcp-d* that you want to download.
 
 Manually Prepared Environment (Python 3.8+)
 ===========================================
