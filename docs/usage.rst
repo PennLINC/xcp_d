@@ -18,7 +18,7 @@ However, we strongly recommend using :ref:`container-tech`. Here, the command-li
 
 Docker
 ===============
-If you are computing locally, we recommend Docker. See :ref:`docker-install` for installation questions.
+If you are computing locally, we recommend Docker. See :ref:`Installation:Docker Installation` for installation questions.
 ::
    $ docker run --rm -it \
    -v /fmriprepdata:/data/ \
