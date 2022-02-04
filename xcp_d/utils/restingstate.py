@@ -77,6 +77,12 @@ class ContrastEnhancement(SimpleInterface):
 
     def _run_interface(self, runtime):
         outfile = runtime.cwd + "/3dunfixed.nii.gz"
-        shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
+
+        if self.inputs.in_file.endswith(".nii.gz"):
+            shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
+        else:
+            shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.mgz")
+            os.system("mri_convert inset.mgz inset.nii.gz")
+            
         os.system("3dUnifize  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")
         self._results['out_file'] = outfile
