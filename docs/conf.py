@@ -46,7 +46,10 @@ extensions = [
     'nbsphinx',
     'recommonmark',
     'sphinx_markdown_tables'
-]
+    'sphinx.ext.autosectionlabel']
+
+
+autosectionlabel_prefix_document = True
 
 # Mock modules in autodoc:
 autodoc_mock_imports = [
