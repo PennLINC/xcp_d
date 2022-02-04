@@ -214,6 +214,9 @@ The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may 
   0.5979640661963432 -0.04378800242207828 -0.22350241191186113 0.0 0.0
   
 
+Command Line XCP-D with Custom Confounds
+------------------------------------------
+
 Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv file to xcp_d with ``-c`` option. -c should point to the directory where this file exists, rather than to the file itself; ``xcp_d`` will identify the correct file based on the subid, sesid, and taskid. You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call::
 
   singularity run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
