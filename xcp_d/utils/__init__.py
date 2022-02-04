@@ -80,5 +80,5 @@ __all__ = [
     'DespikePatch',
     'concatenatebold',
     'interpolate_masked_datax',
-    'ContrastEnhancement'
+    'ContrastEnhancement',
   ]
