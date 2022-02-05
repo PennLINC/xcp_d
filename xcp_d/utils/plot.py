@@ -782,13 +782,13 @@ def display_cb(gs_ts):
 
     from ..utils.write_save import scalex
     data = scalex(np.random.rand(40),-600,600)
-    ax2 = plt.subplot(gs[0])
+    ax2 = plt.subplot(gs[1])
     PCM = ax2.scatter(data,data,cmap="gray",c=data)
     cbar = plt.colorbar(PCM,orientation="horizontal",shrink=1,fraction=12)
     for t in cbar.ax.get_xticklabels():
         t.set_fontsize(20)
 
-    ax2.set_ylim([-700, -650])
+    ax2.set_ylim([-700, -690])
     plt.axis('off')
     
     return ax2, gs
