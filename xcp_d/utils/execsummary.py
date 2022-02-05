@@ -145,7 +145,7 @@ def ribbon_to_statmap(ribbon,outfile):
         contour_data = ngbdata.get_fdata() % 39
         white = nlimage.new_img_like(ngbdata, contour_data == 2) 
         pial = nlimage.new_img_like(ngbdata, contour_data >= 2)
-    else:  # then segmentation
+    else: 
         contour_data = ngbdata.get_fdata()
         white = nlimage.new_img_like(ngbdata, contour_data == 2)
         pial = nlimage.new_img_like(ngbdata, contour_data == 1)
