@@ -1,0 +1,10 @@
+sphinx>=4.2.0
+sphinx-argparse
+nbsphinx
+sphinx-markdown-tables
+svgutils
+sphinx_rtd_theme
+nipype
+doctest-ignore-unicode
+svgutils
+git+https://github.com/pennlinc/xcp_d.git

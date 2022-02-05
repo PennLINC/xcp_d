@@ -1,0 +1,7 @@
+#Misc
+include CHANGES.rst
+include LICENSE
+
+# versioneer
+include versioneer.py
+include xcp_d/_version.py
