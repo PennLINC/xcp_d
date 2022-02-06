@@ -165,24 +165,25 @@ def ribbon_to_statmap(ribbon,outfile):
 
 
 def _get_contour(datax):
+    # contour in each plane 
     dims =datax.shape
     
     contour =np.zeros_like(datax)
     
     # get y-z plane 
-    #for i in range(dims[0]):
-        #con = measure.find_contours(datax[i,:,:],fully_connected='high')
-        #conx =np.zeros_like(datax[i,:,:])
-        #for cx in con: 
-            #conx[np.int64(cx[:, 0]+0.5), np.int64(cx[:, 1]+0.5)]=1
-        #contour[i,:,:]= conx 
+    for i in range(dims[0]):
+        con = measure.find_contours(datax[i,:,:],fully_connected='high')
+        conx =np.zeros_like(datax[i,:,:])
+        for cx in con: 
+            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
+        contour[i,:,:]= conx 
 
       #for xz plane
     for i in range(dims[1]):
         con = measure.find_contours(datax[:,i,:],fully_connected='high')
         conx =np.zeros_like(datax[:,i,:])
         for cx in con:
-            conx[np.int64(cx[:, 0]+0.5), np.int64(cx[:, 1]+0.5)]=1
+            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
         contour[:,i,:]= conx 
 
     #for yz plane
@@ -190,7 +191,7 @@ def _get_contour(datax):
         con = measure.find_contours(datax[:,:,i],fully_connected='high')
         conx =np.zeros_like(datax[:,:,i])
         for cx in con:
-            conx[np.int64(cx[:, 0]+0.5), np.int64(cx[:, 1]+0.5)]=1
+            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
         contour[:,:,i]= conx 
         
     return contour
