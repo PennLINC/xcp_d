@@ -17,7 +17,6 @@ from nipype.interfaces import utility as niu
 from ..utils import CiftiCorrelation, CiftiParcellate,get_transformfile
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-
 def init_fcon_ts_wf(
     mem_gb,
     t1w_to_native,
