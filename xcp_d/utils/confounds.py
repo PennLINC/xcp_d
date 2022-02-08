@@ -163,6 +163,8 @@ def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
         gs = load_globalS(confoundtsv)
         cosine = load_cosine(confoundtsv)
         confound = pd.concat([mm_dev,acompc,gs,cosine],axis=1)
+    elif params =='custom':
+        confound = pd.DataFrame() #for custom confounds with no other confounds
         
         
     return confound
