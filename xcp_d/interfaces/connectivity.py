@@ -99,15 +99,23 @@ def get_atlas_nifti(atlasname):
     select atlas by name from xcp_d/data
     all atlases are in MNI dimension
     atlas list:
+      schaefer100x17
       schaefer200x17
+      schaefer300x17
       schaefer400x17
+      schaefer500x17
+      schaefer600x17
+      schaefer700x17
+      schaefer800x17
+      schaefer900x17
+      schaefer1000x17
       glasser360
       gordon360
     """
-    if atlasname == 'schaefer200x17':
-        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/schaefer200x17/schaefer200x17MNI.nii.gz')
-    elif atlasname == 'schaefer400x17':
-        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/schaefer400x17/schaefer400x17MNI.nii.gz')
+
+    if atlasname[:8] == 'schaefer':
+        if atlasname[8:12] == '1000': atlasfile = pkgrf('xcp_d', 'data/niftiatlas/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii'.format(atlasname[8:11]))
+        else: atlasfile = pkgrf('xcp_d', 'data/niftiatlas/Schaefer2018_{0}Parcels_17Networks_order_FSLMNI152_2mm.nii'.format(atlasname[8:11]))
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_d', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
     elif atlasname == 'gordon333':
@@ -124,15 +132,22 @@ def get_atlas_cifti(atlasname):
     select atlas by name from xcp_d/data
     all atlases are in 91K dimension
     atlas list:
+      schaefer100x17
       schaefer200x17
+      schaefer300x17
       schaefer400x17
+      schaefer500x17
+      schaefer600x17
+      schaefer700x17
+      schaefer800x17
+      schaefer900x17
+      schaefer1000x17
       glasser360
       gordon360
     """
-    if atlasname == 'schaefer200x17':
-        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-200Parcels17Networks_atlas.dlabel.nii')
-    elif atlasname == 'schaefer400x17':
-        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/schaefer_space-fsLR_den-32k_desc-400Parcels17Networks_atlas.dlabel.nii')
+    if atlasname[:8] == 'schaefer':
+        if atlasname[8:12] == '1000': atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order.dlabel.nii'.format(atlasname[8:11]))
+        else: atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/Schaefer2018_{0}Parcels_17Networks_order.dlabel.nii'.format(atlasname[8:11]))
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'gordon333':
