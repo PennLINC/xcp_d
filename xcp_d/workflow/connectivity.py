@@ -445,7 +445,6 @@ Corresponding pair-wise functional connectivity between all regions was computed
                     (inputnode,matrix_plot,[('clean_cifti','in_file')]),
                     (sc217parcel,matrix_plot,[('out_file','sc217_timeseries')]),
                     (sc417parcel,matrix_plot,[('out_file','sc417_timeseries')]),
-                    (sc517parcel,matrix_plot,[('out_file','sc517_timeseries')]),
                     (gd333parcel,matrix_plot,[('out_file','gd333_timeseries')]),
                     (gs360parcel,matrix_plot,[('out_file','gs360_timeseries')]),
                     (matrix_plot,outputnode,[('connectplot','connectplot')])
