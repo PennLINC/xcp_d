@@ -3,7 +3,7 @@ import numpy as np
 import os
 import pandas as pd
 from ..utils import (drop_tseconds_volume, read_ndata, 
-                  write_ndata,compute_FD,generate_mask,interpolate_masked_datax)
+                  write_ndata,compute_FD,generate_mask,interpolate_masked_data)
 from nipype.interfaces.base import (traits, TraitedSpec, BaseInterfaceInputSpec, File,
     SimpleInterface )
 from nipype import logging
@@ -253,7 +253,7 @@ class interpolate(SimpleInterface):
         else:
             fulldata = datax
 
-        recon_data = interpolate_masked_datax(img_datax=fulldata, tmask=tmask, 
+        recon_data = interpolate_masked_data(img_datax=fulldata, tmask=tmask, 
                     TR=self.inputs.TR)
 
         self._results['bold_interpolated'] = fname_presuffix(
