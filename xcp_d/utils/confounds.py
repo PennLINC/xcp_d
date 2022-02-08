@@ -59,6 +59,10 @@ def load_WM_CSF(confoundspd):
     """select white matter and CSF nuissance."""
     return confoundspd[["csf","white_matter"]]
 
+def load_cosine(confoundspd):
+    """select cosine for compcor"""
+    return confoundspd[["cosine00","cosine01","cosine02","cosine03","cosine04","cosine05"]]
+
 def load_acompcor(confoundspd, confoundjs):
     """ select WM and GM acompcor separately."""
 
@@ -149,14 +153,16 @@ def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
         wmcsf=load_WM_CSF(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         gs = load_globalS(confoundtsv)
-        pd.concat([wmcsf,aroma,gs],axis=1)
+        cosine = load_cosine(confoundtsv)
+        pd.concat([wmcsf,aroma,gs,cosine],axis=1)
     elif params == 'acompcor_gsr':
         motion = load_motion(confoundtsv,TR,head_radius,filtertype,
         cutoff=cutoff,freqband=freqband,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
         gs = load_globalS(confoundtsv)
-        confound = pd.concat([mm_dev,acompc,gs],axis=1)
+        cosine = load_cosine(confoundtsv)
+        confound = pd.concat([mm_dev,acompc,gs,cosine],axis=1)
         
         
     return confound
