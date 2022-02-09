@@ -15,10 +15,10 @@ Processesing Steps
 
 0. Data is read in. See :ref:`Running XCP-D:Inputs` for information on input dataset structures.
 
-1. Skip volumes [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing. These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds. Most default scanning sequences include dummy volumes that are not reconstructed. However, some users still perfer to remove the first reconstructed few volumes.
+1. Skip volumes [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing. These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds. For example, if your TR is .72, and you want to remove the first 2 volumes, you should enter: ``-d 1.44``. Most default scanning sequences include dummy volumes that are not reconstructed. However, some users still perfer to remove the first reconstructed few volumes.
 
 
-2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_d`` with 27P as the default. 
+2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_d`` with 36P as the default. 
    In addition to the standard confound regressors selected from fMRIPrep outputs, the custom timeseries can be added as described in `Task Regression`_.
    
 
