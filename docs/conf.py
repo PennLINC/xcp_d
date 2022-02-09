@@ -45,7 +45,7 @@ extensions = [
     'nipype.sphinxext.plot_workflow',
     'nbsphinx',
     'recommonmark',
-    'sphinx_markdown_tables'
+    'sphinx_markdown_tables',
     'sphinx.ext.autosectionlabel']
 
 
