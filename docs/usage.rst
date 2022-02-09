@@ -56,8 +56,6 @@ argument (``--home``) as follows: ::
 
 Therefore, once a user specifies the container options and the image to be run, the command line options are the same as the *bare-metal* installation.
 
-An optional input is the custom task or physiological timeseries that a user may want to regress from the BOLD data. This custom timeseries can be arranged as described in `Task Regression`_.
-
 Command-Line Arguments
 ===============
 .. argparse::
