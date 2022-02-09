@@ -142,9 +142,8 @@ def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
         cutoff=cutoff,freqband=freqband,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
-        confound = pd.concat([mm_dev,acompc],axis=1)
-    elif params == 'tcompcor':
-        confound = load_tcompcor(confoundspd=confoundtsv,confoundjs=confoundjson)
+        cosine = load_cosine(confoundtsv)
+        confound = pd.concat([mm_dev,acompc,cosine],axis=1)
     elif params == 'aroma':
         wmcsf=load_WM_CSF(confoundtsv)
         aroma = load_aroma(datafile=datafile)
@@ -153,8 +152,7 @@ def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
         wmcsf=load_WM_CSF(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         gs = load_globalS(confoundtsv)
-        cosine = load_cosine(confoundtsv)
-        pd.concat([wmcsf,aroma,gs,cosine],axis=1)
+        pd.concat([wmcsf,aroma,gs],axis=1)
     elif params == 'acompcor_gsr':
         motion = load_motion(confoundtsv,TR,head_radius,filtertype,
         cutoff=cutoff,freqband=freqband,order=order)
