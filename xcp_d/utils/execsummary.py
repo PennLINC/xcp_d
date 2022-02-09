@@ -171,12 +171,12 @@ def _get_contour(datax):
     contour =np.zeros_like(datax)
     
     # get y-z plane 
-    for i in range(dims[0]):
-        con = measure.find_contours(datax[i,:,:],fully_connected='low')
-        conx =np.zeros_like(datax[i,:,:])
+    for i in range(dims[2]):
+        con = measure.find_contours(datax[:,:,i],fully_connected='low')
+        conx =np.zeros_like(datax[:,:,i])
         for cx in con: 
             conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-        contour[i,:,:]= conx 
+        contour[:,:,i]= conx 
 
       #for xz plane
     #for i in range(dims[1]):
