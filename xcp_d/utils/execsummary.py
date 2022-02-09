@@ -172,27 +172,27 @@ def _get_contour(datax):
     
     # get y-z plane 
     for i in range(dims[0]):
-        con = measure.find_contours(datax[i,:,:],fully_connected='high')
+        con = measure.find_contours(datax[i,:,:],fully_connected='low')
         conx =np.zeros_like(datax[i,:,:])
         for cx in con: 
             conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
         contour[i,:,:]= conx 
 
       #for xz plane
-    for i in range(dims[1]):
-        con = measure.find_contours(datax[:,i,:],fully_connected='high')
-        conx =np.zeros_like(datax[:,i,:])
-        for cx in con:
-            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
-        contour[:,i,:]= conx 
+    #for i in range(dims[1]):
+        #con = measure.find_contours(datax[:,i,:],fully_connected='low')
+        #conx =np.zeros_like(datax[:,i,:])
+        #for cx in con:
+            #conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
+        #contour[:,i,:]= conx 
 
     #for yz plane
-    for i in range(dims[2]):
-        con = measure.find_contours(datax[:,:,i],fully_connected='high')
-        conx =np.zeros_like(datax[:,:,i])
-        for cx in con:
-            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-        contour[:,:,i]= conx 
+    #for i in range(dims[2]):
+        #con = measure.find_contours(datax[:,:,i],fully_connected='low')
+        #conx =np.zeros_like(datax[:,:,i])
+        #for cx in con:
+            #conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
+        #contour[:,:,i]= conx 
         
     return contour
 
