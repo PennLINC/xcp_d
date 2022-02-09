@@ -18,7 +18,7 @@ Processesing Steps
 1. Skip volumes [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing. These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds. For example, if your TR is .72, and you want to remove the first 2 volumes, you should enter: ``-d 1.44``. Most default scanning sequences include dummy volumes that are not reconstructed. However, some users still perfer to remove the first reconstructed few volumes.
 
 
-2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_d`` with 36P as the default. In addition to the standard confound regressors selected from fMRIPrep outputs, the custom timeseries can be added as described in `Task Regression`_. If you are passing custom regressors, and you want none of the regressors here, the option would be ``custom``.
+2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_d`` with 36P as the default. In addition to the standard confound regressors selected from fMRIPrep outputs, a custom confound timeseries can be added as described below in:ref:`Custom Confounds`. If you are passing custom confound regressors, and you want none of the regressors here, the option will be ``custom``.
 
    .. list-table:: Confound
    
@@ -82,9 +82,7 @@ Processesing Steps
 
    For more information about confound regresssors selection, please refer to `Ciric et. al. 2017`_ 
 
-   After the selection of confound regressors, the respiratory effects can optionally be filtered 
-   out from the motion estimates with band-stop filter to improve fMRI data quality. Please refer to `Fair et. al. 2020`_ 
-   for more information. These band-stop parameters are age specific (see table below) and can  be added to the command line arguments (see `Usage`_ ).
+   After the selection of confound regressors, the respiratory effects can optionally be filtered out from the motion estimates with band-stop filter to improve fMRI data quality. Please refer to `Fair et. al. 2020`_ for more information. These band-stop parameters are age specific (see table below) and can  be added to the command line arguments (see :ref:`Running XCP-D:Command Structure`).
 
    .. list-table:: Respiratory Filter 
 
