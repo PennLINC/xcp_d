@@ -68,15 +68,15 @@ Processesing Steps
       -
     * - aroma_gsr
       - X, dX 
-      - 
-      - 
+      - X
+      - X
       - X
       - 
       - X
     * - aroma 
       - X, dX 
-      - 
-      - 
+      - X
+      - X
       - 
       - 
       - X
