@@ -10,13 +10,12 @@ Input data
 The default inputs to `XCP-D` are the outputs of  `fMRIPrep` and `Nibabies`.  The `xcp_d` can aslo process `ABCD-DCAN` and minimal processing of `HCP` data which  require `input-type` flag ( 'dcan'  and 'hcp' for `ABCD-DCAN` and `HCP` respectively).
 
 
-
 Processesing Steps
 ------------------
 
 0. Data is read in. See :ref:`Running XCP-D:Inputs` for information on input dataset structures.
 
-1. Skip volumes [Optional]: The ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing. These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds
+1. Skip volumes [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing. These volumes are usually refered to as dummy scans. It can be added to the command line with ``-d X`` where X is in seconds. Most default scanning sequences include dummy volumes that are not reconstructed. However, some users still perfer to remove the first reconstructed few volumes.
 
 
 2. Confound regressors selection: The confound regressors configurations in the table below are implemented in ``xcp_d`` with 27P as the default. 
@@ -30,13 +29,13 @@ Processesing Steps
       - White Matter
       - CSF
       - Global Signal
-      - tcompcor
-      - acompcor
+      - ACompCor
+      - AROMA
     * - 24P 
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       - 
-      -
       - 
+      -
       -
       -
     * - 27P 
@@ -53,20 +52,35 @@ Processesing Steps
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       -
       -
-    * - tcompcor 
-      -  
+    * - acompcor_gsr 
+      -  X, dX
       - 
       - 
-      -
-      - 5 comps
+      - X
+      - 10 com, 5WM,5CSF
       -
     * - acompcor 
       - X, dX 
       - 
       - 
+      - 
+      - 10 com, 5WM,5CSF
       -
-      -  
-      - 5 comps
+    * - aroma_gsr
+      - X, dX 
+      - 
+      - 
+      - X
+      - 
+      - X
+    * - aroma 
+      - X, dX 
+      - 
+      - 
+      - 
+      - 
+      - X
+
 
    For more information about confound regresssors selection, please refer to `Ciric et. al. 2017`_ 
 
