@@ -121,8 +121,7 @@ Processesing Steps
    Any volume with FD above the threshold will be flagged as an outlier before the regession.
    Please refer to `Satterthwaite et al. 2013`_ and `Power et. al. 2012`_ for more information. 
 
-   There is also a process of  masking out the non-contiguous segments of data points between outliers. The number of contiguous volumes required to survive masking is set to 5 by default and 
-   and can be modifeid by the users in the command line arguments.
+   There is also a process of  masking out the non-contiguous segments of data points between outliers. The number of contiguous volumes required to survive masking is set to 5 by default and and can be modifeid by the users in the command line arguments.
 
 5. Confound Regression: At this stage, the BOLD data is denoised by regressing the confound regressors from the BOLD data. If there are any volumes or timepoints flagged, 
    as outliers during censoring step, these volumes are excluded from the regression. In addtion, if there is custom confound regressors,
