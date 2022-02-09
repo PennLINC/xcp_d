@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-xcp_abcd preprocessing workflow
+xcp_d preprocessing workflow
 =====
 """
 
