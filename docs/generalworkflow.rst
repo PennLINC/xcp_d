@@ -135,10 +135,10 @@ Processesing Steps
    the brain atlases. The local mean timeseries within each brain atlas's region  of interest (ROI) is extracted. Currently, static connectivity is estimated using 
    the Pearson correlation between all ROIs for a particular atlas. The following atlases are implemented in  ``xcp_d``:
      
-  a. Schaefer 200 and 400
+  a. Schaefer 100,200,300,400,500,600,700,800,900,1000
   b. Glasser 360 
   c. Gordon 360 
-  d. Subcortital Atlas  
+  d. Tian Subcortical Atlas `Tian et al https://www.nature.com/articles/s41593-020-00711-6.epdf?sharing_token=Fzk9fg_oTs49l2_4GcFHvtRgN0jAjWel9jnR3ZoTv0OcoEh_rWSSGTYcOuTVFJlvyoz7cKiJgYmHRlYIGzAnNt5tMyMZIXn3xdgdMC_wzDAONIDh5m0cUiLGzNChnEK_AHqVJl2Qrno8-hzk8CanTnXjGX3rRfZX3WXgTLew1oE%3D`_
 
 8.  Resting-state derivatives: For each BOLD data, the resting-state derivatives are computed. These includes regional homogeneity (ReHo) 
     and amplitude of low-frequency fluctuation (ALFF).  
