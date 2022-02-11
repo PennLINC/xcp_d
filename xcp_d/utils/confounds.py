@@ -62,7 +62,7 @@ def load_WM_CSF(confoundspd):
 def load_cosine(confoundspd):
     """select cosine for compcor"""
     cosine = [];
-    for key,value in confoundjs.items():
+    for key in confoundspd.keys():
         if 'cosine' in key:
             cosine.append(key)
     return confoundspd[cosine]
