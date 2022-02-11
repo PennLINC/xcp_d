@@ -80,9 +80,13 @@ def load_acompcor(confoundspd, confoundjs):
     # select the first five components
     csflist = []; wmlist = []
     for i in range(0,4):
-        csflist.append(CSF[i][0])
-        wmlist.append(WM[i][0])
-    acompcor = wmlist +csflist  
+        try:
+            csflist.append(CSF[i][0])
+        except: pass
+        try:
+            wmlist.append(WM[i][0])
+        except: pass
+    acompcor = wmlist +csflist    
     return confoundspd[acompcor]
 
 
