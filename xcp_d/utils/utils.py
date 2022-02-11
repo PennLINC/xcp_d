@@ -196,11 +196,16 @@ def stringforparams(params):
         bsignal= "All the clean aroma components with the mean white matter  \
         signal, and the mean CSF signal were selected as nuisance regressors"
     if params == 'acompcor':
-        bsignal= "All the components of the aCompCor algorithm were selected as \
-        nuisance regressors"
-    if params == 'tcompcor':
-        bsignal= "All the components of the tCompCor algorithm were selected as \
-        nuisance regressors"
+        bsignal= "The top 5 principal aCompCor components from WM and CSF compartments were selected as \
+        nuisance regressors. Additionally, the six motion parameters and their temporal derivatives were \
+        added as confounds."
+    if params == 'aroma_gsr':
+        bsignal= "All the clean aroma components with the mean white matter  \
+        signal, and the mean CSF signal, and mean global signal were selected as nuisance regressors"
+    if params == 'acompcor_gsr':
+        bsignal= "The top 5 principal aCompCor components from WM and CSF compartments were selected as \
+        nuisance regressors. Additionally, the six motion parameters and their temporal derivatives were \
+        added as confounds. The average global signal was also added as a regressor."
 
     return bsignal
 
