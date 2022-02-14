@@ -61,7 +61,11 @@ def load_WM_CSF(confoundspd):
 
 def load_cosine(confoundspd):
     """select cosine for compcor"""
-    return confoundspd[["cosine00","cosine01","cosine02","cosine03","cosine04","cosine05"]]
+    cosine = [];
+    for key in confoundspd.keys():
+        if 'cosine' in key:
+            cosine.append(key)
+    return confoundspd[cosine]
 
 def load_acompcor(confoundspd, confoundjs):
     """ select WM and GM acompcor separately."""
@@ -76,9 +80,13 @@ def load_acompcor(confoundspd, confoundjs):
     # select the first five components
     csflist = []; wmlist = []
     for i in range(0,4):
-        csflist.append(CSF[i][0])
-        wmlist.append(WM[i][0])
-    acompcor = wmlist +csflist  
+        try:
+            csflist.append(CSF[i][0])
+        except: pass
+        try:
+            wmlist.append(WM[i][0])
+        except: pass
+    acompcor = wmlist +csflist    
     return confoundspd[acompcor]
 
 
