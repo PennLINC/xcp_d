@@ -138,16 +138,14 @@ Processesing Steps
 Outputs
 -------
 
-``XCP-D`` generates the following ouputs following the successful execution: 
+XCP-D generates four main types of outputs for every subject.  
 
-1. Executive summary: The executive summary reveals some very important information of BOLD data before and after regression. 
-It also shows some key files to allow a quick QC of the image processing results of a single session of a single subject.
+First, XCP-D generates an “executive summary” that displays relevant information about the anatomical data and the BOLD data before and after regression. The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical image. Next, for each session, the user can see the segmentation registered onto the BOLD images. Alongside this image, pre and post regression “carpet” plot is alongside DVARS, FD, the global signal.  
 
-2. Visual QA (quality assessment) reports: ``XCP-D`` generates one HTML per subject, per session (if applicable), that allows the user to conduct a thorough visual assessment 
-of processed data. This also includes QC measures. 
+Second, XCP-D also generates an HTML report for each subject and session. The HTML report contains a Processing Summary with QC values, with the BOLD volume space, the TR, mean FD, mean RSMD, and mean and maximum RMS, the Correlation between DVARS and FD before and after processing, and the number of volumes censored. Next, pre and post regression “carpet” plots are alongside DVARS and FD. An About section that notes the release version of XCP-D, a Methods section that can be copied and pasted into the user’s paper, which is customized based on command line options, and an Error section, which will read “No errors to report!” if no errors are found. 
 
-3. Processed BOLD data: residual BOLD for each subject and session, functional timeseries and connectvity matrices, and  resting-state derivatives. 
-   
-4. Anatomical data. The anatomical data (processed T1w processed and segmentation files) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resamspled to MNI space. The surfaces (Gifti files) in each subject are also remsapled to standardard space (fsLR-32K). 
+Third, XCP-D outputs processed BOLD data, including denoised dense unsmoothed and smoothed timeseries in MNI2006 and fsLR32k spaces, parcellated time series, functional connectivity matrices, and ALFF and ReHo (smoothed and unsmoothed). 
+
+Fourth, the anatomical data (processed T1w processed and segmentation files) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resampled to MNI space. The fMRI
 
 See Outputs_ for details about xcp_d outputs. 
