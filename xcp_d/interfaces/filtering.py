@@ -100,8 +100,10 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     # pad the data with zeros to avoid filter artifacts
     n = np.int(data.shape[1]/4)
     datax = np.hstack((data[:,0:n],data,data[:,0:n]))
+    
+    # get the mean of the data
+    mean_data=np.mean(data,axis=1)
 
-    #mean_data=np.mean(data,axis=1)
     filtdata = np.zeros_like(datax)
 
     #filter_dir = np.floor(order/2)
@@ -113,6 +115,8 @@ def butter_bandpass(data,fs,lowpass,highpass,order=2):
     nn = datax.shape[1]
           
     #add mean back 
-    #mean_datag = np.outer(mean_data, np.ones(data.shape[1]))
+    mean_datag = np.outer(mean_data, np.ones(filtdata.shape[1]))
 
-    return filtdata[:,n:(nn-n)] 
+    filtered_data = np.add(mean_datag, filtdata)
+
+    return filtered_data[:,n:(nn-n)] 
