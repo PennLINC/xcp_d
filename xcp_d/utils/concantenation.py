@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from email.contentmanager import raw_data_manager
 import os,glob,fnmatch,tempfile,shutil
 import numpy as np
 import nibabel as nb
@@ -73,7 +74,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual*bold*.nii.gz'))
-        
+        reg_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold)>1:
             res = resbold[0]
@@ -88,8 +89,13 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                     combine_fd(filex,outfile)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
-                    os.system('fslmerge -t ' + outfile + '  ' + combinefile)
-   
+                    os.system('fslmerge -t ' + outfile + '  ' + combinefile)   
+                    for b in sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j)):
+                        dvar = compute_dvars(read_ndata(b))
+                        dvar[0] = np.mean(dvar)
+                        reg_dvars.append(dvar)
+
+
             filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
 
             mask = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
@@ -103,12 +109,18 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
 
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
             postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
+            raw_dvars = []
+            for f in filey:
+                dvar = compute_dvars(read_ndata(f))
+                dvar[0] = np.mean(dvar)
+                raw_dvars.append(dvar)  
 
             plot_svgx(rawdata=rawdata,regdata=fileid+'_desc-residual_bold.nii.gz',
-                  resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
-                  filenameaf=postcarpet,filenamebf=precarpet,mask=mask,seg=segfile,tr=tr)
-
-
+                resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
+                raw_dvars=raw_dvars,
+                reg_dvars=reg_dvars,
+                regf_dvars=reg_dvars,
+                filenameaf=postcarpet,filenamebf=precarpet,mask=mask,seg=segfile,tr=tr)
 
             # link or copy bb svgs
             gboldbbreg = figure_files  + os.path.basename(fileid) + '_desc-bbregister_bold.svg'
