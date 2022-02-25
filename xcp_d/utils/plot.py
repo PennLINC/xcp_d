@@ -367,7 +367,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
-def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1):
+def plot_svgx(rawdata,regdata,resddata,fd,raw_dvars,reg_dvars,regf_dvars,filenamebf,filenameaf,mask=None,seg=None,tr=1):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
@@ -390,16 +390,15 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     filenameaf: 
       output file svg after processing
     '''
-    
-    rxdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
-    rgdata = compute_dvars(read_ndata(datafile=regdata,maskfile=mask))
-    rsdata = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
-    rgdata = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
-    
+        
+    rxdata = raw_dvars
+    rgdata = raw_dvars
+    rsdata = regf_dvars
     #load files 
     rw = read_ndata(datafile=rawdata,maskfile=mask)
     rs = read_ndata(datafile=resddata,maskfile=mask)
-    
+    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
+    conf.to_csv('/wkdir/conf.csv')    
     # remove first n deleted 
     if len(rxdata) > len(rsdata):
         rxdata = rxdata[0:len(rsdata)]
@@ -407,9 +406,9 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
         rw = rw[:,0:len(rsdata)]
     
     
-    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
+    conf = pd.DataFrame({'Pre reg': rxdata,'Post all': rsdata})
+    conf.to_csv('/wkdir/conf2.csv')
     fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
-    
     
     
     wbbf = pd.DataFrame({'Mean':np.nanmean(rw,axis=0),'Std':np.nanstd(rw,axis=0)})

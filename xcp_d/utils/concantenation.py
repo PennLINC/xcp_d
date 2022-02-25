@@ -7,6 +7,7 @@ import nibabel as nb
 from pathlib import Path
 from ..utils.plot import plot_svgx
 from ..utils import get_transformfile
+from ..utils import read_ndata
 from templateflow.api import get as get_template
 from nipype.interfaces.ants import ApplyTransforms
 
@@ -120,6 +121,18 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
             shutil.copy(bb1ref,bboldref)
             
     
+def compute_dvars(datat):
+    '''
+    compute standard dvars
+
+    datat : numpy darrays
+        data matrix vertices by timepoints 
+     
+    '''
+    firstcolumn=np.zeros((datat.shape[0]))[...,None]
+    datax=np.hstack((firstcolumn,np.diff(datat)))
+    datax_ss=np.sum(np.square(datax),axis=0)/datat.shape[0]
+    return np.sqrt(datax_ss)
         
 
 
@@ -152,11 +165,12 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
     tasklist = [os.path.basename(j).split('task-')[1].split('_')[0]  
                   for j in fnmatch.filter(all_func_files,'*den-91k_desc-residual*bold.dtseries.nii') ]
     tasklist = list(set(tasklist))
-
-   # do for each task
+    
+    # do for each task
     for task in tasklist:
         resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual*bold.dtseries.nii'))
         if len(resbold) > 1:
+            reg_dvars = []
             res=resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
             #print(resid)
@@ -179,9 +193,20 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                 elif j.endswith('dtseries.nii'):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
+                    if j.endswith('_desc-residual_bold.dtseries.nii'):
+                        for b in sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j)):
+                            dvar = compute_dvars(read_ndata(b))
+                            dvar[0] = np.mean(dvar)
+                            reg_dvars.append(dvar)
 
-   
+
+
+            raw_dvars = []
             filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
+            for f in filey:
+                dvar = compute_dvars(read_ndata(f))
+                dvar[0] = np.mean(dvar)
+                raw_dvars.append(dvar)              
             tr =  get_ciftiTR(filey[0])
             rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
@@ -192,9 +217,20 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
             postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
 
-            plot_svgx(rawdata=rawdata,regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
+
+            raw_dvars = np.array(raw_dvars).flatten()
+            reg_dvars = np.array(reg_dvars).flatten()
+            print (raw_dvars.shape)
+            print (reg_dvars.shape)
+            np.save('/wkdir/raw_dvars.npy',raw_dvars)
+            np.save('/wkdir/reg_dvars.npy',reg_dvars)
+            plot_svgx(rawdata=rawdata,
+            regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
             resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
             fd=res.split('run-')[0]+ resid.partition('_den-91k')[0]+'_desc-framewisedisplacement_bold.tsv',
+            raw_dvars=raw_dvars,
+            reg_dvars=reg_dvars,
+            regf_dvars=reg_dvars,
             filenameaf=postcarpet,filenamebf=precarpet,tr=tr)
 
 
