@@ -368,7 +368,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
-def plot_svgx(rawdata,regdata,resddata,fd,raw_dvars=None,reg_dvars=None,regf_dvars=None,filenamebf,filenameaf,mask=None,seg=None,tr=1):
+def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,raw_dvars=None,reg_dvars=None,regf_dvars=None):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
@@ -394,14 +394,14 @@ def plot_svgx(rawdata,regdata,resddata,fd,raw_dvars=None,reg_dvars=None,regf_dva
         
     if type(raw_dvars) == NoneType:
         rxdata = raw_dvars
-    else: raw_dvars = compute_dvars(rxdata)
+    else: raw_dvars = compute_dvars(rawdata)
     if type(reg_dvars) == NoneType:
         rgdata = raw_dvars
-    else: raw_dvars = compute_dvars(rgdata)
+    else: raw_dvars = compute_dvars(regdata)
     
     if type(regf_dvars) == NoneType:
         rsdata = regf_dvars
-    else: regf_dvars = compute_dvars(rgdata)
+    else: regf_dvars = compute_dvars(resddata)
     #load files 
     rw = read_ndata(datafile=rawdata,maskfile=mask)
     rs = read_ndata(datafile=resddata,maskfile=mask)
