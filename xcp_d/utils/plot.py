@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """ploting tools."""
 from re import A
+from types import NoneType
 import numpy as np
 import nibabel as nb
 import pandas as pd
@@ -367,7 +368,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
-def plot_svgx(rawdata,regdata,resddata,fd,raw_dvars,reg_dvars,regf_dvars,filenamebf,filenameaf,mask=None,seg=None,tr=1):
+def plot_svgx(rawdata,regdata,resddata,fd,raw_dvars=None,reg_dvars=None,regf_dvars=None,filenamebf,filenameaf,mask=None,seg=None,tr=1):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
@@ -391,9 +392,16 @@ def plot_svgx(rawdata,regdata,resddata,fd,raw_dvars,reg_dvars,regf_dvars,filenam
       output file svg after processing
     '''
         
-    rxdata = raw_dvars
-    rgdata = raw_dvars
-    rsdata = regf_dvars
+    if type(raw_dvars) == NoneType:
+        rxdata = raw_dvars
+    else: raw_dvars = compute_dvars(rxdata)
+    if type(reg_dvars) == NoneType:
+        rgdata = raw_dvars
+    else: raw_dvars = compute_dvars(rgdata)
+    
+    if type(regf_dvars) == NoneType:
+        rsdata = regf_dvars
+    else: regf_dvars = compute_dvars(rgdata)
     #load files 
     rw = read_ndata(datafile=rawdata,maskfile=mask)
     rs = read_ndata(datafile=resddata,maskfile=mask)
