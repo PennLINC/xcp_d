@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """ploting tools."""
 from re import A
-from types import NoneType
 import numpy as np
 import nibabel as nb
 import pandas as pd
@@ -392,16 +391,16 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
       output file svg after processing
     '''
         
-    if type(raw_dvars) == NoneType:
-        rxdata = raw_dvars
-    else: raw_dvars = compute_dvars(rawdata)
-    if type(reg_dvars) == NoneType:
-        rgdata = raw_dvars
-    else: raw_dvars = compute_dvars(regdata)
-    
-    if type(regf_dvars) == NoneType:
-        rsdata = regf_dvars
-    else: regf_dvars = compute_dvars(resddata)
+    if type(raw_dvars) != np.ndarray:
+        raw_dvars = compute_dvars(rawdata)
+    if type(reg_dvars) != np.ndarray:
+        reg_dvars = compute_dvars(regdata)
+    if type(regf_dvars) != np.ndarray:
+        regf_dvars = compute_dvars(resddata)
+
+    rgdata = raw_dvars
+    rsdata = regf_dvars
+    rxdata = raw_dvars
     #load files 
     rw = read_ndata(datafile=rawdata,maskfile=mask)
     rs = read_ndata(datafile=resddata,maskfile=mask)
