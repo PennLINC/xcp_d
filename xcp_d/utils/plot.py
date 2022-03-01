@@ -393,11 +393,11 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     '''
     print (rawdata)
     if type(raw_dvars) != np.ndarray:
-        raw_dvars = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask)))
+        raw_dvars = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask))
     if type(reg_dvars) != np.ndarray:
-        reg_dvars = compute_dvars(read_ndata(datafile=regdata,maskfile=mask)))
+        reg_dvars = compute_dvars(read_ndata(datafile=regdata,maskfile=mask))
     if type(regf_dvars) != np.ndarray:
-        regf_dvars = compute_dvars(read_ndata(datafile=resddata,maskfile=mask)))
+        regf_dvars = compute_dvars(read_ndata(datafile=resddata,maskfile=mask))
 
     rgdata = raw_dvars
     rsdata = regf_dvars
