@@ -391,11 +391,11 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
       output file svg after processing
     '''
         
-    if type(raw_dvars) == np.ndarray:
+    if type(raw_dvars) != np.ndarray:
         raw_dvars = compute_dvars(rawdata)
-    if type(reg_dvars) == np.ndarray:
+    if type(reg_dvars) != np.ndarray:
         reg_dvars = compute_dvars(regdata)
-    if type(regf_dvars) == np.ndarray:
+    if type(regf_dvars) != np.ndarray:
         regf_dvars = compute_dvars(resddata)
 
     rgdata = raw_dvars
@@ -405,7 +405,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     rw = read_ndata(datafile=rawdata,maskfile=mask)
     rs = read_ndata(datafile=resddata,maskfile=mask)
     conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
-    conf.to_csv('/wkdir/conf.csv')    
+ 
     # remove first n deleted 
     if len(rxdata) > len(rsdata):
         rxdata = rxdata[0:len(rsdata)]
@@ -414,7 +414,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     
     
     conf = pd.DataFrame({'Pre reg': rxdata,'Post all': rsdata})
-    conf.to_csv('/wkdir/conf2.csv')
+
     fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
     
     
