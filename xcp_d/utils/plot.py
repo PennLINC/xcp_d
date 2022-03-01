@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """ploting tools."""
+from curses import raw
 from re import A
 import numpy as np
 import nibabel as nb
@@ -390,13 +391,13 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     filenameaf: 
       output file svg after processing
     '''
-        
+    print (rawdata)
     if type(raw_dvars) != np.ndarray:
-        raw_dvars = compute_dvars(rawdata)
+        raw_dvars = compute_dvars(read_ndata(datafile=rawdata,maskfile=mask)))
     if type(reg_dvars) != np.ndarray:
-        reg_dvars = compute_dvars(regdata)
+        reg_dvars = compute_dvars(read_ndata(datafile=regdata,maskfile=mask)))
     if type(regf_dvars) != np.ndarray:
-        regf_dvars = compute_dvars(resddata)
+        regf_dvars = compute_dvars(read_ndata(datafile=resddata,maskfile=mask)))
 
     rgdata = raw_dvars
     rsdata = regf_dvars
@@ -404,7 +405,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     #load files 
     rw = read_ndata(datafile=rawdata,maskfile=mask)
     rs = read_ndata(datafile=resddata,maskfile=mask)
-    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
+
  
     # remove first n deleted 
     if len(rxdata) > len(rsdata):
@@ -413,7 +414,7 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
         rw = rw[:,0:len(rsdata)]
     
     
-    conf = pd.DataFrame({'Pre reg': rxdata,'Post all': rsdata})
+    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
 
     fdx = pd.DataFrame({'FD':np.loadtxt(fd)})
     
