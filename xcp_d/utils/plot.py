@@ -573,11 +573,11 @@ def confoundplotx(
             ax_ts.plot(fdx,'.',color='r',markersize=40)
 
             good_vols = len(tseries[c][tseries[c]<0.1])
-            ax_ts.text(1.055,.1,len(tseries[c]),c='green',verticalalignment='center',horizontalalignment='right',transform=ax_ts.transAxes)
+            ax_ts.text(1.01,.1,len(tseries[c]),c='green',verticalalignment='bottom',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=60)
             good_vols = len(tseries[c][tseries[c]<0.2])
-            ax_ts.text(1.055,.2,len(tseries[c]),c='orange',verticalalignment='center',horizontalalignment='right',transform=ax_ts.transAxes)
+            ax_ts.text(1.01,.2,len(tseries[c]),c='orange',verticalalignment='bottom',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=60)
             good_vols = len(tseries[c][tseries[c]<0.5])
-            ax_ts.text(1.055,.5,len(tseries[c]),c='red',verticalalignment='center',horizontalalignment='right',transform=ax_ts.transAxes)
+            ax_ts.text(1.01,.5,len(tseries[c]),c='red',verticalalignment='bottom',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=60)
 
 
             #plot all of them 
