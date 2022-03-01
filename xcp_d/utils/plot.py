@@ -522,7 +522,7 @@ def confoundplotx(
     if ylabel:
         ax_ts.set_ylabel(ylabel)
  
-    
+    np.save('/wkdir/tseries.npy',tseries)
     columns= tseries.columns
     maxim_value =[]
     minim_value =[]
@@ -539,39 +539,45 @@ def confoundplotx(
             fdx [fdx>0]=1
             ax_ts.plot(fda,'.',color='gray',markersize=40)
             ax_ts.plot(fdx,'.',color='gray',markersize=40)
+           
             ax_ts.axhline(y=0.05,color='gray',linestyle='-',linewidth=5)
-
-          
             fda[fda < 0.05] = np.nan 
             fdx = tseries[c].copy()
             fdx[fdx >= 0.05] = 1
             fdx[fdx < 0.05] = np.nan 
             ax_ts.plot(fda,'.',color='gray',markersize=40)
             ax_ts.plot(fdx,'.',color='gray',markersize=40)
+            
             ax_ts.axhline(y=0.1,color='green',linestyle='-',linewidth=5)
-
             fda[fda < 0.1 ] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.1] = 1
             fdx[fdx < 0.1] = np.nan 
             ax_ts.plot(fda,'.',color='green',markersize=40)
             ax_ts.plot(fdx,'.',color='green',markersize=40)
+            
             ax_ts.axhline(y=0.2,color='orange',linestyle='-',linewidth=5)
-
             fda[fda < 0.2 ] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.2] = 1
             fdx[fdx < 0.2] = np.nan 
             ax_ts.plot(fda,'.',color='orange',markersize=40)
             ax_ts.plot(fdx,'.',color='orange',markersize=40)
+            
             ax_ts.axhline(y=0.5,color='r',linestyle='-',linewidth=5)
-
             fda[fda < 0.5 ] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.5] = 1
             fdx[fdx < 0.5] = np.nan 
             ax_ts.plot(fda,'.',color='r',markersize=40)
             ax_ts.plot(fdx,'.',color='r',markersize=40)
+
+            good_vols = len(tseries[c][tseries[c]<0.1])
+            ax_ts.text(1.055,.1,len(tseries[c]),c='green',verticalalignment='center',horizontalalignment='right',transform=ax_ts.transAxes)
+            good_vols = len(tseries[c][tseries[c]<0.2])
+            ax_ts.text(1.055,.2,len(tseries[c]),c='orange',verticalalignment='center',horizontalalignment='right',transform=ax_ts.transAxes)
+            good_vols = len(tseries[c][tseries[c]<0.5])
+            ax_ts.text(1.055,.5,len(tseries[c]),c='red',verticalalignment='center',horizontalalignment='right',transform=ax_ts.transAxes)
 
 
             #plot all of them 
@@ -599,7 +605,7 @@ def confoundplotx(
     
     for axis in ['top','bottom','left','right']:
         ax_ts.spines[axis].set_linewidth(4)
-
+    sns.despine()
     return ax_ts, gs
 
 

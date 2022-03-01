@@ -232,10 +232,6 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
             raw_dvars = np.array(raw_dvars).flatten()
             reg_dvars = np.array(reg_dvars).flatten()
-            print (raw_dvars.shape)
-            print (reg_dvars.shape)
-            np.save('/wkdir/raw_dvars.npy',raw_dvars)
-            np.save('/wkdir/reg_dvars.npy',reg_dvars)
             plot_svgx(rawdata=rawdata,
             regdata= res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
             resddata=res.split('run-')[0]+ resid.partition('_desc')[0]+ '_desc-residual_bold.dtseries.nii',
