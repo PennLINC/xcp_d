@@ -11,7 +11,7 @@ from ..utils import get_transformfile
 from ..utils import read_ndata
 from templateflow.api import get as get_template
 from nipype.interfaces.ants import ApplyTransforms
-
+import h5py
 
 def concatenatebold(subjlist,fmridir,outputdir):
     outdir = outputdir
@@ -43,7 +43,40 @@ def concatenatebold(subjlist,fmridir,outputdir):
                 concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
 
     
+def make_DCAN_DF(fds_files,name):
+    """
+    FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
+    frame_removal: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0) 
+    format_string (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
+    total_frame_count: a whole number that represents the total number of frames in the concatenated series
+    remaining_frame_count: a whole number that represents the number of remaining frames in the concatenated series
+    remaining_seconds: a whole number that represents the amount of time remaining after thresholding
+    remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the remaining frames
+    """
 
+    print ('making dcan')
+    try: 
+        cifti = fds_files[0].split('space')[0] + 'space-fsLR_den-91k_desc-residual_bold.dtseries.nii'
+        tr = nb.load(cifti).header.get_axis(0).step
+    except:
+        nii = fds_files[0].split('space')[0] + 'space-MNI152NLin6Asym_desc-residual_res-2_bold.nii.gz'
+        tr = nb.load(nii).header.get_zooms()[-1]
+
+    fd = np.loadtxt(fds_files[0],delimiter=',').T
+    for j in range(1,len(fds_files)):
+        dx = np.loadtxt(fds_files[j],delimiter=',')
+        fd = np.hstack([fd,fd.T])
+    dcan = h5py.File(name, "w")
+    for thresh in np.linspace(0,1,101):
+        thresh = np.around(thresh,2)
+        dcan.create_dataset("fd_{0}/skip".format(thresh), data=0, dtype='float')
+        dcan.create_dataset("fd_{0}/binary_mask".format(thresh), data=(fd>thresh).astype(int), dtype='float')
+        dcan.create_dataset("fd_{0}/threshold".format(thresh), data=thresh, dtype='float')
+        dcan.create_dataset("fd_{0}/total_frame_count".format(thresh),data=len(fd), dtype='float')
+        dcan.create_dataset("fd_{0}/remaining_total_frame_count".format(thresh), data=len(fd[fd<=thresh]), dtype='float')
+        dcan.create_dataset("fd_{0}/remaining_seconds".format(thresh),data=len(fd[fd<=thresh])*tr, dtype='float')
+        dcan.create_dataset("fd_{0}/remaining_frame_mean_FD".format(thresh), data=(fd[fd<=thresh]).mean(), dtype='float')
+  
 
 def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     
@@ -87,6 +120,9 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                
                 if j.endswith('tsv'):
                     combine_fd(filex,outfile)
+                if j.endswith('_desc-framewisedisplacement_bold.tsv'):
+                    name = '{0}/{1}{2}-DCAN.hdf5'.format(fmri_files,fileid,j.split('.')[0])
+                    make_DCAN_DF(filex,name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)   
@@ -197,12 +233,14 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                     filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
-                elif j.endswith('framewisedisplacement_bold.tsv'):
+                if j.endswith('framewisedisplacement_bold.tsv'):
                     fileid = fileid.split('_den-91k')[0]
                     outfile = fileid + j
                     filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combine_fd(filex,outfile)
-                elif j.endswith('dtseries.nii'):
+                    name = '{0}/{1}{2}-DCAN.hdf5'.format(fmri_files,fileid,j.split('.')[0])
+                    make_DCAN_DF(filex,name)
+                if j.endswith('dtseries.nii'):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
                     if j.endswith('_desc-residual_bold.dtseries.nii'):
