@@ -81,12 +81,12 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         
    e. DCAN style scrubbing file. This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps. At each step the following variables are present:
     
-        # nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-framewisedisplacement_bold-DCAN.hdf5
-        
-        # cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
-       
+       # nifti
+       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-framewisedisplacement_bold-DCAN.hdf5
+
+       # cifti
+       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
+
        These files have the following keys:
        1. FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
        2. frame_removal: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0) 
