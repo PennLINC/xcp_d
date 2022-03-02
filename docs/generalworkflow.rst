@@ -133,15 +133,6 @@ Processesing Steps
       c. BOLD-T1w coregistration quality - Dice, Jaccard, Coverage and Cross-correlation indices
       d. BOLD-Template normalization quality - Dice, Jaccard, Coverage and Cross-correlation indices
 
-11. DCAN style scrubbing file. This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps. At each step the following variables are present:
-    a. FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
-    b. frame_removal: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0) 
-    c. format_string (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
-    d. total_frame_count: a whole number that represents the total number of frames in the concatenated series
-    e. remaining_frame_count: a whole number that represents the number of remaining frames in the concatenated series
-    f. remaining_seconds: a whole number that represents the amount of time remaining after thresholding
-    g. remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the remaining frames      
-
 Outputs
 -------
 
@@ -155,4 +146,4 @@ Third, XCP-D outputs processed BOLD data, including denoised dense unsmoothed an
 
 Fourth, the anatomical data (processed T1w processed and segmentation files) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resampled to MNI space. The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space (fsLR-32K). 
 
-See Outputs_ for details about xcp_d outputs. 
+See Outputs_ for file details about xcp_d outputs. 
