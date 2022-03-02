@@ -68,7 +68,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-32k_hemi-R_desc-reho_bold.func.gii
         xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_den-91k_desc-alff_bold.dtseries.nii
     
-   d. Other outputs inlcude quality control and framewise  displacement::
+   d. Other outputs include quality control and framewise  displacement::
 
         # nifti
         xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-qc_bold.csv
