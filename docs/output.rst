@@ -77,8 +77,24 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         # cifti
         xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-qc_bold.csv
         xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-framewisedisplacement_den-91k_bold.tsv
+    
         
+   e. DCAN style scrubbing file. This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps. At each step the following variables are present:
+    
+        # nifti
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_desc-framewisedisplacement_bold-DCAN.hdf5
         
+        # cifti
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
        
-
+       These files have the following keys:
+       1. FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
+       2. frame_removal: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0) 
+       3. format_string (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
+       4. total_frame_count: a whole number that represents the total number of frames in the concatenated series
+       5. remaining_frame_count: a whole number that represents the number of remaining frames in the concatenated series
+       6. remaining_seconds: a whole number that represents the amount of time remaining after thresholding
+       7. remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the remaining frames      
+       
+   
 
