@@ -133,19 +133,26 @@ Processesing Steps
       c. BOLD-T1w coregistration quality - Dice, Jaccard, Coverage and Cross-correlation indices
       d. BOLD-Template normalization quality - Dice, Jaccard, Coverage and Cross-correlation indices
 
-
+11. DCAN style scrubbing file. This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps. At each step the following variables are present:
+    a. FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
+    b. frame_removal: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0) 
+    c. format_string (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
+    d. total_frame_count: a whole number that represents the total number of frames in the concatenated series
+    e. remaining_frame_count: a whole number that represents the number of remaining frames in the concatenated series
+    f. remaining_seconds: a whole number that represents the amount of time remaining after thresholding
+    g. remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the remaining frames      
 
 Outputs
 -------
 
 XCP-D generates four main types of outputs for every subject.  
 
-First, XCP-D generates an “executive summary” that displays relevant information about the anatomical data and the BOLD data before and after regression. The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical image. Next, for each session, the user can see the segmentation registered onto the BOLD images. Alongside this image, pre and post regression “carpet” plot is alongside DVARS, FD, the global signal.  
+First, XCP-D generates an HTLM “executive summary” that displays relevant information about the anatomical data and the BOLD data before and after regression. The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical image. Next, for each session, the user can see the segmentation registered onto the BOLD images. Alongside this image, pre and post regression “carpet” plot is alongside DVARS, FD, the global signal. The number of volumes remaining at various FD thresholds are shown. 
 
-Second, XCP-D also generates an HTML report for each subject and session. The HTML report contains a Processing Summary with QC values, with the BOLD volume space, the TR, mean FD, mean RSMD, and mean and maximum RMS, the Correlation between DVARS and FD before and after processing, and the number of volumes censored. Next, pre and post regression “carpet” plots are alongside DVARS and FD. An About section that notes the release version of XCP-D, a Methods section that can be copied and pasted into the user’s paper, which is customized based on command line options, and an Error section, which will read “No errors to report!” if no errors are found. 
+Second, XCP-D generates an HTML “report” for each subject and session. The report contains a Processing Summary with QC values, with the BOLD volume space, the TR, mean FD, mean RMSD, and mean and maximum RMS, the Correlation between DVARS and FD before and after processing, and the number of volumes censored. Next, pre and post regression “carpet” plots are alongside DVARS and FD. An About section that notes the release version of XCP-D, a Methods section that can be copied and pasted into the user’s paper, which is customized based on command line options, and an Error section, which will read “No errors to report!” if no errors are found. 
 
 Third, XCP-D outputs processed BOLD data, including denoised dense unsmoothed and smoothed timeseries in MNI2006 and fsLR32k spaces, parcellated time series, functional connectivity matrices, and ALFF and ReHo (smoothed and unsmoothed). 
 
-Fourth, the anatomical data (processed T1w processed and segmentation files) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resampled to MNI space. The fMRI
+Fourth, the anatomical data (processed T1w processed and segmentation files) are copied from fMRIPrep. If both images are not in MNI2006 space, they are resampled to MNI space. The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space (fsLR-32K). 
 
 See Outputs_ for details about xcp_d outputs. 
