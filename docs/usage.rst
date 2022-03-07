@@ -221,6 +221,19 @@ Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv fil
   /mnt/input/fmriprep /mnt/output/directory participant --despike \
   --lower-bpf 0.01 --upper-bpf 0.08 --participant_label $subid -p 36P -f 10 -t emotionid -c /mnt/taskarray_file_dir 
 
+Custom Parcellations
+===============
+While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations. We suggest running XCP-D with the ``-cifti`` option, and then using the Human Connectome Project wb_command to generate the time series::
+
+   wb_command -cifti-parcellate {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii your_parcels.dlabel \
+   {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii
+
+After this, if one wishes to have a connectivity matrix::
+
+   wb_command -cifti-correlation {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii \
+   {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.pconn.nii
+
+More infomration can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_
 
 Troubleshooting
 ===============
