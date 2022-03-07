@@ -69,13 +69,13 @@ def make_DCAN_DF(fds_files,name):
     dcan = h5py.File(name, "w")
     for thresh in np.linspace(0,1,101):
         thresh = np.around(thresh,2)
-        dcan.create_dataset("fd_{0}/skip".format(thresh), data=0, dtype='float')
-        dcan.create_dataset("fd_{0}/binary_mask".format(thresh), data=(fd>thresh).astype(int), dtype='float')
-        dcan.create_dataset("fd_{0}/threshold".format(thresh), data=thresh, dtype='float')
-        dcan.create_dataset("fd_{0}/total_frame_count".format(thresh),data=len(fd), dtype='float')
-        dcan.create_dataset("fd_{0}/remaining_total_frame_count".format(thresh), data=len(fd[fd<=thresh]), dtype='float')
-        dcan.create_dataset("fd_{0}/remaining_seconds".format(thresh),data=len(fd[fd<=thresh])*tr, dtype='float')
-        dcan.create_dataset("fd_{0}/remaining_frame_mean_FD".format(thresh), data=(fd[fd<=thresh]).mean(), dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/skip".format(thresh), data=0, dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/binary_mask".format(thresh), data=(fd>thresh).astype(int), dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/threshold".format(thresh), data=thresh, dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/total_frame_count".format(thresh),data=len(fd), dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/remaining_total_frame_count".format(thresh), data=len(fd[fd<=thresh]), dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/remaining_seconds".format(thresh),data=len(fd[fd<=thresh])*tr, dtype='float')
+        dcan.create_dataset("/dcan_motion/fd_{0}/remaining_frame_mean_FD".format(thresh), data=(fd[fd<=thresh]).mean(), dtype='float')
   
 
 def concatenate_nifti(subid,fmridir,outputdir,ses=None):
@@ -83,7 +83,11 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     # filex to be concatenated
 
     datafile = ['_atlas-Glasser_desc-timeseries_bold.tsv', '_atlas-Gordon_desc-timeseries_bold.tsv',
-            '_atlas-Schaefer217_desc-timeseries_bold.tsv','_atlas-Schaefer417_desc-timeseries_bold.tsv',
+            '_atlas-Schaefer117_desc-timeseries_bold.tsv','_atlas-Schaefer617_desc-timeseries_bold.tsv',
+            '_atlas-Schaefer217_desc-timeseries_bold.tsv','_atlas-Schaefer717_desc-timeseries_bold.tsv',
+            '_atlas-Schaefer317_desc-timeseries_bold.tsv','_atlas-Schaefer817_desc-timeseries_bold.tsv',
+            '_atlas-Schaefer417_desc-timeseries_bold.tsv','_atlas-Schaefer917_desc-timeseries_bold.tsv',
+            '_atlas-Schaefer517_desc-timeseries_bold.tsv','_atlas-Schaefer1017_desc-timeseries_bold.tsv',
             '_atlas-subcortical_desc-timeseries_bold.tsv', '_desc-framewisedisplacement_bold.tsv',
             '_desc-residual_bold.nii.gz','_desc-residual_smooth_bold.nii.gz']
 
@@ -121,7 +125,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                 if j.endswith('tsv'):
                     combine_fd(filex,outfile)
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
-                    name = '{0}/{1}{2}-DCAN.hdf5'.format(fmri_files,fileid,j.split('.')[0])
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid,j.split('.')[0])
                     make_DCAN_DF(filex,name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
@@ -194,8 +198,16 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
          '_atlas-subcortical_den-91k_bold.ptseries.nii', 
          '_atlas-Glasser_den-91k_bold.ptseries.nii',
          '_atlas-Gordon_den-91k_bold.ptseries.nii', 
+         '_atlas-Schaefer117_den-91k_bold.ptseries.nii',
          '_atlas-Schaefer217_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer317_den-91k_bold.ptseries.nii',
          '_atlas-Schaefer417_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer517_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer617_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer717_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer817_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer917_den-91k_bold.ptseries.nii',
+         '_atlas-Schaefer1017_den-91k_bold.ptseries.nii',
          '_desc-framewisedisplacement_bold.tsv',
          '_atlas-subcortical_den-91k_bold.ptseries.nii']
 
@@ -238,7 +250,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                     outfile = fileid + j
                     filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combine_fd(filex,outfile)
-                    name = '{0}/{1}{2}-DCAN.hdf5'.format(fmri_files,fileid,j.split('.')[0])
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid,j.split('.')[0])
                     make_DCAN_DF(filex,name)
                 if j.endswith('dtseries.nii'):
                     combinefile = " -cifti ".join(filex)
