@@ -12,6 +12,7 @@ from ..utils import read_ndata
 from templateflow.api import get as get_template
 from nipype.interfaces.ants import ApplyTransforms
 import h5py
+from natsort import natsorted
 
 def concatenatebold(subjlist,fmridir,outputdir):
     outdir = outputdir
@@ -110,7 +111,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
 
     # do for each task
     for task in tasklist:
-        resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual*bold*.nii.gz'))
+        resbold = natsorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual*bold*.nii.gz'))
         reg_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold)>1:
@@ -120,7 +121,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                 fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
                 outfile = fileid + j
                
-                filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
+                filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                
                 if j.endswith('tsv'):
                     combine_fd(filex,outfile)
@@ -130,15 +131,15 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)   
-                    for b in sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j)):
+                    for b in filex:
                         dvar = compute_dvars(read_ndata(b))
                         dvar[0] = np.mean(dvar)
                         reg_dvars.append(dvar)
 
 
-            filey = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
+            filey = natsorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
 
-            mask = sorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
+            mask = natsorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
         
             segfile = get_segfile(filey[0])
             tr = nb.load(filey[0]).header.get_zooms()[-1]
@@ -228,7 +229,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
     
     # do for each task
     for task in tasklist:
-        resbold = sorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual*bold.dtseries.nii'))
+        resbold = natsorted(fnmatch.filter(all_func_files,'*'+task+'*run*den-91k_desc-residual*bold.dtseries.nii'))
         if len(resbold) > 1:
             reg_dvars = []
             res=resbold[0]
@@ -237,18 +238,18 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             for j in  datafile:
                 fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
                 outfile = fileid + j
-                filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
+                # filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                 
                 if j.endswith('ptseries.nii'):
                     fileid = fileid.split('_den-91k')[0]
                     outfile = fileid + j
-                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
+                    filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
                 if j.endswith('framewisedisplacement_bold.tsv'):
                     fileid = fileid.split('_den-91k')[0]
                     outfile = fileid + j
-                    filex = sorted(glob.glob(res.split('run-')[0] +'*run*' + j))
+                    filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + j))
                     combine_fd(filex,outfile)
                     name = '{0}{1}-DCAN.hdf5'.format(fileid,j.split('.')[0])
                     make_DCAN_DF(filex,name)
@@ -256,7 +257,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
                     if j.endswith('_desc-residual_bold.dtseries.nii'):
-                        for b in sorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j)):
+                        for b in natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j)):
                             dvar = compute_dvars(read_ndata(b))
                             dvar[0] = np.mean(dvar)
                             reg_dvars.append(dvar)
@@ -264,7 +265,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
 
 
             raw_dvars = []
-            filey = sorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
+            filey = natsorted(glob.glob(fmri_files +  os.path.basename(res.split('run-')[0]) +'*run*'+'*_den-91k_bold.dtseries.nii'))
             for f in filey:
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
