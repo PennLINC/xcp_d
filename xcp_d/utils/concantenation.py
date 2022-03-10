@@ -238,7 +238,6 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             for j in  datafile:
                 fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
                 outfile = fileid + j
-                # filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                 
                 if j.endswith('ptseries.nii'):
                     fileid = fileid.split('_den-91k')[0]
@@ -254,6 +253,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid,j.split('.')[0])
                     make_DCAN_DF(filex,name)
                 if j.endswith('dtseries.nii'):
+                    filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
                     if j.endswith('_desc-residual_bold.dtseries.nii'):
