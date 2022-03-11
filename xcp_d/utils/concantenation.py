@@ -66,7 +66,7 @@ def make_DCAN_DF(fds_files,name):
     fd = np.loadtxt(fds_files[0],delimiter=',').T
     for j in range(1,len(fds_files)):
         dx = np.loadtxt(fds_files[j],delimiter=',')
-        fd = np.hstack([fd,fd.T])
+        fd = np.hstack([fd,dx.T])
     dcan = h5py.File(name, "w")
     for thresh in np.linspace(0,1,101):
         thresh = np.around(thresh,2)
