@@ -3,6 +3,7 @@
 """ploting tools."""
 from curses import raw
 from re import A
+from aiohttp import worker
 import numpy as np
 import nibabel as nb
 import pandas as pd
@@ -368,7 +369,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
-def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,raw_dvars=None,reg_dvars=None,regf_dvars=None):
+def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,raw_dvars=None,reg_dvars=None,regf_dvars=None,work_dir=work_dir):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
@@ -460,14 +461,14 @@ def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=No
     
     figy = plt.figure(constrained_layout=True, figsize=(45,60))
     grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05,height_ratios=[1,1,0.2,2.5,1])
-    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True)
-    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB')
+    confoundplotx(tseries=conf,gs_ts=grid[0],tr=tr,ylabel='DVARS',hide_x=True,work_dir=work_dir)
+    confoundplotx(tseries=wbaf,gs_ts=grid[1],tr=tr,hide_x=True,ylabel='WB',work_dir=work_dir)
     plot_text(imgdata=rawdata,gs_ts=grid[2])
     
     #display_cb(gs_ts=grid[3])
 
     plot_carpetX(func=scaledresdata,atlaslabels=atlaslabels,tr=tr,subplot=grid[3],legend=True)
-    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True)
+    confoundplotx(tseries=fdx,gs_ts=grid[4],tr=tr,hide_x=False,ylims=[0,1],ylabel='FD[mm]',FD=True,work_dir=work_dir)
     figy.savefig(filenameaf,bbox_inches="tight", pad_inches=None,dpi=300)
     
     return filenamebf,filenameaf
@@ -483,6 +484,7 @@ def confoundplotx(
     ylims=None,
     ylabel=None,
     FD=False
+    work_dir=None
    ):
     import seaborn as sns
 
@@ -521,8 +523,8 @@ def confoundplotx(
 
     if ylabel:
         ax_ts.set_ylabel(ylabel)
- 
-    np.save('/wkdir/tseries.npy',tseries)
+    if type(work_dir) == 'str':
+        tseries.to_csv('/{0}/{1}_tseries.npy'.format(work_dir,ylabel))
     columns= tseries.columns
     maxim_value =[]
     minim_value =[]

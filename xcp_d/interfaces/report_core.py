@@ -97,7 +97,7 @@ def generate_reports(
                 fmri_dir = str(work_dir) + '/hcp/hcp'
             from ..utils import concatenatebold
             print('Concatenating bold files ...')
-            concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_d/')
+            concatenatebold(subjlist=subject_list,fmridir=str(fmri_dir),outputdir=Path(str(output_dir))/'xcp_d/',work_dir=work_dir)
             print('Concatenation complete!')
         
         from .layout_builder import layout_builder 

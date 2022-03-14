@@ -14,7 +14,7 @@ from nipype.interfaces.ants import ApplyTransforms
 import h5py
 from natsort import natsorted
 
-def concatenatebold(subjlist,fmridir,outputdir):
+def concatenatebold(subjlist,fmridir,outputdir,work_dir):
     outdir = outputdir
     fmr = glob.glob(str(outdir) + '/' + _prefix(subjlist[0])+'/*/func/*_desc-residual*bold*nii*')[0]
     if fmr.endswith('nii.gz'):
@@ -29,19 +29,19 @@ def concatenatebold(subjlist,fmridir,outputdir):
             if sed: 
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
-                    concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)    
+                    concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses,work_dir=work_dir)    
             else:
                 ses = None 
-                concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+                concatenate_nifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,work_dir=work_dir)
     else:
         for s in subjlist:
             sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual*bold*.dtseries.nii')
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
-                    concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses)
+                    concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,ses=kses,work_dir=work_dir)
             else:
-                concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir)
+                concatenate_cifti(subid=_prefix(s),fmridir=fmridir,outputdir=outputdir,work_dir=work_dir)
 
     
 def make_DCAN_DF(fds_files,name):
@@ -161,7 +161,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None):
                 raw_dvars=raw_dvars,
                 reg_dvars=reg_dvars,
                 regf_dvars=reg_dvars,
-                filenameaf=postcarpet,filenamebf=precarpet,mask=mask,seg=segfile,tr=tr)
+                filenameaf=postcarpet,filenamebf=precarpet,mask=mask,seg=segfile,tr=tr,work_dir=work_dir)
 
             # link or copy bb svgs
             gboldbbreg = figure_files  + os.path.basename(fileid) + '_desc-bbregister_bold.svg'
@@ -290,7 +290,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None):
             raw_dvars=raw_dvars,
             reg_dvars=reg_dvars,
             regf_dvars=reg_dvars,
-            filenameaf=postcarpet,filenamebf=precarpet,tr=tr)
+            filenameaf=postcarpet,filenamebf=precarpet,tr=tr,work_dir=work_dir)
 
 
 
