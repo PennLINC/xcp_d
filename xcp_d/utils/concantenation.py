@@ -190,7 +190,7 @@ def compute_dvars(datat):
 
 
 
-def concatenate_cifti(subid,fmridir,outputdir,ses=None):
+def concatenate_cifti(subid,fmridir,outputdir,ses=None,work_dir=None):
 
     
 
