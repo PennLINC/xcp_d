@@ -3,7 +3,6 @@
 """ploting tools."""
 from curses import raw
 from re import A
-from aiohttp import worker
 import numpy as np
 import nibabel as nb
 import pandas as pd
@@ -369,7 +368,7 @@ def plotseries(conf,gs_ts,ylim=None,ylabelx=None,hide_x=None,tr=None,ax=None):
     return ax
 
 
-def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,raw_dvars=None,reg_dvars=None,regf_dvars=None,work_dir=work_dir):
+def plot_svgx(rawdata,regdata,resddata,fd,filenamebf,filenameaf,mask=None,seg=None,tr=1,raw_dvars=None,reg_dvars=None,regf_dvars=None,work_dir=None):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
@@ -483,7 +482,7 @@ def confoundplotx(
     hide_x=True,
     ylims=None,
     ylabel=None,
-    FD=False
+    FD=False,
     work_dir=None
    ):
     import seaborn as sns
