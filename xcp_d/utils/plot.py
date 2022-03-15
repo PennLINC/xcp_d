@@ -522,7 +522,8 @@ def confoundplotx(
 
     if ylabel:
         ax_ts.set_ylabel(ylabel)
-    if type(work_dir) == 'str':
+
+    if work_dir != None:
         tseries.to_csv('/{0}/{1}_tseries.npy'.format(work_dir,ylabel))
     columns= tseries.columns
     maxim_value =[]
