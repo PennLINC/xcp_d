@@ -107,7 +107,7 @@ def init_post_process_wf(
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_conf: str
-        path to cusrtom nuissance regressors 
+        path to custom nuissance regressors 
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     
@@ -168,7 +168,8 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         fields=['processed_bold', 'smoothed_bold','tmask','fd']), name='outputnode')
     
     inputnode.inputs.bold_file = bold_file
-    confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
+    confoundmat = pe.Node(ConfoundMatrix(head_radius=head_radius, 
+                params=params, custom_conf=inputnode.inputs.custom_conf,
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),
@@ -207,10 +208,10 @@ The residual were then  band pass filtered within the frequency band {highpass}-
             (inputnode,rm_dummytime,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]) 
              ])
-        if inputnode.inputs.custom_conf:
-           workflow.connect([ (inputnode,rm_dummytime,[('custom_conf','custom_conf')]),
-                             (rm_dummytime,censor_scrubwf,[('custom_confdropTR','custom_conf')]),
-                             (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]),])
+        # if inputnode.inputs.custom_conf:
+        #    workflow.connect([ (inputnode,rm_dummytime,[('custom_conf','custom_conf')]),
+        #                      (rm_dummytime,censor_scrubwf,[('custom_confdropTR','custom_conf')]),
+        #                      (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]),])
 
         workflow.connect([
               (rm_dummytime,censor_scrubwf,[('bold_file_TR','in_file'),
@@ -231,10 +232,10 @@ The residual were then  band pass filtered within the frequency band {highpass}-
                (censor_scrubwf,outputnode,[('fd_timeseries','fd')])
                 ])
     else:
-        if inputnode.inputs.custom_conf:
-                workflow.connect([
-                    (inputnode,censor_scrubwf,[('custom_conf','custom_conf')]),
-                     (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
+        # if inputnode.inputs.custom_conf:
+        #         workflow.connect([
+        #             (inputnode,censor_scrubwf,[('custom_conf','custom_conf')]),
+        #              (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
         
         
         workflow.connect([

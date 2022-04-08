@@ -26,8 +26,8 @@ class _regressInputSpec(BaseInterfaceInputSpec):
     confounds = File(exists=True, mandatory=True,
                           desc=" confound regressors selected from fmriprep's confound matrix.")
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
-    custom_conf = File(exists=False, mandatory=False,
-                          desc=" custom regressors like task or respiratory with the same length as in_file")
+    # custom_conf = File(exists=False, mandatory=False,
+    #                       desc="custom regressors like task or respiratory with the same length as in_file")
     mask = File(exists=False, mandatory=False,
                           desc=" brain mask nifti file")
     
@@ -61,13 +61,14 @@ class regress(SimpleInterface):
         
         # get the confound matrix 
         confound = pd.read_csv(self.inputs.confounds,header=None)
-        if self.inputs.custom_conf:
-            confound_custom = pd.read_table(self.inputs.custom_conf,
-                                header=None,delimiter=' ')
-            confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
-            confound = np.nan_to_num(confound)
-        else:
-            confound = confound.to_numpy().T
+        confound = confound.to_numpy().T
+        # if self.inputs.custom_conf:
+        #     confound_custom = pd.read_table(self.inputs.custom_conf,
+        #                         header=None,delimiter=' ')
+        #     confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
+        #     confound = np.nan_to_num(confound)
+        # else:
+        #     confound = confound.to_numpy().T
         
         # get the nifti/cifti  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file,

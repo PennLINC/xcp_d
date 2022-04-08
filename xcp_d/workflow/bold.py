@@ -265,6 +265,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                     name="write_derivative_wf")
 
     confoundmat_wf = pe.Node(ConfoundMatrix(head_radius=head_radius, params=params,
+                custom_conf=custom_conf,
                 filtertype=motion_filter_type,cutoff=band_stop_max,
                 low_freq=band_stop_max,high_freq=band_stop_min,TR=TR,
                 filterorder=motion_filter_order),

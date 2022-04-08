@@ -15,10 +15,12 @@ from nipype.interfaces.base import (
     traits, TraitedSpec, BaseInterfaceInputSpec, File,SimpleInterface
 )
 from ..utils import(read_ndata, write_ndata, compute_FD,compute_dvars)
+from ..utils.confounds import load_confound, load_motion
 import pandas as pd
-from niworkflows.viz.plots import fMRIPlot
+from ..utils.plot import fMRIPlot,plot_carpet,_carpet
 from ..utils import regisQ
 LOGGER = logging.getLogger('nipype.interface')
+
 
 
 
@@ -30,6 +32,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     tmask = File(exists=False,mandatory=False, desc="temporal mask")
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
     TR = traits.Float(exit=True,mandatory=True,desc="TR")
+    filtertype = traits.Float(exists=False,mandatory=False)
     head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head raidus for to convert rotxyz to arc length \
                                                for baby, 40m is recommended")
     bold2T1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
@@ -74,8 +77,9 @@ class computeqcplot(SimpleInterface):
     def _run_interface(self, runtime):
         
         conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
-        fd_timeseries = compute_FD(confound=conf_matrix, 
-                           head_radius=self.inputs.head_radius)
+        motion_conf = load_motion(conf_matrix.copy(),TR=self.inputs.TR,head_radius=self.inputs.head_radius,filtertype=self.inputs.filtertype)
+        motion_df = pd.DataFrame(data=motion_conf.values,columns=["rot_x", "rot_y", "rot_z","trans_x", "trans_y","trans_z"])
+        fd_timeseries = compute_FD(confound=motion_df, head_radius=self.inputs.head_radius)
     
         rmsd = conf_matrix['rmsd']
 
@@ -117,11 +121,10 @@ class computeqcplot(SimpleInterface):
         conf = pd.DataFrame({ 'FD': fd_timeseries, 'DVARS': dvars_bf})
 
         fig = fMRIPlot(func_file=filex,seg_file=self.inputs.seg_file,data=conf,
-                    mask_file=self.inputs.mask_file).plot()
+                    mask_file=self.inputs.mask_file).plot(labelsize=8)
         fig.savefig(self._results['raw_qcplot'], bbox_inches='tight')
 
-        #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,tr=self.inputs.TR,
-                        #filename=self._results['raw_qcplot'])
+        # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,tr=self.inputs.TR,filename=self._results['raw_qcplot'])
 
         if nvolcensored > 0 :
             mean_fd = np.mean(fd_timeseries[tmask==0])
@@ -147,11 +150,11 @@ class computeqcplot(SimpleInterface):
                           mask=self.inputs.mask_file,filename=filey,tr=self.inputs.TR)
             
             figy = fMRIPlot(func_file=filey,seg_file=self.inputs.seg_file,data=confy,
-                    mask_file=self.inputs.mask_file).plot()
+                    mask_file=self.inputs.mask_file).plot(labelsize=8)
             figy.savefig(self._results['clean_qcplot'], bbox_inches='tight')
             
-            #plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
-                             #filename=self._results['clean_qcplot'])
+            # plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
+            #                  filename=self._results['clean_qcplot'])
         else:
             mean_fd = np.mean(fd_timeseries)
             mean_rms = np.mean (rmsd)
@@ -168,11 +171,11 @@ class computeqcplot(SimpleInterface):
                          'DVARS': dvars_af})
             
             figz = fMRIPlot(func_file=self.inputs.cleaned_file,seg_file=self.inputs.seg_file,
-                    data=confz, mask_file=self.inputs.mask_file).plot()
+                    data=confz, mask_file=self.inputs.mask_file).plot(labelsize=8)
             figz.savefig(self._results['clean_qcplot'], bbox_inches='tight')
 
-            #plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
-                             #filename=self._results['clean_qcplot'])
+            # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
+            #                  filename=self._results['clean_qcplot'])
 
         qc_pf = {'meanFD':[mean_fd],'relMeansRMSMotion':[mean_rms],'relMaxRMSMotion':[rms_max],
                   'meanDVInit':[mdvars_bf], 'meanDVFinal':[mdvars_af],'nVolCensored':[nvolcensored],

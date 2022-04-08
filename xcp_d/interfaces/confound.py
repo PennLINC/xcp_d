@@ -32,6 +32,8 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
     low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
 
     high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')
+
+    custom_conf= traits.Str(exit=False,mandatory=False, desc='path to custom regressors')
     
     params = traits.Str(exists=True,mandatory=True, 
                             default_value='24P',desc= "nuissance confound model from Ciric etal 2017 \
@@ -81,7 +83,7 @@ class ConfoundMatrix(SimpleInterface):
        
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
-                       filtertype=self.inputs.filtertype,
+                       filtertype=self.inputs.filtertype,custom_conf=self.inputs.custom_conf,
                        freqband=freqband,cutoff=cutoff,head_radius=self.inputs.head_radius,
                        params=self.inputs.params,TR=self.inputs.TR,
                        order=self.inputs.filterorder)

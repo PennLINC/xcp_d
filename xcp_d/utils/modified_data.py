@@ -29,7 +29,7 @@ def drop_tseconds_volume(data_matrix,confound,delets=0,TR=1):
 
 def compute_FD(confound,head_radius=50):
     """
-
+    computes FD
     """
     
     confound = confound.replace(np.nan, 0)

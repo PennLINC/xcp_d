@@ -82,6 +82,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
                            desc=" confound selected from fmriprep confound matrix ")
     head_radius = traits.Float(exists=False,mandatory=False, default_value=50,
                            desc="head radius in mm  ")
+    filtertype = traits.Float(exists=False,mandatory=False)
     time_todrop = traits.Float(exists=False,mandatory=False,default_value=0, desc="time in seconds to drop")
 
 
@@ -122,10 +123,18 @@ class censorscrub(SimpleInterface):
     def _run_interface(self, runtime):
         
         # get the raw confound matrix  and compute 
-        from ..utils.confounds import load_confound
-        conf_matrix = load_confound(datafile=self.inputs.bold_file)
-        fd_timeseries = compute_FD(confound=conf_matrix[0], 
-                           head_radius=self.inputs.head_radius)
+        
+        # conf_matrix = load_confound(datafile=self.inputs.bold_file)
+        # fd_timeseries = compute_FD(confound=conf_matrix[0], 
+        #                    head_radius=self.inputs.head_radius)
+
+
+        from ..utils.confounds import (load_confound, load_motion)
+        conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
+        motion_conf = load_motion(conf_matrix.copy(),TR=self.inputs.TR,head_radius=self.inputs.head_radius,filtertype=self.inputs.filtertype)
+        motion_df = pd.DataFrame(data=motion_conf.values,columns=["rot_x", "rot_y", "rot_z","trans_x", "trans_y","trans_z"])
+        fd_timeseries = compute_FD(confound=motion_df, head_radius=self.inputs.head_radius)
+
 
         ### read confound
 

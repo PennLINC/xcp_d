@@ -173,6 +173,8 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 def stringforparams(params):
+    if params == 'custom':
+        bsignal = "A custom set of regressors was used, with no other regressors from XCP-D"
     if params == '24P':
         bsignal = "In total, 24 nuisance regressors were selected  from the nuisance \
         confound matrices of fMRIPrep output. These nuisance regressors included \
@@ -217,6 +219,6 @@ def get_customfile(custom_conf,bold_file):
         custom_file = os.path.abspath(str(custom_conf) + '/' + file_base + '-custom_timeseries.tsv')
     else:
         custom_file = None
-
+    print (custom_file)
     return custom_file
 

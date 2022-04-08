@@ -41,15 +41,16 @@ def load_motion(confoundspd,TR,head_radius,filtertype,
         cutoff=0.1,freqband=[0.1,0.2],order=4):
     """Load the 6 motion regressors."""
     fs = 1/TR
-    head_radius = head_radius
-    rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]*head_radius
+    rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
     datay = pd.concat([rot_2mm,trans_mm],axis=1).to_numpy()
-    datay = datay.T 
+    
     if filtertype == 'lp' or filtertype == 'notch' :
+        datay = datay.T 
         datay = motion_regression_filter(data=datay,fs=fs,
           filtertype=filtertype,cutoff=cutoff,freqband=freqband,order=order)
-    return  pd.DataFrame(datay.T) 
+        datay = datay.T
+    return  pd.DataFrame(datay)
 
 def load_globalS(confoundspd):
     """select global signal."""
@@ -114,7 +115,7 @@ def confpower(confound,order=2):
     return confound ** order
 
 
-def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
+def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,order=4,
                         freqband=[0.1,0.2],head_radius=50,params='27P'):
                     
     """ extract confound """
@@ -170,9 +171,13 @@ def load_confound_matrix(datafile,TR,filtertype,cutoff=0.1,order=4,
         cosine = load_cosine(confoundtsv)
         confound = pd.concat([mm_dev,acompc,gs,cosine],axis=1)
     elif params =='custom':
-        confound = pd.DataFrame() #for custom confounds with no other confounds
-        
-        
+        confound = pd.read_csv(custom_conf,sep='\t',header=None) #for custom confounds with no other confounds
+    
+    if params != 'custom':
+        if custom_conf != None:
+            custom = pd.read_csv(custom_conf,sep='\t',header=None)
+            confound = pd.concat([confound,custom],axis=1)
+           
     return confound
 
 def load_aroma(datafile):

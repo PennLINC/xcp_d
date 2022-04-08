@@ -105,7 +105,7 @@ def get_parser():
     g_param.add_argument('--despike', action='store_true', default=False,
                         help='despike the nifti/cifti before postprocessing') 
     g_param.add_argument('-p','--nuissance-regressors', required=False, default='36P', 
-                           choices=['27P', '36P', '24P', 'acompcor','aroma','acompcor_gsr','aroma_gsr'],
+                           choices=['27P', '36P', '24P', 'acompcor','aroma','acompcor_gsr','aroma_gsr','custom'],
                              type=str, help='nuissance parameters to be selected, other options include 24P and 36P \
                                            acompcor and aroma, see Ciric etal 2007')
     g_param.add_argument('-c','--custom_conf', required=False,default=None,
