@@ -277,7 +277,7 @@ def init_subject_wf(
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_conf: str
-        path to cusrtom nuissance regressors 
+        path to custom nuissance regressors 
     dummytime: float
         the first vols in seconds to be removed before postprocessing
 
