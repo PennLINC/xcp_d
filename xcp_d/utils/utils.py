@@ -212,7 +212,7 @@ def stringforparams(params):
     return bsignal
 
 def get_customfile(custom_conf,bold_file):
-    if custom_conf != 'None':
+    if custom_conf != None:
         confounds_timeseries = bold_file.replace("_space-" + bold_file.split("space-")[1],
                          "_desc-confounds_timeseries.tsv")
         file_base = os.path.basename(confounds_timeseries.split('-confounds_timeseries.tsv')[0])

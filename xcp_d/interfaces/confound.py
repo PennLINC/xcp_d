@@ -33,7 +33,9 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
 
     high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')
     
-    custom_conf= traits.Str(exit=False,mandatory=False, desc='path to custom regressors',default_value='None')
+    custom_conf = traits.Either(
+        traits.Undefined, File,
+        desc="name of output file with field or true",exists=False,mandatory=False)
 
     params = traits.Str(exists=True,mandatory=True, 
                             default_value='24P',desc= "nuissance confound model from Ciric etal 2017 \
