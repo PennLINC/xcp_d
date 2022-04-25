@@ -26,7 +26,7 @@ from nipype.interfaces.afni  import Unifize
 from nipype.interfaces.ants import CompositeTransformUtil #MB
 from ...interfaces.ants import ConvertTransformFile #MB
 from ..utils import load_confound_matrix #MB
-from ..utils import ConvertAffine #MB
+from ..utils import ConvertAffine,ApplyAffine #MB
 
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_d'
@@ -252,7 +252,16 @@ def init_anatomical_wf(
 
                # apply affine
                # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
+               surface_apply_affine_wf = pd.Node(ApplyAffine()) #MB
+               
+               # apply warpfield
+               # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
 
+               # concatenate sphere reg
+               # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
+
+               # resample MNI native surfs to 32k
+               # wb_command -surface-resample anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
 
 
                ## surface resample to fsl32k
