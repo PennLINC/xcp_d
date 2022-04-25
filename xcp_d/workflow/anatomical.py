@@ -7,6 +7,7 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 
 """
 
+from dis import disassemble
 import os,fnmatch,shutil
 from pathlib import Path
 from templateflow.api import get as get_template
@@ -21,7 +22,11 @@ from nipype import MapNode as MapNode
 from ..interfaces import BrainPlotx, RibbontoStatmap
 from ..utils import bid_derivative
 from nipype.interfaces.afni  import Unifize
-
+#MB for anatomical
+from nipype.interfaces.ants import CompositeTransformUtil #MB
+from ...interfaces.ants import ConvertTransformFile #MB
+from ..utils import load_confound_matrix #MB
+from ..utils import ConvertAffine #MB
 
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_d'
@@ -179,7 +184,7 @@ def init_anatomical_wf(
            (inputnode,ds_t1wseg_wf,[('t1w','source_file')]),
             ])
 
-     #verify fresurfer directory
+          #verify fresurfer directory
      
           p = Path(fmri_dir)
           import glob as glob
@@ -204,24 +209,53 @@ def init_anatomical_wf(
                L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
                R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
 
-          # get sphere surfaces to be converted
+               h5_file  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0] #MB
+
+               # get sphere surfaces to be converted
                if 'sub-' not in subject_id:
                     subid ='sub-'+ subject_id
                else:
                     subid = subject_id
-          
+
+               left_sphere_raw = str(freesufer_path)+'/'+subid+'/surf/lh.sphere' #MB
+               right_sphere_raw = str(freesufer_path)+'/'+subid+'/surf/rh.sphere' #MB 
+
                left_sphere = str(freesufer_path)+'/'+subid+'/surf/lh.sphere.reg'
                right_sphere = str(freesufer_path)+'/'+subid+'/surf/rh.sphere.reg'  
           
                left_sphere_fsLR = str(get_template(template='fsLR',hemi='L',density='32k',suffix='sphere')[0])
                right_sphere_fsLR = str(get_template(template='fsLR',hemi='R',density='32k',suffix='sphere')[0]) 
 
-          # nodes for letf and right in node
+               # nodes for left and right in node
                left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
                right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
           
+               left_sphere_raw_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere_raw),name='left_sphere_raw',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
+               right_sphere_raw_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere_raw),name='right_sphere_raw',mem_gb=mem_gb,n_procs=omp_nthreads)#MB        
          
-          ## surface resample to fsl32k
+               # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
+               # CompositeTransformUtil --disassemble anat/sub-MSC01_ses-3TAME01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5 T1w_to_MNI152Lin6Asym
+               disassemble_h5_wf = pe.Node(CompositeTransformUtil(process='disassemble',in_file=h5_file)),name='disassemble_h5',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
+
+               # convert affine from ITK binary to txt
+               # ConvertTransformFile 3 00_T1w_to_MNI152Lin6Asym_AffineTransform.mat 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
+               convert_ants_transform_wf = pe.Node(ConvertTransformFile(dimension=3),name="convert_ants_transform")#MB
+
+               # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase" since wb_command doesn't recognize "AffineTransform"
+               # (AffineTransform is a subclass of MatrixOffsetTransformBase which makes this okay to do AFAIK) 
+               # sed -e s/AffineTransform/MatrixOffsetTransformBase/ 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt > 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
+               change_xfm_type_wf = pe.Node(change_xfm_type,name="change_xfm_type")#MB
+               
+               # convert affine xfm to "world" so it works with -surface-apply-affine
+               # wb_command -convert-affine -from-itk 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
+               convert_xfm2world_wf = pd.Node(ConvertAffine(fromwhat='itk',towhat='world')) #MB
+
+               # apply affine
+               # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
+
+
+
+               ## surface resample to fsl32k
                left_wm_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
                         metric = ' BARYCENTRIC ',in_file=L_wm_surf), name="left_wm_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_pial_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
@@ -242,7 +276,7 @@ def init_anatomical_wf(
                         metric = ' BARYCENTRIC ',in_file=R_inflated_surf), name="right_inflated_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
 
           
-          # write report node
+               # write report node
                ds_wmLsurf_wf = pe.Node(
                   DerivativesDataSink(base_directory=output_dir, dismiss_entities=['desc'], space='fsLR', density='32k',desc='smoothwm',check_hdr=False,
                  extension='.surf.gii',hemi='L',source_file=L_wm_surf), name='ds_wmLsurf_wf', run_without_submitting=False,mem_gb=2)

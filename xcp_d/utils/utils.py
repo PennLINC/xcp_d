@@ -108,6 +108,14 @@ def get_maskfiles(bold_file,mni_to_t1w):
     t1mask = mni_to_t1w.split('from-')[0]+'desc-brain_mask.nii.gz'
     return boldmask,t1mask
 
+def change_xfm_type(file_path):
+    # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
+    # since wb_command doesn't recognize "AffineTransform"
+    # (AffineTransform is a subclass of MatrixOffsetTransformBase 
+    # which makes this okay to do AFAIK) 
+    os.system('sed -e s/AffineTransform/MatrixOffsetTransformBase/ {0} > {0}'.format(file_path))
+    return file_path
+
 
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 
