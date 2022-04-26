@@ -37,18 +37,17 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd,TR,head_radius,filtertype,
-        cutoff=0.1,freqband=[0.1,0.2],order=4):
+def load_motion(confoundspd,TR,filtertype,freqband
+        cutoff=0.1,order=4):
     """Load the 6 motion regressors."""
-    fs = 1/TR
     rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
     datay = pd.concat([rot_2mm,trans_mm],axis=1).to_numpy()
     
     if filtertype == 'lp' or filtertype == 'notch' :
         datay = datay.T 
-        datay = motion_regression_filter(data=datay,fs=fs,
-          filtertype=filtertype,cutoff=cutoff,freqband=freqband,order=order)
+        datay = motion_regression_filter(data=datay,
+          filtertype=filtertype,freqband=freqband,cutoff=cutoff,order=order)
         datay = datay.T
     return  pd.DataFrame(datay)
 
@@ -116,7 +115,7 @@ def confpower(confound,order=2):
 
 
 def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,order=4,
-                        freqband=[0.1,0.2],head_radius=50,params='27P'):
+                        freqband=[0.1,0.2],params='27P'):
                     
     """ extract confound """
     '''
@@ -127,28 +126,24 @@ def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,orde
     '''
     confoundtsv,confoundjson = load_confound(datafile)
     if  params == '24P':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
-        cutoff=cutoff,freqband=freqband,order=order)
+        motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         confound = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
     elif  params == '27P':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
-        cutoff=cutoff,freqband=freqband,order=order)
+        motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
         confound = pd.concat([mm_dev,confpower(mm_dev),wmcsf,gs],axis=1)
     elif params == '36P':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
-        cutoff=cutoff,freqband=freqband,order=order)
+        motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         conf24p = pd.concat([mm_dev,confpower(mm_dev)],axis=1)
         gswmcsf = pd.concat([load_WM_CSF(confoundtsv),load_globalS(confoundtsv)],axis=1)
         gwcs_dev = pd.concat([gswmcsf,derivative(gswmcsf)],axis=1) 
         confound = pd.concat([conf24p,gwcs_dev,confpower(gwcs_dev)],axis=1)
     elif params == 'acompcor':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
-        cutoff=cutoff,freqband=freqband,order=order)
+        motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
         cosine = load_cosine(confoundtsv)
@@ -163,8 +158,7 @@ def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,orde
         gs = load_globalS(confoundtsv)
         pd.concat([wmcsf,aroma,gs],axis=1)
     elif params == 'acompcor_gsr':
-        motion = load_motion(confoundtsv,TR,head_radius,filtertype,
-        cutoff=cutoff,freqband=freqband,order=order)
+        motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
         gs = load_globalS(confoundtsv)
@@ -204,48 +198,86 @@ def load_aroma(datafile):
 
 
 
-def motion_regression_filter(data,fs,filtertype,cutoff,freqband,order=4):
+def motion_regression_filter(data,fs,filtertype,freqband,cutoff=.1,order=4):
     """
     apply motion filter to 6 motion.
     """
 
+    LP_freq_min=cutoff
+    fc_RR_min,fc_RR_max = freqband
 
-    from scipy.signal import firwin,iirnotch,filtfilt
+    TR = float(TR)
+    order = float(order)
+    LP_freq_min = float(LP_freq_min)
+    fc_RR_min = float(fc_RR_min)
+    fc_RR_max = float(fc_RR_max)
 
-    def lowpassfilter_coeff(cutoff, fs, order=4):
+
+    if filt_type == 'lp':
+        hr_min = LP_freq_min
+        hr = hr_min
+        fs = 1. / TR
+        fNy = fs / 2.
+        fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)
+        # cutting frequency normalized between 0 and nyquist
+        Wn = np.amin(fa) / fNy
+        b_filt = firwin(int(order)+1,Wn, pass_zero = 'lowpass')
+        a_filt = 1.
+        num_f_apply = 1.
+    else:
+        if  filt_type == 'notch':
+            fc_RR_bw = np.array([fc_RR_min,fc_RR_max])
+            rr = fc_RR_bw 
+            fs = 1. / TR
+            fNy = fs / 2.
+            fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)
+            W_notch = fa / fNy
+            Wn = np.mean(W_notch)
+            Wd = np.diff(W_notch)
+            bw = np.abs(Wd)
+            b_filt,a_filt = iirnotch(Wn,Wn/bw)
+            num_f_apply = np.int(np.floor(order/2))
+        for j in range(num_f_apply):
+            for k in range(data.shape[0]):
+                data[k,:] = filtfilt(b_filt,a_filt,data[k,:])
+    return data
+
+
+    # from scipy.signal import firwin,iirnotch,filtfilt
+
+    # def lowpassfilter_coeff(cutoff, fs, order=4):
         
-        nyq = 0.5 * fs
-        fa = np.abs( cutoff - np.floor((cutoff + nyq) / fs) * fs)
-        normalCutoff = fa / nyq
-        b = firwin(order, cutoff=normalCutoff, window='hamming') 
-        a = 1
-        return b, a
+    #     nyq = 0.5 * fs
+    #     fa = np.abs( cutoff - np.floor((cutoff + nyq) / fs) * fs)
+    #     normalCutoff = fa / nyq
+    #     b = firwin(order, cutoff=normalCutoff, window='hamming') 
+    #     a = 1
+    #     return b, a
 
-    def iirnortch_coeff(freqband,fs):
-        nyq = 0.5*fs
-        fa = np.abs(freqband - np.floor((np.add(freqband,nyq) / fs) * fs))
-        w0 = np.mean(fa)/nyq
-        bw = np.diff(fa)/nyq
-        qf = w0 / bw
-        b, a = iirnotch( w0, qf )
-        return b,a
+    # def iirnortch_coeff(freqband,fs):
+    #     nyq = 0.5*fs
+    #     fa = np.abs(freqband - np.floor((np.add(freqband,nyq) / fs) * fs))
+    #     w0 = np.mean(fa)/nyq
+    #     bw = np.diff(fa)/nyq
+    #     qf = w0 / bw
+    #     b, a = iirnotch( w0, qf )
+    #     return b,a
 
-    if filtertype == 'lp':
-        b,a = lowpassfilter_coeff(cutoff,fs,order=4)
-    elif filtertype =='notch':
-        b,a = iirnortch_coeff(freqband,fs=fs)
+    # if filtertype == 'lp':
+    #     b,a = lowpassfilter_coeff(cutoff,fs,order=4)
+    # elif filtertype =='notch':
+    #     b,a = iirnortch_coeff(freqband,fs=fs)
     
-    order_apply = np.int(np.floor(order/2))
+    # order_apply = np.int(np.floor(order/2))
 
-    for j in range(order_apply):
-        for k in range(data.shape[0]):
-            data[k,:] = filtfilt(b,a,data[k,:])
-        j=j+1
+    # for j in range(order_apply):
+    #     for k in range(data.shape[0]):
+    #         data[k,:] = filtfilt(b,a,data[k,:])
+    #     j=j+1
     
-    return data 
+    # return data 
     
     
-
 
 
 
