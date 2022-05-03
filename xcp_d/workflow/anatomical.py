@@ -226,6 +226,7 @@ def init_anatomical_wf(
                left_sphere_fsLR = str(get_template(template='fsLR',hemi='L',density='32k',suffix='sphere')[0])
                right_sphere_fsLR = str(get_template(template='fsLR',hemi='R',density='32k',suffix='sphere')[0]) 
 
+
                # nodes for left and right in node
                left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
                right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
@@ -256,13 +257,15 @@ def init_anatomical_wf(
                
                # apply warpfield
                # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
-
+               apply_warpfield_wf = pd.Node(ApplyWarpfield()) #MB
+               
                # concatenate sphere reg
                # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
+               surface_sphere_project_unproject_wf = pd.Node(SurfaceSphereProjectUnproject()) 
 
                # resample MNI native surfs to 32k
                # wb_command -surface-resample anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
-
+               # I believe this can be done in the framework below
 
                ## surface resample to fsl32k
                left_wm_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
