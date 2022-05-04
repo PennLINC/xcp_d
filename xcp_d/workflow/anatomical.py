@@ -209,7 +209,7 @@ def init_anatomical_wf(
                L_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-L_smoothwm.surf.gii')[0]
                R_wm_surf  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*hemi-R_smoothwm.surf.gii')[0]
 
-               h5_file  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0] #MB
+               
 
                # get sphere surfaces to be converted
                if 'sub-' not in subject_id:
@@ -226,17 +226,23 @@ def init_anatomical_wf(
                left_sphere_fsLR = str(get_template(template='fsLR',hemi='L',density='32k',suffix='sphere')[0])
                right_sphere_fsLR = str(get_template(template='fsLR',hemi='R',density='32k',suffix='sphere')[0]) 
 
+               left_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='L',density='164k',suffix='sphere')[0]) #MB
+               right_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='R',density='164k',suffix='sphere')[0]) #MB
 
                # nodes for left and right in node
                left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
                right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
           
+               # convert spheres (from FreeSurfer surf dir) to gifti MB
                left_sphere_raw_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere_raw),name='left_sphere_raw',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
                right_sphere_raw_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere_raw),name='right_sphere_raw',mem_gb=mem_gb,n_procs=omp_nthreads)#MB        
-         
+
                # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
                # CompositeTransformUtil --disassemble anat/sub-MSC01_ses-3TAME01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5 T1w_to_MNI152Lin6Asym
+         
+               h5_file  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0] #MB         
                disassemble_h5_wf = pe.Node(CompositeTransformUtil(process='disassemble',in_file=h5_file)),name='disassemble_h5',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
+
 
                # convert affine from ITK binary to txt
                # ConvertTransformFile 3 00_T1w_to_MNI152Lin6Asym_AffineTransform.mat 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
@@ -249,19 +255,19 @@ def init_anatomical_wf(
                
                # convert affine xfm to "world" so it works with -surface-apply-affine
                # wb_command -convert-affine -from-itk 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
-               convert_xfm2world_wf = pd.Node(ConvertAffine(fromwhat='itk',towhat='world')) #MB
+               convert_xfm2world_wf = pe.Node(ConvertAffine(fromwhat='itk',towhat='world')) #MB
 
                # apply affine
                # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
-               surface_apply_affine_wf = pd.Node(ApplyAffine()) #MB
+               surface_apply_affine_wf = pe.Node(ApplyAffine()) #MB
                
                # apply warpfield
                # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
-               apply_warpfield_wf = pd.Node(ApplyWarpfield()) #MB
+               apply_warpfield_wf = pe.Node(ApplyWarpfield()) #MB
                
                # concatenate sphere reg
                # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
-               surface_sphere_project_unproject_wf = pd.Node(SurfaceSphereProjectUnproject()) 
+               surface_sphere_project_unproject_wf = pe.Node(SurfaceSphereProjectUnproject()) 
 
                # resample MNI native surfs to 32k
                # wb_command -surface-resample anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
