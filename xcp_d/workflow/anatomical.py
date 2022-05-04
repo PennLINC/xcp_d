@@ -257,6 +257,10 @@ def init_anatomical_wf(
                # wb_command -convert-affine -from-itk 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
                convert_xfm2world_wf = pe.Node(ConvertAffine(fromwhat='itk',towhat='world'),name="convert_xfm2world") #MB
 
+               """
+               all of the below has to be done for both left and right
+               """
+
                # apply affine
                # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
                surface_apply_affine_wf = pe.Node(ApplyAffine(),name='surface_apply_affine') #MB
@@ -268,9 +272,15 @@ def init_anatomical_wf(
                left_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='L',density='164k',suffix='sphere')[0]) #MB
                right_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='R',density='164k',suffix='sphere')[0]) #MB
 
+               fs_std_mesh_L  = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii')
+               fs_std_mesh_R  = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_R/fsaverage.R.sphere.164k_fs_R.surf.gii')
+
+               fs_LR2fs_L  = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii')
+               fs_LR2fs_R  = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_R/fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii')
+               
                # concatenate sphere reg
                # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
-               surface_sphere_project_unproject_wf = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject') 
+               surface_sphere_project_unproject_wf = pe.Node(SurfaceSphereProjectUnproject(infile=),name='surface_sphere_project_unproject') 
 
                # resample MNI native surfs to 32k
                # wb_command -surface-resample anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
