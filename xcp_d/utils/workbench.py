@@ -152,7 +152,7 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         mandatory=True,
         argstr="%s ",
         position=0,
-        desc="The input sphere file",
+        desc="a sphere with the desired output mesh",
     )
 
     sphere_project_to = File(
@@ -160,7 +160,7 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         mandatory=True,
         argstr="%s ",
         position=1,
-        desc="The warpfield file",
+        desc="a sphere that aligns with sphere-in",
     )
 
     sphere_unproject_from = File(
@@ -168,7 +168,7 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         mandatory=True,
         argstr="%s ",
         position=2,
-        desc="The warpfield file",
+        desc="deformed to the desired output space",
     )
 
     out_file = File(
