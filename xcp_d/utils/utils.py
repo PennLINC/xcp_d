@@ -108,14 +108,36 @@ def get_maskfiles(bold_file,mni_to_t1w):
     t1mask = mni_to_t1w.split('from-')[0]+'desc-brain_mask.nii.gz'
     return boldmask,t1mask
 
-def change_xfm_type(file_path):
-    # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
-    # since wb_command doesn't recognize "AffineTransform"
-    # (AffineTransform is a subclass of MatrixOffsetTransformBase 
-    # which makes this okay to do AFAIK) 
-    os.system('sed -e s/AffineTransform/MatrixOffsetTransformBase/ {0} > {0}'.format(file_path))
-    return file_path
+class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
 
+    in_transform = traits.File(
+        exists=True,
+        argstr="%s",
+        mandatory=True,
+        position=0)
+    out_transform = traits.File(
+        argstr="%s",
+        name_source='in_transform',
+        name_template='%s_MatrixOffsetTransformBase',
+        keep_extension=True,
+        position=1)
+
+class _ChangeXfmTypeOutputSpec(TraitedSpec):
+    out_transform = traits.File(exists=True)
+
+class ChangeXfmType(SimpleInterface):
+    input_spec = _ChangeXfmTypeInputSpec
+    output_spec = _ChangeXfmTypeOutputSpec
+
+    def _run_interface(self,runtime):
+        with open(self.inputs.in_transform) as f:
+            lines=f.read_lines()
+        listcomp=[line.replace('AffineTransform','MatrixOffsetTransformBase') for line in lines]
+        outfile = runtime.cwd + '/' + self.inputs.out_transform
+        with open(outfile,'w') as write_file:
+            outfile.write(''.join(listcomp))
+        self._results['out_transform'] = outfile
+        return runtime
 
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 

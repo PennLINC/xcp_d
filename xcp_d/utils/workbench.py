@@ -119,7 +119,7 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
         desc="The output file",
     )
 
-class ApplyAffineOutputSpec(TraitedSpec):
+class ApplyWarpfieldOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output file")
 
 class ApplyWarpfield(WBCommand):

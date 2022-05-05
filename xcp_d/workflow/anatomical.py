@@ -25,7 +25,7 @@ from nipype.interfaces.afni  import Unifize
 #MB for anatomical
 from nipype.interfaces.ants import CompositeTransformUtil #MB
 from ...interfaces.ants import ConvertTransformFile #MB
-from ..utils import ConvertAffine,ApplyAffine,ApplyWarpfield,SurfaceSphereProjectUnproject #MB
+from ..utils import ConvertAffine,ApplyAffine,ApplyWarpfield,SurfaceSphereProjectUnproject,ChangeXfmType #MB
 
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_d'
@@ -218,8 +218,8 @@ def init_anatomical_wf(
 
 
 
-               left_sphere = str(freesufer_path)+'/'+subid+'/surf/lh.sphere.reg'
-               right_sphere = str(freesufer_path)+'/'+subid+'/surf/rh.sphere.reg'  
+               # left_sphere = str(freesufer_path)+'/'+subid+'/surf/lh.sphere.reg'
+               # right_sphere = str(freesufer_path)+'/'+subid+'/surf/rh.sphere.reg'  
           
                left_sphere_fsLR = str(get_template(template='fsLR',hemi='L',density='32k',suffix='sphere')[0])
                right_sphere_fsLR = str(get_template(template='fsLR',hemi='R',density='32k',suffix='sphere')[0]) 
@@ -230,45 +230,38 @@ def init_anatomical_wf(
 
 
                # nodes for left and right in node
-               left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
-               right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
+               # left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
+               # right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
           
                # convert spheres (from FreeSurfer surf dir) to gifti #MB
-               left_sphere_raw_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere_raw),name='left_sphere_raw',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
-               right_sphere_raw_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere_raw),name='right_sphere_raw',mem_gb=mem_gb,n_procs=omp_nthreads)#MB        
+               left_sphere_raw_mris = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere_raw),name='left_sphere_raw_mris',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
+               right_sphere_raw_mris = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere_raw),name='right_sphere_raw_mris',mem_gb=mem_gb,n_procs=omp_nthreads)#MB        
 
                # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
                # CompositeTransformUtil --disassemble anat/sub-MSC01_ses-3TAME01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5 T1w_to_MNI152Lin6Asym
          
                h5_file  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0] #MB         
-               disassemble_h5_wf = pe.Node(CompositeTransformUtil(process='disassemble',in_file=h5_file)),name='disassemble_h5',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
-
+               disassemble_h5 = pe.Node(CompositeTransformUtil(process='disassemble',in_file=h5_file)),name='disassemble_h5',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
 
                # convert affine from ITK binary to txt
                # ConvertTransformFile 3 00_T1w_to_MNI152Lin6Asym_AffineTransform.mat 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
-               convert_ants_transform_wf = pe.Node(ConvertTransformFile(dimension=3),name="convert_ants_transform")#MB
+               convert_ants_transform = pe.Node(ConvertTransformFile(dimension=3),name="convert_ants_transform")#MB
 
                # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase" since wb_command doesn't recognize "AffineTransform"
                # (AffineTransform is a subclass of MatrixOffsetTransformBase which makes this okay to do AFAIK) 
                # sed -e s/AffineTransform/MatrixOffsetTransformBase/ 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt > 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
-               change_xfm_type_wf = pe.Node(change_xfm_type,name="change_xfm_type")#MB
-               
+               change_xfm_type = pe.Node(ChangeXfmType(),name="change_xfm_type")#MB
+
                # convert affine xfm to "world" so it works with -surface-apply-affine
                # wb_command -convert-affine -from-itk 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
-               convert_xfm2world_wf = pe.Node(ConvertAffine(fromwhat='itk',towhat='world'),name="convert_xfm2world") #MB
+               convert_xfm2world = pe.Node(ConvertAffine(fromwhat='itk',towhat='world'),name="convert_xfm2world") #MB
 
-               """
-               all of the below has to be done for both left and right
-               """
+               workflow.connect([
+                    (disassemble_h5,convert_ants_transform,[('affine_transform','in_transform')]),
+                    (convert_ants_transform,change_xfm_type,[('out_transform','in_transform')]),
+                    (change_xfm_type,convert_xfm2world,[('out_transform','in_file')])
+               ])
 
-               # apply affine
-               # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
-               surface_apply_affine_wf = pe.Node(ApplyAffine(),name='surface_apply_affine') #MB
-               
-               # apply warpfield
-               # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
-               apply_warpfield_wf = pe.Node(ApplyWarpfield(),name='apply_warpfield') #MB
-               
                left_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='L',density='164k',suffix='sphere')[0]) #MB
                right_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='R',density='164k',suffix='sphere')[0]) #MB
 
@@ -277,10 +270,24 @@ def init_anatomical_wf(
 
                fs_LR2fs_L  = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii')
                fs_LR2fs_R  = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_R/fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii')
+
+               # apply affine
+               # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
+               surface_apply_affine_lh_pial = pe.Node(ApplyAffine(in_file=L_pial_surf),name='surface_apply_affine_lh') #MB
+               surface_apply_affine_rh_pial = pe.Node(ApplyAffine(in_file=R_pial_surf),name='surface_apply_affine_rh') #MB
                
+               # apply warpfield
+               # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
+               apply_warpfield_lh_pial = pe.Node(ApplyWarpfield(),name='apply_warpfield_lh') #MB
+               apply_warpfield_rh_pial = pe.Node(ApplyWarpfield(),name='apply_warpfield_rh') #MB
+               
+ 
                # concatenate sphere reg
                # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
-               surface_sphere_project_unproject_wf = pe.Node(SurfaceSphereProjectUnproject(infile=),name='surface_sphere_project_unproject') 
+               surface_sphere_project_unproject_lh_pial = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_lh') 
+               surface_sphere_project_unproject_rh_pial = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_rh') 
+
+
 
                # resample MNI native surfs to 32k
                # wb_command -surface-resample anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
@@ -339,30 +346,14 @@ def init_anatomical_wf(
                   DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR',density='32k',desc='midthickness',check_hdr=False,
                   extension='.surf.gii',hemi='R',source_file=R_midthick_surf), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
 
-          
+               workflow.connect([
+                    (convert_xfm2world,surface_apply_affine_lh_pial,[('out_file','affine')]),
+                    (surface_apply_affine_lh_pial,apply_warpfield_lh_pial,[('out_file','in_file')]),
+                    (disassemble_h5,apply_warpfield_lh_pial,[('displacement_field','warpfield')]),
+                    (apply_warpfield_lh_pial,left_pial_surf_wf,[('out_file','in_file')]),
+                    (left_pial_surf_wf,ds_pialLsurf_wf,[('out_file','in_file')]),
+               ])
 
-               workflow.connect([ 
-                (left_sphere_mris_wf,left_wm_surf_wf,[('converted','current_sphere')]),
-                (left_sphere_mris_wf,left_pial_surf_wf,[('converted','current_sphere')]),
-                (left_sphere_mris_wf,left_midthick_surf_wf,[('converted','current_sphere')]),
-                (left_sphere_mris_wf,left_inf_surf_wf,[('converted','current_sphere')]),
-
-                (right_sphere_mris_wf,right_wm_surf_wf,[('converted','current_sphere')]),
-                (right_sphere_mris_wf,right_pial_surf_wf,[('converted','current_sphere')]),
-                (right_sphere_mris_wf,right_midthick_surf_wf,[('converted','current_sphere')]),
-                (right_sphere_mris_wf,right_inf_surf_wf,[('converted','current_sphere')]),
-
-                (left_wm_surf_wf,ds_wmLsurf_wf,[('out_file','in_file')]),
-                (left_pial_surf_wf,ds_pialLsurf_wf,[('out_file','in_file')]),
-                (left_midthick_surf_wf,ds_midLsurf_wf,[('out_file','in_file')]),
-                (left_inf_surf_wf,ds_infLsurf_wf,[('out_file','in_file')]),
-
-                (right_wm_surf_wf,ds_wmRsurf_wf,[('out_file','in_file')]),
-                (right_pial_surf_wf,ds_pialRsurf_wf,[('out_file','in_file')]),
-                (right_midthick_surf_wf,ds_midRsurf_wf,[('out_file','in_file')]),
-                (right_inf_surf_wf,ds_infRsurf_wf,[('out_file','in_file')]),
-                ]) 
-               
                
                ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
                
