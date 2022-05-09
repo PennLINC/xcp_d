@@ -256,12 +256,6 @@ def init_anatomical_wf(
                # wb_command -convert-affine -from-itk 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
                convert_xfm2world = pe.Node(ConvertAffine(fromwhat='itk',towhat='world'),name="convert_xfm2world") #MB
 
-               workflow.connect([
-                    (disassemble_h5,convert_ants_transform,[('affine_transform','in_transform')]),
-                    (convert_ants_transform,change_xfm_type,[('out_transform','in_transform')]),
-                    (change_xfm_type,convert_xfm2world,[('out_transform','in_file')])
-               ])
-
                left_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='L',density='164k',suffix='sphere')[0]) #MB
                right_sphere_fsLR_164 = str(get_template(template='fsLR',hemi='R',density='164k',suffix='sphere')[0]) #MB
 
@@ -273,20 +267,24 @@ def init_anatomical_wf(
 
                # apply affine
                # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
-               surface_apply_affine_lh_pial = pe.Node(ApplyAffine(in_file=L_pial_surf),name='surface_apply_affine_lh') #MB
-               surface_apply_affine_rh_pial = pe.Node(ApplyAffine(in_file=R_pial_surf),name='surface_apply_affine_rh') #MB
+               surface_apply_affine_lh_pial = pe.Node(ApplyAffine(in_file=L_pial_surf),name='surface_apply_affine_lh_pial') #MB
+               surface_apply_affine_rh_pial = pe.Node(ApplyAffine(in_file=R_pial_surf),name='surface_apply_affine_rh_pial') #MB
+               surface_apply_affine_lh_wm = pe.Node(ApplyAffine(in_file=L_pial_surf),name='surface_apply_affine_lh_wm') #MB
+               surface_apply_affine_rh_wm = pe.Node(ApplyAffine(in_file=R_pial_surf),name='surface_apply_affine_rh_wm') #MB
                
                # apply warpfield
                # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
-               apply_warpfield_lh_pial = pe.Node(ApplyWarpfield(),name='apply_warpfield_lh') #MB
-               apply_warpfield_rh_pial = pe.Node(ApplyWarpfield(),name='apply_warpfield_rh') #MB
-               
+               apply_warpfield_lh_pial = pe.Node(ApplyWarpfield(),name='apply_warpfield_lh_pial') #MB
+               apply_warpfield_rh_pial = pe.Node(ApplyWarpfield(),name='apply_warpfield_rh_pial') #MB
+               apply_warpfield_lh_wm = pe.Node(ApplyWarpfield(),name='apply_warpfield_lh_wm') #MB
+               apply_warpfield_rh_wm = pe.Node(ApplyWarpfield(),name='apply_warpfield_rh_wm') #MB               
  
                # concatenate sphere reg
                # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
-               surface_sphere_project_unproject_lh_pial = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_lh') 
-               surface_sphere_project_unproject_rh_pial = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_rh') 
-
+               surface_sphere_project_unproject_lh_pial = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_lh_pial') 
+               surface_sphere_project_unproject_rh_pial = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_rh_pial') 
+               surface_sphere_project_unproject_lh_wm = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_lh_wm') 
+               surface_sphere_project_unproject_rh_wm = pe.Node(SurfaceSphereProjectUnproject(),name='surface_sphere_project_unproject_rh_wm') 
 
 
                # resample MNI native surfs to 32k
@@ -347,6 +345,12 @@ def init_anatomical_wf(
                   extension='.surf.gii',hemi='R',source_file=R_midthick_surf), name='ds_midRsurf_wf', run_without_submitting=False,mem_gb=2)
 
                workflow.connect([
+                    (disassemble_h5,convert_ants_transform,[('affine_transform','in_transform')]),
+                    (convert_ants_transform,change_xfm_type,[('out_transform','in_transform')]),
+                    (change_xfm_type,convert_xfm2world,[('out_transform','in_file')])
+               ])
+
+               workflow.connect([
                     (convert_xfm2world,surface_apply_affine_lh_pial,[('out_file','affine')]),
                     (surface_apply_affine_lh_pial,apply_warpfield_lh_pial,[('out_file','in_file')]),
                     (disassemble_h5,apply_warpfield_lh_pial,[('displacement_field','warpfield')]),
@@ -354,6 +358,29 @@ def init_anatomical_wf(
                     (left_pial_surf_wf,ds_pialLsurf_wf,[('out_file','in_file')]),
                ])
 
+               workflow.connect([
+                    (convert_xfm2world,surface_apply_affine_rh_pial,[('out_file','affine')]),
+                    (surface_apply_affine_rh_pial,apply_warpfield_rh_pial,[('out_file','in_file')]),
+                    (disassemble_h5,apply_warpfield_rh_pial,[('displacement_field','warpfield')]),
+                    (apply_warpfield_rh_pial,right_pial_surf_wf,[('out_file','in_file')]),
+                    (right_pial_surf_wf,ds_pialRsurf_wf,[('out_file','in_file')]),
+               ])
+
+               workflow.connect([
+                    (convert_xfm2world,surface_apply_affine_lh_wm,[('out_file','affine')]),
+                    (surface_apply_affine_lh_wm,apply_warpfield_lh_wm,[('out_file','in_file')]),
+                    (disassemble_h5,apply_warpfield_lh_wm,[('displacement_field','warpfield')]),
+                    (apply_warpfield_lh_wm,left_wm_surf_wf,[('out_file','in_file')]),
+                    (left_wm_surf_wf,ds_wmLsurf_wf,[('out_file','in_file')]),
+               ])
+
+               workflow.connect([
+                    (convert_xfm2world,surface_apply_affine_rh_wm,[('out_file','affine')]),
+                    (surface_apply_affine_rh_wm,apply_warpfield_rh_wm,[('out_file','in_file')]),
+                    (disassemble_h5,apply_warpfield_rh_wm,[('displacement_field','warpfield')]),
+                    (apply_warpfield_rh_wm,right_wm_surf_wf,[('out_file','in_file')]),
+                    (right_wm_surf_wf,ds_wmRsurf_wf,[('out_file','in_file')]),
+               ])
                
                ribbon = str(freesufer_path) + '/'+subid+'/mri/ribbon.mgz'
                
@@ -369,7 +396,7 @@ def init_anatomical_wf(
                ribbon2statmap_wf = pe.Node(RibbontoStatmap(ribbon=ribbon),name='ribbon2statmap',mem_gb=mem_gb,n_procs=omp_nthreads)
      
           
-          #brainplot
+               #brainplot
                brainspritex_wf = pe.Node(BrainPlotx(),name='brainsprite',mem_gb=mem_gb,n_procs=omp_nthreads)
           
                ds_brainspriteplot_wf = pe.Node(
