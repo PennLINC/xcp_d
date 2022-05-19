@@ -1,13 +1,15 @@
 """workbench command for wb_command -convert-affine -from-itk"""
 
 from nipype.interfaces.workbench.base import WBCommand
-from nipype.interfaces.base import TraitedSpec, File, traits, CommandLineInputSpec
+from nipype.interfaces.base import TraitedSpec, File, traits, CommandLineInputSpec,SimpleInterface
 from nipype import logging
+from nipype.utils.filemanip import fname_presuffix
+from sqlalchemy import false
 iflogger = logging.getLogger("nipype.interface")
 
 class ConvertAffineInputSpec(CommandLineInputSpec):
 
-    from_what = traits.Str(
+    fromwhat = traits.Str(
         mandatory=True,
         argstr="-from-%s ",
         position=0,
@@ -22,18 +24,18 @@ class ConvertAffineInputSpec(CommandLineInputSpec):
         desc="The input file",
     )
 
-    to_what = traits.Str(
+    towhat = traits.Str(
         mandatory=True,
         argstr="-to-%s ",
         position=2,
         desc="world, itk, or flirt",
     )
-
-    out_file = File(
+    out_file = traits.File(
         argstr="%s",
-        position=3,
-        desc="The output file",
-    )
+        name_source='in_file',
+        name_template='%s_world.nii.gz',
+        keep_extension=False)
+    
 
 class ConvertAffineOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output file")
@@ -50,7 +52,7 @@ class ApplyAffineInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="The input file",
     )
@@ -58,17 +60,17 @@ class ApplyAffineInputSpec(CommandLineInputSpec):
     affine = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="The affine file",
     )
 
     out_file = File(
-        keep_extension=False,
         argstr="%s",
-        position=2,
-        desc="The output file",
-    )
+        name_source='in_file',
+        name_template='%s-MNIaffine.nii.gz',
+        keep_extension=False,
+        position=2)
 
 class ApplyAffineOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output file")
@@ -91,7 +93,7 @@ class ApplyAffine(WBCommand):
 #       command, or aff_conv from the 4dfp suite.
     input_spec = ApplyAffineInputSpec
     output_spec = ApplyAffineOutputSpec
-    _cmd = "wb_command surface-apply-affine "
+    _cmd = "wb_command -surface-apply-affine "
 
 
 class ApplyWarpfieldInputSpec(CommandLineInputSpec):
@@ -99,7 +101,7 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="The input file",
     )
@@ -113,11 +115,10 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
     )
 
     out_file = File(
-        keep_extension=False,
         argstr="%s",
-        position=2,
-        desc="The output file",
-    )
+        name_source='in_file',
+        name_template='%s-MNIwarped.nii.gz',
+        keep_extension=False)
 
 class ApplyWarpfieldOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output file")
@@ -143,7 +144,7 @@ class ApplyWarpfield(WBCommand):
 
     input_spec = ApplyWarpfieldInputSpec
     output_spec = ApplyWarpfieldOutputSpec
-    _cmd = "wb_command surface-apply-warpfield "
+    _cmd = "wb_command -surface-apply-warpfield "
 
 class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
 
@@ -193,3 +194,28 @@ class SurfaceSphereProjectUnproject(WBCommand):
     output_spec = SurfaceSphereProjectUnprojectOutputSpec
     _cmd = "wb_command -surface-sphere-project-unproject "
 
+
+
+class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
+    in_transform = traits.File(
+        exists=True,
+        argstr="%s",
+        mandatory=True,
+        position=0)
+
+class _ChangeXfmTypeOutputSpec(TraitedSpec):
+    out_transform = traits.File(exists=True)
+
+class ChangeXfmType(SimpleInterface):
+    input_spec = _ChangeXfmTypeInputSpec
+    output_spec = _ChangeXfmTypeOutputSpec
+
+    def _run_interface(self,runtime):
+        with open(self.inputs.in_transform) as f:
+            lines=f.readlines()
+        listcomp=[line.replace('AffineTransform','MatrixOffsetTransformBase') for line in lines]
+        outfile = fname_presuffix(self.inputs.in_transform, suffix='_MatrixOffsetTransformBase', newpath=runtime.cwd)
+        with open(outfile,'w') as write_file:
+            write_file.write(''.join(listcomp))
+        self._results['out_transform'] = outfile
+        return runtime

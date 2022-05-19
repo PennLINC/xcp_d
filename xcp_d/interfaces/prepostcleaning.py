@@ -84,6 +84,8 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
                            desc="head radius in mm  ")
     filtertype = traits.Float(exists=False,mandatory=False)
     time_todrop = traits.Float(exists=False,mandatory=False,default_value=0, desc="time in seconds to drop")
+    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
+    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')
 
 
 class _censorscrubOutputSpec(TraitedSpec):
@@ -131,7 +133,7 @@ class censorscrub(SimpleInterface):
 
         from ..utils.confounds import (load_confound, load_motion)
         conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
-        motion_conf = load_motion(conf_matrix.copy(),TR=self.inputs.TR,head_radius=self.inputs.head_radius,filtertype=self.inputs.filtertype)
+        motion_conf = load_motion(conf_matrix.copy(),TR=self.inputs.TR,filtertype=self.inputs.filtertype,freqband=[self.inputs.low_freq,self.inputs.high_freq])
         motion_df = pd.DataFrame(data=motion_conf.values,columns=["rot_x", "rot_y", "rot_z","trans_x", "trans_y","trans_z"])
         fd_timeseries = compute_FD(confound=motion_df, head_radius=self.inputs.head_radius)
 

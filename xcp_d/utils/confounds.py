@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 import os  
-
+from scipy.signal import firwin,iirnotch,filtfilt
 def load_confound(datafile):
     """`Load confound amd json."""
     '''
@@ -37,8 +37,7 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd,TR,filtertype,freqband
-        cutoff=0.1,order=4):
+def load_motion(confoundspd,TR,filtertype,freqband,cutoff=0.1,order=4):
     """Load the 6 motion regressors."""
     rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
@@ -46,7 +45,7 @@ def load_motion(confoundspd,TR,filtertype,freqband
     
     if filtertype == 'lp' or filtertype == 'notch' :
         datay = datay.T 
-        datay = motion_regression_filter(data=datay,
+        datay = motion_regression_filter(data=datay,TR=TR,
           filtertype=filtertype,freqband=freqband,cutoff=cutoff,order=order)
         datay = datay.T
     return  pd.DataFrame(datay)
@@ -198,7 +197,7 @@ def load_aroma(datafile):
 
 
 
-def motion_regression_filter(data,fs,filtertype,freqband,cutoff=.1,order=4):
+def motion_regression_filter(data,TR,filtertype,freqband,cutoff=.1,order=4):
     """
     apply motion filter to 6 motion.
     """
@@ -213,7 +212,7 @@ def motion_regression_filter(data,fs,filtertype,freqband,cutoff=.1,order=4):
     fc_RR_max = float(fc_RR_max)
 
 
-    if filt_type == 'lp':
+    if filtertype == 'lp':
         hr_min = LP_freq_min
         hr = hr_min
         fs = 1. / TR
@@ -225,7 +224,7 @@ def motion_regression_filter(data,fs,filtertype,freqband,cutoff=.1,order=4):
         a_filt = 1.
         num_f_apply = 1.
     else:
-        if  filt_type == 'notch':
+        if  filtertype == 'notch':
             fc_RR_bw = np.array([fc_RR_min,fc_RR_max])
             rr = fc_RR_bw 
             fs = 1. / TR
@@ -243,7 +242,7 @@ def motion_regression_filter(data,fs,filtertype,freqband,cutoff=.1,order=4):
     return data
 
 
-    # from scipy.signal import firwin,iirnotch,filtfilt
+    
 
     # def lowpassfilter_coeff(cutoff, fs, order=4):
         

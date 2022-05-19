@@ -5,7 +5,7 @@ import os
 import numpy as np
 import glob as glob
 from templateflow.api import get as get_template
-
+from nipype.interfaces.base import TraitedSpec, File, traits, CommandLineInputSpec, SimpleInterface
 from pkg_resources import resource_filename as pkgrf
 
 def get_transformfilex(bold_file,mni_to_t1w,t1w_to_native):
@@ -107,37 +107,6 @@ def get_maskfiles(bold_file,mni_to_t1w):
     boldmask = bold_file.split('desc-preproc_bold.nii.gz')[0]+ 'desc-brain_mask.nii.gz'
     t1mask = mni_to_t1w.split('from-')[0]+'desc-brain_mask.nii.gz'
     return boldmask,t1mask
-
-class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
-
-    in_transform = traits.File(
-        exists=True,
-        argstr="%s",
-        mandatory=True,
-        position=0)
-    out_transform = traits.File(
-        argstr="%s",
-        name_source='in_transform',
-        name_template='%s_MatrixOffsetTransformBase',
-        keep_extension=True,
-        position=1)
-
-class _ChangeXfmTypeOutputSpec(TraitedSpec):
-    out_transform = traits.File(exists=True)
-
-class ChangeXfmType(SimpleInterface):
-    input_spec = _ChangeXfmTypeInputSpec
-    output_spec = _ChangeXfmTypeOutputSpec
-
-    def _run_interface(self,runtime):
-        with open(self.inputs.in_transform) as f:
-            lines=f.read_lines()
-        listcomp=[line.replace('AffineTransform','MatrixOffsetTransformBase') for line in lines]
-        outfile = runtime.cwd + '/' + self.inputs.out_transform
-        with open(outfile,'w') as write_file:
-            outfile.write(''.join(listcomp))
-        self._results['out_transform'] = outfile
-        return runtime
 
 def get_transformfile(bold_file,mni_to_t1w,t1w_to_native):
 

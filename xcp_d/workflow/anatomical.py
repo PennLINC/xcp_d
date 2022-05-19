@@ -24,8 +24,8 @@ from ..utils import bid_derivative
 from nipype.interfaces.afni  import Unifize
 #MB for anatomical
 from nipype.interfaces.ants import CompositeTransformUtil #MB
-from ...interfaces.ants import ConvertTransformFile #MB
-from ..utils import ConvertAffine,ApplyAffine,ApplyWarpfield,SurfaceSphereProjectUnproject,ChangeXfmType #MB
+from ..interfaces.ants import ConvertTransformFile #MB
+from ..interfaces.workbench import ConvertAffine,ApplyAffine,ApplyWarpfield,SurfaceSphereProjectUnproject,ChangeXfmType #MB
 
 class DerivativesDataSink(bid_derivative):
      out_path_base = 'xcp_d'
@@ -42,7 +42,7 @@ def init_anatomical_wf(
       ):
      """
      This workflow is convert surfaces (gifti) from fMRI to standard space-fslr-32k
-     It also resmaple t1w t1w segmnetation to standard space, MNI
+     It also resamples the t1w segmnetation to standard space, MNI
 
      Workflow Graph
           .. workflow::
@@ -241,7 +241,7 @@ def init_anatomical_wf(
                # CompositeTransformUtil --disassemble anat/sub-MSC01_ses-3TAME01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5 T1w_to_MNI152Lin6Asym
          
                h5_file  = fnmatch.filter(all_files,'*sub-*'+ subject_id +'*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0] #MB         
-               disassemble_h5 = pe.Node(CompositeTransformUtil(process='disassemble',in_file=h5_file)),name='disassemble_h5',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
+               disassemble_h5 = pe.Node(CompositeTransformUtil(process='disassemble',in_file=h5_file,output_prefix='T1w_to_MNI152Lin6Asym'),name='disassemble_h5',mem_gb=mem_gb,n_procs=omp_nthreads)#MB
 
                # convert affine from ITK binary to txt
                # ConvertTransformFile 3 00_T1w_to_MNI152Lin6Asym_AffineTransform.mat 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
@@ -355,6 +355,7 @@ def init_anatomical_wf(
                     (surface_apply_affine_lh_pial,apply_warpfield_lh_pial,[('out_file','in_file')]),
                     (disassemble_h5,apply_warpfield_lh_pial,[('displacement_field','warpfield')]),
                     (apply_warpfield_lh_pial,left_pial_surf_wf,[('out_file','in_file')]),
+                    (left_sphere_raw_mris,left_pial_surf_wf,[('converted','current_sphere')]),
                     (left_pial_surf_wf,ds_pialLsurf_wf,[('out_file','in_file')]),
                ])
 
@@ -363,6 +364,7 @@ def init_anatomical_wf(
                     (surface_apply_affine_rh_pial,apply_warpfield_rh_pial,[('out_file','in_file')]),
                     (disassemble_h5,apply_warpfield_rh_pial,[('displacement_field','warpfield')]),
                     (apply_warpfield_rh_pial,right_pial_surf_wf,[('out_file','in_file')]),
+                    (right_sphere_raw_mris,right_pial_surf_wf,[('converted','current_sphere')]),
                     (right_pial_surf_wf,ds_pialRsurf_wf,[('out_file','in_file')]),
                ])
 
@@ -371,6 +373,7 @@ def init_anatomical_wf(
                     (surface_apply_affine_lh_wm,apply_warpfield_lh_wm,[('out_file','in_file')]),
                     (disassemble_h5,apply_warpfield_lh_wm,[('displacement_field','warpfield')]),
                     (apply_warpfield_lh_wm,left_wm_surf_wf,[('out_file','in_file')]),
+                    (left_sphere_raw_mris,left_wm_surf_wf,[('converted','current_sphere')]),
                     (left_wm_surf_wf,ds_wmLsurf_wf,[('out_file','in_file')]),
                ])
 
@@ -379,6 +382,7 @@ def init_anatomical_wf(
                     (surface_apply_affine_rh_wm,apply_warpfield_rh_wm,[('out_file','in_file')]),
                     (disassemble_h5,apply_warpfield_rh_wm,[('displacement_field','warpfield')]),
                     (apply_warpfield_rh_wm,right_wm_surf_wf,[('out_file','in_file')]),
+                    (right_sphere_raw_mris,right_wm_surf_wf,[('converted','current_sphere')]),
                     (right_wm_surf_wf,ds_wmRsurf_wf,[('out_file','in_file')]),
                ])
                
