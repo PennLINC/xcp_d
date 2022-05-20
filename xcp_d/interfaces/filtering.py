@@ -29,6 +29,8 @@ class _filterdataInputSpec(BaseInterfaceInputSpec):
                             default_value=0.01,desc="highpass filter in Hz")
     mask = File(exists=False, mandatory=False,
                           desc=" brain mask for nifti file")
+    bandpass_filter = traits.Bool(exists=False, mandatory=True,
+                          desc="apply bandpass or not")
 
 
 
