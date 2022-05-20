@@ -63,10 +63,12 @@ class FilteringData(SimpleInterface):
         # get the nifti/cifti into  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file,
                            maskfile=self.inputs.mask)
-        # filter the data 
-        filt_data = butter_bandpass(data=data_matrix,fs=1/self.inputs.tr,
+        # filter the data
+        if self.inputs.bandpass_filter == True:
+            filt_data = butter_bandpass(data=data_matrix,fs=1/self.inputs.tr,
                       lowpass=self.inputs.lowpass,highpass=self.inputs.highpass,
                       order=self.inputs.filter_order)
+        else: filt_data = data_matrix #no filtering! 
 
         # writeout the data
         if self.inputs.in_file.endswith('.dtseries.nii'):

@@ -114,7 +114,10 @@ def get_parser():
                              type=float, help='first volume in seconds to be removed or skipped before postprocessing') 
     
     g_filter = parser.add_argument_group('Filtering parameters and default value')
-    
+
+    g_filter.add_argument('--bandpass_filter', action='store', default=True, type=bool,
+                        help='butterworth bandpass filter the data')
+
     g_filter.add_argument('--lower-bpf', action='store', default=0.009, type=float,
                         help='lower cut-off frequency (Hz) for the butterworth bandpass filter')
 

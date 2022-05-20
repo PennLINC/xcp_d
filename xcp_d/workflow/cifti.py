@@ -37,6 +37,7 @@ def init_ciftipostprocess_wf(
     bpf_order,
     motion_filter_order,
     motion_filter_type,
+    bandpass_filter,
     band_stop_min,
     band_stop_max,
     smoothing,
@@ -261,7 +262,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 name="resd_smoothing_wf",omp_nthreads=omp_nthreads)
     
     filtering_wf  = pe.Node(FilteringData(tr=TR,lowpass=upper_bpf,highpass=lower_bpf,
-                filter_order=bpf_order),
+                filter_order=bpf_order,bandpass_filter=bandpass_filter),
                     name="filtering_wf", mem_gb=mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     regression_wf = pe.Node(regress(tr=TR),
