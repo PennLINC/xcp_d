@@ -271,7 +271,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                   name="interpolation_wf",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=cifti_file,dummytime=dummytime,
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['resampled'],n_procs=omp_nthreads)
+                       head_radius=head_radius,low_freq=band_stop_max,high_freq=band_stop_min), name="qc_report",mem_gb = mem_gbx['resampled'],n_procs=omp_nthreads)
 
     
     executivesummary_wf =init_execsummary_wf(tr=TR,bold_file=cifti_file,layout=layout,

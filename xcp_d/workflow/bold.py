@@ -329,7 +329,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     qcreport = pe.Node(computeqcplot(TR=TR,bold_file=bold_file,dummytime=dummytime,t1w_mask=t1w_mask,
                        template_mask = str(get_template('MNI152NLin2009cAsym', resolution=2, desc='brain',
                         suffix='mask', extension=['.nii', '.nii.gz'])),
-                       head_radius=head_radius), name="qc_report",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
+                       head_radius=head_radiusm,low_freq=band_stop_max,high_freq=band_stop_min), name="qc_report",mem_gb = mem_gbx['timeseries'],n_procs=omp_nthreads)
     
 
     workflow.connect([

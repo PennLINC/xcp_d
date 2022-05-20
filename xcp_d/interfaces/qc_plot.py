@@ -39,7 +39,8 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     bold2temp_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
     template_mask =  File(exists=False,mandatory=False, desc="template mask")
     t1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
-    
+    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
+    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')    
     
 class _qcOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True,
@@ -77,7 +78,7 @@ class computeqcplot(SimpleInterface):
     def _run_interface(self, runtime):
         
         conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
-        motion_conf = load_motion(conf_matrix.copy(),TR=self.inputs.TR,head_radius=self.inputs.head_radius,filtertype=self.inputs.filtertype)
+        motion_conf = load_motion(conf_matrix.copy(),TR=self.inputs.TR,filtertype=self.inputs.filtertype,freqband=[self.inputs.low_freq,self.inputs.high_freq])
         motion_df = pd.DataFrame(data=motion_conf.values,columns=["rot_x", "rot_y", "rot_z","trans_x", "trans_y","trans_z"])
         fd_timeseries = compute_FD(confound=motion_df, head_radius=self.inputs.head_radius)
     
