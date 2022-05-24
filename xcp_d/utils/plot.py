@@ -334,11 +334,13 @@ def confoundplotx(
             ax_ts.plot(fdx,'.',color='#8da0cb',markersize=40)
 
             good_vols = len(tseries[c][tseries[c]<0.1])
-            ax_ts.text(1.01,.1,good_vols,c='#66c2a5',verticalalignment='bottom',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
+            ax_ts.text(1.01,.1,good_vols,c='#66c2a5',verticalalignment='top',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
             good_vols = len(tseries[c][tseries[c]<0.2])
-            ax_ts.text(1.01,.2,good_vols,c='#fc8d62',verticalalignment='bottom',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
+            ax_ts.text(1.01,.2,good_vols,c='#fc8d62',verticalalignment='top',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
             good_vols = len(tseries[c][tseries[c]<0.5])
-            ax_ts.text(1.01,.5,good_vols,c='#8da0cb',verticalalignment='bottom',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
+            ax_ts.text(1.01,.5,good_vols,c='#8da0cb',verticalalignment='top',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
+            good_vols = len(tseries[c][tseries[c]<0.05])
+            ax_ts.text(1.01,.05,good_vols,c='grey',verticalalignment='top',horizontalalignment='left',transform=ax_ts.transAxes,fontsize=30)
 
 
             #plot all of them 
