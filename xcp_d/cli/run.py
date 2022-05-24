@@ -497,7 +497,7 @@ def build_workflow(opts, retval):
               motion_filter_type=opts.motion_filter_type,
               bandpass_filter=opts.bandpass_filter,
               band_stop_min=opts.band_stop_min,
-              band_stop_max=opts.band_stop_min,
+              band_stop_max=opts.band_stop_max,
               subject_list=subject_list,
               work_dir=str(work_dir),
               task_id=opts.task_id,

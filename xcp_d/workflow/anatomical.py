@@ -269,8 +269,8 @@ def init_anatomical_wf(
                # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
                surface_apply_affine_lh_pial = pe.Node(ApplyAffine(in_file=L_pial_surf),name='surface_apply_affine_lh_pial') #MB
                surface_apply_affine_rh_pial = pe.Node(ApplyAffine(in_file=R_pial_surf),name='surface_apply_affine_rh_pial') #MB
-               surface_apply_affine_lh_wm = pe.Node(ApplyAffine(in_file=L_pial_surf),name='surface_apply_affine_lh_wm') #MB
-               surface_apply_affine_rh_wm = pe.Node(ApplyAffine(in_file=R_pial_surf),name='surface_apply_affine_rh_wm') #MB
+               surface_apply_affine_lh_wm = pe.Node(ApplyAffine(in_file=L_wm_surf),name='surface_apply_affine_lh_wm') #MB
+               surface_apply_affine_rh_wm = pe.Node(ApplyAffine(in_file=R_wm_surf),name='surface_apply_affine_rh_wm') #MB
                
                # apply warpfield
                # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
