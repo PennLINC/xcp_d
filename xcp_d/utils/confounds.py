@@ -150,12 +150,12 @@ def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,orde
     elif params == 'aroma':
         wmcsf=load_WM_CSF(confoundtsv)
         aroma = load_aroma(datafile=datafile)
-        pd.concat([wmcsf,aroma],axis=1)
+        confound = pd.concat([wmcsf,aroma],axis=1)
     elif params == 'aroma_gsr':
         wmcsf=load_WM_CSF(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         gs = load_globalS(confoundtsv)
-        pd.concat([wmcsf,aroma,gs],axis=1)
+        confound = pd.concat([wmcsf,aroma,gs],axis=1)
     elif params == 'acompcor_gsr':
         motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
