@@ -74,7 +74,7 @@ class ConfoundMatrix(SimpleInterface):
     def _run_interface(self, runtime):
 
         cutoff = np.float(0.1)
-        freqband = [self.inputs.low_freq,self.inputs.high_freq]/60.
+        freqband = np.array([self.inputs.low_freq,self.inputs.high_freq])/60.
 
        
         # get the nifti/cifti into  matrix
