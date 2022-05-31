@@ -1,4 +1,4 @@
-# emacs: -*-:x mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from email.contentmanager import raw_data_manager
@@ -117,8 +117,6 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None,work_dir=None):
         if len(resbold)>1:
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
-            #resid=res.split('res-')[1].partition('_')[0]
-
             for j in  datafile:
                 fileid = res.split('run-')[0]+ resid.partition('_desc')[0]
                 outfile = fileid + j
@@ -263,6 +261,7 @@ def concatenate_cifti(subid,fmridir,outputdir,ses=None,work_dir=None):
                     make_DCAN_DF(filex,name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j))
+                    combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
                     if j.endswith('_desc-residual_bold.dtseries.nii'):
                         for b in natsorted(glob.glob(res.split('run-')[0] +'*run*' + resid.partition('_desc')[0]+ j)):
