@@ -94,8 +94,8 @@ def get_parser():
     g_outputoption = parser.add_argument_group('Input flags')
 
     g_outputoption.add_argument('--input-type', required=False, default='fmriprep',type=str,
-                      choices=['fmirprep', 'dcan', 'hpc'],
-                       help='fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
+                      choices=['fmriprep', 'dcan', 'hpc'],
+                       help='fMRIPrep/nibabies are default structures, DCAN and HCP are optional')
 
     g_param = parser.add_argument_group('Parameters for postprocessing')
 
