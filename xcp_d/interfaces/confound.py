@@ -27,11 +27,11 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
                                   desc=' filter type for filtering regressors, either lp or notch')
     filterorder = traits.Int(exit=False,mandatory=False,default_value=4, desc=' motion filter order')
 
-    cutoff = traits.Float(exit=False,mandatory=False, desc=' cutoff frequency for lp filter in breathe per min (bpm)')
+    cutoff = traits.Float(exit=False,mandatory=True,default=12, desc=' cutoff frequency for lp filter in breathe per min (bpm)')
      
-    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
+    low_freq= traits.Float(exit=False,mandatory=True,default=12, desc=' low frequency band for nortch filterin breathe per min (bpm)')
 
-    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')
+    high_freq= traits.Float(exit=False,mandatory=True,default=16,desc=' high frequency for nortch filter in breathe per min (bpm)')
     
     custom_conf = traits.Either(
         traits.Undefined, File,
@@ -73,15 +73,9 @@ class ConfoundMatrix(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        if self.inputs.cutoff == float:
-            cutoff = self.inputs.cutoff/60
-        else:
-            cutoff = np.float(0.1)
-        
-        if self.inputs.low_freq == float and self.inputs.high_freq == float:
-            freqband = [self.inputs.low_freq,self.inputs.high_freq]/60
-        else:
-            freqband = [0.1,0.2] # use default band
+        cutoff = np.float(0.1)
+        freqband = np.array([self.inputs.low_freq,self.inputs.high_freq])/60.
+
        
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
