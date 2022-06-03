@@ -253,7 +253,7 @@ def motion_regression_filter(data,TR,filtertype,freqband,cutoff=.1,order=4):
     #     a = 1
     #     return b, a
 
-    # def iirnortch_coeff(freqband,fs):
+    # def iirnotch_coeff(freqband,fs):
     #     nyq = 0.5*fs
     #     fa = np.abs(freqband - np.floor((np.add(freqband,nyq) / fs) * fs))
     #     w0 = np.mean(fa)/nyq
@@ -265,7 +265,7 @@ def motion_regression_filter(data,TR,filtertype,freqband,cutoff=.1,order=4):
     # if filtertype == 'lp':
     #     b,a = lowpassfilter_coeff(cutoff,fs,order=4)
     # elif filtertype =='notch':
-    #     b,a = iirnortch_coeff(freqband,fs=fs)
+    #     b,a = iirnotch_coeff(freqband,fs=fs)
     
     # order_apply = np.int(np.floor(order/2))
 

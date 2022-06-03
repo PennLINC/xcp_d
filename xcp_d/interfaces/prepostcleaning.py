@@ -84,8 +84,8 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
                            desc="head radius in mm  ")
     filtertype = traits.Float(exists=False,mandatory=False)
     time_todrop = traits.Float(exists=False,mandatory=False,default_value=0, desc="time in seconds to drop")
-    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
-    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')
+    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for notch filterin breathe per min (bpm)')
+    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for notch filter in breathe per min (bpm)')
 
 
 class _censorscrubOutputSpec(TraitedSpec):

@@ -59,4 +59,4 @@ class CiftiSurfaceResample(WBCommand):
     """
     input_spec = CiftiSurfaceResampleInputSpec
     output_spec = CiftiSurfaceResampleOutputSpec
-    _cmd = "wb_command  -surface-resample"
+    _cmd = "wb_command  -surface-resample "

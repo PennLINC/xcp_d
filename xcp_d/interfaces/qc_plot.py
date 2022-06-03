@@ -25,7 +25,7 @@ LOGGER = logging.getLogger('nipype.interface')
 
 
 class _qcInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True,mandatory=True, desc=" raw  bold or cifit file from fmirprep")
+    bold_file = File(exists=True,mandatory=True, desc=" raw  bold or cifit file from fmriprep")
     mask_file = File(exists=False,mandatory=False, desc=" mask file")
     seg_file = File(exists=False,mandatory=False, desc=" seg file for nifti")
     cleaned_file = File(exists=True,mandatory=True, desc=" residual and filter file")
@@ -33,14 +33,14 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     dummytime = traits.Float(exit=False,mandatory=False,default_value=0,desc="dummy time to drop after")
     TR = traits.Float(exit=True,mandatory=True,desc="TR")
     filtertype = traits.Float(exists=False,mandatory=False)
-    head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head raidus for to convert rotxyz to arc length \
+    head_radius = traits.Float(exits=True,mandatory=False,default_value=50,desc=" head radius for to convert rotxyz to arc length \
                                                for baby, 40m is recommended")
     bold2T1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
-    bold2temp_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
+    bold2temp_mask =  File(exists=False,mandatory=False, desc="bold2tempmask")
     template_mask =  File(exists=False,mandatory=False, desc="template mask")
     t1w_mask =  File(exists=False,mandatory=False, desc="bold2t1mask")
-    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for nortch filterin breathe per min (bpm)')
-    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for nortch filter in breathe per min (bpm)')    
+    low_freq= traits.Float(exit=False,mandatory=False, desc=' low frequency band for notch filter in breathe per min (bpm)')
+    high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for notch filter in breathe per min (bpm)')    
     
 class _qcOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True,
