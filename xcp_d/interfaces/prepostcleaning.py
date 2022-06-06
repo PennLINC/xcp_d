@@ -150,14 +150,12 @@ class censorscrub(SimpleInterface):
         if self.inputs.custom_conf:
             custom_confounds_uncensored = pd.read_csv(self.inputs.custom_conf, header=None)
         if self.inputs.time_todrop == 0:  # Generate temporal mask
-            tmask = generate_mask(fd_res=fd_timeseries, fd_thresh=self.inputs.fd_thresh)
-            if np.sum(tmask) > 0:  # Threshold all values above fd_thresh
+            tmask = generate_mask(fd_res=fd_timeseries, fd_thresh=self.inputs.fd_thresh) # Set all values above fd_thresh to 1
+            if np.sum(tmask) > 0:  
                 bold_data_censored = bold_data_uncensored[:, tmask == 0]
-                fmriprep_confounds_censored = fmriprep_confounds_uncensored.drop(fmriprep_confounds_uncensored.
-                                                                                 index[np.where(tmask == 1)])
+                fmriprep_confounds_censored = fmriprep_confounds_uncensored.drop(fmriprep_confounds_uncensored.index[np.where(tmask == 1)])
                 if self.inputs.custom_conf:
-                    custom_confounds_censored = custom_confounds_uncensored.drop(custom_confounds_uncensored.
-                                                                                 index[np.where(tmask == 1)])
+                    custom_confounds_censored = custom_confounds_uncensored.drop(custom_confounds_uncensored.index[np.where(tmask == 1)])
             else:  # If no censoring required
                 bold_data_censored = bold_data_uncensored
                 fmriprep_confounds_censored = fmriprep_confounds_uncensored
@@ -171,11 +169,9 @@ class censorscrub(SimpleInterface):
             tmask = generate_mask(fd_res=fd_timeseries_censored, fd_thresh=self.inputs.fd_thresh)
             if np.sum(tmask) > 0:
                 bold_data_censored = bold_data_uncensored[:, tmask == 0]
-                fmriprep_confounds_censored = fmriprep_confounds_uncensored.drop(fmriprep_confounds_uncensored.index
-                                                                                 [np.where(tmask == 1)])
+                fmriprep_confounds_censored = fmriprep_confounds_uncensored.drop(fmriprep_confounds_uncensored.index[np.where(tmask == 1)])
                 if self.inputs.custom_conf:
-                    custom_confounds_censored = custom_confounds_uncensored.drop(custom_confounds_uncensored.index
-                                                                                 [np.where(tmask == 1)])
+                    custom_confounds_censored = custom_confounds_uncensored.drop(custom_confounds_uncensored.index[np.where(tmask == 1)])
             else:
                 bold_data_censored = bold_data_uncensored
                 fmriprep_confounds_censored = fmriprep_confounds_uncensored
@@ -205,7 +201,7 @@ class censorscrub(SimpleInterface):
         # Write out the output
         write_ndata(data_matrix=bold_data_censored, template=self.inputs.in_file,
                     mask=self.inputs.mask_file, filename=self._results['bold_censored'],
-                    tr=self.inputs.TR)  
+                    tr=self.inputs.TR) 
         fmriprep_confounds_censored.to_csv(self._results['fmriprepconf_censored'],
                                            index=False, header=False)
         np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
