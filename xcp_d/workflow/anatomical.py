@@ -436,8 +436,8 @@ def init_anatomical_wf(
 
                # make "HCP-style" native midthickness and inflated
 
-               left_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in=L_pial_surf,surface_in=L_wm_surf), name="left_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
-               right_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in=R_pial_surf,surface_in=R_wm_surf), name="right_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
+               left_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in=(L_pial_surf + " " + L_wm_surf)), name="left_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
+               right_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in=(R_pial_surf + " " + R_wm_surf)), name="right_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_hcpmidthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
                     metric = ' BARYCENTRIC '), name="left_hcpmidthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_hcpmidthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
@@ -487,7 +487,7 @@ def init_anatomical_wf(
                     (right_hcpinflated_surf_wf,ds_hcpinfRsurf_wf[('inflated_out_file','in_file')]),
                     (right_hcpinflated_surf_wf,ds_hcpveryinfRsurf_wf[('very_inflated_out_file','in_file')]),
                ])  
-               
+
                ribbon = str(freesurfer_path) + '/'+subid+'/mri/ribbon.mgz'
                
                t1w_mgz  = str(freesurfer_path) + '/'+subid+'/mri/orig.mgz'
