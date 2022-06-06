@@ -225,16 +225,24 @@ class ChangeXfmType(SimpleInterface):
 class SurfaceAverageInputSpec(CommandLineInputSpec):
 
 
-    surface_in = File(
+    surface_in1 = File(
         exists=True,
         mandatory=True,
-        argstr="-surf %s...",
+        argstr="-surf %s ",
         position=1,
         desc="specify a surface to include in the average",
     )
 
+    surface_in2 = File(
+        exists=True,
+        mandatory=True,
+        argstr="-surf %s ",
+        position=2,
+        desc="specify a surface to include in the average",
+    )
+
     out_file = File(
-        name_source=surface_in,
+        name_source=surface_in1,
         keep_extension=False,
         name_template='%s-avg.surf.gii',
         argstr="%s ",
