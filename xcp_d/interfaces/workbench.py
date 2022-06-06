@@ -228,7 +228,7 @@ class SurfaceAverageInputSpec(CommandLineInputSpec):
     surface_in = File(
         exists=True,
         mandatory=True,
-        argstr="-surf %s ...",
+        argstr="-surf %s...",
         position=1,
         desc="specify a surface to include in the average",
     )
