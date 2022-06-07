@@ -183,15 +183,16 @@ def init_boldpostprocess_wf(
     qc_file
         quality control files
     """
-
+    
     metadata = layout.get_metadata(bold_file)
+    # Throw error if no TR
     try:
         TR = metadata['RepetitionTime']
         if TR is None:
             TR = layout.get_tr(bold_file)
     except:
         print("Unable to find TR")
-
+    # Throw error if no confound files
     try:
         confounds_tsv, confounds_json = find_confounds(bold_file)
     except UnboundLocalError:

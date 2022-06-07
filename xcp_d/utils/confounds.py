@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import os
 from scipy.signal import firwin, iirnotch, filtfilt
-from os.path import exists
 
 
 def find_confounds(datafile):
@@ -21,11 +20,13 @@ def find_confounds(datafile):
         confound json file
     '''
     if 'space' in os.path.basename(datafile):
+        # What should corresponding confound file names be based off bold file name
         confounds_timeseries_filename = datafile.replace("_space-" + datafile.split("space-")[1],
                                                          "_desc-confounds_timeseries.tsv")
 
         confounds_json_filename = datafile.replace("_space-" + datafile.split("space-")[1],
                                                    "_desc-confounds_timeseries.json")
+    # Confirm these files exist first, else get an error ...
     if os.path.exists(confounds_timeseries_filename):
         confounds_timeseries = confounds_timeseries_filename
     if os.path.exists(confounds_json_filename):
