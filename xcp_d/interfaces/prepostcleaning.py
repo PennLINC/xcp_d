@@ -141,7 +141,8 @@ class censorscrub(SimpleInterface):
                                   freqband=[self.inputs.low_freq, self.inputs.high_freq])
         motion_df = pd.DataFrame(data=motion_conf.values,
                                  columns=["rot_x", "rot_y", "rot_z", "trans_x",
-                                          "trans_y", "trans_z"])
+                                          "trans_y", "trans_z"]) 
+        # TODO - Double check if there are rot_x, rot_y, rot_z in radians for HCP and DCAN Bold 
         fd_timeseries = compute_FD(confound=motion_df, head_radius=self.inputs.head_radius)
         # Read confound and BOLD data
         bold_data_uncensored = read_ndata(datafile=self.inputs.in_file,
@@ -201,12 +202,12 @@ class censorscrub(SimpleInterface):
         # Write out the output
         write_ndata(data_matrix=bold_data_censored, template=self.inputs.in_file,
                     mask=self.inputs.mask_file, filename=self._results['bold_censored'],
-                    tr=self.inputs.TR) 
+                    tr=self.inputs.TR)
         fmriprep_confounds_censored.to_csv(self._results['fmriprepconf_censored'],
                                            index=False, header=False)
         np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
         np.savetxt(self._results['fd_timeseries'],
-                   fd_timeseries_censored, fmt="%1.4f", delimiter=',')
+                   fd_timeseries_censored, fmt="%1.4f", delimiter=',')        
         if self.inputs.custom_conf:
             custom_confounds_censored.to_csv(self._results['customconf_censored'],
                                              index=False, header=False)
