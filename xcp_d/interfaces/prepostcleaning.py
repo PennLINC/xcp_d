@@ -164,7 +164,7 @@ class censorscrub(SimpleInterface):
                 if self.inputs.custom_conf:
                     custom_confounds_censored = custom_confounds_uncensored
             fd_timeseries_censored = fd_timeseries_uncensored
-        else:  # If no time is being cut off from the beginning of the scan
+        else:  # If time is being cut off from the beginning of the scan
             num_vol = np.int(np.divide(self.inputs.time_todrop, self.inputs.TR))
             fd_timeseries_censored = fd_timeseries_uncensored
             fd_timeseries_censored = fd_timeseries_censored[num_vol:]

@@ -1,10 +1,31 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """confound matrix selection based on Ciric et al 2007."""
+#from msilib.schema import Error
+from re import X
 import numpy as np
 import pandas as pd
-import os  
-from scipy.signal import firwin,iirnotch,filtfilt
+import os
+from scipy.signal import firwin, iirnotch, filtfilt
+
+
+def find_confounds(datafile):
+    """Find confounds.tsv and json."""
+    '''
+    datafile:
+        real nifti or cifti file
+    confounds_timeseries:
+        confound tsv file
+    confounds_json:
+        confound json file
+    '''
+    if 'space' in os.path.basename(datafile):
+            confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
+                                                    "_desc-confounds_timeseries.tsv")
+            confounds_json = datafile.replace("_space-" + datafile.split("space-")[1],
+                                              "_desc-confounds_timeseries.json")
+    return confounds_timeseries, confounds_json
+
 def load_confound(datafile):
     """`Load confound amd json."""
     '''

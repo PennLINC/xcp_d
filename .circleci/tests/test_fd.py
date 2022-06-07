@@ -25,7 +25,7 @@ def test_fd():
     test_wf.run()
 
 
-test_fd() # Call the function
+test_fd()  # Call the function
 
 
 def test_fd_interface():  # Checking results
