@@ -190,16 +190,14 @@ def init_boldpostprocess_wf(
         if TR is None:
             TR = layout.get_tr(bold_file)
     except:
-        print("Getting TR from metadata...")
-        
+        print("Unable to find TR")
+
     try:
         confounds_tsv, confounds_json = find_confounds(bold_file)
     except UnboundLocalError:
         print("No confound files found for " + bold_file)
-
     file_base = os.path.basename(str(bold_file))
     workflow = Workflow(name=name)
-
     workflow.__desc__ = """
 For each of the {num_bold} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
