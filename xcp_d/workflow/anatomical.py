@@ -436,7 +436,7 @@ def init_anatomical_wf(
 
                # make "HCP-style" native midthickness and inflated
                left_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in1=L_pial_surf,surface_in2=L_wm_surf), name="left_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
-               right_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in2=R_pial_surf,surface_in2=R_wm_surf), name="right_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
+               right_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in1=R_pial_surf,surface_in2=R_wm_surf), name="right_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_hcpmidthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
                     metric = ' BARYCENTRIC '), name="left_hcpmidthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_hcpmidthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
