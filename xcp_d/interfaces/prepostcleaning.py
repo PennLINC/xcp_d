@@ -69,8 +69,8 @@ class removeTR(SimpleInterface):
 
 
 class _censorscrubInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True, mandatory=True,
-                     desc="Path to original nifti, processed by fMRIPrep")
+    # bold_file = File(exists=True, mandatory=True,
+    #                  desc="Path to original nifti, processed by fMRIPrep")
     in_file = File(exists=True, mandatory=True,
                    desc=" Nifti partially XCP processed")
     fd_thresh = traits.Float(exists=True, mandatory=True, 
@@ -117,7 +117,6 @@ class censorscrub(SimpleInterface):
     >>> os.chdir(tmpdir.name)
     .. doctest::
     >>> cscrub = censorscrub()
-    >>> cscrub.inputs.bold_file = cleanbold
     >>> cscrub.inputs.in_file = datafile
     >>> cscrub.inputs.TR = TR
     >>> cscrub.inputs.fd_thresh = fd_thresh
@@ -134,16 +133,17 @@ class censorscrub(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Get the raw confound matrix  and compute Framewise Displacement
-        from ..utils.confounds import (load_confound, load_motion)
-        conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
-        motion_conf = load_motion(conf_matrix.copy(), TR=self.inputs.TR,
-                                  filtertype=self.inputs.filtertype,
-                                  freqband=[self.inputs.low_freq, self.inputs.high_freq])
-        motion_df = pd.DataFrame(data=motion_conf.values,
-                                 columns=["rot_x", "rot_y", "rot_z", "trans_x",
-                                          "trans_y", "trans_z"]) 
-        # TODO - Double check if there are rot_x, rot_y, rot_z in radians for HCP and DCAN Bold 
-        fd_timeseries = compute_FD(confound=motion_df, head_radius=self.inputs.head_radius)
+        from ..utils.confounds import (load_motion)
+        conf_matrix = pd.read_table(self.inputs.fmriprep_conf,)
+        motion_confound = load_motion(confounds_df=conf_matrix.copy(), TR=self.inputs.TR,
+                                      filtertype=self.inputs.filtertype,
+                                      freqband=[self.inputs.low_freq, self.inputs.high_freq])
+        motion_confounds_df = pd.DataFrame(data=motion_confound.values,
+                                           columns=["rot_x", "rot_y", "rot_z", "trans_x",
+                                                    "trans_y", "trans_z"])
+        # TODO - Double check if there are rot_x, rot_y, rot_z in radians for HCP and DCAN Bold
+        fd_timeseries_uncensored = compute_FD(confound=motion_confounds_df,
+                                              head_radius=self.inputs.head_radius)
         # Read confound and BOLD data
         bold_data_uncensored = read_ndata(datafile=self.inputs.in_file,
                                           maskfile=self.inputs.mask_file)
@@ -151,8 +151,9 @@ class censorscrub(SimpleInterface):
         if self.inputs.custom_conf:
             custom_confounds_uncensored = pd.read_csv(self.inputs.custom_conf, header=None)
         if self.inputs.time_todrop == 0:  # Generate temporal mask
-            tmask = generate_mask(fd_res=fd_timeseries, fd_thresh=self.inputs.fd_thresh) # Set all values above fd_thresh to 1
-            if np.sum(tmask) > 0:  
+            tmask = generate_mask(fd_res=fd_timeseries_uncensored,
+                                  fd_thresh=self.inputs.fd_thresh)  # Set all values above fd_thresh to 1
+            if np.sum(tmask) > 0:
                 bold_data_censored = bold_data_uncensored[:, tmask == 0]
                 fmriprep_confounds_censored = fmriprep_confounds_uncensored.drop(fmriprep_confounds_uncensored.index[np.where(tmask == 1)])
                 if self.inputs.custom_conf:
@@ -162,10 +163,10 @@ class censorscrub(SimpleInterface):
                 fmriprep_confounds_censored = fmriprep_confounds_uncensored
                 if self.inputs.custom_conf:
                     custom_confounds_censored = custom_confounds_uncensored
-            fd_timeseries_censored = fd_timeseries
+            fd_timeseries_censored = fd_timeseries_uncensored
         else:  # If no time is being cut off from the beginning of the scan
             num_vol = np.int(np.divide(self.inputs.time_todrop, self.inputs.TR))
-            fd_timeseries_censored = fd_timeseries
+            fd_timeseries_censored = fd_timeseries_uncensored
             fd_timeseries_censored = fd_timeseries_censored[num_vol:]
             tmask = generate_mask(fd_res=fd_timeseries_censored, fd_thresh=self.inputs.fd_thresh)
             if np.sum(tmask) > 0:

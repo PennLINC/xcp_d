@@ -30,7 +30,7 @@ from xcp_d.interfaces.prepostcleaning import censorscrub
 import os
 import pandas as pd
 def test_fd_interface():  # Checking results
-    bold_file = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
+    input_file = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
     mask = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz'
     confounds_tsv = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_desc-confounds_timeseries.tsv'
     df = pd.read_table(confounds_tsv)
@@ -39,14 +39,14 @@ def test_fd_interface():  # Checking results
     df["trans_y"][5:8] = [7, 8, 9]
     df["trans_z"][9:12] = [12, 8, 9]
     print(df["trans_z"][9:12])  # Confirming that the df values are changed as expected 
-    tmpdir = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func'  # So we can see results
+    tmpdir = '/Users/kahinim/Desktop/FD_test'  # So we can see results
     os.chdir(tmpdir)
     df.to_csv(confounds_tsv, sep='\t')
     confounds_tsv = confounds_tsv
     # Run workflow
     cscrub = censorscrub()
-    cscrub.inputs.bold_file = bold_file
-    cscrub.inputs.in_file = bold_file
+    # cscrub.inputs.bold_file = bold_file
+    cscrub.inputs.in_file = input_file
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.5
     cscrub.inputs.fmriprep_conf = confounds_tsv

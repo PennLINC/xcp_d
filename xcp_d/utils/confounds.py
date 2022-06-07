@@ -37,18 +37,18 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd,TR,filtertype,freqband,cutoff=0.1,order=4):
+def load_motion(confounds_df, TR, filtertype, freqband, cutoff=0.1, order=4):
     """Load the 6 motion regressors."""
-    rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
-    trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
-    datay = pd.concat([rot_2mm,trans_mm],axis=1).to_numpy()
-    
-    if filtertype == 'lp' or filtertype == 'notch' :
-        datay = datay.T 
-        datay = motion_regression_filter(data=datay,TR=TR,
-          filtertype=filtertype,freqband=freqband,cutoff=cutoff,order=order)
-        datay = datay.T
-    return  pd.DataFrame(datay)
+    rot_mm = confounds_df[["rot_x", "rot_y", "rot_z"]]
+    trans_mm = confounds_df[["trans_x", "trans_y", "trans_z"]]
+    confound_data = pd.concat([rot_mm, trans_mm], axis=1).to_numpy()
+    if filtertype == 'lp' or filtertype == 'notch':
+        confound_data = confound_data.T
+        confound_data = motion_regression_filter(data=confound_data, TR=TR,
+                                                 filtertype=filtertype, freqband=freqband, 
+                                                 cutoff=cutoff, order=order)
+        confound_data = confound_data.T
+    return pd.DataFrame(confound_data)
 
 def load_globalS(confoundspd):
     """select global signal."""
