@@ -25,6 +25,9 @@ def test_fd():
     test_wf.run()
 
 
+test_fd() # Call the function
+
+
 def test_fd_interface():  # Checking results
     input_file = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
     mask = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz'
@@ -37,7 +40,7 @@ def test_fd_interface():  # Checking results
     print(df["trans_z"][9:12])  # Confirming that the df values are changed as expected
     tmpdir = '/Users/kahinim/Desktop/FD_test'  # So we can see results
     os.chdir(tmpdir)
-    confounds_tsv = "edited_" + confounds_tsv.split('/func/')[1]  # Rename with same convention as inital confounds tsv
+    confounds_tsv = "edited_" + confounds_tsv.split('/func/')[1]  # Rename with same convention as initial confounds tsv
     df.to_csv(confounds_tsv, sep='\t', index=False)
     # Run workflow
     cscrub = censorscrub()
