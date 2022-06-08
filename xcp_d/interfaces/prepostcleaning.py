@@ -83,7 +83,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
         traits.Undefined, File,
         desc="Name of custom confound file with field/True", exists=False, mandatory=False)
     fmriprep_confounds = File(exists=True, mandatory=True,
-                         desc=" Confound selected from fmriprep confound matrix ")
+                              desc=" Confound selected from fmriprep confound matrix ")
     head_radius = traits.Float(exists=False, mandatory=False, default_value=50,
                                desc="Head radius in mm ")
     filtertype = traits.Float(exists=False, mandatory=False)
@@ -101,9 +101,9 @@ class _censorscrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True, manadatory=True,
                          desc="Censored bold file")
     fmriprepconfounds_censored = File(exists=True, mandatory=True,
-                                 desc="Censored fMRIPrep confounds")
+                                      desc="Censored fMRIPrep confounds")
     customconfounds_censored = File(exists=False, mandatory=False,
-                               desc="Censored custom confounds")
+                                    desc="Censored custom confounds")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask used for censoring")
     fd_timeseries = File(exists=True, mandatory=True,
                          desc="Censored framewise displacement timeseries")

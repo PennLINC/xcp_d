@@ -1,4 +1,3 @@
-
 from xcp_d.workflow.postprocessing import init_censoring_wf
 from xcp_d.interfaces.prepostcleaning import censorscrub
 import os
@@ -26,7 +25,7 @@ def test_fd():
     test_wf.run()
 
 
-#test_fd()  # Call the function
+test_fd()  # Call the function
 
 
 def test_fd_interface():  # Checking results
@@ -57,15 +56,12 @@ def test_fd_interface():  # Checking results
     cscrub.inputs.mask_file = mask
     cscrub.inputs.time_todrop = 0
     cscrub.inputs.head_radius = 50
-    results = cscrub.run()
-    
+    cscrub.run()
     # Confirming that the df values were changed as expected
     confounds_df = pd.read_table(cscrub.inputs.fmriprep_confounds)
     assert confounds_df["trans_x"][1:4].tolist() == [6, 8, 9]
     assert confounds_df["trans_y"][5:8].tolist() == [7, 8, 9]
     assert confounds_df["trans_z"][9:12].tolist() == [12, 8, 9]
-    
+
+
 test_fd_interface()  # Call the function
-
-
-# %%
