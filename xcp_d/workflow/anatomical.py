@@ -435,14 +435,14 @@ def init_anatomical_wf(
 
 
                # make "HCP-style" native midthickness and inflated
-               left_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in1=L_pial_surf,surface_in2=L_wm_surf), name="left_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
-               right_hcpmidthick_native = pe.Node(SurfaceAverage(surface_in1=R_pial_surf,surface_in2=R_wm_surf), name="right_hcpmidthick_native",mem_gb=mem_gb,n_procs=omp_nthreads)
+               left_hcpmidthick_native_wf = pe.Node(SurfaceAverage(surface_in1=L_pial_surf,surface_in2=L_wm_surf), name="left_hcpmidthick_native_wf",mem_gb=mem_gb,n_procs=omp_nthreads)
+               right_hcpmidthick_native_wf = pe.Node(SurfaceAverage(surface_in1=R_pial_surf,surface_in2=R_wm_surf), name="right_hcpmidthick_native_wf",mem_gb=mem_gb,n_procs=omp_nthreads)
                left_hcpmidthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=left_sphere_fsLR, 
-                    metric = ' BARYCENTRIC '), name="left_hcpmidthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)
+                    metric = ' BARYCENTRIC '), name="left_hcpmidthick_surf_wf",mem_gb=mem_gb,n_procs=omp_nthreads)
                right_hcpmidthick_surf_wf = pe.Node(CiftiSurfaceResample(new_sphere=right_sphere_fsLR, 
-                    metric = ' BARYCENTRIC '), name="right_hcpmidthick_surf",mem_gb=mem_gb,n_procs=omp_nthreads)                        
-               left_hcpinflated_surf_wf = pe.Node(SurfaceGenerateInflated(iterations_scale_value=0.75), name="left_hcpinflated_surf")
-               right_hcpinflated_surf_wf = pe.Node(SurfaceGenerateInflated(iterations_scale_value=0.75), name="right_hcpinflated_surf")
+                    metric = ' BARYCENTRIC '), name="right_hcpmidthick_surf_wf",mem_gb=mem_gb,n_procs=omp_nthreads)                        
+               left_hcpinflated_surf_wf = pe.Node(SurfaceGenerateInflated(iterations_scale_value=0.75), name="left_hcpinflated_surf_wf")
+               right_hcpinflated_surf_wf = pe.Node(SurfaceGenerateInflated(iterations_scale_value=0.75), name="right_hcpinflated_surf_wf")
 
                ds_hcpmidLsurf_wf = pe.Node(
                  DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpmidthickness',check_hdr=False,
@@ -464,27 +464,27 @@ def init_anatomical_wf(
                  extension='.surf.gii',hemi='R',source_file=R_inflated_surf), name='ds_hcpveryinfRsurf_wf', run_without_submitting=False,mem_gb=2)
 
                workflow.connect([
-                    (left_hcpmidthick_native,left_hcpmidthick_surf_wf,[('out_file','in_file')]),
-                    (left_hcpmidthick_surf_wf,ds_hcpmidLsurf_wf[('out_file','in_file')]),
+                    (left_hcpmidthick_native_wf,left_hcpmidthick_surf_wf,[('out_file','in_file')]),
+                    (left_hcpmidthick_surf_wf,ds_hcpmidLsurf_wf,[('out_file','in_file')]),
                ])          
 
                workflow.connect([
-                    (right_hcpmidthick_native,right_hcpmidthick_surf_wf,[('out_file','in_file')]),
-                    (right_hcpmidthick_surf_wf,ds_hcpmidRsurf_wf[('out_file','in_file')]),
+                    (right_hcpmidthick_native_wf,right_hcpmidthick_surf_wf,[('out_file','in_file')]),
+                    (right_hcpmidthick_surf_wf,ds_hcpmidRsurf_wf,[('out_file','in_file')]),
                ])     
 
                workflow.connect([
-                    (left_hcpmidthick_native,left_hcpmidthick_surf_wf,[('out_file','in_file')]),
-                    (left_hcpmidthick_surf_wf,left_hcpinflated_surf_wf[('out_file','anatomical_surface_in')]),
-                    (left_hcpinflated_surf_wf,ds_hcpinfLsurf_wf[('inflated_out_file','in_file')]),
-                    (left_hcpinflated_surf_wf,ds_hcpveryinfLsurf_wf[('very_inflated_out_file','in_file')]),
+                    (left_hcpmidthick_native_wf,left_hcpmidthick_surf_wf,[('out_file','in_file')]),
+                    (left_hcpmidthick_surf_wf,left_hcpinflated_surf_wf,[('out_file','anatomical_surface_in')]),
+                    (left_hcpinflated_surf_wf,ds_hcpinfLsurf_wf,[('inflated_out_file','in_file')]),
+                    (left_hcpinflated_surf_wf,ds_hcpveryinfLsurf_wf,[('very_inflated_out_file','in_file')]),
                ])          
 
                workflow.connect([
-                    (right_hcpmidthick_native,right_hcpmidthick_surf_wf,[('out_file','in_file')]),
-                    (right_hcpmidthick_surf_wf,right_hcpinflated_surf_wf[('out_file','anatomical_surface_in')]),
-                    (right_hcpinflated_surf_wf,ds_hcpinfRsurf_wf[('inflated_out_file','in_file')]),
-                    (right_hcpinflated_surf_wf,ds_hcpveryinfRsurf_wf[('very_inflated_out_file','in_file')]),
+                    (right_hcpmidthick_native_wf,right_hcpmidthick_surf_wf,[('out_file','in_file')]),
+                    (right_hcpmidthick_surf_wf,right_hcpinflated_surf_wf,[('out_file','anatomical_surface_in')]),
+                    (right_hcpinflated_surf_wf,ds_hcpinfRsurf_wf,[('inflated_out_file','in_file')]),
+                    (right_hcpinflated_surf_wf,ds_hcpveryinfRsurf_wf,[('very_inflated_out_file','in_file')]),
                ])  
 
                ribbon = str(freesurfer_path) + '/'+subid+'/mri/ribbon.mgz'
