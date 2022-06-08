@@ -167,8 +167,9 @@ class censorscrub(SimpleInterface):
         else:  # If time is being cut off from the beginning of the scan
             num_vol = np.int(np.divide(self.inputs.time_todrop, self.inputs.TR))
             fd_timeseries_censored = fd_timeseries_uncensored
-            fd_timeseries_censored = fd_timeseries_censored[num_vol:]  # TO-DO: Add dummytime and make sure right times are being dropped
             tmask = generate_mask(fd_res=fd_timeseries_censored, fd_thresh=self.inputs.fd_thresh)
+            tmask[:num_vol] = np.ones(num_vol)  # Setting all times to be cut off to one so that they will be dropped later
+            fd_timeseries_censored = fd_timeseries_censored[:num_vol]  # Cut those times off from fd_timeseries as well
             if np.sum(tmask) > 0:
                 bold_data_censored = bold_data_uncensored[:, tmask == 0]
                 fmriprep_confounds_censored = fmriprep_confounds_uncensored.drop(fmriprep_confounds_uncensored.index[np.where(tmask == 1)])
@@ -179,6 +180,7 @@ class censorscrub(SimpleInterface):
                 fmriprep_confounds_censored = fmriprep_confounds_uncensored
                 if self.inputs.custom_conf:
                     custom_confounds_censored = custom_confounds_uncensored
+
         # Get the output file names
         self._results['bold_censored'] = fname_presuffix(
                 self.inputs.in_file,
