@@ -242,7 +242,7 @@ class SurfaceAverageInputSpec(CommandLineInputSpec):
     )
 
     out_file = File(
-        name_source=surface_in1,
+        name_source='surface_in1',
         keep_extension=False,
         name_template='%s-avg.surf.gii',
         argstr="%s ",
@@ -289,7 +289,7 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     )
 
         inflated_surface_out = File(
-        name_source=anatomical_surface_in,
+        name_source='anatomical_surface_in',
         keep_extension=False,
         name_template='%s-hcpinflated.surf.gii',
         argstr="%s ",
@@ -298,7 +298,7 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     )
 
         very_inflated_surface_out = File(
-        name_source=anatomical_surface_in,
+        name_source='anatomical_surface_in',
         keep_extension=False,
         name_template='%s-hcpveryinflated.surf.gii',
         argstr="%s ",
