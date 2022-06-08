@@ -15,7 +15,7 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
     mask_file = File(exists=False,mandatory=False, desc ="required for nifti")
     time_todrop = traits.Float(exists=True,mandatory=True, desc="time in seconds to drop")
     TR = traits.Float(exists=True,mandatory=True, desc="repetition time in TR")
-    fmriprep_conf = File(exists=True,mandatory=False,desc="confound selected from fmriprep confound matrix")
+    fmriprep_confounds = File(exists=True,mandatory=False,desc="confound selected from fmriprep confound matrix")
 
 class _removeTROutputSpec(TraitedSpec):
     fmrip_confdropTR  = File(exists=True, manadatory=True,
@@ -39,7 +39,7 @@ class removeTR(SimpleInterface):
         # get the nifti or cifti
         data_matrix = read_ndata(datafile=self.inputs.bold_file,
                                       maskfile=self.inputs.mask_file)
-        fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf,header=None)
+        fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_confounds,header=None)
     
 
         
@@ -82,7 +82,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
     custom_conf = traits.Either(
         traits.Undefined, File,
         desc="Name of custom confound file with field/True", exists=False, mandatory=False)
-    fmriprep_conf = File(exists=True, mandatory=True,
+    fmriprep_confounds = File(exists=True, mandatory=True,
                          desc=" Confound selected from fmriprep confound matrix ")
     head_radius = traits.Float(exists=False, mandatory=False, default_value=50,
                                desc="Head radius in mm ")
@@ -100,9 +100,9 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
 class _censorscrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True, manadatory=True,
                          desc="Censored bold file")
-    fmriprepconf_censored = File(exists=True, mandatory=True,
+    fmriprepconfounds_censored = File(exists=True, mandatory=True,
                                  desc="Censored fMRIPrep confounds")
-    customconf_censored = File(exists=False, mandatory=False,
+    customconfounds_censored = File(exists=False, mandatory=False,
                                desc="Censored custom confounds")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask used for censoring")
     fd_timeseries = File(exists=True, mandatory=True,
@@ -121,7 +121,7 @@ class censorscrub(SimpleInterface):
     >>> cscrub.inputs.in_file = datafile
     >>> cscrub.inputs.TR = TR
     >>> cscrub.inputs.fd_thresh = fd_thresh
-    >>> cscrub.inputs.fmriprep_conf = fmriprepconf 
+    >>> cscrub.inputs.fmriprep_confounds = fmriprepconf 
     >>> cscrub.inputs.mask_file = mask
     >>> cscrub.inputs.time_todrop = dummytime
     >>> cscrub.run()
@@ -134,7 +134,7 @@ class censorscrub(SimpleInterface):
     def _run_interface(self, runtime):
         # Get the raw confound matrix  and compute Framewise Displacement
         from ..utils.confounds import (load_motion)
-        conf_matrix = pd.read_table(self.inputs.fmriprep_conf)
+        conf_matrix = pd.read_table(self.inputs.fmriprep_confounds)
         motion_confound = load_motion(confounds_df=conf_matrix.copy(), TR=self.inputs.TR,
                                       filtertype=self.inputs.filtertype,
                                       freqband=[self.inputs.low_freq, self.inputs.high_freq])
@@ -147,7 +147,7 @@ class censorscrub(SimpleInterface):
         # Read confound and BOLD data
         bold_data_uncensored = read_ndata(datafile=self.inputs.in_file,
                                           maskfile=self.inputs.mask_file)
-        fmriprep_confounds_uncensored = pd.read_csv(self.inputs.fmriprep_conf, header=None)
+        fmriprep_confounds_uncensored = pd.read_csv(self.inputs.fmriprep_confounds, header=None)
         if self.inputs.custom_conf:  # Read in custom confounds if there are any
             custom_confounds_uncensored = pd.read_csv(self.inputs.custom_conf, header=None)
         if self.inputs.time_todrop == 0:  # Generate temporal mask
@@ -167,7 +167,7 @@ class censorscrub(SimpleInterface):
         else:  # If time is being cut off from the beginning of the scan
             num_vol = np.int(np.divide(self.inputs.time_todrop, self.inputs.TR))
             fd_timeseries_censored = fd_timeseries_uncensored
-            fd_timeseries_censored = fd_timeseries_censored[num_vol:]
+            fd_timeseries_censored = fd_timeseries_censored[num_vol:]  # TO-DO: Add dummytime and make sure right times are being dropped
             tmask = generate_mask(fd_res=fd_timeseries_censored, fd_thresh=self.inputs.fd_thresh)
             if np.sum(tmask) > 0:
                 bold_data_censored = bold_data_uncensored[:, tmask == 0]
@@ -184,11 +184,11 @@ class censorscrub(SimpleInterface):
                 self.inputs.in_file,
                 newpath=os.getcwd(),
                 use_ext=True)
-        self._results['fmriprepconf_censored'] = fname_presuffix(
+        self._results['fmriprepconfounds_censored'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix='_fmriprep_confounds_censored.tsv', newpath=os.getcwd(),
                 use_ext=False)
-        self._results['customconf_censored'] = fname_presuffix(
+        self._results['customconfounds_censored'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix='_custom_confounds_censored.txt', newpath=os.getcwd(),
                 use_ext=False)
@@ -204,13 +204,13 @@ class censorscrub(SimpleInterface):
         write_ndata(data_matrix=bold_data_censored, template=self.inputs.in_file,
                     mask=self.inputs.mask_file, filename=self._results['bold_censored'],
                     tr=self.inputs.TR)
-        fmriprep_confounds_censored.to_csv(self._results['fmriprepconf_censored'],
+        fmriprep_confounds_censored.to_csv(self._results['fmriprepconfounds_censored'],
                                            index=False, header=False)
         np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
         np.savetxt(self._results['fd_timeseries'],
                    fd_timeseries_uncensored, fmt="%1.4f", delimiter=',')        
         if self.inputs.custom_conf:
-            custom_confounds_censored.to_csv(self._results['customconf_censored'],
+            custom_confounds_censored.to_csv(self._results['customconfounds_censored'],
                                              index=False, header=False)
         return runtime
 
