@@ -66,11 +66,7 @@ def test_fd_interface():  # Checking results
 
 test_fd_interface()  # Call the function
 
-#%%
-from xcp_d.workflow.postprocessing import init_censoring_wf
-from xcp_d.interfaces.prepostcleaning import censorscrub
-import os
-import pandas as pd
+
 def test_fd_interface_dummy_signal():  # Checking results with dummy signal
     input_file = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
     mask = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz'
@@ -90,7 +86,3 @@ def test_fd_interface_dummy_signal():  # Checking results with dummy signal
 
 
 test_fd_interface_dummy_signal()  # Call the function
-
-
-
-# %%
