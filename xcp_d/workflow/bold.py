@@ -6,6 +6,7 @@ post processing the bold
 .. autofunction:: init_boldpostprocess_wf
 
 """
+from logging import raiseExceptions
 import os
 import numpy as np
 import nibabel as nb
@@ -26,6 +27,7 @@ from ..interfaces import interpolate
 from .postprocessing import init_censoring_wf,init_resd_smoohthing
 from .execsummary import init_execsummary_wf
 from num2words import num2words
+from ..utils.confounds import find_confounds
 #from postprocessing import stringforparams
 
 from  ..workflow import (init_fcon_ts_wf,
@@ -181,17 +183,22 @@ def init_boldpostprocess_wf(
     qc_file
         quality control files
     """
-
-
-    metadata = layout.get_metadata(bold_file)
-    TR = metadata['RepetitionTime']
     
-    if TR is None:
-        TR = layout.get_tr(bold_file)
-        
+    metadata = layout.get_metadata(bold_file)
+    # Throw error if no TR
+    try:
+        TR = metadata['RepetitionTime']
+        if TR is None:
+            TR = layout.get_tr(bold_file)
+    except:
+        print("Unable to find TR")
+    # Throw error if no confound files
+    try:
+        confounds_tsv, confounds_json = find_confounds(bold_file)
+    except UnboundLocalError:
+        print("No confound files found for " + bold_file)
     file_base = os.path.basename(str(bold_file))
     workflow = Workflow(name=name)
-
     workflow.__desc__ = """
 For each of the {num_bold} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
@@ -363,7 +370,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     workflow.connect([
 	      (inputnode,regression_wf,[('bold_mask','mask')]),
 	      (censorscrub_wf,regression_wf,[('outputnode.bold_censored','in_file'),
-	             ('outputnode.fmriprepconf_censored','confounds')])
+	             ('outputnode.fmriprepconfounds_censored','confounds')])
         ])
     # interpolation workflow
     workflow.connect([
