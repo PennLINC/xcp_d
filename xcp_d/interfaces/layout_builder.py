@@ -95,7 +95,7 @@ class ModalContainer(object):
 
     def add_image(self, image_file):
 
-        if self.state is not 'open':
+        if self.state != 'open':
             print('ERROR: Cannot add images after the HTML has been written.')
             return 0
 
@@ -290,7 +290,7 @@ class TasksSection(Section):
 
 
     def run(self, tasks):
-        if len(tasks) is 0:
+        if len(tasks) == 0:
             print('No tasks were found.')
             return
 
