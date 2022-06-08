@@ -474,14 +474,12 @@ def init_anatomical_wf(
                ])     
 
                workflow.connect([
-                    (left_hcpmidthick_native_wf,left_hcpmidthick_surf_wf,[('out_file','in_file')]),
                     (left_hcpmidthick_surf_wf,left_hcpinflated_surf_wf,[('out_file','anatomical_surface_in')]),
                     (left_hcpinflated_surf_wf,ds_hcpinfLsurf_wf,[('inflated_out_file','in_file')]),
                     (left_hcpinflated_surf_wf,ds_hcpveryinfLsurf_wf,[('very_inflated_out_file','in_file')]),
                ])          
 
                workflow.connect([
-                    (right_hcpmidthick_native_wf,right_hcpmidthick_surf_wf,[('out_file','in_file')]),
                     (right_hcpmidthick_surf_wf,right_hcpinflated_surf_wf,[('out_file','anatomical_surface_in')]),
                     (right_hcpinflated_surf_wf,ds_hcpinfRsurf_wf,[('inflated_out_file','in_file')]),
                     (right_hcpinflated_surf_wf,ds_hcpveryinfRsurf_wf,[('very_inflated_out_file','in_file')]),
