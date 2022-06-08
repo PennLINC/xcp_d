@@ -27,7 +27,7 @@ def test_fd():
 
 test_fd()  # Call the function
 
-#%%
+
 def test_fd_interface():  # Checking results
     input_file = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
     mask = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz'
@@ -62,7 +62,7 @@ def test_fd_interface():  # Checking results
 
 test_fd_interface()  # Call the function
 
-#%%
+
 def test_fd_interface_dummy_signal():  # Checking results with dummy signal
     input_file = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
     mask = '/Users/kahinim/Desktop/FD_test/fmriprep/sub-99964/ses-10105/func/sub-99964_ses-10105_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz'
@@ -82,6 +82,3 @@ def test_fd_interface_dummy_signal():  # Checking results with dummy signal
 
 
 test_fd_interface_dummy_signal()  # Call the function
-
-
-
