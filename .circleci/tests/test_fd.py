@@ -1,4 +1,4 @@
-#%%
+
 from xcp_d.workflow.postprocessing import init_censoring_wf
 from xcp_d.interfaces.prepostcleaning import censorscrub
 import os
@@ -48,12 +48,6 @@ def test_fd_interface():  # Checking results
     assert confounds_df["trans_y"][5:8].tolist() == [7, 8, 9]
     assert confounds_df["trans_z"][9:12].tolist() == [12, 8, 9]
 
-    # Confirming that the df values are changed as expected
-    confounds_df = pd.read_table(confounds_tsv)
-    assert confounds_df["trans_x"][1:4].tolist() == [6, 8, 9]
-    assert confounds_df["trans_y"][5:8].tolist() == [7, 8, 9]
-    assert confounds_df["trans_z"][9:12].tolist() == [12, 8, 9]
-
     # Run workflow
     cscrub = censorscrub()
     cscrub.inputs.in_file = input_file
@@ -64,9 +58,13 @@ def test_fd_interface():  # Checking results
     cscrub.inputs.time_todrop = 0
     cscrub.inputs.head_radius = 50
     results = cscrub.run()
-    tmask = results.outputs.tmask
-    tmask = results.outputs.tmask
-    tmask = results.outputs.tmask
+    
+    # Confirming that the df values were changed as expected
+    confounds_df = pd.read_table(cscrub.inputs.fmriprep_confounds)
+    assert confounds_df["trans_x"][1:4].tolist() == [6, 8, 9]
+    assert confounds_df["trans_y"][5:8].tolist() == [7, 8, 9]
+    assert confounds_df["trans_z"][9:12].tolist() == [12, 8, 9]
+    
 test_fd_interface()  # Call the function
 
 
