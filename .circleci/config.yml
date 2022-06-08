@@ -70,7 +70,7 @@ jobs:
 
   get_data:
     machine:
-      image: cimg/base:2020.09
+      image: ubuntu-2004:202010-01
     working_directory: /home/circleci/data
     steps:
       - restore_cache:
