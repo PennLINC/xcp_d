@@ -105,7 +105,7 @@ jobs:
 
   update_cache:
     machine:
-      image: circleci/classic:201711-01
+      image: ubuntu-2004:202010-01
     working_directory: /tmp/src/xcp_d
     steps:
       - attach_workspace:
@@ -118,7 +118,7 @@ jobs:
 
   xcpd_niftiW:
     machine:
-      image: circleci/classic:201711-01
+      image: ubuntu-2004:202010-01
     working_directory: /tmp/data
     steps:
       - checkout:
@@ -198,7 +198,7 @@ jobs:
           
   xcpd_ciftiF:
     machine:
-      image: circleci/classic:201711-01
+      image: ubuntu-2004:202010-01
     working_directory: /tmp/data
     steps:
       - checkout:
@@ -279,7 +279,7 @@ jobs:
 
   xcpd_niftiF:
     machine:
-      image: circleci/classic:201711-01
+      image: ubuntu-2004:202010-01
     working_directory: /tmp/data
     steps:
       - checkout:
@@ -359,7 +359,7 @@ jobs:
 
   deploy_docker:
       machine:
-        image: circleci/classic:201711-01
+        image: ubuntu-2004:202010-01
       working_directory: /tmp/src/xcp_d
       steps:
         - attach_workspace:
