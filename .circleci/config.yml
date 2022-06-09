@@ -142,7 +142,7 @@ jobs:
       - run:
           name: Setting up test
           command: |
-            mkdir -p /tmp/xcpd_niftiW && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiW  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiW
+            mkdir -p /tmp/xcpd_niftiW 
 
       - run:
           name: Load Docker image layer cache
@@ -159,8 +159,7 @@ jobs:
           name: Run full xcpd_abcd on nifti without freesurfer 
           no_output_timeout: 5h
           command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiW && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiW
+
         
             docker run --rm -it \
                 -v /tmp/data:/data/ \
@@ -222,7 +221,7 @@ jobs:
       - run:
           name: Setting up test
           command: |
-            mkdir -p /tmp/xcpd_ciftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_ciftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_ciftiF
+            mkdir -p /tmp/xcpd_ciftiF 
 
       - run:
           name: Load Docker image layer cache
@@ -239,8 +238,6 @@ jobs:
           name: Run full xcpd_abcd on cifti with freesurfer 
           no_output_timeout: 5h
           command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_ciftiF && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_ciftiF
         
             docker run --rm -it \
                 -v /tmp/data:/data/ \
@@ -303,7 +300,7 @@ jobs:
       - run:
           name: Setting up test
           command: |
-            mkdir -p /tmp/xcpd_niftiF && sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiF  && sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiF
+            mkdir -p /tmp/xcpd_niftiF 
 
       - run:
           name: Load Docker image layer cache
@@ -320,8 +317,6 @@ jobs:
           name: Run full xcpd_abcd on nifti with freesurfer 
           no_output_timeout: 5h
           command: |
-            sudo setfacl -d -m group:$(id -gn):rwx /tmp/xcpd_niftiF && \
-                sudo setfacl -m group:$(id -gn):rwx /tmp/xcpd_niftiF
         
             docker run --rm -it \
                 -v /tmp/data:/data/ \
