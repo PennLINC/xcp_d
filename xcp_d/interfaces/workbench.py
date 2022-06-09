@@ -288,7 +288,7 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         desc="the anatomical surface",
     )
 
-        inflated_surface_out = File(
+        inflated_out_file = File(
         name_source='anatomical_surface_in',
         keep_extension=False,
         name_template='%s-hcpinflated.surf.gii',
@@ -297,7 +297,7 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         desc="output - the output inflated surface",
     )
 
-        very_inflated_surface_out = File(
+        very_inflated_out_file = File(
         name_source='anatomical_surface_in',
         keep_extension=False,
         name_template='%s-hcpveryinflated.surf.gii',
