@@ -46,7 +46,7 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
     
 
 class _confoundOutputSpec(TraitedSpec):
-    confound_file = File(exists=True, manadatory=True,
+    confound_file = File(exists=True, mandatory=True,
                                   desc="confound matrix file")
 
 

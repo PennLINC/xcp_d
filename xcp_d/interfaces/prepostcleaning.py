@@ -18,7 +18,7 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
     fmriprep_conf = File(exists=True,mandatory=False,desc="confound selected from fmriprep confound matrix")
 
 class _removeTROutputSpec(TraitedSpec):
-    fmrip_confdropTR  = File(exists=True, manadatory=True,
+    fmrip_confdropTR  = File(exists=True, mandatory=True,
                                   desc="fmriprep confound after removing TRs,")
     
     bold_file_TR = File(exists=True,mandatory=True, desc=" either bold or nifti modified")
@@ -89,7 +89,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
 
 
 class _censorscrubOutputSpec(TraitedSpec):
-    bold_censored  = File(exists=True, manadatory=True,
+    bold_censored  = File(exists=True, mandatory=True,
                                      desc=" fmriprep censored")
     fmriprepconf_censored  = File(exists=True,mandatory=True, 
                                     desc=" fmriprep_conf censored")
@@ -227,7 +227,7 @@ class _interpolateInputSpec(BaseInterfaceInputSpec):
 
 
 class _interpolateOutputSpec(TraitedSpec):
-    bold_interpolated  = File(exists=True, manadatory=True,
+    bold_interpolated  = File(exists=True, mandatory=True,
                                      desc=" fmriprep censored")
 
 class interpolate(SimpleInterface):

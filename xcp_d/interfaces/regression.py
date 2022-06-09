@@ -33,7 +33,7 @@ class _regressInputSpec(BaseInterfaceInputSpec):
     
 
 class _regressOutputSpec(TraitedSpec):
-    res_file = File(exists=True, manadatory=True,
+    res_file = File(exists=True, mandatory=True,
                                   desc=" residual file after regression")
 
 
@@ -146,7 +146,7 @@ class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
     tr = traits.Float(exists=True,mandatory=True, desc="repetition time")
 
 class _ciftidespikeOutputSpec(TraitedSpec):
-    des_file = File(exists=True, manadatory=True,
+    des_file = File(exists=True, mandatory=True,
                                   desc=" despike cifti")
 
 

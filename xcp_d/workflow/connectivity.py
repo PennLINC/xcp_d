@@ -321,7 +321,8 @@ Corresponding pair-wise functional connectivity between all regions was computed
                 'sc717_ts', 'sc717_fc','sc817_ts','sc817_fc',
                 'sc917_ts', 'sc917_fc','sc1017_ts','sc1017_fc',
                 'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc',
-                'ts50_ts','ts50_fc','connectplot' ]),
+#                'ts50_ts','ts50_fc',
+                'connectplot' ]),
                 name='outputnode')
 
 
@@ -338,7 +339,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
     sc1017atlas = get_atlas_cifti(atlasname='schaefer1000x17')
     gs360atlas = get_atlas_cifti(atlasname='glasser360')
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
-    ts50atlas = get_atlas_cifti(atlasname='tiansubcortical')
+ #   ts50atlas = get_atlas_cifti(atlasname='tiansubcortical')
 
     # timeseries extraction
     sc117parcel = pe.Node(CiftiParcellate(atlas_label=sc117atlas,direction='COLUMN'),
@@ -365,8 +366,8 @@ Corresponding pair-wise functional connectivity between all regions was computed
                           mem_gb=mem_gb, name='gs360parcel',n_procs=omp_nthreads)
     gd333parcel = pe.Node(CiftiParcellate(atlas_label=gd333atlas,direction='COLUMN'),
                          mem_gb=mem_gb, name='gd333parcel',n_procs=omp_nthreads)
-    ts50parcel = pe.Node(CiftiParcellate(atlas_label=ts50atlas,direction='COLUMN'),
-                         mem_gb=mem_gb, name='ts50parcel',n_procs=omp_nthreads)
+#    ts50parcel = pe.Node(CiftiParcellate(atlas_label=ts50atlas,direction='COLUMN'),
+#                         mem_gb=mem_gb, name='ts50parcel',n_procs=omp_nthreads)
 
     matrix_plot = pe.Node(connectplot(),name="matrix_plot_wf", mem_gb=mem_gb)
     # correlation
@@ -382,7 +383,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
     sc1017corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='sc1017corr',n_procs=omp_nthreads)
     gs360corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gs360corr',n_procs=omp_nthreads)
     gd333corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='gd333corr',n_procs=omp_nthreads)
-    ts50corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='ts50corr',n_procs=omp_nthreads)
+  #  ts50corr = pe.Node(CiftiCorrelation(),mem_gb=mem_gb, name='ts50corr',n_procs=omp_nthreads)
 
     workflow.connect([
                     (inputnode,sc117parcel,[('clean_cifti','in_file')]),
@@ -397,7 +398,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
                     (inputnode,sc1017parcel,[('clean_cifti','in_file')]),
                     (inputnode,gd333parcel,[('clean_cifti','in_file')]),
                     (inputnode,gs360parcel,[('clean_cifti','in_file')]),
-                    (inputnode,ts50parcel,[('clean_cifti','in_file')]),
+#                    (inputnode,ts50parcel,[('clean_cifti','in_file')]),
 
                     (sc117parcel,outputnode,[('out_file','sc117_ts',)]),
                     (sc217parcel,outputnode,[('out_file','sc217_ts',)]),
@@ -411,7 +412,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
                     (sc1017parcel,outputnode,[('out_file','sc1017_ts',)]),
                     (gs360parcel,outputnode,[('out_file','gs360_ts',)]),
                     (gd333parcel,outputnode,[('out_file','gd333_ts',)]),
-                    (ts50parcel,outputnode,[('out_file','ts50_ts',)]),
+ #                   (ts50parcel,outputnode,[('out_file','ts50_ts',)]),
 
                     (sc117parcel,sc117corr ,[('out_file','in_file',)]),
                     (sc217parcel,sc217corr ,[('out_file','in_file',)]),
@@ -425,7 +426,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
                     (sc1017parcel,sc1017corr ,[('out_file','in_file',)]),
                     (gs360parcel,gs360corr ,[('out_file','in_file',)]),
                     (gd333parcel,gd333corr ,[('out_file','in_file',)]),
-                    (ts50parcel,ts50corr ,[('out_file','in_file',)]),
+#                    (ts50parcel,ts50corr ,[('out_file','in_file',)]),
 
                     (sc117corr,outputnode,[('out_file','sc117_fc',)]),
                     (sc217corr,outputnode,[('out_file','sc217_fc',)]),
@@ -439,7 +440,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
                     (sc1017corr,outputnode,[('out_file','sc1017_fc',)]),
                     (gs360corr,outputnode,[('out_file','gs360_fc',)]),
                     (gd333corr,outputnode,[('out_file','gd333_fc',)]),
-                    (ts50corr,outputnode,[('out_file','ts50_fc',)]),    
+ #                   (ts50corr,outputnode,[('out_file','ts50_fc',)]),    
 
                     (inputnode,matrix_plot,[('clean_cifti','in_file')]),
                     (sc217parcel,matrix_plot,[('out_file','sc217_timeseries')]),

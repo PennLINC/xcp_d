@@ -43,11 +43,11 @@ class _qcInputSpec(BaseInterfaceInputSpec):
     high_freq= traits.Float(exit=False,mandatory=False, desc=' high frequency for notch filter in breathe per min (bpm)')    
     
 class _qcOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, manadatory=True,
+    qc_file = File(exists=True, mandatory=True,
                                   desc="qc file in tsv")
-    raw_qcplot = File(exists=True, manadatory=True,
+    raw_qcplot = File(exists=True, mandatory=True,
                                   desc="qc plot before regression")
-    clean_qcplot = File(exists=True, manadatory=True,
+    clean_qcplot = File(exists=True, mandatory=True,
                                   desc="qc plot after regression")
 
 

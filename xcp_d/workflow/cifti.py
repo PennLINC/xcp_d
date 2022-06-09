@@ -222,7 +222,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 'reho_lh','reho_rh','sc117_ts', 'sc117_fc','sc217_ts', 'sc217_fc','sc317_ts','sc317_fc',
                 'sc517_ts', 'sc517_fc','sc517_ts', 'sc517_fc','sc617_ts','sc617_fc',
                 'sc717_ts', 'sc717_fc','sc817_ts', 'sc817_fc','sc917_ts','sc917_fc','sc1017_ts','sc1017_fc',
-                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','ts50_ts','ts50_fc','qc_file','fd']),
+ #              'ts50_ts','ts50_fc',
+                'gs360_ts', 'gs360_fc','gd333_ts', 'gd333_fc','qc_file','fd']),
         name='outputnode')
 
     
@@ -359,7 +360,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                         ('outputnode.sc1017_ts','sc1017_ts'),('outputnode.sc1017_fc','sc1017_fc'),
                         ('outputnode.gs360_ts','gs360_ts'),('outputnode.gs360_fc','gs360_fc'),
                         ('outputnode.gd333_ts','gd333_ts'),('outputnode.gd333_fc','gd333_fc'),
-                        ('outputnode.ts50_ts','ts50_ts'),('outputnode.ts50_fc','ts50_fc')]),
+  #                      ('outputnode.ts50_ts','ts50_ts'),('outputnode.ts50_fc','ts50_fc')
+                        ]),
 
        ])
 
@@ -397,9 +399,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                 ('outputnode.gs360_ts','inputnode.gs360_ts'),
                                 ('outputnode.gs360_fc','inputnode.gs360_fc'),
                                 ('outputnode.gd333_ts','inputnode.gd333_ts'),
-                                ('outputnode.gd333_fc','inputnode.gd333_fc'),
-                                ('outputnode.ts50_ts','inputnode.ts50_ts'),
-                                ('outputnode.ts50_fc','inputnode.ts50_fc')]),
+                                ('outputnode.gd333_fc','inputnode.gd333_fc')]),
+       #                         ('outputnode.ts50_ts','inputnode.ts50_ts'),
+       #                         ('outputnode.ts50_fc','inputnode.ts50_fc')]),
          (qcreport,write_derivative_wf,[('qc_file','inputnode.qc_file')]),
 
 

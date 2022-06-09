@@ -27,9 +27,9 @@ class _nifticonnectInputSpec(BaseInterfaceInputSpec):
     atlas = File(exists=True,mandatory=True, desc="atlas file")
 
 class _nifticonnectOutputSpec(TraitedSpec):
-    time_series_tsv = File(exists=True, manadatory=True,
+    time_series_tsv = File(exists=True, mandatory=True,
                                   desc=" time series file")
-    fcon_matrix_tsv = File(exists=True, manadatory=True,
+    fcon_matrix_tsv = File(exists=True, mandatory=True,
                                   desc=" time series file")
 
 
@@ -167,7 +167,7 @@ class _connectplotInputSpec(BaseInterfaceInputSpec):
     
 
 class _connectplotOutputSpec(TraitedSpec):
-    connectplot = File(exists=True, manadatory=True,)
+    connectplot = File(exists=True, mandatory=True,)
 
 
 class connectplot(SimpleInterface):

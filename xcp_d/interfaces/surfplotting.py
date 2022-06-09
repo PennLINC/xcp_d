@@ -46,7 +46,7 @@ class _surf2volInputSpec(BaseInterfaceInputSpec):
     scale = traits.Int(default_value=1, desc="scale factor for the surface")
 
 class _surf2volOutputSpec(TraitedSpec):
-    out_file = File(exists=True, manadatory=True,
+    out_file = File(exists=True, mandatory=True,
                                   desc=" t1image")
   
 
@@ -81,7 +81,7 @@ class _brainplotxInputSpec(BaseInterfaceInputSpec):
 
 
 class _brainplotxOutputSpec(TraitedSpec):
-    out_html = File(exists=True, manadatory=True,
+    out_html = File(exists=True, mandatory=True,
                                   desc="zscore html")
 
 class BrainPlotx(SimpleInterface):
@@ -112,7 +112,7 @@ class _regplotInputSpec(BaseInterfaceInputSpec):
 
 
 class _regplotOutputSpec(TraitedSpec):
-    out_file = File(exists=True, manadatory=True,
+    out_file = File(exists=True, mandatory=True,
                                   desc="svg file")
 
 class RegPlot(SimpleInterface):
@@ -149,8 +149,8 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
 
 
 class _plotsvgOutputSpec(TraitedSpec):
-    before_process = File(exists=True, manadatory=True,desc="svg file before pro")
-    after_process = File(exists=True, manadatory=True,desc="svg file before after")
+    before_process = File(exists=True, mandatory=True,desc="svg file before pro")
+    after_process = File(exists=True, mandatory=True,desc="svg file before after")
 
 
 class PlotSVGData(SimpleInterface):
@@ -189,7 +189,7 @@ class _ribbonstatmapInputSpec(BaseInterfaceInputSpec):
 
 
 class _ribbonstatmapOutputSpec(TraitedSpec):
-    out_file = File(exists=True, manadatory=True,desc="ribbon > pial and white")
+    out_file = File(exists=True, mandatory=True,desc="ribbon > pial and white")
 
 
 

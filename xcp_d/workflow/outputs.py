@@ -377,10 +377,10 @@ def init_writederivatives_wf(
                  dismiss_entities=['desc','den'],atlas='Gordon',density='91k',extension='.ptseries.nii',
                  source_file=bold_file,check_hdr=False),
             name='dv_gd333_wf', run_without_submitting=True, mem_gb=1)
-        dv_ts50ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                 dismiss_entities=['desc','den'],atlas='subcortical',density='91k',extension='.ptseries.nii',
-                 source_file=bold_file,check_hdr=False),
-            name='dv_ts50_wf', run_without_submitting=True, mem_gb=1)
+#        dv_ts50ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+#                dismiss_entities=['desc','den'],atlas='subcortical',density='91k',extension='.ptseries.nii',
+#                 source_file=bold_file,check_hdr=False),
+#            name='dv_ts50_wf', run_without_submitting=True, mem_gb=1)
 
         dv_sc117fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                  dismiss_entities=['desc','den'],atlas='Schaefer117',extension='.pconn.nii',
@@ -441,9 +441,9 @@ def init_writederivatives_wf(
                  check_hdr=False,dismiss_entities=['desc','den'],atlas='Gordon',density='91k',source_file=bold_file),
             name='dv_gd333fc_wf', run_without_submitting=True, mem_gb=1)
            
-        dv_ts50fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,extension='.pconn.nii',
-                 check_hdr=False,dismiss_entities=['desc','den'],atlas='subcortical',density='91k',source_file=bold_file),
-            name='dv_ts50fc_wf', run_without_submitting=True, mem_gb=1)
+ #       dv_ts50fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,extension='.pconn.nii',
+ #                check_hdr=False,dismiss_entities=['desc','den'],atlas='subcortical',density='91k',source_file=bold_file),
+ #           name='dv_ts50fc_wf', run_without_submitting=True, mem_gb=1)
 
         dv_reholh_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,check_hdr=False,
                  dismiss_entities=['desc','den'],desc='reho',density='32k',hemi='L',extension='.func.gii',
@@ -476,7 +476,7 @@ def init_writederivatives_wf(
          (inputnode,dv_sc1017ts_wf,[('sc1017_ts','in_file')]),
          (inputnode,dv_gs360ts_wf,[('gs360_ts','in_file')]),
          (inputnode,dv_gd333ts_wf,[('gd333_ts','in_file')]),
-         (inputnode,dv_ts50ts_wf,[('ts50_ts','in_file')]),
+ #        (inputnode,dv_ts50ts_wf,[('ts50_ts','in_file')]),
          (inputnode,dv_sc117fc_wf,[('sc117_fc','in_file')]),
          (inputnode,dv_sc217fc_wf,[('sc217_fc','in_file')]),
          (inputnode,dv_sc317fc_wf,[('sc317_fc','in_file')]),
@@ -489,7 +489,7 @@ def init_writederivatives_wf(
          (inputnode,dv_sc1017fc_wf,[('sc1017_fc','in_file')]),
          (inputnode,dv_gs360fc_wf,[('gs360_fc','in_file')]),
          (inputnode,dv_gd333fc_wf,[('gd333_fc','in_file')]),
-         (inputnode,dv_ts50fc_wf,[('ts50_fc','in_file')]),
+ #        (inputnode,dv_ts50fc_wf,[('ts50_fc','in_file')]),
          (inputnode,dv_reholh_wf,[('reho_lh','in_file')]),
          (inputnode,dv_rehorh_wf,[('reho_rh','in_file')]),
          (inputnode,dv_fd_wf,[('fd','in_file')]),
