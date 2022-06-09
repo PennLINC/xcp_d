@@ -445,22 +445,22 @@ def init_anatomical_wf(
                right_hcpinflated_surf_wf = pe.Node(SurfaceGenerateInflated(iterations_scale_value=0.75), name="right_hcpinflated_surf_wf")
 
                ds_hcpmidLsurf_wf = pe.Node(
-                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpmidthickness',check_hdr=False,
+                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],space='fsLR', density='32k',suffix='hcpmidthickness',check_hdr=False,
                 extension='.surf.gii',hemi='L',source_file=L_midthick_surf), name='ds_hcpmidLsurf_wf', run_without_submitting=False,mem_gb=2)
                ds_hcpmidRsurf_wf = pe.Node(
-                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpmidthickness',check_hdr=False,
+                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],space='fsLR', density='32k',suffix='hcpmidthickness',check_hdr=False,
                  extension='.surf.gii',hemi='R',source_file=R_midthick_surf), name='ds_hcpmidRsurf_wf', run_without_submitting=False,mem_gb=2)
                ds_hcpinfLsurf_wf = pe.Node(
-                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpinflated',check_hdr=False,
+                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],space='fsLR', density='32k',suffix='hcpinflated',check_hdr=False,
                  extension='.surf.gii',hemi='L',source_file=L_inflated_surf), name='ds_hcpinfLsurf_wf', run_without_submitting=False,mem_gb=2)
                ds_hcpinfRsurf_wf = pe.Node(
-                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpinflated',check_hdr=False,
+                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],space='fsLR', density='32k',suffix='hcpinflated',check_hdr=False,
                  extension='.surf.gii',hemi='R',source_file=R_inflated_surf), name='ds_hcpinfRsurf_wf', run_without_submitting=False,mem_gb=2)
                ds_hcpveryinfLsurf_wf = pe.Node(
-                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpveryinflated',check_hdr=False,
+                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],space='fsLR', density='32k',suffix='hcpveryinflated',check_hdr=False,
                  extension='.surf.gii',hemi='L',source_file=L_inflated_surf), name='ds_hcpveryinfLsurf_wf', run_without_submitting=False,mem_gb=2)
                ds_hcpveryinfRsurf_wf = pe.Node(
-                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc'],space='fsLR', density='32k',desc='hcpveryinflated',check_hdr=False,
+                 DerivativesDataSink(base_directory=output_dir,dismiss_entities=['desc','suffix'],space='fsLR', density='32k',suffix='hcpveryinflated',check_hdr=False,
                  extension='.surf.gii',hemi='R',source_file=R_inflated_surf), name='ds_hcpveryinfRsurf_wf', run_without_submitting=False,mem_gb=2)
 
                workflow.connect([
