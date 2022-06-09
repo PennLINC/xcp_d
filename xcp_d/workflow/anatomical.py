@@ -464,11 +464,13 @@ def init_anatomical_wf(
                  extension='.surf.gii',hemi='R',source_file=R_inflated_surf), name='ds_hcpveryinfRsurf_wf', run_without_submitting=False,mem_gb=2)
 
                workflow.connect([
+                    (left_sphere_raw_mris,left_hcpmidthick_surf_wf,[('converted','current_sphere')]),
                     (left_hcpmidthick_native_wf,left_hcpmidthick_surf_wf,[('out_file','in_file')]),
                     (left_hcpmidthick_surf_wf,ds_hcpmidLsurf_wf,[('out_file','in_file')]),
                ])          
 
                workflow.connect([
+                    (right_sphere_raw_mris,right_hcpmidthick_surf_wf,[('converted','current_sphere')]),
                     (right_hcpmidthick_native_wf,right_hcpmidthick_surf_wf,[('out_file','in_file')]),
                     (right_hcpmidthick_surf_wf,ds_hcpmidRsurf_wf,[('out_file','in_file')]),
                ])     
