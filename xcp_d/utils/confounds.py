@@ -33,6 +33,7 @@ def find_confounds(datafile):
 
     return confounds_timeseries, confounds_json
 
+
 def load_confound(datafile):
     """`Load confound amd json."""
     '''
@@ -56,7 +57,8 @@ def load_confound(datafile):
     
     confoundjs = readjson(confounds_json)
 
-    return confoundpd,confoundjs
+    return confoundpd, confoundjs
+
 
 def readjson(jsonfile):
     import json
@@ -78,13 +80,16 @@ def load_motion(confounds_df, TR, filtertype, freqband, cutoff=0.1, order=4):
         confound_data = confound_data.T
     return pd.DataFrame(confound_data)
 
+
 def load_globalS(confoundspd):
     """select global signal."""
     return confoundspd["global_signal"]
 
+
 def load_WM_CSF(confoundspd):
     """select white matter and CSF nuissance."""
     return confoundspd[["csf","white_matter"]]
+
 
 def load_cosine(confoundspd):
     """select cosine for compcor"""
@@ -93,6 +98,7 @@ def load_cosine(confoundspd):
         if 'cosine' in key:
             cosine.append(key)
     return confoundspd[cosine]
+
 
 def load_acompcor(confoundspd, confoundjs):
     """ select WM and GM acompcor separately."""
@@ -124,12 +130,12 @@ def load_tcompcor(confoundspd, confoundjs):
     for key, value in confoundjs.items():
         if 't_comp_cor' in key:
             if value['Method']=='tCompCor' and value['Retained']==True:
-                tcomp.append([key,value['VarianceExplained']])
+                tcomp.append([key, value['VarianceExplained']])
     # sort it by variance explained
     # select the first five components
-    tcomplist = [] 
-    for i in range(0,6):
-       tcomplist.append(tcomp[i][0])
+    tcomplist = []
+    for i in range(0, 6):
+        tcomplist.append(tcomp[i][0])
     return confoundspd[tcomplist]
 
 
@@ -137,12 +143,14 @@ def derivative(confound):
     dat = confound.to_numpy()
     return pd.DataFrame(np.diff(dat,prepend=0))
 
-def confpower(confound,order=2):
+
+def confpower(confound, order=2):
     return confound ** order
 
 
-def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,order=4,
-                        freqband=[0.1,0.2],params='27P'):
+def load_confound_matrix(datafile, TR, filtertype, custom_conf=None, cutoff=0.1, order=4,
+                         freqband=[0.1, 0.2], params='27P', confounds_file=None,
+                         confounds_json=None):
                     
     """ extract confound """
     '''
@@ -151,7 +159,11 @@ def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,orde
     params: 
        confound requested based on Ciric et. al 2017
     '''
-    confoundtsv,confoundjson = load_confound(datafile)
+    if None in (confounds_file, confounds_json):
+        confoundtsv, confoundjson = load_confound(datafile)
+    else:
+        confoundtsv, confoundjson = confounds_file, confounds_json
+
     if  params == '24P':
         motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
@@ -271,7 +283,6 @@ def motion_regression_filter(data,TR,filtertype,freqband,cutoff=.1,order=4):
 
 
     
-
     # def lowpassfilter_coeff(cutoff, fs, order=4):
         
     #     nyq = 0.5 * fs

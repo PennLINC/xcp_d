@@ -356,7 +356,7 @@ def build_workflow(opts, retval):
         build_log.error(
             'The selected output folder is the same as the input fmri input. '
             'Please modify the output path (suggestion: %s).',
-             fmri_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
+            fmri_dir / 'derivatives' / ('xcp-d-%s' % __version__.split('+')[0]))
         retval['return_code'] = 1
         return retval
 
