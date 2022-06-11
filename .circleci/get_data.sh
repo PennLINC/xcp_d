@@ -24,31 +24,37 @@ else
 fi
 export IN_CI NTHREADS OMP_NTHREADS
 
-run_qsiprep_cmd () {
+run_xcpd_cmd () {
   bids_dir="$1"
   output_dir="$2"
+  workdir="$3"
   # Defines a call to qsiprep that works on circleci OR for a local
   # test that uses 
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    QSIPREP_RUN="/usr/local/miniconda/bin/qsiprep ${bids_dir} ${output_dir} participant"
+    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
   else
-    # Otherwise we're going to use docker from the outside
-    QSIPREP_RUN="qsiprep-docker ${bids_dir} ${output_dir} participant -e qsiprep_DEV 1 -u $(id -u) -i ${IMAGE}"
+    patch_mount=""
+    if [[ -n "${LOCAL_PATCH}" ]]; then
+      patch_mount="-v ${LOCAL_PATCH}:/usr/local/miniconda/lib/python3.8/site-packages/xcp_d"
+    fi
+
+    # Is there a nipype config?
+    cfg_arg=""
     CFG=$(printenv NIPYPE_CONFIG)
     if [[ -n "${CFG}" ]]; then
-        QSIPREP_RUN="${QSIPREP_RUN} --config ${CFG}"
+        cfg_arg="-v ${CFG}:/nipype/nipype.cfg --env NIPYPE_CONFIG_DIR=/nipype"
     fi
 
-    if [[ -n "${LOCAL_PATCH}" ]]; then
-      #echo "Using qsiprep patch: ${LOCAL_PATCH}"
-      QSIPREP_RUN="${QSIPREP_RUN} --patch-qsiprep ${LOCAL_PATCH}"
-    fi
+    # Otherwise we're going to use docker from the outside
+    bids_mount="-v ${bids_dir}:/bids-input:ro"
+    output_mount="-v ${output_dir}:/out:rw"
+    workdir_mount="-v ${workdir}:/work:rw"
+    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input /out -w /work"
+
   fi
-  echo "${QSIPREP_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"
+  echo "${XCPD_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"
 }
-
-
 
 cat << DOC
 

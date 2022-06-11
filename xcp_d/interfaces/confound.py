@@ -40,7 +40,7 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
         mandatory=True, 
         desc='repetition time in seconds')
     filtertype = traits.Enum(
-        'lp', 'notch',
+        'lp', 'notch', 'none', 'None',
         desc='filter type for filtering regressors, either lp or notch')
     filterorder = traits.Int(
         default=4,

@@ -33,45 +33,9 @@ jobs:
       - checkout
       - run: *runinstall
 
-  get_data:
-    machine:
-      image: ubuntu-2004:202010-01
-    working_directory: /home/circleci/data
-    steps:
-      - restore_cache:
-          keys:
-            - data-v1-{{ epoch }}
-            - data-v1-
-      - run:
-          name: Get test data from box
-          command: |
-            mkdir -p /tmp/data
-            cd /tmp/data
-            if [[ ! -d /tmp/data/fmriprepdata/withfreesurfer  ]]; then
-              wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
-                -O fmriprepdata.tar.xz "https://upenn.box.com/shared/static/k0ccctapoe1ne7xby2lrh4soqjrha8kb.zx"
-              tar xvfJ fmriprepdata.tar.xz 
-              rm -rf fmriprepdata.tar.xz 
-            else
-              echo "fmriprep data was cached"
-            fi
-            mkdir -p /tmp/wkdir
-
-
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - data
-      - save_cache:
-         key: data-v1-{{ epoch }}
-         paths:
-            - /tmp/data
-
 
   nifti_without_freesurfer:
-    machine:
-      image: ubuntu-2004:202010-01
-    working_directory: /tmp/data
+    <<: *dockersetup
     steps:
       - checkout:
           path: /home/circleci/src/xcp_d
@@ -85,20 +49,10 @@ jobs:
             fi
       - run:
           name: Run full xcpd_abcd on nifti without freesurfer 
-          no_output_timeout: 5h
+          no_output_timeout: 1h
           command: |
-
-        
-            docker run --rm -it \
-                -v /tmp/data:/data/ \
-                -v /tmp/wkdir:/wkdir \
-                -v /tmp:/scrth \
-                -v /tmp/nifti_without_freesurfer/:/out \
-                pennlinc/xcp_d:latest \
-                /data/fmriprepdata/fmriprepdata/withoutfreesurfer \
-                /out   \
-                --despike  --head_radius 40 \
-                -w /scrth/wkdir_niftiW --smoothing 6  -f 100
+            cd .circleci
+            bash NiftiWithoutFreeSurferTest.sh
 
       - run:
           name: Checking outputs of nifti_without_freesurfer
@@ -113,136 +67,136 @@ jobs:
             fi
 
           
-  cifti_with_freesurfer:
-    machine:
-      image: ubuntu-2004:202010-01
-    working_directory: /tmp/data
-    steps:
-      - checkout:
-          path: /home/circleci/src/xcp_d
-      - run:
-          name: Check whether build should be skipped
-          command: |
-            cd /home/circleci/src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer build"
-              circleci step halt
-            fi
-      - run:
-          name: Setting up test
-          command: |
-            mkdir -p /tmp/cifti_with_freesurfer 
+  # cifti_with_freesurfer:
+  #   machine:
+  #     image: ubuntu-2004:202010-01
+  #   working_directory: /tmp/data
+  #   steps:
+  #     - checkout:
+  #         path: /home/circleci/src/xcp_d
+  #     - run:
+  #         name: Check whether build should be skipped
+  #         command: |
+  #           cd /home/circleci/src/xcp_d
+  #           if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
+  #             echo "Skipping cifti_with_freesurfer build"
+  #             circleci step halt
+  #           fi
+  #     - run:
+  #         name: Setting up test
+  #         command: |
+  #           mkdir -p /tmp/cifti_with_freesurfer 
 
-      - run:
-          name: Run full xcpd_abcd on cifti with freesurfer 
-          no_output_timeout: 5h
-          command: |
+  #     - run:
+  #         name: Run full xcpd_abcd on cifti with freesurfer 
+  #         no_output_timeout: 5h
+  #         command: |
         
-            docker run --rm -it \
-                -v /tmp/data:/data/ \
-                -v /tmp/wkdir:/wkdir \
-                -v /tmp:/scrth \
-                -v /tmp/cifti_with_freesurfer/:/out \
-                pennlinc/xcp_d:latest \
-                /data/fmriprepdata/withfreesurfer/fmriprep \
-                /out   --cifti \
-                --despike  --head_radius 40 \
-                -w /scrth/wkdir_ciftiF --smoothing 6 
+  #           docker run --rm -it \
+  #               -v /tmp/data:/data/ \
+  #               -v /tmp/wkdir:/wkdir \
+  #               -v /tmp:/scrth \
+  #               -v /tmp/cifti_with_freesurfer/:/out \
+  #               pennlinc/xcp_d:latest \
+  #               /data/fmriprepdata/withfreesurfer/fmriprep \
+  #               /out   --cifti \
+  #               --despike  --head_radius 40 \
+  #               -w /scrth/wkdir_ciftiF --smoothing 6 
 
-      - run:
-          name: Checking outputs of cifti_with_freesurfer
-          command: |
-            qcfile=$(ls -f /tmp/cifti_with_freesurfer/xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_desc-qc_bold.csv)
-            if [[ -f ${qcfile} ]]; then 
-            echo "processing complete"
-               exit 0
-            else 
-            echo "there is error "
-                exit 1
-            fi
+  #     - run:
+  #         name: Checking outputs of cifti_with_freesurfer
+  #         command: |
+  #           qcfile=$(ls -f /tmp/cifti_with_freesurfer/xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_desc-qc_bold.csv)
+  #           if [[ -f ${qcfile} ]]; then 
+  #           echo "processing complete"
+  #              exit 0
+  #           else 
+  #           echo "there is error "
+  #               exit 1
+  #           fi
 
 
-  nifti_with_freesurfer:
-    machine:
-      image: ubuntu-2004:202010-01
-    working_directory: /tmp/data
-    steps:
-      - checkout:
-          path: /home/circleci/src/xcp_d
-      - run:
-          name: Check whether build should be skipped
-          command: |
-            cd /home/circleci/src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping nifti_with_freesurfer build"
-              circleci step halt
-            fi
-      - run:
-          name: Setting up test
-          command: |
-            mkdir -p /tmp/nifti_with_freesurfer 
-      - run:
-          name: Run full xcpd_abcd on nifti with freesurfer 
-          no_output_timeout: 5h
-          command: |
+  # nifti_with_freesurfer:
+  #   machine:
+  #     image: ubuntu-2004:202010-01
+  #   working_directory: /tmp/data
+  #   steps:
+  #     - checkout:
+  #         path: /home/circleci/src/xcp_d
+  #     - run:
+  #         name: Check whether build should be skipped
+  #         command: |
+  #           cd /home/circleci/src/xcp_d
+  #           if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_with_freesurfer\]' )" != "" ]]; then
+  #             echo "Skipping nifti_with_freesurfer build"
+  #             circleci step halt
+  #           fi
+  #     - run:
+  #         name: Setting up test
+  #         command: |
+  #           mkdir -p /tmp/nifti_with_freesurfer 
+  #     - run:
+  #         name: Run full xcpd_abcd on nifti with freesurfer 
+  #         no_output_timeout: 5h
+  #         command: |
         
-            docker run --rm -it \
-                -v /tmp/data:/data/ \
-                -v /tmp/wkdir:/wkdir \
-                -v /tmp:/scrth \
-                -v /tmp/nifti_with_freesurfer/:/out \
-                pennlinc/xcp_d:latest \
-                /data/fmriprepdata/withfreesurfer/fmriprep \
-                /out   \
-                --despike  --head_radius 40 \
-                -w /scrth/wkdir_niftiF --smoothing 6 
+  #           docker run --rm -it \
+  #               -v /tmp/data:/data/ \
+  #               -v /tmp/wkdir:/wkdir \
+  #               -v /tmp:/scrth \
+  #               -v /tmp/nifti_with_freesurfer/:/out \
+  #               pennlinc/xcp_d:latest \
+  #               /data/fmriprepdata/withfreesurfer/fmriprep \
+  #               /out   \
+  #               --despike  --head_radius 40 \
+  #               -w /scrth/wkdir_niftiF --smoothing 6 
 
-      - run:
-          name: Checking outputs of nifti_with_freesurfer
-          command: |
-            qcfile=$(ls -f /tmp/nifti_with_freesurfer/xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
-            if [[ -f ${qcfile} ]]; then 
-            echo "processing complete"
-               exit 0
-            else 
-            echo "there is error "
-                exit 1
-            fi
+  #     - run:
+  #         name: Checking outputs of nifti_with_freesurfer
+  #         command: |
+  #           qcfile=$(ls -f /tmp/nifti_with_freesurfer/xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
+  #           if [[ -f ${qcfile} ]]; then 
+  #           echo "processing complete"
+  #              exit 0
+  #           else 
+  #           echo "there is error "
+  #               exit 1
+  #           fi
 
 
-  deploy_docker:
-      machine:
-        image: ubuntu-2004:202010-01
-      working_directory: /tmp/src/xcp_d
-      steps:
-        - attach_workspace:
-            at: /tmp
-        - run:
-            name: Load Docker image layer cache
-            no_output_timeout: 2h
-            command: |
-              docker info
-              set +o pipefail
-              if [ -f /tmp/cache/docker.tar.gz ]; then
-                sudo apt update && sudo apt -y install pigz
-                pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-                docker images
-              fi
-        - run:
-            name: Deploy to Docker Hub
-            no_output_timeout: 1h
-            command: |
-              if [[ -n "$DOCKER_PASS" ]]; then
-                docker login -u $DOCKER_USER -p $DOCKER_PASS
-                docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
-                docker push pennlinc/xcp_d:unstable
-              fi
+  # deploy_docker:
+  #     machine:
+  #       image: ubuntu-2004:202010-01
+  #     working_directory: /tmp/src/xcp_d
+  #     steps:
+  #       - attach_workspace:
+  #           at: /tmp
+  #       - run:
+  #           name: Load Docker image layer cache
+  #           no_output_timeout: 2h
+  #           command: |
+  #             docker info
+  #             set +o pipefail
+  #             if [ -f /tmp/cache/docker.tar.gz ]; then
+  #               sudo apt update && sudo apt -y install pigz
+  #               pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+  #               docker images
+  #             fi
+  #       - run:
+  #           name: Deploy to Docker Hub
+  #           no_output_timeout: 1h
+  #           command: |
+  #             if [[ -n "$DOCKER_PASS" ]]; then
+  #               docker login -u $DOCKER_USER -p $DOCKER_PASS
+  #               docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
+  #               docker push pennlinc/xcp_d:unstable
+  #             fi
 
-              if [[ -n "$CIRCLE_TAG" ]]; then
-                docker push pennlinc/xcp_d:latest
-                docker tag pennlinc/xcp_d pennlinc/xcp_d:$CIRCLE_TAG
-                docker push pennlinc/xcp_d:$CIRCLE_TAG
-              fi
+  #             if [[ -n "$CIRCLE_TAG" ]]; then
+  #               docker push pennlinc/xcp_d:latest
+  #               docker tag pennlinc/xcp_d pennlinc/xcp_d:$CIRCLE_TAG
+  #               docker push pennlinc/xcp_d:$CIRCLE_TAG
+  #             fi
       
 workflows:
   version: 2
@@ -253,28 +207,28 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer:
-          requires:
-            - build
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
+      # - cifti_with_freesurfer:
+      #     requires:
+      #       - build
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - /docs?\/.*/
+      #           - /tests?\/.*/
+      #       tags:
+      #         only: /.*/
               
-      - nifti_with_freesurfer:
-          requires:
-            - get_data
-            - build
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
+      # - nifti_with_freesurfer:
+      #     requires:
+      #       - get_data
+      #       - build
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - /docs?\/.*/
+      #           - /tests?\/.*/
+      #       tags:
+      #         only: /.*/
 
       - nifti_without_freesurfer:
           requires:
@@ -288,14 +242,14 @@ workflows:
             tags:
               only: /.*/
 
-      - deploy_docker:
-          requires:
-            - build
-            - cifti_with_freesurfer
-            - nifti_with_freesurfer
-            - nifti_without_freesurfer
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /.*/
+      # - deploy_docker:
+      #     requires:
+      #       - build
+      #       - cifti_with_freesurfer
+      #       - nifti_with_freesurfer
+      #       - nifti_without_freesurfer
+      #     filters:
+      #       branches:
+      #         only: main
+      #       tags:
+      #         only: /.*/

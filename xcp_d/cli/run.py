@@ -128,8 +128,8 @@ def get_parser():
                          help='number of filter coefficients for butterworth bandpass filter')
     
 
-    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='None',
-                         choices=['lp','notch'],
+    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='none',
+                         choices=['lp','notch', 'none'],
                          help='type of band-stop filter to use for removing respiratory' \
                                  'artifact from motion regressors')
     g_filter.add_argument('--band-stop-min', default=0,type=float, 
