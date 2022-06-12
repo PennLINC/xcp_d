@@ -32,7 +32,7 @@ run_xcpd_cmd () {
   # test that uses 
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
+    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} -w ${workdir}"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
