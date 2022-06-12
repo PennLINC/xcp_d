@@ -122,6 +122,8 @@ DOC
 get_bids_data() {
     WORKDIR=$1
     DS=$2
+    echo "working dir: ${WORKDIR}"
+    echo "fetching dataset: ${DS}"
     ENTRYDIR=`pwd`
     mkdir -p ${WORKDIR}/data
     cd ${WORKDIR}/data
@@ -137,9 +139,10 @@ get_bids_data() {
 
     # colornest subject who also has freesurfer data (in a different archive)
     if [[ ${DS} = fmriprep_colornest ]]; then
+      echo "Getting fmriprep colornest"
       ${WGET} \
         -O withfs_fmriprep_colornest001.tar.xz \
-        "hhttps://upenn.box.com/shared/static/xxmty7kbg3umifu4l1z6e5tg8ha7hjxx.xz"
+        "https://upenn.box.com/shared/static/xxmty7kbg3umifu4l1z6e5tg8ha7hjxx.xz"
       tar xvfJ withfs_fmriprep_colornest001.tar.xz -C ${WORKDIR}/data/
       rm withfs_fmriprep_colornest001.tar.xz
     fi
@@ -149,7 +152,7 @@ get_bids_data() {
 		  ${WGET} \
         -O withfs_fs_colornest001.tar.xz \
         "https://upenn.box.com/shared/static/ej43w925h5cozsizuamnh7bjtdevi61b.xz"
-      tar withfs_fs_colornest001.tar.xz -C ${WORKDIR}/data/
+      tar xvfJ withfs_fs_colornest001.tar.xz -C ${WORKDIR}/data/
       rm withfs_fs_colornest001.tar.xz
     fi
 
