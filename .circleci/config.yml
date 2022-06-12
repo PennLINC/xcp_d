@@ -81,7 +81,7 @@ jobs:
             fi
       - run: *runinstall
       - run:
-          name: Run full xcpd_d on nifti with freesurfer 
+          name: Run full xcp_d on nifti with freesurfer 
           no_output_timeout: 1h
           command: |
             cd /src/xcp_d/.circleci
@@ -100,41 +100,26 @@ jobs:
   #           fi
 
 
-  # cifti_with_freesurfer:
-  #   machine:
-  #     image: ubuntu-2004:202010-01
-  #   working_directory: /tmp/data
-  #   steps:
-  #     - checkout:
-  #         path: /home/circleci/src/xcp_d
-  #     - run:
-  #         name: Check whether build should be skipped
-  #         command: |
-  #           cd /home/circleci/src/xcp_d
-  #           if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
-  #             echo "Skipping cifti_with_freesurfer build"
-  #             circleci step halt
-  #           fi
-  #     - run:
-  #         name: Setting up test
-  #         command: |
-  #           mkdir -p /tmp/cifti_with_freesurfer 
+  cifti_with_freesurfer:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
+              echo "Skipping cifti_with_freesurfer build"
+              circleci step halt
+            fi
+      - run: *runinstall
 
-  #     - run:
-  #         name: Run full xcpd_abcd on cifti with freesurfer 
-  #         no_output_timeout: 5h
-  #         command: |
-        
-  #           docker run --rm -it \
-  #               -v /tmp/data:/data/ \
-  #               -v /tmp/wkdir:/wkdir \
-  #               -v /tmp:/scrth \
-  #               -v /tmp/cifti_with_freesurfer/:/out \
-  #               pennlinc/xcp_d:latest \
-  #               /data/fmriprepdata/withfreesurfer/fmriprep \
-  #               /out   --cifti \
-  #               --despike  --head_radius 40 \
-  #               -w /scrth/wkdir_ciftiF --smoothing 6 
+      - run:
+          name: Run full xcp_d on cifti with freesurfer 
+          no_output_timeout: 5h
+          command: |
+            cd /src/xcp_d/.circleci
+            bash CiftiWithFreeSurferTest.sh
 
   #     - run:
   #         name: Checking outputs of cifti_with_freesurfer
@@ -194,16 +179,16 @@ workflows:
             tags:
               only: /.*/
 
-      # - cifti_with_freesurfer:
-      #     requires:
-      #       - build
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - /docs?\/.*/
-      #           - /tests?\/.*/
-      #       tags:
-      #         only: /.*/
+      - cifti_with_freesurfer:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
               
       - nifti_with_freesurfer:
           requires:
