@@ -60,7 +60,7 @@ def make_DCAN_DF(fds_files,name):
         cifti = fds_files[0].split('space')[0] + 'space-fsLR_den-91k_desc-residual_bold.dtseries.nii'
         tr = nb.load(cifti).header.get_axis(0).step
     except:
-        nii = fds_files[0].split('space')[0] + 'space-MNI152NLin2009cAsym_desc-residual_bold.nii.gz'
+        nii = fds_files[0].split('space')[0] + 'space-MNI152NLin6Asym_desc-residual_res-2_bold.nii.gz'
         tr = nb.load(nii).header.get_zooms()[-1]
 
     fd = np.loadtxt(fds_files[0],delimiter=',').T
@@ -79,7 +79,7 @@ def make_DCAN_DF(fds_files,name):
         dcan.create_dataset("/dcan_motion/fd_{0}/remaining_frame_mean_FD".format(thresh), data=(fd[fd<=thresh]).mean(), dtype='float')
   
 
-def concatenate_nifti(subid,fmridir,outputdir,ses=None,work_dir=None):
+def concatenate_nifti(subid,fmridir,outputdir,ses=None):
     
     # filex to be concatenated
 
@@ -111,7 +111,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None,work_dir=None):
 
     # do for each task
     for task in tasklist:
-        resbold = natsorted(fnmatch.filter(all_func_files,'*'+task+'*_desc-residual*bold*.nii.gz'))
+        resbold = natsorted(fnmatch.filter(all_func_files,'*'+task+'*run*_desc-residual*bold*.nii.gz'))
         reg_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold)>1:
@@ -132,37 +132,30 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None,work_dir=None):
                     combinefile = "  ".join(filex)
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)   
                     for b in filex:
-                        mask = fmridir+'/'+subid+'/'+'ses-'+str(ses)+'/func/'+(b.split('desc')[0]+'desc-brain_mask.nii.gz').split('/')[-1]
-                        dvar = compute_dvars(read_ndata(b,mask))
+                        dvar = compute_dvars(read_ndata(b))
                         dvar[0] = np.mean(dvar)
                         reg_dvars.append(dvar)
 
+
             filey = natsorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-preproc_bold.nii.gz'))
+
+            mask = natsorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))[0]
+        
             segfile = get_segfile(filey[0])
             tr = nb.load(filey[0]).header.get_zooms()[-1]
+
             combinefiley = "  ".join(filey)
-            masks = natsorted(glob.glob(fmri_files+  os.path.basename(res.split('run-')[0]) +'*'+ resid.partition('_desc')[0] +'*_desc-brain_mask.nii.gz'))
-            mask_array = nb.load(masks[0]).get_fdata()
-            for item in masks[1:]:
-                img_array = nb.load(item).get_fdata()
-                mask_array = np.add(mask_array,img_array)
-            affine = nb.load(masks[0]).affine 
-            mask_array = mask_array > 0 
-            mask_array = mask_array.astype(int) 
-            nifti_file = nb.Nifti1Image(mask_array, affine) 
-            outputmask = masks[0].split('run-1_')[0]+masks[0].split('run-1_')[1]
-            nb.save(nifti_file, outputmask)
             rawdata = tempfile.mkdtemp()+'/rawdata.nii.gz'
-            os.system('fslmerge -t ' + rawdata + '  ' + combinefiley) 
+            os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
+
             precarpet = figure_files  + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
             postcarpet = figure_files  + os.path.basename(fileid) + '_desc-postcarpetplot_bold.svg'
             raw_dvars = []
             for f in filey:
-                mask = fmridir+'/'+subid+'/'+'ses-'+str(ses)+'/func/'+(b.split('desc')[0]+'desc-brain_mask.nii.gz').split('/')[-1]
-                dvar = compute_dvars(read_ndata(f,mask))
+                dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)  
-            mask = outputmask
+
             plot_svgx(rawdata=rawdata,regdata=fileid+'_desc-residual_bold.nii.gz',
                 resddata=fileid+'_desc-residual_bold.nii.gz',fd=fileid+'_desc-framewisedisplacement_bold.tsv',
                 raw_dvars=raw_dvars,
@@ -179,7 +172,7 @@ def concatenate_nifti(subid,fmridir,outputdir,ses=None,work_dir=None):
              
             shutil.copy(bb1reg,gboldbbreg)
             shutil.copy(bb1ref,bboldref)
-    
+            
     
 def compute_dvars(datat):
     '''

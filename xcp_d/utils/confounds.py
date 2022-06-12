@@ -1,39 +1,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """confound matrix selection based on Ciric et al 2007."""
-from re import X
 import numpy as np
 import pandas as pd
-import os
-from scipy.signal import firwin, iirnotch, filtfilt
-
-
-def find_confounds(datafile):
-    """Find confounds.tsv and json."""
-    '''
-    datafile:
-        real nifti or cifti file
-    confounds_timeseries:
-        confound tsv file
-    confounds_json:
-        confound json file
-    '''
-    if 'space' in os.path.basename(datafile):
-        # What should corresponding confound file names be based off bold file name
-        confounds_timeseries_filename = datafile.replace("_space-" + datafile.split("space-")[1],
-                                                         "_desc-confounds_timeseries.tsv")
-
-        confounds_json_filename = datafile.replace("_space-" + datafile.split("space-")[1],
-                                                   "_desc-confounds_timeseries.json")
-    # Confirm these files exist first, else get an error ...
-    if os.path.exists(confounds_timeseries_filename):
-        confounds_timeseries = confounds_timeseries_filename
-    if os.path.exists(confounds_json_filename):
-        confounds_json = confounds_json_filename
-
-    return confounds_timeseries, confounds_json
-
-
+import os  
+from scipy.signal import firwin,iirnotch,filtfilt
 def load_confound(datafile):
     """`Load confound amd json."""
     '''
@@ -57,8 +28,7 @@ def load_confound(datafile):
     
     confoundjs = readjson(confounds_json)
 
-    return confoundpd, confoundjs
-
+    return confoundpd,confoundjs
 
 def readjson(jsonfile):
     import json
@@ -67,29 +37,26 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confounds_df, TR, filtertype, freqband, cutoff=0.1, order=4):
+def load_motion(confoundspd,TR,filtertype,freqband,cutoff=0.1,order=4):
     """Load the 6 motion regressors."""
-    rot_mm = confounds_df[["rot_x", "rot_y", "rot_z"]]
-    trans_mm = confounds_df[["trans_x", "trans_y", "trans_z"]]
-    confound_data = pd.concat([rot_mm, trans_mm], axis=1).to_numpy()
-    if filtertype == 'lp' or filtertype == 'notch':
-        confound_data = confound_data.T
-        confound_data = motion_regression_filter(data=confound_data, TR=TR,
-                                                 filtertype=filtertype, freqband=freqband, 
-                                                 cutoff=cutoff, order=order)
-        confound_data = confound_data.T
-    return pd.DataFrame(confound_data)
-
+    rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
+    trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
+    datay = pd.concat([rot_2mm,trans_mm],axis=1).to_numpy()
+    
+    if filtertype == 'lp' or filtertype == 'notch' :
+        datay = datay.T 
+        datay = motion_regression_filter(data=datay,TR=TR,
+          filtertype=filtertype,freqband=freqband,cutoff=cutoff,order=order)
+        datay = datay.T
+    return  pd.DataFrame(datay)
 
 def load_globalS(confoundspd):
     """select global signal."""
     return confoundspd["global_signal"]
 
-
 def load_WM_CSF(confoundspd):
     """select white matter and CSF nuissance."""
     return confoundspd[["csf","white_matter"]]
-
 
 def load_cosine(confoundspd):
     """select cosine for compcor"""
@@ -98,7 +65,6 @@ def load_cosine(confoundspd):
         if 'cosine' in key:
             cosine.append(key)
     return confoundspd[cosine]
-
 
 def load_acompcor(confoundspd, confoundjs):
     """ select WM and GM acompcor separately."""
@@ -130,12 +96,12 @@ def load_tcompcor(confoundspd, confoundjs):
     for key, value in confoundjs.items():
         if 't_comp_cor' in key:
             if value['Method']=='tCompCor' and value['Retained']==True:
-                tcomp.append([key, value['VarianceExplained']])
+                tcomp.append([key,value['VarianceExplained']])
     # sort it by variance explained
     # select the first five components
-    tcomplist = []
-    for i in range(0, 6):
-        tcomplist.append(tcomp[i][0])
+    tcomplist = [] 
+    for i in range(0,6):
+       tcomplist.append(tcomp[i][0])
     return confoundspd[tcomplist]
 
 
@@ -143,14 +109,12 @@ def derivative(confound):
     dat = confound.to_numpy()
     return pd.DataFrame(np.diff(dat,prepend=0))
 
-
-def confpower(confound, order=2):
+def confpower(confound,order=2):
     return confound ** order
 
 
-def load_confound_matrix(datafile, TR, filtertype, custom_conf=None, cutoff=0.1, order=4,
-                         freqband=[0.1, 0.2], params='27P', confounds_file=None,
-                         confounds_json=None):
+def load_confound_matrix(datafile,TR,filtertype,custom_conf=None,cutoff=0.1,order=4,
+                        freqband=[0.1,0.2],params='27P'):
                     
     """ extract confound """
     '''
@@ -159,11 +123,7 @@ def load_confound_matrix(datafile, TR, filtertype, custom_conf=None, cutoff=0.1,
     params: 
        confound requested based on Ciric et. al 2017
     '''
-    if None in (confounds_file, confounds_json):
-        confoundtsv, confoundjson = load_confound(datafile)
-    else:
-        confoundtsv, confoundjson = confounds_file, confounds_json
-
+    confoundtsv,confoundjson = load_confound(datafile)
     if  params == '24P':
         motion = load_motion(confoundtsv,TR,filtertype,freqband,cutoff=cutoff,order=order)
         mm_dev = pd.concat([motion,derivative(motion)],axis=1)
@@ -283,6 +243,7 @@ def motion_regression_filter(data,TR,filtertype,freqband,cutoff=.1,order=4):
 
 
     
+
     # def lowpassfilter_coeff(cutoff, fs, order=4):
         
     #     nyq = 0.5 * fs

@@ -128,8 +128,8 @@ def get_parser():
                          help='number of filter coefficients for butterworth bandpass filter')
     
 
-    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='none',
-                         choices=['lp','notch', 'none'],
+    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='None',
+                         choices=['lp','notch'],
                          help='type of band-stop filter to use for removing respiratory' \
                                  'artifact from motion regressors')
     g_filter.add_argument('--band-stop-min', default=0,type=float, 
@@ -356,7 +356,7 @@ def build_workflow(opts, retval):
         build_log.error(
             'The selected output folder is the same as the input fmri input. '
             'Please modify the output path (suggestion: %s).',
-            fmri_dir / 'derivatives' / ('xcp-d-%s' % __version__.split('+')[0]))
+             fmri_dir / 'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
         retval['return_code'] = 1
         return retval
 

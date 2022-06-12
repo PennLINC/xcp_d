@@ -204,22 +204,22 @@ The residual were then  band pass filtered within the frequency band {highpass}-
     
     if dummytime > 0: 
         workflow.connect([
-            (confoundmat,rm_dummytime,[('confound_file','fmriprep_confounds'),]),
+            (confoundmat,rm_dummytime,[('confound_file','fmriprep_conf'),]),
             (inputnode,rm_dummytime,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]) 
              ])
         # if inputnode.inputs.custom_conf:
         #    workflow.connect([ (inputnode,rm_dummytime,[('custom_conf','custom_conf')]),
         #                      (rm_dummytime,censor_scrubwf,[('custom_confdropTR','custom_conf')]),
-        #                      (censor_scrubwf,regressy,[('customconfounds_censored','custom_conf')]),])
+        #                      (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]),])
 
         workflow.connect([
               (rm_dummytime,censor_scrubwf,[('bold_file_TR','in_file'),
-                         ('fmrip_confdropTR','fmriprep_confounds'),]),
+                         ('fmrip_confdropTR','fmriprep_conf'),]),
               (inputnode,censor_scrubwf,[('bold_file','bold_file'), 
                                     ('bold_mask','mask_file')]),
               (censor_scrubwf,regressy,[('bold_censored','in_file'),
-                            ('fmriprepconfounds_censored','confounds')]),
+                            ('fmriprepconf_censored','confounds')]),
               (inputnode,regressy,[('bold_mask','mask')]),
               (inputnode, filterdx,[('bold_mask','mask')]),
               (inputnode, interpolatewf,[('bold_mask','mask_file')]),
@@ -235,16 +235,16 @@ The residual were then  band pass filtered within the frequency band {highpass}-
         # if inputnode.inputs.custom_conf:
         #         workflow.connect([
         #             (inputnode,censor_scrubwf,[('custom_conf','custom_conf')]),
-        #              (censor_scrubwf,regressy,[('customconfounds_censored','custom_conf')]) ])
+        #              (censor_scrubwf,regressy,[('customconf_censored','custom_conf')]) ])
         
         
         workflow.connect([
               (inputnode,censor_scrubwf,[('bold','in_file'),
                                     ('bold_file','bold_file'), 
                                     ('bold_mask','mask_file'),]),
-               (confoundmat,censor_scrubwf,[('confound_file','fmriprep_confounds')]),    
+               (confoundmat,censor_scrubwf,[('confound_file','fmriprep_conf')]),    
                (censor_scrubwf,regressy,[('bold_censored','in_file'),
-                            ('fmriprepconfounds_censored','confounds'),]),
+                            ('fmriprepconf_censored','confounds'),]),
                (inputnode,regressy,[('bold_mask','mask')]),
                (inputnode, interpolatewf,[('bold_mask','mask_file')]),
                (regressy,interpolatewf,[('res_file','in_file'),]),
@@ -319,7 +319,7 @@ def init_censoring_wf(
     inputnode = pe.Node(niu.IdentityInterface(
             fields=['bold','bold_file','bold_mask','confound_file']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_censored','fmriprepconfounds_censored','tmask','fd','customconfounds_censored']), name='outputnode')
+        fields=['bold_censored','fmriprepconf_censored','tmask','fd','customconf_censored']), name='outputnode')
 
 
     censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
@@ -332,31 +332,34 @@ def init_censoring_wf(
 
     if dummytime > 0: 
         workflow.connect([
-            (inputnode,dummy_scan_wf,[('confound_file','fmriprep_confounds'),]),
+            (inputnode,dummy_scan_wf,[('confound_file','fmriprep_conf'),]),
             (inputnode,dummy_scan_wf,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]),
+
             (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),
-                                ('fmrip_confdropTR','fmriprep_confounds'),]),
-            (inputnode,censorscrub_wf,[('bold_mask','mask_file')]),
+                                ('fmrip_confdropTR','fmriprep_conf'),]),
+            (inputnode,censorscrub_wf,[('bold_file','bold_file'), 
+                                    ('bold_mask','mask_file'),]),
+            (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
+                                   ('fmriprepconf_censored','fmriprepconf_censored'),
+                                   ('tmask','tmask'),('fd_timeseries','fd')]),
             ])
     
     else:
         if custom_conf:
                 workflow.connect([
-                    (censorscrub_wf,outputnode,[('customconfounds_censored','customconfounds_censored')]),
+                    (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')]),
                 ])
         
         workflow.connect([
               (inputnode,censorscrub_wf,[('bold','in_file'),
+                                    ('bold_file','bold_file'), 
                                     ('bold_mask','mask_file'),]),
-               (inputnode,censorscrub_wf,[('confound_file','fmriprep_confounds')]),   
+               (inputnode,censorscrub_wf,[('confound_file','fmriprep_conf')]), 
+               (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
+                                   ('fmriprepconf_censored','fmriprepconf_censored'),
+                                   ('tmask','tmask'),('fd_timeseries','fd')]),  
                 ])
-
-    workflow.connect([
-            (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
-                                   ('fmriprepconfounds_censored','fmriprepconfounds_censored'),
-                                   ('tmask','tmask'),('fd_timeseries','fd')]),
-            ])
     
     return workflow 
 
