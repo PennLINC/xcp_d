@@ -244,7 +244,7 @@ workflows:
             tags:
               only: /.*/
 
-      - deploy_docker:
+      - build_and_deploy:
           requires:
             - deployable
           filters:
