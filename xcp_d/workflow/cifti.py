@@ -306,7 +306,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # regression workflow 
     workflow.connect([
 	      (censorscrub_wf,regression_wf,[('outputnode.bold_censored','in_file'),
-	             ('outputnode.fmriprepconfounds_censored','confounds'),])
+	             ('outputnode.fmriprepconf_censored','confounds'),])
         ])
     # interpolation workflow
     workflow.connect([

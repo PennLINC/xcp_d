@@ -138,6 +138,7 @@ def init_xcpd_wf(layout,
         the first vols in seconds to be removed before postprocessing
     
     """
+
     xcpabcd_wf = Workflow(name='xcpabcd_wf')
     xcpabcd_wf.base_dir = work_dir
 
