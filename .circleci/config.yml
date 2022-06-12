@@ -37,21 +37,21 @@ jobs:
   nifti_without_freesurfer:
     <<: *dockersetup
     steps:
-      - checkout:
-          path: /home/circleci/src/xcp_d
+      - checkout
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci/src/xcp_d
+            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_without_freesurfer\]' )" != "" ]]; then
-              echo "Skipping xcpd_nifti build"
+              echo "Skipping nifti_without_freeurfer build"
               circleci step halt
             fi
+      - run: *runinstall
       - run:
           name: Run full xcpd_abcd on nifti without freesurfer 
           no_output_timeout: 1h
           command: |
-            cd /home/circleci/src/xcp_d/.circleci
+            cd /src/xcp_d/.circleci
             bash NiftiWithoutFreeSurferTest.sh
 
       # - run:
