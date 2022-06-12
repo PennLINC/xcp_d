@@ -2,7 +2,7 @@ version: 2.1
 
 .dockersetup: &dockersetup
   docker:
-    - image: pennbbl/xcpd_build:22.6.0
+    - image: pennbbl/xcpd_build:0.0.3
   working_directory: /src/xcp_d
 
 runinstall: &runinstall
@@ -54,17 +54,17 @@ jobs:
             cd .circleci
             bash NiftiWithoutFreeSurferTest.sh
 
-      - run:
-          name: Checking outputs of nifti_without_freesurfer
-          command: |
-            qcfile=$(ls -f /tmp/nifti_without_freesurfer/xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
-            if [[ -f ${qcfile} ]]; then 
-            echo "processing complete"
-               exit 0
-            else 
-            echo "there is error "
-                exit 1
-            fi
+      # - run:
+      #     name: Checking outputs of nifti_without_freesurfer
+      #     command: |
+      #       qcfile=$(ls -f /tmp/nifti_without_freesurfer/xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-qc_bold.csv)
+      #       if [[ -f ${qcfile} ]]; then 
+      #       echo "processing complete"
+      #          exit 0
+      #       else 
+      #       echo "there is error "
+      #           exit 1
+      #       fi
 
           
   # cifti_with_freesurfer:
@@ -232,7 +232,6 @@ workflows:
 
       - nifti_without_freesurfer:
           requires:
-            - get_data
             - build
           filters:
             branches:
