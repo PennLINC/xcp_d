@@ -133,6 +133,26 @@ jobs:
   #               exit 1
   #           fi
 
+  pytests:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
+              echo "Skipping cifti_with_freesurfer build"
+              circleci step halt
+            fi
+      - run: *runinstall
+
+      - run:
+          name: Run pytest on the tests directory
+          no_output_timeout: 1h
+          command: |
+            cd /src/xcp_d/.circleci
+            bash RunPyTests.sh
 
   deployable:
     docker:
@@ -233,11 +253,23 @@ workflows:
             tags:
               only: /.*/
 
+      - pytests:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
       - deployable:
           requires:
             - nifti_with_freesurfer
             - nifti_without_freesurfer
             - cifti_with_freesurfer
+            - pytests
           filters:
             branches:
               only: main
