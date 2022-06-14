@@ -534,4 +534,3 @@ def _getsesid(filename):
             break
 
     return ses_id
-
