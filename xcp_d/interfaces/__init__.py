@@ -9,7 +9,7 @@ from .prepostcleaning import interpolate, censorscrub, removeTR
 from .qc_plot import computeqcplot
 from .report import SubjectSummary, AboutSummary, FunctionalSummary
 from .report_core import generate_reports
-from .surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot, 
+from .surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot,
                            PlotImage, RibbontoStatmap)
 from .layout_builder import layout_builder
 

@@ -1,30 +1,29 @@
-
 IMAGE_INFO = {
-     't1w_brainplot' : { 
-          'pattern': '*desc-brainplot_T1w.html',
-          'title' : 'T1w BrainSprite'
-      },
-      't2w_brainplot' : { 
-          'pattern': '*desc-brainplot_T1w.html',
-          'title' : 'T2w BrainSprite'
-      },
+    't1w_brainplot': {
+        'pattern': '*desc-brainplot_T1w.html',
+        'title': 'T1w BrainSprite'
+    },
+    't2w_brainplot': {
+        'pattern': '*desc-brainplot_T1w.html',
+        'title': 'T2w BrainSprite'
+    },
     'task_pre_reg_gray': {
         'pattern': '*%s*desc-precarpetplot*bold.svg',
         'title': 'Pre-Regression'
-        },
+    },
     'task_post_reg_gray': {
         'pattern': '*%s*desc-postcarpetplot*bold.svg',
         'title': 'Post-Regression'
-        },
+    },
     'bold_t1w_reg': {
         'pattern': '*%s*desc-bbregister*bold.svg',
         'title': 'Bold T1w registration'
-        },
+    },
     'ref': {
         'pattern': '*%s*desc-boldref*bold.svg',
         'title': 'Reference'
-        }
     }
+}
 
 # HTML constants:
 HTML_START = """
@@ -61,7 +60,7 @@ HTML_START = """
 # as well as the page header.
 # Needs the following values:
 #    subject, session.
-TITLE="""
+TITLE = """
 <title>Executive Summary: {subject} {session}</title>
 <header> <h1>{subject}{sep}{session}</h1> </header>
 """
@@ -87,7 +86,6 @@ TX_SECTION_START = """
         </div>
 </section>
         """
-
 
 T1X_SECTION = """
 <section id="{tx1}">
@@ -228,23 +226,22 @@ BOLD_GRAY_END = """
 # Layout the row of bold, reference and gray-ordinates images for the task.
 # Needs the following values and corresponding indices:
 #    modal_id, bold, ref, task_pre_reg_gray, task_post_reg_gray
-#BOLD_GRAY_ROW2="""
-            #<div class="w3-quarter">
-                #<div class="w3-row w3-center label1">Pre-Regression</div>
-                #<div class="w3-row"><img src="{task_pre_reg_gray}" onclick="open_{modal_id}_to_index({task_pre_reg_gray_idx})"></div>
-            #</div>
-            #<div class="w3-quarter">
-                #<div class="w3-row w3-center label1">Post-Regression</div>
-                #<div class="w3-row"><img src="{task_post_reg_gray}" onclick="open_{modal_id}_to_index({task_post_reg_gray_idx})"></div>
-            #</div>
-        #"""
+# BOLD_GRAY_ROW2="""
+# <div class="w3-quarter">
+# <div class="w3-row w3-center label1">Pre-Regression</div>
+# <div class="w3-row"><img src="{task_pre_reg_gray}" onclick="open_{modal_id}_to_index({task_pre_reg_gray_idx})"></div>
+# </div>
+# <div class="w3-quarter">
+# <div class="w3-row w3-center label1">Post-Regression</div>
+# <div class="w3-row"><img src="{task_post_reg_gray}" onclick="open_{modal_id}_to_index({task_post_reg_gray_idx})"></div>
+# </div>
+# """
 
 # Close up the divisions and section.
 TASKS_SECTION_END = """
     </div>
 </section>
 """
-
 
 # MODAL/SLIDER STUFF
 
@@ -286,7 +283,6 @@ MODAL_END = """
         </div>
     </div>
 """
-
 
 # Add an image in a container with its filename displayed in the
 # upper left corner. The filename is 'w3-black' so that the text
