@@ -8,7 +8,6 @@ from nipype import logging
 iflogger = logging.getLogger("nipype.interface")
 
 
-
 class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
@@ -24,21 +23,20 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         argstr=" %s",
         desc=" the current sphere surface in gifti for in_file",
     )
-    
+
     new_sphere = File(
         exists=True,
         position=2,
         argstr=" %s",
         desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
     )
-    
+
     metric = traits.Str(
         argstr=" %s ",
         position=3,
         desc=" fixed for anatomic",
         default="  BARYCENTRIC  "
     )
-    
 
     out_file = File(
         name_source=["in_file"],
@@ -49,8 +47,10 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         desc="The gifti output, either left and right",
     )
 
+
 class CiftiSurfaceResampleOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output gifti file")
+
 
 class CiftiSurfaceResample(WBCommand):
     r"""

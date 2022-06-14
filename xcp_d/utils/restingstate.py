@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec,UnifizeOutputSpec,UnifizeInputSpec 
-from nipype.interfaces.afni.preprocess import DespikeInputSpec,AFNICommandOutputSpec
+from nipype.interfaces.afni.utils import (ReHoInputSpec, ReHoOutputSpec,
+                                          UnifizeOutputSpec, UnifizeInputSpec)
+from nipype.interfaces.afni.preprocess import DespikeInputSpec, AFNICommandOutputSpec
 from nipype.interfaces.base import SimpleInterface
-import os, shutil
+import os
+import shutil
 
 
 class ReHoNamePatch(SimpleInterface):
@@ -26,7 +28,6 @@ class ReHoNamePatch(SimpleInterface):
     _cmd = "3dReHo"
     input_spec = ReHoInputSpec
     output_spec = ReHoOutputSpec
-
 
     def _run_interface(self, runtime):
         outfile = runtime.cwd + "/reho.nii.gz"
@@ -64,7 +65,6 @@ class DespikePatch(SimpleInterface):
         self._results['out_file'] = outfile
 
 
-
 class ContrastEnhancement(SimpleInterface):
     """contrast enhancement with afni
     3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
@@ -73,7 +73,6 @@ class ContrastEnhancement(SimpleInterface):
     _cmd = "3dUnifize"
     input_spec = UnifizeInputSpec
     output_spec = UnifizeOutputSpec
-
 
     def _run_interface(self, runtime):
         outfile = runtime.cwd + "/3dunfixed.nii.gz"
