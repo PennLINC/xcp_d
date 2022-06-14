@@ -314,6 +314,49 @@ def init_censoring_wf(
     fd_thresh=0,
     name='censoring'
     ):
+    """Creates a workflow that censors volumes in a BOLD dataset.
+
+    This workflow does two steps: removing dummy volumes and censoring noisy
+    timepoints.
+
+    Parameters:
+    -----------
+      mem_gb
+        Expected memory consumption in GB
+      TR
+        Repetition time (seconds)
+      head_radius
+        Radius of the head for FD calculation (mm)
+      custom_conf
+        Path to a custom confounds file
+      omp_nthreads: int
+        Number of threads to use in parallel
+      dummytime: float
+        Time in seconds to remove from beginning of scan (default=0)
+      fd_thresh: float
+    
+
+    Inputs:
+    -------
+      bold
+        Path to a nii.gz file on disk
+      bold_file
+        Path to the original image in bids [delete me!!]
+      bold_mask
+        Path to a mask for ``bold``
+      confound_file
+        Path to the input confounds tsv file (expected fmriprep format)
+    
+
+    Outputs:
+    --------
+      bold_censored
+        Nifti file after censoring has been applied
+      fmriprepconf_censored
+        
+
+
+    """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -321,8 +364,8 @@ def init_censoring_wf(
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_censored','fmriprepconf_censored','tmask','fd','customconf_censored']), name='outputnode')
 
-
-    censorscrub_wf = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
+    # [SHUOLD NOT BE _wf]
+    censor_scrub = pe.Node(censorscrub(fd_thresh=fd_thresh,TR=TR,
                        head_radius=head_radius,
                        time_todrop=dummytime,custom_conf=custom_conf),
                        name="censor_scrub",mem_gb=mem_gb,n_procs=omp_nthreads)
@@ -336,11 +379,11 @@ def init_censoring_wf(
             (inputnode,dummy_scan_wf,[('bold','bold_file'),
                    ('bold_mask','mask_file'),]),
 
-            (dummy_scan_wf,censorscrub_wf,[('bold_file_TR','in_file'),
+            (dummy_scan_wf,censor_scrub,[('bold_file_TR','in_file'),
                                 ('fmrip_confdropTR','fmriprep_conf'),]),
-            (inputnode,censorscrub_wf,[('bold_file','bold_file'), 
+            (inputnode,censor_scrub,[('bold_file','bold_file'), 
                                     ('bold_mask','mask_file'),]),
-            (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
+            (censor_scrub,outputnode,[('bold_censored','bold_censored'),
                                    ('fmriprepconf_censored','fmriprepconf_censored'),
                                    ('tmask','tmask'),('fd_timeseries','fd')]),
             ])
@@ -348,15 +391,15 @@ def init_censoring_wf(
     else:
         if custom_conf:
                 workflow.connect([
-                    (censorscrub_wf,outputnode,[('customconf_censored','customconf_censored')]),
+                    (censor_scrub,outputnode,[('customconf_censored','customconf_censored')]),
                 ])
         
         workflow.connect([
-              (inputnode,censorscrub_wf,[('bold','in_file'),
+              (inputnode,censor_scrub,[('bold','in_file'),
                                     ('bold_file','bold_file'), 
                                     ('bold_mask','mask_file'),]),
-               (inputnode,censorscrub_wf,[('confound_file','fmriprep_conf')]), 
-               (censorscrub_wf,outputnode,[('bold_censored','bold_censored'),
+               (inputnode,censor_scrub,[('confound_file','fmriprep_conf')]), 
+               (censor_scrub,outputnode,[('bold_censored','bold_censored'),
                                    ('fmriprepconf_censored','fmriprepconf_censored'),
                                    ('tmask','tmask'),('fd_timeseries','fd')]),  
                 ])
