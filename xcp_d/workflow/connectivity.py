@@ -81,9 +81,13 @@ def init_fcon_ts_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-Processed functional timeseries were extracted  from  the residual BOLD signal with  *Nilearn* {nilearnver}'s *NiftiLabelsMasker* for the following atlases
-[@nilearn]: the Schaefer 200 and 400-parcel resolution atlas [@Schaefer_2017],the Glasser atlas [@Glasser_2016], and the Gordon atlas [@Gordon_2014] atlases.
-Corresponding pair-wise functional connectivity between all regions was computed for each atlas, which was operationalized as the Pearson’s correlation of each parcel’s (unsmoothed) timeseries.
+Processed functional timeseries were extracted  from  the residual BOLD signal
+with  *Nilearn* {nilearnver}'s *NiftiLabelsMasker* for the following atlases
+[@nilearn]: the Schaefer 200 and 400-parcel resolution atlas
+[@Schaefer_2017],the Glasser atlas [@Glasser_2016], and the Gordon atlas
+[@Gordon_2014] atlases.  Corresponding pair-wise functional connectivity between
+all regions was computed for each atlas, which was operationalized as the
+Pearson's correlation of each parcel's (unsmoothed) timeseries.
  """.format(nilearnver=nl.__version__)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=[
@@ -103,7 +107,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
 
     inputnode.inputs.bold_file = bold_file
 
-    # get atlases # ietration will be used later
+    # get atlases # ietration will be used later # RF: Why?
     sc117atlas = get_atlas_nifti(atlasname='schaefer100x17')
     sc217atlas = get_atlas_nifti(atlasname='schaefer200x17')
     sc317atlas = get_atlas_nifti(atlasname='schaefer300x17')
@@ -118,7 +122,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
     ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
 
-    #get transfrom file
+    # get transfrom file
     transformfile = get_transformfile(bold_file=bold_file,
                                       mni_to_t1w=mni_to_t1w,
                                       t1w_to_native=t1w_to_native)
@@ -204,137 +208,86 @@ Corresponding pair-wise functional connectivity between all regions was computed
 
     workflow.connect([
         # tansform atlas to bold space
-        (inputnode, schaefer_transform, [
-            ('ref_file', 'reference_image'),
-        ]),
-        (inputnode, gs360_transform, [
-            ('ref_file', 'reference_image'),
-        ]),
-        (inputnode, gd333_transform, [
-            ('ref_file', 'reference_image'),
-        ]),
-        (inputnode, ts50_transform, [
-            ('ref_file', 'reference_image'),
-        ]),
+        (inputnode, schaefer_transform, [('ref_file', 'reference_image')]),
+        (inputnode, gs360_transform, [('ref_file', 'reference_image')]),
+        (inputnode, gd333_transform, [('ref_file', 'reference_image')]),
+        (inputnode, ts50_transform, [('ref_file', 'reference_image')]),
 
         # load bold for timeseries extraction and connectivity
-        (inputnode, nifticonnect_sc17, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc27, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc37, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc47, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc57, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc67, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc77, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc87, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc97, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_sc107, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_gd33, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_gs36, [
-            ('clean_bold', 'regressed_file'),
-        ]),
-        (inputnode, nifticonnect_ts50, [
-            ('clean_bold', 'regressed_file'),
-        ]),
+        (inputnode, nifticonnect_sc17, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc27, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc37, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc47, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc57, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc67, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc77, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc87, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc97, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_sc107, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_gd33, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_gs36, [('clean_bold', 'regressed_file')]),
+        (inputnode, nifticonnect_ts50, [('clean_bold', 'regressed_file')]),
 
         # linked atlas
-        (schaefer_transform, nifticonnect_sc17, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc27, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc37, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc47, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc57, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc67, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc77, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc87, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc97, [
-            ('output_image', 'atlas'),
-        ]),
-        (schaefer_transform, nifticonnect_sc107, [
-            ('output_image', 'atlas'),
-        ]),
-        (gd333_transform, nifticonnect_gd33, [
-            ('output_image', 'atlas'),
-        ]),
-        (gs360_transform, nifticonnect_gs36, [
-            ('output_image', 'atlas'),
-        ]),
-        (ts50_transform, nifticonnect_ts50, [
-            ('output_image', 'atlas'),
-        ]),
+        (schaefer_transform, nifticonnect_sc17, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc27, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc37, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc47, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc57, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc67, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc77, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc87, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc97, [('output_image', 'atlas')]),
+        (schaefer_transform, nifticonnect_sc107, [('output_image', 'atlas')]),
+        (gd333_transform, nifticonnect_gd33, [('output_image', 'atlas')]),
+        (gs360_transform, nifticonnect_gs36, [('output_image', 'atlas')]),
+        (ts50_transform, nifticonnect_ts50, [('output_image', 'atlas')]),
 
         # output file
-        (nifticonnect_sc17, outputnode, [('time_series_tsv', 'sc117_ts'),
-                                         ('fcon_matrix_tsv', 'sc117_fc')]),
-        (nifticonnect_sc27, outputnode, [('time_series_tsv', 'sc217_ts'),
-                                         ('fcon_matrix_tsv', 'sc217_fc')]),
-        (nifticonnect_sc37, outputnode, [('time_series_tsv', 'sc317_ts'),
-                                         ('fcon_matrix_tsv', 'sc317_fc')]),
-        (nifticonnect_sc47, outputnode, [('time_series_tsv', 'sc417_ts'),
-                                         ('fcon_matrix_tsv', 'sc417_fc')]),
-        (nifticonnect_sc57, outputnode, [('time_series_tsv', 'sc517_ts'),
-                                         ('fcon_matrix_tsv', 'sc517_fc')]),
-        (nifticonnect_sc67, outputnode, [('time_series_tsv', 'sc617_ts'),
-                                         ('fcon_matrix_tsv', 'sc617_fc')]),
-        (nifticonnect_sc77, outputnode, [('time_series_tsv', 'sc717_ts'),
-                                         ('fcon_matrix_tsv', 'sc717_fc')]),
-        (nifticonnect_sc87, outputnode, [('time_series_tsv', 'sc817_ts'),
-                                         ('fcon_matrix_tsv', 'sc817_fc')]),
-        (nifticonnect_sc97, outputnode, [('time_series_tsv', 'sc917_ts'),
-                                         ('fcon_matrix_tsv', 'sc917_fc')]),
-        (nifticonnect_sc107, outputnode, [('time_series_tsv', 'sc1017_ts'),
-                                          ('fcon_matrix_tsv', 'sc1017_fc')]),
-        (nifticonnect_gs36, outputnode, [('time_series_tsv', 'gs360_ts'),
-                                         ('fcon_matrix_tsv', 'gs360_fc')]),
-        (nifticonnect_gd33, outputnode, [('time_series_tsv', 'gd333_ts'),
-                                         ('fcon_matrix_tsv', 'gd333_fc')]),
-        (nifticonnect_ts50, outputnode, [('time_series_tsv', 'ts50_ts'),
-                                         ('fcon_matrix_tsv', 'ts50_fc')]),
+        (nifticonnect_sc17, outputnode, [
+            ('time_series_tsv', 'sc117_ts'),
+            ('fcon_matrix_tsv', 'sc117_fc')]),
+        (nifticonnect_sc27, outputnode, [
+            ('time_series_tsv', 'sc217_ts'),
+            ('fcon_matrix_tsv', 'sc217_fc')]),
+        (nifticonnect_sc37, outputnode, [
+            ('time_series_tsv', 'sc317_ts'),
+            ('fcon_matrix_tsv', 'sc317_fc')]),
+        (nifticonnect_sc47, outputnode, [
+            ('time_series_tsv', 'sc417_ts'),
+            ('fcon_matrix_tsv', 'sc417_fc')]),
+        (nifticonnect_sc57, outputnode, [
+            ('time_series_tsv', 'sc517_ts'),
+            ('fcon_matrix_tsv', 'sc517_fc')]),
+        (nifticonnect_sc67, outputnode, [
+            ('time_series_tsv', 'sc617_ts'),
+            ('fcon_matrix_tsv', 'sc617_fc')]),
+        (nifticonnect_sc77, outputnode, [
+            ('time_series_tsv', 'sc717_ts'),
+            ('fcon_matrix_tsv', 'sc717_fc')]),
+        (nifticonnect_sc87, outputnode, [
+            ('time_series_tsv', 'sc817_ts'),
+            ('fcon_matrix_tsv', 'sc817_fc')]),
+        (nifticonnect_sc97, outputnode, [
+            ('time_series_tsv', 'sc917_ts'),
+            ('fcon_matrix_tsv', 'sc917_fc')]),
+        (nifticonnect_sc107, outputnode, [
+            ('time_series_tsv', 'sc1017_ts'),
+            ('fcon_matrix_tsv', 'sc1017_fc')]),
+        (nifticonnect_gs36, outputnode, [
+            ('time_series_tsv', 'gs360_ts'),
+            ('fcon_matrix_tsv', 'gs360_fc')]),
+        (nifticonnect_gd33, outputnode, [
+            ('time_series_tsv', 'gd333_ts'),
+            ('fcon_matrix_tsv', 'gd333_fc')]),
+        (nifticonnect_ts50, outputnode, [
+            ('time_series_tsv', 'ts50_ts'),
+            ('fcon_matrix_tsv', 'ts50_fc')]),
         # to qcplot
-        (nifticonnect_sc27, matrix_plot, [('time_series_tsv',
-                                           'sc217_timeseries')]),
-        (nifticonnect_sc47, matrix_plot, [('time_series_tsv',
-                                           'sc417_timeseries')]),
-        (nifticonnect_gs36, matrix_plot, [('time_series_tsv',
-                                           'gd333_timeseries')]),
-        (nifticonnect_gd33, matrix_plot, [('time_series_tsv',
-                                           'gs360_timeseries')]),
+        (nifticonnect_sc27, matrix_plot, [('time_series_tsv', 'sc217_timeseries')]),
+        (nifticonnect_sc47, matrix_plot, [('time_series_tsv', 'sc417_timeseries')]),
+        (nifticonnect_gs36, matrix_plot, [('time_series_tsv', 'gd333_timeseries')]),
+        (nifticonnect_gd33, matrix_plot, [('time_series_tsv', 'gs360_timeseries')]),
         (matrix_plot, outputnode, [('connectplot', 'connectplot')])
     ])
     return workflow
@@ -556,124 +509,46 @@ timeseries with the Connectome Workbench.
         (inputnode, gd333parcel, [('clean_cifti', 'in_file')]),
         (inputnode, gs360parcel, [('clean_cifti', 'in_file')]),
         (inputnode, ts50parcel, [('clean_cifti', 'in_file')]),
-        (sc117parcel, outputnode, [(
-            'out_file',
-            'sc117_ts',
-        )]), (sc217parcel, outputnode, [(
-            'out_file',
-            'sc217_ts',
-        )]), (sc317parcel, outputnode, [(
-            'out_file',
-            'sc317_ts',
-        )]), (sc417parcel, outputnode, [(
-            'out_file',
-            'sc417_ts',
-        )]), (sc517parcel, outputnode, [(
-            'out_file',
-            'sc517_ts',
-        )]), (sc617parcel, outputnode, [(
-            'out_file',
-            'sc617_ts',
-        )]), (sc717parcel, outputnode, [(
-            'out_file',
-            'sc717_ts',
-        )]), (sc817parcel, outputnode, [(
-            'out_file',
-            'sc817_ts',
-        )]), (sc917parcel, outputnode, [(
-            'out_file',
-            'sc917_ts',
-        )]), (sc1017parcel, outputnode, [(
-            'out_file',
-            'sc1017_ts',
-        )]), (gs360parcel, outputnode, [(
-            'out_file',
-            'gs360_ts',
-        )]), (gd333parcel, outputnode, [(
-            'out_file',
-            'gd333_ts',
-        )]), (ts50parcel, outputnode, [(
-            'out_file',
-            'ts50_ts',
-        )]), (sc117parcel, sc117corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc217parcel, sc217corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc317parcel, sc317corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc417parcel, sc417corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc517parcel, sc517corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc617parcel, sc617corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc717parcel, sc717corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc817parcel, sc817corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc917parcel, sc917corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc1017parcel, sc1017corr, [(
-            'out_file',
-            'in_file',
-        )]), (gs360parcel, gs360corr, [(
-            'out_file',
-            'in_file',
-        )]), (gd333parcel, gd333corr, [(
-            'out_file',
-            'in_file',
-        )]), (ts50parcel, ts50corr, [(
-            'out_file',
-            'in_file',
-        )]), (sc117corr, outputnode, [(
-            'out_file',
-            'sc117_fc',
-        )]), (sc217corr, outputnode, [(
-            'out_file',
-            'sc217_fc',
-        )]), (sc317corr, outputnode, [(
-            'out_file',
-            'sc317_fc',
-        )]), (sc417corr, outputnode, [(
-            'out_file',
-            'sc417_fc',
-        )]), (sc517corr, outputnode, [(
-            'out_file',
-            'sc517_fc',
-        )]), (sc617corr, outputnode, [(
-            'out_file',
-            'sc617_fc',
-        )]), (sc717corr, outputnode, [(
-            'out_file',
-            'sc717_fc',
-        )]), (sc817corr, outputnode, [(
-            'out_file',
-            'sc817_fc',
-        )]), (sc917corr, outputnode, [(
-            'out_file',
-            'sc917_fc',
-        )]), (sc1017corr, outputnode, [(
-            'out_file',
-            'sc1017_fc',
-        )]), (gs360corr, outputnode, [(
-            'out_file',
-            'gs360_fc',
-        )]), (gd333corr, outputnode, [(
-            'out_file',
-            'gd333_fc',
-        )]), (ts50corr, outputnode, [(
-            'out_file',
-            'ts50_fc',
-        )]), (inputnode, matrix_plot, [('clean_cifti', 'in_file')]),
+        (sc117parcel, outputnode, [('out_file', 'sc117_ts')]),
+        (sc217parcel, outputnode, [('out_file', 'sc217_ts')]),
+        (sc317parcel, outputnode, [('out_file', 'sc317_ts')]),
+        (sc417parcel, outputnode, [('out_file', 'sc417_ts')]),
+        (sc517parcel, outputnode, [('out_file', 'sc517_ts')]),
+        (sc617parcel, outputnode, [('out_file', 'sc617_ts')]),
+        (sc717parcel, outputnode, [('out_file', 'sc717_ts')]),
+        (sc817parcel, outputnode, [('out_file', 'sc817_ts')]),
+        (sc917parcel, outputnode, [('out_file', 'sc917_ts')]),
+        (sc1017parcel, outputnode, [('out_file', 'sc1017_ts')]),
+        (gs360parcel, outputnode, [('out_file', 'gs360_ts')]),
+        (gd333parcel, outputnode, [('out_file', 'gd333_ts')]),
+        (ts50parcel, outputnode, [('out_file', 'ts50_ts')]),
+        (sc117parcel, sc117corr, [('out_file', 'in_file')]),
+        (sc217parcel, sc217corr, [('out_file', 'in_file')]),
+        (sc317parcel, sc317corr, [('out_file', 'in_file')]),
+        (sc417parcel, sc417corr, [('out_file', 'in_file')]),
+        (sc517parcel, sc517corr, [('out_file', 'in_file')]),
+        (sc617parcel, sc617corr, [('out_file', 'in_file')]),
+        (sc717parcel, sc717corr, [('out_file', 'in_file')]),
+        (sc817parcel, sc817corr, [('out_file', 'in_file')]),
+        (sc917parcel, sc917corr, [('out_file', 'in_file')]),
+        (sc1017parcel, sc1017corr, [('out_file', 'in_file')]),
+        (gs360parcel, gs360corr, [('out_file', 'in_file')]),
+        (gd333parcel, gd333corr, [('out_file', 'in_file')]),
+        (ts50parcel, ts50corr, [('out_file', 'in_file')]),
+        (sc117corr, outputnode, [('out_file', 'sc117_fc')]),
+        (sc217corr, outputnode, [('out_file', 'sc217_fc')]),
+        (sc317corr, outputnode, [('out_file', 'sc317_fc')]),
+        (sc417corr, outputnode, [('out_file', 'sc417_fc')]),
+        (sc517corr, outputnode, [('out_file', 'sc517_fc')]),
+        (sc617corr, outputnode, [('out_file', 'sc617_fc')]),
+        (sc717corr, outputnode, [('out_file', 'sc717_fc')]),
+        (sc817corr, outputnode, [('out_file', 'sc817_fc')]),
+        (sc917corr, outputnode, [('out_file', 'sc917_fc')]),
+        (sc1017corr, outputnode, [('out_file', 'sc1017_fc')]),
+        (gs360corr, outputnode, [('out_file', 'gs360_fc')]),
+        (gd333corr, outputnode, [('out_file', 'gd333_fc')]),
+        (ts50corr, outputnode, [('out_file', 'ts50_fc')]),
+        (inputnode, matrix_plot, [('clean_cifti', 'in_file')]),
         (sc217parcel, matrix_plot, [('out_file', 'sc217_timeseries')]),
         (sc417parcel, matrix_plot, [('out_file', 'sc417_timeseries')]),
         (gd333parcel, matrix_plot, [('out_file', 'gd333_timeseries')]),
