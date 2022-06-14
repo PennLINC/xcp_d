@@ -24,14 +24,14 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
         position=1,
         desc="The output CIFTI",
     )
-    
+
     roi_override = traits.Bool(
         exists=True,
         argstr="-roi-override %s ",
         position=2,
         desc=" perform correlation from a subset of rows to all rows",
     )
-    
+
     left_roi = File(
         exists=True,
         position=3,
@@ -51,7 +51,7 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
         argstr="-cerebellum-roi %s",
         desc="specify the cerebellum meytric to use",
     )
-    
+
     vol_roi = File(
         exists=True,
         position=7,
@@ -65,7 +65,7 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
         argstr="-cifti-roi %s",
         desc="cifti roi to use",
     )
-    weights_file= File(
+    weights_file = File(
         exists=True,
         position=9,
         argstr="-weights %s",
@@ -88,14 +88,16 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
         desc=" compute covariance instead of correlation",
     )
 
+
 class CiftiCorrelationOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output CIFTI file")
+
 
 class CiftiCorrelation(WBCommand):
     r"""
     Compute correlation from CIFTI file
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .ptseries or .dtseries,  
+    dimension, columns for .ptseries or .dtseries,
     >>> cifticorr = CiftiCorrelation()
     >>> cifticorr.inputs.in_file = 'sub-01XX_task-rest.ptseries.nii'
     >>> cifticorr.inputs.out_file = 'sub_01XX_task-rest.pconn.nii'
@@ -106,4 +108,4 @@ class CiftiCorrelation(WBCommand):
 
     input_spec = CiftiCorrelationInputSpec
     output_spec = CiftiCorrelationOutputSpec
-    _cmd = "wb_command  -cifti-correlation" 
+    _cmd = "wb_command  -cifti-correlation"

@@ -26,6 +26,7 @@ KNOWN_ERRORS = {
     ],
 }
 
+
 def start_ping(run_uuid, npart):
     with sentry_sdk.configure_scope() as scope:
         if run_uuid:
@@ -38,7 +39,6 @@ def start_ping(run_uuid, npart):
 def sentry_setup(opts, exec_env):
     from os import cpu_count
     import psutil
-    import hashlib
     from ..__about__ import __version__
 
     environment = "develop"
@@ -54,8 +54,8 @@ def sentry_setup(opts, exec_env):
                     environment=environment,
                     before_send=before_send)
     sentry_sdk.init(
-    "https://729b52a70da149da97c69af55eebc4eb@o317280.ingest.sentry.io/5645951",
-     traces_sample_rate=1.0)
+        "https://729b52a70da149da97c69af55eebc4eb@o317280.ingest.sentry.io/5645951",
+        traces_sample_rate=1.0)
     with sentry_sdk.configure_scope() as scope:
         scope.set_tag('exec_env', exec_env)
         free_mem_at_start = round(psutil.virtual_memory().free / 1024**3, 1)

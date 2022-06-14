@@ -1,63 +1,66 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+import nilearn.image as nlimage
+import tempita
+from pkg_resources import resource_filename as pkgrf
+from brainsprite import viewer_substitute
 import numpy as np
 import nibabel as nb
 from uuid import uuid4
-from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
-from niworkflows.viz.utils import extract_svg,robust_set_limits,compose_view
+from niworkflows.viz.utils import extract_svg, robust_set_limits, compose_view
 from svgutils.transform import fromstring
 from skimage import measure
 
 
-def surf2vol(template,left_surf, right_surf, filename,scale=1):
+def surf2vol(template, left_surf, right_surf, filename, scale=1):
     """
     template, t1w image in nii.gz or mgz from freesufer of other subject
-    left_surf,right_surf, gii file 
-    filename 
+    left_surf,right_surf, gii file
+    filename
     """
-    
+
     # load the t1 image
     t1_image = nb.load(template)
     ras2vox = np.linalg.inv(t1_image.affine)
-    
-    #read the coordinates
-    lsurf,ltri = nb.load(left_surf).agg_data()
-    rsurf,rtri = nb.load(right_surf).agg_data()
-    surf = np.concatenate((lsurf,rsurf))
-    
-    #ras2vox
-    datax  =  nb.affines.apply_affine(ras2vox,surf)
-    
+
+    # read the coordinates
+    lsurf, ltri = nb.load(left_surf).agg_data()
+    rsurf, rtri = nb.load(right_surf).agg_data()
+    surf = np.concatenate((lsurf, rsurf))
+
+    # ras2vox
+    datax = nb.affines.apply_affine(ras2vox, surf)
+
     indices = np.floor(datax).astype(int).T
-    overlay =np.zeros(t1_image.shape)
+    overlay = np.zeros(t1_image.shape)
     indices[0, np.where(indices[0] >= t1_image.shape[0])] = 0
     indices[1, np.where(indices[1] >= t1_image.shape[1])] = 0
     indices[2, np.where(indices[2] >= t1_image.shape[2])] = 0
     overlay[tuple(indices.tolist())] = 1
-    
+
     overlay_image = nb.Nifti1Image(overlay*scale, affine=t1_image.affine)
-    
+
     nb.save(overlay_image, filename)
-    
+
     return filename
 
 
-
-def get_regplot(brain,overlay,out_file,cuts=3,order=("x","y","z")):
+def get_regplot(brain, overlay, out_file, cuts=3, order=("x", "y", "z")):
     """
-   
+
     """
 
     brain = nb.load(brain)
     overlay = nb.load(overlay)
     from niworkflows.viz.utils import cuts_from_bbox
     cuts = cuts_from_bbox(overlay, cuts=cuts)
-    filex_plot = plot_registrationx(anat_nii=brain, contour=overlay, 
-                 div_id='', cuts=cuts,order=order)
-    compose_view(bg_svgs=filex_plot,fg_svgs=None,out_file=out_file)
+    filex_plot = plot_registrationx(anat_nii=brain, contour=overlay,
+                                    div_id='', cuts=cuts, order=order)
+    compose_view(bg_svgs=filex_plot, fg_svgs=None, out_file=out_file)
 
     return out_file
+
 
 def plot_registrationx(
     anat_nii,
@@ -69,7 +72,7 @@ def plot_registrationx(
     label=None,
     contour=None,
     compress="auto",
-    ):
+):
     """
     Plots the foreground and background views
     Default order is: axial, coronal, sagittal
@@ -84,7 +87,7 @@ def plot_registrationx(
 
     # FreeSurfer ribbon.mgz
     contour_data = contour.get_fdata()
-    pial = nlimage.new_img_like(contour, contour_data > 0 )
+    pial = nlimage.new_img_like(contour, contour_data > 0)
     # Plot each cut axis
     for i, mode in enumerate(list(order)):
         plot_params["display_mode"] = mode
@@ -96,10 +99,10 @@ def plot_registrationx(
 
         # Generate nilearn figure
         display = plot_anat(anat_nii, **plot_params)
-        kwargs ={}
-        
+        kwargs = {}
+
         display.add_edges(pial, color="r", **kwargs)
-    
+
         svg = extract_svg(display, compress=compress)
         display.close()
 
@@ -110,54 +113,45 @@ def plot_registrationx(
     return out_files
 
 
-from brainsprite import viewer_substitute
-from pkg_resources import resource_filename as pkgrf
-import tempita
+def generate_brain_sprite(template_image, stat_map, out_file):
 
-def generate_brain_sprite(template_image,stat_map,out_file):
-    
-    
-    file_template = pkgrf("xcp_d",'data/transform/brainsprite_template.html')
+    file_template = pkgrf("xcp_d", 'data/transform/brainsprite_template.html')
     template = tempita.Template.from_filename(file_template, encoding="utf-8")
 
-    
     bsprite = viewer_substitute(cmap='hsv', symmetric_cmap=False, black_bg=True,
-                         vmin=-1, vmax=3, value=False,colorbar=False)
-    bsprite.fit(stat_map_img=stat_map,bg_img=template_image)
+                                vmin=-1, vmax=3, value=False, colorbar=False)
+    bsprite.fit(stat_map_img=stat_map, bg_img=template_image)
 
-    viewer = bsprite.transform(template=template,javascript='js', html='html', library='bsprite')
+    viewer = bsprite.transform(template=template, javascript='js', html='html', library='bsprite')
     viewer.save_as_html(out_file)
-
 
     return out_file
 
-import nilearn.image  as nlimage
-#from scipy.ndimage import sobel, generic_gradient_magnitude
 
-def ribbon_to_statmap(ribbon,outfile):
+# from scipy.ndimage import sobel, generic_gradient_magnitude
 
-    
-    # chek if the data is ribbon or seg files 
+
+def ribbon_to_statmap(ribbon, outfile):
+
+    # chek if the data is ribbon or seg files
 
     ngbdata = nb.load(ribbon)
-    
-    if ngbdata.get_fdata().max() > 5: # that is ribbon 
+
+    if ngbdata.get_fdata().max() > 5:  # that is ribbon
         contour_data = ngbdata.get_fdata() % 39
-        white = nlimage.new_img_like(ngbdata, contour_data == 2) 
+        white = nlimage.new_img_like(ngbdata, contour_data == 2)
         pial = nlimage.new_img_like(ngbdata, contour_data >= 2)
-    else: 
+    else:
         contour_data = ngbdata.get_fdata()
         white = nlimage.new_img_like(ngbdata, contour_data == 2)
         pial = nlimage.new_img_like(ngbdata, contour_data == 1)
-    
-    
+
     datapial = _get_contour(pial.get_fdata())
     datawhite = _get_contour(white.get_fdata())
 
-
     datax = 2*datapial + datawhite
-    
-    # save the output 
+
+    # save the output
     ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)
     ngbdatax.to_filename(outfile)
 
@@ -165,34 +159,33 @@ def ribbon_to_statmap(ribbon,outfile):
 
 
 def _get_contour(datax):
-    # contour in each plane 
-    dims =datax.shape
-    
-    contour =np.zeros_like(datax)
-    
-    # get y-z plane 
+    # contour in each plane
+    dims = datax.shape
+
+    contour = np.zeros_like(datax)
+
+    # get y-z plane
     for i in range(dims[2]):
-        con = measure.find_contours(datax[:,:,i],fully_connected='low')
-        conx =np.zeros_like(datax[:,:,i])
-        for cx in con: 
-            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-        contour[:,:,i]= conx 
+        con = measure.find_contours(datax[:, :, i], fully_connected='low')
+        conx = np.zeros_like(datax[:, :, i])
+        for cx in con:
+            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])] = 1
+        contour[:, :, i] = conx
 
-      #for xz plane
-    #for i in range(dims[1]):
-        #con = measure.find_contours(datax[:,i,:],fully_connected='low')
-        #conx =np.zeros_like(datax[:,i,:])
-        #for cx in con:
-            #conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
-        #contour[:,i,:]= conx 
+        # for xz plane
+        # for i in range(dims[1]):
+        # con = measure.find_contours(datax[:,i,:],fully_connected='low')
+        # conx =np.zeros_like(datax[:,i,:])
+        # for cx in con:
+        # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
+        # contour[:,i,:]= conx
 
-    #for yz plane
-    #for i in range(dims[2]):
-        #con = measure.find_contours(datax[:,:,i],fully_connected='low')
-        #conx =np.zeros_like(datax[:,:,i])
-        #for cx in con:
-            #conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-        #contour[:,:,i]= conx 
-        
+    # for yz plane
+    # for i in range(dims[2]):
+        # con = measure.find_contours(datax[:,:,i],fully_connected='low')
+        # conx =np.zeros_like(datax[:,:,i])
+        # for cx in con:
+        # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
+        # contour[:,:,i]= conx
+
     return contour
-

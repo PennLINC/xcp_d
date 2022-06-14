@@ -1,20 +1,20 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Utilities for fmriprep bids derivatives and layout. most of the code copied from niworkflows, A PR will be submit to"""
+"""Utilities for fmriprep bids derivatives and layout.
+most of the code copied from niworkflows, A PR will be submit to"""
 
 from pathlib import Path
 from collections import defaultdict
-import fnmatch,os
+import fnmatch
+import os
 import re
 import warnings
 from bids import BIDSLayout
 from json import dumps, loads
-
 from nipype import logging
 from nipype.interfaces.base import (
     traits,
     isdefined,
-    Undefined,
     BaseInterfaceInputSpec,
     DynamicTraitedSpec,
     File,
@@ -48,6 +48,7 @@ LOGGER = logging.getLogger("nipype.interface")
 def _none():
     return None
 
+
 # Automatically coerce certain suffixes (DerivativesDataSink)
 DEFAULT_DTYPES = defaultdict(
     _none,
@@ -74,9 +75,11 @@ class BIDSError(ValueError):
         )
         super(BIDSError, self).__init__(self.msg)
         self.bids_root = bids_root
-        
+
+
 class BIDSWarning(RuntimeWarning):
-    pass 
+    pass
+
 
 def collect_participants(
     bids_dir, participant_label=None, strict=False, bids_validate=False
@@ -146,8 +149,6 @@ def collect_participants(
     return found_label
 
 
-
-
 def collect_data(
     bids_dir,
     participant_label,
@@ -155,18 +156,18 @@ def collect_data(
     bids_validate=False,
     bids_filters=None,
 ):
-   
+
     layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
 
     queries = {
-        'regfile': {'datatype': 'anat','suffix':'xfm'},
-        'boldfile': {'datatype':'func','suffix': 'bold'},
-        't1w': {'datatype':'anat','suffix':'T1w'},
-        'seg': {'datatype':'anat','suffix':'dseg'},
-        'pial': { 'datatype': 'anat','suffix':'pial'},
-        'wm': {'datatype': 'anat','suffix':'smoothwm'},
-        'midthickness':{'datatype': 'anat','suffix':'midthickness'},
-        'inflated':{'datatype': 'anat','suffix':'inflated'}
+        'regfile': {'datatype': 'anat', 'suffix': 'xfm'},
+        'boldfile': {'datatype': 'func', 'suffix': 'bold'},
+        't1w': {'datatype': 'anat', 'suffix': 'T1w'},
+        'seg': {'datatype': 'anat', 'suffix': 'dseg'},
+        'pial': {'datatype': 'anat', 'suffix': 'pial'},
+        'wm': {'datatype': 'anat', 'suffix': 'smoothwm'},
+        'midthickness': {'datatype': 'anat', 'suffix': 'midthickness'},
+        'inflated': {'datatype': 'anat', 'suffix': 'inflated'}
     }
 
     bids_filters = bids_filters or {}
@@ -174,7 +175,7 @@ def collect_data(
         queries[acq].update(entities)
 
     if task:
-        #queries["preproc_bold"]["task"] = task
+        # queries["preproc_bold"]["task"] = task
         queries['boldfile']["task"] = task
 
     subj_data = {
@@ -182,70 +183,68 @@ def collect_data(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz","dtseries.nii","h5",'gii'],
+                extension=["nii", "nii.gz", "dtseries.nii", "h5", 'gii'],
                 **query,
             )
         )
         for dtype, query in queries.items()
     }
-    
-    #reg_file = select_registrationfile(subj_data,template=template)
-    
-    #bold_file= select_cifti_bold(subj_data)
+
+    # reg_file = select_registrationfile(subj_data,template=template)
+
+    # bold_file= select_cifti_bold(subj_data)
 
     return layout, subj_data
 
 
 def select_registrationfile(subj_data):
-    
+
     regfile = subj_data['regfile']
 
     # get the file with the template name
     template1 = 'MNI152NLin2009cAsym'  # default template for fmriprep,dcan and hcp
-    template2 = 'MNIInfant' # nibabies
+    template2 = 'MNIInfant'  # nibabies
 
-    for j in regfile: 
-        if 'from-' + template1  in j or 'from-' + template2 in j: 
+    for j in regfile:
+        if 'from-' + template1 in j or 'from-' + template2 in j:
             mni_to_t1w = j
         elif 'to-' + template1 in j or 'to-' + template2 in j:
             t1w_to_mni = j
-    ## for validation, we need to check presence of MNI152NLin2009cAsym 
-    ## if not we use MNI152NLin2006cAsym for nibabies 
-    #print(mni_to_t1w)
-    
+    # for validation, we need to check presence of MNI152NLin2009cAsym
+    # if not we use MNI152NLin2006cAsym for nibabies
+    # print(mni_to_t1w)
+
     return mni_to_t1w, t1w_to_mni
 
 
 def select_cifti_bold(subj_data):
-    
+
     boldfile = subj_data['boldfile']
     bold_file = []
-    cifti_file = [] 
-    
-    
+    cifti_file = []
+
     for j in boldfile:
-        if 'preproc_bold' in  j:
+        if 'preproc_bold' in j:
             bold_file.append(j)
-        if 'bold.dtseries.nii' in  j:
+        if 'bold.dtseries.nii' in j:
             cifti_file.append(j)
     return bold_file, cifti_file
 
+
 def extract_t1w_seg(subj_data):
-    all_t1w = subj_data['t1w'] 
+    all_t1w = subj_data['t1w']
     for i in all_t1w:
         ii = os.path.basename(i)
-        if  not fnmatch.fnmatch(ii,'*_space-*'):
+        if not fnmatch.fnmatch(ii, '*_space-*'):
             t1w = i
-     
-     
+
     all_seg = subj_data['seg']
     for j in all_seg:
-        ii=os.path.basename(j)
-        if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
-            t1seg  = j
-               
-    return t1w,t1seg
-     
+        ii = os.path.basename(j)
+        if not (fnmatch.fnmatch(ii, '*_space-*') or fnmatch.fnmatch(ii, '*aseg*')):
+            t1seg = j
+
+    return t1w, t1seg
 
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
@@ -294,7 +293,7 @@ class DerivativesDataSink(SimpleInterface):
     Saves the ``in_file`` into a BIDS-Derivatives folder provided
     by ``base_directory``, given the input reference ``source_file``.
 
-    
+
 
     """
 
