@@ -61,7 +61,7 @@ class FilteringData(SimpleInterface):
     >>> filt.inputs.highpass = 0.01
     >>> filt.run()
     .. testcleanup::
-    >>> tmpdir.cleanup()    
+    >>> tmpdir.cleanup()
     """
 
     input_spec = _filterdataInputSpec
@@ -108,7 +108,7 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     data : voxels/vertices by timepoints dimension
     fs : sampling frequency,=1/TR(s)
     lowpass frequency
-    highpass frequency 
+    highpass frequency
     '''
 
     nyq = 0.5 * fs

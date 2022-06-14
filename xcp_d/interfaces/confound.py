@@ -94,7 +94,6 @@ class ConfoundMatrix(SimpleInterface):
     >>> conf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-    
     """
 
     input_spec = _confoundInputSpec
