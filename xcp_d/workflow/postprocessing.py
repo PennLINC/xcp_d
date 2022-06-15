@@ -164,10 +164,10 @@ frequency band {highpass}-{lowpass} Hz.
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold', 'bold_file', 'bold_mask', 'custom_conf']),
-                        name='inputnode')
+        name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold', 'tmask', 'fd']),
-                         name='outputnode')
+        name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
     confoundmat = pe.Node(ConfoundMatrix(
@@ -180,8 +180,8 @@ frequency band {highpass}-{lowpass} Hz.
         high_freq=band_stop_min,
         TR=TR,
         filterorder=motion_filter_order),
-                          name="ConfoundMatrix",
-                          mem_gb=0.1 * mem_gb)
+        name="ConfoundMatrix",
+        mem_gb=0.1 * mem_gb)
 
     filterdx = pe.Node(FilteringData(tr=TR,
                                      lowpass=upper_bpf,
@@ -298,8 +298,8 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
                                  hemi='L',
                                  suffix='sphere',
                                  density='32k')[0])),
-                                  name="cifti_smoothing",
-                                  mem_gb=mem_gb)
+                name="cifti_smoothing",
+                mem_gb=mem_gb)
             workflow.connect([
                 (filterdx, smooth_data, [('filt_file', 'in_file')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_bold')])
@@ -379,12 +379,12 @@ def init_censoring_wf(mem_gb,
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold', 'bold_file', 'bold_mask', 'confound_file']),
-                        name='inputnode')
+        name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'bold_censored', 'fmriprepconf_censored', 'tmask', 'fd',
         'customconf_censored'
     ]),
-                         name='outputnode')
+        name='outputnode')
 
     censor_scrub = pe.Node(censorscrub(fd_thresh=fd_thresh,
                                        TR=TR,
@@ -470,9 +470,9 @@ size of {kernelsize} mm  (FWHM).
                 'xcp_d', 'data/ciftiatlas/'
                 'Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
             )),
-                              name="cifti_smoothing",
-                              mem_gb=mem_gb,
-                              n_procs=omp_nthreads)
+            name="cifti_smoothing",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads)
 
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
                           (smooth_data, outputnode, [('out_file',

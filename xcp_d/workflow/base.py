@@ -277,7 +277,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf', 'mni_to_t1w', 't1w', 't1seg']),
-                        name='inputnode')
+        name='inputnode')
     inputnode.inputs.custom_conf = custom_conf
     inputnode.inputs.t1w = t1wseg[0]
     inputnode.inputs.t1seg = t1wseg[1]
@@ -326,7 +326,7 @@ It is released under the [CC0]\
         source_file=subject_data[0][0],
         desc='summary',
         datatype="figures"),
-                                name='ds_report_summary')
+        name='ds_report_summary')
 
     anatomical_wf = init_anatomical_wf(
         omp_nthreads=omp_nthreads,
@@ -381,8 +381,8 @@ It is released under the [CC0]\
                 desc='about',
                 datatype="figures",
             ),
-                                      name='ds_report_about',
-                                      run_without_submitting=True)
+                name='ds_report_about',
+                run_without_submitting=True)
             workflow.connect([(inputnode, cifti_postproc_wf,
                                [('custom_conf', 'inputnode.custom_conf'),
                                 ('t1w', 'inputnode.t1w'),
@@ -424,8 +424,8 @@ It is released under the [CC0]\
                 source_file=bold_file,
                 desc='about',
                 datatype="figures"),
-                                      name='ds_report_about',
-                                      run_without_submitting=True)
+                name='ds_report_about',
+                run_without_submitting=True)
             workflow.connect([(inputnode, bold_postproc_wf,
                                [('mni_to_t1w', 'inputnode.mni_to_t1w'),
                                 ('t1w', 'inputnode.t1w'),

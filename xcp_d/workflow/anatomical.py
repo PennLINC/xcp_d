@@ -7,7 +7,9 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 
 """
 
-import os, fnmatch, shutil
+import os
+import fnmatch
+import shutil
 from pathlib import Path
 from templateflow.api import get as get_template
 from ..utils import collect_data, CiftiSurfaceResample
@@ -174,8 +176,8 @@ def init_anatomical_wf(
             dismiss_entities=['desc'],
             desc='brainplot',
             datatype="figures"),
-                                        name='brainspriteplot',
-                                        run_without_submitting=True)
+            name='brainspriteplot',
+            run_without_submitting=True)
 
         workflow.connect([
             (ribbon2statmap_wf, brainspritex_wf, [('out_file', 'in_file')]),
@@ -195,9 +197,9 @@ def init_anatomical_wf(
             interpolation='LanczosWindowedSinc',
             input_image_type=3,
             dimension=3),
-                                   name="t1w_transform",
-                                   mem_gb=mem_gb,
-                                   n_procs=omp_nthreads)
+            name="t1w_transform",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads)
 
         seg_transform_wf = pe.Node(ApplyTransformsx(
             num_threads=2,
@@ -206,9 +208,9 @@ def init_anatomical_wf(
             interpolation="MultiLabel",
             input_image_type=3,
             dimension=3),
-                                   name="seg_transform",
-                                   mem_gb=mem_gb,
-                                   n_procs=omp_nthreads)
+            name="seg_transform",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads)
 
         ds_t1wmni_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                    space='MNI152NLin6Asym',
@@ -297,68 +299,80 @@ def init_anatomical_wf(
                              suffix='sphere')[0])
 
             left_sphere_raw = str(
-                freesufer_path) + '/' + subid + '/surf/lh.sphere'  #MB
+                freesufer_path) + '/' + subid + '/surf/lh.sphere'  # MB
             right_sphere_raw = str(
-                freesufer_path) + '/' + subid + '/surf/rh.sphere'  #MB
+                freesufer_path) + '/' + subid + '/surf/rh.sphere'  # MB
 
             # nodes for left and right in node
-            # left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
-            # right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
+            # left_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=left_sphere),
+            # name='left_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
+            # right_sphere_mris_wf = pe.Node(MRIsConvert(out_datatype='gii',in_file=right_sphere),
+            # name='right_sphere',mem_gb=mem_gb,n_procs=omp_nthreads)
 
-            # convert spheres (from FreeSurfer surf dir) to gifti #MB
+            # convert spheres (from FreeSurfer surf dir) to gifti # MB
             left_sphere_raw_mris = pe.Node(MRIsConvert(
                 out_datatype='gii', in_file=left_sphere_raw),
-                                           name='left_sphere_raw_mris',
-                                           mem_gb=mem_gb,
-                                           n_procs=omp_nthreads)  #MB
+                name='left_sphere_raw_mris',
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)  # MB
             right_sphere_raw_mris = pe.Node(MRIsConvert(
                 out_datatype='gii', in_file=right_sphere_raw),
-                                            name='right_sphere_raw_mris',
-                                            mem_gb=mem_gb,
-                                            n_procs=omp_nthreads)  #MB
+                name='right_sphere_raw_mris',
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)  # MB
 
             # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
-            # CompositeTransformUtil --disassemble anat/sub-MSC01_ses-3TAME01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5 T1w_to_MNI152Lin6Asym
+            # CompositeTransformUtil --disassemble
+            # anat/sub-MSC01_ses-3TAME01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+            # T1w_to_MNI152Lin6Asym
 
             h5_file = fnmatch.filter(
-                all_files, '*sub-*' + subject_id +
-                '*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0]  #MB
+                all_files, '*sub-*' + subject_id + '*from'
+                '-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5')[0]  # MB
             disassemble_h5 = pe.Node(CompositeTransformUtil(
                 process='disassemble',
                 in_file=h5_file,
                 output_prefix='T1w_to_MNI152Lin6Asym'),
-                                     name='disassemble_h5',
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)  #MB
+                name='disassemble_h5',
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)  # MB
 
             # convert affine from ITK binary to txt
-            # ConvertTransformFile 3 00_T1w_to_MNI152Lin6Asym_AffineTransform.mat 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
+            # ConvertTransformFile 3 00_T1w_to_MNI152Lin6Asym_AffineTransform.mat
+            # 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
             convert_ants_transform = pe.Node(
                 ConvertTransformFile(dimension=3),
-                name="convert_ants_transform")  #MB
+                name="convert_ants_transform")  # MB
 
-            # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase" since wb_command doesn't recognize "AffineTransform"
-            # (AffineTransform is a subclass of MatrixOffsetTransformBase which makes this okay to do AFAIK)
-            # sed -e s/AffineTransform/MatrixOffsetTransformBase/ 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt > 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
+            # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
+            # since wb_command doesn't recognize "AffineTransform"
+            # (AffineTransform is a subclass of MatrixOffsetTransformBase
+            # which makes this okay to do AFAIK)
+            # sed -e s/AffineTransform/MatrixOffsetTransformBase/
+            # 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt >
+            # 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
             change_xfm_type = pe.Node(ChangeXfmType(),
-                                      name="change_xfm_type")  #MB
+                                      name="change_xfm_type")  # MB
 
-            # convert affine xfm to "world" so it works with -surface-apply-affine
-            # wb_command -convert-affine -from-itk 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
+            # convert affine xfm to "world" so it
+            # works with -surface-apply-affine
+            # wb_command -convert-affine -from-itk
+            # 00_T1w_to_MNI152Lin6Asym_AffineTransform.txt
+            # -to-world 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
             convert_xfm2world = pe.Node(ConvertAffine(fromwhat='itk',
                                                       towhat='world'),
-                                        name="convert_xfm2world")  #MB
+                                        name="convert_xfm2world")  # MB
 
             left_sphere_fsLR_164 = str(
                 get_template(template='fsLR',
                              hemi='L',
                              density='164k',
-                             suffix='sphere')[0])  #MB
+                             suffix='sphere')[0])  # MB
             right_sphere_fsLR_164 = str(
                 get_template(template='fsLR',
                              hemi='R',
                              density='164k',
-                             suffix='sphere')[0])  #MB
+                             suffix='sphere')[0])  # MB
 
             fs_std_mesh_L = pkgrf(
                 'xcp_d',
@@ -371,41 +385,53 @@ def init_anatomical_wf(
 
             fs_LR2fs_L = pkgrf(
                 'xcp_d',
-                'data/standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii'
+                'data/standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage'
+                '.L_LR.spherical_std.164k_fs_L.surf.gii'
             )
             fs_LR2fs_R = pkgrf(
                 'xcp_d',
-                'data/standard_mesh_atlases/fs_R/fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii'
+                'data/standard_mesh_atlases/fs_R/fs_R-to-fs_LR_fsaverage'
+                '.R_LR.spherical_std.164k_fs_R.surf.gii'
             )
 
             # apply affine
-            # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
+            # wb_command -surface-apply-affine anat/sub-MSC01_ses-3TAME01_hemi-L_pial.surf.gii
+            # 00_T1w_to_MNI152Lin6Asym_AffineTransform_world.nii.gz
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
             surface_apply_affine_lh_pial = pe.Node(
                 ApplyAffine(in_file=L_pial_surf),
-                name='surface_apply_affine_lh_pial')  #MB
+                name='surface_apply_affine_lh_pial')  # MB
             surface_apply_affine_rh_pial = pe.Node(
                 ApplyAffine(in_file=R_pial_surf),
-                name='surface_apply_affine_rh_pial')  #MB
+                name='surface_apply_affine_rh_pial')  # MB
             surface_apply_affine_lh_wm = pe.Node(
                 ApplyAffine(in_file=L_wm_surf),
-                name='surface_apply_affine_lh_wm')  #MB
+                name='surface_apply_affine_lh_wm')  # MB
             surface_apply_affine_rh_wm = pe.Node(
                 ApplyAffine(in_file=R_wm_surf),
-                name='surface_apply_affine_rh_wm')  #MB
+                name='surface_apply_affine_rh_wm')  # MB
 
             # apply warpfield
-            # wb_command -surface-apply-warpfield anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
+            # wb_command -surface-apply-warpfield
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIaffine.surf.gii
+            # 01_T1w_to_MNI152Lin6Asym_DisplacementFieldTransform.nii.gz
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
             apply_warpfield_lh_pial = pe.Node(
-                ApplyWarpfield(), name='apply_warpfield_lh_pial')  #MB
+                ApplyWarpfield(), name='apply_warpfield_lh_pial')  # MB
             apply_warpfield_rh_pial = pe.Node(
-                ApplyWarpfield(), name='apply_warpfield_rh_pial')  #MB
+                ApplyWarpfield(), name='apply_warpfield_rh_pial')  # MB
             apply_warpfield_lh_wm = pe.Node(ApplyWarpfield(),
-                                            name='apply_warpfield_lh_wm')  #MB
+                                            name='apply_warpfield_lh_wm')  # MB
             apply_warpfield_rh_wm = pe.Node(ApplyWarpfield(),
-                                            name='apply_warpfield_rh_wm')  #MB
+                                            name='apply_warpfield_rh_wm')
+            # MB
 
             # concatenate sphere reg
-            # wb_command -surface-sphere-project-unproject anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
+            # wb_command -surface-sphere-project-unproject
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregnative.surf.gii
+            # standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii
+            # standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
             surface_sphere_project_unproject_lh_pial = pe.Node(
                 SurfaceSphereProjectUnproject(),
                 name='surface_sphere_project_unproject_lh_pial')
@@ -420,67 +446,71 @@ def init_anatomical_wf(
                 name='surface_sphere_project_unproject_rh_wm')
 
             # resample MNI native surfs to 32k
-            # wb_command -surface-resample anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
+            # wb_command -surface-resample
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_pial_desc-MNIwarped.surf.gii
+            # anat/sub-MSC01_ses-3TAME01_hemi-L_FSsphereregLRnative.surf.gii
+            # standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii BARYCENTRIC
+            # anat/sub-MSC01_ses-3TAME01_space-fsLR_den-32k_hemi-L_pial.surf.gii
             # I believe this can be done in the framework below
 
-            ## surface resample to fsl32k
+            # surface resample to fsl32k
             left_wm_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=left_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=L_wm_surf),
-                                      name="left_wm_surf",
-                                      mem_gb=mem_gb,
-                                      n_procs=omp_nthreads)
+                name="left_wm_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
             left_pial_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=left_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=L_pial_surf),
-                                        name="left_pial_surf",
-                                        mem_gb=mem_gb,
-                                        n_procs=omp_nthreads)
+                name="left_pial_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
             left_midthick_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=left_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=L_midthick_surf),
-                                            name="left_midthick_surf",
-                                            mem_gb=mem_gb,
-                                            n_procs=omp_nthreads)
+                name="left_midthick_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
             left_inf_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=left_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=L_inflated_surf),
-                                       name="left_inflated_surf",
-                                       mem_gb=mem_gb,
-                                       n_procs=omp_nthreads)
+                name="left_inflated_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
 
             right_wm_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=right_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=R_wm_surf),
-                                       name="right_wm_surf",
-                                       mem_gb=mem_gb,
-                                       n_procs=omp_nthreads)
+                name="right_wm_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
             right_pial_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=right_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=R_pial_surf),
-                                         name="right_pial_surf",
-                                         mem_gb=mem_gb,
-                                         n_procs=omp_nthreads)
+                name="right_pial_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
             right_midthick_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=right_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=R_midthick_surf),
-                                             name="right_midthick_surf",
-                                             mem_gb=mem_gb,
-                                             n_procs=omp_nthreads)
+                name="right_midthick_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
             right_inf_surf_wf = pe.Node(CiftiSurfaceResample(
                 new_sphere=right_sphere_fsLR,
                 metric=' BARYCENTRIC ',
                 in_file=R_inflated_surf),
-                                        name="right_inflated_surf",
-                                        mem_gb=mem_gb,
-                                        n_procs=omp_nthreads)
+                name="right_inflated_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads)
 
             # write report node
             ds_wmLsurf_wf = pe.Node(DerivativesDataSink(
@@ -493,9 +523,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='L',
                 source_file=L_wm_surf),
-                                    name='ds_wmLsurf_wf',
-                                    run_without_submitting=False,
-                                    mem_gb=2)
+                name='ds_wmLsurf_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             ds_wmRsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -507,9 +537,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='R',
                 source_file=R_wm_surf),
-                                    name='ds_wmRsur_wf',
-                                    run_without_submitting=False,
-                                    mem_gb=2)
+                name='ds_wmRsur_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             ds_pialLsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -521,9 +551,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='L',
                 source_file=L_pial_surf),
-                                      name='ds_pialLsurf_wf',
-                                      run_without_submitting=True,
-                                      mem_gb=2)
+                name='ds_pialLsurf_wf',
+                run_without_submitting=True,
+                mem_gb=2)
             ds_pialRsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=['desc'],
@@ -534,9 +564,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='R',
                 source_file=R_pial_surf),
-                                      name='ds_pialRsurf_wf',
-                                      run_without_submitting=False,
-                                      mem_gb=2)
+                name='ds_pialRsurf_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             ds_infLsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -548,9 +578,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='L',
                 source_file=L_inflated_surf),
-                                     name='ds_infLsurf_wf',
-                                     run_without_submitting=False,
-                                     mem_gb=2)
+                name='ds_infLsurf_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             ds_infRsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -562,9 +592,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='R',
                 source_file=R_inflated_surf),
-                                     name='ds_infRsurf_wf',
-                                     run_without_submitting=False,
-                                     mem_gb=2)
+                name='ds_infRsurf_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             ds_midLsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -576,9 +606,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='L',
                 source_file=L_midthick_surf),
-                                     name='ds_midLsurf_wf',
-                                     run_without_submitting=False,
-                                     mem_gb=2)
+                name='ds_midLsurf_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             ds_midRsurf_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -590,9 +620,9 @@ def init_anatomical_wf(
                 extension='.surf.gii',
                 hemi='R',
                 source_file=R_midthick_surf),
-                                     name='ds_midRsurf_wf',
-                                     run_without_submitting=False,
-                                     mem_gb=2)
+                name='ds_midRsurf_wf',
+                run_without_submitting=False,
+                mem_gb=2)
 
             workflow.connect([(disassemble_h5, convert_ants_transform,
                                [('affine_transform', 'in_transform')]),
@@ -663,7 +693,7 @@ def init_anatomical_wf(
 
             t1w_mgz = str(freesufer_path) + '/' + subid + '/mri/orig.mgz'
 
-            #nibabies outputs do not  have ori.mgz, ori is the same as norm.mgz
+            # nibabies outputs do not  have ori.mgz, ori is the same as norm.mgz
             if not Path(t1w_mgz).is_file():
                 t1w_mgz = str(freesufer_path) + '/' + subid + '/mri/norm.mgz'
 
@@ -678,7 +708,7 @@ def init_anatomical_wf(
                                         mem_gb=mem_gb,
                                         n_procs=omp_nthreads)
 
-            #brainplot
+            # brainplot
             brainspritex_wf = pe.Node(BrainPlotx(),
                                       name='brainsprite',
                                       mem_gb=mem_gb,
@@ -690,11 +720,11 @@ def init_anatomical_wf(
                 dismiss_entities=['desc'],
                 desc='brainplot',
                 datatype="figures"),
-                                            name='brainspriteplot')
+                name='brainspriteplot')
 
             workflow.connect([
-                #(pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
-                #(wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
+                # (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
+                # (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
                 (enhancet1w_wf, brainspritex_wf, [('out_file', 'template')]),
                 (ribbon2statmap_wf, brainspritex_wf, [('out_file', 'in_file')
                                                       ]),
@@ -725,7 +755,7 @@ def init_anatomical_wf(
                 ],
                 desc='brainplot',
                 datatype="figures"),
-                                            name='brainspriteplot')
+                name='brainspriteplot')
 
             workflow.connect([
                 (inputnode, enhancet1w_wf, [('t1w', 'in_file')]),

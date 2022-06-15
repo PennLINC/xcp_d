@@ -209,7 +209,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['cifti_file', 'custom_conf', 't1w', 't1seg']),
-                        name='inputnode')
+        name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
 
@@ -222,7 +222,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
         'fd'
     ]),
-                         name='outputnode')
+        name='outputnode')
 
     mem_gbx = _create_mem_gb(cifti_file)
 
@@ -472,32 +472,32 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         desc='qualitycontrol',
         source_file=cifti_file,
         datatype="figures"),
-                                       name='ds_report_qualitycontrol',
-                                       run_without_submitting=True)
+        name='ds_report_qualitycontrol',
+        run_without_submitting=True)
 
     ds_report_preprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=cifti_file,
         desc='preprocessing',
         datatype="figures"),
-                                      name='ds_report_preprocessing',
-                                      run_without_submitting=True)
+        name='ds_report_preprocessing',
+        run_without_submitting=True)
 
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=cifti_file,
         desc='postprocessing',
         datatype="figures"),
-                                       name='ds_report_postprocessing',
-                                       run_without_submitting=True)
+        name='ds_report_postprocessing',
+        run_without_submitting=True)
 
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=cifti_file,
         desc='connectvityplot',
         datatype="figures"),
-                                     name='ds_report_connectivity',
-                                     run_without_submitting=True)
+        name='ds_report_connectivity',
+        run_without_submitting=True)
 
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),

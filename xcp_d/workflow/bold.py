@@ -221,7 +221,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         'bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
         't1w', 't1seg'
     ]),
-                        name='inputnode')
+        name='inputnode')
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
@@ -236,7 +236,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'ts50_ts', 'ts50_fc', 'gs360_ts',
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'qc_file', 'fd'
     ]),
-                         name='outputnode')
+        name='outputnode')
 
     mem_gbx = _create_mem_gb(bold_file)
 
@@ -349,9 +349,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                          extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',
         transforms=transformfile),
-                            name='resample_parc',
-                            n_procs=omp_nthreads,
-                            mem_gb=mem_gbx['timeseries'])
+        name='resample_parc',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
 
     resample_bold2T1w = pe.Node(ApplyTransforms(
         dimension=3,
@@ -359,9 +359,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         reference_image=t1w_mask,
         interpolation='NearestNeighbor',
         transforms=bold2T1w_trans),
-                                name='bold2t1_trans',
-                                n_procs=omp_nthreads,
-                                mem_gb=mem_gbx['timeseries'])
+        name='bold2t1_trans',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
 
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
@@ -374,9 +374,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                          extension=['.nii', '.nii.gz'])),
         interpolation='NearestNeighbor',
         transforms=bold2MNI_trans),
-                                name='bold2mni_trans',
-                                n_procs=omp_nthreads,
-                                mem_gb=mem_gbx['timeseries'])
+        name='bold2mni_trans',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
 
     qcreport = pe.Node(computeqcplot(TR=TR,
                                      bold_file=bold_file,
@@ -567,32 +567,32 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         desc='qualitycontrol',
         source_file=bold_file,
         datatype="figures"),
-                                       name='ds_report_qualitycontrol',
-                                       run_without_submitting=False)
+        name='ds_report_qualitycontrol',
+        run_without_submitting=False)
 
     ds_report_preprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         desc='preprocessing',
         source_file=bold_file,
         datatype="figures"),
-                                      name='ds_report_preprocessing',
-                                      run_without_submitting=False)
+        name='ds_report_preprocessing',
+        run_without_submitting=False)
 
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
         desc='postprocessing',
         datatype="figures"),
-                                       name='ds_report_postprocessing',
-                                       run_without_submitting=False)
+        name='ds_report_postprocessing',
+        un_without_submitting=False)
 
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
         desc='connectvityplot',
         datatype="figures"),
-                                     name='ds_report_connectivity',
-                                     run_without_submitting=False)
+        name='ds_report_connectivity',
+        run_without_submitting=False)
 
     ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                      source_file=bold_file,
