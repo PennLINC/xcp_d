@@ -29,8 +29,7 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         exists=True,
         position=2,
         argstr=" %s",
-        desc=
-        " the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
+        desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
     )
 
     metric = traits.Str(argstr=" %s ",

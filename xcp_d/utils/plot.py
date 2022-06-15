@@ -225,9 +225,7 @@ def confoundplot(tseries,
     stats_label = (r'max: {max:.3f}{units} $\bullet$ mean: {mean:.3f}{units} '
                    r'$\bullet$ $\sigma$: {sigma:.3f}').format(max=maxv,
                                                               mean=mean,
-                                                              units=units
-                                                              or '',
-                                                              sigma=stdv)
+                                                              units=units or '', sigma=stdv)
     ax_ts.annotate(stats_label,
                    xy=(0.98, 0.7),
                    xycoords='axes fraction',

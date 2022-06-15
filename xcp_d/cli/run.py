@@ -33,8 +33,8 @@ def check_deps(workflow):
     from nipype.utils.filemanip import which
     return sorted((node.interface.__class__.__name__, node.interface._cmd)
                   for node in workflow._get_all_nodes()
-                  if (hasattr(node.interface, '_cmd')
-                      and which(node.interface._cmd.split()[0]) is None))
+                  if (hasattr(node.interface, '_cmd') and which
+                  (node.interface._cmd.split()[0]) is None))
 
 
 def get_parser():
@@ -42,15 +42,13 @@ def get_parser():
 
     from packaging.version import Version
     from ..__about__ import __version__
-    from .version import check_latest, is_flagged
 
     verstr = 'xcp_d v{}'.format(__version__)
     currentv = Version(__version__)
 
     parser = ArgumentParser(
         description='xcp_d postprocessing workflow of fMRI data',
-        epilog=
-        'see https://xcp-d.readthedocs.io/en/latest/generalworkflow.html',
+        epilog='see https://xcp-d.readthedocs.io/en/latest/generalworkflow.html',
         formatter_class=ArgumentDefaultsHelpFormatter)
 
     # important parameters required
@@ -133,8 +131,7 @@ def get_parser():
         default='fmriprep',
         type=str,
         choices=['fmirprep', 'dcan', 'hpc'],
-        help=
-        'fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
+        help='fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
 
     g_param = parser.add_argument_group('Parameters for postprocessing')
 
@@ -158,8 +155,7 @@ def get_parser():
             'aroma_gsr', 'custom'
         ],
         type=str,
-        help=
-        'nuissance parameters to be selected, other options include 24P and 36P \
+        help='nuissance parameters to be selected, other options include 24P and 36P \
                                            acompcor and aroma, see Ciric etal 2007'
     )
     g_param.add_argument(
@@ -174,8 +170,7 @@ def get_parser():
         '--dummytime',
         default=0,
         type=float,
-        help=
-        'first volume in seconds to be removed or skipped before postprocessing'
+        help='first volume in seconds to be removed or skipped before postprocessing'
     )
 
     g_filter = parser.add_argument_group(
@@ -210,25 +205,24 @@ def get_parser():
         type=int,
         help='number of filter coefficients for butterworth bandpass filter')
 
-
-    g_filter.add_argument('--motion-filter-type', action='store',type=str,default='None',
-                         choices=['lp','notch'],
-                         help='type of band-stop filter to use for removing respiratory' \
-                                 'artifact from motion regressors')
+    g_filter.add_argument('--motion-filter-type', action='store', type=str, default='None',
+                          choices=['lp', 'notch'],
+                          help='type of band-stop filter to use for removing respiratory'
+                               'artifact from motion regressors')
     g_filter.add_argument(
         '--band-stop-min',
         default=0,
         type=float,
-        help=
-        'lower frequency (bpm) for the band-stop motion filter. see documentation for more details'
+        help='lower frequency (bpm) for the band-stop motion filter.'
+        'see documentation for more details'
     )
 
     g_filter.add_argument(
         '--band-stop-max',
         default=0,
         type=float,
-        help=
-        'upper frequency (bpm) for the band-stop motion filter.see documentation for more details'
+        help='upper frequency (bpm) for the band-stop motion filter.'
+        'see documentation for more details'
     )
 
     g_filter.add_argument(
@@ -243,8 +237,8 @@ def get_parser():
         '--head_radius',
         default=50,
         type=float,
-        help=
-        'head radius for computing FD, deafult is 50mm, 35mm  is recommended for baby'
+        help='head radius for computing FD, deafult is 50mm,'
+        '35mm is recommended for baby'
     )
 
     g_censor.add_argument(
@@ -273,8 +267,7 @@ def get_parser():
         '--resource-monitor',
         action='store_true',
         default=False,
-        help=
-        'enable Nipype\'s resource monitoring to keep track of memory and CPU usage'
+        help='enable Nipype\'s resource monitoring to keep track of memory and CPU usage'
     )
 
     g_other.add_argument('--notrack',
@@ -550,20 +543,20 @@ def build_workflow(opts, retval):
             }
         }
 
-    #nthreads = plugin_settings['plugin_args'].get('n_procs')
+    # nthreads = plugin_settings['plugin_args'].get('n_procs')
     # Permit overriding plugin config with specific CLI options
-    #if nthreads is None or opts.nthreads is not None:
+    # if nthreads is None or opts.nthreads is not None:
     nthreads = opts.nthreads
-    #if nthreads is None or nthreads < 1:
-    #nthreads = cpu_count()
-    #plugin_settings['plugin_args']['n_procs'] = nthreads
+    # if nthreads is None or nthreads < 1:
+    # nthreads = cpu_count()
+    # plugin_settings['plugin_args']['n_procs'] = nthreads
 
     if opts.mem_gb:
         plugin_settings['plugin_args']['memory_gb'] = opts.mem_gb
 
     omp_nthreads = opts.omp_nthreads
-    #if omp_nthreads == 0:
-    #omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
+    # if omp_nthreads == 0:
+    # omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
     if (nthreads == 1) or (omp_nthreads > nthreads):
         omp_nthreads = 1
 

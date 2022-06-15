@@ -270,8 +270,7 @@ def extract_t1w_seg(subj_data):
     all_seg = subj_data['seg']
     for j in all_seg:
         ii = os.path.basename(j)
-        if not (fnmatch.fnmatch(ii, '*_space-*')
-                or fnmatch.fnmatch(ii, '*aseg*')):
+        if not (fnmatch.fnmatch(ii, '*_space-*') or fnmatch.fnmatch(ii, '*aseg*')):
             t1seg = j
 
     return t1w, t1seg
@@ -287,8 +286,7 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec,
     compress = InputMultiObject(
         traits.Either(None, traits.Bool),
         usedefault=True,
-        desc=
-        "whether ``in_file`` should be compressed (True), uncompressed (False) "
+        desc="whether ``in_file`` should be compressed (True), uncompressed (False) "
         "or left unmodified (None, default).",
     )
     data_dtype = Str(
@@ -316,8 +314,7 @@ class _DerivativesDataSinkOutputSpec(TraitedSpec):
         File(exists=True, desc="written JSON sidecar path"))
     compression = OutputMultiObject(
         traits.Either(None, traits.Bool),
-        desc=
-        "whether ``in_file`` should be compressed (True), uncompressed (False) "
+        desc="whether ``in_file`` should be compressed (True), uncompressed (False) "
         "or left unmodified (None).",
     )
     fixed_hdr = traits.List(traits.Bool,
@@ -343,8 +340,7 @@ class DerivativesDataSink(SimpleInterface):
 
     def __init__(self, allowed_entities=None, out_path_base=None, **inputs):
         """Initialize the SimpleInterface and extend inputs with custom entities."""
-        self._allowed_entities = set(allowed_entities
-                                     or []).union(self._allowed_entities)
+        self._allowed_entities = set(allowed_entities or []).union(self._allowed_entities)
         if out_path_base:
             self.out_path_base = out_path_base
 

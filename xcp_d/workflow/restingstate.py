@@ -91,7 +91,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['alff_out', 'smoothed_alff', 'alffhtml']),
-                         name='outputnode')
+        name='outputnode')
 
     alff_compt = pe.Node(computealff(tr=TR, lowpass=lowpass,
                                      highpass=highpass),

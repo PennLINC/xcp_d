@@ -177,24 +177,24 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
                 "volume": "MNI152NLin6Asym"
             }
 
-            boldname = func_dir + sub_id+'_' + ses_id + '_task-'+taskname + \
+            boldname = func_dir + sub_id + '_' + ses_id + '_task-' + taskname + \
                 run_id + '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
-            boldjson = func_dir + sub_id+'_' + ses_id + '_task-'+taskname + \
+            boldjson = func_dir + sub_id + '_' + ses_id + '_task-' + taskname + \
                 run_id + '_space-MNI152NLin6Asym_desc-preproc_bold.json'
-            confreg = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            confreg = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_desc-confounds_timeseries.tsv'
-            confregj = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            confregj = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_desc-confounds_timeseries.json'
-            boldref = func_dir + sub_id+'_' + ses_id + '_task-' + \
-                taskname + run_id+'_space-MNI152NLin6A' \
-                                  'sym_boldref.nii.gz'
-            dttseriesx = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            boldref = func_dir + sub_id + '_' + ses_id + '_task-' + \
+                taskname + run_id + '_space-MNI152NLin6A' \
+                                    'sym_boldref.nii.gz'
+            dttseriesx = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_space-fsLR_den-91k_bold.dtseries.nii'
-            dttseriesj = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            dttseriesj = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_space-fsLR_den-91k_bold.dtseries.json'
-            native2t1w = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            native2t1w = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_from-scanner_to-T1w_mode-image_xfm.txt'
-            t12native = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            t12native = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_from-T1w_to-scanner_mode-image_xfm.txt'
 
             # maske  coreg files here

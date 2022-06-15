@@ -63,7 +63,7 @@ def compute_2d_reho(datat, adjacency_matrix):
         rankmean = np.sum(rankeddata, axis=0)
 
         KC = np.sum(np.power(rankmean, 2)) - \
-            timepoint*np.power(np.mean(rankmean), 2)
+            timepoint * np.power(np.mean(rankmean), 2)
 
         denom = np.power(neigbor, 2) * (np.power(timepoint, 3) - timepoint)
 

@@ -152,13 +152,13 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         # functional files
         hcp_ref = k + '/' + filenamex + '_SBRef.nii.gz'
-        prep_ref = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-MNI152NLin6Asym_boldref.nii.gz'
+        prep_ref = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-MNI152NLin6Asym_boldref.nii.gz'
 
         # create/copy  cifti
         ciftip = k + '/' + filenamex + '_Atlas_MSMAll.dtseries.nii'
-        ciftib = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-fsLR_den-91k_bold.dtseries.nii'
+        ciftib = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-fsLR_den-91k_bold.dtseries.nii'
 
         niftip = k + '/' + filenamex + '.nii.gz'
         tr = nb.load(niftip).header.get_zooms()[-1]  # repetition time
@@ -173,10 +173,10 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
             "volume": "MNI152NLin6Asym"
         }
 
-        boldjson = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-MNI152NLin6Asym_desc-preproc_bold.json'
-        ciftijson = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-fsLR_den-91k_bold.dtseries.json'
+        boldjson = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-MNI152NLin6Asym_desc-preproc_bold.json'
+        ciftijson = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-fsLR_den-91k_bold.dtseries.json'
 
         writejson(jsontis, boldjson)
         writejson(json2, ciftijson)
