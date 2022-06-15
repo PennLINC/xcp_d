@@ -377,8 +377,14 @@ def get_segfile(bold_file):
     transformfilex = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1,
                                        t1w_to_native=_t12native(bold_file))
 
+<<<<<<< HEAD
     boldref = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
     segfile = tempfile.mkdtemp() + 'segfile.nii.gz'
+=======
+    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0]+'boldref.nii.gz'
+
+    segfile = tempfile.mkdtemp()+'segfile.nii.gz'
+>>>>>>> baa8616d4c12f0b3707cb783ad42fd12e2b788f4
     carpet = str(get_template('MNI152NLin2009cAsym', resolution=1, desc='carpet',
                               suffix='dseg', extension=['.nii', '.nii.gz']))
 
