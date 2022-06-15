@@ -5,6 +5,7 @@
 from nipype.interfaces.workbench.base import WBCommand
 from nipype.interfaces.base import TraitedSpec, File, traits, CommandLineInputSpec
 from nipype import logging
+
 iflogger = logging.getLogger("nipype.interface")
 
 
@@ -28,15 +29,14 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         exists=True,
         position=2,
         argstr=" %s",
-        desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
+        desc=
+        " the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
     )
 
-    metric = traits.Str(
-        argstr=" %s ",
-        position=3,
-        desc=" fixed for anatomic",
-        default="  BARYCENTRIC  "
-    )
+    metric = traits.Str(argstr=" %s ",
+                        position=3,
+                        desc=" fixed for anatomic",
+                        default="  BARYCENTRIC  ")
 
     out_file = File(
         name_source=["in_file"],

@@ -27,33 +27,31 @@ from ..interfaces import SubjectSummary, AboutSummary
 from ..utils import bid_derivative
 
 
-def init_xcpd_wf(
-        layout,
-        lower_bpf,
-        upper_bpf,
-        despike,
-        bpf_order,
-        motion_filter_order,
-        motion_filter_type,
-        band_stop_min,
-        band_stop_max,
-        bandpass_filter,
-        fmri_dir,
-        omp_nthreads,
-        cifti,
-        task_id,
-        head_radius,
-        params,
-        subject_list,
-        smoothing,
-        custom_conf,
-        output_dir,
-        work_dir,
-        dummytime,
-        fd_thresh,
-        input_type='fmriprep',
-        name='xcpabcd_wf'):
-
+def init_xcpd_wf(layout,
+                 lower_bpf,
+                 upper_bpf,
+                 despike,
+                 bpf_order,
+                 motion_filter_order,
+                 motion_filter_type,
+                 band_stop_min,
+                 band_stop_max,
+                 bandpass_filter,
+                 fmri_dir,
+                 omp_nthreads,
+                 cifti,
+                 task_id,
+                 head_radius,
+                 params,
+                 subject_list,
+                 smoothing,
+                 custom_conf,
+                 output_dir,
+                 work_dir,
+                 dummytime,
+                 fd_thresh,
+                 input_type='fmriprep',
+                 name='xcpabcd_wf'):
     """
     This workflow builds and organizes  execution of  xcp_d  pipeline.
     It is also connect the subworkflows under the xcp_d
@@ -172,9 +170,8 @@ def init_xcpd_wf(
             input_type=input_type,
             name="single_subject_" + subject_id + "_wf")
 
-        single_subj_wf.config['execution']['crashdump_dir'] = (
-            os.path.join(output_dir, "xcp_d", "sub-" + subject_id, 'log')
-        )
+        single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
+            output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
         xcpabcd_wf.add_nodes([single_subj_wf])
@@ -182,32 +179,12 @@ def init_xcpd_wf(
     return xcpabcd_wf
 
 
-def init_subject_wf(
-        layout,
-        lower_bpf,
-        upper_bpf,
-        bpf_order,
-        motion_filter_order,
-        motion_filter_type,
-        bandpass_filter,
-        band_stop_min,
-        band_stop_max,
-        fmri_dir,
-        omp_nthreads,
-        subject_id,
-        cifti,
-        despike,
-        head_radius,
-        params,
-        dummytime,
-        fd_thresh,
-        task_id,
-        smoothing,
-        custom_conf,
-        output_dir,
-        input_type,
-        name):
-
+def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
+                    motion_filter_order, motion_filter_type, bandpass_filter,
+                    band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
+                    subject_id, cifti, despike, head_radius, params, dummytime,
+                    fd_thresh, task_id, smoothing, custom_conf, output_dir,
+                    input_type, name):
     """This workflow organizes the postprocessing pipeline for a single subject
 
     # RF: this is the wrong function
@@ -289,11 +266,10 @@ def init_subject_wf(
 
     """
 
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir,
-        participant_label=subject_id,
-        task=task_id,
-        bids_validate=False)
+    layout, subj_data = collect_data(bids_dir=fmri_dir,
+                                     participant_label=subject_id,
+                                     task=task_id,
+                                     bids_validate=False)
 
     regfile = select_registrationfile(subj_data=subj_data)
     subject_data = select_cifti_bold(subj_data=subj_data)
@@ -301,7 +277,7 @@ def init_subject_wf(
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_conf', 'mni_to_t1w', 't1w', 't1seg']),
-        name='inputnode')
+                        name='inputnode')
     inputnode.inputs.custom_conf = custom_conf
     inputnode.inputs.t1w = t1wseg[0]
     inputnode.inputs.t1seg = t1wseg[1]
@@ -315,7 +291,8 @@ def init_subject_wf(
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of fMRIPrep version {fvers} [@fmriprep1].
 XCP was built with *Nipype* {nipype_ver} [@nipype1].
-""".format(input_type=input_type, nipype_ver=nipype_ver,
+""".format(input_type=input_type,
+           nipype_ver=nipype_ver,
            fvers=getfmriprepv(fmri_dir=fmri_dir))
 
     workflow.__postdesc__ = """
@@ -336,25 +313,20 @@ It is released under the [CC0]\
 
 """
 
-    summary = pe.Node(
-        SubjectSummary(
-            subject_id=subject_id,
-            bold=subject_data[0]),
-        name='summary')
+    summary = pe.Node(SubjectSummary(subject_id=subject_id,
+                                     bold=subject_data[0]),
+                      name='summary')
 
-    about = pe.Node(
-        AboutSummary(
-            version=__version__,
-            command=' '.join(sys.argv)),
-        name='about')
+    about = pe.Node(AboutSummary(version=__version__,
+                                 command=' '.join(sys.argv)),
+                    name='about')
 
-    ds_report_summary = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=subject_data[0][0],
-            desc='summary',
-            datatype="figures"),
-        name='ds_report_summary')
+    ds_report_summary = pe.Node(DerivativesDataSink(
+        base_directory=output_dir,
+        source_file=subject_data[0][0],
+        desc='summary',
+        datatype="figures"),
+                                name='ds_report_summary')
 
     anatomical_wf = init_anatomical_wf(
         omp_nthreads=omp_nthreads,
@@ -367,20 +339,18 @@ It is released under the [CC0]\
 
     # send t1w and t1seg to anatomical workflow
     workflow.connect([
-          (inputnode, anatomical_wf, [
-              ('t1w', 'inputnode.t1w'),
-              ('t1seg', 'inputnode.t1seg')]),
-      ])
+        (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                    ('t1seg', 'inputnode.t1seg')]),
+    ])
 
     # loop over each bold data to be postprocessed
     # RF: get rid of ii's
     if cifti:
         ii = 0
         for cifti_file in subject_data[1]:
-            ii = ii+1
-            custom_confx = get_customfile(
-                custom_conf=custom_conf,
-                bold_file=cifti_file)
+            ii = ii + 1
+            custom_confx = get_customfile(custom_conf=custom_conf,
+                                          bold_file=cifti_file)
             cifti_postproc_wf = init_ciftipostprocess_wf(
                 cifti_file=cifti_file,
                 lower_bpf=lower_bpf,
@@ -405,25 +375,23 @@ It is released under the [CC0]\
                 output_dir=output_dir,
                 name='cifti_postprocess_' + str(ii) + '_wf')
 
-            ds_report_about = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=cifti_file,
-                    desc='about',
-                    datatype="figures",),
-                name='ds_report_about',
-                run_without_submitting=True)
-            workflow.connect([
-                (inputnode, cifti_postproc_wf, [
-                    ('custom_conf', 'inputnode.custom_conf'),
-                    ('t1w', 'inputnode.t1w'),
-                    ('t1seg', 'inputnode.t1seg')])
-            ])
+            ds_report_about = pe.Node(DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=cifti_file,
+                desc='about',
+                datatype="figures",
+            ),
+                                      name='ds_report_about',
+                                      run_without_submitting=True)
+            workflow.connect([(inputnode, cifti_postproc_wf,
+                               [('custom_conf', 'inputnode.custom_conf'),
+                                ('t1w', 'inputnode.t1w'),
+                                ('t1seg', 'inputnode.t1seg')])])
 
     else:
         ii = 0
         for bold_file in subject_data[0]:
-            ii = ii+1
+            ii = ii + 1
             custom_confx = get_customfile(custom_conf=custom_conf,
                                           bold_file=bold_file)
             bold_postproc_wf = init_boldpostprocess_wf(
@@ -451,23 +419,20 @@ It is released under the [CC0]\
                 mni_to_t1w=mni_to_t1w,
                 name='bold_postprocess_' + str(ii) + '_wf')
 
-            ds_report_about = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=bold_file,
-                    desc='about',
-                    datatype="figures"),
-                name='ds_report_about',
-                run_without_submitting=True)
-            workflow.connect([
-                (inputnode, bold_postproc_wf, [
-                    ('mni_to_t1w', 'inputnode.mni_to_t1w'),
-                    ('t1w', 'inputnode.t1w'),
-                    ('t1seg', 'inputnode.t1seg')])
-             ])
-    workflow.connect([
-        (summary, ds_report_summary, [('out_report', 'in_file')]),
-        (about, ds_report_about, [('out_report', 'in_file')])])
+            ds_report_about = pe.Node(DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                desc='about',
+                datatype="figures"),
+                                      name='ds_report_about',
+                                      run_without_submitting=True)
+            workflow.connect([(inputnode, bold_postproc_wf,
+                               [('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                                ('t1w', 'inputnode.t1w'),
+                                ('t1seg', 'inputnode.t1seg')])])
+    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
+                                                    ]),
+                      (about, ds_report_about, [('out_report', 'in_file')])])
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = 'xcp_d'
@@ -506,7 +471,7 @@ def getfmriprepv(fmri_dir):
     get fmriprep/nibabies/dcan/hcp version
     """
 
-    datax = glob.glob(fmri_dir+'/dataset_description.json')
+    datax = glob.glob(fmri_dir + '/dataset_description.json')
 
     if datax:
         datax = datax[0]
