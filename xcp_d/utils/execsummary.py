@@ -39,7 +39,7 @@ def surf2vol(template, left_surf, right_surf, filename, scale=1):
     indices[2, np.where(indices[2] >= t1_image.shape[2])] = 0
     overlay[tuple(indices.tolist())] = 1
 
-    overlay_image = nb.Nifti1Image(overlay*scale, affine=t1_image.affine)
+    overlay_image = nb.Nifti1Image(overlay * scale, affine=t1_image.affine)
 
     nb.save(overlay_image, filename)
 
@@ -55,8 +55,11 @@ def get_regplot(brain, overlay, out_file, cuts=3, order=("x", "y", "z")):
     overlay = nb.load(overlay)
     from niworkflows.viz.utils import cuts_from_bbox
     cuts = cuts_from_bbox(overlay, cuts=cuts)
-    filex_plot = plot_registrationx(anat_nii=brain, contour=overlay,
-                                    div_id='', cuts=cuts, order=order)
+    filex_plot = plot_registrationx(anat_nii=brain,
+                                    contour=overlay,
+                                    div_id='',
+                                    cuts=cuts,
+                                    order=order)
     compose_view(bg_svgs=filex_plot, fg_svgs=None, out_file=out_file)
 
     return out_file
@@ -83,7 +86,8 @@ def plot_registrationx(
 
     out_files = []
     if estimate_brightness:
-        plot_params = robust_set_limits(anat_nii.get_fdata().reshape(-1), plot_params)
+        plot_params = robust_set_limits(anat_nii.get_fdata().reshape(-1),
+                                        plot_params)
 
     # FreeSurfer ribbon.mgz
     contour_data = contour.get_fdata()
@@ -118,11 +122,19 @@ def generate_brain_sprite(template_image, stat_map, out_file):
     file_template = pkgrf("xcp_d", 'data/transform/brainsprite_template.html')
     template = tempita.Template.from_filename(file_template, encoding="utf-8")
 
-    bsprite = viewer_substitute(cmap='hsv', symmetric_cmap=False, black_bg=True,
-                                vmin=-1, vmax=3, value=False, colorbar=False)
+    bsprite = viewer_substitute(cmap='hsv',
+                                symmetric_cmap=False,
+                                black_bg=True,
+                                vmin=-1,
+                                vmax=3,
+                                value=False,
+                                colorbar=False)
     bsprite.fit(stat_map_img=stat_map, bg_img=template_image)
 
-    viewer = bsprite.transform(template=template, javascript='js', html='html', library='bsprite')
+    viewer = bsprite.transform(template=template,
+                               javascript='js',
+                               html='html',
+                               library='bsprite')
     viewer.save_as_html(out_file)
 
     return out_file
@@ -149,7 +161,7 @@ def ribbon_to_statmap(ribbon, outfile):
     datapial = _get_contour(pial.get_fdata())
     datawhite = _get_contour(white.get_fdata())
 
-    datax = 2*datapial + datawhite
+    datax = 2 * datapial + datawhite
 
     # save the output
     ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)
@@ -182,10 +194,10 @@ def _get_contour(datax):
 
     # for yz plane
     # for i in range(dims[2]):
-        # con = measure.find_contours(datax[:,:,i],fully_connected='low')
-        # conx =np.zeros_like(datax[:,:,i])
-        # for cx in con:
-        # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-        # contour[:,:,i]= conx
+    # con = measure.find_contours(datax[:,:,i],fully_connected='low')
+    # conx =np.zeros_like(datax[:,:,i])
+    # for cx in con:
+    # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
+    # contour[:,:,i]= conx
 
     return contour

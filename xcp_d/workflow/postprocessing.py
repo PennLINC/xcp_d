@@ -21,25 +21,24 @@ from nipype.interfaces.fsl import Smooth
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 
-def init_post_process_wf(
-        mem_gb,
-        TR,
-        head_radius,
-        lower_bpf,
-        upper_bpf,
-        bpf_order,
-        smoothing,
-        bold_file,
-        params,
-        motion_filter_type,
-        band_stop_max,
-        band_stop_min,
-        motion_filter_order,
-        contigvol,
-        cifti=False,
-        dummytime=0,
-        fd_thresh=0,
-        name="post_process_wf"):
+def init_post_process_wf(mem_gb,
+                         TR,
+                         head_radius,
+                         lower_bpf,
+                         upper_bpf,
+                         bpf_order,
+                         smoothing,
+                         bold_file,
+                         params,
+                         motion_filter_type,
+                         band_stop_max,
+                         band_stop_min,
+                         motion_filter_order,
+                         contigvol,
+                         cifti=False,
+                         dummytime=0,
+                         fd_thresh=0,
+                         name="post_process_wf"):
     """
     This workflow is organizing workflows including
     selectign confound matrix, regression and filtering
@@ -158,74 +157,73 @@ confound matrices of fMRIPrep output.  These nuissance regressors were regressed
 out from the bold data with *LinearRegression* as implemented in Scikit-Learn
 {sclver} [@scikit-learn].  The residual were then  band pass filtered within the
 frequency band {highpass}-{lowpass} Hz.
- """.format(regressors=stringforparams(params=params), sclver=sklearn.__version__,
-            lowpass=upper_bpf, highpass=lower_bpf)
+ """.format(regressors=stringforparams(params=params),
+            sclver=sklearn.__version__,
+            lowpass=upper_bpf,
+            highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold', 'bold_file', 'bold_mask', 'custom_conf']), name='inputnode')
+        fields=['bold', 'bold_file', 'bold_mask', 'custom_conf']),
+        name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['processed_bold', 'smoothed_bold', 'tmask', 'fd']), name='outputnode')
+        fields=['processed_bold', 'smoothed_bold', 'tmask', 'fd']),
+        name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
-    confoundmat = pe.Node(
-        ConfoundMatrix(
-            head_radius=head_radius,
-            params=params,
-            custom_conf=inputnode.inputs.custom_conf,
-            filtertype=motion_filter_type,
-            cutoff=band_stop_max,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min, TR=TR,
-            filterorder=motion_filter_order),
-        name="ConfoundMatrix", mem_gb=0.1*mem_gb)
+    confoundmat = pe.Node(ConfoundMatrix(
+        head_radius=head_radius,
+        params=params,
+        custom_conf=inputnode.inputs.custom_conf,
+        filtertype=motion_filter_type,
+        cutoff=band_stop_max,
+        low_freq=band_stop_max,
+        high_freq=band_stop_min,
+        TR=TR,
+        filterorder=motion_filter_order),
+        name="ConfoundMatrix",
+        mem_gb=0.1 * mem_gb)
 
-    filterdx = pe.Node(
-        FilteringData(
-            tr=TR,
-            lowpass=upper_bpf,
-            highpass=lower_bpf,
-            filter_order=bpf_order),
-        name="filter_the_data",
-        mem_gb=0.25*mem_gb)
+    filterdx = pe.Node(FilteringData(tr=TR,
+                                     lowpass=upper_bpf,
+                                     highpass=lower_bpf,
+                                     filter_order=bpf_order),
+                       name="filter_the_data",
+                       mem_gb=0.25 * mem_gb)
 
-    regressy = pe.Node(
-        regress(tr=TR),
-        name="regress_the_data",
-        mem_gb=0.25*mem_gb)
+    regressy = pe.Node(regress(tr=TR),
+                       name="regress_the_data",
+                       mem_gb=0.25 * mem_gb)
 
-    censor_scrubwf = pe.Node(
-        censorscrub(
-            fd_thresh=fd_thresh,
-            TR=TR,
-            head_radius=head_radius,
-            contig=contigvol,
-            time_todrop=dummytime),
-        name="censor_scrub",
-        mem_gb=0.1*mem_gb)
+    censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,
+                                         TR=TR,
+                                         head_radius=head_radius,
+                                         contig=contigvol,
+                                         time_todrop=dummytime),
+                             name="censor_scrub",
+                             mem_gb=0.1 * mem_gb)
 
     # RF: rename to match
-    interpolatewf = pe.Node(
-        interpolate(TR=TR),
-        name="interpolation",
-        mem_gb=0.25*mem_gb)
+    interpolatewf = pe.Node(interpolate(TR=TR),
+                            name="interpolation",
+                            mem_gb=0.25 * mem_gb)
 
     if dummytime > 0:
-        rm_dummytime = pe.Node(
-            removeTR(time_todrop=dummytime, TR=TR),
-            name="remove_dummy_time",
-            mem_gb=0.1*mem_gb)
+        rm_dummytime = pe.Node(removeTR(time_todrop=dummytime, TR=TR),
+                               name="remove_dummy_time",
+                               mem_gb=0.1 * mem_gb)
 
     # get the confound matrix
     workflow.connect([
         # connect bold confound matrix to extract confound matrix
-        (inputnode, confoundmat, [('bold_file', 'in_file')])])
+        (inputnode, confoundmat, [('bold_file', 'in_file')])
+    ])
 
     if dummytime > 0:
         workflow.connect([
             (confoundmat, rm_dummytime, [('confound_file', 'fmriprep_conf')]),
-            (inputnode, rm_dummytime, [
-                ('bold', 'bold_file'),
-                ('bold_mask', 'mask_file')])])
+            (inputnode, rm_dummytime, [('bold', 'bold_file'),
+                                       ('bold_mask', 'mask_file')])
+        ])
 
         # if inputnode.inputs.custom_conf:
         #    workflow.connect([ (inputnode, rm_dummytime, [('custom_conf', 'custom_conf')]),
@@ -235,15 +233,14 @@ frequency band {highpass}-{lowpass} Hz.
         # 'custom_conf')]),])
 
         workflow.connect([
-            (rm_dummytime, censor_scrubwf, [
-                ('bold_file_TR', 'in_file'),
-                ('fmrip_confdropTR', 'fmriprep_conf')]),
-            (inputnode, censor_scrubwf, [
-                ('bold_file', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
-            (censor_scrubwf, regressy, [
-                ('bold_censored', 'in_file'),
-                ('fmriprepconf_censored', 'confounds')]),
+            (rm_dummytime, censor_scrubwf, [('bold_file_TR', 'in_file'),
+                                            ('fmrip_confdropTR',
+                                             'fmriprep_conf')]),
+            (inputnode, censor_scrubwf, [('bold_file', 'bold_file'),
+                                         ('bold_mask', 'mask_file')]),
+            (censor_scrubwf, regressy, [('bold_censored', 'in_file'),
+                                        ('fmriprepconf_censored', 'confounds')
+                                        ]),
             (inputnode, regressy, [('bold_mask', 'mask')]),
             (inputnode, filterdx, [('bold_mask', 'mask')]),
             (inputnode, interpolatewf, [('bold_mask', 'mask_file')]),
@@ -253,21 +250,22 @@ frequency band {highpass}-{lowpass} Hz.
             (inputnode, interpolatewf, [('bold_file', 'bold_file')]),
             (interpolatewf, filterdx, [('bold_interpolated', 'in_file')]),
             (filterdx, outputnode, [('filt_file', 'processed_bold')]),
-            (censor_scrubwf, outputnode, [('fd_timeseries', 'fd')])])
+            (censor_scrubwf, outputnode, [('fd_timeseries', 'fd')])
+        ])
     else:
         # if inputnode.inputs.custom_conf:
         #         workflow.connect([
         #             (inputnode, censor_scrubwf, [('custom_conf', 'custom_conf')]),
         #              (censor_scrubwf, regressy, [('customconf_censored', 'custom_conf')]) ])
         workflow.connect([
-            (inputnode, censor_scrubwf, [
-                ('bold', 'in_file'),
-                ('bold_file', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
-            (confoundmat, censor_scrubwf, [('confound_file', 'fmriprep_conf')]),
-            (censor_scrubwf, regressy, [
-                ('bold_censored', 'in_file'),
-                ('fmriprepconf_censored', 'confounds')]),
+            (inputnode, censor_scrubwf, [('bold', 'in_file'),
+                                         ('bold_file', 'bold_file'),
+                                         ('bold_mask', 'mask_file')]),
+            (confoundmat, censor_scrubwf, [('confound_file', 'fmriprep_conf')
+                                           ]),
+            (censor_scrubwf, regressy, [('bold_censored', 'in_file'),
+                                        ('fmriprepconf_censored', 'confounds')
+                                        ]),
             (inputnode, regressy, [('bold_mask', 'mask')]),
             (inputnode, interpolatewf, [('bold_mask', 'mask_file')]),
             (regressy, interpolatewf, [('res_file', 'in_file')]),
@@ -277,41 +275,49 @@ frequency band {highpass}-{lowpass} Hz.
             (interpolatewf, filterdx, [('bold_interpolated', 'in_file')]),
             (filterdx, outputnode, [('filt_file', 'processed_bold')]),
             (inputnode, filterdx, [('bold_mask', 'mask')]),
-            (censor_scrubwf, outputnode, [('fd_timeseries', 'fd')])])
+            (censor_scrubwf, outputnode, [('fd_timeseries', 'fd')])
+        ])
 
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
             workflow.__desc__ = workflow.__desc__ + """
 The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm .
-"""         .format(kernelsize=str(smoothing))
-            smooth_data = pe.Node(
-                CiftiSmooth(
-                    sigma_surf=sigma_lx,
-                    sigma_vol=sigma_lx,
-                    direction='COLUMN',
-                    right_surf=str(get_template(
-                        "fsLR", hemi='R', suffix='sphere', density='32k')[0]),
-                    left_surf=str(get_template(
-                       "fsLR", hemi='L', suffix='sphere', density='32k')[0])),
+""".format(kernelsize=str(smoothing))
+            smooth_data = pe.Node(CiftiSmooth(
+                sigma_surf=sigma_lx,
+                sigma_vol=sigma_lx,
+                direction='COLUMN',
+                right_surf=str(
+                    get_template("fsLR",
+                                 hemi='R',
+                                 suffix='sphere',
+                                 density='32k')[0]),
+                left_surf=str(
+                    get_template("fsLR",
+                                 hemi='L',
+                                 suffix='sphere',
+                                 density='32k')[0])),
                 name="cifti_smoothing",
                 mem_gb=mem_gb)
             workflow.connect([
-                   (filterdx, smooth_data, [('filt_file', 'in_file')]),
-                   (smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
+                (filterdx, smooth_data, [('filt_file', 'in_file')]),
+                (smooth_data, outputnode, [('out_file', 'smoothed_bold')])
+            ])
 
         else:
             workflow.__desc__ = workflow.__desc__ + """
 The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm.
-"""         .format(kernelsize=str(smoothing))
-            smooth_data = pe.Node(
-                Smooth(output_type='NIFTI_GZ', fwhm=smoothing),
-                name="nifti_smoothing", mem_gb=mem_gb)
+""".format(kernelsize=str(smoothing))
+            smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
+                                         fwhm=smoothing),
+                                  name="nifti_smoothing",
+                                  mem_gb=mem_gb)
 
             workflow.connect([
-                   (filterdx, smooth_data, [('filt_file', 'in_file')]),
-                   (smooth_data, outputnode, [('smoothed_file', 'smoothed_bold')])
-                     ])
+                (filterdx, smooth_data, [('filt_file', 'in_file')]),
+                (smooth_data, outputnode, [('smoothed_file', 'smoothed_bold')])
+            ])
 
     return workflow
 
@@ -320,15 +326,14 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def init_censoring_wf(
-        mem_gb,
-        TR,
-        head_radius,
-        custom_conf,
-        omp_nthreads,
-        dummytime=0,
-        fd_thresh=0,
-        name='censoring'):
+def init_censoring_wf(mem_gb,
+                      TR,
+                      head_radius,
+                      custom_conf,
+                      omp_nthreads,
+                      dummytime=0,
+                      fd_thresh=0,
+                      name='censoring'):
     """Creates a workflow that censors volumes in a BOLD dataset.
 
     This workflow does two steps: removing dummy volumes and censoring noisy
@@ -372,126 +377,117 @@ def init_censoring_wf(
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=['bold', 'bold_file', 'bold_mask', 'confound_file']),
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['bold', 'bold_file', 'bold_mask', 'confound_file']),
         name='inputnode')
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=['bold_censored', 'fmriprepconf_censored', 'tmask', 'fd',
-                    'customconf_censored']),
+    outputnode = pe.Node(niu.IdentityInterface(fields=[
+        'bold_censored', 'fmriprepconf_censored', 'tmask', 'fd',
+        'customconf_censored'
+    ]),
         name='outputnode')
 
-    censor_scrub = pe.Node(
-        censorscrub(
-            fd_thresh=fd_thresh,
-            TR=TR,
-            head_radius=head_radius,
-            time_todrop=dummytime,
-            custom_conf=custom_conf),
-        name="censor_scrub",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads)
+    censor_scrub = pe.Node(censorscrub(fd_thresh=fd_thresh,
+                                       TR=TR,
+                                       head_radius=head_radius,
+                                       time_todrop=dummytime,
+                                       custom_conf=custom_conf),
+                           name="censor_scrub",
+                           mem_gb=mem_gb,
+                           n_procs=omp_nthreads)
 
-    dummy_scan_wf = pe.Node(
-        removeTR(time_todrop=dummytime, TR=TR),
-        name="remove_dummy_time",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads)
+    dummy_scan_wf = pe.Node(removeTR(time_todrop=dummytime, TR=TR),
+                            name="remove_dummy_time",
+                            mem_gb=mem_gb,
+                            n_procs=omp_nthreads)
 
     if dummytime > 0:
         workflow.connect([
             (inputnode, dummy_scan_wf, [('confound_file', 'fmriprep_conf')]),
-            (inputnode, dummy_scan_wf, [
-                ('bold', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
-            (dummy_scan_wf, censor_scrub, [
-                ('bold_file_TR', 'in_file'),
-                ('fmrip_confdropTR', 'fmriprep_conf')]),
-            (inputnode, censor_scrub, [
-                ('bold_file', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
-            (censor_scrub, outputnode, [
-                ('bold_censored', 'bold_censored'),
-                ('fmriprepconf_censored', 'fmriprepconf_censored'),
-                ('tmask', 'tmask'),
-                ('fd_timeseries', 'fd')])
-            ])
+            (inputnode, dummy_scan_wf, [('bold', 'bold_file'),
+                                        ('bold_mask', 'mask_file')]),
+            (dummy_scan_wf, censor_scrub, [('bold_file_TR', 'in_file'),
+                                           ('fmrip_confdropTR',
+                                            'fmriprep_conf')]),
+            (inputnode, censor_scrub, [('bold_file', 'bold_file'),
+                                       ('bold_mask', 'mask_file')]),
+            (censor_scrub, outputnode, [('bold_censored', 'bold_censored'),
+                                        ('fmriprepconf_censored',
+                                         'fmriprepconf_censored'),
+                                        ('tmask', 'tmask'),
+                                        ('fd_timeseries', 'fd')])
+        ])
 
     else:
         if custom_conf:
             workflow.connect([
-                (censor_scrub, outputnode, [('customconf_censored', 'customconf_censored')]),
+                (censor_scrub, outputnode, [('customconf_censored',
+                                             'customconf_censored')]),
             ])
 
         workflow.connect([
-            (inputnode, censor_scrub, [
-                ('bold', 'in_file'),
-                ('bold_file', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
+            (inputnode, censor_scrub, [('bold', 'in_file'),
+                                       ('bold_file', 'bold_file'),
+                                       ('bold_mask', 'mask_file')]),
             (inputnode, censor_scrub, [('confound_file', 'fmriprep_conf')]),
-            (censor_scrub, outputnode, [
-                ('bold_censored', 'bold_censored'),
-                ('fmriprepconf_censored', 'fmriprepconf_censored'),
-                ('tmask', 'tmask'),
-                ('fd_timeseries', 'fd')])])
+            (censor_scrub, outputnode, [('bold_censored', 'bold_censored'),
+                                        ('fmriprepconf_censored',
+                                         'fmriprepconf_censored'),
+                                        ('tmask', 'tmask'),
+                                        ('fd_timeseries', 'fd')])
+        ])
 
     return workflow
 
 
-def init_resd_smoohthing(
-        mem_gb,
-        smoothing,
-        omp_nthreads,
-        cifti=False,
-        name="smoothing"):
+def init_resd_smoohthing(mem_gb,
+                         smoothing,
+                         omp_nthreads,
+                         cifti=False,
+                         name="smoothing"):
 
     workflow = Workflow(name=name)
-    inputnode = pe.Node(niu.IdentityInterface(
-            fields=['bold_file']), name='inputnode')
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=['smoothed_bold']), name='outputnode')
+    inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
+                        name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(fields=['smoothed_bold']),
+                         name='outputnode')
 
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = """ \
 The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
 size of {kernelsize} mm  (FWHM).
-"""     .format(kernelsize=str(smoothing))
+""".format(kernelsize=str(smoothing))
 
-        smooth_data = pe.Node(
-            CiftiSmooth(
-                sigma_surf=sigma_lx,
-                sigma_vol=sigma_lx,
-                direction='COLUMN',
-                right_surf=pkgrf(
-                    'xcp_d',
-                    'data/ciftiatlas/'
-                    'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'),
-                left_surf=pkgrf(
-                    'xcp_d',
-                    'data/ciftiatlas/'
-                    'Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii')),
+        smooth_data = pe.Node(CiftiSmooth(
+            sigma_surf=sigma_lx,
+            sigma_vol=sigma_lx,
+            direction='COLUMN',
+            right_surf=pkgrf(
+                'xcp_d', 'data/ciftiatlas/'
+                'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
+            ),
+            left_surf=pkgrf(
+                'xcp_d', 'data/ciftiatlas/'
+                'Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
+            )),
             name="cifti_smoothing",
             mem_gb=mem_gb,
             n_procs=omp_nthreads)
 
-        workflow.connect([
-            (inputnode, smooth_data, [('bold_file', 'in_file')]),
-            (smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
+        workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
+                          (smooth_data, outputnode, [('out_file',
+                                                      'smoothed_bold')])])
 
     else:
         workflow.__desc__ = """ \
 The processed BOLD was smoothed using  FSL with a gaussian kernel size of {kernelsize} mm  (FWHM).
-"""      .format(kernelsize=str(smoothing))
-        smooth_data = pe.Node(
-            Smooth(output_type='NIFTI_GZ', fwhm=smoothing),
-            name="nifti_smoothing",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads)
+""".format(kernelsize=str(smoothing))
+        smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),
+                              name="nifti_smoothing",
+                              mem_gb=mem_gb,
+                              n_procs=omp_nthreads)
 
-        workflow.connect([
-                   (inputnode, smooth_data, [('bold_file', 'in_file')]),
-                   (smooth_data, outputnode, [('smoothed_file', 'smoothed_bold')])
-                     ])
+        workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
+                          (smooth_data, outputnode, [('smoothed_file',
+                                                      'smoothed_bold')])])
     return workflow

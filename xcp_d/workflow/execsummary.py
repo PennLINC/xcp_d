@@ -32,7 +32,7 @@ def init_execsummary_wf(omp_nthreads,
     inputnode = pe.Node(niu.IdentityInterface(fields=[
         't1w', 't1seg', 'regdata', 'resddata', 'fd', 'rawdata', 'mask'
     ]),
-                        name='inputnode')
+        name='inputnode')
     inputnode.inputs.bold_file = bold_file
 
     # get bbregsiter file from fmriprep
@@ -79,9 +79,9 @@ def init_execsummary_wf(omp_nthreads,
         interpolation='MultiLabel',
         reference_image=boldref,
         transforms=transformfilex),
-                            name='resample_parc',
-                            n_procs=omp_nthreads,
-                            mem_gb=mem_gb * 3 * omp_nthreads)
+        name='resample_parc',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gb * 3 * omp_nthreads)
 
     plot_svgx_wf = pe.Node(PlotSVGData(tr=tr, rawdata=bold_file),
                            name='plot_svgx_wf',

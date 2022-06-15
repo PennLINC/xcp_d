@@ -119,7 +119,7 @@ def init_writederivatives_wf(
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
         'fd'
     ]),
-                        name='inputnode')
+        name='inputnode')
 
     cleandata_dict = {
         'RepetitionTime': TR,
@@ -138,9 +138,9 @@ def init_writederivatives_wf(
             extension='.nii.gz',
             source_file=bold_file,
             compression=True),
-                                  name='dv_cleandata_wf',
-                                  run_without_submitting=True,
-                                  mem_gb=2)
+            name='dv_cleandata_wf',
+            run_without_submitting=True,
+            mem_gb=2)
 
         dv_alff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                  dismiss_entities=['desc'],
@@ -457,9 +457,9 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 extension='.nii.gz',
                 compression=True),
-                                            name='dv_smoothcleandata_wf',
-                                            run_without_submitting=True,
-                                            mem_gb=2)
+                name='dv_smoothcleandata_wf',
+                run_without_submitting=True,
+                mem_gb=2)
 
             dv_smoothalff_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -469,9 +469,9 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 extension='.nii.gz',
                 compression=True),
-                                       name='dv_smoothalff_wf',
-                                       run_without_submitting=True,
-                                       mem_gb=1)
+                name='dv_smoothalff_wf',
+                run_without_submitting=True,
+                mem_gb=1)
 
             workflow.connect([
                 (inputnode, dv_smoothcleandata_wf, [('smoothed_bold',
@@ -488,9 +488,9 @@ def init_writederivatives_wf(
             source_file=bold_file,
             density='91k',
             extension='.dtseries.nii'),
-                                  name='dv_cleandata_wf',
-                                  run_without_submitting=True,
-                                  mem_gb=2)
+            name='dv_cleandata_wf',
+            run_without_submitting=True,
+            mem_gb=2)
 
         dv_alff_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -500,9 +500,9 @@ def init_writederivatives_wf(
             extension='.dtseries.nii',
             source_file=bold_file,
             check_hdr=False),
-                             name='dv_alff_wf',
-                             run_without_submitting=True,
-                             mem_gb=1)
+            name='dv_alff_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_qcfile_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -511,9 +511,9 @@ def init_writederivatives_wf(
             source_file=bold_file,
             extension='.csv',
             density='91k'),
-                               name='dv_qcfile_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+            name='dv_qcfile_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc117ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -523,9 +523,9 @@ def init_writederivatives_wf(
             density='91k',
             extension='.ptseries.nii',
             source_file=bold_file),
-                                name='dv_sc117ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc117ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc217ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -535,9 +535,9 @@ def init_writederivatives_wf(
             density='91k',
             extension='.ptseries.nii',
             source_file=bold_file),
-                                name='dv_sc217ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc217ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc317ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -547,9 +547,9 @@ def init_writederivatives_wf(
             density='91k',
             extension='.ptseries.nii',
             source_file=bold_file),
-                                name='dv_sc317ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc317ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc417ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -559,9 +559,9 @@ def init_writederivatives_wf(
             source_file=bold_file,
             density='91k',
             check_hdr=False),
-                                name='dv_sc417ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc417ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc517ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -571,9 +571,9 @@ def init_writederivatives_wf(
             source_file=bold_file,
             density='91k',
             check_hdr=False),
-                                name='dv_sc517ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc517ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc617ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -583,9 +583,9 @@ def init_writederivatives_wf(
             density='91k',
             extension='.ptseries.nii',
             source_file=bold_file),
-                                name='dv_sc617ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc617ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc717ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -595,9 +595,9 @@ def init_writederivatives_wf(
             density='91k',
             extension='.ptseries.nii',
             source_file=bold_file),
-                                name='dv_sc717ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc717ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc817ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -607,9 +607,9 @@ def init_writederivatives_wf(
             density='91k',
             extension='.ptseries.nii',
             source_file=bold_file),
-                                name='dv_sc817ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc817ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc917ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -619,9 +619,9 @@ def init_writederivatives_wf(
             source_file=bold_file,
             density='91k',
             check_hdr=False),
-                                name='dv_sc917ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc917ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc1017ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -631,9 +631,9 @@ def init_writederivatives_wf(
             source_file=bold_file,
             density='91k',
             check_hdr=False),
-                                 name='dv_sc1017ts_wf',
-                                 run_without_submitting=True,
-                                 mem_gb=1)
+            name='dv_sc1017ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_gs360ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -643,9 +643,9 @@ def init_writederivatives_wf(
             extension='.ptseries.nii',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_gs360ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_gs360ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_gd333ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -655,9 +655,9 @@ def init_writederivatives_wf(
             extension='.ptseries.nii',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_gd333_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_gd333_wf',
+            run_without_submitting=True,
+            mem_gb=1)
         dv_ts50ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=['desc', 'den'],
@@ -666,9 +666,9 @@ def init_writederivatives_wf(
             extension='.ptseries.nii',
             source_file=bold_file,
             check_hdr=False),
-                               name='dv_ts50_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+            name='dv_ts50_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc117fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -678,9 +678,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc117fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc117fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc217fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -690,9 +690,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc217fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc217fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc317fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -702,9 +702,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc317fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc317fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc417fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -714,9 +714,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc417fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc417fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc517fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -726,9 +726,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc517fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc517fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc617fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -738,9 +738,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc617fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc617fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc717fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -750,9 +750,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc717fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc717fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc817fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -762,9 +762,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc817fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc817fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc917fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -774,9 +774,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_sc917fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_sc917fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_sc1017fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -786,9 +786,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                 name='dv_sc1017fc_wf',
-                                 run_without_submitting=True,
-                                 mem_gb=1)
+            name='dv_sc1017fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_gs360fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -798,9 +798,9 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-                                name='dv_gs333_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_gs333_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_gd333fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -810,9 +810,9 @@ def init_writederivatives_wf(
             atlas='Gordon',
             density='91k',
             source_file=bold_file),
-                                name='dv_gd333fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+            name='dv_gd333fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_ts50fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -822,9 +822,9 @@ def init_writederivatives_wf(
             atlas='subcortical',
             density='91k',
             source_file=bold_file),
-                               name='dv_ts50fc_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+            name='dv_ts50fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_reholh_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -835,9 +835,9 @@ def init_writederivatives_wf(
             hemi='L',
             extension='.func.gii',
             source_file=bold_file),
-                               name='dv_reholh_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+            name='dv_reholh_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_rehorh_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -848,9 +848,9 @@ def init_writederivatives_wf(
             hemi='R',
             extension='.func.gii',
             source_file=bold_file),
-                               name='dv_rehorh_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+            name='dv_rehorh_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         dv_fd_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -858,9 +858,9 @@ def init_writederivatives_wf(
             desc='framewisedisplacement',
             extension='.tsv',
             source_file=bold_file),
-                           name='dv_fd_wf',
-                           run_without_submitting=True,
-                           mem_gb=1)
+            name='dv_fd_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         workflow.connect([
             (inputnode, dv_cleandata_wf, [('processed_bold', 'in_file')]),
@@ -907,9 +907,9 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 extension='.dtseries.nii',
                 check_hdr=False),
-                                            name='dv_smoothcleandata_wf',
-                                            run_without_submitting=True,
-                                            mem_gb=2)
+                name='dv_smoothcleandata_wf',
+                run_without_submitting=True,
+                mem_gb=2)
 
             dv_smoothalff_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -920,9 +920,9 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 extension='.dtseries.nii',
                 check_hdr=False),
-                                       name='dv_smoothalff_wf',
-                                       run_without_submitting=True,
-                                       mem_gb=1)
+                name='dv_smoothalff_wf',
+                run_without_submitting=True,
+                mem_gb=1)
 
             workflow.connect([
                 (inputnode, dv_smoothcleandata_wf, [('smoothed_bold',

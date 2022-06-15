@@ -5,17 +5,17 @@ from .write_save import (read_ndata, write_ndata, read_gii, write_gii,
                          despikedatacifti)
 from .plot import (plot_svg, compute_dvars, plotimage)
 from .confounds import load_confound_matrix
-from .fcon import (extract_timeseries_funct,
-                   compute_2d_reho, compute_alff, mesh_adjacency)
+from .fcon import (extract_timeseries_funct, compute_2d_reho, compute_alff,
+                   mesh_adjacency)
 from .cifticonnectivity import CiftiCorrelation
 from .ciftiparcellation import CiftiParcellate
 from .ciftiseparatemetric import CiftiSeparateMetric
 from .cifitiresample import CiftiSurfaceResample
-from .bids import (collect_participants, collect_data,
-                   select_registrationfile, select_cifti_bold, extract_t1w_seg)
+from .bids import (collect_participants, collect_data, select_registrationfile,
+                   select_cifti_bold, extract_t1w_seg)
 from .bids import DerivativesDataSink as bid_derivative
-from .modified_data import (interpolate_masked_data, interpolate_masked_datax, generate_mask,
-                            compute_FD, drop_tseconds_volume)
+from .modified_data import (interpolate_masked_data, interpolate_masked_datax,
+                            generate_mask, compute_FD, drop_tseconds_volume)
 from .sentry import sentry_setup
 
 from .qcmetrics import regisQ
@@ -66,10 +66,12 @@ __all__ = [
     'select_registrationfile',
     'select_cifti_bold',
     'CiftiSurfaceResample',
-    'plotseries', 'plot_svgx',
+    'plotseries',
+    'plot_svgx',
     'plot_carpet',
     'confoundplot',
-    'surf2vol', 'get_regplot',
+    'surf2vol',
+    'get_regplot',
     'plot_registrationx',
     'generate_brain_sprite',
     'plotimage',

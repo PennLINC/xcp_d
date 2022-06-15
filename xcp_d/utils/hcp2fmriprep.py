@@ -45,19 +45,29 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
     ribbon = anat_dirx + '/ribbon.nii.gz'
     segm = anat_dirx + '/aparc+aseg.nii.gz'
 
-    midR = glob.glob(anat_dirx + '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
-    midL = glob.glob(anat_dirx + '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
-    infR = glob.glob(anat_dirx + '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
-    infL = glob.glob(anat_dirx + '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
+    midR = glob.glob(anat_dirx +
+                     '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
+    midL = glob.glob(anat_dirx +
+                     '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
+    infR = glob.glob(anat_dirx +
+                     '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
+    infL = glob.glob(anat_dirx +
+                     '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
 
-    pialR = glob.glob(anat_dirx + '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
-    pialL = glob.glob(anat_dirx + '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
+    pialR = glob.glob(anat_dirx +
+                      '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
+    pialL = glob.glob(anat_dirx +
+                      '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
 
-    whiteR = glob.glob(anat_dirx + '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
-    whiteL = glob.glob(anat_dirx + '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
+    whiteR = glob.glob(anat_dirx +
+                       '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
+    whiteL = glob.glob(anat_dirx +
+                       '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
 
-    hcpfiles = [tw1, segm, ribbon, brainmask, tw1, tw1,
-                midL, midR, pialL, pialR, whiteL, whiteR, infL, infR]
+    hcpfiles = [
+        tw1, segm, ribbon, brainmask, tw1, tw1, midL, midR, pialL, pialR,
+        whiteL, whiteR, infL, infR
+    ]
 
     # to fmriprep directory
     t1wim = anatdir + sub_id + '_desc-preproc_T1w.nii.gz'
@@ -78,8 +88,10 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
     linf = anatdir + sub_id + '_hemi-L_inflated.surf.gii'
     rinf = anatdir + sub_id + '_hemi-R_inflated.surf.gii'
-    newanatfiles = [t1wim, t1seg, t1ribbon, t1brainm, regfile1, regfile2, lMid, rMid, lpial, rpial,
-                    lwhite, rwhite, linf, rinf]
+    newanatfiles = [
+        t1wim, t1seg, t1ribbon, t1brainm, regfile1, regfile2, lMid, rMid,
+        lpial, rpial, lwhite, rwhite, linf, rinf
+    ]
 
     for i, j in zip(hcpfiles, newanatfiles):
         copyfileobj_example(i, j)
@@ -100,13 +112,17 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         # create confound regressors
 
-        mvreg = pd.read_csv(k + '/Movement_Regressors.txt', header=None, delimiter=r"\s+")
+        mvreg = pd.read_csv(k + '/Movement_Regressors.txt',
+                            header=None,
+                            delimiter=r"\s+")
         mvreg = mvreg.iloc[:, 0:6]
-        mvreg.columns = ['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']
+        mvreg.columns = [
+            'trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z'
+        ]
         # convert rot to rad
-        mvreg['rot_x'] = mvreg['rot_x']*np.pi/180
-        mvreg['rot_y'] = mvreg['rot_y']*np.pi/180
-        mvreg['rot_z'] = mvreg['rot_z']*np.pi/180
+        mvreg['rot_x'] = mvreg['rot_x'] * np.pi / 180
+        mvreg['rot_y'] = mvreg['rot_y'] * np.pi / 180
+        mvreg['rot_z'] = mvreg['rot_z'] * np.pi / 180
 
         # use masks: brain,csf and wm mask to extract timeseries
         bolddata = k + '/' + filenamex + '.nii.gz'
@@ -116,41 +132,51 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         wmreg = extractreg(mask=wm_mask, nifti=bolddata)
 
         rsmd = np.loadtxt(k + '/Movement_AbsoluteRMS.txt')
-        brainreg = pd.DataFrame(
-            {'global_signal': gsreg, 'white_matter': wmreg, 'csf': csfreg, 'rmsd': rsmd})
+        brainreg = pd.DataFrame({
+            'global_signal': gsreg,
+            'white_matter': wmreg,
+            'csf': csfreg,
+            'rmsd': rsmd
+        })
         regressors = pd.concat([mvreg, brainreg], axis=1)
 
         # write out the json
         # jsonreg = pd.DataFrame({'LR': [1, 2, 3]})  # just a fake json
-        regressors.to_csv(funcdir+'/sub-'+subid+'_task-' +
-                          idx[1]+'_acq-'+idx[2]+'_desc-confounds_timeseries.tsv',
-                          index=False, sep='\t')
-        regressors.to_json(funcdir+'/sub-' + subid +
-                           '_task-' + idx[1]+'_acq-' +
-                           idx[2]+'_desc-confounds_timeseries.json')
+        regressors.to_csv(funcdir + '/sub-' + subid + '_task-' + idx[1] +
+                          '_acq-' + idx[2] + '_desc-confounds_timeseries.tsv',
+                          index=False,
+                          sep='\t')
+        regressors.to_json(funcdir + '/sub-' + subid + '_task-' + idx[1] +
+                           '_acq-' + idx[2] +
+                           '_desc-confounds_timeseries.json')
 
         # functional files
         hcp_ref = k + '/' + filenamex + '_SBRef.nii.gz'
-        prep_ref = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-MNI152NLin6Asym_boldref.nii.gz'
+        prep_ref = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-MNI152NLin6Asym_boldref.nii.gz'
 
         # create/copy  cifti
         ciftip = k + '/' + filenamex + '_Atlas_MSMAll.dtseries.nii'
-        ciftib = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-fsLR_den-91k_bold.dtseries.nii'
+        ciftib = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-fsLR_den-91k_bold.dtseries.nii'
 
         niftip = k + '/' + filenamex + '.nii.gz'
-        tr = nb.load(niftip).header.get_zooms()[-1]   # repetition time
+        tr = nb.load(niftip).header.get_zooms()[-1]  # repetition time
 
         jsontis = {"RepetitionTime": np.float(tr), "TaskName": idx[1]}
 
-        json2 = {"grayordinates": "91k", "space": "HCP grayordinates",
-                 "surface": "fsLR", "surface_density": "32k", "volume": "MNI152NLin6Asym"}
+        json2 = {
+            "grayordinates": "91k",
+            "space": "HCP grayordinates",
+            "surface": "fsLR",
+            "surface_density": "32k",
+            "volume": "MNI152NLin6Asym"
+        }
 
-        boldjson = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-MNI152NLin6Asym_desc-preproc_bold.json'
-        ciftijson = funcdir+'/sub-'+subid+'_task-' + \
-            idx[1]+'_acq-'+idx[2]+'_space-fsLR_den-91k_bold.dtseries.json'
+        boldjson = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-MNI152NLin6Asym_desc-preproc_bold.json'
+        ciftijson = funcdir + '/sub-' + subid + '_task-' + \
+            idx[1] + '_acq-' + idx[2] + '_space-fsLR_den-91k_bold.dtseries.json'
 
         writejson(jsontis, boldjson)
         writejson(json2, ciftijson)

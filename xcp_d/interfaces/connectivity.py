@@ -9,8 +9,9 @@ from nipype import logging
 from nipype.utils.filemanip import fname_presuffix
 from pkg_resources import resource_filename as pkgrf
 from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
-from nipype.interfaces.base import (
-    traits, TraitedSpec, BaseInterfaceInputSpec, File, SimpleInterface, InputMultiObject)
+from nipype.interfaces.base import (traits, TraitedSpec,
+                                    BaseInterfaceInputSpec, File,
+                                    SimpleInterface, InputMultiObject)
 from ..utils import extract_timeseries_funct
 import matplotlib.pyplot as plt
 from nilearn.plotting import plot_matrix
@@ -27,9 +28,11 @@ class _nifticonnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _nifticonnectOutputSpec(TraitedSpec):
-    time_series_tsv = File(exists=True, manadatory=True,
+    time_series_tsv = File(exists=True,
+                           manadatory=True,
                            desc=" time series file")
-    fcon_matrix_tsv = File(exists=True, manadatory=True,
+    fcon_matrix_tsv = File(exists=True,
+                           manadatory=True,
                            desc=" time series file")
 
 
@@ -45,13 +48,15 @@ class nifticonnect(SimpleInterface):
     def _run_interface(self, runtime):
 
         self._results['time_series_tsv'] = fname_presuffix(
-                self.inputs.regressed_file,
-                suffix='time_series.tsv', newpath=runtime.cwd,
-                use_ext=False)
+            self.inputs.regressed_file,
+            suffix='time_series.tsv',
+            newpath=runtime.cwd,
+            use_ext=False)
         self._results['fcon_matrix_tsv'] = fname_presuffix(
-                self.inputs.regressed_file,
-                suffix='fcon_matrix.tsv', newpath=runtime.cwd,
-                use_ext=False)
+            self.inputs.regressed_file,
+            suffix='fcon_matrix.tsv',
+            newpath=runtime.cwd,
+            use_ext=False)
 
         self._results['time_series_tsv'], self._results['fcon_matrix_tsv'] = \
             extract_timeseries_funct(
@@ -80,12 +85,11 @@ class ApplyTransformsx(ApplyTransforms):
 
     def _run_interface(self, runtime):
         # Run normally
-        self.inputs.output_image = fname_presuffix(
-                self.inputs.input_image,
-                suffix='_trans.nii.gz', newpath=runtime.cwd,
-                use_ext=False)
-        runtime = super(ApplyTransformsx, self)._run_interface(
-            runtime)
+        self.inputs.output_image = fname_presuffix(self.inputs.input_image,
+                                                   suffix='_trans.nii.gz',
+                                                   newpath=runtime.cwd,
+                                                   use_ext=False)
+        runtime = super(ApplyTransformsx, self)._run_interface(runtime)
         return runtime
 
 
@@ -111,21 +115,23 @@ def get_atlas_nifti(atlasname):
     if atlasname[:8] == 'schaefer':
         if atlasname[8:12] == '1000':
             atlasfile = pkgrf(
-                'xcp_d',
-                'data/niftiatlas/'
+                'xcp_d', 'data/niftiatlas/'
                 'Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii')
         else:
             atlasfile = pkgrf(
-                'xcp_d',
-                'data/niftiatlas/'
-                'Schaefer2018_{0}Parcels_17Networks_order_FSLMNI152_2mm.nii'
-                .format(atlasname[8:11]))
+                'xcp_d', 'data/niftiatlas/'
+                'Schaefer2018_{0}Parcels_17Networks_order_FSLMNI152_2mm.nii'.
+                format(atlasname[8:11]))
     elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
+        atlasfile = pkgrf('xcp_d',
+                          'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
     elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_d', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
+        atlasfile = pkgrf('xcp_d',
+                          'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
     elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf('xcp_d', 'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
+        atlasfile = pkgrf(
+            'xcp_d',
+            'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
@@ -152,22 +158,24 @@ def get_atlas_cifti(atlasname):
     if atlasname[:8] == 'schaefer':
         if atlasname[8:12] == '1000':
             atlasfile = pkgrf(
-                'xcp_d',
-                'data/ciftiatlas/'
+                'xcp_d', 'data/ciftiatlas/'
                 'Schaefer2018_1000Parcels_17Networks_order.dlabel.nii')
         else:
             atlasfile = pkgrf(
-                'xcp_d',
-                'data/ciftiatlas/'
-                'Schaefer2018_{0}Parcels_17Networks_order.dlabel.nii'.format(atlasname[8:11]))
+                'xcp_d', 'data/ciftiatlas/'
+                'Schaefer2018_{0}Parcels_17Networks_order.dlabel.nii'.format(
+                    atlasname[8:11]))
     elif atlasname == 'glasser360':
         atlasfile = pkgrf(
-            'xcp_d', 'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+            'xcp_d',
+            'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'gordon333':
         atlasfile = pkgrf(
-            'xcp_d', 'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
+            'xcp_d',
+            'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
     elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf('xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
+        atlasfile = pkgrf(
+            'xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
     else:
         raise RuntimeError('atlas not available')
     return atlasfile
@@ -182,7 +190,10 @@ class _connectplotInputSpec(BaseInterfaceInputSpec):
 
 
 class _connectplotOutputSpec(TraitedSpec):
-    connectplot = File(exists=True, manadatory=True,)
+    connectplot = File(
+        exists=True,
+        manadatory=True,
+    )
 
 
 class connectplot(SimpleInterface):
@@ -195,16 +206,24 @@ class connectplot(SimpleInterface):
     def _run_interface(self, runtime):
 
         if self.inputs.in_file.endswith('dtseries.nii'):
-            sc217 = np.corrcoef(nb.load(self.inputs.sc217_timeseries).get_fdata().T)
-            sc417 = np.corrcoef(nb.load(self.inputs.sc417_timeseries).get_fdata().T)
-            gd333 = np.corrcoef(nb.load(self.inputs.gd333_timeseries).get_fdata().T)
-            gs360 = np.corrcoef(nb.load(self.inputs.gs360_timeseries).get_fdata().T)
+            sc217 = np.corrcoef(
+                nb.load(self.inputs.sc217_timeseries).get_fdata().T)
+            sc417 = np.corrcoef(
+                nb.load(self.inputs.sc417_timeseries).get_fdata().T)
+            gd333 = np.corrcoef(
+                nb.load(self.inputs.gd333_timeseries).get_fdata().T)
+            gs360 = np.corrcoef(
+                nb.load(self.inputs.gs360_timeseries).get_fdata().T)
 
         else:
-            sc217 = np.corrcoef(np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
-            sc417 = np.corrcoef(np.loadtxt(self.inputs.sc417_timeseries, delimiter=',').T)
-            gd333 = np.corrcoef(np.loadtxt(self.inputs.gd333_timeseries, delimiter=',').T)
-            gs360 = np.corrcoef(np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
+            sc217 = np.corrcoef(
+                np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
+            sc417 = np.corrcoef(
+                np.loadtxt(self.inputs.sc417_timeseries, delimiter=',').T)
+            gd333 = np.corrcoef(
+                np.loadtxt(self.inputs.gd333_timeseries, delimiter=',').T)
+            gs360 = np.corrcoef(
+                np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
 
         fig, ax1 = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
@@ -225,6 +244,7 @@ class connectplot(SimpleInterface):
             use_ext=False)
 
         fig.savefig(self._results['connectplot'],
-                    bbox_inches="tight", pad_inches=None)
+                    bbox_inches="tight",
+                    pad_inches=None)
 
         return runtime
