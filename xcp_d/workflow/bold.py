@@ -103,7 +103,7 @@ def init_boldpostprocess_wf(
     contigvol: int
         number of contigious volumes
     despike: bool
-        afni depsike
+        If True, run 3dDespike from AFNI
     motion_filter_order: int
         respiratory motion filter order
     motion_filter_type: str
@@ -129,7 +129,7 @@ def init_boldpostprocess_wf(
     custom_conf: str
         path to cusrtom nuissance regressors
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the time in seconds to be removed before postprocessing
 
     Inputs
     ------
@@ -176,12 +176,20 @@ def init_boldpostprocess_wf(
         quality control files
     """
 
-    # RF: Needs a check
+    # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
-
     if TR is None:
         TR = layout.get_tr(bold_file)
+    if not isinstance(TR, float):
+        raise Exception("Unable to determine TR of {}".format(bold_file))
+
+    # Confounds file is necessary: ensure we can find it
+    try:
+        # TODO: write a function that gets
+        confounds_tsv = get_confounds_tsv(bold_file)
+    except Exception as exc:
+        raise Exception("Unable to find confounds file for {}.".format(bold_file))
 
     workflow = Workflow(name=name)
 
@@ -191,13 +199,13 @@ tasks and sessions), the following post-processing was performed:
 """.format(num_bold=num2words(num_bold))
 
     if dummytime > 0:
-        nvolx = str(np.floor(dummytime / TR))
+        initial_volumes_to_drop = str(np.ceil(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data, the first {nvol} were discarded, then both
 the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with
 framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(nvolx), fd_thresh=fd_thresh)
+""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
@@ -220,13 +228,14 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
-                't1w', 't1seg']),
+                't1w', 't1seg', 'fmriprep_confounds_tsv']),
         name='inputnode')
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
     inputnode.inputs.custom_conf = str(custom_conf)
+    inputnode.inputs.fmriprep_confounds_tsv = str()
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -414,17 +423,17 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     if despike:
         from ..utils import DespikePatch
         # RF: rename without _wf
-        despike_wf = pe.Node(
+        despike3d = pe.Node(
             DespikePatch(
                 outputtype='NIFTI_GZ',
                 args='-NEW'),
-            name="despike_wf",
+            name="despike3d",
             mem_gb=mem_gbx['timeseries'],
             n_procs=omp_nthreads)
 
         workflow.connect([
-            (inputnode, despike_wf, [('bold_file', 'in_file')]),
-            (despike_wf, censorscrub_wf, [('out_file', 'inputnode.bold')])
+            (inputnode, despike3d, [('bold_file', 'in_file')]),
+            (despike3d, censorscrub_wf, [('out_file', 'inputnode.bold')])
         ])
     else:
         workflow.connect([

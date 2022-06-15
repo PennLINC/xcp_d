@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
+import nibabel as nb
 from ..utils import (drop_tseconds_volume, read_ndata, write_ndata, compute_FD,
                      generate_mask, interpolate_masked_data)
 from nipype.interfaces.base import (traits, TraitedSpec,
@@ -14,12 +15,8 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
                      mandatory=True,
                      desc=" either bold or nifti ")
     mask_file = File(exists=False, mandatory=False, desc="required for nifti")
-    time_todrop = traits.Float(exists=True,
-                               mandatory=True,
-                               desc="time in seconds to drop")
-    TR = traits.Float(exists=True,
-                      mandatory=True,
-                      desc="repetition time in TR")
+    volumes_to_drop = traits.Int(mandatory=True,
+                                 desc="number of volumes to drop from the beginning")
     fmriprep_conf = File(
         exists=True,
         mandatory=False,
@@ -37,9 +34,17 @@ class _removeTROutputSpec(TraitedSpec):
 
 
 class removeTR(SimpleInterface):
-    r"""
+    """Removes initial volumes from a nifti or cifti file.
 
-     testing and documentation open to me
+    A bold file and its corresponding confounds TSV (fmriprep format)
+    are adjusted to remove the first n seconds of data. If 0, the
+    bold file and confounds are returned as-is. If dummytime is larger
+    than the repetition time, the corresponding rows are removed from
+    the confounds TSV and the initial volumes are removed from the
+    nifti or cifti file.
+
+    If the dummy time is less than the repetition time, it will
+    be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
 
     """
     input_spec = _removeTRInputSpec
@@ -47,37 +52,54 @@ class removeTR(SimpleInterface):
 
     def _run_interface(self, runtime):
 
+        # Check if we need to do anything
+        if self.inputs.dummytime == 0:
+            # write the output out
+            self._results['bold_file_TR'] = self.inputs.bold_file
+            self._results['fmrip_confdropTR'] = self.inputs.fmriprep_conf
+            return runtime
+
         # get the nifti or cifti
-        data_matrix = read_ndata(datafile=self.inputs.bold_file,
-                                 maskfile=self.inputs.mask_file)
-        fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf, header=None)
-
-        data_matrix_TR, fmriprep_confTR = drop_tseconds_volume(
-            data_matrix=data_matrix,
-            confound=fmriprepx_conf,
-            delets=self.inputs.time_todrop,
-            TR=self.inputs.TR)
-
-        # write the output out
-        self._results['bold_file_TR'] = fname_presuffix(self.inputs.bold_file,
-                                                        newpath=os.getcwd(),
-                                                        use_ext=True)
-
-        self._results['fmrip_confdropTR'] = fname_presuffix(
+        dropped_bold_file = fname_presuffix(
             self.inputs.bold_file,
-            suffix='fmriprep_dropTR.txt',
-            newpath=os.getcwd(),
-            use_ext=False)
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True)
+        dropped_confounds_file = fname_presuffix(
+            self.inputs.fmriprep_conf,
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True)
 
-        write_ndata(data_matrix=data_matrix_TR,
-                    template=self.inputs.bold_file,
-                    mask=self.inputs.mask_file,
-                    filename=self._results['bold_file_TR'],
-                    tr=self.inputs.TR)
+        bold_image = nb.load(self.inputs.bold_file)
+        data = bold_image.get_fdata()
 
-        fmriprep_confTR.to_csv(self._results['fmrip_confdropTR'],
-                               index=False,
-                               header=False)
+        # this is a Cifti image
+        if bold_image.ndim == 2:
+            dropped_data = data[self.inputs.volumes_to_drop:]
+            dropped_image = nb.Cifti2Image(
+                dropped_data,
+                header=bold_image.header,
+                nifti_header=bold_image.nifti_header)
+
+        # It's a Nifti
+        else:
+            dropped_data = data[..., self.inputs.volumes_to_drop:]
+            dropped_image = nb.Nifti1Image(
+                dropped_data,
+                affine=bold_image.affine,
+                header=bold_image.header)
+
+        # Write the file
+        dropped_image.to_filename(dropped_bold_file)
+
+        # Drop the first rows from the pandas dataframe
+        confounds_df = pd.read_csv(self.inputs.fmriprep_conf, sep="\t")
+        dropped_confounds_df = confounds_df.drop(np.arange(self.inputs.volumes_todrop))
+        dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
+
+        self._results['bold_file_TR'] = dropped_bold_file
+        self._results['fmrip_confdropTR'] = dropped_confounds_file
 
         return runtime
 
