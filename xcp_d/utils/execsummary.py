@@ -39,7 +39,7 @@ def surf2vol(template, left_surf, right_surf, filename, scale=1):
     indices[2, np.where(indices[2] >= t1_image.shape[2])] = 0
     overlay[tuple(indices.tolist())] = 1
 
-    overlay_image = nb.Nifti1Image(overlay*scale, affine=t1_image.affine)
+    overlay_image = nb.Nifti1Image(overlay * scale, affine=t1_image.affine)
 
     nb.save(overlay_image, filename)
 
@@ -149,7 +149,7 @@ def ribbon_to_statmap(ribbon, outfile):
     datapial = _get_contour(pial.get_fdata())
     datawhite = _get_contour(white.get_fdata())
 
-    datax = 2*datapial + datawhite
+    datax = 2 * datapial + datawhite
 
     # save the output
     ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)

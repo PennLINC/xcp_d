@@ -24,9 +24,9 @@ def load_confound(datafile):
                                           "_desc-confounds_timeseries.json")
     else:
         confounds_timeseries = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.tsv"
+            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.tsv"
         confounds_json = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.json"
+            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.json"
 
     confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
 
@@ -195,7 +195,6 @@ def load_aroma(datafile):
     """ extract aroma confound."""
     # _AROMAnoiseICs.csv
     # _desc-MELODIC_mixing.tsv
-    
     if 'space' in os.path.basename(datafile):
         aroma_noise = datafile.replace("_space-" + datafile.split("space-")[1],
                                        "_AROMAnoiseICs.csv")

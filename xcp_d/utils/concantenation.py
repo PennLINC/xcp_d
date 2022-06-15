@@ -21,8 +21,8 @@ from natsort import natsorted
 
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     outdir = outputdir
-    fmr = glob.glob(str(outdir) + '/' +
-                    _prefix(subjlist[0])+'/*/func/*_desc-residual*bold*nii*')[0]
+    fmr = glob.glob(str(outdir) + '/' + _prefix(subjlist[0]) + '/*/func/*'
+                                  '_desc-residual*bold*nii*')[0]
     if fmr.endswith('nii.gz'):
         cifti = False
     else:
@@ -31,7 +31,8 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     if not cifti:
         for s in subjlist:
             # get seission if there
-            sed = glob.glob(str(outdir) + '/' + _prefix(s)+'/*/func/*_desc-residual*bold*.nii.gz')
+            sed = glob.glob(str(outdir) + '/' + _prefix(s) + '/*/func/*_desc-residual'
+                                          '*bold*.nii.gz')
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
@@ -43,8 +44,8 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
                                   outputdir=outputdir, work_dir=work_dir)
     else:
         for s in subjlist:
-            sed = glob.glob(str(outdir) + '/' + _prefix(s) +
-                            '/*/func/*_desc-residual*bold*.dtseries.nii')
+            sed = glob.glob(str(outdir) + '/' + _prefix(s) + '/*/func/*_desc-'
+                                          'residual*bold*.dtseries.nii')
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
@@ -106,7 +107,7 @@ def make_DCAN_DF(fds_files, name):
             data=len(fd[fd <= thresh]), dtype='float')
         dcan.create_dataset(
             "/dcan_motion/fd_{0}/remaining_seconds".format(thresh),
-            data=len(fd[fd <= thresh])*tr, dtype='float')
+            data=len(fd[fd <= thresh]) * tr, dtype='float')
         dcan.create_dataset(
             "/dcan_motion/fd_{0}/remaining_frame_mean_FD".format(thresh),
             data=(fd[fd <= thresh]).mean(), dtype='float')
@@ -138,8 +139,8 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         fmri_files = str(fmridir) + '/' + subid + '/func/'
         figure_files = str(outputdir) + '/' + subid + '/figures/'
     else:
-        all_func_files = glob.glob(str(outputdir) + '/' + subid + '/ses-' + str(ses)+'/func/*')
-        fmri_files = str(fmridir) + '/' + subid + '/ses-' + str(ses)+'/func/'
+        all_func_files = glob.glob(str(outputdir) + '/' + subid + '/ses-' + str(ses) + '/func/*')
+        fmri_files = str(fmridir) + '/' + subid + '/ses-' + str(ses) + '/func/'
         figure_files = str(outputdir) + '/' + subid + '/figures/'
 
     fmri_files = str(fmri_files)
@@ -151,8 +152,8 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
     # do for each task
     for task in tasklist:
-        resbold = natsorted(fnmatch.filter(all_func_files, '*' +
-                            task+'*run*_desc-residual*bold*.nii.gz'))
+        resbold = natsorted(fnmatch.filter(all_func_files, '*' + task + '*run*'
+                                                           '_desc-residual*bold*.nii.gz'))
         reg_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold) > 1:
@@ -179,18 +180,18 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         reg_dvars.append(dvar)
 
             filey = natsorted(glob.glob(fmri_files + os.path.basename(res.split('run-')
-                              [0]) + '*' + resid.partition('_desc')[0] +
-                              '*_desc-preproc_bold.nii.gz'))
+                              [0]) + '*' + resid.partition('_desc')[0] + '*_desc'
+                '-preproc_bold.nii.gz'))
 
             mask = natsorted(glob.glob(fmri_files + os.path.basename(res.split('run-')
-                             [0]) + '*' + resid.partition('_desc')[0] +
-                             '*_desc-brain_mask.nii.gz'))[0]
+                             [0]) + '*' + resid.partition('_desc')[0] + '*_desc'
+                '-brain_mask.nii.gz'))[0]
 
             segfile = get_segfile(filey[0])
             tr = nb.load(filey[0]).header.get_zooms()[-1]
 
             combinefiley = "  ".join(filey)
-            rawdata = tempfile.mkdtemp()+'/rawdata.nii.gz'
+            rawdata = tempfile.mkdtemp() + '/rawdata.nii.gz'
             os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
 
             precarpet = figure_files + os.path.basename(fileid) + '_desc-precarpetplot_bold.svg'
@@ -201,9 +202,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
 
-            plot_svgx(rawdata=rawdata, regdata=fileid+'_desc-residual_bold.nii.gz',
-                      resddata=fileid+'_desc-residual_bold.nii.gz',
-                      fd=fileid+'_desc-framewisedisplacement_bold.tsv',
+            plot_svgx(rawdata=rawdata, regdata=fileid + '_desc-residual_bold.nii.gz',
+                      resddata=fileid + '_desc-residual_bold.nii.gz',
+                      fd=fileid + '_desc-framewisedisplacement_bold.tsv',
                       raw_dvars=raw_dvars,
                       reg_dvars=reg_dvars,
                       regf_dvars=reg_dvars,
@@ -234,7 +235,7 @@ def compute_dvars(datat):
     '''
     firstcolumn = np.zeros((datat.shape[0]))[..., None]
     datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0)/datat.shape[0]
+    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
     return np.sqrt(datax_ss)
 
 
@@ -263,8 +264,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         fmri_files = str(fmridir) + '/' + subid + '/func/'
         figure_files = str(outputdir) + '/' + subid + '/figures/'
     else:
-        all_func_files = glob.glob(str(outputdir) + '/' + subid + '/ses-' + str(ses)+'/func/*')
-        fmri_files = str(fmridir) + '/' + subid + '/ses-' + str(ses)+'/func/'
+        all_func_files = glob.glob(str(outputdir) + '/' + subid + '/ses-' + str(ses) + '/func/*')
+        fmri_files = str(fmridir) + '/' + subid + '/ses-' + str(ses) + '/func/'
         figure_files = str(outputdir) + '/' + subid + '/figures/'
 
     fmri_files = str(fmri_files)
@@ -276,8 +277,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
     # do for each task
     for task in tasklist:
-        resbold = natsorted(fnmatch.filter(all_func_files, '*'+task +
-                            '*run*den-91k_desc-residual*bold.dtseries.nii'))
+        resbold = natsorted(fnmatch.filter(all_func_files, '*' + task + '*run*'
+                            'den-91k_desc-residual*bold.dtseries.nii'))
         if len(resbold) > 1:
             reg_dvars = []
             res = resbold[0]
@@ -302,27 +303,28 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     make_DCAN_DF(filex, name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
-                        glob.glob(res.split('run-')[0] + '*run*' +
-                                  resid.partition('_desc')[0] + j))
+                        glob.glob(res.split('ru'
+                                  'n-')[0] + '*run*' + resid.partition('_desc')[0] + j))
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
                     if j.endswith('_desc-residual_bold.dtseries.nii'):
-                        for b in natsorted(glob.glob(res.split('run-')[0] +
-                                                     '*run*' + resid.partition('_desc')[0] + j)):
+                        for b in natsorted(glob.glob
+                                           (res.split('ru'
+                                            'n-')[0] + '*run*' + resid.partition('_desc')[0] + j)):
                             dvar = compute_dvars(read_ndata(b))
                             dvar[0] = np.mean(dvar)
                             reg_dvars.append(dvar)
 
             raw_dvars = []
             filey = natsorted(glob.glob(
-                fmri_files + os.path.basename(res.split('run-')[0]) +
-                '*run*'+'*_den-91k_bold.dtseries.nii'))
+                fmri_files + os.path.basename(res.split('ru'
+                                              'n-')[0]) + '*run*' + '*_den-91k_bold.dtseries.nii'))
             for f in filey:
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
             tr = get_ciftiTR(filey[0])
-            rawdata = tempfile.mkdtemp()+'/den-91k_bold.dtseries.nii'
+            rawdata = tempfile.mkdtemp() + '/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' + combinefile)
 
@@ -332,12 +334,15 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             raw_dvars = np.array(raw_dvars).flatten()
             reg_dvars = np.array(reg_dvars).flatten()
             plot_svgx(rawdata=rawdata,
-                      regdata=res.split('run-')[0] + resid.partition('_desc')[0] +
-                      '_desc-residual_bold.dtseries.nii',
-                      resddata=res.split('run-')[0] + resid.partition('_desc')[0] +
-                      '_desc-residual_bold.dtseries.nii',
-                      fd=res.split('run-')[0] + resid.partition('_den-91k')[0] +
-                      '_desc-framewisedisplacement_bold.tsv',
+                      regdata=res.split('run-')[0] + resid.partition('_de'
+                                                                     'sc')[0] + '_desc-resi'
+                      'dual_bold.dtseries.nii',
+                      resddata=res.split('run-')[0] + resid.partition('_de'
+                                                                      'sc')[0] + '_desc-resi'
+                      'dual_bold.dtseries.nii',
+                      fd=res.split('run-')[0] + resid.partition('_den-9'
+                                                                '1k')[0] + '_desc-framewise'
+                      'displacement_bold.tsv',
                       raw_dvars=raw_dvars,
                       reg_dvars=reg_dvars,
                       regf_dvars=reg_dvars,
@@ -372,9 +377,8 @@ def get_segfile(bold_file):
     transformfilex = get_transformfile(bold_file=bold_file, mni_to_t1w=mni_to_t1,
                                        t1w_to_native=_t12native(bold_file))
 
-    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0]+'boldref.nii.gz'
-
-    segfile = tempfile.mkdtemp()+'segfile.nii.gz'
+    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
+    segfile = tempfile.mkdtemp() + 'segfile.nii.gz'
     carpet = str(get_template('MNI152NLin2009cAsym', resolution=1, desc='carpet',
                               suffix='dseg', extension=['.nii', '.nii.gz']))
 

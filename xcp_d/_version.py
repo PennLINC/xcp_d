@@ -107,12 +107,11 @@ def versions_from_parentdir(parentdir_prefix, root, verbose):
     """
     rootdirs = []
 
-    
     dirname = os.path.basename(root)
     if dirname.startswith(parentdir_prefix):
         return {"version": dirname[len(parentdir_prefix):],
-                    "full-revisionid": None,
-                    "dirty": False, "error": None, "date": None}
+                "full-revisionid": None,
+                "dirty": False, "error": None, "date": None}
     else:
         rootdirs.append(root)
         root = os.path.dirname(root)  # up a level
@@ -205,7 +204,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
         GITS = ["git.cmd", "git.exe"]
 
     rc = run_command(GITS, ["rev-parse", "--git-dir"], cwd=root,
-                          hide_stderr=True)
+                     hide_stderr=True)
     if rc[1] != 0:
         if verbose:
             print("Directory %s not under git control" % root)

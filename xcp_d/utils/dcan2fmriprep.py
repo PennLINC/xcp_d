@@ -36,7 +36,7 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
     """
     # get session id if available
 
-    sess = glob.glob(dcan_dir+'/'+sub_id+'/s*')
+    sess = glob.glob(dcan_dir + '/' + sub_id + '/s*')
     ses_id = []
     ses_id = [j.split('ses-')[1] for j in sess]
 
@@ -44,10 +44,10 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
 
     for ses in ses_id:
 
-        anat_dirx = dcan_dir+'/' + sub_id + '/ses-' + ses + '/files/MNINonLinear/'
-        anatdir = out_dir + '/' + sub_id + '/ses-'+ses + '/anat/'
+        anat_dirx = dcan_dir + '/' + sub_id + '/ses-' + ses + '/files/MNINonLinear/'
+        anatdir = out_dir + '/' + sub_id + '/ses-' + ses + '/anat/'
         os.makedirs(anatdir, exist_ok=True)
-        sess = 'ses-'+ses
+        sess = 'ses-' + ses
         tw1 = anat_dirx + '/T1w.nii.gz'
         brainmask = anat_dirx + '/brainmask_fs.nii.gz'
         ribbon = anat_dirx + '/ribbon.nii.gz'
@@ -71,10 +71,10 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
         t1seg = anatdir + sub_id + '_' + sess + '_dseg.nii.gz'
         t1ribbon = anatdir + sub_id + '_' + sess + '_desc-ribbon.nii.gz'
         t1brainm = anatdir + sub_id + '_' + sess + '_desc-brain_mask.nii.gz'
-        regfile1 = (anatdir + sub_id + '_' + sess +
-                    '_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5')
-        regfile2 = (anatdir + sub_id + '_' + sess +
-                    '_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')
+        regfile1 = (anatdir + sub_id + '_' + sess + '_from-T1w_to-MNI152NLi'
+                    'n2009cAsym_mode-image_xfm.h5')
+        regfile2 = (anatdir + sub_id + '_' + sess + '_from-MNI152NLin2009c'
+                    'Asym_to-T1w_mode-image_xfm.h5')
 
         lMid = anatdir + sub_id + '_' + sess + '_hemi-L_midthickness.surf.gii'
         rMid = anatdir + sub_id + '_' + sess + '_hemi-R_midthickness.surf.gii'
@@ -109,11 +109,11 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
             if not os.path.isfile(k):
                 taskid.append(os.path.basename(k).split('-')[1])
 
-        func_dir = out_dir + '/' + sub_id + '/ses-'+ses + '/func/'
+        func_dir = out_dir + '/' + sub_id + '/ses-' + ses + '/func/'
         os.makedirs(func_dir, exist_ok=True)
-        ses_id = 'ses-'+ses
+        ses_id = 'ses-' + ses
         for ttt in taskid:
-            taskdir = 'task-'+ttt
+            taskdir = 'task-' + ttt
 
             taskname = re.split(r'(\d+)', ttt)[0]
             run_id = '_run-' + str(int(re.split(r'(\d+)', ttt)[1]))
@@ -131,9 +131,9 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
             mvreg = mvreg.iloc[:, 0:6]
             mvreg.columns = ['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']
             # convert rot to rad
-            mvreg['rot_x'] = mvreg['rot_x']*np.pi/180
-            mvreg['rot_y'] = mvreg['rot_y']*np.pi/180
-            mvreg['rot_z'] = mvreg['rot_z']*np.pi/180
+            mvreg['rot_x'] = mvreg['rot_x'] * np.pi / 180
+            mvreg['rot_y'] = mvreg['rot_y'] * np.pi / 180
+            mvreg['rot_z'] = mvreg['rot_z'] * np.pi / 180
 
             csfreg = extractreg(mask=csfmask, nifti=volume)
             wmreg = extractreg(mask=wmmask, nifti=volume)
@@ -156,24 +156,24 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
                 "surface": "fsLR", "surface_density": "32k",
                 "volume": "MNI152NLin6Asym"}
 
-            boldname = func_dir + sub_id+'_' + ses_id + '_task-'+taskname + \
+            boldname = func_dir + sub_id + '_' + ses_id + '_task-' + taskname + \
                 run_id + '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
-            boldjson = func_dir + sub_id+'_' + ses_id + '_task-'+taskname + \
+            boldjson = func_dir + sub_id + '_' + ses_id + '_task-' + taskname + \
                 run_id + '_space-MNI152NLin6Asym_desc-preproc_bold.json'
-            confreg = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            confreg = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_desc-confounds_timeseries.tsv'
-            confregj = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            confregj = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_desc-confounds_timeseries.json'
-            boldref = func_dir + sub_id+'_' + ses_id + '_task-' + \
-                taskname + run_id+'_space-MNI152NLin6A' \
-                                  'sym_boldref.nii.gz'
-            dttseriesx = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            boldref = func_dir + sub_id + '_' + ses_id + '_task-' + \
+                taskname + run_id + '_space-MNI152NLin6A' \
+                'sym_boldref.nii.gz'
+            dttseriesx = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_space-fsLR_den-91k_bold.dtseries.nii'
-            dttseriesj = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            dttseriesj = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_space-fsLR_den-91k_bold.dtseries.json'
-            native2t1w = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            native2t1w = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_from-scanner_to-T1w_mode-image_xfm.txt'
-            t12native = func_dir + sub_id+'_' + ses_id + '_task-' + \
+            t12native = func_dir + sub_id + '_' + ses_id + '_task-' + \
                 taskname + run_id + '_from-T1w_to-scanner_mode-image_xfm.txt'
 
             # maske  coreg files here
@@ -186,8 +186,9 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
 
             figdir = out_dir + '/' + sub_id + '/figures/'
             os.makedirs(figdir, exist_ok=True)
-            bbreg = (figdir + sub_id+'_' + ses_id + '_task-'+taskname +
-                     run_id + '_desc-bbregister_bold.svg')
+            bbreg = (
+                figdir + sub_id + '_' + ses_id + '_task-' + taskname + run_id + '_desc-bbregis'
+                'ter_bold.svg')
             bbreg = bbregplot(fixed_image=tw1,
                               moving_image=boldref,
                               out_file=bbreg, contour=ribbon)
@@ -210,7 +211,7 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
                     "Version": "0.0.4",
                     "CodeURL": "https://github.com/DCAN-Labs/abcd-hcp-pipeline"
                 }], }
-        writejson(dcanjosn, out_dir+'/dataset_description.json')
+        writejson(dcanjosn, out_dir + '/dataset_description.json')
 
 
 # def symlinkfiles(src, dest):

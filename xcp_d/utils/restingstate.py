@@ -31,8 +31,8 @@ class ReHoNamePatch(SimpleInterface):
 
     def _run_interface(self, runtime):
         outfile = runtime.cwd + "/reho.nii.gz"
-        shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
-        shutil.copyfile(self.inputs.mask_file, runtime.cwd+"/mask.nii.gz")
+        shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
+        shutil.copyfile(self.inputs.mask_file, runtime.cwd + "/mask.nii.gz")
         os.system("3dReHo -inset inset.nii.gz -mask mask.nii.gz -nneigh 27 -prefix reho.nii.gz")
         self._results['out_file'] = outfile
 
@@ -60,7 +60,7 @@ class DespikePatch(SimpleInterface):
 
     def _run_interface(self, runtime):
         outfile = runtime.cwd + "/3despike.nii.gz"
-        shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
+        shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
         os.system("3dDespike -NEW -prefix  3despike.nii.gz inset.nii.gz")
         self._results['out_file'] = outfile
 
@@ -78,9 +78,9 @@ class ContrastEnhancement(SimpleInterface):
         outfile = runtime.cwd + "/3dunfixed.nii.gz"
 
         if self.inputs.in_file.endswith(".nii.gz"):
-            shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.nii.gz")
+            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
         else:
-            shutil.copyfile(self.inputs.in_file, runtime.cwd+"/inset.mgz")
+            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.mgz")
             os.system("mri_convert inset.mgz inset.nii.gz")
 
         os.system("3dUnifize -T2  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")

@@ -164,8 +164,8 @@ def read_gii(surf_gii):
 
 def despikedatacifti(cifti, tr, basedir):
     """ despiking cifti """
-    fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
-    fake_cifti1_depike = str(basedir+'/fake_niftix_depike.nii.gz')
+    fake_cifti1 = str(basedir + '/fake_niftix.nii.gz')
+    fake_cifti1_depike = str(basedir + '/fake_niftix_depike.nii.gz')
     cifti_despike = str(basedir + '/despike_nifti2cifti.dtseries.nii')
     run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ', cifti, fake_cifti1])
     run_shell(['3dDespike -nomask -NEW -prefix', fake_cifti1_depike, fake_cifti1])
@@ -176,8 +176,8 @@ def despikedatacifti(cifti, tr, basedir):
 
 
 def scalex(X, x_min, x_max):
-    nom = (X-X.min())*(x_max-x_min)
+    nom = (X - X.min()) * (x_max - x_min)
     denom = X.max() - X.min()
     if denom == 0:
         denom = 1
-    return x_min + nom/denom
+    return x_min + nom / denom

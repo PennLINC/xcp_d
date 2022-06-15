@@ -82,7 +82,7 @@ def compute_dvars(datat):
     '''
     firstcolumn = np.zeros((datat.shape[0]))[..., None]
     datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0)/datat.shape[0]
+    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
     return np.sqrt(datax_ss)
 
 
@@ -364,10 +364,11 @@ def confoundplotx(
     elif ylims:
         ax_ts.set_ylim(ylims)
     else:
-        ax_ts.set_ylim([-1.5*max(minx_value), 1.5*max(maxim_value)])
+        ax_ts.set_ylim([-1.5 * max(minx_value), 1.5 * max(maxim_value)])
 
-    for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
-                 ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
+    for item in ([ax_ts.title,
+                  ax_ts.xaxis.label,
+                  ax_ts.yaxis.label] + ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
         item.set_fontsize(30)
 
     for axis in ['top', 'bottom', 'left', 'right']:
@@ -380,7 +381,7 @@ def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=No
     colums = conf.columns
     if tr is None:
         tr = 1.
-    xtick = np.linspace(0, conf.shape[0]*tr, num=conf.shape[0])
+    xtick = np.linspace(0, conf.shape[0] * tr, num=conf.shape[0])
     plt.style.use('seaborn-white')
     plt.xticks(color='k')
     plt.yticks(color='k')
@@ -394,7 +395,7 @@ def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=No
     if ylim:
         ax.set_ylim(ylim)
     else:
-        ax.set_ylim([-2*conf[k].max(), 2*conf[k].max()])
+        ax.set_ylim([-2 * conf[k].max(), 2 * conf[k].max()])
     ax.set_ylabel(ylabelx, fontsize=40)
     ax.legend(fontsize=20)
 
@@ -417,8 +418,9 @@ def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=No
 
     for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(2)
-    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                 ax.get_xticklabels() + ax.get_yticklabels()):
+    for item in ([ax.title,
+                  ax.xaxis.label,
+                  ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
         item.set_fontsize(20)
 
     return ax

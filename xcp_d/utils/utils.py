@@ -119,9 +119,10 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     # get the template for registration
     if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
         template = 'MNI152NLin2009cAsym'
-
+        print(template)
     elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
         template = 'MNIInfant'
+        print(template)
         # FSL2MNI9  = pkgrf('xcp_d', 'data/transform/oneratiotransform.txt')
 
     # now get transform files for bold file
