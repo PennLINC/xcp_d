@@ -280,7 +280,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     censorscrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
         custom_conf=custom_conf,
-        initial_volumes_to_drop=initial_volumes_to_drop
+        initial_volumes_to_drop=initial_volumes_to_drop,
         TR=TR,
         head_radius=head_radius,
         dummytime=dummytime,
