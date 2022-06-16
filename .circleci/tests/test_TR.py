@@ -12,6 +12,7 @@ mounted in a container somewhere unintuitively.
 import os.path as op
 import nibabel as nb
 
+
 def test_data_availability(data_dir, working_dir, output_dir):
     """Makes sure that we have access to all the testing data
     """
@@ -56,7 +57,8 @@ def test_removeTR(data_dir):
     assert nb.load(results.outputs.bold_file_TR).get_fdata().shape[3] == original_nvols_nifti
 
     # Test a nifti file with 'n' volumes to remove
-    for n in range(0, original_nvols_nifti-1):  # Testing all n values till original_nvols_nifti - 1
+    for n in range(0, original_nvols_nifti-1):  # Testing all n values till
+        # original_nvols_nifti - 1
         remove_n_vols = removeTR(
             bold_file=boldfile,
             fmriprep_conf=confounds_file,
