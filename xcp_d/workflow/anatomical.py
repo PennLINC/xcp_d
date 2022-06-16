@@ -389,7 +389,7 @@ def init_anatomical_wf(
                     convert_warpfield_fnirt,
                     [("output_image", "source_volume")],
                 ),
-                (convert_warpfield_fnirt, invert_warpfield, [("field_file", "warp")]),
+                (convert_warpfield_fnirt, invert_warpfield, [("out_file", "warp")]),
                 (t1w_mniaffine_wf, invert_warpfield, [("output_image", "reference")]),
             ]
         )
@@ -861,7 +861,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_lh_pial,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_lh_pial,
@@ -897,7 +897,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_rh_pial,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_rh_pial,
@@ -933,7 +933,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_lh_wm,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_lh_wm,
@@ -965,7 +965,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_rh_wm,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_rh_wm,
@@ -1001,7 +1001,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_lh_midthick,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_lh_midthick,
@@ -1037,7 +1037,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_rh_midthick,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_rh_midthick,
@@ -1073,7 +1073,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_lh_inflated,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_lh_inflated,
@@ -1109,7 +1109,7 @@ def init_anatomical_wf(
                     (
                         convert_warpfield_fnirt,
                         apply_warpfield_rh_inflated,
-                        [("field_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         surface_apply_affine_rh_inflated,
