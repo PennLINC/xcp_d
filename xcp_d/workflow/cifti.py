@@ -42,7 +42,6 @@ def init_ciftipostprocess_wf(
         smoothing,
         head_radius,
         params,
-        initial_volumes_to_drop,
         output_dir,
         custom_conf,
         omp_nthreads,
@@ -128,8 +127,6 @@ def init_ciftipostprocess_wf(
         remove the censored volumes
     dummytime: float
         the first few seconds to be removed before postprocessing
-    initial_volumes_to_drop: int
-        the first volumes to be removed before postprocessing
 
     Inputs
     ------
@@ -184,9 +181,9 @@ tasks and sessions), the following post-processing was performed:
         TR = metadata['RepetitionTime']
 
     # TR = get_ciftiTR(cifti_file=cifti_file)
-
+    initial_volumes_to_drop = 0
     if dummytime > 0:
-        nvolx = str(np.floor(dummytime / TR))
+        initial_volumes_to_drop = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data,  the first {nvol} were discarded.
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
