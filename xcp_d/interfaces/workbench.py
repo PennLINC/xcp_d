@@ -182,6 +182,13 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
         name_source="in_file",
         name_template="%s-MNIwarped.surf.gii",
         keep_extension=False,
+        position=2,
+    )
+
+    forward_warp = File(
+        argstr="-fnirt %s ",
+        position=3,
+        desc="fnirt forward warpfield",
     )
 
 
@@ -244,12 +251,6 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         argstr="%s",
         position=3,
         desc="The sphere output file",
-    )
-
-    forward_warp = File(
-        argstr="-fnirt %s ",
-        position=4,
-        desc="fnirt forward warpfield",
     )
 
 
