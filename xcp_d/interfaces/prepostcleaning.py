@@ -15,12 +15,14 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
                      mandatory=True,
                      desc=" either bold or nifti ")
     mask_file = File(exists=False, mandatory=False, desc="required for nifti")
-    volumes_to_drop = traits.Int(mandatory=True,
-                                 desc="number of volumes to drop from the beginning")
+    time_todrop = traits.Float(mandatory=True,
+                               desc="number of seconds to drop from the beginning")
     fmriprep_conf = File(
         exists=True,
         mandatory=False,
         desc="confound selected from fmriprep confound matrix")
+    TR = traits.Float(mandatory=True,
+                      desc="repetition time")
 
 
 class _removeTROutputSpec(TraitedSpec):
@@ -51,9 +53,9 @@ class removeTR(SimpleInterface):
     output_spec = _removeTROutputSpec
 
     def _run_interface(self, runtime):
-
+        volumes_to_drop = np.ceil(self.inputs.time_todrop / self.inputs.TR)
         # Check if we need to do anything
-        if self.inputs.dummytime == 0:
+        if self.inputs.time_todrop == 0:
             # write the output out
             self._results['bold_file_TR'] = self.inputs.bold_file
             self._results['fmrip_confdropTR'] = self.inputs.fmriprep_conf
@@ -76,7 +78,7 @@ class removeTR(SimpleInterface):
 
         # this is a Cifti image
         if bold_image.ndim == 2:
-            dropped_data = data[self.inputs.volumes_to_drop:]
+            dropped_data = data[volumes_to_drop:]
             dropped_image = nb.Cifti2Image(
                 dropped_data,
                 header=bold_image.header,
@@ -84,7 +86,7 @@ class removeTR(SimpleInterface):
 
         # It's a Nifti
         else:
-            dropped_data = data[..., self.inputs.volumes_to_drop:]
+            dropped_data = data[volumes_to_drop:]
             dropped_image = nb.Nifti1Image(
                 dropped_data,
                 affine=bold_image.affine,
@@ -95,7 +97,7 @@ class removeTR(SimpleInterface):
 
         # Drop the first rows from the pandas dataframe
         confounds_df = pd.read_csv(self.inputs.fmriprep_conf, sep="\t")
-        dropped_confounds_df = confounds_df.drop(np.arange(self.inputs.volumes_todrop))
+        dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
 
         self._results['bold_file_TR'] = dropped_bold_file
