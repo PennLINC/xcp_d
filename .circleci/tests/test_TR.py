@@ -12,9 +12,6 @@ mounted in a container somewhere unintuitively.
 import os.path as op
 import nibabel as nb
 
-data_dir = '/Users/kahinim/Desktop/xcp_test/data'
-
-
 def test_data_availability(data_dir, working_dir, output_dir):
     """Makes sure that we have access to all the testing data
     """
