@@ -36,6 +36,7 @@ def init_post_process_wf(
         band_stop_min,
         motion_filter_order,
         contigvol,
+        initial_number_of_volumes_to_drop,
         cifti=False,
         dummytime=0,
         fd_thresh=0,
@@ -211,7 +212,7 @@ frequency band {highpass}-{lowpass} Hz.
 
     if dummytime > 0:
         rm_dummytime = pe.Node(
-            removeTR(time_todrop=dummytime, TR=TR),
+            removeTR(volumes_to_drop = initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1*mem_gb)
 

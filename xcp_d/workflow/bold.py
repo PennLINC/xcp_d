@@ -198,7 +198,7 @@ def init_boldpostprocess_wf(
 For each of the {num_bold} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """.format(num_bold=num2words(num_bold))
-
+    initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = str(np.ceil(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \

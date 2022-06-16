@@ -15,7 +15,7 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
                      mandatory=True,
                      desc=" either bold or nifti ")
     mask_file = File(exists=False, mandatory=False, desc="required for nifti")
-    volumes_to_drop = traits.Int(mandatory=True,
+    initial_volumes_to_drop = traits.Int(mandatory=True,
                                  desc="number of volumes to drop from the beginning")
     fmriprep_conf = File(
         exists=True,
