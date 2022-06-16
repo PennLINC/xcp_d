@@ -81,4 +81,3 @@ def test_removeTR(data_dir):
             print("Tests failing at N = {}.".format(n))
             raise Exception("Number of volumes in censored nifti is {}.".format(exc))
 
-
