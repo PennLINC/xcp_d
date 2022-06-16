@@ -35,17 +35,23 @@ def test_removeTR(data_dir, working_dir, output_dir):
     mask_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
 
+    # Test a nifti file with 0 volumes to remove
     original_confounds = pd.read_csv(confounds_file, sep="\t")
+    confounds_num_rows = original_confounds.shape[0]
 
     remove_nothing = removeTR(
         bold_file=boldfile,
         fmriprep_conf=confounds_file,
         TR=2,
-        time_todrop=0,
+        initial_volumes_to_drop=0,
         mask_file=mask_file)
     results = remove_nothing.run()
     print(results.outputs)
 
-    nothing_outputs = pd.read_csv(results.outputs.fmrip_confdropTR)
+    nothing_confounds = pd.read_csv(results.outputs.fmrip_confdropTR)
+    assert nothing_confounds.shape == original_confounds.shape
+
+
+    # Do a cifti test! ensure that the data is readable and writable
 
     assert op.exists(results.outputs.fmrip_confdropTR)
