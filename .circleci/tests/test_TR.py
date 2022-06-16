@@ -43,39 +43,40 @@ def test_removeTR(data_dir):
     # Test a nifti file with 0 volumes to remove
     remove_nothing = removeTR(
         bold_file=boldfile,
-        fmriprep_conf=confounds_file,
+        fmriprep_confounds_file=confounds_file,
         initial_volumes_to_drop=0,
         mask_file=mask_file)
     results = remove_nothing.run()
-    uncensored_confounds = pd.read_table(results.outputs.fmrip_confdropTR)
+    uncensored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
-    assert op.exists(results.outputs.bold_file_TR)
-    assert op.exists(results.outputs.fmrip_confdropTR)
+    assert op.exists(results.outputs.bold_file_dropped_TR)
+    assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Have the confounds stayed the same shape?
     assert uncensored_confounds.shape == original_confounds.shape
     # Has the nifti stayed the same shape?
-    assert nb.load(results.outputs.bold_file_TR).get_fdata().shape[3] == original_nvols_nifti
+    assert nb.load(results. 
+                   outputs.bold_file_dropped_TR).get_fdata().shape[3] == original_nvols_nifti
 
     # Test a nifti file with 'n' volumes to remove
     for n in range(0, original_nvols_nifti-1):  # Testing all n values till
         # original_nvols_nifti - 1
         remove_n_vols = removeTR(
             bold_file=boldfile,
-            fmriprep_conf=confounds_file,
+            fmriprep_confounds_file=confounds_file,
             initial_volumes_to_drop=n,
             mask_file=mask_file)
         results = remove_n_vols.run()
-        censored_confounds = pd.read_table(results.outputs.fmrip_confdropTR)
+        censored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
-        assert op.exists(results.outputs.bold_file_TR)
-        assert op.exists(results.outputs.fmrip_confdropTR)
+        assert op.exists(results.outputs.bold_file_dropped_TR)
+        assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Have the confounds changed correctly?
         assert censored_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the nifti changed correctly?
         try:
-            assert nb.load(results.outputs.bold_file_TR).get_fdata().shape[3]\
+            assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]\
                 == original_nvols_nifti - n
         except Exception as exc:
-            exc = nb.load(results.outputs.bold_file_TR).get_fdata().shape[3]
+            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
             print("Tests failing at N = {}.".format(n))
             raise Exception("Number of volumes in censored nifti is {}.".format(exc))

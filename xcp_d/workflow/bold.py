@@ -200,7 +200,7 @@ tasks and sessions), the following post-processing was performed:
 """.format(num_bold=num2words(num_bold))
     initial_volumes_to_drop = 0
     if dummytime > 0:
-        initial_volumes_to_drop = str(np.ceil(dummytime / TR))
+        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data, the first {nvol} were discarded, then both
 the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with

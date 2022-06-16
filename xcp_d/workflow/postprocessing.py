@@ -36,7 +36,7 @@ def init_post_process_wf(
         band_stop_min,
         motion_filter_order,
         contigvol,
-        initial_number_of_volumes_to_drop,
+        initial_volumes_to_drop,
         cifti=False,
         dummytime=0,
         fd_thresh=0,
@@ -212,7 +212,7 @@ frequency band {highpass}-{lowpass} Hz.
 
     if dummytime > 0:
         rm_dummytime = pe.Node(
-            removeTR(volumes_to_drop = initial_volumes_to_drop),
+            removeTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1*mem_gb)
 
@@ -223,7 +223,7 @@ frequency band {highpass}-{lowpass} Hz.
 
     if dummytime > 0:
         workflow.connect([
-            (confoundmat, rm_dummytime, [('confound_file', 'fmriprep_conf')]),
+            (confoundmat, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime, [
                 ('bold', 'bold_file'),
                 ('bold_mask', 'mask_file')])])
@@ -237,8 +237,8 @@ frequency band {highpass}-{lowpass} Hz.
 
         workflow.connect([
             (rm_dummytime, censor_scrubwf, [
-                ('bold_file_TR', 'in_file'),
-                ('fmrip_confdropTR', 'fmriprep_conf')]),
+                ('bold_file_dropped_TR', 'in_file'),
+                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
             (inputnode, censor_scrubwf, [
                 ('bold_file', 'bold_file'),
                 ('bold_mask', 'mask_file')]),
@@ -265,7 +265,7 @@ frequency band {highpass}-{lowpass} Hz.
                 ('bold', 'in_file'),
                 ('bold_file', 'bold_file'),
                 ('bold_mask', 'mask_file')]),
-            (confoundmat, censor_scrubwf, [('confound_file', 'fmriprep_conf')]),
+            (confoundmat, censor_scrubwf, [('confound_file', 'fmriprep_confounds_file')]),
             (censor_scrubwf, regressy, [
                 ('bold_censored', 'in_file'),
                 ('fmriprepconf_censored', 'confounds')]),
@@ -405,13 +405,13 @@ def init_censoring_wf(
 
     if dummytime > 0:
         workflow.connect([
-            (inputnode, dummy_scan_wf, [('confound_file', 'fmriprep_conf')]),
+            (inputnode, dummy_scan_wf, [('confound_file', 'fmriprep_confounds_file')]),
             (inputnode, dummy_scan_wf, [
                 ('bold', 'bold_file'),
                 ('bold_mask', 'mask_file')]),
             (dummy_scan_wf, censor_scrub, [
-                ('bold_file_TR', 'in_file'),
-                ('fmrip_confdropTR', 'fmriprep_conf')]),
+                ('bold_file_dropped_TR', 'in_file'),
+                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
             (inputnode, censor_scrub, [
                 ('bold_file', 'bold_file'),
                 ('bold_mask', 'mask_file')]),
@@ -433,7 +433,7 @@ def init_censoring_wf(
                 ('bold', 'in_file'),
                 ('bold_file', 'bold_file'),
                 ('bold_mask', 'mask_file')]),
-            (inputnode, censor_scrub, [('confound_file', 'fmriprep_conf')]),
+            (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')]),
             (censor_scrub, outputnode, [
                 ('bold_censored', 'bold_censored'),
                 ('fmriprepconf_censored', 'fmriprepconf_censored'),
