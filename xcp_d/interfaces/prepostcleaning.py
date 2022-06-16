@@ -16,13 +16,11 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
                      desc=" either bold or nifti ")
     mask_file = File(exists=False, mandatory=False, desc="required for nifti")
     initial_volumes_to_drop = traits.Int(mandatory=True,
-                                 desc="number of volumes to drop from the beginning")
+                                         desc="number of volumes to drop from the beginning")
     fmriprep_conf = File(
         exists=True,
         mandatory=False,
         desc="confound selected from fmriprep confound matrix")
-    TR = traits.Float(mandatory=True,
-                      desc="repetition time")
 
 
 class _removeTROutputSpec(TraitedSpec):
@@ -53,9 +51,9 @@ class removeTR(SimpleInterface):
     output_spec = _removeTROutputSpec
 
     def _run_interface(self, runtime):
-        volumes_to_drop = np.ceil(self.inputs.time_todrop / self.inputs.TR)
+        volumes_to_drop = self.inputs.initial_volumes_to_drop
         # Check if we need to do anything
-        if self.inputs.time_todrop == 0:
+        if self.inputs.initial_volumes_to_drop == 0:
             # write the output out
             self._results['bold_file_TR'] = self.inputs.bold_file
             self._results['fmrip_confdropTR'] = self.inputs.fmriprep_conf
