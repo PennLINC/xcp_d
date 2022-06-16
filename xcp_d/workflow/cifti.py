@@ -42,6 +42,7 @@ def init_ciftipostprocess_wf(
         smoothing,
         head_radius,
         params,
+        initial_volumes_to_drop,
         output_dir,
         custom_conf,
         omp_nthreads,
@@ -126,7 +127,9 @@ def init_ciftipostprocess_wf(
     scrub: bool
         remove the censored volumes
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the first few seconds to be removed before postprocessing
+    initial_volumes_to_drop: int
+        the first volumes to be removed before postprocessing
 
     Inputs
     ------
@@ -277,6 +280,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     censorscrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
         custom_conf=custom_conf,
+        initial_volumes_to_drop=initial_volumes_to_drop
         TR=TR,
         head_radius=head_radius,
         dummytime=dummytime,

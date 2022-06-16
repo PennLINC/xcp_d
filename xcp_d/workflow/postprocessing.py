@@ -110,7 +110,10 @@ def init_post_process_wf(
     custom_conf: str
         path to custom nuissance regressors
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the first few seconds to be removed before postprocessing
+    initial_volumes_to_drop: int
+        the first volumes to be removed before postprocessing
+
 
     Inputs
     ------
