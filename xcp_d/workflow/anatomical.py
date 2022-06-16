@@ -41,6 +41,7 @@ from ..interfaces.workbench import (
     ConvertAffine,
     ApplyAffine,
     ApplyWarpfield,
+    ConvertWarpfield,
     SurfaceSphereProjectUnproject,
     ChangeXfmType,
     SurfaceGenerateInflated,
@@ -110,12 +111,12 @@ def init_anatomical_wf(
 
     MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
     mnitemplate = str(
-        get_template(template="MNI152NLin6Asym", resolution=2, suffix="T1w")[-1]
+        get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
     )
     mnitemplatemask = str(
         get_template(
             template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
-        )[-1]
+        )
     )
     t1w2mnifnirtconf = os.path.join(
         os.getenv("FSLDIR"), "/etc/flirtsch/T1_2_MNI152_2mm.cnf"
@@ -291,12 +292,12 @@ def init_anatomical_wf(
 
         # convert warpfield to fnirt format
         convert_warpfield_fnirt = pe.Node(
-            fslfnirt(
+            ConvertWarpfield(
                 fromwhat="world",
                 towhat="fnirt",
-                ref_file=mnitemplate,
-                config_file=t1w2mnifnirtconf,
-                refmask_file=mnitemplatemask,
+                #                ref_file=mnitemplate,
+                #                config_file=t1w2mnifnirtconf,
+                #                refmask_file=mnitemplatemask,
             ),
             name="convert_warpfield_fnirt",
             mem_gb=mem_gb,
