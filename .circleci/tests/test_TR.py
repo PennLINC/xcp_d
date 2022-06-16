@@ -80,4 +80,3 @@ def test_removeTR(data_dir):
             exc = nb.load(results.outputs.bold_file_TR).get_fdata().shape[3]
             print("Tests failing at N = {}.".format(n))
             raise Exception("Number of volumes in censored nifti is {}.".format(exc))
-
