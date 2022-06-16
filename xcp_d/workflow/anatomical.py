@@ -313,7 +313,8 @@ def init_anatomical_wf(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=mnitemplate,
-                transforms=[str(t1w_to_mni), str(MNI92FSL)],
+                # transforms=[str(t1w_to_mni), str(MNI92FSL)], #TM: why was MNI92FSL xfm included here?
+                transforms=t1w_to_mni,
                 interpolation="LanczosWindowedSinc",
                 input_image_type=3,
                 dimension=3,
@@ -327,7 +328,8 @@ def init_anatomical_wf(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=mnitemplate,
-                transforms=[str(t1w_to_mni), str(MNI92FSL)],
+                # transforms=[str(t1w_to_mni), str(MNI92FSL)], # TM: why was MNI92FSL xfm included here?
+                transforms=t1w_to_mni,
                 interpolation="MultiLabel",
                 input_image_type=3,
                 dimension=3,
@@ -363,7 +365,7 @@ def init_anatomical_wf(
         workflow.connect(
             [
                 (inputnode, t1w_transform_wf, [("t1w", "input_image")]),
-                (inputnode, seg_transform_wf, [("t1seg", "transforms")]),
+                (inputnode, seg_transform_wf, [("t1seg", "input_image")]),
                 (t1w_transform_wf, ds_t1wmni_wf, [("output_image", "in_file")]),
                 (seg_transform_wf, ds_t1wseg_wf, [("output_image", "in_file")]),
                 (inputnode, ds_t1wmni_wf, [("t1w", "source_file")]),
