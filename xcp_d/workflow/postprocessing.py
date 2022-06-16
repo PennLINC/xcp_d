@@ -326,6 +326,7 @@ def init_censoring_wf(
         TR,
         head_radius,
         custom_conf,
+        initial_volumes_to_drop,
         omp_nthreads,
         dummytime=0,
         fd_thresh=0,
@@ -350,6 +351,8 @@ def init_censoring_wf(
       dummytime: float
         Time in seconds to remove from beginning of scan (default=0)
       fd_thresh: float
+      initial_volumes_to_drop: int
+        Number of volumes to drop from beginning of scan (default=0)
 
 
     Inputs:
@@ -395,7 +398,7 @@ def init_censoring_wf(
         n_procs=omp_nthreads)
 
     dummy_scan_wf = pe.Node(
-        removeTR(time_todrop=dummytime, TR=TR),
+        removeTR(initial_volumes_to_drop=initial_volumes_to_drop),
         name="remove_dummy_time",
         mem_gb=mem_gb,
         n_procs=omp_nthreads)

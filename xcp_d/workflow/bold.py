@@ -309,6 +309,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         custom_conf=custom_conf,
         head_radius=head_radius,
         dummytime=dummytime,
+        initial_volumes_to_drop=initial_volumes_to_drop,
         fd_thresh=fd_thresh,
         name='censoring',
         omp_nthreads=omp_nthreads)
