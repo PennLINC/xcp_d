@@ -390,7 +390,7 @@ def init_anatomical_wf(
                     [("output_image", "source_volume")],
                 ),
                 (convert_warpfield_fnirt, invert_warpfield, [("field_file", "warp")]),
-                (t1w_mniaffine_wf, invert_warpfield[("output_image", "reference")]),
+                (t1w_mniaffine_wf, invert_warpfield, [("output_image", "reference")]),
             ]
         )
         # verify freesurfer directory
