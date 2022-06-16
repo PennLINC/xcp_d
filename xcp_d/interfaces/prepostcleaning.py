@@ -76,7 +76,7 @@ class removeTR(SimpleInterface):
 
         # this is a Cifti image
         if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:]
+            dropped_data = data[...,volumes_to_drop:]
             dropped_image = nb.Cifti2Image(
                 dropped_data,
                 header=bold_image.header,
@@ -84,7 +84,7 @@ class removeTR(SimpleInterface):
 
         # It's a Nifti
         else:
-            dropped_data = data[volumes_to_drop:]
+            dropped_data = data[...,volumes_to_drop:]
             dropped_image = nb.Nifti1Image(
                 dropped_data,
                 affine=bold_image.affine,
