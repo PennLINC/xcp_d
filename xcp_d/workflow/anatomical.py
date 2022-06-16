@@ -285,7 +285,7 @@ def init_anatomical_wf(
         # get affine-transformed T1w to use as reference for fnirt-format warpfield
         t1w_mniaffine_wf = pe.Node(
             antsapplytransforms(reference_image=mnitemplate),
-            name="t1w_mniaffine",
+            name="t1w_mniaffine_wf",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
