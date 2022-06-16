@@ -246,7 +246,7 @@ def init_anatomical_wf(
         )
 
     else:
-
+        all_files = list(layout.get_files())
         # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
         h5_file = fnmatch.filter(
             all_files,
@@ -414,7 +414,6 @@ def init_anatomical_wf(
 
         if freesurfer_path is not None and os.path.isdir(freesurfer_path):
 
-            all_files = list(layout.get_files())
             L_inflated_surf = fnmatch.filter(
                 all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
             )[0]
