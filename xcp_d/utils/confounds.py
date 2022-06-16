@@ -7,6 +7,24 @@ import os
 from scipy.signal import firwin, iirnotch, filtfilt
 
 
+def get_confounds_tsv(datafile):
+    """Find path to confounds.tsv """
+    '''
+    datafile:
+        real nifti or cifti file
+    confounds_timeseries:
+        confound tsv file
+    '''
+    if 'space' in os.path.basename(datafile):
+        confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
+                                                "_desc-confounds_timeseries.tsv")
+    else:
+        confounds_timeseries = datafile.split(
+            '_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.tsv"
+
+    return confounds_timeseries
+
+
 def load_confound(datafile):
     """`Load confound amd json."""
     '''
