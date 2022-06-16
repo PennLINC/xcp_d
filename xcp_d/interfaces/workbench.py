@@ -41,18 +41,18 @@ class ConvertWarpfieldInputSpec(CommandLineInputSpec):
         desc="world, itk, or fnirt",
     )
 
-    source_volume = File(
-        argstr="%s ",
-        position=3,
-        desc="fnirt source volume",
-    )
-
     out_file = traits.File(
         argstr="%s",
         name_source="in_file",
         name_template="%s_converted.nii.gz",
         keep_extension=False,
+        position=3,
+    )
+
+    source_volume = File(
+        argstr="%s ",
         position=4,
+        desc="fnirt source volume",
     )
 
 
