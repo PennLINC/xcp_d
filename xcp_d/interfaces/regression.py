@@ -62,8 +62,8 @@ class regress(SimpleInterface):
         # get the confound matrix
         confound = pd.read_csv(self.inputs.confounds, header=None)
         confound = confound.to_numpy().T
-        # if self.inputs.custom_conf:
-        #     confound_custom = pd.read_table(self.inputs.custom_conf,
+        # if self.inputs.custom_confounds:
+        #     confound_custom = pd.read_table(self.inputs.custom_confounds,
         #                         header=None,delimiter=' ')
         #     confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
         #     confound = np.nan_to_num(confound)

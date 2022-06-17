@@ -82,14 +82,16 @@ class RemoveTR(SimpleInterface):
 
         # If it's a Cifti Image:
         if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...] #time series is the first element
-            time_axis, brain_model_axis = [bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
+            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
+            time_axis, brain_model_axis = [
+                bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
             new_total_volumes = dropped_data.shape[0]
             dropped_time_axis = time_axis[:new_total_volumes]
-            dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
+            dropped_header = nb.cifti2.Cifti2Header.from_axes(
+                (dropped_time_axis, brain_model_axis))
             dropped_image = nb.Cifti2Image(
-                dropped_data, 
-                header = dropped_header,
+                dropped_data,
+                header=dropped_header,
                 nifti_header=bold_image.nifti_header)
 
         # If it's a Nifti Image:
@@ -126,12 +128,12 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(exists=True,
                       mandatory=True,
                       desc="repetition time in TR")
-    custom_conf = traits.Either(traits.Undefined,
+    custom_confounds = traits.Either(traits.Undefined,
                                 File,
                                 desc="name of output file with field or true",
                                 exists=False,
                                 mandatory=False)
-    # custom_conf = File(exists=False,mandatory=False,desc=" custom confound")
+    # custom_confounds = File(exists=False,mandatory=False,desc=" custom confound")
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
@@ -159,12 +161,12 @@ class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True,
                          manadatory=True,
                          desc=" fmriprep censored")
-    fmriprepconf_censored = File(exists=True,
-                                 mandatory=True,
-                                 desc=" fmriprep_confounds_file censored")
-    customconf_censored = File(exists=False,
-                               mandatory=False,
-                               desc="custom conf censored")
+    fmriprep_confounds_censored = File(exists=True,
+                                       mandatory=True,
+                                       desc=" fmriprep_confounds_file censored")
+    custom_confounds_censored = File(exists=False,
+                                     mandatory=False,
+                                     desc="custom conf censored")
     tmask = File(exists=True, mandatory=True, desc="temporal mask")
     fd_timeseries = File(exists=True, mandatory=True, desc="fd timeseries")
 
@@ -172,8 +174,8 @@ class _CensorScrubOutputSpec(TraitedSpec):
 class CensorScrub(SimpleInterface):
     r"""
     Generate temporal masking with volumes above fd threshold set to 1.
-    This will be used to remove timepoints from the bold file and 
-    confounds tsv. 
+    This will be used to remove timepoints from the bold file and
+    confounds tsv.
 
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
@@ -225,8 +227,8 @@ class CensorScrub(SimpleInterface):
                             maskfile=self.inputs.mask_file)
         fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_confounds_file, header=None)
 
-        if self.inputs.custom_conf:
-            customx_conf = pd.read_csv(self.inputs.custom_conf, header=None)
+        if self.inputs.custom_confounds:
+            customx_conf = pd.read_csv(self.inputs.custom_confounds, header=None)
 
         if self.inputs.time_todrop == 0:
             # do censoring staright
@@ -236,13 +238,13 @@ class CensorScrub(SimpleInterface):
                 datax_censored = dataxx[:, tmask == 0]
                 fmriprepx_censored = fmriprepx_conf.drop(
                     fmriprepx_conf.index[np.where(tmask == 1)])
-                if self.inputs.custom_conf:
+                if self.inputs.custom_confounds:
                     customx_censored = customx_conf.drop(
                         customx_conf.index[np.where(tmask == 1)])
             else:
                 datax_censored = dataxx
                 fmriprepx_censored = fmriprepx_conf
-                if self.inputs.custom_conf:
+                if self.inputs.custom_confounds:
                     customx_censored = customx_conf
             fd_timeseries2 = fd_timeseries
         else:
@@ -257,27 +259,27 @@ class CensorScrub(SimpleInterface):
                 datax_censored = dataxx[:, tmask == 0]
                 fmriprepx_censored = fmriprepx_conf.drop(
                     fmriprepx_conf.index[np.where(tmask == 1)])
-                if self.inputs.custom_conf:
+                if self.inputs.custom_confounds:
                     customx_censored = customx_conf.drop(
                         customx_conf.index[np.where(tmask == 1)])
             else:
                 datax_censored = dataxx
                 fmriprepx_censored = fmriprepx_conf
-                if self.inputs.custom_conf:
+                if self.inputs.custom_confounds:
                     customx_censored = customx_conf
 
         # get the output
         self._results['bold_censored'] = fname_presuffix(self.inputs.in_file,
                                                          newpath=os.getcwd(),
                                                          use_ext=True)
-        self._results['fmriprepconf_censored'] = fname_presuffix(
+        self._results['fmriprep_confounds_censored'] = fname_presuffix(
             self.inputs.in_file,
-            suffix='fmriprepconf_censored.csv',
+            suffix='fmriprep_confounds_censored.csv',
             newpath=os.getcwd(),
             use_ext=False)
-        self._results['customconf_censored'] = fname_presuffix(
+        self._results['custom_confounds_censored'] = fname_presuffix(
             self.inputs.in_file,
-            suffix='customconf_censored.txt',
+            suffix='custom_confounds_censored.txt',
             newpath=os.getcwd(),
             use_ext=False)
         self._results['tmask'] = fname_presuffix(self.inputs.in_file,
@@ -296,7 +298,7 @@ class CensorScrub(SimpleInterface):
                     filename=self._results['bold_censored'],
                     tr=self.inputs.TR)
 
-        fmriprepx_censored.to_csv(self._results['fmriprepconf_censored'],
+        fmriprepx_censored.to_csv(self._results['fmriprep_confounds_censored'],
                                   index=False,
                                   header=False)
         np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
@@ -304,8 +306,8 @@ class CensorScrub(SimpleInterface):
                    fd_timeseries2,
                    fmt="%1.4f",
                    delimiter=',')
-        if self.inputs.custom_conf:
-            customx_censored.to_csv(self._results['customconf_censored'],
+        if self.inputs.custom_confounds:
+            customx_censored.to_csv(self._results['custom_confounds_censored'],
                                     index=False,
                                     header=False)
         return runtime

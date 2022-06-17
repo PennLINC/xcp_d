@@ -158,7 +158,7 @@ def confpower(confound, order=2):
 def load_confound_matrix(datafile,
                          TR,
                          filtertype,
-                         custom_conf=None,
+                         custom_confounds=None,
                          cutoff=0.1,
                          order=4,
                          freqband=[0.1, 0.2],
@@ -241,11 +241,11 @@ def load_confound_matrix(datafile,
         confound = pd.concat([mm_dev, acompc, gs, cosine], axis=1)
     elif params == 'custom':
         # for custom confounds with no other confounds
-        confound = pd.read_csv(custom_conf, sep='\t', header=None)
+        confound = pd.read_csv(custom_confounds, sep='\t', header=None)
 
     if params != 'custom':
-        if custom_conf is not None:
-            custom = pd.read_csv(custom_conf, sep='\t', header=None)
+        if custom_confounds is not None:
+            custom = pd.read_csv(custom_confounds, sep='\t', header=None)
             confound = pd.concat([confound, custom], axis=1)
 
     return confound

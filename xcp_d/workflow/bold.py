@@ -44,7 +44,7 @@ def init_boldpostprocess_wf(lower_bpf,
                             bold_file,
                             head_radius,
                             params,
-                            custom_conf,
+                            custom_confounds,
                             omp_nthreads,
                             dummytime,
                             output_dir,
@@ -77,7 +77,7 @@ def init_boldpostprocess_wf(lower_bpf,
                 smoothing,
                 head_radius,
                 params,
-                custom_conf,
+                custom_confounds,
                 omp_nthreads,
                 dummytime,
                 output_dir,
@@ -123,7 +123,7 @@ def init_boldpostprocess_wf(lower_bpf,
         nuissance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_conf: str
+    custom_confounds: str
         path to cusrtom nuissance regressors
     dummytime: float
         the time in seconds to be removed before postprocessing
@@ -233,7 +233,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
-    inputnode.inputs.custom_conf = str(custom_conf)
+    inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str()
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
@@ -286,7 +286,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         ConfoundMatrix(
             head_radius=head_radius,
             params=params,
-            custom_conf=custom_conf,
+            custom_confounds=custom_confounds,
             filtertype=motion_filter_type,
             cutoff=band_stop_max,
             low_freq=band_stop_max,
@@ -299,7 +299,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
         TR=TR,
-        custom_conf=custom_conf,
+        custom_confounds=custom_confounds,
         head_radius=head_radius,
         dummytime=dummytime,
         initial_volumes_to_drop=initial_volumes_to_drop,
@@ -450,7 +450,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
                       (CensorScrub_wf, regression_wf,
                        [('outputnode.bold_censored', 'in_file'),
-                        ('outputnode.fmriprepconf_censored', 'confounds')])])
+                        ('outputnode.fmriprep_confounds_censored', 'confounds')])])
 
     # interpolation workflow
     workflow.connect([

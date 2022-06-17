@@ -42,7 +42,7 @@ def init_ciftipostprocess_wf(cifti_file,
                              head_radius,
                              params,
                              output_dir,
-                             custom_conf,
+                             custom_confounds,
                              omp_nthreads,
                              dummytime,
                              fd_thresh,
@@ -72,7 +72,7 @@ def init_ciftipostprocess_wf(cifti_file,
                 smoothing,
                 head_radius,
                 params,
-                custom_conf,
+                custom_confounds,
                 omp_nthreads,
                 dummytime,
                 output_dir,
@@ -119,7 +119,7 @@ def init_ciftipostprocess_wf(cifti_file,
         nuissance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_conf: str
+    custom_confounds: str
         path to cusrtom nuissance regressors
     scrub: bool
         remove the censored volumes
@@ -208,7 +208,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_conf', 't1w', 't1seg']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
@@ -264,7 +264,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         ConfoundMatrix(
             head_radius=head_radius,
             params=params,
-            custom_conf=custom_conf,
+            custom_confounds=custom_confounds,
             filtertype=motion_filter_type,
             cutoff=band_stop_max,
             low_freq=band_stop_max,
@@ -277,7 +277,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
-        custom_conf=custom_conf,
+        custom_confounds=custom_confounds,
         initial_volumes_to_drop=initial_volumes_to_drop,
         TR=TR,
         head_radius=head_radius,
@@ -365,7 +365,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     # regression workflow
     workflow.connect([(CensorScrub_wf, regression_wf,
                        [('outputnode.bold_censored', 'in_file'),
-                        ('outputnode.fmriprepconf_censored', 'confounds')])])
+                        ('outputnode.fmriprep_confounds_censored', 'confounds')])])
 
     # interpolation workflow
     workflow.connect([

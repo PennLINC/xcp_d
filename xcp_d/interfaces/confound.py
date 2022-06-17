@@ -58,7 +58,7 @@ class _confoundInputSpec(BaseInterfaceInputSpec):
         default=16,
         desc=' high frequency for nortch filter in breathe per min (bpm)')
 
-    custom_conf = traits.Either(traits.Undefined,
+    custom_confounds = traits.Either(traits.Undefined,
                                 File,
                                 desc="name of output file with field or true",
                                 exists=False,
@@ -109,7 +109,7 @@ class ConfoundMatrix(SimpleInterface):
         # get the nifti/cifti into  matrix
         data_matrix = load_confound_matrix(datafile=self.inputs.in_file,
                                            filtertype=self.inputs.filtertype,
-                                           custom_conf=self.inputs.custom_conf,
+                                           custom_confounds=self.inputs.custom_confounds,
                                            freqband=freqband,
                                            cutoff=cutoff,
                                            params=self.inputs.params,
