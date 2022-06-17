@@ -65,11 +65,18 @@ def plot_svg(fdata, fd, dvars, filename, tr=1):
     '''
     sns.set_style('whitegrid')
     fig = plt.figure(constrained_layout=False, figsize=(30, 15))
-    grid = mgs.GridSpec(3, 1, wspace=0.0, hspace=0.05,
+    grid = mgs.GridSpec(3,
+                        1,
+                        wspace=0.0,
+                        hspace=0.05,
                         height_ratios=[1] * (3 - 1) + [5])
     confoundplot(fd, grid[0], tr=tr, color='b', name='FD')
     confoundplot(dvars, grid[1], tr=tr, color='r', name='DVARS')
-    plot_carpet(func_data=fdata, subplot=grid[-1], tr=tr,)
+    plot_carpet(
+        func_data=fdata,
+        subplot=grid[-1],
+        tr=tr,
+    )
     fig.savefig(filename, bbox_inches="tight", pad_inches=None)
 
 
@@ -82,13 +89,21 @@ def compute_dvars(datat):
     '''
     firstcolumn = np.zeros((datat.shape[0]))[..., None]
     datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0)/datat.shape[0]
+    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
     return np.sqrt(datax_ss)
 
 
-def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
-                 units=None, tr=None, hide_x=True, color='b', nskip=0,
-                 cutoff=None, ylims=None):
+def confoundplot(tseries,
+                 gs_ts,
+                 gs_dist=None,
+                 name=None,
+                 units=None,
+                 tr=None,
+                 hide_x=True,
+                 color='b',
+                 nskip=0,
+                 cutoff=None,
+                 ylims=None):
     '''
     adapted from niworkflows
     tseries:
@@ -112,8 +127,11 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
     tseries = np.array(tseries)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts,
-                                     width_ratios=[1, 100], wspace=0.0)
+    gs = mgs.GridSpecFromSubplotSpec(1,
+                                     2,
+                                     subplot_spec=gs_ts,
+                                     width_ratios=[1, 100],
+                                     wspace=0.0)
 
     ax_ts = plt.subplot(gs[1])
     ax_ts.grid(False)
@@ -137,12 +155,23 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
         if units is not None:
             name += ' [%s]' % units
 
-        ax_ts.annotate(
-            name, xy=(0.0, 0.7), xytext=(0, 0), xycoords='axes fraction',
-            textcoords='offset points', va='center', ha='left',
-            color=color, size=16,
-            bbox={'boxstyle': 'round', 'fc': 'w', 'ec': 'none',
-                  'color': 'none', 'lw': 0, 'alpha': 0.8})
+        ax_ts.annotate(name,
+                       xy=(0.0, 0.7),
+                       xytext=(0, 0),
+                       xycoords='axes fraction',
+                       textcoords='offset points',
+                       va='center',
+                       ha='left',
+                       color=color,
+                       size=16,
+                       bbox={
+                           'boxstyle': 'round',
+                           'fc': 'w',
+                           'ec': 'none',
+                           'color': 'none',
+                           'lw': 0,
+                           'alpha': 0.8
+                       })
 
     for side in ["top", "right"]:
         ax_ts.spines[side].set_color('none')
@@ -167,8 +196,10 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
     if nonnan.size > 0:
         # Calculate Y limits
         valrange = (nonnan.max() - nonnan.min())
-        def_ylims = [nonnan.min() - 0.1 * valrange,
-                     nonnan.max() + 0.1 * valrange]
+        def_ylims = [
+            nonnan.min() - 0.1 * valrange,
+            nonnan.max() + 0.1 * valrange
+        ]
         if ylims is not None:
             if ylims[0] is not None:
                 def_ylims[0] = min([def_ylims[0], ylims[0]])
@@ -192,34 +223,52 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
         p95 = 0
 
     stats_label = (r'max: {max:.3f}{units} $\bullet$ mean: {mean:.3f}{units} '
-                   r'$\bullet$ $\sigma$: {sigma:.3f}').format(
-        max=maxv, mean=mean, units=units or '', sigma=stdv)
-    ax_ts.annotate(
-        stats_label, xy=(0.98, 0.7), xycoords='axes fraction',
-        xytext=(0, 0), textcoords='offset points',
-        va='center', ha='right', color=color, size=14,
-        bbox={'boxstyle': 'round', 'fc': 'w', 'ec': 'none', 'color': 'none',
-              'lw': 0, 'alpha': 0.8}
-    )
+                   r'$\bullet$ $\sigma$: {sigma:.3f}').format(max=maxv,
+                                                              mean=mean,
+                                                              units=units or '', sigma=stdv)
+    ax_ts.annotate(stats_label,
+                   xy=(0.98, 0.7),
+                   xycoords='axes fraction',
+                   xytext=(0, 0),
+                   textcoords='offset points',
+                   va='center',
+                   ha='right',
+                   color=color,
+                   size=14,
+                   bbox={
+                       'boxstyle': 'round',
+                       'fc': 'w',
+                       'ec': 'none',
+                       'color': 'none',
+                       'lw': 0,
+                       'alpha': 0.8
+                   })
 
     # Annotate percentile 95
     ax_ts.plot((0, ntsteps - 1), [p95] * 2, linewidth=.1, color='lightgray')
-    ax_ts.annotate(
-        '%.2f' % p95, xy=(0, p95), xytext=(-1, 0),
-        textcoords='offset points', va='center', ha='right',
-        color='lightgray', size=3)
+    ax_ts.annotate('%.2f' % p95,
+                   xy=(0, p95),
+                   xytext=(-1, 0),
+                   textcoords='offset points',
+                   va='center',
+                   ha='right',
+                   color='lightgray',
+                   size=3)
 
     if cutoff is None:
         cutoff = []
 
     for thr in enumerate(cutoff):
-        ax_ts.plot((0, ntsteps - 1), [thr] * 2,
-                   linewidth=.2, color='dimgray')
+        ax_ts.plot((0, ntsteps - 1), [thr] * 2, linewidth=.2, color='dimgray')
 
-        ax_ts.annotate(
-            '%.2f' % thr, xy=(0, thr), xytext=(-1, 0),
-            textcoords='offset points', va='center', ha='right',
-            color='dimgray', size=3)
+        ax_ts.annotate('%.2f' % thr,
+                       xy=(0, thr),
+                       xytext=(-1, 0),
+                       textcoords='offset points',
+                       va='center',
+                       ha='right',
+                       color='dimgray',
+                       size=3)
 
     ax_ts.plot(tseries, color=color, linewidth=2.5)
     ax_ts.set_xlim((0, ntsteps - 1))
@@ -235,16 +284,14 @@ def confoundplot(tseries, gs_ts, gs_dist=None, name=None,
     return ax_ts, gs
 
 
-def confoundplotx(
-    tseries,
-    gs_ts,
-    tr=None,
-    hide_x=True,
-    ylims=None,
-    ylabel=None,
-    FD=False,
-    work_dir=None
-):
+def confoundplotx(tseries,
+                  gs_ts,
+                  tr=None,
+                  hide_x=True,
+                  ylims=None,
+                  ylabel=None,
+                  FD=False,
+                  work_dir=None):
 
     sns.set_style('whitegrid')
 
@@ -258,9 +305,11 @@ def confoundplotx(
     # tseries = np.array(tseries)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
-    )
+    gs = mgs.GridSpecFromSubplotSpec(1,
+                                     2,
+                                     subplot_spec=gs_ts,
+                                     width_ratios=[1, 100],
+                                     wspace=0.0)
 
     ax_ts = plt.subplot(gs[1])
     ax_ts.grid(False)
@@ -337,17 +386,41 @@ def confoundplotx(
             ax_ts.plot(fdx, '.', color='#8da0cb', markersize=40)
 
             good_vols = len(tseries[c][tseries[c] < 0.1])
-            ax_ts.text(1.01, .1, good_vols, c='#66c2a5', verticalalignment='top',
-                       horizontalalignment='left', transform=ax_ts.transAxes, fontsize=30)
+            ax_ts.text(1.01,
+                       .1,
+                       good_vols,
+                       c='#66c2a5',
+                       verticalalignment='top',
+                       horizontalalignment='left',
+                       transform=ax_ts.transAxes,
+                       fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.2])
-            ax_ts.text(1.01, .2, good_vols, c='#fc8d62', verticalalignment='top',
-                       horizontalalignment='left', transform=ax_ts.transAxes, fontsize=30)
+            ax_ts.text(1.01,
+                       .2,
+                       good_vols,
+                       c='#fc8d62',
+                       verticalalignment='top',
+                       horizontalalignment='left',
+                       transform=ax_ts.transAxes,
+                       fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.5])
-            ax_ts.text(1.01, .5, good_vols, c='#8da0cb', verticalalignment='top',
-                       horizontalalignment='left', transform=ax_ts.transAxes, fontsize=30)
+            ax_ts.text(1.01,
+                       .5,
+                       good_vols,
+                       c='#8da0cb',
+                       verticalalignment='top',
+                       horizontalalignment='left',
+                       transform=ax_ts.transAxes,
+                       fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.05])
-            ax_ts.text(1.01, .05, good_vols, c='grey', verticalalignment='top',
-                       horizontalalignment='left', transform=ax_ts.transAxes, fontsize=30)
+            ax_ts.text(1.01,
+                       .05,
+                       good_vols,
+                       c='grey',
+                       verticalalignment='top',
+                       horizontalalignment='left',
+                       transform=ax_ts.transAxes,
+                       fontsize=30)
     else:
         for c in columns:
             ax_ts.plot(tseries[c], label=c, linewidth=5)
@@ -364,7 +437,7 @@ def confoundplotx(
     elif ylims:
         ax_ts.set_ylim(ylims)
     else:
-        ax_ts.set_ylim([-1.5*max(minx_value), 1.5*max(maxim_value)])
+        ax_ts.set_ylim([-1.5 * max(minx_value), 1.5 * max(maxim_value)])
 
     for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
                  ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
@@ -376,16 +449,25 @@ def confoundplotx(
     return ax_ts, gs
 
 
-def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=None):
+def plotseries(conf,
+               gs_ts,
+               ylim=None,
+               ylabelx=None,
+               hide_x=None,
+               tr=None,
+               ax=None):
     colums = conf.columns
     if tr is None:
         tr = 1.
-    xtick = np.linspace(0, conf.shape[0]*tr, num=conf.shape[0])
+    xtick = np.linspace(0, conf.shape[0] * tr, num=conf.shape[0])
     plt.style.use('seaborn-white')
     plt.xticks(color='k')
     plt.yticks(color='k')
-    gs = mgs.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts,
-                                     width_ratios=[1, 100], wspace=0.0)
+    gs = mgs.GridSpecFromSubplotSpec(1,
+                                     2,
+                                     subplot_spec=gs_ts,
+                                     width_ratios=[1, 100],
+                                     wspace=0.0)
 
     ax = plt.subplot(gs[1])
     ax.grid(False)
@@ -394,7 +476,7 @@ def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=No
     if ylim:
         ax.set_ylim(ylim)
     else:
-        ax.set_ylim([-2*conf[k].max(), 2*conf[k].max()])
+        ax.set_ylim([-2 * conf[k].max(), 2 * conf[k].max()])
     ax.set_ylabel(ylabelx, fontsize=40)
     ax.legend(fontsize=20)
 
@@ -413,7 +495,8 @@ def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=No
             ax.set_xlabel("time (frame #)")
         else:
             ax.set_xlabel("time (s)")
-            ax.set_xticklabels(["%.01f" % t for t in (tr * np.array(xticks)).tolist()])
+            ax.set_xticklabels(
+                ["%.01f" % t for t in (tr * np.array(xticks)).tolist()])
 
     for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(2)
@@ -424,9 +507,19 @@ def plotseries(conf, gs_ts, ylim=None, ylabelx=None, hide_x=None, tr=None, ax=No
     return ax
 
 
-def plot_svgx(rawdata, regdata, resddata, fd, filenamebf, filenameaf,
-              mask=None, seg=None, tr=1, raw_dvars=None, reg_dvars=None,
-              regf_dvars=None, work_dir=None):
+def plot_svgx(rawdata,
+              regdata,
+              resddata,
+              fd,
+              filenamebf,
+              filenameaf,
+              mask=None,
+              seg=None,
+              tr=1,
+              raw_dvars=None,
+              reg_dvars=None,
+              regf_dvars=None,
+              work_dir=None):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
@@ -454,7 +547,8 @@ def plot_svgx(rawdata, regdata, resddata, fd, filenamebf, filenameaf,
     if type(reg_dvars) != np.ndarray:
         reg_dvars = compute_dvars(read_ndata(datafile=regdata, maskfile=mask))
     if type(regf_dvars) != np.ndarray:
-        regf_dvars = compute_dvars(read_ndata(datafile=resddata, maskfile=mask))
+        regf_dvars = compute_dvars(read_ndata(datafile=resddata,
+                                              maskfile=mask))
     sns.set_style('whitegrid')
     rgdata = raw_dvars
     rsdata = regf_dvars
@@ -469,12 +563,22 @@ def plot_svgx(rawdata, regdata, resddata, fd, filenamebf, filenameaf,
         rgdata = rxdata
         rw = rw[:, 0:len(rsdata)]
 
-    conf = pd.DataFrame({'Pre reg': rxdata, 'Post reg': rgdata, 'Post all': rsdata})
+    conf = pd.DataFrame({
+        'Pre reg': rxdata,
+        'Post reg': rgdata,
+        'Post all': rsdata
+    })
 
     fdx = pd.DataFrame({'FD': np.loadtxt(fd)})
 
-    wbbf = pd.DataFrame({'Mean': np.nanmean(rw, axis=0), 'Std': np.nanstd(rw, axis=0)})
-    wbaf = pd.DataFrame({'Mean': np.nanmean(rs, axis=0), 'Std': np.nanstd(rs, axis=0)})
+    wbbf = pd.DataFrame({
+        'Mean': np.nanmean(rw, axis=0),
+        'Std': np.nanstd(rw, axis=0)
+    })
+    wbaf = pd.DataFrame({
+        'Mean': np.nanmean(rs, axis=0),
+        'Std': np.nanstd(rs, axis=0)
+    })
     if seg is not None:
         atlaslabels = nb.load(seg).get_fdata()
     else:
@@ -492,39 +596,85 @@ def plot_svgx(rawdata, regdata, resddata, fd, filenamebf, filenameaf,
         scaledrawdata = tempfile.mkdtemp() + '/filex_raw.dtseries.nii'
         scaledresdata = tempfile.mkdtemp() + '/filex_red.dtseries.nii'
 
-    scaledrawdata = write_ndata(data_matrix=rawdatax, template=rawdata,
-                                filename=scaledrawdata, mask=mask, tr=tr)
-    scaledresdata = write_ndata(data_matrix=resddatax, template=resddata,
-                                filename=scaledresdata, mask=mask, tr=tr)
+    scaledrawdata = write_ndata(data_matrix=rawdatax,
+                                template=rawdata,
+                                filename=scaledrawdata,
+                                mask=mask,
+                                tr=tr)
+    scaledresdata = write_ndata(data_matrix=resddatax,
+                                template=resddata,
+                                filename=scaledresdata,
+                                mask=mask,
+                                tr=tr)
 
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45, 60))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(tseries=conf, gs_ts=grid[0], tr=tr, ylabel='DVARS', hide_x=True)
+    grid = mgs.GridSpec(5,
+                        1,
+                        wspace=0.0,
+                        hspace=0.05,
+                        height_ratios=[1, 1, 0.2, 2.5, 1])
+    confoundplotx(tseries=conf,
+                  gs_ts=grid[0],
+                  tr=tr,
+                  ylabel='DVARS',
+                  hide_x=True)
     confoundplotx(tseries=wbbf, gs_ts=grid[1], tr=tr, hide_x=True, ylabel='WB')
     # plot_text(imgdata=rawdata,gs_ts=grid[2])
     # display_cb(gs_ts=grid[3])
-    plot_carpet(func=scaledrawdata, atlaslabels=atlaslabels, tr=tr, subplot=grid[3], legend=False)
-    confoundplotx(tseries=fdx, gs_ts=grid[4], tr=tr,
-                  hide_x=False, ylims=[0, 1], ylabel='FD[mm]', FD=True)
+    plot_carpet(func=scaledrawdata,
+                atlaslabels=atlaslabels,
+                tr=tr,
+                subplot=grid[3],
+                legend=False)
+    confoundplotx(tseries=fdx,
+                  gs_ts=grid[4],
+                  tr=tr,
+                  hide_x=False,
+                  ylims=[0, 1],
+                  ylabel='FD[mm]',
+                  FD=True)
     figx.savefig(filenamebf, bbox_inches="tight", pad_inches=None, dpi=300)
 
     plt.cla()
     plt.clf()
 
     figy = plt.figure(constrained_layout=True, figsize=(45, 60))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(tseries=conf, gs_ts=grid[0], tr=tr,
-                  ylabel='DVARS', hide_x=True, work_dir=work_dir)
-    confoundplotx(tseries=wbaf, gs_ts=grid[1], tr=tr, hide_x=True, ylabel='WB', work_dir=work_dir)
+    grid = mgs.GridSpec(5,
+                        1,
+                        wspace=0.0,
+                        hspace=0.05,
+                        height_ratios=[1, 1, 0.2, 2.5, 1])
+    confoundplotx(tseries=conf,
+                  gs_ts=grid[0],
+                  tr=tr,
+                  ylabel='DVARS',
+                  hide_x=True,
+                  work_dir=work_dir)
+    confoundplotx(tseries=wbaf,
+                  gs_ts=grid[1],
+                  tr=tr,
+                  hide_x=True,
+                  ylabel='WB',
+                  work_dir=work_dir)
     # plot_text(imgdata=rawdata,gs_ts=grid[2])
 
     # display_cb(gs_ts=grid[3])
 
-    plot_carpet(func=scaledresdata, atlaslabels=atlaslabels, tr=tr, subplot=grid[3], legend=True)
-    confoundplotx(tseries=fdx, gs_ts=grid[4], tr=tr, hide_x=False, ylims=[
-                  0, 1], ylabel='FD[mm]', FD=True, work_dir=work_dir)
+    plot_carpet(func=scaledresdata,
+                atlaslabels=atlaslabels,
+                tr=tr,
+                subplot=grid[3],
+                legend=True)
+    confoundplotx(tseries=fdx,
+                  gs_ts=grid[4],
+                  tr=tr,
+                  hide_x=False,
+                  ylims=[0, 1],
+                  ylabel='FD[mm]',
+                  FD=True,
+                  work_dir=work_dir)
     figy.savefig(filenameaf, bbox_inches="tight", pad_inches=None, dpi=300)
 
     return filenamebf, filenameaf
@@ -533,7 +683,8 @@ def plot_svgx(rawdata, regdata, resddata, fd, filenamebf, filenameaf,
 class fMRIPlot:
     """Generates the fMRI Summary Plot."""
 
-    __slots__ = ("func_file", "mask_data", "tr", "seg_data", "confounds", "spikes")
+    __slots__ = ("func_file", "mask_data", "tr", "seg_data", "confounds",
+                 "spikes")
 
     def __init__(
         self,
@@ -557,12 +708,10 @@ class fMRIPlot:
 
         if not isinstance(func_img, nb.Cifti2Image):
             self.mask_data = nb.fileslice.strided_scalar(
-                func_img.shape[:3], np.uint8(1)
-            )
+                func_img.shape[:3], np.uint8(1))
             if mask_file:
-                self.mask_data = np.asanyarray(nb.load(mask_file).dataobj).astype(
-                    "uint8"
-                )
+                self.mask_data = np.asanyarray(
+                    nb.load(mask_file).dataobj).astype("uint8")
             if seg_file:
                 self.seg_data = np.asanyarray(nb.load(seg_file).dataobj)
 
@@ -572,9 +721,10 @@ class fMRIPlot:
             vlines = {}
         self.confounds = {}
         if data is None and conf_file:
-            data = pd.read_csv(
-                conf_file, sep=r"[\t\s]+", usecols=usecols, index_col=False
-            )
+            data = pd.read_csv(conf_file,
+                               sep=r"[\t\s]+",
+                               usecols=usecols,
+                               index_col=False)
 
         if data is not None:
             for name in data.columns.ravel():
@@ -604,16 +754,20 @@ class fMRIPlot:
         nrows = 1 + nconfounds + nspikes
 
         # Create grid
-        grid = mgs.GridSpec(
-            nrows, 1, wspace=0.0, hspace=0.05, height_ratios=[1] * (nrows - 1) + [5]
-        )
+        grid = mgs.GridSpec(nrows,
+                            1,
+                            wspace=0.0,
+                            hspace=0.05,
+                            height_ratios=[1] * (nrows - 1) + [5])
 
         grid_id = 0
         for tsz, name, iszs in self.spikes:
             # RF: What is this?
-            spikesplot(
-                tsz, title=name, outer_gs=grid[grid_id], tr=self.tr, zscored=iszs
-            )
+            spikesplot(tsz,
+                       title=name,
+                       outer_gs=grid[grid_id],
+                       tr=self.tr,
+                       zscored=iszs)
             grid_id += 1
 
         if self.confounds:
@@ -623,18 +777,19 @@ class fMRIPlot:
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
             tseries = kwargs.pop("values")
-            confoundplot(
-                tseries,
-                grid[grid_id],
-                tr=self.tr,
-                color=palette[i],
-                name=name,
-                **kwargs
-            )
+            confoundplot(tseries,
+                         grid[grid_id],
+                         tr=self.tr,
+                         color=palette[i],
+                         name=name,
+                         **kwargs)
             grid_id += 1
 
-        plot_carpet(self.func_file, atlaslabels=self.seg_data,
-                    subplot=grid[-1], tr=self.tr, labelsize=labelsize)
+        plot_carpet(self.func_file,
+                    atlaslabels=self.seg_data,
+                    subplot=grid[-1],
+                    tr=self.tr,
+                    labelsize=labelsize)
         # spikesplot_cb([0.7, 0.78, 0.2, 0.008])
         return figure
 
@@ -697,9 +852,8 @@ def plot_carpet(
     img = nb.load(func)
     sns.set_style("whitegrid")
     if isinstance(img, nb.Cifti2Image):
-        assert (
-            img.nifti_header.get_intent()[0] == "ConnDenseSeries"
-        ), "Not a dense timeseries"
+        assert (img.nifti_header.get_intent()[0] == "ConnDenseSeries"
+                ), "Not a dense timeseries"
 
         data = img.get_fdata().T
         matrix = img.header.matrix
@@ -709,7 +863,7 @@ def plot_carpet(
             "SUBCORTICAL": 3,
             "CEREBELLUM": 4,
         }
-        seg = np.zeros((data.shape[0],), dtype="uint32")
+        seg = np.zeros((data.shape[0], ), dtype="uint32")
         for bm in matrix.get_index_map(1).brain_models:
             if "CORTEX" in bm.brain_structure:
                 lidx = (1, 2)["RIGHT" in bm.brain_structure]
@@ -726,16 +880,19 @@ def plot_carpet(
         # preserve as much continuity as possible
         order = seg.argsort(kind="stable")
 
-        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        cmap = ListedColormap(
+            [cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
         assert len(cmap.colors) == len(
-            struct_map
-        ), "Mismatch between expected # of structures and colors"
+            struct_map), "Mismatch between expected # of structures and colors"
 
         # ensure no legend for CIFTI
         legend = False
 
     else:  # Volumetric NIfTI
-        img_nii = check_niimg_4d(img, dtype="auto",)
+        img_nii = check_niimg_4d(
+            img,
+            dtype="auto",
+        )
         func_data = _safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -743,7 +900,7 @@ def plot_carpet(
 
         # Map segmentation
         if lut is None:
-            lut = np.zeros((256,), dtype="int")
+            lut = np.zeros((256, ), dtype="int")
             lut[1:11] = 1
             lut[255] = 2
             lut[30:99] = 3
@@ -761,9 +918,8 @@ def plot_carpet(
         if legend:
             epiavg = func_data.mean(3)
             epinii = nb.Nifti1Image(epiavg, img_nii.affine, img_nii.header)
-            segnii = nb.Nifti1Image(
-                lut[atlaslabels.astype(int)], epinii.affine, epinii.header
-            )
+            segnii = nb.Nifti1Image(lut[atlaslabels.astype(int)],
+                                    epinii.affine, epinii.header)
             segnii.set_data_dtype("uint8")
             nslices = epiavg.shape[-1]
 
@@ -784,22 +940,21 @@ def plot_carpet(
     )
 
 
-def _carpet(
-        func,
-        data,
-        seg,
-        order,
-        cmap,
-        labelsize,
-        tr=None,
-        detrend=True,
-        subplot=None,
-        legend=False,
-        title=None,
-        output_file=None,
-        epinii=None,
-        segnii=None,
-        nslices=None):
+def _carpet(func,
+            data,
+            seg,
+            order,
+            cmap,
+            labelsize,
+            tr=None,
+            detrend=True,
+            subplot=None,
+            legend=False,
+            title=None,
+            output_file=None,
+            epinii=None,
+            segnii=None,
+            nslices=None):
     """Common carpetplot building code for volumetric / CIFTI plots"""
     if tr is None:
         tr = 1.0
@@ -820,14 +975,17 @@ def _carpet(
         1,
         2 + int(legend),
         subplot_spec=subplot,
-        width_ratios=wratios[: 2 + int(legend)],
+        width_ratios=wratios[:2 + int(legend)],
         wspace=0.0,
     )
 
     # Segmentation colorbar
     ax0 = plt.subplot(gs[0])
     ax0.set_xticks([])
-    ax0.imshow(seg[order, np.newaxis], interpolation="none", aspect="auto", cmap=cmap)
+    ax0.imshow(seg[order, np.newaxis],
+               interpolation="none",
+               aspect="auto",
+               cmap=cmap)
 
     if func.endswith('nii.gz'):
         labels = ['Cortical GM', 'Subcortical GM', 'Cerebellum', 'CSF and WM']
@@ -839,7 +997,10 @@ def _carpet(
         tick_locs.append(np.argwhere(seg[order] == y).mean())
 
     ax0.set_yticks(tick_locs)
-    ax0.set_yticklabels(labels, fontdict={'fontsize': labelsize}, rotation=90, va='center')
+    ax0.set_yticklabels(labels,
+                        fontdict={'fontsize': labelsize},
+                        rotation=90,
+                        va='center')
     ax0.grid(False)
     ax0.spines["left"].set_visible(False)
     ax0.spines["bottom"].set_color("none")
@@ -901,9 +1062,11 @@ def _carpet(
 def plot_text(imgdata, gs_ts):
     """
     """
-    gs = mgs.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
-    )
+    gs = mgs.GridSpecFromSubplotSpec(1,
+                                     2,
+                                     subplot_spec=gs_ts,
+                                     width_ratios=[1, 100],
+                                     wspace=0.0)
     # tm = nb.load(imgdata).shape[-1]
     if imgdata.endswith('nii.gz'):
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
@@ -923,9 +1086,11 @@ def display_cb(gs_ts):
     """
 
     """
-    gs = mgs.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0
-    )
+    gs = mgs.GridSpecFromSubplotSpec(1,
+                                     2,
+                                     subplot_spec=gs_ts,
+                                     width_ratios=[1, 100],
+                                     wspace=0.0)
     # tm = nb.load(imgdata).shape[-1]
     data = scalex(np.random.rand(40), -600, 600)
     ax2 = plt.subplot(gs[1])

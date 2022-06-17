@@ -73,7 +73,7 @@ class FilteringData(SimpleInterface):
         data_matrix = read_ndata(datafile=self.inputs.in_file,
                                  maskfile=self.inputs.mask)
         # filter the data
-        if self.inputs.bandpass_filter == True:
+        if self.inputs.bandpass_filter:
             filt_data = butter_bandpass(data=data_matrix,
                                         fs=1 / self.inputs.tr,
                                         lowpass=self.inputs.lowpass,

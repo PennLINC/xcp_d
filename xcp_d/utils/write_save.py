@@ -51,7 +51,8 @@ def write_ndata(data_matrix, template, filename, mask=None, tr=1, scale=0):
         from nibabel.cifti2 import Cifti2Image
         template_file = nb.load(template)
         if data_matrix.shape[1] == template_file.shape[0]:
-            dataimg = Cifti2Image(dataobj=data_matrix.T, header=template_file.header,
+            dataimg = Cifti2Image(dataobj=data_matrix.T,
+                                  header=template_file.header,
                                   file_map=template_file.file_map,
                                   nifti_header=template_file.nifti_header)
         elif data_matrix.shape[1] != template_file.shape[0]:
@@ -65,7 +66,8 @@ def write_ndata(data_matrix, template, filename, mask=None, tr=1, scale=0):
                        fake_cifti0, template,
                        orig_cifti0, '-reset-timepoints', str(tr), str(0)]) #fix
             template_file2 = nb.load(orig_cifti0)
-            dataimg = Cifti2Image(dataobj=data_matrix.T, header=template_file2.header,
+            dataimg = Cifti2Image(dataobj=data_matrix.T,
+                                  header=template_file2.header,
                                   file_map=template_file2.file_map,
                                   nifti_header=template_file2.nifti_header)
             os.remove(fake_cifti1)
@@ -81,11 +83,14 @@ def write_ndata(data_matrix, template, filename, mask=None, tr=1, scale=0):
             dataz[mask_data == 1] = data_matrix
 
         else:
-            dataz = np.zeros([mask_data.shape[0], mask_data.shape[1],
-                              mask_data.shape[2], data_matrix.shape[1]])
+            dataz = np.zeros([
+                mask_data.shape[0], mask_data.shape[1], mask_data.shape[2],
+                data_matrix.shape[1]
+            ])
             dataz[mask_data == 1, :] = data_matrix
 
-        dataimg = nb.Nifti1Image(dataobj=dataz, affine=template_file.affine,
+        dataimg = nb.Nifti1Image(dataobj=dataz,
+                                 affine=template_file.affine,
                                  header=template_file.header)
 
     dataimg.to_filename(filename)
@@ -106,7 +111,8 @@ def edit_ciftinifti(in_file, out_file, datax):
     thdata = nb.load(in_file)
     dataxx = thdata.get_fdata()
     dd = dataxx[:, :, :, 0:datax.shape[1]]
-    dataimg = nb.Nifti1Image(dataobj=dd, affine=thdata.affine,
+    dataimg = nb.Nifti1Image(dataobj=dd,
+                             affine=thdata.affine,
                              header=thdata.header)
     dataimg.to_filename(out_file)
     return out_file
@@ -121,8 +127,13 @@ def run_shell(cmd, env=os.environ):
     if type(cmd) is list:
         cmd = ' '.join(cmd)
 
-    call_command = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, env=env, shell=True,)
+    call_command = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        shell=True,
+    )
     output, error = call_command.communicate("Hello from the other side!")
     call_command.wait()
 
@@ -136,14 +147,18 @@ def write_gii(datat, template, filename, hemi):
     filename ; name of the output
     '''
     datax = np.array(datat, dtype='float32')
-    template = str(get_template("fsLR", hemi=hemi, suffix='midthickness', density='32k'))
+    template = str(
+        get_template("fsLR", hemi=hemi, suffix='midthickness', density='32k'))
     template = nb.load(template)
     dataimg = nb.gifti.GiftiImage(header=template.header,
-                                  file_map=template.file_map, extra=template.extra)
-    dataimg = nb.gifti.GiftiImage(header=template.header, file_map=template.file_map,
+                                  file_map=template.file_map,
+                                  extra=template.extra)
+    dataimg = nb.gifti.GiftiImage(header=template.header,
+                                  file_map=template.file_map,
                                   extra=template.extra,
                                   meta=template.meta)
-    d_timepoint = nb.gifti.GiftiDataArray(data=datax, intent='NIFTI_INTENT_NORMAL')
+    d_timepoint = nb.gifti.GiftiDataArray(data=datax,
+                                          intent='NIFTI_INTENT_NORMAL')
     dataimg.add_gifti_data_array(d_timepoint)
     dataimg.to_filename(filename)
     return filename
@@ -164,20 +179,27 @@ def read_gii(surf_gii):
 
 def despikedatacifti(cifti, tr, basedir):
     """ despiking cifti """
-    fake_cifti1 = str(basedir+'/fake_niftix.nii.gz')
-    fake_cifti1_depike = str(basedir+'/fake_niftix_depike.nii.gz')
+    fake_cifti1 = str(basedir + '/fake_niftix.nii.gz')
+    fake_cifti1_depike = str(basedir + '/fake_niftix_depike.nii.gz')
     cifti_despike = str(basedir + '/despike_nifti2cifti.dtseries.nii')
-    run_shell(['OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ', cifti, fake_cifti1])
-    run_shell(['3dDespike -nomask -NEW -prefix', fake_cifti1_depike, fake_cifti1])
-    run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',
-               fake_cifti1_depike, cifti,
-               cifti_despike, '-reset-timepoints', str(tr), str(0)])
+    run_shell([
+        'OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ', cifti,
+        fake_cifti1
+    ])
+    run_shell(
+        ['3dDespike -nomask -NEW -prefix', fake_cifti1_depike, fake_cifti1])
+    run_shell([
+        'OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',
+        fake_cifti1_depike, cifti, cifti_despike, '-reset-timepoints',
+        str(tr),
+        str(0)
+    ])
     return cifti_despike
 
 
 def scalex(X, x_min, x_max):
-    nom = (X-X.min())*(x_max-x_min)
+    nom = (X - X.min()) * (x_max - x_min)
     denom = X.max() - X.min()
     if denom == 0:
         denom = 1
-    return x_min + nom/denom
+    return x_min + nom / denom

@@ -36,17 +36,21 @@ def load_confound(datafile):
         confound json file
     '''
     if 'space' in os.path.basename(datafile):
-        confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
-                                                "_desc-confounds_timeseries.tsv")
-        confounds_json = datafile.replace("_space-" + datafile.split("space-")[1],
-                                          "_desc-confounds_timeseries.json")
+        confounds_timeseries = datafile.replace(
+            "_space-" + datafile.split("space-")[1],
+            "_desc-confounds_timeseries.tsv")
+        confounds_json = datafile.replace(
+            "_space-" + datafile.split("space-")[1],
+            "_desc-confounds_timeseries.json")
     else:
         confounds_timeseries = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.tsv"
+            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.tsv"
         confounds_json = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.json"
+            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.json"
 
-    confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
+    confoundpd = pd.read_csv(confounds_timeseries,
+                             delimiter="\t",
+                             encoding="utf-8")
 
     confoundjs = readjson(confounds_json)
 
@@ -68,9 +72,12 @@ def load_motion(confoundspd, TR, filtertype, freqband, cutoff=0.1, order=4):
 
     if filtertype == 'lp' or filtertype == 'notch':
         datay = datay.T
-        datay = motion_regression_filter(data=datay, TR=TR,
-                                         filtertype=filtertype, freqband=freqband,
-                                         cutoff=cutoff, order=order)
+        datay = motion_regression_filter(data=datay,
+                                         TR=TR,
+                                         filtertype=filtertype,
+                                         freqband=freqband,
+                                         cutoff=cutoff,
+                                         order=order)
         datay = datay.T
     return pd.DataFrame(datay)
 
@@ -145,11 +152,17 @@ def derivative(confound):
 
 
 def confpower(confound, order=2):
-    return confound ** order
+    return confound**order
 
 
-def load_confound_matrix(datafile, TR, filtertype, custom_conf=None, cutoff=0.1, order=4,
-                         freqband=[0.1, 0.2], params='27P'):
+def load_confound_matrix(datafile,
+                         TR,
+                         filtertype,
+                         custom_conf=None,
+                         cutoff=0.1,
+                         order=4,
+                         freqband=[0.1, 0.2],
+                         params='27P'):
     """ extract confound """
     '''
     datafile:
@@ -159,26 +172,49 @@ def load_confound_matrix(datafile, TR, filtertype, custom_conf=None, cutoff=0.1,
     '''
     confoundtsv, confoundjson = load_confound(datafile)
     if params == '24P':
-        motion = load_motion(confoundtsv, TR, filtertype, freqband, cutoff=cutoff, order=order)
+        motion = load_motion(confoundtsv,
+                             TR,
+                             filtertype,
+                             freqband,
+                             cutoff=cutoff,
+                             order=order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
     elif params == '27P':
-        motion = load_motion(confoundtsv, TR, filtertype, freqband, cutoff=cutoff, order=order)
+        motion = load_motion(confoundtsv,
+                             TR,
+                             filtertype,
+                             freqband,
+                             cutoff=cutoff,
+                             order=order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
         confound = pd.concat([mm_dev, confpower(mm_dev), wmcsf, gs], axis=1)
     elif params == '36P':
-        motion = load_motion(confoundtsv, TR, filtertype, freqband, cutoff=cutoff, order=order)
+        motion = load_motion(confoundtsv,
+                             TR,
+                             filtertype,
+                             freqband,
+                             cutoff=cutoff,
+                             order=order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         conf24p = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
-        gswmcsf = pd.concat([load_WM_CSF(confoundtsv), load_globalS(confoundtsv)], axis=1)
+        gswmcsf = pd.concat(
+            [load_WM_CSF(confoundtsv),
+             load_globalS(confoundtsv)], axis=1)
         gwcs_dev = pd.concat([gswmcsf, derivative(gswmcsf)], axis=1)
         confound = pd.concat([conf24p, gwcs_dev, confpower(gwcs_dev)], axis=1)
     elif params == 'acompcor':
-        motion = load_motion(confoundtsv, TR, filtertype, freqband, cutoff=cutoff, order=order)
+        motion = load_motion(confoundtsv,
+                             TR,
+                             filtertype,
+                             freqband,
+                             cutoff=cutoff,
+                             order=order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
-        acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
+        acompc = load_acompcor(confoundspd=confoundtsv,
+                               confoundjs=confoundjson)
         cosine = load_cosine(confoundtsv)
         confound = pd.concat([mm_dev, acompc, cosine], axis=1)
     elif params == 'aroma':
@@ -191,9 +227,15 @@ def load_confound_matrix(datafile, TR, filtertype, custom_conf=None, cutoff=0.1,
         gs = load_globalS(confoundtsv)
         confound = pd.concat([wmcsf, aroma, gs], axis=1)
     elif params == 'acompcor_gsr':
-        motion = load_motion(confoundtsv, TR, filtertype, freqband, cutoff=cutoff, order=order)
+        motion = load_motion(confoundtsv,
+                             TR,
+                             filtertype,
+                             freqband,
+                             cutoff=cutoff,
+                             order=order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
-        acompc = load_acompcor(confoundspd=confoundtsv, confoundjs=confoundjson)
+        acompc = load_acompcor(confoundspd=confoundtsv,
+                               confoundjs=confoundjson)
         gs = load_globalS(confoundtsv)
         cosine = load_cosine(confoundtsv)
         confound = pd.concat([mm_dev, acompc, gs, cosine], axis=1)
@@ -213,25 +255,39 @@ def load_aroma(datafile):
     """ extract aroma confound."""
     # _AROMAnoiseICs.csv
     # _desc-MELODIC_mixing.tsv
-    
+
     if 'space' in os.path.basename(datafile):
         aroma_noise = datafile.replace("_space-" + datafile.split("space-")[1],
                                        "_AROMAnoiseICs.csv")
         melodic_ts = datafile.replace("_space-" + datafile.split("space-")[1],
                                       "_desc-MELODIC_mixing.tsv")
     else:
-        aroma_noise = datafile.split('_desc-preproc_bold.nii.gz')[0]+"_AROMAnoiseICs.csv"
-        melodic_ts = datafile.split('_desc-preproc_bold.nii.gz')[0]+"_desc-MELODIC_mixing.tsv"
+        aroma_noise = datafile.split(
+            '_desc-preproc_bold.nii.gz')[0] + "_AROMAnoiseICs.csv"
+        melodic_ts = datafile.split(
+            '_desc-preproc_bold.nii.gz')[0] + "_desc-MELODIC_mixing.tsv"
 
-    aroma_noise = np.genfromtxt(aroma_noise, delimiter=',',)
-    aroma_noise = [np.int(i) - 1 for i in aroma_noise]  # change to 0-based index
-    melodic = pd.read_csv(melodic_ts, header=None, delimiter="\t", encoding="utf-8")
+    aroma_noise = np.genfromtxt(
+        aroma_noise,
+        delimiter=',',
+    )
+    aroma_noise = [np.int(i) - 1
+                   for i in aroma_noise]  # change to 0-based index
+    melodic = pd.read_csv(melodic_ts,
+                          header=None,
+                          delimiter="\t",
+                          encoding="utf-8")
     aroma = melodic.drop(aroma_noise, axis=1)
 
     return aroma
 
 
-def motion_regression_filter(data, TR, filtertype, freqband, cutoff=.1, order=4):
+def motion_regression_filter(data,
+                             TR,
+                             filtertype,
+                             freqband,
+                             cutoff=.1,
+                             order=4):
     """
     apply motion filter to 6 motion.
     """
@@ -253,7 +309,7 @@ def motion_regression_filter(data, TR, filtertype, freqband, cutoff=.1, order=4)
         fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)
         # cutting frequency normalized between 0 and nyquist
         Wn = np.amin(fa) / fNy
-        b_filt = firwin(int(order)+1, Wn, pass_zero='lowpass')
+        b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')
         a_filt = 1.
         num_f_apply = 1.
     else:
@@ -267,8 +323,8 @@ def motion_regression_filter(data, TR, filtertype, freqband, cutoff=.1, order=4)
             Wn = np.mean(W_notch)
             Wd = np.diff(W_notch)
             bw = np.abs(Wd)
-            b_filt, a_filt = iirnotch(Wn, Wn/bw)
-            num_f_apply = np.int(np.floor(order/2))
+            b_filt, a_filt = iirnotch(Wn, Wn / bw)
+            num_f_apply = np.int(np.floor(order / 2))
         for j in range(num_f_apply):
             for k in range(data.shape[0]):
                 data[k, :] = filtfilt(b_filt, a_filt, data[k, :])

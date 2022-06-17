@@ -11,10 +11,7 @@ import nibabel as nb
 from templateflow.api import get as get_template
 
 
-def extract_timeseries_funct(in_file,
-                             atlas,
-                             timeseries,
-                             fconmatrix):
+def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
     """
      This function used Nilearn *NiftiLabelsMasker*
      to extact timeseries
@@ -28,7 +25,9 @@ def extract_timeseries_funct(in_file,
       functional connectivity matrix filename
 
     """
-    masker = NiftiLabelsMasker(labels_img=atlas, smoothing_fwhm=None, standardize=False)
+    masker = NiftiLabelsMasker(labels_img=atlas,
+                               smoothing_fwhm=None,
+                               standardize=False)
     time_series = masker.fit_transform(in_file)
     correlation_matrices = np.corrcoef(time_series.T)
 
@@ -64,11 +63,11 @@ def compute_2d_reho(datat, adjacency_matrix):
         rankmean = np.sum(rankeddata, axis=0)
 
         KC = np.sum(np.power(rankmean, 2)) - \
-            timepoint*np.power(np.mean(rankmean), 2)
+            timepoint * np.power(np.mean(rankmean), 2)
 
-        denom = np.power(neigbor, 2)*(np.power(timepoint, 3) - timepoint)
+        denom = np.power(neigbor, 2) * (np.power(timepoint, 3) - timepoint)
 
-        KCC[i] = 12*KC/(denom)
+        KCC[i] = 12 * KC / (denom)
 
     return KCC
 
@@ -77,7 +76,12 @@ def mesh_adjacency(hemi):
     # surface sphere to be load from templateflow
     # either left or right hemisphere
 
-    surf = str(get_template("fsLR", space='fsaverage', hemi=hemi, suffix='sphere', density='32k'))
+    surf = str(
+        get_template("fsLR",
+                     space='fsaverage',
+                     hemi=hemi,
+                     suffix='sphere',
+                     density='32k'))
 
     surf = nb.load(surf)
     vertices_faces = surf.agg_data(('pointset', 'triangle'))
@@ -108,13 +112,18 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     TR: numpy float
        repetition time in seconds
     """
-    fs = 1/TR
+    fs = 1 / TR
     alff = np.zeros(data_matrix.shape[0])
     for i in range(data_matrix.shape[0]):
-        fx, Pxx_den = signal.periodogram(data_matrix[i, :], fs, scaling='spectrum')
+        fx, Pxx_den = signal.periodogram(data_matrix[i, :],
+                                         fs,
+                                         scaling='spectrum')
         # fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='density')
         pxx_sqrt = np.sqrt(Pxx_den)
-        ff_alff = [np.argmin(np.abs(fx-high_pass)), np.argmin(np.abs(fx-low_pass))]
-        alff[i] = len(ff_alff)*np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
+        ff_alff = [
+            np.argmin(np.abs(fx - high_pass)),
+            np.argmin(np.abs(fx - low_pass))
+        ]
+        alff[i] = len(ff_alff) * np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
     alff = np.reshape(alff, [len(alff), 1])
     return alff

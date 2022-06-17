@@ -29,30 +29,28 @@ from .outputs import init_writederivatives_wf
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_ciftipostprocess_wf(
-        cifti_file,
-        lower_bpf,
-        upper_bpf,
-        bpf_order,
-        motion_filter_order,
-        motion_filter_type,
-        bandpass_filter,
-        band_stop_min,
-        band_stop_max,
-        smoothing,
-        head_radius,
-        params,
-        output_dir,
-        custom_conf,
-        omp_nthreads,
-        dummytime,
-        fd_thresh,
-        mni_to_t1w,
-        despike,
-        num_cifti,
-        layout=None,
-        name='cifti_process_wf'):
-
+def init_ciftipostprocess_wf(cifti_file,
+                             lower_bpf,
+                             upper_bpf,
+                             bpf_order,
+                             motion_filter_order,
+                             motion_filter_type,
+                             bandpass_filter,
+                             band_stop_min,
+                             band_stop_max,
+                             smoothing,
+                             head_radius,
+                             params,
+                             output_dir,
+                             custom_conf,
+                             omp_nthreads,
+                             dummytime,
+                             fd_thresh,
+                             mni_to_t1w,
+                             despike,
+                             num_cifti,
+                             layout=None,
+                             name='cifti_process_wf'):
     """
     This workflow organizes cifti processing workflow.
     Workflow Graph
@@ -204,23 +202,26 @@ regression.
 regressed from the BOLD data using linear regression - as implemented in Scikit-Learn {sclver}
 [@scikit-learn]. Residual timeseries from this regression were then band-pass filtered to retain
 signals within the {highpass}-{lowpass} Hz frequency band.
- """.format(regressors=stringforparams(params=params), sclver=sklearn.__version__,
-            lowpass=upper_bpf, highpass=lower_bpf)
+ """.format(regressors=stringforparams(params=params),
+            sclver=sklearn.__version__,
+            lowpass=upper_bpf,
+            highpass=lower_bpf)
 
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=['cifti_file', 'custom_conf', 't1w', 't1seg']),
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['cifti_file', 'custom_conf', 't1w', 't1seg']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
 
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=['processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-                'reho_lh', 'reho_rh', 'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc',
-                'sc317_ts', 'sc317_fc', 'sc517_ts', 'sc517_fc', 'sc517_ts', 'sc517_fc',
-                'sc617_ts', 'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc',
-                'sc917_ts', 'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'gs360_ts', 'gs360_fc',
-                'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file', 'fd']),
+    outputnode = pe.Node(niu.IdentityInterface(fields=[
+        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
+        'reho_lh', 'reho_rh', 'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc',
+        'sc317_ts', 'sc317_fc', 'sc517_ts', 'sc517_fc', 'sc517_ts', 'sc517_fc',
+        'sc617_ts', 'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc',
+        'sc917_ts', 'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'gs360_ts',
+        'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
+        'fd'
+    ]),
         name='outputnode')
 
     mem_gbx = _create_mem_gb(cifti_file)
@@ -338,165 +339,179 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     workflow.connect([
         # connect bold confound matrix to extract confound matrix
-        (inputnode, confoundmat_wf, [('cifti_file', 'in_file')])])
+        (inputnode, confoundmat_wf, [('cifti_file', 'in_file')])
+    ])
 
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(
-            ciftidespike(tr=TR),
-            name="cifti_depike_wf",
-            mem_gb=mem_gbx['timeseries'],
-            n_procs=omp_nthreads)
+        despike_wf = pe.Node(ciftidespike(tr=TR),
+                             name="cifti_depike_wf",
+                             mem_gb=mem_gbx['timeseries'],
+                             n_procs=omp_nthreads)
 
-        workflow.connect([
-             (inputnode, despike_wf, [('cifti_file', 'in_file')]),
-             (despike_wf, censorscrub_wf, [('des_file', 'inputnode.bold')])])
+        workflow.connect([(inputnode, despike_wf, [('cifti_file', 'in_file')]),
+                          (despike_wf, censorscrub_wf, [('des_file',
+                                                         'inputnode.bold')])])
     else:
-        workflow.connect([
-            (inputnode, censorscrub_wf, [('cifti_file', 'inputnode.bold')])])
+        workflow.connect([(inputnode, censorscrub_wf, [('cifti_file',
+                                                        'inputnode.bold')])])
 
     # add neccessary input for censoring if there is one
-    workflow.connect([
-        (inputnode, censorscrub_wf, [('cifti_file', 'inputnode.bold_file')]),
-        (confoundmat_wf, censorscrub_wf, [('confound_file', 'inputnode.confound_file')])])
+    workflow.connect([(inputnode, censorscrub_wf, [('cifti_file',
+                                                    'inputnode.bold_file')]),
+                      (confoundmat_wf, censorscrub_wf,
+                       [('confound_file', 'inputnode.confound_file')])])
 
     # regression workflow
-    workflow.connect([
-        (censorscrub_wf, regression_wf, [
-            ('outputnode.bold_censored', 'in_file'),
-            ('outputnode.fmriprepconf_censored', 'confounds')])])
+    workflow.connect([(censorscrub_wf, regression_wf,
+                       [('outputnode.bold_censored', 'in_file'),
+                        ('outputnode.fmriprepconf_censored', 'confounds')])])
 
     # interpolation workflow
     workflow.connect([
         (inputnode, interpolate_wf, [('cifti_file', 'bold_file')]),
         (censorscrub_wf, interpolate_wf, [('outputnode.tmask', 'tmask')]),
-        (regression_wf, interpolate_wf, [('res_file', 'in_file')])])
+        (regression_wf, interpolate_wf, [('res_file', 'in_file')])
+    ])
 
     # add filtering workflow
-    workflow.connect([
-        (interpolate_wf, filtering_wf, [('bold_interpolated', 'in_file')])])
+    workflow.connect([(interpolate_wf, filtering_wf, [('bold_interpolated',
+                                                       'in_file')])])
 
     # residual smoothing
-    workflow.connect([
-       (filtering_wf, resdsmoothing_wf, [('filt_file', 'inputnode.bold_file')])])
+    workflow.connect([(filtering_wf, resdsmoothing_wf,
+                       [('filt_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([
-         (filtering_wf, cifti_conts_wf, [('filt_file', 'inputnode.clean_cifti')])])
+    workflow.connect([(filtering_wf, cifti_conts_wf,
+                       [('filt_file', 'inputnode.clean_cifti')])])
 
     # reho and alff
-    workflow.connect([
-     (filtering_wf, alff_compute_wf, [('filt_file', 'inputnode.clean_bold')]),
-     (filtering_wf, reho_compute_wf, [('filt_file', 'inputnode.clean_bold')])])
+    workflow.connect([(filtering_wf, alff_compute_wf,
+                       [('filt_file', 'inputnode.clean_bold')]),
+                      (filtering_wf, reho_compute_wf,
+                       [('filt_file', 'inputnode.clean_bold')])])
 
     # qc report
     workflow.connect([
         (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
         (censorscrub_wf, qcreport, [('outputnode.tmask', 'tmask')]),
-        (qcreport, outputnode, [('qc_file', 'qc_file')])])
+        (qcreport, outputnode, [('qc_file', 'qc_file')])
+    ])
 
     workflow.connect([
         (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
         (censorscrub_wf, outputnode, [('outputnode.fd', 'fd')]),
-        (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold', 'smoothed_bold')]),
+        (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
+                                         'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
-        (reho_compute_wf, outputnode, [
-            ('outputnode.lh_reho', 'reho_lh'),
-            ('outputnode.rh_reho', 'reho_rh')]),
-        (cifti_conts_wf, outputnode, [
-            ('outputnode.sc117_ts', 'sc117_ts'), ('outputnode.sc117_fc', 'sc117_fc'),
-            ('outputnode.sc217_ts', 'sc217_ts'), ('outputnode.sc217_fc', 'sc217_fc'),
-            ('outputnode.sc317_ts', 'sc317_ts'), ('outputnode.sc317_fc', 'sc317_fc'),
-            ('outputnode.sc417_ts', 'sc417_ts'), ('outputnode.sc417_fc', 'sc417_fc'),
-            ('outputnode.sc517_ts', 'sc517_ts'), ('outputnode.sc517_fc', 'sc517_fc'),
-            ('outputnode.sc617_ts', 'sc617_ts'), ('outputnode.sc617_fc', 'sc617_fc'),
-            ('outputnode.sc717_ts', 'sc717_ts'), ('outputnode.sc717_fc', 'sc717_fc'),
-            ('outputnode.sc817_ts', 'sc817_ts'), ('outputnode.sc817_fc', 'sc817_fc'),
-            ('outputnode.sc917_ts', 'sc917_ts'), ('outputnode.sc917_fc', 'sc917_fc'),
-            ('outputnode.sc1017_ts', 'sc1017_ts'), ('outputnode.sc1017_fc', 'sc1017_fc'),
-            ('outputnode.gs360_ts', 'gs360_ts'), ('outputnode.gs360_fc', 'gs360_fc'),
-            ('outputnode.gd333_ts', 'gd333_ts'), ('outputnode.gd333_fc', 'gd333_fc'),
-            ('outputnode.ts50_ts', 'ts50_ts'), ('outputnode.ts50_fc', 'ts50_fc')])])
+        (reho_compute_wf, outputnode, [('outputnode.lh_reho', 'reho_lh'),
+                                       ('outputnode.rh_reho', 'reho_rh')]),
+        (cifti_conts_wf, outputnode, [('outputnode.sc117_ts', 'sc117_ts'),
+                                      ('outputnode.sc117_fc', 'sc117_fc'),
+                                      ('outputnode.sc217_ts', 'sc217_ts'),
+                                      ('outputnode.sc217_fc', 'sc217_fc'),
+                                      ('outputnode.sc317_ts', 'sc317_ts'),
+                                      ('outputnode.sc317_fc', 'sc317_fc'),
+                                      ('outputnode.sc417_ts', 'sc417_ts'),
+                                      ('outputnode.sc417_fc', 'sc417_fc'),
+                                      ('outputnode.sc517_ts', 'sc517_ts'),
+                                      ('outputnode.sc517_fc', 'sc517_fc'),
+                                      ('outputnode.sc617_ts', 'sc617_ts'),
+                                      ('outputnode.sc617_fc', 'sc617_fc'),
+                                      ('outputnode.sc717_ts', 'sc717_ts'),
+                                      ('outputnode.sc717_fc', 'sc717_fc'),
+                                      ('outputnode.sc817_ts', 'sc817_ts'),
+                                      ('outputnode.sc817_fc', 'sc817_fc'),
+                                      ('outputnode.sc917_ts', 'sc917_ts'),
+                                      ('outputnode.sc917_fc', 'sc917_fc'),
+                                      ('outputnode.sc1017_ts', 'sc1017_ts'),
+                                      ('outputnode.sc1017_fc', 'sc1017_fc'),
+                                      ('outputnode.gs360_ts', 'gs360_ts'),
+                                      ('outputnode.gs360_fc', 'gs360_fc'),
+                                      ('outputnode.gd333_ts', 'gd333_ts'),
+                                      ('outputnode.gd333_fc', 'gd333_fc'),
+                                      ('outputnode.ts50_ts', 'ts50_ts'),
+                                      ('outputnode.ts50_fc', 'ts50_fc')])
+    ])
 
     # write derivatives
     workflow.connect([
-        (filtering_wf, write_derivative_wf, [('filt_file', 'inputnode.processed_bold')]),
-        (resdsmoothing_wf, write_derivative_wf, [
-            ('outputnode.smoothed_bold', 'inputnode.smoothed_bold')]),
-        (censorscrub_wf, write_derivative_wf, [('outputnode.fd', 'inputnode.fd')]),
-        (alff_compute_wf, write_derivative_wf, [
-            ('outputnode.alff_out', 'inputnode.alff_out'),
-            ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
-        (reho_compute_wf, write_derivative_wf, [
-            ('outputnode.rh_reho', 'inputnode.reho_rh'),
-            ('outputnode.lh_reho', 'inputnode.reho_lh')]),
-        (cifti_conts_wf, write_derivative_wf, [
-            ('outputnode.sc117_ts', 'inputnode.sc117_ts'),
-            ('outputnode.sc117_fc', 'inputnode.sc117_fc'),
-            ('outputnode.sc217_ts', 'inputnode.sc217_ts'),
-            ('outputnode.sc217_fc', 'inputnode.sc217_fc'),
-            ('outputnode.sc317_ts', 'inputnode.sc317_ts'),
-            ('outputnode.sc317_fc', 'inputnode.sc317_fc'),
-            ('outputnode.sc417_ts', 'inputnode.sc417_ts'),
-            ('outputnode.sc417_fc', 'inputnode.sc417_fc'),
-            ('outputnode.sc517_ts', 'inputnode.sc517_ts'),
-            ('outputnode.sc517_fc', 'inputnode.sc517_fc'),
-            ('outputnode.sc617_ts', 'inputnode.sc617_ts'),
-            ('outputnode.sc617_fc', 'inputnode.sc617_fc'),
-            ('outputnode.sc717_ts', 'inputnode.sc717_ts'),
-            ('outputnode.sc717_fc', 'inputnode.sc717_fc'),
-            ('outputnode.sc817_ts', 'inputnode.sc817_ts'),
-            ('outputnode.sc817_fc', 'inputnode.sc817_fc'),
-            ('outputnode.sc917_ts', 'inputnode.sc917_ts'),
-            ('outputnode.sc917_fc', 'inputnode.sc917_fc'),
-            ('outputnode.sc1017_ts', 'inputnode.sc1017_ts'),
-            ('outputnode.sc1017_fc', 'inputnode.sc1017_fc'),
-            ('outputnode.gs360_ts', 'inputnode.gs360_ts'),
-            ('outputnode.gs360_fc', 'inputnode.gs360_fc'),
-            ('outputnode.gd333_ts', 'inputnode.gd333_ts'),
-            ('outputnode.gd333_fc', 'inputnode.gd333_fc'),
-            ('outputnode.ts50_ts', 'inputnode.ts50_ts'),
-            ('outputnode.ts50_fc', 'inputnode.ts50_fc')]),
-        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])])
+        (filtering_wf, write_derivative_wf, [('filt_file',
+                                              'inputnode.processed_bold')]),
+        (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
+                                                  'inputnode.smoothed_bold')]),
+        (censorscrub_wf, write_derivative_wf, [('outputnode.fd',
+                                                'inputnode.fd')]),
+        (alff_compute_wf, write_derivative_wf,
+         [('outputnode.alff_out', 'inputnode.alff_out'),
+          ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
+        (reho_compute_wf, write_derivative_wf,
+         [('outputnode.rh_reho', 'inputnode.reho_rh'),
+          ('outputnode.lh_reho', 'inputnode.reho_lh')]),
+        (cifti_conts_wf, write_derivative_wf,
+         [('outputnode.sc117_ts', 'inputnode.sc117_ts'),
+          ('outputnode.sc117_fc', 'inputnode.sc117_fc'),
+          ('outputnode.sc217_ts', 'inputnode.sc217_ts'),
+          ('outputnode.sc217_fc', 'inputnode.sc217_fc'),
+          ('outputnode.sc317_ts', 'inputnode.sc317_ts'),
+          ('outputnode.sc317_fc', 'inputnode.sc317_fc'),
+          ('outputnode.sc417_ts', 'inputnode.sc417_ts'),
+          ('outputnode.sc417_fc', 'inputnode.sc417_fc'),
+          ('outputnode.sc517_ts', 'inputnode.sc517_ts'),
+          ('outputnode.sc517_fc', 'inputnode.sc517_fc'),
+          ('outputnode.sc617_ts', 'inputnode.sc617_ts'),
+          ('outputnode.sc617_fc', 'inputnode.sc617_fc'),
+          ('outputnode.sc717_ts', 'inputnode.sc717_ts'),
+          ('outputnode.sc717_fc', 'inputnode.sc717_fc'),
+          ('outputnode.sc817_ts', 'inputnode.sc817_ts'),
+          ('outputnode.sc817_fc', 'inputnode.sc817_fc'),
+          ('outputnode.sc917_ts', 'inputnode.sc917_ts'),
+          ('outputnode.sc917_fc', 'inputnode.sc917_fc'),
+          ('outputnode.sc1017_ts', 'inputnode.sc1017_ts'),
+          ('outputnode.sc1017_fc', 'inputnode.sc1017_fc'),
+          ('outputnode.gs360_ts', 'inputnode.gs360_ts'),
+          ('outputnode.gs360_fc', 'inputnode.gs360_fc'),
+          ('outputnode.gd333_ts', 'inputnode.gd333_ts'),
+          ('outputnode.gd333_fc', 'inputnode.gd333_fc'),
+          ('outputnode.ts50_ts', 'inputnode.ts50_ts'),
+          ('outputnode.ts50_fc', 'inputnode.ts50_fc')]),
+        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
+    ])
 
-    functional_qc = pe.Node(
-        FunctionalSummary(bold_file=cifti_file, tr=TR),
-        name='qcsummary',
-        run_without_submitting=True)
+    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, tr=TR),
+                            name='qcsummary',
+                            run_without_submitting=True)
 
-    ds_report_qualitycontrol = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc='qualitycontrol',
-            source_file=cifti_file,
-            datatype="figures"),
+    ds_report_qualitycontrol = pe.Node(DerivativesDataSink(
+        base_directory=output_dir,
+        desc='qualitycontrol',
+        source_file=cifti_file,
+        datatype="figures"),
         name='ds_report_qualitycontrol',
         run_without_submitting=True)
 
-    ds_report_preprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=cifti_file,
-            desc='preprocessing',
-            datatype="figures"),
+    ds_report_preprocessing = pe.Node(DerivativesDataSink(
+        base_directory=output_dir,
+        source_file=cifti_file,
+        desc='preprocessing',
+        datatype="figures"),
         name='ds_report_preprocessing',
         run_without_submitting=True)
 
-    ds_report_postprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=cifti_file,
-            desc='postprocessing',
-            datatype="figures"),
+    ds_report_postprocessing = pe.Node(DerivativesDataSink(
+        base_directory=output_dir,
+        source_file=cifti_file,
+        desc='postprocessing',
+        datatype="figures"),
         name='ds_report_postprocessing',
         run_without_submitting=True)
 
-    ds_report_connectivity = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=cifti_file,
-            desc='connectvityplot',
-            datatype="figures"),
+    ds_report_connectivity = pe.Node(DerivativesDataSink(
+        base_directory=output_dir,
+        source_file=cifti_file,
+        desc='connectvityplot',
+        datatype="figures"),
         name='ds_report_connectivity',
         run_without_submitting=True)
 
@@ -505,17 +520,22 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (cifti_conts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])])
+        (cifti_conts_wf, ds_report_connectivity, [('outputnode.connectplot',
+                                                   "in_file")])
+    ])
 
     # exexetive summary workflow
     workflow.connect([
-        (inputnode, executivesummary_wf, [
-            ('t1w', 'inputnode.t1w'),
-            ('t1seg', 'inputnode.t1seg'),
-            ('cifti_file', 'inputnode.bold_file')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')]),
-        (filtering_wf, executivesummary_wf, [('filt_file', 'inputnode.resddata')]),
-        (censorscrub_wf, executivesummary_wf, [('outputnode.fd', 'inputnode.fd')]),
+        (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
+                                          ('t1seg', 'inputnode.t1seg'),
+                                          ('cifti_file', 'inputnode.bold_file')
+                                          ]),
+        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')
+                                              ]),
+        (filtering_wf, executivesummary_wf, [('filt_file',
+                                              'inputnode.resddata')]),
+        (censorscrub_wf, executivesummary_wf, [('outputnode.fd',
+                                                'inputnode.fd')]),
     ])
 
     return workflow

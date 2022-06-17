@@ -95,7 +95,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         'clean_bold',
         'ref_file',
     ]),
-                        name='inputnode')
+        name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc', 'sc317_ts', 'sc317_fc',
         'sc417_ts', 'sc417_fc', 'sc517_ts', 'sc517_fc', 'sc617_ts', 'sc617_fc',
@@ -103,7 +103,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         'sc1017_ts', 'sc1017_fc', 'gs360_ts', 'gs360_fc', 'gd333_ts',
         'gd333_fc', 'ts50_ts', 'ts50_fc', 'connectplot'
     ]),
-                         name='outputnode')
+        name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
 
@@ -244,50 +244,41 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         (ts50_transform, nifticonnect_ts50, [('output_image', 'atlas')]),
 
         # output file
-        (nifticonnect_sc17, outputnode, [
-            ('time_series_tsv', 'sc117_ts'),
-            ('fcon_matrix_tsv', 'sc117_fc')]),
-        (nifticonnect_sc27, outputnode, [
-            ('time_series_tsv', 'sc217_ts'),
-            ('fcon_matrix_tsv', 'sc217_fc')]),
-        (nifticonnect_sc37, outputnode, [
-            ('time_series_tsv', 'sc317_ts'),
-            ('fcon_matrix_tsv', 'sc317_fc')]),
-        (nifticonnect_sc47, outputnode, [
-            ('time_series_tsv', 'sc417_ts'),
-            ('fcon_matrix_tsv', 'sc417_fc')]),
-        (nifticonnect_sc57, outputnode, [
-            ('time_series_tsv', 'sc517_ts'),
-            ('fcon_matrix_tsv', 'sc517_fc')]),
-        (nifticonnect_sc67, outputnode, [
-            ('time_series_tsv', 'sc617_ts'),
-            ('fcon_matrix_tsv', 'sc617_fc')]),
-        (nifticonnect_sc77, outputnode, [
-            ('time_series_tsv', 'sc717_ts'),
-            ('fcon_matrix_tsv', 'sc717_fc')]),
-        (nifticonnect_sc87, outputnode, [
-            ('time_series_tsv', 'sc817_ts'),
-            ('fcon_matrix_tsv', 'sc817_fc')]),
-        (nifticonnect_sc97, outputnode, [
-            ('time_series_tsv', 'sc917_ts'),
-            ('fcon_matrix_tsv', 'sc917_fc')]),
-        (nifticonnect_sc107, outputnode, [
-            ('time_series_tsv', 'sc1017_ts'),
-            ('fcon_matrix_tsv', 'sc1017_fc')]),
-        (nifticonnect_gs36, outputnode, [
-            ('time_series_tsv', 'gs360_ts'),
-            ('fcon_matrix_tsv', 'gs360_fc')]),
-        (nifticonnect_gd33, outputnode, [
-            ('time_series_tsv', 'gd333_ts'),
-            ('fcon_matrix_tsv', 'gd333_fc')]),
-        (nifticonnect_ts50, outputnode, [
-            ('time_series_tsv', 'ts50_ts'),
-            ('fcon_matrix_tsv', 'ts50_fc')]),
+        (nifticonnect_sc17, outputnode, [('time_series_tsv', 'sc117_ts'),
+                                         ('fcon_matrix_tsv', 'sc117_fc')]),
+        (nifticonnect_sc27, outputnode, [('time_series_tsv', 'sc217_ts'),
+                                         ('fcon_matrix_tsv', 'sc217_fc')]),
+        (nifticonnect_sc37, outputnode, [('time_series_tsv', 'sc317_ts'),
+                                         ('fcon_matrix_tsv', 'sc317_fc')]),
+        (nifticonnect_sc47, outputnode, [('time_series_tsv', 'sc417_ts'),
+                                         ('fcon_matrix_tsv', 'sc417_fc')]),
+        (nifticonnect_sc57, outputnode, [('time_series_tsv', 'sc517_ts'),
+                                         ('fcon_matrix_tsv', 'sc517_fc')]),
+        (nifticonnect_sc67, outputnode, [('time_series_tsv', 'sc617_ts'),
+                                         ('fcon_matrix_tsv', 'sc617_fc')]),
+        (nifticonnect_sc77, outputnode, [('time_series_tsv', 'sc717_ts'),
+                                         ('fcon_matrix_tsv', 'sc717_fc')]),
+        (nifticonnect_sc87, outputnode, [('time_series_tsv', 'sc817_ts'),
+                                         ('fcon_matrix_tsv', 'sc817_fc')]),
+        (nifticonnect_sc97, outputnode, [('time_series_tsv', 'sc917_ts'),
+                                         ('fcon_matrix_tsv', 'sc917_fc')]),
+        (nifticonnect_sc107, outputnode, [('time_series_tsv', 'sc1017_ts'),
+                                          ('fcon_matrix_tsv', 'sc1017_fc')]),
+        (nifticonnect_gs36, outputnode, [('time_series_tsv', 'gs360_ts'),
+                                         ('fcon_matrix_tsv', 'gs360_fc')]),
+        (nifticonnect_gd33, outputnode, [('time_series_tsv', 'gd333_ts'),
+                                         ('fcon_matrix_tsv', 'gd333_fc')]),
+        (nifticonnect_ts50, outputnode, [('time_series_tsv', 'ts50_ts'),
+                                         ('fcon_matrix_tsv', 'ts50_fc')]),
         # to qcplot
-        (nifticonnect_sc27, matrix_plot, [('time_series_tsv', 'sc217_timeseries')]),
-        (nifticonnect_sc47, matrix_plot, [('time_series_tsv', 'sc417_timeseries')]),
-        (nifticonnect_gs36, matrix_plot, [('time_series_tsv', 'gd333_timeseries')]),
-        (nifticonnect_gd33, matrix_plot, [('time_series_tsv', 'gs360_timeseries')]),
+        (nifticonnect_sc27, matrix_plot, [('time_series_tsv',
+                                           'sc217_timeseries')]),
+        (nifticonnect_sc47, matrix_plot, [('time_series_tsv',
+                                           'sc417_timeseries')]),
+        (nifticonnect_gs36, matrix_plot, [('time_series_tsv',
+                                           'gd333_timeseries')]),
+        (nifticonnect_gd33, matrix_plot, [('time_series_tsv',
+                                           'gs360_timeseries')]),
         (matrix_plot, outputnode, [('connectplot', 'connectplot')])
     ])
     return workflow
@@ -356,7 +347,7 @@ timeseries with the Connectome Workbench.
         'sc1017_ts', 'sc1017_fc', 'gs360_ts', 'gs360_fc', 'gd333_ts',
         'gd333_fc', 'ts50_ts', 'ts50_fc', 'connectplot'
     ]),
-                         name='outputnode')
+        name='outputnode')
 
     # get atlas list
     sc117atlas = get_atlas_cifti(atlasname='schaefer100x17')
