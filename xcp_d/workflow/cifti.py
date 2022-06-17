@@ -187,7 +187,7 @@ before nuisance regression and filtering of the data,  the first {nvol} were dis
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
 with framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(nvolx), fd_thresh=fd_thresh)
+""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
