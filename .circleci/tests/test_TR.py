@@ -88,9 +88,9 @@ def test_removeTR_cifti(data_dir):
     from xcp_d.interfaces.prepostcleaning import removeTR
     import pandas as pd
     # Define inputs
-    boldfile = data_dir + "fmriprep/sub-colornest001/ses-1/func/" \
+    boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
-    confounds_file = data_dir + "fmriprep/sub-colornest001/ses-1/func/" \
+    confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv"
 
     # Find the original number of volumes acc. to cifti & confounds timeseries
