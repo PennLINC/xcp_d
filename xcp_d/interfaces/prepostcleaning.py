@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 import nibabel as nb
-from ..utils import (drop_tseconds_volume, read_ndata, write_ndata, compute_FD,
+from ..utils import (read_ndata, write_ndata, compute_FD,
                      generate_mask, interpolate_masked_data)
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
@@ -10,7 +10,7 @@ from nipype.interfaces.base import (traits, TraitedSpec,
 from nipype.utils.filemanip import fname_presuffix
 
 
-class _removeTRInputSpec(BaseInterfaceInputSpec):
+class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
                      desc=" either bold or nifti ")
@@ -25,7 +25,7 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
                                    desc="confound selected from fmriprep confound matrix")
 
 
-class _removeTROutputSpec(TraitedSpec):
+class _RemoveTROutputSpec(TraitedSpec):
     fmriprep_confounds_file_dropped_TR = File(exists=True,
                                               mandatory=True,
                                               desc="fmriprep confound after removing TRs,")
@@ -35,7 +35,7 @@ class _removeTROutputSpec(TraitedSpec):
                                 desc=" either bold or nifti modified")
 
 
-class removeTR(SimpleInterface):
+class RemoveTR(SimpleInterface):
     """Removes initial volumes from a nifti or cifti file.
 
     A bold file and its corresponding confounds TSV (fmriprep format)
@@ -52,8 +52,8 @@ class removeTR(SimpleInterface):
     The  number of volumes to be removed has been calculated in a previous
     workflow.
     """
-    input_spec = _removeTRInputSpec
-    output_spec = _removeTROutputSpec
+    input_spec = _RemoveTRInputSpec
+    output_spec = _RemoveTROutputSpec
 
     def _run_interface(self, runtime):
         volumes_to_drop = self.inputs.initial_volumes_to_drop
@@ -116,7 +116,7 @@ class removeTR(SimpleInterface):
         return runtime
 
 
-class _censorscrubInputSpec(BaseInterfaceInputSpec):
+class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
                      desc=" raw bold or nifti real")
@@ -155,7 +155,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
         desc=' high frequency for nortch filter in breathe per min (bpm)')
 
 
-class _censorscrubOutputSpec(TraitedSpec):
+class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True,
                          manadatory=True,
                          desc=" fmriprep censored")
@@ -169,15 +169,18 @@ class _censorscrubOutputSpec(TraitedSpec):
     fd_timeseries = File(exists=True, mandatory=True, desc="fd timeseries")
 
 
-class censorscrub(SimpleInterface):
+class CensorScrub(SimpleInterface):
     r"""
-    generate temporal masking with volumes above fd threshold
+    Generate temporal masking with volumes above fd threshold set to 1.
+    This will be used to remove timepoints from the bold file and 
+    confounds tsv. 
+
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> cscrub = censorscrub()
+    >>> cscrub = CensorScrub()
     >>> cscrub.inputs.bold_file = cleanbold
     >>> cscrub.inputs.in_file = datafile
     >>> cscrub.inputs.TR = TR
@@ -190,8 +193,8 @@ class censorscrub(SimpleInterface):
     >>> tmpdir.cleanup()
 
     """
-    input_spec = _censorscrubInputSpec
-    output_spec = _censorscrubOutputSpec
+    input_spec = _CensorScrubInputSpec
+    output_spec = _CensorScrubOutputSpec
 
     def _run_interface(self, runtime):
 

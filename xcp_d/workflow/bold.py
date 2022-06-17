@@ -296,7 +296,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         name="ConfoundMatrix_wf",
         mem_gb=0.5)
 
-    censorscrub_wf = init_censoring_wf(
+    CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
         TR=TR,
         custom_conf=custom_conf,
@@ -432,23 +432,23 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
         workflow.connect([
             (inputnode, despike3d, [('bold_file', 'in_file')]),
-            (despike3d, censorscrub_wf, [('out_file', 'inputnode.bold')])
+            (despike3d, CensorScrub_wf, [('out_file', 'inputnode.bold')])
         ])
     else:
         workflow.connect([
-            (inputnode, censorscrub_wf, [('bold_file', 'inputnode.bold')]),
+            (inputnode, CensorScrub_wf, [('bold_file', 'inputnode.bold')]),
         ])
 
     # add neccessary input for censoring if there is one
-    workflow.connect([(inputnode, censorscrub_wf,
+    workflow.connect([(inputnode, CensorScrub_wf,
                        [('bold_file', 'inputnode.bold_file'),
                         ('bold_mask', 'inputnode.bold_mask')]),
-                      (confoundmat_wf, censorscrub_wf,
+                      (confoundmat_wf, CensorScrub_wf,
                        [('confound_file', 'inputnode.confound_file')])])
 
     # regression workflow
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
-                      (censorscrub_wf, regression_wf,
+                      (CensorScrub_wf, regression_wf,
                        [('outputnode.bold_censored', 'in_file'),
                         ('outputnode.fmriprepconf_censored', 'confounds')])])
 
@@ -456,7 +456,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     workflow.connect([
         (inputnode, interpolate_wf, [('bold_file', 'bold_file'),
                                      ('bold_mask', 'mask_file')]),
-        (censorscrub_wf, interpolate_wf, [('outputnode.tmask', 'tmask')]),
+        (CensorScrub_wf, interpolate_wf, [('outputnode.tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
 
@@ -489,7 +489,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     workflow.connect([
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
         (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
-        (censorscrub_wf, qcreport, [('outputnode.tmask', 'tmask')]),
+        (CensorScrub_wf, qcreport, [('outputnode.tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
         (resample_bold2T1w, qcreport, [('output_image', 'bold2T1w_mask')]),
@@ -500,7 +500,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     # write  to the outputnode, may be use in future
     workflow.connect([
         (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
-        (censorscrub_wf, outputnode, [('outputnode.fd', 'fd')]),
+        (CensorScrub_wf, outputnode, [('outputnode.fd', 'fd')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
@@ -541,7 +541,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censorscrub_wf, write_derivative_wf, [('outputnode.fd',
+        (CensorScrub_wf, write_derivative_wf, [('outputnode.fd',
                                                 'inputnode.fd')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
@@ -652,7 +652,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                               ]),
         (filtering_wf, executivesummary_wf, [('filt_file',
                                               'inputnode.resddata')]),
-        (censorscrub_wf, executivesummary_wf, [('outputnode.fd',
+        (CensorScrub_wf, executivesummary_wf, [('outputnode.fd',
                                                 'inputnode.fd')]),
     ])
 

@@ -24,9 +24,9 @@ def test_data_availability(data_dir, working_dir, output_dir):
     assert op.exists(boldfile)
 
 
-def test_removeTR_nifti(data_dir):
-    # Test removeTR() for NIFTI input data
-    from xcp_d.interfaces.prepostcleaning import removeTR
+def test_RemoveTR_nifti(data_dir):
+    # Test RemoveTR() for NIFTI input data
+    from xcp_d.interfaces.prepostcleaning import RemoveTR
     import pandas as pd
 
     # Define inputs
@@ -42,7 +42,7 @@ def test_removeTR_nifti(data_dir):
     original_nvols_nifti = nb.load(boldfile).get_fdata().shape[3]
 
     # Test a nifti file with 0 volumes to remove
-    remove_nothing = removeTR(
+    remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         initial_volumes_to_drop=0,
@@ -61,7 +61,7 @@ def test_removeTR_nifti(data_dir):
     # Test a nifti file with 'n' volumes to remove
     for n in range(0, original_nvols_nifti-1):  # Testing all n values till
         # original_nvols_nifti - 1
-        remove_n_vols = removeTR(
+        remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             initial_volumes_to_drop=n,
@@ -83,9 +83,9 @@ def test_removeTR_nifti(data_dir):
             raise Exception("Number of volumes in censored nifti is {}.".format(exc))
 
 
-def test_removeTR_cifti(data_dir):
-    # Test removeTR() for CIFTI input data
-    from xcp_d.interfaces.prepostcleaning import removeTR
+def test_RemoveTR_cifti(data_dir):
+    # Test RemoveTR() for CIFTI input data
+    from xcp_d.interfaces.prepostcleaning import RemoveTR
     import pandas as pd
     # Define inputs
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
@@ -98,7 +98,7 @@ def test_removeTR_cifti(data_dir):
     original_nvols_cifti = nb.load(boldfile).get_fdata().shape[0]
 
     # Test a cifti file with 0 volumes to remove
-    remove_nothing = removeTR(
+    remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         initial_volumes_to_drop=0)
@@ -115,7 +115,7 @@ def test_removeTR_cifti(data_dir):
     # Test a cifti file with 'n' volumes to remove
     for n in range(0, original_nvols_cifti-1):  # Testing all n values till
         # original_nvols_cifti - 1
-        remove_n_vols = removeTR(
+        remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             initial_volumes_to_drop=n)

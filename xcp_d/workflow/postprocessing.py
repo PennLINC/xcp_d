@@ -13,7 +13,7 @@ from pkg_resources import resource_filename as pkgrf
 from ..utils.utils import stringforparams
 from templateflow.api import get as get_template
 from ..interfaces import (ConfoundMatrix, FilteringData, regress)
-from ..interfaces import (interpolate, removeTR, censorscrub)
+from ..interfaces import (interpolate, RemoveTR, CensorScrub)
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
@@ -198,7 +198,7 @@ frequency band {highpass}-{lowpass} Hz.
                        name="regress_the_data",
                        mem_gb=0.25 * mem_gb)
 
-    censor_scrubwf = pe.Node(censorscrub(fd_thresh=fd_thresh,
+    censor_scrubwf = pe.Node(CensorScrub(fd_thresh=fd_thresh,
                                          TR=TR,
                                          head_radius=head_radius,
                                          contig=contigvol,
@@ -213,7 +213,7 @@ frequency band {highpass}-{lowpass} Hz.
 
     if dummytime > 0:
         rm_dummytime = pe.Node(
-            removeTR(initial_volumes_to_drop=initial_volumes_to_drop),
+            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1*mem_gb)
 
@@ -398,7 +398,7 @@ def init_censoring_wf(
         name='outputnode')
 
     censor_scrub = pe.Node(
-        censorscrub(
+        CensorScrub(
             fd_thresh=fd_thresh,
             TR=TR,
             head_radius=head_radius,
@@ -409,7 +409,7 @@ def init_censoring_wf(
         n_procs=omp_nthreads)
 
     dummy_scan_wf = pe.Node(
-        removeTR(initial_volumes_to_drop=initial_volumes_to_drop),
+        RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
         name="remove_dummy_time",
         mem_gb=mem_gb,
         n_procs=omp_nthreads)
