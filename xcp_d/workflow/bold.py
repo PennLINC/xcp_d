@@ -298,10 +298,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
-        TR=TR,
         custom_confounds=custom_confounds,
         head_radius=head_radius,
-        dummytime=dummytime,
         initial_volumes_to_drop=initial_volumes_to_drop,
         fd_thresh=fd_thresh,
         name='censoring',
@@ -441,8 +439,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # add neccessary input for censoring if there is one
     workflow.connect([(inputnode, CensorScrub_wf,
-                       [('bold_file', 'inputnode.bold_file'),
-                        ('bold_mask', 'inputnode.bold_mask')]),
+                       [('bold_file', 'inputnode.bold_file')]),
                       (confoundmat_wf, CensorScrub_wf,
                        [('confound_file', 'inputnode.confound_file')])])
 

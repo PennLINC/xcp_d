@@ -20,6 +20,7 @@ from nipype.interfaces.fsl import Smooth
 
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+
 def init_post_process_wf(
         mem_gb,
         TR,
@@ -34,7 +35,6 @@ def init_post_process_wf(
         band_stop_max,
         band_stop_min,
         motion_filter_order,
-        contigvol,
         initial_volumes_to_drop,
         cifti=False,
         dummytime=0,
@@ -62,7 +62,6 @@ def init_post_process_wf(
                 band_stop_max,
                 band_stop_min,
                 motion_filter_order,
-                contigvol,
                 cifti=False,
                 dummytime,
                 fd_thresh,
@@ -80,8 +79,6 @@ def init_post_process_wf(
         Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
-    contigvol: int
-        number of contigious volumes
     despike: bool
         afni depsike
     motion_filter_order: int
@@ -199,10 +196,7 @@ frequency band {highpass}-{lowpass} Hz.
                        mem_gb=0.25 * mem_gb)
 
     censor_scrubwf = pe.Node(CensorScrub(fd_thresh=fd_thresh,
-                                         TR=TR,
-                                         head_radius=head_radius,
-                                         contig=contigvol,
-                                         time_todrop=dummytime),
+                                         head_radius=head_radius),
                              name="censor_scrub",
                              mem_gb=0.1 * mem_gb)
 
@@ -334,7 +328,6 @@ def fwhm2sigma(fwhm):
 
 def init_censoring_wf(
         mem_gb,
-        TR,
         head_radius,
         custom_confounds,
         initial_volumes_to_drop,
@@ -342,7 +335,6 @@ def init_censoring_wf(
         dummytime=0,
         fd_thresh=0,
         name='censoring'):
-  
     """Creates a workflow that censors volumes in a BOLD dataset.
 
     This workflow does two steps: removing dummy volumes and censoring noisy
@@ -400,9 +392,7 @@ def init_censoring_wf(
     censor_scrub = pe.Node(
         CensorScrub(
             fd_thresh=fd_thresh,
-            TR=TR,
             head_radius=head_radius,
-            time_todrop=dummytime,
             custom_confounds=custom_confounds),
         name="censor_scrub",
         mem_gb=mem_gb,
@@ -418,20 +408,18 @@ def init_censoring_wf(
         workflow.connect([
             (inputnode, dummy_scan_wf, [('confound_file', 'fmriprep_confounds_file')]),
             (inputnode, dummy_scan_wf, [
-                ('bold', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
+                ('bold', 'bold_file')]),
             (dummy_scan_wf, censor_scrub, [
                 ('bold_file_dropped_TR', 'in_file'),
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
             (inputnode, censor_scrub, [
-                ('bold_file', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
+                ('bold_file', 'bold_file')]),
             (censor_scrub, outputnode, [
                 ('bold_censored', 'bold_censored'),
                 ('fmriprep_confounds_censored', 'fmriprep_confounds_censored'),
                 ('tmask', 'tmask'),
                 ('fd_timeseries', 'fd')])
-            ])
+        ])
     else:
         if custom_confounds:
             workflow.connect([
@@ -441,9 +429,7 @@ def init_censoring_wf(
 
         workflow.connect([
             (inputnode, censor_scrub, [
-                ('bold', 'in_file'),
-                ('bold_file', 'bold_file'),
-                ('bold_mask', 'mask_file')]),
+                ('bold', 'in_file')]),
             (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')]),
             (censor_scrub, outputnode, [
                 ('bold_censored', 'bold_censored'),
