@@ -124,7 +124,7 @@ def init_ciftipostprocess_wf(cifti_file,
     scrub: bool
         remove the censored volumes
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the first few seconds to be removed before postprocessing
 
     Inputs
     ------
@@ -179,9 +179,9 @@ tasks and sessions), the following post-processing was performed:
         TR = metadata['RepetitionTime']
 
     # TR = get_ciftiTR(cifti_file=cifti_file)
-
+    initial_volumes_to_drop = 0
     if dummytime > 0:
-        nvolx = str(np.floor(dummytime / TR))
+        initial_volumes_to_drop = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data,  the first {nvol} were discarded.
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
@@ -226,100 +226,116 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     mem_gbx = _create_mem_gb(cifti_file)
 
-    cifti_conts_wf = init_cifti_conts_wf(mem_gb=mem_gbx['timeseries'],
-                                         name='cifti_ts_con_wf',
-                                         omp_nthreads=omp_nthreads)
+    cifti_conts_wf = init_cifti_conts_wf(
+        mem_gb=mem_gbx['timeseries'],
+        name='cifti_ts_con_wf',
+        omp_nthreads=omp_nthreads)
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
-                                           TR=TR,
-                                           lowpass=upper_bpf,
-                                           highpass=lower_bpf,
-                                           smoothing=smoothing,
-                                           cifti=True,
-                                           name="compute_alff_wf",
-                                           omp_nthreads=omp_nthreads)
+    alff_compute_wf = init_compute_alff_wf(
+        mem_gb=mem_gbx['timeseries'],
+        TR=TR,
+        lowpass=upper_bpf,
+        highpass=lower_bpf,
+        smoothing=smoothing,
+        cifti=True,
+        name="compute_alff_wf",
+        omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_surface_reho_wf(mem_gb=mem_gbx['timeseries'],
-                                           smoothing=smoothing,
-                                           name="surface_reho_wf",
-                                           omp_nthreads=omp_nthreads)
+    reho_compute_wf = init_surface_reho_wf(
+        mem_gb=mem_gbx['timeseries'],
+        smoothing=smoothing,
+        name="surface_reho_wf",
+        omp_nthreads=omp_nthreads)
 
-    write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,
-                                                   bold_file=cifti_file,
-                                                   params=params,
-                                                   cifti=True,
-                                                   output_dir=output_dir,
-                                                   dummytime=dummytime,
-                                                   lowpass=upper_bpf,
-                                                   highpass=lower_bpf,
-                                                   TR=TR,
-                                                   omp_nthreads=omp_nthreads,
-                                                   name="write_derivative_wf")
+    write_derivative_wf = init_writederivatives_wf(
+        smoothing=smoothing,
+        bold_file=cifti_file,
+        params=params,
+        cifti=True,
+        output_dir=output_dir,
+        dummytime=dummytime,
+        lowpass=upper_bpf,
+        highpass=lower_bpf,
+        TR=TR,
+        omp_nthreads=omp_nthreads,
+        name="write_derivative_wf")
 
-    confoundmat_wf = pe.Node(ConfoundMatrix(head_radius=head_radius,
-                                            params=params,
-                                            custom_conf=custom_conf,
-                                            filtertype=motion_filter_type,
-                                            cutoff=band_stop_max,
-                                            low_freq=band_stop_max,
-                                            high_freq=band_stop_min,
-                                            TR=TR,
-                                            filterorder=motion_filter_order),
-                             name="ConfoundMatrix_wf",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
+    confoundmat_wf = pe.Node(
+        ConfoundMatrix(
+            head_radius=head_radius,
+            params=params,
+            custom_conf=custom_conf,
+            filtertype=motion_filter_type,
+            cutoff=band_stop_max,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min,
+            TR=TR,
+            filterorder=motion_filter_order),
+        name="ConfoundMatrix_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],
-                                       custom_conf=custom_conf,
-                                       TR=TR,
-                                       head_radius=head_radius,
-                                       dummytime=dummytime,
-                                       fd_thresh=fd_thresh,
-                                       name='censoring',
-                                       omp_nthreads=omp_nthreads)
+    censorscrub_wf = init_censoring_wf(
+        mem_gb=mem_gbx['timeseries'],
+        custom_conf=custom_conf,
+        initial_volumes_to_drop=initial_volumes_to_drop,
+        TR=TR,
+        head_radius=head_radius,
+        dummytime=dummytime,
+        fd_thresh=fd_thresh,
+        name='censoring',
+        omp_nthreads=omp_nthreads)
 
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],
-                                            smoothing=smoothing,
-                                            cifti=True,
-                                            name="resd_smoothing_wf",
-                                            omp_nthreads=omp_nthreads)
+    resdsmoothing_wf = init_resd_smoohthing(
+        mem_gb=mem_gbx['timeseries'],
+        smoothing=smoothing,
+        cifti=True,
+        name="resd_smoothing_wf",
+        omp_nthreads=omp_nthreads)
 
-    filtering_wf = pe.Node(FilteringData(tr=TR,
-                                         lowpass=upper_bpf,
-                                         highpass=lower_bpf,
-                                         filter_order=bpf_order,
-                                         bandpass_filter=bandpass_filter),
-                           name="filtering_wf",
-                           mem_gb=mem_gbx['timeseries'],
-                           n_procs=omp_nthreads)
+    filtering_wf = pe.Node(
+        FilteringData(
+            tr=TR,
+            lowpass=upper_bpf,
+            highpass=lower_bpf,
+            filter_order=bpf_order,
+            bandpass_filter=bandpass_filter),
+        name="filtering_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    regression_wf = pe.Node(regress(tr=TR),
-                            name="regression_wf",
-                            mem_gb=mem_gbx['timeseries'],
-                            n_procs=omp_nthreads)
+    regression_wf = pe.Node(
+        regress(tr=TR),
+        name="regression_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    interpolate_wf = pe.Node(interpolate(TR=TR),
-                             name="interpolation_wf",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
+    interpolate_wf = pe.Node(
+        interpolate(TR=TR),
+        name="interpolation_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    qcreport = pe.Node(computeqcplot(TR=TR,
-                                     bold_file=cifti_file,
-                                     dummytime=dummytime,
-                                     head_radius=head_radius,
-                                     low_freq=band_stop_max,
-                                     high_freq=band_stop_min),
-                       name="qc_report",
-                       mem_gb=mem_gbx['resampled'],
-                       n_procs=omp_nthreads)
+    qcreport = pe.Node(
+        computeqcplot(
+            TR=TR,
+            bold_file=cifti_file,
+            dummytime=dummytime,
+            head_radius=head_radius,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min),
+        name="qc_report",
+        mem_gb=mem_gbx['resampled'],
+        n_procs=omp_nthreads)
 
-    executivesummary_wf = init_execsummary_wf(tr=TR,
-                                              bold_file=cifti_file,
-                                              layout=layout,
-                                              output_dir=output_dir,
-                                              mni_to_t1w=mni_to_t1w,
-                                              omp_nthreads=omp_nthreads,
-                                              mem_gb=mem_gbx['timeseries'])
+    executivesummary_wf = init_execsummary_wf(
+        tr=TR,
+        bold_file=cifti_file,
+        layout=layout,
+        output_dir=output_dir,
+        mni_to_t1w=mni_to_t1w,
+        omp_nthreads=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
 
     workflow.connect([
         # connect bold confound matrix to extract confound matrix

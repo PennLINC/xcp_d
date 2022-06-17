@@ -100,7 +100,7 @@ def init_boldpostprocess_wf(lower_bpf,
     contigvol: int
         number of contigious volumes
     despike: bool
-        afni depsike
+        If True, run 3dDespike from AFNI
     motion_filter_order: int
         respiratory motion filter order
     motion_filter_type: str
@@ -126,7 +126,7 @@ def init_boldpostprocess_wf(lower_bpf,
     custom_conf: str
         path to cusrtom nuissance regressors
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the time in seconds to be removed before postprocessing
 
     Inputs
     ------
@@ -173,12 +173,21 @@ def init_boldpostprocess_wf(lower_bpf,
         quality control files
     """
 
-    # RF: Needs a check
+    # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
-
     if TR is None:
         TR = layout.get_tr(bold_file)
+    if not isinstance(TR, float):
+        raise Exception("Unable to determine TR of {}".format(bold_file))
+
+    # Confounds file is necessary: ensure we can find it
+    from xcp_d.utils.confounds import get_confounds_tsv
+    try:
+        # TODO: write a function that gets
+        confounds_tsv = get_confounds_tsv(bold_file)
+    except Exception as exc:
+        raise Exception("Unable to find confounds file for {}.".format(bold_file))
 
     workflow = Workflow(name=name)
 
@@ -186,15 +195,15 @@ def init_boldpostprocess_wf(lower_bpf,
 For each of the {num_bold} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """.format(num_bold=num2words(num_bold))
-
+    initial_volumes_to_drop = 0
     if dummytime > 0:
-        nvolx = str(np.floor(dummytime / TR))
+        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data, the first {nvol} were discarded, then both
 the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with
 framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(nvolx), fd_thresh=fd_thresh)
+""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
 
     else:
         workflow.__desc__ = workflow.__desc__ + """ \
@@ -216,17 +225,16 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
-
-    inputnode = pe.Node(niu.IdentityInterface(fields=[
-        'bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
-        't1w', 't1seg'
-    ]),
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
+                't1w', 't1seg', 'fmriprep_confounds_tsv']),
         name='inputnode')
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
     inputnode.inputs.custom_conf = str(custom_conf)
+    inputnode.inputs.fmriprep_confounds_tsv = str()
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -274,60 +282,69 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                                    name="write_derivative_wf")
 
     # RF: remove _wf
-    confoundmat_wf = pe.Node(ConfoundMatrix(head_radius=head_radius,
-                                            params=params,
-                                            custom_conf=custom_conf,
-                                            filtertype=motion_filter_type,
-                                            cutoff=band_stop_max,
-                                            low_freq=band_stop_max,
-                                            high_freq=band_stop_min,
-                                            TR=TR,
-                                            filterorder=motion_filter_order),
-                             name="ConfoundMatrix_wf",
-                             mem_gb=0.5)
+    confoundmat_wf = pe.Node(
+        ConfoundMatrix(
+            head_radius=head_radius,
+            params=params,
+            custom_conf=custom_conf,
+            filtertype=motion_filter_type,
+            cutoff=band_stop_max,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min,
+            TR=TR,
+            filterorder=motion_filter_order),
+        name="ConfoundMatrix_wf",
+        mem_gb=0.5)
 
-    censorscrub_wf = init_censoring_wf(mem_gb=mem_gbx['timeseries'],
-                                       TR=TR,
-                                       custom_conf=custom_conf,
-                                       head_radius=head_radius,
-                                       dummytime=dummytime,
-                                       fd_thresh=fd_thresh,
-                                       name='censoring',
-                                       omp_nthreads=omp_nthreads)
+    censorscrub_wf = init_censoring_wf(
+        mem_gb=mem_gbx['timeseries'],
+        TR=TR,
+        custom_conf=custom_conf,
+        head_radius=head_radius,
+        dummytime=dummytime,
+        initial_volumes_to_drop=initial_volumes_to_drop,
+        fd_thresh=fd_thresh,
+        name='censoring',
+        omp_nthreads=omp_nthreads)
 
-    resdsmoothing_wf = init_resd_smoohthing(mem_gb=mem_gbx['timeseries'],
-                                            smoothing=smoothing,
-                                            cifti=False,
-                                            name="resd_smoothing_wf",
-                                            omp_nthreads=omp_nthreads)
+    resdsmoothing_wf = init_resd_smoohthing(
+        mem_gb=mem_gbx['timeseries'],
+        smoothing=smoothing,
+        cifti=False,
+        name="resd_smoothing_wf",
+        omp_nthreads=omp_nthreads)
 
-    filtering_wf = pe.Node(FilteringData(tr=TR,
-                                         lowpass=upper_bpf,
-                                         highpass=lower_bpf,
-                                         filter_order=bpf_order,
-                                         bandpass_filter=bandpass_filter),
-                           name="filtering_wf",
-                           mem_gb=mem_gbx['timeseries'],
-                           n_procs=omp_nthreads)
+    filtering_wf = pe.Node(
+        FilteringData(
+            tr=TR,
+            lowpass=upper_bpf,
+            highpass=lower_bpf,
+            filter_order=bpf_order,
+            bandpass_filter=bandpass_filter),
+        name="filtering_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    regression_wf = pe.Node(regress(tr=TR),
-                            name="regression_wf",
-                            mem_gb=mem_gbx['timeseries'],
-                            n_procs=omp_nthreads)
+    regression_wf = pe.Node(
+        regress(tr=TR),
+        name="regression_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    interpolate_wf = pe.Node(interpolate(TR=TR),
-                             name="interpolation_wf",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
+    interpolate_wf = pe.Node(
+        interpolate(TR=TR),
+        name="interpolation_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-    executivesummary_wf = init_execsummary_wf(tr=TR,
-                                              bold_file=bold_file,
-                                              layout=layout,
-                                              mem_gb=mem_gbx['timeseries'],
-                                              output_dir=output_dir,
-                                              mni_to_t1w=mni_to_t1w,
-                                              omp_nthreads=omp_nthreads)
-
+    executivesummary_wf = init_execsummary_wf(
+        tr=TR,
+        bold_file=bold_file,
+        layout=layout,
+        mem_gb=mem_gbx['timeseries'],
+        output_dir=output_dir,
+        mni_to_t1w=mni_to_t1w,
+        omp_nthreads=omp_nthreads)
     # get transform file for resampling and fcon
     transformfile = get_transformfile(bold_file=bold_file,
                                       mni_to_t1w=mni_to_t1w,
@@ -405,14 +422,18 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     if despike:
         from ..utils import DespikePatch
         # RF: rename without _wf
-        despike_wf = pe.Node(DespikePatch(outputtype='NIFTI_GZ', args='-NEW'),
-                             name="despike_wf",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
+        despike3d = pe.Node(
+            DespikePatch(
+                outputtype='NIFTI_GZ',
+                args='-NEW'),
+            name="despike3d",
+            mem_gb=mem_gbx['timeseries'],
+            n_procs=omp_nthreads)
 
-        workflow.connect([(inputnode, despike_wf, [('bold_file', 'in_file')]),
-                          (despike_wf, censorscrub_wf, [('out_file',
-                                                         'inputnode.bold')])])
+        workflow.connect([
+            (inputnode, despike3d, [('bold_file', 'in_file')]),
+            (despike3d, censorscrub_wf, [('out_file', 'inputnode.bold')])
+        ])
     else:
         workflow.connect([
             (inputnode, censorscrub_wf, [('bold_file', 'inputnode.bold')]),

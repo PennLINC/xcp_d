@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
+import nibabel as nb
 from ..utils import (drop_tseconds_volume, read_ndata, write_ndata, compute_FD,
                      generate_mask, interpolate_masked_data)
 from nipype.interfaces.base import (traits, TraitedSpec,
@@ -14,70 +15,103 @@ class _removeTRInputSpec(BaseInterfaceInputSpec):
                      mandatory=True,
                      desc=" either bold or nifti ")
     mask_file = File(exists=False, mandatory=False, desc="required for nifti")
-    time_todrop = traits.Float(exists=True,
-                               mandatory=True,
-                               desc="time in seconds to drop")
-    TR = traits.Float(exists=True,
-                      mandatory=True,
-                      desc="repetition time in TR")
-    fmriprep_conf = File(
-        exists=True,
-        mandatory=False,
-        desc="confound selected from fmriprep confound matrix")
+
+    initial_volumes_to_drop = traits.Int(mandatory=True,
+                                         desc="number of volumes to drop from the beginning,"
+                                              "calculated in an earlier workflow from dummytime "
+                                              "and repetition time.")
+    fmriprep_confounds_file = File(exists=True,
+                                   mandatory=False,
+                                   desc="confound selected from fmriprep confound matrix")
 
 
 class _removeTROutputSpec(TraitedSpec):
-    fmrip_confdropTR = File(exists=True,
-                            manadatory=True,
-                            desc="fmriprep confound after removing TRs,")
+    fmriprep_confounds_file_dropped_TR = File(exists=True,
+                                              mandatory=True,
+                                              desc="fmriprep confound after removing TRs,")
 
-    bold_file_TR = File(exists=True,
-                        mandatory=True,
-                        desc=" either bold or nifti modified")
+    bold_file_dropped_TR = File(exists=True,
+                                mandatory=True,
+                                desc=" either bold or nifti modified")
 
 
 class removeTR(SimpleInterface):
-    r"""
+    """Removes initial volumes from a nifti or cifti file.
 
-     testing and documentation open to me
+    A bold file and its corresponding confounds TSV (fmriprep format)
+    are adjusted to remove the first n seconds of data.
 
+    If 0, the bold file and confounds are returned as-is. If dummytime
+    is larger than the repetition time, the corresponding rows are removed
+    from the confounds TSV and the initial volumes are removed from the
+    nifti or cifti file.
+
+    If the dummy time is less than the repetition time, it will
+    be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
+
+    The  number of volumes to be removed has been calculated in a previous
+    workflow.
     """
     input_spec = _removeTRInputSpec
     output_spec = _removeTROutputSpec
 
     def _run_interface(self, runtime):
+        volumes_to_drop = self.inputs.initial_volumes_to_drop
+        # Check if we need to do anything
+        if self.inputs.initial_volumes_to_drop == 0:
+            # write the output out
+            self._results['bold_file_dropped_TR'] = self.inputs.bold_file
+            self._results['fmriprep_confounds_file_dropped_TR'] = self.inputs.fmriprep_confounds_file
+            return runtime
 
-        # get the nifti or cifti
-        data_matrix = read_ndata(datafile=self.inputs.bold_file,
-                                 maskfile=self.inputs.mask_file)
-        fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf, header=None)
-
-        data_matrix_TR, fmriprep_confTR = drop_tseconds_volume(
-            data_matrix=data_matrix,
-            confound=fmriprepx_conf,
-            delets=self.inputs.time_todrop,
-            TR=self.inputs.TR)
-
-        # write the output out
-        self._results['bold_file_TR'] = fname_presuffix(self.inputs.bold_file,
-                                                        newpath=os.getcwd(),
-                                                        use_ext=True)
-
-        self._results['fmrip_confdropTR'] = fname_presuffix(
+        # get the file names to output to
+        dropped_bold_file = fname_presuffix(
             self.inputs.bold_file,
-            suffix='fmriprep_dropTR.txt',
-            newpath=os.getcwd(),
-            use_ext=False)
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True)
+        dropped_confounds_file = fname_presuffix(
+            self.inputs.fmriprep_confounds_file,
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True)
 
-        write_ndata(data_matrix=data_matrix_TR,
-                    template=self.inputs.bold_file,
-                    mask=self.inputs.mask_file,
-                    filename=self._results['bold_file_TR'],
-                    tr=self.inputs.TR)
+        # read the bold file
+        bold_image = nb.load(self.inputs.bold_file)
+        data = bold_image.get_fdata()
 
-        fmriprep_confTR.to_csv(self._results['fmrip_confdropTR'],
-                               index=False,
-                               header=False)
+        # If it's a Cifti Image:
+        if bold_image.ndim == 2:
+            dropped_data = data[volumes_to_drop:, ...] #time series is the first element
+            time_axis, brain_model_axis = [bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
+            new_total_volumes = dropped_data.shape[0]
+            dropped_time_axis = time_axis[:new_total_volumes]
+            dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
+            dropped_image = nb.Cifti2Image(
+                dropped_data, 
+                header = dropped_header,
+                nifti_header=bold_image.nifti_header)
+
+        # If it's a Nifti Image:
+        else:
+            dropped_data = data[..., volumes_to_drop:]
+            dropped_image = nb.Nifti1Image(
+                dropped_data,
+                affine=bold_image.affine,
+                header=bold_image.header)
+
+        # Write the file
+        dropped_image.to_filename(dropped_bold_file)
+
+        # Drop the first N rows from the pandas dataframe
+        confounds_df = pd.read_csv(self.inputs.fmriprep_confounds_file, sep="\t")
+        dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
+
+        # Save out results
+        dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
+        # Write to output node
+        self._results['bold_file_dropped_TR'] = dropped_bold_file
+        self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
 
         return runtime
 
@@ -98,7 +132,7 @@ class _censorscrubInputSpec(BaseInterfaceInputSpec):
                                 exists=False,
                                 mandatory=False)
     # custom_conf = File(exists=False,mandatory=False,desc=" custom confound")
-    fmriprep_conf = File(
+    fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
         desc=" confound selected from fmriprep confound matrix ")
@@ -127,7 +161,7 @@ class _censorscrubOutputSpec(TraitedSpec):
                          desc=" fmriprep censored")
     fmriprepconf_censored = File(exists=True,
                                  mandatory=True,
-                                 desc=" fmriprep_conf censored")
+                                 desc=" fmriprep_confounds_file censored")
     customconf_censored = File(exists=False,
                                mandatory=False,
                                desc="custom conf censored")
@@ -148,7 +182,7 @@ class censorscrub(SimpleInterface):
     >>> cscrub.inputs.in_file = datafile
     >>> cscrub.inputs.TR = TR
     >>> cscrub.inputs.fd_thresh = fd_thresh
-    >>> cscrub.inputs.fmriprep_conf = fmriprepconf
+    >>> cscrub.inputs.fmriprep_confounds_file = fmriprepconf
     >>> cscrub.inputs.mask_file = mask
     >>> cscrub.inputs.time_todrop = dummytime
     >>> cscrub.run()
@@ -186,7 +220,7 @@ class censorscrub(SimpleInterface):
 
         dataxx = read_ndata(datafile=self.inputs.in_file,
                             maskfile=self.inputs.mask_file)
-        fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_conf, header=None)
+        fmriprepx_conf = pd.read_csv(self.inputs.fmriprep_confounds_file, header=None)
 
         if self.inputs.custom_conf:
             customx_conf = pd.read_csv(self.inputs.custom_conf, header=None)
