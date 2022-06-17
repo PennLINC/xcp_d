@@ -119,7 +119,7 @@ def test_removeTR_cifti(data_dir):
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             initial_volumes_to_drop=n)
-        print(n)
+#         print(n)
         results = remove_n_vols.run()
         censored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
