@@ -129,10 +129,10 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
                       mandatory=True,
                       desc="repetition time in TR")
     custom_confounds = traits.Either(traits.Undefined,
-                                File,
-                                desc="name of output file with field or true",
-                                exists=False,
-                                mandatory=False)
+                                     File,
+                                     desc="name of output file with field or true",
+                                     exists=False,
+                                     mandatory=False)
     # custom_confounds = File(exists=False,mandatory=False,desc=" custom confound")
     fmriprep_confounds_file = File(
         exists=True,
