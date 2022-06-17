@@ -100,7 +100,7 @@ def test_removeTR_cifti(data_dir):
     # Test a cifti file with 0 volumes to remove
     remove_nothing = removeTR(
         bold_file=boldfile,
-        fmriprep_conf=confounds_file,
+        fmriprep_confounds_file=confounds_file,
         initial_volumes_to_drop=0)
     results = remove_nothing.run()
     uncensored_confounds = pd.read_table(results.outputs.fmrip_confdropTR)
@@ -117,9 +117,9 @@ def test_removeTR_cifti(data_dir):
         # original_nvols_cifti - 1
         remove_n_vols = removeTR(
             bold_file=boldfile,
-            fmriprep_conf=confounds_file,
+            fmriprep_confounds_file=confounds_file,
             initial_volumes_to_drop=n)
-        print(n)
+#         print(n)
         results = remove_n_vols.run()
         censored_confounds = pd.read_table(results.outputs.fmrip_confdropTR)
         # Were the files created?
