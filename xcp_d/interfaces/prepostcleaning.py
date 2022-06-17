@@ -81,15 +81,19 @@ class removeTR(SimpleInterface):
         bold_image = nb.load(self.inputs.bold_file)
         data = bold_image.get_fdata()
 
-        # this is a Cifti image
+        # If it's a Cifti Image:
         if bold_image.ndim == 2:
-            dropped_data = data[..., volumes_to_drop:]
+            dropped_data = data[volumes_to_drop:, ...] #time series is the first element
+            time_axis, brain_model_axis = [bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
+            new_total_volumes = dropped_data.shape[0]
+            dropped_time_axis = time_axis[:new_total_volumes]
+            dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
             dropped_image = nb.Cifti2Image(
-                dropped_data,
-                header=bold_image.header,
+                dropped_data, 
+                header = dropped_header,
                 nifti_header=bold_image.nifti_header)
 
-        # It's a Nifti
+        # If it's a Nifti Image:
         else:
             dropped_data = data[..., volumes_to_drop:]
             dropped_image = nb.Nifti1Image(
