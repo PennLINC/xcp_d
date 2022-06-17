@@ -126,7 +126,7 @@ def init_ciftipostprocess_wf(
     scrub: bool
         remove the censored volumes
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the first few seconds to be removed before postprocessing
 
     Inputs
     ------
@@ -181,9 +181,9 @@ tasks and sessions), the following post-processing was performed:
         TR = metadata['RepetitionTime']
 
     # TR = get_ciftiTR(cifti_file=cifti_file)
-
+    initial_volumes_to_drop = 0
     if dummytime > 0:
-        nvolx = str(np.floor(dummytime / TR))
+        initial_volumes_to_drop = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data,  the first {nvol} were discarded.
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
@@ -277,6 +277,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     censorscrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
         custom_conf=custom_conf,
+        initial_volumes_to_drop=initial_volumes_to_drop,
         TR=TR,
         head_radius=head_radius,
         dummytime=dummytime,
