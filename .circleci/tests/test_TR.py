@@ -105,12 +105,12 @@ def test_removeTR_cifti(data_dir):
     results = remove_nothing.run()
     uncensored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
-    assert op.exists(results.outputs.bold_file_TR)
+    assert op.exists(results.outputs.bold_file_dropped_TR)
     assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Have the confounds stayed the same shape?
     assert uncensored_confounds.shape == original_confounds.shape
     # Has the cifti stayed the same shape?
-    assert nb.load(results.outputs.bold_file_TR).get_fdata().shape[0] == original_nvols_cifti
+    assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0] == original_nvols_cifti
 
     # Test a cifti file with 'n' volumes to remove
     for n in range(0, original_nvols_cifti-1):  # Testing all n values till
@@ -123,15 +123,15 @@ def test_removeTR_cifti(data_dir):
         results = remove_n_vols.run()
         censored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
-        assert op.exists(results.outputs.bold_file_TR)
+        assert op.exists(results.outputs.bold_file_dropped_TR)
         assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Have the confounds changed correctly?
         assert censored_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the cifti changed correctly?
         try:
-            assert nb.load(results.outputs.bold_file_TR).get_fdata().shape[0]\
+            assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]\
                 == original_nvols_cifti - n
         except Exception as exc:
-            exc = nb.load(results.outputs.bold_file_TR).get_fdata().shape[0]
+            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
             print("Tests failing at N = {}.".format(n))
             raise Exception("Number of volumes in censored cifti is {}.".format(exc))
