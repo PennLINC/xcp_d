@@ -134,6 +134,16 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
                                mandatory=False,
                                default_value=50,
                                desc="Head radius in mm")
+    filtertype = traits.Float(exists=False, mandatory=False,
+                              desc=" Type of filter")
+    low_freq = traits.Float(
+        exit=False,
+        mandatory=False,
+        desc='Low frequency band for Notch filter in breaths per min (bpm)')
+    high_freq = traits.Float(
+        exit=False,
+        mandatory=False,
+        desc='High frequency for Notch filter in bpm')
 
 
 class _CensorScrubOutputSpec(TraitedSpec):
@@ -154,33 +164,27 @@ class CensorScrub(SimpleInterface):
     r"""
     Generate temporal masking with volumes above fd threshold set to 1.
     This will be used to remove timepoints from the bold file and
-    confounds tsv.
-
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    >>> cscrub = CensorScrub()
-    >>> cscrub.inputs.bold_file = cleanbold
-    >>> cscrub.inputs.in_file = datafile
-    >>> cscrub.inputs.TR = TR
-    >>> cscrub.inputs.fd_thresh = fd_thresh
-    >>> cscrub.inputs.fmriprep_confounds_file = fmriprepconf
-    >>> cscrub.inputs.mask_file = mask
-    >>> cscrub.inputs.time_todrop = dummytime
-    >>> cscrub.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-
+    confounds tsv. Notch filtering will also happen in this step.
     """
     input_spec = _CensorScrubInputSpec
     output_spec = _CensorScrubOutputSpec
 
     def _run_interface(self, runtime):
         # Get fd_timeseries and fmriprep confounds tsv
+        from ..utils.confounds import (load_motion)
         fmriprep_confounds_tsv = pd.read_table(self.inputs.fmriprep_confounds_file)
-        fd_timeseries = np.array(fmriprep_confounds_tsv["framewise_displacement"].tolist())
+        motion_confounds = load_motion(
+            fmriprep_confounds_tsv.copy(),
+            TR=self.inputs.TR,
+            filtertype=self.inputs.filtertype,
+            freqband=[self.inputs.low_freq, self.inputs.high_freq])
+        motion_confounds_df = pd.DataFrame(data=motion_confounds.values,
+                                           columns=[
+                                               "rot_x", "rot_y", "rot_z", "trans_x",
+                                               "trans_y", "trans_z"
+                                           ])
+        fd_timeseries = compute_FD(confound=motion_confounds_df,
+                                   head_radius=self.inputs.head_radius)
 
         # Get custom confounds tsv if present
         if self.inputs.custom_confounds:
