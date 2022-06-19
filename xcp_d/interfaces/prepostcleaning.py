@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 import nibabel as nb
-from ..utils import (read_ndata, write_ndata, compute_FD,
+from ..utils import (read_ndata, write_ndata, 
                      generate_mask, interpolate_masked_data)
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
