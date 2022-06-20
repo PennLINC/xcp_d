@@ -177,10 +177,10 @@ class CensorScrub(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        from ..utils.confounds import (load_confound, load_motion)
+        from ..utils.confounds import (load_motion)
         # Read in confounds .tsv and calculated FD timeseries after
         # filtering.
-        confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
+        confound_matrix = pd.read_csv(self.inputs.fmriprep_confounds_file)
         motion_confounds = load_motion(
             confound_matrix.copy(),
             TR=self.inputs.TR,
