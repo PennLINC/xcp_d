@@ -200,9 +200,7 @@ frequency band {highpass}-{lowpass} Hz.
 
     censor_scrubwf = pe.Node(CensorScrub(fd_thresh=fd_thresh,
                                          TR=TR,
-                                         head_radius=head_radius,
-                                         contig=contigvol,
-                                         time_todrop=dummytime),
+                                         head_radius=head_radius),
                              name="censor_scrub",
                              mem_gb=0.1 * mem_gb)
 
@@ -234,7 +232,7 @@ frequency band {highpass}-{lowpass} Hz.
         #    workflow.connect([ (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')]),
         #                      (rm_dummytime, censor_scrubwf, [
         # ('custom_confoundsdropTR', 'custom_confounds')]),
-        #                      (censor_scrubwf, regressy, [('custom_confoundsounds_censored',
+        #                      (censor_scrubwf, regressy, [('custom_confounds_censored',
         # 'custom_confounds')]),])
 
         workflow.connect([
@@ -262,7 +260,7 @@ frequency band {highpass}-{lowpass} Hz.
         # if inputnode.inputs.custom_confounds:
         #         workflow.connect([
         #             (inputnode, censor_scrubwf, [('custom_confounds', 'custom_confounds')]),
-        #              (censor_scrubwf, regressy, [('custom_confoundsounds_censored', 'custom_confounds')]) ])
+        #              (censor_scrubwf, regressy, [('custom_confounds_censored', 'custom_confounds')]) ])
         workflow.connect([
             (inputnode, censor_scrubwf, [
                 ('bold', 'in_file'),
@@ -393,7 +391,7 @@ def init_censoring_wf(
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'bold_censored', 'fmriprep_confounds_censored', 'tmask', 'fd',
-        'custom_confoundsounds_censored'
+        'custom_confounds_censored'
     ]),
         name='outputnode')
 
@@ -402,7 +400,6 @@ def init_censoring_wf(
             fd_thresh=fd_thresh,
             TR=TR,
             head_radius=head_radius,
-            time_todrop=dummytime,
             custom_confounds=custom_confounds),
         name="censor_scrub",
         mem_gb=mem_gb,
@@ -435,8 +432,8 @@ def init_censoring_wf(
     else:
         if custom_confounds:
             workflow.connect([
-                (censor_scrub, outputnode, [('custom_confoundsounds_censored',
-                                             'custom_confoundsounds_censored')]),
+                (censor_scrub, outputnode, [('custom_confounds_censored',
+                                             'custom_confounds_censored')]),
             ])
 
         workflow.connect([
