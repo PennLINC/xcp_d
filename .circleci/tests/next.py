@@ -1,5 +1,5 @@
 from xcp_d.workflow.postprocessing import init_censoring_wf
-from xcp_d.interfaces.prepostcleaning import censorscrub
+from xcp_d.interfaces.prepostcleaning import CensorScrub
 import os
 import pandas as pd
 
@@ -16,7 +16,7 @@ def test_fd():
         dummytime=0,
         fd_thresh=0.5,
         name='test_censoringwf',
-        custom_conf=None)
+        custom_confounds=None)
     # Run workflow to see if it passes basic test
     inputnode = test_wf.get_node("inputnode")
     inputnode.inputs.bold = bold_file
@@ -43,7 +43,7 @@ def test_fd_interface():  # Checking results
     df.to_csv(confounds_tsv, sep='\t', index=False)
 
     # Run workflow
-    cscrub = censorscrub()
+    cscrub = CensorScrub()
     cscrub.inputs.in_file = input_file
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.5
@@ -70,7 +70,7 @@ def test_fd_interface_dummy_signal():  # Checking results with dummy signal
     tmpdir = '/Users/kahinim/Desktop/FD_test'  # So we can see results
     os.chdir(tmpdir)
     # Run workflow
-    cscrub = censorscrub()
+    cscrub = CensorScrub()
     cscrub.inputs.in_file = input_file
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.5

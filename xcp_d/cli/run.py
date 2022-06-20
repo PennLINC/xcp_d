@@ -160,7 +160,7 @@ def get_parser():
     )
     g_param.add_argument(
         '-c',
-        '--custom_conf',
+        '--custom_confounds',
         required=False,
         default=None,
         type=Path,
@@ -625,7 +625,7 @@ def build_workflow(opts, retval):
         cifti=opts.cifti,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_conf=opts.custom_conf,
+        custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         input_type=opts.input_type,

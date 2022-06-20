@@ -45,7 +45,7 @@ def init_xcpd_wf(layout,
                  params,
                  subject_list,
                  smoothing,
-                 custom_conf,
+                 custom_confounds,
                  output_dir,
                  work_dir,
                  dummytime,
@@ -80,7 +80,7 @@ def init_xcpd_wf(layout,
                 brain_template,
                 subject_list,
                 smoothing,
-                custom_conf,
+                custom_confounds,
                 output_dir,
                 work_dir,
                 dummytime,
@@ -133,7 +133,7 @@ def init_xcpd_wf(layout,
         nuissance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_conf: str
+    custom_confounds: str
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
@@ -165,7 +165,7 @@ def init_xcpd_wf(layout,
             smoothing=smoothing,
             output_dir=output_dir,
             dummytime=dummytime,
-            custom_conf=custom_conf,
+            custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
             input_type=input_type,
             name="single_subject_" + subject_id + "_wf")
@@ -183,7 +183,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
                     motion_filter_order, motion_filter_type, bandpass_filter,
                     band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
                     subject_id, cifti, despike, head_radius, params, dummytime,
-                    fd_thresh, task_id, smoothing, custom_conf, output_dir,
+                    fd_thresh, task_id, smoothing, custom_confounds, output_dir,
                     input_type, name):
     """This workflow organizes the postprocessing pipeline for a single subject
 
@@ -215,7 +215,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
                 task_id,
                 template,
                 smoothing,
-                custom_conf,
+                custom_confounds,
                 bids_filters,
                 output_dir
              )
@@ -259,7 +259,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
         nuissance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_conf: str
+    custom_confounds: str
         path to custom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
@@ -276,9 +276,9 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
     t1wseg = extract_t1w_seg(subj_data=subj_data)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_conf', 'mni_to_t1w', 't1w', 't1seg']),
+        fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
         name='inputnode')
-    inputnode.inputs.custom_conf = custom_conf
+    inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.t1w = t1wseg[0]
     inputnode.inputs.t1seg = t1wseg[1]
     mni_to_t1w = regfile[0]
@@ -349,7 +349,7 @@ It is released under the [CC0]\
         ii = 0
         for cifti_file in subject_data[1]:
             ii = ii + 1
-            custom_confx = get_customfile(custom_conf=custom_conf,
+            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
                                           bold_file=cifti_file)
             cifti_postproc_wf = init_ciftipostprocess_wf(
                 cifti_file=cifti_file,
@@ -364,7 +364,7 @@ It is released under the [CC0]\
                 smoothing=smoothing,
                 params=params,
                 head_radius=head_radius,
-                custom_conf=custom_confx,
+                custom_confounds=custom_confoundsx,
                 omp_nthreads=omp_nthreads,
                 num_cifti=len(subject_data[1]),
                 dummytime=dummytime,
@@ -384,7 +384,7 @@ It is released under the [CC0]\
                 name='ds_report_about',
                 run_without_submitting=True)
             workflow.connect([(inputnode, cifti_postproc_wf,
-                               [('custom_conf', 'inputnode.custom_conf'),
+                               [('custom_confounds', 'inputnode.custom_confounds'),
                                 ('t1w', 'inputnode.t1w'),
                                 ('t1seg', 'inputnode.t1seg')])])
 
@@ -392,7 +392,7 @@ It is released under the [CC0]\
         ii = 0
         for bold_file in subject_data[0]:
             ii = ii + 1
-            custom_confx = get_customfile(custom_conf=custom_conf,
+            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
                                           bold_file=bold_file)
             bold_postproc_wf = init_boldpostprocess_wf(
                 bold_file=bold_file,
@@ -410,7 +410,7 @@ It is released under the [CC0]\
                 omp_nthreads=omp_nthreads,
                 brain_template='MNI152NLin2009cAsym',
                 num_bold=len(subject_data[0]),
-                custom_conf=custom_confx,
+                custom_confounds=custom_confoundsx,
                 layout=layout,
                 despike=despike,
                 dummytime=dummytime,

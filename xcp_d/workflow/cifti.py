@@ -42,7 +42,7 @@ def init_ciftipostprocess_wf(cifti_file,
                              head_radius,
                              params,
                              output_dir,
-                             custom_conf,
+                             custom_confounds,
                              omp_nthreads,
                              dummytime,
                              fd_thresh,
@@ -72,7 +72,7 @@ def init_ciftipostprocess_wf(cifti_file,
                 smoothing,
                 head_radius,
                 params,
-                custom_conf,
+                custom_confounds,
                 omp_nthreads,
                 dummytime,
                 output_dir,
@@ -119,7 +119,7 @@ def init_ciftipostprocess_wf(cifti_file,
         nuissance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_conf: str
+    custom_confounds: str
         path to cusrtom nuissance regressors
     scrub: bool
         remove the censored volumes
@@ -208,7 +208,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_conf', 't1w', 't1seg']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
@@ -264,7 +264,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         ConfoundMatrix(
             head_radius=head_radius,
             params=params,
-            custom_conf=custom_conf,
+            custom_confounds=custom_confounds,
             filtertype=motion_filter_type,
             cutoff=band_stop_max,
             low_freq=band_stop_max,
@@ -275,9 +275,9 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
-    censorscrub_wf = init_censoring_wf(
+    CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
-        custom_conf=custom_conf,
+        custom_confounds=custom_confounds,
         initial_volumes_to_drop=initial_volumes_to_drop,
         TR=TR,
         head_radius=head_radius,
@@ -350,27 +350,27 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                              n_procs=omp_nthreads)
 
         workflow.connect([(inputnode, despike_wf, [('cifti_file', 'in_file')]),
-                          (despike_wf, censorscrub_wf, [('des_file',
+                          (despike_wf, CensorScrub_wf, [('des_file',
                                                          'inputnode.bold')])])
     else:
-        workflow.connect([(inputnode, censorscrub_wf, [('cifti_file',
+        workflow.connect([(inputnode, CensorScrub_wf, [('cifti_file',
                                                         'inputnode.bold')])])
 
     # add neccessary input for censoring if there is one
-    workflow.connect([(inputnode, censorscrub_wf, [('cifti_file',
+    workflow.connect([(inputnode, CensorScrub_wf, [('cifti_file',
                                                     'inputnode.bold_file')]),
-                      (confoundmat_wf, censorscrub_wf,
+                      (confoundmat_wf, CensorScrub_wf,
                        [('confound_file', 'inputnode.confound_file')])])
 
     # regression workflow
-    workflow.connect([(censorscrub_wf, regression_wf,
+    workflow.connect([(CensorScrub_wf, regression_wf,
                        [('outputnode.bold_censored', 'in_file'),
-                        ('outputnode.fmriprepconf_censored', 'confounds')])])
+                        ('outputnode.fmriprep_confounds_censored', 'confounds')])])
 
     # interpolation workflow
     workflow.connect([
         (inputnode, interpolate_wf, [('cifti_file', 'bold_file')]),
-        (censorscrub_wf, interpolate_wf, [('outputnode.tmask', 'tmask')]),
+        (CensorScrub_wf, interpolate_wf, [('outputnode.tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
 
@@ -395,13 +395,13 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     # qc report
     workflow.connect([
         (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
-        (censorscrub_wf, qcreport, [('outputnode.tmask', 'tmask')]),
+        (CensorScrub_wf, qcreport, [('outputnode.tmask', 'tmask')]),
         (qcreport, outputnode, [('qc_file', 'qc_file')])
     ])
 
     workflow.connect([
         (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
-        (censorscrub_wf, outputnode, [('outputnode.fd', 'fd')]),
+        (CensorScrub_wf, outputnode, [('outputnode.fd', 'fd')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
@@ -441,7 +441,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censorscrub_wf, write_derivative_wf, [('outputnode.fd',
+        (CensorScrub_wf, write_derivative_wf, [('outputnode.fd',
                                                 'inputnode.fd')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
@@ -534,7 +534,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                                               ]),
         (filtering_wf, executivesummary_wf, [('filt_file',
                                               'inputnode.resddata')]),
-        (censorscrub_wf, executivesummary_wf, [('outputnode.fd',
+        (CensorScrub_wf, executivesummary_wf, [('outputnode.fd',
                                                 'inputnode.fd')]),
     ])
 
