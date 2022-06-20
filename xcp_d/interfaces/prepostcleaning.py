@@ -61,7 +61,8 @@ class RemoveTR(SimpleInterface):
         if self.inputs.initial_volumes_to_drop == 0:
             # write the output out
             self._results['bold_file_dropped_TR'] = self.inputs.bold_file
-            self._results['fmriprep_confounds_file_dropped_TR'] = self.inputs.fmriprep_confounds_file
+            self._results['fmriprep_confounds_file'
+                          '_dropped_TR'] = self.inputs.fmriprep_confounds_file
             return runtime
 
         # get the file names to output to
