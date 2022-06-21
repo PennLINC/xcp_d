@@ -9,13 +9,13 @@ Handling regression.
 import numpy as np
 import pandas as pd
 from nipype import logging
+
 from sklearn.linear_model import LinearRegression
 from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
-
-from ..utils import (read_ndata, write_ndata, despikedatacifti)
+from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -29,7 +29,8 @@ class _regressInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc=" confound regressors selected from fmriprep's confound matrix.")
     tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
-    mask = File(exists=False, mandatory=False, desc=" brain mask nifti file")
+    mask = File(exists=False, mandatory=False, desc="brain mask nifti file")
+    motion_filter_type = traits.Str(exists=False, mandatory=True)
 
 
 class _regressOutputSpec(TraitedSpec):
@@ -49,7 +50,9 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
 
         # get the confound matrix
-        confound = pd.read_csv(self.inputs.confounds, header=None)
+        confound = load_confound_matrix(namefile=self.inputs.mask, datafile=self.inputs.in_file,
+                                        TR=self.inputs.tr, confound_tsv=self.inputs.confounds,
+                                        motion_filter_type=self.inputs.motion_filter_type)
         confound = confound.to_numpy().T
         # if self.inputs.custom_confounds:
         #     confound_custom = pd.read_table(self.inputs.custom_confounds,
@@ -71,7 +74,10 @@ class regress(SimpleInterface):
                                       order=orderx)
         # confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
         # regress the confound regressors from data
-        resid_data = linear_regression(data=dd_data, confound=confound)
+        try:
+            resid_data = linear_regression(data=dd_data, confound=confound)
+        except: 
+            print (dd_data.shape, confound.shape)
 
         # writeout the data
         if self.inputs.in_file.endswith('.dtseries.nii'):

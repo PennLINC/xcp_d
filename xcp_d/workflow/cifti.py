@@ -294,7 +294,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(tr=TR),
+        regress(tr=TR,
+                motion_filter_type=motion_filter_type),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)

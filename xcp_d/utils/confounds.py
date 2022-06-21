@@ -159,18 +159,37 @@ def load_confound_matrix(datafile,
                          TR,
                          motion_filter_type,
                          custom_confounds=None,
+                         confound_tsv=None,
+                         namefile=None,
                          cutoff=0.1,
                          order=4,
                          freqband=[0.1, 0.2],
                          params='27P'):
     """ extract confound """
     '''
+    namefile:
+       file used to find confounds
     datafile:
-       cifti file or nifti file
+        boldfile
+    confound_tsv:
+        confound tsv
     params:
        confound requested based on Ciric et. al 2017
     '''
-    confoundtsv, confoundjson = load_confound(datafile)
+
+    if namefile:
+        confoundjson = load_confound(namefile)[1]
+    else:
+        confoundjson = load_confound(datafile)[1]
+
+    if confound_tsv:
+        confoundtsv = pd.read_table(confound_tsv)
+    else:
+        if namefile:
+            confoundtsv = load_confound(namefile)[0]
+        else:
+            confoundtsv = load_confound(datafile)[0]
+
     if params == '24P':
         motion = load_motion(confoundtsv,
                              TR,

@@ -279,7 +279,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         TR=TR,
         custom_confounds=custom_confounds,
         head_radius=head_radius,
-        motion_filter_type=motion_filter_type, 
+        motion_filter_type=motion_filter_type,
         low_freq=band_stop_max,
         high_freq=band_stop_min,
         initial_volumes_to_drop=initial_volumes_to_drop,
@@ -307,7 +307,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(tr=TR),
+        regress(tr=TR,
+                motion_filter_type=motion_filter_type),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
