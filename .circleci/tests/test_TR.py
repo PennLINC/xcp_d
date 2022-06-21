@@ -52,7 +52,7 @@ def test_RemoveTR_nifti(data_dir):
     # Have the confounds stayed the same shape?
     assert uncensored_confounds.shape == original_confounds.shape
     # Has the nifti stayed the same shape?
-    assert nb.load(results. 
+    assert nb.load(results.
                    outputs.bold_file_dropped_TR).get_fdata().shape[3] == original_nvols_nifti
 
     # Test a nifti file with 'n' volumes to remove
@@ -106,7 +106,8 @@ def test_RemoveTR_cifti(data_dir):
     # Have the confounds stayed the same shape?
     assert uncensored_confounds.shape == original_confounds.shape
     # Has the cifti stayed the same shape?
-    assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0] == original_nvols_cifti
+    assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata(
+    ).shape[0] == original_nvols_cifti
 
     # Test a cifti file with 'n' volumes to remove
     for n in range(0, original_nvols_cifti-1):  # Testing all n values till

@@ -268,7 +268,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         custom_confounds=custom_confounds,
         initial_volumes_to_drop=initial_volumes_to_drop,
         low_freq=band_stop_max,
-        high_freq=band_stop_min, 
+        high_freq=band_stop_min,
         motion_filter_type=motion_filter_type,
         head_radius=head_radius,
         fd_thresh=fd_thresh,
@@ -342,8 +342,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     # add neccessary input for censoring if there is one
     workflow.connect([(inputnode, CensorScrub_wf, [('cifti_file',
-                                                    'inputnode.bold_file')],
-                       [('confound_file', 'inputnode.confound_file')])])
+                                                    'inputnode.bold_file'),
+                       ('confound_file', 'inputnode.confound_file')])])
 
     # regression workflow
     workflow.connect([(CensorScrub_wf, regression_wf,
