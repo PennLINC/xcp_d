@@ -157,17 +157,17 @@ def confpower(confound, order=2):
 
 def load_confound_matrix(datafile,
                          TR,
+                         original_file,
                          motion_filter_type,
                          custom_confounds=None,
                          confound_tsv=None,
-                         namefile=None,
                          cutoff=0.1,
                          order=4,
                          freqband=[0.1, 0.2],
                          params='27P'):
     """ extract confound """
     '''
-    namefile:
+    original_file:
        file used to find confounds
     datafile:
         boldfile
@@ -177,18 +177,8 @@ def load_confound_matrix(datafile,
        confound requested based on Ciric et. al 2017
     '''
 
-    if namefile:
-        confoundjson = load_confound(namefile)[1]
-    else:
-        confoundjson = load_confound(datafile)[1]
-
-    if confound_tsv:
-        confoundtsv = pd.read_table(confound_tsv)
-    else:
-        if namefile:
-            confoundtsv = load_confound(namefile)[0]
-        else:
-            confoundtsv = load_confound(datafile)[0]
+    confoundjson = load_confound(original_file)[1]
+    confoundtsv = pd.read_table(confound_tsv)
 
     if params == '24P':
         motion = load_motion(confoundtsv,

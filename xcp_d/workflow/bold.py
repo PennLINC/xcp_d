@@ -308,7 +308,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     regression_wf = pe.Node(
         regress(tr=TR,
-                motion_filter_type=motion_filter_type),
+                motion_filter_type=motion_filter_type,
+                original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
