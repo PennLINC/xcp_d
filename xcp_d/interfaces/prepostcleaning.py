@@ -192,7 +192,7 @@ class CensorScrub(SimpleInterface):
                                               head_radius=self.inputs.head_radius)
 
         # Read in custom confounds file (if any) and bold file to be censored
-        bold_file_uncensored = nb.load(self.inputs.in_file)
+        bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
         if self.inputs.custom_confounds:
             custom_confounds_tsv_uncensored = pd.read_csv(
                 self.inputs.custom_confounds, header=None)
@@ -201,7 +201,10 @@ class CensorScrub(SimpleInterface):
         tmask = generate_mask(fd_res=fd_timeseries_uncensored,
                               fd_thresh=self.inputs.fd_thresh)
         if np.sum(tmask) > 0:  # If any FD values exceed the threshold
-            bold_file_censored = bold_file_uncensored[:, tmask == 0]
+            if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
+                bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
+            else:
+                bold_file_censored = bold_file_uncensored[tmask == 0, :]
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.drop(
                 fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)])
             if self.inputs.custom_confounds:  # If custom regressors are present
@@ -212,7 +215,25 @@ class CensorScrub(SimpleInterface):
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
             if self.inputs.custom_confounds:
                 custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
-        fd_timeseries_censored = fd_timeseries_uncensored
+
+        #  Turn censored bold into nifti image
+        if nb.load(self.inputs.in_file).ndim > 2:
+            bold_file_censored = nb.Nifti1Image(bold_file_censored,
+                                                affine=nb.load(self.inputs.in_file).affine,
+                                                header=nb.load(self.inputs.in_file).header)
+        else:
+            # If it's a Cifti Image:
+            original_image = nb.load(self.inputs.in_file)
+            time_axis, brain_model_axis = [
+                original_image.header.get_axis(i) for i in range(original_image.ndim)]
+            new_total_volumes = bold_file_censored.shape[0]
+            dropped_time_axis = time_axis[:new_total_volumes]
+            dropped_header = nb.cifti2.Cifti2Header.from_axes(
+                (dropped_time_axis, brain_model_axis))
+            bold_file_censored = nb.Cifti2Image(
+                bold_file_censored,
+                header=dropped_header,
+                nifti_header=original_image.nifti_header)
 
         # get the output
         self._results['bold_censored'] = fname_presuffix(self.inputs.in_file,
