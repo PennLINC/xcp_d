@@ -417,7 +417,7 @@ def init_censoring_wf(
         workflow.connect([
             (inputnode, censor_scrub, [
                 ('bold', 'in_file'),
-                ('bold_file', 'bold_file'))]),
+                ('bold_file', 'bold_file')]),
             (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')]),
             (censor_scrub, outputnode, [
                 ('bold_censored', 'bold_censored'),
