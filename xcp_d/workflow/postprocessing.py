@@ -12,13 +12,14 @@ from nipype.pipeline import engine as pe
 from pkg_resources import resource_filename as pkgrf
 from ..utils.utils import stringforparams
 from templateflow.api import get as get_template
-from ..interfaces import (ConfoundMatrix, FilteringData, regress)
+from ..interfaces import (FilteringData, regress)
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
 
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
 
 def init_post_process_wf(
         mem_gb,
@@ -174,18 +175,6 @@ frequency band {highpass}-{lowpass} Hz.
         name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
-    confoundmat = pe.Node(ConfoundMatrix(
-        head_radius=head_radius,
-        params=params,
-        custom_confounds=inputnode.inputs.custom_confounds,
-        filtertype=motion_filter_type,
-        cutoff=band_stop_max,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
-        TR=TR,
-        filterorder=motion_filter_order),
-        name="ConfoundMatrix",
-        mem_gb=0.1 * mem_gb)
 
     filterdx = pe.Node(FilteringData(tr=TR,
                                      lowpass=upper_bpf,
@@ -342,7 +331,6 @@ def init_censoring_wf(
         dummytime=0,
         fd_thresh=0,
         name='censoring'):
-  
     """Creates a workflow that censors volumes in a BOLD dataset.
 
     This workflow does two steps: removing dummy volumes and censoring noisy
@@ -431,7 +419,7 @@ def init_censoring_wf(
                 ('fmriprep_confounds_censored', 'fmriprep_confounds_censored'),
                 ('tmask', 'tmask'),
                 ('fd_timeseries', 'fd')])
-            ])
+        ])
     else:
         if custom_confounds:
             workflow.connect([

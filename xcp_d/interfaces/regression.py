@@ -40,17 +40,6 @@ class _regressOutputSpec(TraitedSpec):
 
 class regress(SimpleInterface):
     r"""
-    regress the nuissance regressors from cifti or nifti.
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    >>> reg = regress()
-    >>> reg.inputs.in_file = datafile
-    >>> reg.inputs.confounds = confoundfile # selected with ConfoundMatrix() or custom
-    >>> reg.inputs.tr = 3
-    >>> reg.run()
 
     """
 

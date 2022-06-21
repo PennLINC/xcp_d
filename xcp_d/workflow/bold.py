@@ -20,7 +20,7 @@ from ..utils import (bid_derivative, stringforparams, get_maskfiles,
 from ..interfaces import FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
-from ..interfaces import (ConfoundMatrix, FilteringData, regress)
+from ..interfaces import (FilteringData, regress)
 from ..interfaces import interpolate
 from .postprocessing import init_censoring_wf, init_resd_smoohthing
 from .execsummary import init_execsummary_wf
@@ -234,7 +234,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
     inputnode.inputs.custom_confounds = str(custom_confounds)
-    inputnode.inputs.fmriprep_confounds_tsv = str()
+    inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -280,21 +280,6 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                                    TR=TR,
                                                    omp_nthreads=omp_nthreads,
                                                    name="write_derivative_wf")
-
-    # RF: remove _wf
-    confoundmat_wf = pe.Node(
-        ConfoundMatrix(
-            head_radius=head_radius,
-            params=params,
-            custom_confounds=custom_confounds,
-            filtertype=motion_filter_type,
-            cutoff=band_stop_max,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min,
-            TR=TR,
-            filterorder=motion_filter_order),
-        name="ConfoundMatrix_wf",
-        mem_gb=0.5)
 
     CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
@@ -412,12 +397,6 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                        name="qc_report",
                        mem_gb=mem_gbx['timeseries'],
                        n_procs=omp_nthreads)
-
-    workflow.connect([
-        # connect bold confound matrix to extract confound matrix
-        (inputnode, confoundmat_wf, [('bold_file', 'in_file')])
-    ])
-
     # if there is despiking
     if despike:
         from ..utils import DespikePatch
@@ -442,9 +421,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     # add neccessary input for censoring if there is one
     workflow.connect([(inputnode, CensorScrub_wf,
                        [('bold_file', 'inputnode.bold_file'),
-                        ('bold_mask', 'inputnode.bold_mask')]),
-                      (confoundmat_wf, CensorScrub_wf,
-                       [('confound_file', 'inputnode.confound_file')])])
+                        ('bold_mask', 'inputnode.bold_mask'),
+                        ('fmriprep_confounds_tsv', 'inputnode.confound_file')])])
 
     # regression workflow
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),

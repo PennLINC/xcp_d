@@ -21,7 +21,7 @@ from .connectivity import init_cifti_conts_wf
 from .restingstate import init_compute_alff_wf, init_surface_reho_wf
 from .execsummary import init_execsummary_wf
 from ..interfaces import interpolate
-from ..interfaces import (ConfoundMatrix, FilteringData, regress)
+from ..interfaces import (FilteringData, regress)
 from .postprocessing import init_censoring_wf, init_resd_smoohthing
 from num2words import num2words
 from .outputs import init_writederivatives_wf
@@ -177,6 +177,13 @@ tasks and sessions), the following post-processing was performed:
     if TR is None:
         metadata = layout.get_metadata(cifti_file)
         TR = metadata['RepetitionTime']
+    # Confounds file is necessary: ensure we can find it
+    from xcp_d.utils.confounds import get_confounds_tsv
+    try:
+        # TODO: write a function that gets
+        confounds_tsv = get_confounds_tsv(cifti_file)
+    except Exception as exc:
+        raise Exception("Unable to find confounds file for {}.".format(cifti_file))
 
     # TR = get_ciftiTR(cifti_file=cifti_file)
     initial_volumes_to_drop = 0
@@ -208,10 +215,11 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confounds_file']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
+    inputnode.inputs.confounds_file = confounds_tsv
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -259,21 +267,6 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         TR=TR,
         omp_nthreads=omp_nthreads,
         name="write_derivative_wf")
-
-    confoundmat_wf = pe.Node(
-        ConfoundMatrix(
-            head_radius=head_radius,
-            params=params,
-            custom_confounds=custom_confounds,
-            filtertype=motion_filter_type,
-            cutoff=band_stop_max,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min,
-            TR=TR,
-            filterorder=motion_filter_order),
-        name="ConfoundMatrix_wf",
-        mem_gb=mem_gbx['timeseries'],
-        n_procs=omp_nthreads)
 
     CensorScrub_wf = init_censoring_wf(
         mem_gb=mem_gbx['timeseries'],
@@ -336,12 +329,6 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         mni_to_t1w=mni_to_t1w,
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
-
-    workflow.connect([
-        # connect bold confound matrix to extract confound matrix
-        (inputnode, confoundmat_wf, [('cifti_file', 'in_file')])
-    ])
-
     # if there is despiking
     if despike:
         despike_wf = pe.Node(ciftidespike(tr=TR),
@@ -358,8 +345,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     # add neccessary input for censoring if there is one
     workflow.connect([(inputnode, CensorScrub_wf, [('cifti_file',
-                                                    'inputnode.bold_file')]),
-                      (confoundmat_wf, CensorScrub_wf,
+                                                    'inputnode.bold_file')],
                        [('confound_file', 'inputnode.confound_file')])])
 
     # regression workflow

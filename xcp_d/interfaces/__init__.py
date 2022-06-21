@@ -1,4 +1,3 @@
-from .confound import ConfoundMatrix
 from .filtering import FilteringData
 from .regression import regress, ciftidespike
 from .connectivity import (nifticonnect, ApplyTransformsx, get_atlas_cifti,
@@ -14,7 +13,7 @@ from .surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot,
 from .layout_builder import layout_builder
 
 __all__ = [
-    'regress', 'ConfoundMatrix', 'FilteringData', 'nifticonnect',
+    'regress','FilteringData', 'nifticonnect',
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'interpolate', 'CensorScrub', 'RemoveTR',
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
