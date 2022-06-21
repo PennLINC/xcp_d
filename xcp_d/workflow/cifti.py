@@ -174,7 +174,6 @@ tasks and sessions), the following post-processing was performed:
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
-        # TODO: write a function that gets
         confounds_tsv = get_confounds_tsv(cifti_file)
     except Exception as exc:
         raise Exception("Unable to find confounds file for {}.".format(cifti_file))

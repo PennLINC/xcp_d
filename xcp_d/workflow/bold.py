@@ -177,7 +177,6 @@ def init_boldpostprocess_wf(lower_bpf,
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
-        # TODO: write a function that gets
         confounds_tsv = get_confounds_tsv(bold_file)
     except Exception as exc:
         raise Exception("Unable to find confounds file for {}.".format(bold_file))
