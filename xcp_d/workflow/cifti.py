@@ -209,11 +209,11 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confounds_file']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confound_file']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
-    inputnode.inputs.confounds_file = confounds_tsv
+    inputnode.inputs.confound_file = confounds_tsv
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
