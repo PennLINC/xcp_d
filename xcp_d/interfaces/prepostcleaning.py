@@ -13,26 +13,24 @@ from nipype.utils.filemanip import fname_presuffix
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
-                     desc=" either bold or nifti ")
-    mask_file = File(exists=False, mandatory=False, desc="required for nifti")
-
+                     desc="Either cifti or nifti ")
     initial_volumes_to_drop = traits.Int(mandatory=True,
-                                         desc="number of volumes to drop from the beginning,"
+                                         desc="Number of volumes to drop from the beginning,"
                                               "calculated in an earlier workflow from dummytime "
                                               "and repetition time.")
     fmriprep_confounds_file = File(exists=True,
                                    mandatory=False,
-                                   desc="confound selected from fmriprep confound matrix")
+                                   desc="fmriprep confounds tsv")
 
 
 class _RemoveTROutputSpec(TraitedSpec):
     fmriprep_confounds_file_dropped_TR = File(exists=True,
                                               mandatory=True,
-                                              desc="fmriprep confound after removing TRs,")
+                                              desc="fmriprep confounds tsv after removing TRs,")
 
     bold_file_dropped_TR = File(exists=True,
                                 mandatory=True,
-                                desc=" either bold or nifti modified")
+                                desc="bold or cifti with volumes dropped")
 
 
 class RemoveTR(SimpleInterface):
@@ -126,7 +124,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
     fd_thresh = traits.Float(exists=True, mandatory=True, desc="Framewise displacement threshold. All"
                              "values above this will be dropped.")
-    mask_file = File(exists=False, mandatory=False, desc="Masks, required for nifti")
     custom_confounds = traits.Either(traits.Undefined,
                                      File,
                                      desc="Name of custom confounds file, or True",
@@ -235,7 +232,7 @@ class CensorScrub(SimpleInterface):
                                                  suffix='_temporal_mask.tsv',
                                                  newpath=os.getcwd(),
                                                  use_ext=False)
-        self._results['fd_timeseries_uncensored'] = fname_presuffix(
+        self._results['fd_timeseries'] = fname_presuffix(
             self.inputs.in_file,
             suffix='_fd_timeseries.tsv',
             newpath=os.getcwd(),
@@ -246,17 +243,17 @@ class CensorScrub(SimpleInterface):
         fmriprep_confounds_tsv_censored.to_csv(self._results['fmriprep_confounds_censored'],
                                                index=False,
                                                header=True,
-                                               sep='/t')
+                                               sep="\t")
         np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
-        np.savetxt(self._results['fd_timeseries_uncensored'],
-                   fd_timeseries_censored,
+        np.savetxt(self._results['fd_timeseries'],
+                   fd_timeseries_uncensored,
                    fmt="%1.4f",
                    delimiter=',')
         if self.inputs.custom_confounds:
             custom_confounds_tsv_censored.to_csv(self._results['custom_confounds_censored'],
                                                  index=False,
                                                  header=False,
-                                                 sep='/t')
+                                                 sep="\t")
         return runtime
 
 

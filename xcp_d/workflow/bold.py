@@ -417,7 +417,6 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     # add neccessary input for censoring if there is one
     workflow.connect([(inputnode, CensorScrub_wf,
                        [('bold_file', 'inputnode.bold_file'),
-                        ('bold_mask', 'inputnode.bold_mask'),
                         ('fmriprep_confounds_tsv', 'inputnode.confound_file')])])
 
     # regression workflow
