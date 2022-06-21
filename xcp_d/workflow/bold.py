@@ -35,7 +35,6 @@ LOGGER = logging.getLogger('nipype.workflow')
 def init_boldpostprocess_wf(lower_bpf,
                             upper_bpf,
                             bpf_order,
-                            motion_filter_order,
                             motion_filter_type,
                             bandpass_filter,
                             band_stop_min,
@@ -68,9 +67,7 @@ def init_boldpostprocess_wf(lower_bpf,
                 bold_file,
                 lower_bpf,
                 upper_bpf,
-                contigvol,
                 bpf_order,
-                motion_filter_order,
                 motion_filter_type,
                 band_stop_min,
                 band_stop_max,
@@ -97,12 +94,8 @@ def init_boldpostprocess_wf(lower_bpf,
         Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
-    contigvol: int
-        number of contigious volumes
     despike: bool
         If True, run 3dDespike from AFNI
-    motion_filter_order: int
-        respiratory motion filter order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     band_stop_min: float
@@ -286,7 +279,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         TR=TR,
         custom_confounds=custom_confounds,
         head_radius=head_radius,
-        dummytime=dummytime,
+        motion_filter_type=motion_filter_type, 
+        low_freq=band_stop_max,
+        high_freq=band_stop_min,
         initial_volumes_to_drop=initial_volumes_to_drop,
         fd_thresh=fd_thresh,
         name='censoring',

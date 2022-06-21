@@ -32,7 +32,6 @@ def init_xcpd_wf(layout,
                  upper_bpf,
                  despike,
                  bpf_order,
-                 motion_filter_order,
                  motion_filter_type,
                  band_stop_min,
                  band_stop_max,
@@ -64,10 +63,8 @@ def init_xcpd_wf(layout,
                 layout,
                 lower_bpf,
                 upper_bpf,
-                contigvol,
                 despike,
                 bpf_order,
-                motion_filter_order,
                 motion_filter_type,
                 band_stop_min,
                 band_stop_max,
@@ -95,12 +92,8 @@ def init_xcpd_wf(layout,
         Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
-    contigvol: int
-        number of contigious volumes
     despike: bool
         afni depsike
-    motion_filter_order: int
-        respiratory motion filter order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     band_stop_min: float
@@ -149,7 +142,6 @@ def init_xcpd_wf(layout,
             lower_bpf=lower_bpf,
             upper_bpf=upper_bpf,
             bpf_order=bpf_order,
-            motion_filter_order=motion_filter_order,
             motion_filter_type=motion_filter_type,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
@@ -180,7 +172,7 @@ def init_xcpd_wf(layout,
 
 
 def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
-                    motion_filter_order, motion_filter_type, bandpass_filter,
+                    motion_filter_type, bandpass_filter,
                     band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
                     subject_id, cifti, despike, head_radius, params, dummytime,
                     fd_thresh, task_id, smoothing, custom_confounds, output_dir,
@@ -197,9 +189,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
                 layout,
                 lower_bpf,
                 upper_bpf,
-                contigvol,
                 bpf_order,
-                motion_filter_order,
                 motion_filter_type,
                 band_stop_min,
                 band_stop_max,
@@ -227,12 +217,8 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
         Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
-    contigvol: int
-        number of contigious volumes
     despike: bool
         afni depsike
-    motion_filter_order: int
-        respiratory motion filter order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     band_stop_min: float
@@ -356,7 +342,6 @@ It is released under the [CC0]\
                 lower_bpf=lower_bpf,
                 upper_bpf=upper_bpf,
                 bpf_order=bpf_order,
-                motion_filter_order=motion_filter_order,
                 motion_filter_type=motion_filter_type,
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,
@@ -399,7 +384,6 @@ It is released under the [CC0]\
                 lower_bpf=lower_bpf,
                 upper_bpf=upper_bpf,
                 bpf_order=bpf_order,
-                motion_filter_order=motion_filter_order,
                 motion_filter_type=motion_filter_type,
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,

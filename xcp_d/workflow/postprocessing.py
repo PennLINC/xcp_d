@@ -34,8 +34,6 @@ def init_post_process_wf(
         motion_filter_type,
         band_stop_max,
         band_stop_min,
-        motion_filter_order,
-        contigvol,
         initial_volumes_to_drop,
         cifti=False,
         dummytime=0,
@@ -62,8 +60,6 @@ def init_post_process_wf(
                 motion_filter_type,
                 band_stop_max,
                 band_stop_min,
-                motion_filter_order,
-                contigvol,
                 cifti=False,
                 dummytime,
                 fd_thresh,
@@ -81,12 +77,8 @@ def init_post_process_wf(
         Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
-    contigvol: int
-        number of contigious volumes
     despike: bool
         afni depsike
-    motion_filter_order: int
-        respiratory motion filter order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     band_stop_min: float
@@ -188,10 +180,11 @@ frequency band {highpass}-{lowpass} Hz.
                        mem_gb=0.25 * mem_gb)
 
     censor_scrubwf = pe.Node(CensorScrub(fd_thresh=fd_thresh,
-                                         TR=TR,
+                                         motion_filter_type=motion_filter_type,
+                                         low_freq=band_stop_max,
+                                         high_freq=band_stop_min,
                                          head_radius=head_radius,
-                                         contig=contigvol,
-                                         time_todrop=dummytime),
+                                         ),
                              name="censor_scrub",
                              mem_gb=0.1 * mem_gb)
 
@@ -206,15 +199,9 @@ frequency band {highpass}-{lowpass} Hz.
             name="remove_dummy_time",
             mem_gb=0.1*mem_gb)
 
-    # get the confound matrix
-    workflow.connect([
-        # connect bold confound matrix to extract confound matrix
-        (inputnode, confoundmat, [('bold_file', 'in_file')])
-    ])
-
     if dummytime > 0:
         workflow.connect([
-            (confoundmat, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
+            (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime, [
                 ('bold', 'bold_file'),
                 ('bold_mask', 'mask_file')])])
@@ -223,7 +210,7 @@ frequency band {highpass}-{lowpass} Hz.
         #    workflow.connect([ (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')]),
         #                      (rm_dummytime, censor_scrubwf, [
         # ('custom_confoundsdropTR', 'custom_confounds')]),
-        #                      (censor_scrubwf, regressy, [('custom_confoundsounds_censored',
+        #                      (censor_scrubwf, regressy, [('custom_confounds_censored',
         # 'custom_confounds')]),])
 
         workflow.connect([
@@ -251,13 +238,13 @@ frequency band {highpass}-{lowpass} Hz.
         # if inputnode.inputs.custom_confounds:
         #         workflow.connect([
         #             (inputnode, censor_scrubwf, [('custom_confounds', 'custom_confounds')]),
-        #              (censor_scrubwf, regressy, [('custom_confoundsounds_censored', 'custom_confounds')]) ])
+        #              (censor_scrubwf, regressy, [('custom_confounds_censored', 'custom_confounds')]) ])
         workflow.connect([
             (inputnode, censor_scrubwf, [
                 ('bold', 'in_file'),
                 ('bold_file', 'bold_file'),
                 ('bold_mask', 'mask_file')]),
-            (confoundmat, censor_scrubwf, [('confound_file', 'fmriprep_confounds_file')]),
+            (inputnode, censor_scrubwf, [('confound_file', 'fmriprep_confounds_file')]),
             (censor_scrubwf, regressy, [
                 ('bold_censored', 'in_file'),
                 ('fmriprep_confounds_censored', 'confounds')]),
@@ -323,9 +310,12 @@ def fwhm2sigma(fwhm):
 
 def init_censoring_wf(
         mem_gb,
-        TR,
         head_radius,
         custom_confounds,
+        low_freq,
+        high_freq,
+        TR,
+        motion_filter_type,
         initial_volumes_to_drop,
         omp_nthreads,
         dummytime=0,
@@ -381,7 +371,7 @@ def init_censoring_wf(
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'bold_censored', 'fmriprep_confounds_censored', 'tmask', 'fd',
-        'custom_confoundsounds_censored'
+        'custom_confounds_censored'
     ]),
         name='outputnode')
 
@@ -389,8 +379,10 @@ def init_censoring_wf(
         CensorScrub(
             fd_thresh=fd_thresh,
             TR=TR,
+            low_freq=low_freq,
+            high_freq=high_freq,
+            motion_filter_type=motion_filter_type,
             head_radius=head_radius,
-            time_todrop=dummytime,
             custom_confounds=custom_confounds),
         name="censor_scrub",
         mem_gb=mem_gb,
@@ -423,8 +415,8 @@ def init_censoring_wf(
     else:
         if custom_confounds:
             workflow.connect([
-                (censor_scrub, outputnode, [('custom_confoundsounds_censored',
-                                             'custom_confoundsounds_censored')]),
+                (censor_scrub, outputnode, [('custom_confounds_censored',
+                                             'custom_confounds_censored')]),
             ])
 
         workflow.connect([

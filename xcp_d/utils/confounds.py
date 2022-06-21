@@ -64,17 +64,17 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd, TR, filtertype, freqband, cutoff=0.1, order=4):
+def load_motion(confoundspd, TR, motion_filter_type, freqband, cutoff=0.1, order=4):
     """Load the 6 motion regressors."""
     rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
     datay = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
 
-    if filtertype == 'lp' or filtertype == 'notch':
+    if motion_filter_type == 'lp' or motion_filter_type == 'notch':
         datay = datay.T
         datay = motion_regression_filter(data=datay,
                                          TR=TR,
-                                         filtertype=filtertype,
+                                         motion_filter_type=motion_filter_type,
                                          freqband=freqband,
                                          cutoff=cutoff,
                                          order=order)
@@ -157,7 +157,7 @@ def confpower(confound, order=2):
 
 def load_confound_matrix(datafile,
                          TR,
-                         filtertype,
+                         motion_filter_type,
                          custom_confounds=None,
                          cutoff=0.1,
                          order=4,
@@ -174,7 +174,7 @@ def load_confound_matrix(datafile,
     if params == '24P':
         motion = load_motion(confoundtsv,
                              TR,
-                             filtertype,
+                             motion_filter_type,
                              freqband,
                              cutoff=cutoff,
                              order=order)
@@ -183,7 +183,7 @@ def load_confound_matrix(datafile,
     elif params == '27P':
         motion = load_motion(confoundtsv,
                              TR,
-                             filtertype,
+                             motion_filter_type,
                              freqband,
                              cutoff=cutoff,
                              order=order)
@@ -194,7 +194,7 @@ def load_confound_matrix(datafile,
     elif params == '36P':
         motion = load_motion(confoundtsv,
                              TR,
-                             filtertype,
+                             motion_filter_type,
                              freqband,
                              cutoff=cutoff,
                              order=order)
@@ -208,7 +208,7 @@ def load_confound_matrix(datafile,
     elif params == 'acompcor':
         motion = load_motion(confoundtsv,
                              TR,
-                             filtertype,
+                             motion_filter_type,
                              freqband,
                              cutoff=cutoff,
                              order=order)
@@ -229,7 +229,7 @@ def load_confound_matrix(datafile,
     elif params == 'acompcor_gsr':
         motion = load_motion(confoundtsv,
                              TR,
-                             filtertype,
+                             motion_filter_type,
                              freqband,
                              cutoff=cutoff,
                              order=order)
@@ -284,7 +284,7 @@ def load_aroma(datafile):
 
 def motion_regression_filter(data,
                              TR,
-                             filtertype,
+                             motion_filter_type,
                              freqband,
                              cutoff=.1,
                              order=4):
@@ -301,7 +301,7 @@ def motion_regression_filter(data,
     fc_RR_min = float(fc_RR_min)
     fc_RR_max = float(fc_RR_max)
 
-    if filtertype == 'lp':
+    if motion_filter_type == 'lp':
         hr_min = LP_freq_min
         hr = hr_min
         fs = 1. / TR
@@ -313,7 +313,7 @@ def motion_regression_filter(data,
         a_filt = 1.
         num_f_apply = 1.
     else:
-        if filtertype == 'notch':
+        if motion_filter_type == 'notch':
             fc_RR_bw = np.array([fc_RR_min, fc_RR_max])
             rr = fc_RR_bw
             fs = 1. / TR
@@ -348,9 +348,9 @@ def motion_regression_filter(data,
     #     b, a = iirnotch( w0, qf )
     #     return b,a
 
-    # if filtertype == 'lp':
+    # if motion_filter_type == 'lp':
     #     b,a = lowpassfilter_coeff(cutoff,fs,order=4)
-    # elif filtertype =='notch':
+    # elif motion_filter_type =='notch':
     #     b,a = iirnortch_coeff(freqband,fs=fs)
 
     # order_apply = np.int(np.floor(order/2))
