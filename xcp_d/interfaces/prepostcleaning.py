@@ -209,7 +209,7 @@ class CensorScrub(SimpleInterface):
 
         # do censoring staright
         tmask = generate_mask(fd_res=fd_timeseries,
-                                fd_thresh=self.inputs.fd_thresh)
+                              fd_thresh=self.inputs.fd_thresh)
         if np.sum(tmask) > 0:
             datax_censored = dataxx[:, tmask == 0]
             fmriprepx_censored = fmriprepx_conf.drop(

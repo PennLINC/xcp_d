@@ -283,6 +283,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         low_freq=band_stop_max,
         high_freq=band_stop_min,
         initial_volumes_to_drop=initial_volumes_to_drop,
+        dummytime=dummytime,
         fd_thresh=fd_thresh,
         name='censoring',
         omp_nthreads=omp_nthreads)
