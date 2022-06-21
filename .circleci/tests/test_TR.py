@@ -34,8 +34,6 @@ def test_RemoveTR_nifti(data_dir):
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
-    mask_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
 
     # Find the original number of volumes acc. to nifti & confounds timeseries
     original_confounds = pd.read_csv(confounds_file, sep="\t")
@@ -45,8 +43,7 @@ def test_RemoveTR_nifti(data_dir):
     remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
-        initial_volumes_to_drop=0,
-        mask_file=mask_file)
+        initial_volumes_to_drop=0)
     results = remove_nothing.run()
     uncensored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
@@ -64,8 +61,7 @@ def test_RemoveTR_nifti(data_dir):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
-            initial_volumes_to_drop=n,
-            mask_file=mask_file)
+            initial_volumes_to_drop=n)
         results = remove_n_vols.run()
         censored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
