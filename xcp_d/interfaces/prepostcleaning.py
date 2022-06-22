@@ -274,7 +274,7 @@ class CensorScrub(SimpleInterface):
             custom_confounds_tsv_censored.to_csv(self._results['custom_confounds_censored'],
                                                  index=False,
                                                  header=False,
-                                                 sep=" ")
+                                                 sep="\t")  # Assuming input is tab separated!
         return runtime
 
 
