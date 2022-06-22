@@ -109,7 +109,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
 #     confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
 #         "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv"
-#     custom_confounds_tsv = '''Put in file path here'''
+#     custom_confounds_tsv = '''Put the path to your file here'''
 #     df = pd.read_table(confounds_file)
 #     # Replace confounds tsv values with values that should be omitted
 #     df.loc[1:3, "trans_x"] = [6, 8, 9]
@@ -144,6 +144,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #     except Exception as exc:
 #         exc = len(censored_confounds_timeseries), censored_image.get_fdata().shape[0]
 #         raise Exception("Sorry, the shapes are: {}.".format(exc))
+
 
 
 # def test_fd_interface_nifti_custom(data_dir):  # Checking results
