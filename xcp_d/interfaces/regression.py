@@ -32,8 +32,11 @@ class _regressInputSpec(BaseInterfaceInputSpec):
     original_file = traits.Str(exists=True, mandatory=False,
                                desc="Name of original bold file- helps load in the confounds"
                                "file down the line using the original path name")
-    custom_confounds = traits.Str(exists=True, mandatory=False,
-                                  desc="Path to a custom confounds file.")
+    custom_confounds = traits.Either(traits.Undefined,
+                                     File,
+                                     desc="Name of custom confounds file, or True",
+                                     exists=False,
+                                     mandatory=False)
 
 
 class _regressOutputSpec(TraitedSpec):
