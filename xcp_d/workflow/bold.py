@@ -179,7 +179,6 @@ def init_boldpostprocess_wf(lower_bpf,
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
-        # TODO: write a function that gets
         confounds_tsv = get_confounds_tsv(bold_file)
     except Exception as exc:
         raise Exception("Unable to find confounds file for {}.".format(bold_file))
@@ -308,7 +307,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(tr=TR),
+        regress(tr=TR,
+                motion_filter_type=motion_filter_type,
+                original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)

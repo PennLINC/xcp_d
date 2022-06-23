@@ -176,7 +176,6 @@ tasks and sessions), the following post-processing was performed:
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
-        # TODO: write a function that gets
         confounds_tsv = get_confounds_tsv(cifti_file)
     except Exception as exc:
         raise Exception("Unable to find confounds file for {}.".format(cifti_file))
@@ -211,11 +210,11 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confounds_file']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confound_file']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
-    inputnode.inputs.confounds_file = confounds_tsv
+    inputnode.inputs.confound_file = confounds_tsv
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -270,7 +269,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         custom_confounds=custom_confounds,
         initial_volumes_to_drop=initial_volumes_to_drop,
         low_freq=band_stop_max,
-        high_freq=band_stop_min, 
+        high_freq=band_stop_min,
         motion_filter_type=motion_filter_type,
         head_radius=head_radius,
         fd_thresh=fd_thresh,
@@ -296,7 +295,10 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(tr=TR),
+        regress(tr=TR,
+                motion_filter_type=motion_filter_type,
+                original_file=cifti_file,
+                custom_confounds=custom_confounds),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
