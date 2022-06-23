@@ -336,7 +336,7 @@ It is released under the [CC0]\
         for cifti_file in subject_data[1]:
             ii = ii + 1
             custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=cifti_file)
+                                          bold_file=cifti_file)
             cifti_postproc_wf = init_ciftipostprocess_wf(
                 cifti_file=cifti_file,
                 lower_bpf=lower_bpf,
@@ -378,7 +378,7 @@ It is released under the [CC0]\
         for bold_file in subject_data[0]:
             ii = ii + 1
             custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=bold_file)
+                                          bold_file=bold_file)
             bold_postproc_wf = init_boldpostprocess_wf(
                 bold_file=bold_file,
                 lower_bpf=lower_bpf,

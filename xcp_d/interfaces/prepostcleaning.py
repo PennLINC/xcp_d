@@ -69,15 +69,11 @@ class RemoveTR(SimpleInterface):
             newpath=runtime.cwd,
             suffix="_dropped",
             use_ext=True)
-        try:
-            dropped_confounds_file = fname_presuffix(
-                self.inputs.fmriprep_confounds_file,
-                newpath=runtime.cwd,
-                suffix="_dropped",
-                use_ext=True)
-        except:
-            filename = self.inputs.fmriprep_confounds_file
-            raise Exception ({}.format(filename))
+        dropped_confounds_file = fname_presuffix(
+            self.inputs.fmriprep_confounds_file,
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True)
 
         # read the bold file
         bold_image = nb.load(self.inputs.bold_file)

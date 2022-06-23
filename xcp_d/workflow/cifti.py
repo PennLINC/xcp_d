@@ -211,11 +211,10 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confound_file', 'bold_file']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confound_file']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
-    inputnode.inputs.bold_file = cifti_file
     inputnode.inputs.confound_file = confounds_tsv
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
@@ -273,8 +272,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         motion_filter_type=motion_filter_type,
         head_radius=head_radius,
         fd_thresh=fd_thresh),
-        mem_gb=mem_gbx['timeseries'],
         name='censoring',
+        mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
     resdsmoothing_wf = init_resd_smoohthing(
@@ -345,12 +344,12 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             rm_dummytime = pe.Node(
                 RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
                 name="remove_dummy_time",
-                mem_gb=0.1*mem_gbx['timeseries'])
+                mem_gb=0.1*mem_gb)
             workflow.connect([
                 (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-                (despike_wf, rm_dummytime, [('des_file', 'bold_file')])])
-
-            # Censor Scrub:
+                (despike3d, rm_dummytime,[('des_file', 'bold_file')])])
+            
+          # Censor Scrub:
             workflow.connect([
                 (rm_dummytime, censor_scrub, [
                     ('bold_file_dropped_TR', 'in_file'),
@@ -361,18 +360,19 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             workflow.connect([
                 (inputnode, censor_scrub, [
                     ('cifti_file', 'bold_file')]),
-                (despike_wf, censor_scrub, [('des_file', 'in_file')]),
+                (despike3d, censor_scrub, [
+                    ('des_file', 'in_file')]),
                 (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
     else:
         # Remove TR
         if dummytime > 0:
             rm_dummytime = pe.Node(
                 RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
-                name="remove_dummy_time")
+                name="remove_dummy_time",
+                mem_gb=0.1*mem_gb)
             workflow.connect([
                 (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-                (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
-                (inputnode, rm_dummytime, [('bold_mask', 'mask_file')])])
+                (inputnode, rm_dummytime,[('cifti_file', 'bold_file')])])
 
             # Censor Scrub:
             workflow.connect([
@@ -380,13 +380,15 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                     ('bold_file_dropped_TR', 'in_file'),
                     ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (inputnode, censor_scrub, [
-                    ('cifti_file', 'bold_file')])])
+                    ('cifti_file', 'bold_file')
+                    ])])
         else:
             workflow.connect([
                 (inputnode, censor_scrub, [
                     ('cifti_file', 'bold_file'),
-                    ('cifti_file', 'in_file')]),
+                    ('bold', 'in_file')]),
                 (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+
 
     # regression workflow
     workflow.connect([(censor_scrub, regression_wf,
@@ -468,7 +470,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+                                                'inputnode.fd')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
@@ -561,7 +563,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (filtering_wf, executivesummary_wf, [('filt_file',
                                               'inputnode.resddata')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+                                                'inputnode.fd')]),
     ])
 
     return workflow
