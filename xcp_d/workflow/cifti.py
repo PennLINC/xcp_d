@@ -26,6 +26,7 @@ from .postprocessing import init_resd_smoohthing
 from num2words import num2words
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
+from ..interfaces import ciftidespike
 
 
 LOGGER = logging.getLogger('nipype.workflow')
@@ -333,12 +334,12 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     # TO DO: Check if this is the right order.
     # if there is despiking
     if despike:
-        despike_wf = pe.Node(ciftidespike(tr=TR),
-                             name="cifti_depike_wf",
+        despike3d = pe.Node(ciftidespike(tr=TR),
+                             name="cifti_depike",
                              mem_gb=mem_gbx['timeseries'],
                              n_procs=omp_nthreads)
 
-        workflow.connect([(inputnode, despike_wf, [('cifti_file', 'in_file')])])
+        workflow.connect([(inputnode, despike3d, [('cifti_file', 'in_file')])])
         # Remove TR
         if dummytime > 0:
             rm_dummytime = pe.Node(

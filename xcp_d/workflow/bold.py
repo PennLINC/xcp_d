@@ -29,7 +29,8 @@ from num2words import num2words
 from ..workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
-
+from ..interfaces import ciftidespike
+from ..utils import DespikePatch
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -447,7 +448,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                 (inputnode, censor_scrub, [
                     ('bold_file', 'bold_file'),
                     ('bold', 'in_file')]),
-                (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+                (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')])])
 
     # regression workflow
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
