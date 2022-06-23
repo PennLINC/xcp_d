@@ -16,7 +16,7 @@ import sklearn
 from ..interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from ..utils import (bid_derivative, stringforparams, get_maskfiles,
-                     get_transformfilex, get_transformfile)
+                     get_transformfilex, get_transformfile, DespikePatch)
 from ..interfaces import FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
@@ -221,14 +221,14 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
-                't1w', 't1seg', 'fmriprep_confounds_tsv']),
+                't1w', 't1seg', 'confound_file']),
         name='inputnode')
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
     inputnode.inputs.custom_confounds = str(custom_confounds)
-    inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
+    inputnode.inputs.confound_file = str(confounds_tsv)
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -276,17 +276,16 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                                    name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(
-        mem_gb=mem_gbx['timeseries'],
         TR=TR,
         custom_confounds=custom_confounds,
-        initial_volumes_to_drop=initial_volumes_to_drop,
         low_freq=band_stop_max,
-        high_freq=band_stop_min, 
+        high_freq=band_stop_min,
         motion_filter_type=motion_filter_type,
         head_radius=head_radius,
-        fd_thresh=fd_thresh,
+        fd_thresh=fd_thresh),
+        mem_gb=mem_gbx['timeseries'],
         name='censoring',
-        omp_nthreads=omp_nthreads))
+        omp_nthreads=omp_nthreads)
 
     resdsmoothing_wf = init_resd_smoohthing(
         mem_gb=mem_gbx['timeseries'],
@@ -395,53 +394,46 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                        name="qc_report",
                        mem_gb=mem_gbx['timeseries'],
                        n_procs=omp_nthreads)
-    
-    
-    # if there is despiking
-    if despike:
-        despike_wf = pe.Node(ciftidespike(tr=TR),
-                             name="cifti_depike_wf",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
 
-        workflow.connect([(inputnode, despike_wf, [('cifti_file', 'in_file')])])
+    if despike:
+        despike_wf = pe.Node(DespikePatch(outputtype='NIFTI_GZ', args='-NEW'), name="despike"
+                             "_wf", mem_gb=mem_gbx['timeseries'], n_procs=omp_nthreads)
+
+        workflow.connect([
+            (inputnode, despike_wf, [('bold_file', 'in_file')])
+        ])
         # Remove TR
         if dummytime > 0:
             rm_dummytime = pe.Node(
                 RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
                 name="remove_dummy_time",
-                mem_gb=0.1*mem_gb)
+                mem_gb=0.1*mem_gbx['timeseries'])
             workflow.connect([
                 (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-                (despike_wf, rm_dummytime,[('des_file', 'bold_file')])
-                (inputnode, rm_dummytime, [('bold_mask', 'mask_file')])])
-            
+                (despike_wf, rm_dummytime, [('out_file', 'bold_file')])])
+
             # Censor Scrub:
             workflow.connect([
                 (rm_dummytime, censor_scrub, [
                     ('bold_file_dropped_TR', 'in_file'),
                     ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (inputnode, censor_scrub, [
-                    ('bold_file', 'bold_file'),
-                    ('bold_mask', 'mask_file')])])
+                    ('bold_file', 'bold_file')])])
         else:
             workflow.connect([
                 (inputnode, censor_scrub, [
-                    ('bold_file', 'bold_file'),
-                    ('bold_mask', 'mask_file')]),
-                (despike_wf, censor_scrub, [('des_file', 'in_file')])
+                    ('bold_file', 'bold_file')]),
+                (despike_wf, censor_scrub, [('out_file', 'in_file')])
                 (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
     else:
         # Remove TR
         if dummytime > 0:
             rm_dummytime = pe.Node(
                 RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
-                name="remove_dummy_time",
-                mem_gb=0.1*mem_gb)
+                name="remove_dummy_time")
             workflow.connect([
                 (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-                (inputnode, rm_dummytime,[('bold_file', 'bold_file')])
-                (inputnode, rm_dummytime, [('bold_mask', 'mask_file')])])
+                (inputnode, rm_dummytime, [('bold_file', 'bold_file')])])
 
             # Censor Scrub:
             workflow.connect([
@@ -449,27 +441,25 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                     ('bold_file_dropped_TR', 'in_file'),
                     ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (inputnode, censor_scrub, [
-                    ('bold_file', 'bold_file'),
-                    ('bold_mask', 'mask_file')])])
+                    ('bold_file', 'bold_file')])])
         else:
             workflow.connect([
                 (inputnode, censor_scrub, [
                     ('bold_file', 'bold_file'),
-                    ('bold_mask', 'mask_file'),
                     ('bold', 'in_file')]),
                 (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
 
     # regression workflow
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
                       (censor_scrub, regression_wf,
-                       [('outputnode.bold_censored', 'in_file'),
-                        ('outputnode.fmriprep_confounds_censored', 'confounds')])])
+                       [('bold_censored', 'in_file'),
+                        ('fmriprep_confounds_censored', 'confounds')])])
 
     # interpolation workflow
     workflow.connect([
         (inputnode, interpolate_wf, [('bold_file', 'bold_file'),
                                      ('bold_mask', 'mask_file')]),
-        (censor_scrub, interpolate_wf, [('outputnode.tmask', 'tmask')]),
+        (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
 
@@ -502,7 +492,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     workflow.connect([
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
         (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
-        (censor_scrub, qcreport, [('outputnode.tmask', 'tmask')]),
+        (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
         (resample_bold2T1w, qcreport, [('output_image', 'bold2T1w_mask')]),
@@ -513,7 +503,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     # write  to the outputnode, may be use in future
     workflow.connect([
         (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('outputnode.fd', 'fd')]),
+        (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
@@ -554,8 +544,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('outputnode.fd',
-                                                'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('fd_timeseries',
+                                              'inputnode.fd')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
@@ -665,8 +655,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                               ]),
         (filtering_wf, executivesummary_wf, [('filt_file',
                                               'inputnode.resddata')]),
-        (censor_scrub, executivesummary_wf, [('outputnode.fd',
-                                                'inputnode.fd')]),
+        (censor_scrub, executivesummary_wf, [('fd_timeseries',
+                                              'inputnode.fd')]),
     ])
 
     return workflow
