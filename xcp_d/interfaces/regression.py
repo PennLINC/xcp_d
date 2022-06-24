@@ -7,15 +7,13 @@ Handling regression.
 """
 
 import numpy as np
-import pandas as pd
 from nipype import logging
 from sklearn.linear_model import LinearRegression
 from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
-
-from ..utils import (read_ndata, write_ndata, despikedatacifti)
+from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -29,7 +27,16 @@ class _regressInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc=" confound regressors selected from fmriprep's confound matrix.")
     tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
-    mask = File(exists=False, mandatory=False, desc=" brain mask nifti file")
+    mask = File(exists=False, mandatory=False, desc="brain mask nifti file")
+    motion_filter_type = traits.Str(exists=False, mandatory=True)
+    original_file = traits.Str(exists=True, mandatory=False,
+                               desc="Name of original bold file- helps load in the confounds"
+                               "file down the line using the original path name")
+    custom_confounds = traits.Either(traits.Undefined,
+                                     File,
+                                     desc="Name of custom confounds file, or True",
+                                     exists=False,
+                                     mandatory=False)
 
 
 class _regressOutputSpec(TraitedSpec):
@@ -40,18 +47,7 @@ class _regressOutputSpec(TraitedSpec):
 
 class regress(SimpleInterface):
     r"""
-    regress the nuissance regressors from cifti or nifti.
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    >>> reg = regress()
-    >>> reg.inputs.in_file = datafile
-    >>> reg.inputs.confounds = confoundfile # selected with ConfoundMatrix() or custom
-    >>> reg.inputs.tr = 3
-    >>> reg.run()
-
+    #TODO: Clean up + add functionality for custom confounds
     """
 
     input_spec = _regressInputSpec
@@ -60,10 +56,13 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
 
         # get the confound matrix
-        confound = pd.read_csv(self.inputs.confounds, header=None)
+        confound = load_confound_matrix(original_file=self.inputs.original_file,
+                                        datafile=self.inputs.in_file,
+                                        TR=self.inputs.tr, confound_tsv=self.inputs.confounds,
+                                        motion_filter_type=self.inputs.motion_filter_type)
         confound = confound.to_numpy().T
-        # if self.inputs.custom_conf:
-        #     confound_custom = pd.read_table(self.inputs.custom_conf,
+        # if self.inputs.custom_confounds:
+        #     confound_custom = pd.read_table(self.inputs.custom_confounds,
         #                         header=None,delimiter=' ')
         #     confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
         #     confound = np.nan_to_num(confound)
@@ -156,16 +155,6 @@ class _ciftidespikeOutputSpec(TraitedSpec):
 
 class ciftidespike(SimpleInterface):
     r"""
-    regress the nuissance regressors from cifti or nifti.
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    >>> reg = ciftidespike()
-    >>> reg.inputs.in_file = datafile
-    >>> reg.inputs.tr = 3
-    >>> reg.run()
 
 
     """

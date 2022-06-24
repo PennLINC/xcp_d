@@ -691,7 +691,7 @@ class fMRIPlot:
         func_file,
         mask_file=None,
         data=None,
-        conf_file=None,
+        confound_file=None,
         seg_file=None,
         tr=None,
         usecols=None,
@@ -720,8 +720,8 @@ class fMRIPlot:
         if vlines is None:
             vlines = {}
         self.confounds = {}
-        if data is None and conf_file:
-            data = pd.read_csv(conf_file,
+        if data is None and confound_file:
+            data = pd.read_csv(confound_file,
                                sep=r"[\t\s]+",
                                usecols=usecols,
                                index_col=False)

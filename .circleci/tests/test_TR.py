@@ -24,9 +24,9 @@ def test_data_availability(data_dir, working_dir, output_dir):
     assert op.exists(boldfile)
 
 
-def test_removeTR_nifti(data_dir):
-    # Test removeTR() for NIFTI input data
-    from xcp_d.interfaces.prepostcleaning import removeTR
+def test_RemoveTR_nifti(data_dir):
+    # Test RemoveTR() for NIFTI input data
+    from xcp_d.interfaces.prepostcleaning import RemoveTR
     import pandas as pd
 
     # Define inputs
@@ -34,19 +34,16 @@ def test_removeTR_nifti(data_dir):
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
-    mask_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
 
     # Find the original number of volumes acc. to nifti & confounds timeseries
     original_confounds = pd.read_csv(confounds_file, sep="\t")
     original_nvols_nifti = nb.load(boldfile).get_fdata().shape[3]
 
     # Test a nifti file with 0 volumes to remove
-    remove_nothing = removeTR(
+    remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
-        initial_volumes_to_drop=0,
-        mask_file=mask_file)
+        initial_volumes_to_drop=0)
     results = remove_nothing.run()
     uncensored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
@@ -55,17 +52,16 @@ def test_removeTR_nifti(data_dir):
     # Have the confounds stayed the same shape?
     assert uncensored_confounds.shape == original_confounds.shape
     # Has the nifti stayed the same shape?
-    assert nb.load(results. 
+    assert nb.load(results.
                    outputs.bold_file_dropped_TR).get_fdata().shape[3] == original_nvols_nifti
 
     # Test a nifti file with 'n' volumes to remove
     for n in range(0, original_nvols_nifti-1):  # Testing all n values till
         # original_nvols_nifti - 1
-        remove_n_vols = removeTR(
+        remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
-            initial_volumes_to_drop=n,
-            mask_file=mask_file)
+            initial_volumes_to_drop=n)
         results = remove_n_vols.run()
         censored_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
@@ -83,9 +79,9 @@ def test_removeTR_nifti(data_dir):
             raise Exception("Number of volumes in censored nifti is {}.".format(exc))
 
 
-def test_removeTR_cifti(data_dir):
-    # Test removeTR() for CIFTI input data
-    from xcp_d.interfaces.prepostcleaning import removeTR
+def test_RemoveTR_cifti(data_dir):
+    # Test RemoveTR() for CIFTI input data
+    from xcp_d.interfaces.prepostcleaning import RemoveTR
     import pandas as pd
     # Define inputs
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
@@ -98,7 +94,7 @@ def test_removeTR_cifti(data_dir):
     original_nvols_cifti = nb.load(boldfile).get_fdata().shape[0]
 
     # Test a cifti file with 0 volumes to remove
-    remove_nothing = removeTR(
+    remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         initial_volumes_to_drop=0)
@@ -110,12 +106,13 @@ def test_removeTR_cifti(data_dir):
     # Have the confounds stayed the same shape?
     assert uncensored_confounds.shape == original_confounds.shape
     # Has the cifti stayed the same shape?
-    assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0] == original_nvols_cifti
+    assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata(
+    ).shape[0] == original_nvols_cifti
 
     # Test a cifti file with 'n' volumes to remove
     for n in range(0, original_nvols_cifti-1):  # Testing all n values till
         # original_nvols_cifti - 1
-        remove_n_vols = removeTR(
+        remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             initial_volumes_to_drop=n)

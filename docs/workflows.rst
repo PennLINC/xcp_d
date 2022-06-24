@@ -21,7 +21,7 @@ BOLD Workflow
     regfile = pkgrf('xcp_d','data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')
 
     bold_file = pkgrf('xcp_d','data/fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz')
-    custom_conf = pkgrf('xcp_d','data/fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv')
+    custom_confounds = pkgrf('xcp_d','data/fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv')
 
     tseg = pkgrf('xcp_d','data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_desc-preproc_T1w.nii.gz')
     t1w = pkgrf('xcp_d','data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_dseg.nii.gz')
@@ -38,7 +38,7 @@ BOLD Workflow
                 smoothing=5,
                 head_radius=50,
                 params='27P',
-                custom_conf=custom_conf,
+                custom_confounds=custom_confounds,
                 omp_nthreads=1,
                 dummytime=0,
                 output_dir='output_dir',

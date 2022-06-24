@@ -160,7 +160,7 @@ def get_parser():
     )
     g_param.add_argument(
         '-c',
-        '--custom_conf',
+        '--custom_confounds',
         required=False,
         default=None,
         type=Path,
@@ -611,9 +611,8 @@ def build_workflow(opts, retval):
         lower_bpf=opts.lower_bpf,
         upper_bpf=opts.upper_bpf,
         bpf_order=opts.bpf_order,
-        motion_filter_order=opts.motion_filter_order,
-        motion_filter_type=opts.motion_filter_type,
         bandpass_filter=opts.bandpass_filter,
+        motion_filter_type=opts.motion_filter_type,
         band_stop_min=opts.band_stop_min,
         band_stop_max=opts.band_stop_max,
         subject_list=subject_list,
@@ -625,7 +624,7 @@ def build_workflow(opts, retval):
         cifti=opts.cifti,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_conf=opts.custom_conf,
+        custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         input_type=opts.input_type,

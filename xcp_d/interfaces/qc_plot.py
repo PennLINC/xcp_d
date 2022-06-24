@@ -37,7 +37,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
                              default_value=0,
                              desc="dummy time to drop after")
     TR = traits.Float(exit=True, mandatory=True, desc="TR")
-    filtertype = traits.Float(exists=False, mandatory=False)
+    motion_filter_type = traits.Float(exists=False, mandatory=False)
     head_radius = traits.Float(
         exits=True,
         mandatory=False,
@@ -94,11 +94,11 @@ class computeqcplot(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        conf_matrix = load_confound(datafile=self.inputs.bold_file)[0]
+        confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
         motion_conf = load_motion(
-            conf_matrix.copy(),
+            confound_matrix.copy(),
             TR=self.inputs.TR,
-            filtertype=self.inputs.filtertype,
+            motion_filter_type=self.inputs.motion_filter_type,
             freqband=[self.inputs.low_freq, self.inputs.high_freq])
         motion_df = pd.DataFrame(data=motion_conf.values,
                                  columns=[
@@ -108,7 +108,7 @@ class computeqcplot(SimpleInterface):
         fd_timeseries = compute_FD(confound=motion_df,
                                    head_radius=self.inputs.head_radius)
 
-        rmsd = conf_matrix['rmsd']
+        rmsd = confound_matrix['rmsd']
 
         if self.inputs.dummytime > 0:
             num_vold = np.int(self.inputs.dummytime / self.inputs.TR)
