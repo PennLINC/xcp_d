@@ -613,6 +613,7 @@ def build_workflow(opts, retval):
         bpf_order=opts.bpf_order,
         bandpass_filter=opts.bandpass_filter,
         motion_filter_type=opts.motion_filter_type,
+        motion_filter_order=opts.motion_filter_order,
         band_stop_min=opts.band_stop_min,
         band_stop_max=opts.band_stop_max,
         subject_list=subject_list,

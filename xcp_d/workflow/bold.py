@@ -39,6 +39,7 @@ def init_boldpostprocess_wf(lower_bpf,
                             upper_bpf,
                             bpf_order,
                             motion_filter_type,
+                            motion_filter_order,
                             bandpass_filter,
                             band_stop_min,
                             band_stop_max,
@@ -72,6 +73,7 @@ def init_boldpostprocess_wf(lower_bpf,
                 upper_bpf,
                 bpf_order,
                 motion_filter_type,
+                motion_filter_order,
                 band_stop_min,
                 band_stop_max,
                 smoothing,
@@ -101,6 +103,8 @@ def init_boldpostprocess_wf(lower_bpf,
         If True, run 3dDespike from AFNI
     motion_filter_type: str
         respiratory motion filter type: lp or notch
+    motion_filter_order: int
+        order for motion filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
@@ -282,6 +286,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         low_freq=band_stop_max,
         high_freq=band_stop_min,
         motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
         head_radius=head_radius,
         fd_thresh=fd_thresh),
         name='censoring',
@@ -309,6 +314,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     regression_wf = pe.Node(
         regress(tr=TR,
                 motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
                 original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
