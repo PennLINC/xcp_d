@@ -403,14 +403,14 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                        n_procs=omp_nthreads)
     
     
-    # Remove TR first:
+   # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1*mem_gb)
         workflow.connect([
-            (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
+            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime,[('bold_file', 'bold_file')])])
         if despike:
             despike3d = pe.Node(DespikePatch(
@@ -455,7 +455,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                         ('bold_file', 'bold_file')]),
                     (despike3d, censor_scrub, [
                         ('out_file', 'in_file')]),
-                    (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+                    (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')])])
 
         else:
             # Censor Scrub only:
@@ -463,10 +463,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                     (inputnode, censor_scrub, [
                         ('bold_file', 'bold_file'),
                         ('bold', 'in_file'),
-                        ('confound_file', 'fmriprep_confounds_file')])])
+                        ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')])])
 
-
-
+            
     # regression workflow
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
                       (censor_scrub, regression_wf,
