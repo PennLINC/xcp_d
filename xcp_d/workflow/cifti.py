@@ -347,7 +347,7 @@ if dummytime > 0:
         (inputnode, rm_dummytime,[('cifti_file', 'bold_file')])])
     if despike:
         despike3d = pe.Node(ciftidespike(tr=TR),
-                             name="cifti_depike",
+                             name="cifti_despike",
                              mem_gb=mem_gbx['timeseries'],
                              n_procs=omp_nthreads)
         
@@ -373,7 +373,7 @@ if dummytime > 0:
 else:
     if despike:
         despike3d = pe.Node(ciftidespike(tr=TR),
-                             name="cifti_depike",
+                             name="cifti_despike",
                              mem_gb=mem_gbx['timeseries'],
                              n_procs=omp_nthreads)
         
