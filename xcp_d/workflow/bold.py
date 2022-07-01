@@ -427,7 +427,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                     ('bold_file_dropped_TR', 'bold_file'),
                     ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (despike3d, censor_scrub, [
-                    ('des_file', 'in_file')
+                    ('out_file', 'in_file')
                     ])])
 
         else:
@@ -454,7 +454,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                     (inputnode, censor_scrub, [
                         ('bold_file', 'bold_file')]),
                     (despike3d, censor_scrub, [
-                        ('des_file', 'in_file')]),
+                        ('out_file', 'in_file')]),
                     (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
 
         else:
