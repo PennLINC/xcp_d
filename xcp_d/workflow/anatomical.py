@@ -463,10 +463,10 @@ def init_anatomical_wf(
             )
 
             left_sphere_raw = (
-                str(freesurfer_path) + "/" + subid + "/surf/lh.sphere"
+                str(freesurfer_path) + "/" + subid + "/surf/lh.sphere.reg"
             )  # MB
             right_sphere_raw = (
-                str(freesurfer_path) + "/" + subid + "/surf/rh.sphere"
+                str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"
             )  # MB
 
             # nodes for left and right in node
@@ -477,16 +477,15 @@ def init_anatomical_wf(
 
             # convert spheres (from FreeSurfer surf dir) to gifti #MB
             left_sphere_raw_mris = pe.Node(
-                MRIsConvert(
-                    out_datatype="gii", in_file=left_sphere_raw, to_scanner=True
-                ),
+                MRIsConvert(out_datatype="gii", in_file=left_sphere_raw),
                 name="left_sphere_raw_mris",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # MB
             right_sphere_raw_mris = pe.Node(
                 MRIsConvert(
-                    out_datatype="gii", in_file=right_sphere_raw, to_scanner=True
+                    out_datatype="gii",
+                    in_file=right_sphere_raw,
                 ),
                 name="right_sphere_raw_mris",
                 mem_gb=mem_gb,
