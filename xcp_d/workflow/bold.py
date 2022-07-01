@@ -404,62 +404,62 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     
     
     # Remove TR first:
-if dummytime > 0:
-    rm_dummytime = pe.Node(
-        RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
-        name="remove_dummy_time",
-        mem_gb=0.1*mem_gb)
-    workflow.connect([
-        (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-        (inputnode, rm_dummytime,[('bold_file', 'bold_file')])])
-    if despike:
-        despike3d = pe.Node(DespikePatch(tr=TR),
-                             name="despike3d",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
-        
-        workflow.connect([(rm_dummytime, despike3d, [('bold_file_dropped_TR', 'in_file')])])
-        # Censor Scrub:
+    if dummytime > 0:
+        rm_dummytime = pe.Node(
+            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
+            name="remove_dummy_time",
+            mem_gb=0.1*mem_gb)
         workflow.connect([
-            (rm_dummytime, censor_scrub, [
-                ('bold_file_dropped_TR', 'bold_file'),
-                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
-            (despike3d, censor_scrub, [
-                ('des_file', 'in_file')
-                ])])
+            (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
+            (inputnode, rm_dummytime,[('bold_file', 'bold_file')])])
+        if despike:
+            despike3d = pe.Node(DespikePatch(tr=TR),
+                                 name="despike3d",
+                                 mem_gb=mem_gbx['timeseries'],
+                                 n_procs=omp_nthreads)
 
-    else:
-        # Censor Scrub:
-        workflow.connect([
-            (rm_dummytime, censor_scrub, [
-                ('bold_file_dropped_TR', 'bold_file'),
-                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
-            (inputnode, censor_scrub, [
-                ('bold_file', 'in_file')
-                ])])
-else:
-    if despike:
-        despike3d = pe.Node(DespikePatch(tr=TR),
-                             name="despike3d",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
-        
-        workflow.connect([(inputnode, despike3d, [('bolod_file', 'in_file')])])
-        # Censor Scrub:
-        workflow.connect([
-                (inputnode, censor_scrub, [
-                    ('bold_file', 'bold_file')]),
+            workflow.connect([(rm_dummytime, despike3d, [('bold_file_dropped_TR', 'in_file')])])
+            # Censor Scrub:
+            workflow.connect([
+                (rm_dummytime, censor_scrub, [
+                    ('bold_file_dropped_TR', 'bold_file'),
+                    ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (despike3d, censor_scrub, [
-                    ('des_file', 'in_file')]),
-                (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+                    ('des_file', 'in_file')
+                    ])])
 
-    else:
-        # Censor Scrub only:
-        workflow.connect([
+        else:
+            # Censor Scrub:
+            workflow.connect([
+                (rm_dummytime, censor_scrub, [
+                    ('bold_file_dropped_TR', 'bold_file'),
+                    ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (inputnode, censor_scrub, [
-                    ('bold_file', 'bold_file'),
-                    ('bold', 'in_file'),
-                    ('confound_file', 'fmriprep_confounds_file')])])
+                    ('bold_file', 'in_file')
+                    ])])
+    else:
+        if despike:
+            despike3d = pe.Node(DespikePatch(tr=TR),
+                                 name="despike3d",
+                                 mem_gb=mem_gbx['timeseries'],
+                                 n_procs=omp_nthreads)
+
+            workflow.connect([(inputnode, despike3d, [('bolod_file', 'in_file')])])
+            # Censor Scrub:
+            workflow.connect([
+                    (inputnode, censor_scrub, [
+                        ('bold_file', 'bold_file')]),
+                    (despike3d, censor_scrub, [
+                        ('des_file', 'in_file')]),
+                    (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+
+        else:
+            # Censor Scrub only:
+            workflow.connect([
+                    (inputnode, censor_scrub, [
+                        ('bold_file', 'bold_file'),
+                        ('bold', 'in_file'),
+                        ('confound_file', 'fmriprep_confounds_file')])])
 
 
 
