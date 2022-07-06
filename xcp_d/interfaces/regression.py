@@ -48,7 +48,6 @@ class _regressOutputSpec(TraitedSpec):
 
 class regress(SimpleInterface):
     r"""
-    #TODO: Clean up + add functionality for custom confounds
     """
 
     input_spec = _regressInputSpec
