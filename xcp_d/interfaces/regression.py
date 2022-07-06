@@ -1,10 +1,5 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Handling regression.
-    .. testsetup::
-    # will comeback
-"""
 
 import numpy as np
 from nipype import logging
@@ -21,12 +16,12 @@ LOGGER = logging.getLogger('nipype.interface')
 class _regressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
-                   desc="Input file either cifti or nifti file ")
+                   desc="The bold file to be regressed")
     confounds = File(
         exists=True,
         mandatory=True,
-        desc=" confound regressors selected from fmriprep's confound matrix.")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
+        desc="The fMRIPrep confounds tsv after censoring")
+    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
     mask = File(exists=False, mandatory=False, desc="brain mask nifti file")
     motion_filter_type = traits.Str(exists=False, mandatory=True)
     motion_filter_order = traits.Int(exists=False, mandatory=True)
@@ -48,6 +43,7 @@ class _regressOutputSpec(TraitedSpec):
 
 class regress(SimpleInterface):
     r"""
+    #TODO: Detailed docstring
     """
 
     input_spec = _regressInputSpec
@@ -58,7 +54,7 @@ class regress(SimpleInterface):
         # get the confound matrix
         confound = load_confound_matrix(original_file=self.inputs.original_file,
                                         datafile=self.inputs.in_file,
-                                        TR=self.inputs.tr, confound_tsv=self.inputs.confounds,
+                                        TR=self.inputs.TR, confound_tsv=self.inputs.confounds,
                                         motion_filter_type=self.inputs.motion_filter_type,
                                         motion_filter_order=self.inputs.motion_filter_order,)
         confound = confound.to_numpy().T
@@ -76,9 +72,9 @@ class regress(SimpleInterface):
         # demean and detrend the data
         #
         # use afni order
-        orderx = np.floor(1 + data_matrix.shape[1] * self.inputs.tr / 150)
+        orderx = np.floor(1 + data_matrix.shape[1] * self.inputs.TR / 150)
         dd_data = demean_detrend_data(data=data_matrix,
-                                      TR=self.inputs.tr,
+                                      TR=self.inputs.TR,
                                       order=orderx)
         # confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
         # regress the confound regressors from data
