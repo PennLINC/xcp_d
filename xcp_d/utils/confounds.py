@@ -305,38 +305,40 @@ def motion_regression_filter(data,
     fc_RR_min, fc_RR_max = freqband
 
     TR = float(TR)
-    order = float(order)
+    order = float(motion_filter_order)
     LP_freq_min = float(LP_freq_min)
     fc_RR_min = float(fc_RR_min)
     fc_RR_max = float(fc_RR_max)
-
-    if motion_filter_type == 'lp':
-        hr_min = LP_freq_min
-        hr = hr_min
-        fs = 1. / TR
-        fNy = fs / 2.
-        fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)
-        # cutting frequency normalized between 0 and nyquist
-        Wn = np.amin(fa) / fNy
-        b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')
-        a_filt = 1.
-        num_f_apply = 1.
-    else:
-        if motion_filter_type == 'notch':
-            fc_RR_bw = np.array([fc_RR_min, fc_RR_max])
-            rr = fc_RR_bw
+    if motion_filter_type:
+        if motion_filter_type == 'lp':
+            hr_min = LP_freq_min
+            hr = hr_min
             fs = 1. / TR
             fNy = fs / 2.
-            fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)
-            W_notch = fa / fNy
-            Wn = np.mean(W_notch)
-            Wd = np.diff(W_notch)
-            bw = np.abs(Wd)
-            b_filt, a_filt = iirnotch(Wn, Wn / bw)
-            num_f_apply = np.int(np.floor(order / 2))
+            fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)
+            # cutting frequency normalized between 0 and nyquist
+            Wn = np.amin(fa) / fNy
+            b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')
+            a_filt = 1.
+            num_f_apply = 1.
+        else:
+            if motion_filter_type == 'notch':
+                fc_RR_bw = np.array([fc_RR_min, fc_RR_max])
+                rr = fc_RR_bw
+                fs = 1. / TR
+                fNy = fs / 2.
+                fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)
+                W_notch = fa / fNy
+                Wn = np.mean(W_notch)
+                Wd = np.diff(W_notch)
+                bw = np.abs(Wd)
+                b_filt, a_filt = iirnotch(Wn, Wn / bw)
+                num_f_apply = np.int(np.floor(order / 2))
         for j in range(num_f_apply):
             for k in range(data.shape[0]):
                 data[k, :] = filtfilt(b_filt, a_filt, data[k, :])
+    else:
+        data = data
     return data
 
     # def lowpassfilter_coeff(cutoff, fs, order=4):
