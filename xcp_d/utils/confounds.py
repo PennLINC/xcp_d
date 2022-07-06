@@ -130,22 +130,6 @@ def load_acompcor(confoundspd, confoundjs):
     return confoundspd[acompcor]
 
 
-# def load_tcompcor(confoundspd, confoundjs):
-#     """ select tcompcor."""
-
-#     tcomp = []
-#     for key, value in confoundjs.items():
-#         if 't_comp_cor' in key:
-#             if value['Method'] == 'tCompCor' and value['Retained']:
-#                 tcomp.append([key, value['VarianceExplained']])
-#     # sort it by variance explained
-#     # select the first five components
-#     tcomplist = []
-#     for i in range(0, 6):
-#         tcomplist.append(tcomp[i][0])
-#     return confoundspd[tcomplist]
-
-
 def derivative(confound):
     dat = confound.to_numpy()
     return pd.DataFrame(np.diff(dat, prepend=0))
@@ -156,14 +140,9 @@ def confpower(confound, order=2):
 
 
 def load_confound_matrix(datafile,
-                         TR,
                          original_file,
-                         motion_filter_type,
                          custom_confounds=None,
                          confound_tsv=None,
-                         cutoff=0.1,
-                         motion_filter_order=4,
-                         freqband=[0.1, 0.2],
                          params='27P'):
     """ extract confound """
     '''
@@ -173,6 +152,8 @@ def load_confound_matrix(datafile,
         boldfile
     confound_tsv:
         confound tsv
+    custom_confounds:
+        custom confounds tsv
     params:
        confound requested based on Ciric et. al 2017
     '''
@@ -181,32 +162,23 @@ def load_confound_matrix(datafile,
     confoundtsv = pd.read_table(confound_tsv)
 
     if params == '24P':
-        motion = load_motion(confoundtsv,
-                             TR,
-                             motion_filter_type,
-                             freqband,
-                             cutoff=cutoff,
-                             motion_filter_order=motion_filter_order)
+        rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
+        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
     elif params == '27P':
-        motion = load_motion(confoundtsv,
-                             TR,
-                             motion_filter_type,
-                             freqband,
-                             cutoff=cutoff,
-                             motion_filter_order=motion_filter_order)
+        rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
+        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
         confound = pd.concat([mm_dev, confpower(mm_dev), wmcsf, gs], axis=1)
     elif params == '36P':
-        motion = load_motion(confoundtsv,
-                             TR,
-                             motion_filter_type,
-                             freqband,
-                             cutoff=cutoff,
-                             motion_filter_order=motion_filter_order)
+        rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
+        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         conf24p = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
         gswmcsf = pd.concat(
@@ -215,12 +187,9 @@ def load_confound_matrix(datafile,
         gwcs_dev = pd.concat([gswmcsf, derivative(gswmcsf)], axis=1)
         confound = pd.concat([conf24p, gwcs_dev, confpower(gwcs_dev)], axis=1)
     elif params == 'acompcor':
-        motion = load_motion(confoundtsv,
-                             TR,
-                             motion_filter_type,
-                             freqband,
-                             cutoff=cutoff,
-                             motion_filter_order=motion_filter_order)
+        rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
+        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv,
                                confoundjs=confoundjson)
@@ -236,12 +205,9 @@ def load_confound_matrix(datafile,
         gs = load_globalS(confoundtsv)
         confound = pd.concat([wmcsf, aroma, gs], axis=1)
     elif params == 'acompcor_gsr':
-        motion = load_motion(confoundtsv,
-                             TR,
-                             motion_filter_type,
-                             freqband,
-                             cutoff=cutoff,
-                             motion_filter_order=motion_filter_order)
+        rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
+        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv,
                                confoundjs=confoundjson)
@@ -250,11 +216,10 @@ def load_confound_matrix(datafile,
         confound = pd.concat([mm_dev, acompc, gs, cosine], axis=1)
     elif params == 'custom':
         # for custom confounds with no other confounds
-        confound = pd.read_csv(custom_confounds, sep='\t', header=None)
-
+        confound = pd.read_table(custom_confounds, sep='\t', header=None)
     if params != 'custom':
         if custom_confounds is not None:
-            custom = pd.read_csv(custom_confounds, sep='\t', header=None)
+            custom = pd.read_table(custom_confounds, sep='\t', header=None)
             confound = pd.concat([confound, custom], axis=1)
 
     return confound

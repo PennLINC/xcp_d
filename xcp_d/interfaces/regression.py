@@ -54,9 +54,8 @@ class regress(SimpleInterface):
         # get the confound matrix
         confound = load_confound_matrix(original_file=self.inputs.original_file,
                                         datafile=self.inputs.in_file,
-                                        TR=self.inputs.TR, confound_tsv=self.inputs.confounds,
-                                        motion_filter_type=self.inputs.motion_filter_type,
-                                        motion_filter_order=self.inputs.motion_filter_order,)
+                                        custom_confounds=self.inputs.custom_confounds,
+                                        confound_tsv=self.inputs.confounds)
         confound = confound.to_numpy().T
         # if self.inputs.custom_confounds:
         #     confound_custom = pd.read_table(self.inputs.custom_confounds,
