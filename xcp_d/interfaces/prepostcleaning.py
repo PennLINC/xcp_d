@@ -81,7 +81,7 @@ class RemoveTR(SimpleInterface):
 
         # If it's a Cifti Image:
         if bold_image.ndim == 2:
-            dropped_data = data  # time series is the first element
+            dropped_data = data[volumes_to_drop:, ...]   # time series is the first element
             time_axis, brain_model_axis = [
                 bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
             new_total_volumes = dropped_data.shape[0]
