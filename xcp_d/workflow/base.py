@@ -33,6 +33,7 @@ def init_xcpd_wf(layout,
                  despike,
                  bpf_order,
                  motion_filter_type,
+                 motion_filter_order,
                  band_stop_min,
                  band_stop_max,
                  bandpass_filter,
@@ -66,6 +67,7 @@ def init_xcpd_wf(layout,
                 despike,
                 bpf_order,
                 motion_filter_type,
+                motion_filter_order,
                 band_stop_min,
                 band_stop_max,
                 fmriprep_dir,
@@ -96,6 +98,8 @@ def init_xcpd_wf(layout,
         afni depsike
     motion_filter_type: str
         respiratory motion filter type: lp or notch
+    motion_filter_order: str
+        respiratory motion order
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
@@ -143,6 +147,7 @@ def init_xcpd_wf(layout,
             upper_bpf=upper_bpf,
             bpf_order=bpf_order,
             motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
             bandpass_filter=bandpass_filter,
@@ -171,7 +176,7 @@ def init_xcpd_wf(layout,
     return xcpabcd_wf
 
 
-def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
+def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order,
                     motion_filter_type, bandpass_filter,
                     band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
                     subject_id, cifti, despike, head_radius, params, dummytime,
@@ -191,6 +196,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
                 upper_bpf,
                 bpf_order,
                 motion_filter_type,
+                motion_filter_order,
                 band_stop_min,
                 band_stop_max,
                 fmriprep_dir,
@@ -221,6 +227,8 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order,
         afni depsike
     motion_filter_type: str
         respiratory motion filter type: lp or notch
+    motion_filter_order: int
+        order for motion filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
@@ -336,13 +344,14 @@ It is released under the [CC0]\
         for cifti_file in subject_data[1]:
             ii = ii + 1
             custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                          bold_file=cifti_file)
+                                               bold_file=cifti_file)
             cifti_postproc_wf = init_ciftipostprocess_wf(
                 cifti_file=cifti_file,
                 lower_bpf=lower_bpf,
                 upper_bpf=upper_bpf,
                 bpf_order=bpf_order,
                 motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,
                 bandpass_filter=bandpass_filter,
@@ -378,13 +387,14 @@ It is released under the [CC0]\
         for bold_file in subject_data[0]:
             ii = ii + 1
             custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                          bold_file=bold_file)
+                                               bold_file=bold_file)
             bold_postproc_wf = init_boldpostprocess_wf(
                 bold_file=bold_file,
                 lower_bpf=lower_bpf,
                 upper_bpf=upper_bpf,
                 bpf_order=bpf_order,
                 motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,
                 bandpass_filter=bandpass_filter,

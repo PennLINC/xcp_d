@@ -138,6 +138,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
                                default_value=50,
                                desc="Head radius in mm ")
     motion_filter_type = traits.Str(exists=False, mandatory=True)
+    motion_filter_order = traits.Int(exists=False, mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     low_freq = traits.Float(
         exists=True,
@@ -182,6 +183,7 @@ class CensorScrub(SimpleInterface):
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
+            motion_filter_order=self.inputs.motion_filter_order,
             freqband=[self.inputs.low_freq, self.inputs.high_freq])
         motion_df = pd.DataFrame(data=motion_confounds.values,
                                  columns=[

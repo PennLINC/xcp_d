@@ -29,6 +29,7 @@ class _regressInputSpec(BaseInterfaceInputSpec):
     tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
     mask = File(exists=False, mandatory=False, desc="brain mask nifti file")
     motion_filter_type = traits.Str(exists=False, mandatory=True)
+    motion_filter_order = traits.Int(exists=False, mandatory=True)
     original_file = traits.Str(exists=True, mandatory=False,
                                desc="Name of original bold file- helps load in the confounds"
                                "file down the line using the original path name")
@@ -59,7 +60,8 @@ class regress(SimpleInterface):
         confound = load_confound_matrix(original_file=self.inputs.original_file,
                                         datafile=self.inputs.in_file,
                                         TR=self.inputs.tr, confound_tsv=self.inputs.confounds,
-                                        motion_filter_type=self.inputs.motion_filter_type)
+                                        motion_filter_type=self.inputs.motion_filter_type,
+                                        motion_filter_order=self.inputs.motion_filter_order,)
         confound = confound.to_numpy().T
         # if self.inputs.custom_confounds:
         #     confound_custom = pd.read_table(self.inputs.custom_confounds,

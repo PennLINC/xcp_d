@@ -37,6 +37,7 @@ def init_ciftipostprocess_wf(cifti_file,
                              upper_bpf,
                              bpf_order,
                              motion_filter_type,
+                             motion_filter_order,
                              bandpass_filter,
                              band_stop_min,
                              band_stop_max,
@@ -67,6 +68,7 @@ def init_ciftipostprocess_wf(cifti_file,
                 upper_bpf,
                 bpf_order,
                 motion_filter_type,
+                motion_filter_order,
                 band_stop_min,
                 band_stop_max,
                 despike,
@@ -98,6 +100,8 @@ def init_ciftipostprocess_wf(cifti_file,
         afni depsike
     motion_filter_type: str
         respiratory motion filter type: lp or notch
+    motion_filter_order: int
+        order for motion filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
@@ -270,6 +274,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         low_freq=band_stop_max,
         high_freq=band_stop_min,
         motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
         head_radius=head_radius,
         fd_thresh=fd_thresh),
         name='censoring',
@@ -297,6 +302,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
     regression_wf = pe.Node(
         regress(tr=TR,
                 motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
                 original_file=cifti_file,
                 custom_confounds=custom_confounds),
         name="regression_wf",
@@ -330,64 +336,63 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    # TO DO: Check if this is the right order.
-    # if there is despiking
-    if despike:
-        despike3d = pe.Node(ciftidespike(tr=TR),
-                             name="cifti_depike",
-                             mem_gb=mem_gbx['timeseries'],
-                             n_procs=omp_nthreads)
+    # Remove TR first:
+    if dummytime > 0:
+        rm_dummytime = pe.Node(
+            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
+            name="remove_dummy_time",
+            mem_gb=0.1*mem_gb)
+        workflow.connect([
+            (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
+            (inputnode, rm_dummytime,[('cifti_file', 'bold_file')])])
+        if despike:
+            despike3d = pe.Node(ciftidespike(tr=TR),
+                                 name="cifti_despike",
+                                 mem_gb=mem_gbx['timeseries'],
+                                 n_procs=omp_nthreads)
 
-        workflow.connect([(inputnode, despike3d, [('cifti_file', 'in_file')])])
-        # Remove TR
-        if dummytime > 0:
-            rm_dummytime = pe.Node(
-                RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
-                name="remove_dummy_time",
-                mem_gb=0.1*mem_gb)
-            workflow.connect([
-                (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-                (despike3d, rm_dummytime,[('des_file', 'bold_file')])])
-            
-          # Censor Scrub:
-            workflow.connect([
-                (rm_dummytime, censor_scrub, [
-                    ('bold_file_dropped_TR', 'in_file'),
-                    ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
-                (inputnode, censor_scrub, [
-                    ('cifti_file', 'bold_file')])])
-        else:
-            workflow.connect([
-                (inputnode, censor_scrub, [
-                    ('cifti_file', 'bold_file')]),
-                (despike3d, censor_scrub, [
-                    ('des_file', 'in_file')]),
-                (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
-    else:
-        # Remove TR
-        if dummytime > 0:
-            rm_dummytime = pe.Node(
-                RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
-                name="remove_dummy_time",
-                mem_gb=0.1*mem_gb)
-            workflow.connect([
-                (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-                (inputnode, rm_dummytime,[('cifti_file', 'bold_file')])])
-
+            workflow.connect([(rm_dummytime, despike3d, [('bold_file_dropped_TR', 'in_file')])])
             # Censor Scrub:
             workflow.connect([
                 (rm_dummytime, censor_scrub, [
-                    ('bold_file_dropped_TR', 'in_file'),
+                    ('bold_file_dropped_TR', 'bold_file'),
+                    ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
+                (despike3d, censor_scrub, [
+                    ('des_file', 'in_file')
+                    ])])
+
+        else:
+            # Censor Scrub:
+            workflow.connect([
+                (rm_dummytime, censor_scrub, [
+                    ('bold_file_dropped_TR', 'bold_file'),
                     ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
                 (inputnode, censor_scrub, [
-                    ('cifti_file', 'bold_file')
+                    ('cifti_file', 'in_file')
                     ])])
-        else:
+    else:
+        if despike:
+            despike3d = pe.Node(ciftidespike(tr=TR),
+                                 name="cifti_despike",
+                                 mem_gb=mem_gbx['timeseries'],
+                                 n_procs=omp_nthreads)
+
+            workflow.connect([(inputnode, despike3d, [('cifti_file', 'in_file')])])
+            # Censor Scrub:
             workflow.connect([
-                (inputnode, censor_scrub, [
-                    ('cifti_file', 'bold_file'),
-                    ('bold', 'in_file')]),
-                (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+                    (inputnode, censor_scrub, [
+                        ('cifti_file', 'bold_file')]),
+                    (despike3d, censor_scrub, [
+                        ('des_file', 'in_file')]),
+                    (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+
+        else:
+            # Censor Scrub only:
+            workflow.connect([
+                    (inputnode, censor_scrub, [
+                        ('cifti_file', 'bold_file'),
+                        ('bold', 'in_file'),
+                        ('confound_file', 'fmriprep_confounds_file')])])
 
 
     # regression workflow

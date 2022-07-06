@@ -64,7 +64,7 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confoundspd, TR, motion_filter_type, freqband, cutoff=0.1, order=4):
+def load_motion(confoundspd, TR, motion_filter_type, freqband, cutoff=0.1, motion_filter_order=4):
     """Load the 6 motion regressors."""
     rot_2mm = confoundspd[["rot_x", "rot_y", "rot_z"]]
     trans_mm = confoundspd[["trans_x", "trans_y", "trans_z"]]
@@ -77,7 +77,7 @@ def load_motion(confoundspd, TR, motion_filter_type, freqband, cutoff=0.1, order
                                          motion_filter_type=motion_filter_type,
                                          freqband=freqband,
                                          cutoff=cutoff,
-                                         order=order)
+                                         motion_filter_order=motion_filter_order)
         datay = datay.T
     return pd.DataFrame(datay)
 
@@ -162,7 +162,7 @@ def load_confound_matrix(datafile,
                          custom_confounds=None,
                          confound_tsv=None,
                          cutoff=0.1,
-                         order=4,
+                         motion_filter_order=4,
                          freqband=[0.1, 0.2],
                          params='27P'):
     """ extract confound """
@@ -186,7 +186,7 @@ def load_confound_matrix(datafile,
                              motion_filter_type,
                              freqband,
                              cutoff=cutoff,
-                             order=order)
+                             motion_filter_order=motion_filter_order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
     elif params == '27P':
@@ -195,7 +195,7 @@ def load_confound_matrix(datafile,
                              motion_filter_type,
                              freqband,
                              cutoff=cutoff,
-                             order=order)
+                             motion_filter_order=motion_filter_order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
@@ -206,7 +206,7 @@ def load_confound_matrix(datafile,
                              motion_filter_type,
                              freqband,
                              cutoff=cutoff,
-                             order=order)
+                             motion_filter_order=motion_filter_order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         conf24p = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
         gswmcsf = pd.concat(
@@ -220,7 +220,7 @@ def load_confound_matrix(datafile,
                              motion_filter_type,
                              freqband,
                              cutoff=cutoff,
-                             order=order)
+                             motion_filter_order=motion_filter_order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv,
                                confoundjs=confoundjson)
@@ -241,7 +241,7 @@ def load_confound_matrix(datafile,
                              motion_filter_type,
                              freqband,
                              cutoff=cutoff,
-                             order=order)
+                             motion_filter_order=motion_filter_order)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv,
                                confoundjs=confoundjson)
@@ -296,7 +296,7 @@ def motion_regression_filter(data,
                              motion_filter_type,
                              freqband,
                              cutoff=.1,
-                             order=4):
+                             motion_filter_order=4):
     """
     apply motion filter to 6 motion.
     """

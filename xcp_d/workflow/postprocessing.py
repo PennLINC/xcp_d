@@ -32,6 +32,7 @@ def init_post_process_wf(
         bold_file,
         params,
         motion_filter_type,
+        motion_filter_order,
         band_stop_max,
         band_stop_min,
         initial_volumes_to_drop,
@@ -58,6 +59,7 @@ def init_post_process_wf(
                 bold_file,
                 params,
                 motion_filter_type,
+                motion_filter_order,
                 band_stop_max,
                 band_stop_min,
                 cifti=False,
@@ -81,6 +83,8 @@ def init_post_process_wf(
         afni depsike
     motion_filter_type: str
         respiratory motion filter type: lp or notch
+    motion_filter_order: int
+        order for motion filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max, : float

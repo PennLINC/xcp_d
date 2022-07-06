@@ -38,6 +38,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
                              desc="dummy time to drop after")
     TR = traits.Float(exit=True, mandatory=True, desc="TR")
     motion_filter_type = traits.Float(exists=False, mandatory=False)
+    motion_filter_order = traits.Int(exists=False, mandatory=False)
     head_radius = traits.Float(
         exits=True,
         mandatory=False,
@@ -99,6 +100,7 @@ class computeqcplot(SimpleInterface):
             confound_matrix.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
+            motion_filter_order=self.inputs.motion_filter_order,
             freqband=[self.inputs.low_freq, self.inputs.high_freq])
         motion_df = pd.DataFrame(data=motion_conf.values,
                                  columns=[
