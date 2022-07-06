@@ -9,7 +9,7 @@ from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
-
+from os.path import exists
 LOGGER = logging.getLogger('nipype.interface')
 
 
@@ -52,31 +52,26 @@ class regress(SimpleInterface):
     def _run_interface(self, runtime):
 
         # get the confound matrix
-        confound = load_confound_matrix(original_file=self.inputs.original_file,
-                                        datafile=self.inputs.in_file,
-                                        custom_confounds=self.inputs.custom_confounds,
-                                        confound_tsv=self.inputs.confounds)
+        if self.inputs.custom_confounds and exists(self.inputs.custom_confounds):
+            confound = load_confound_matrix(original_file=self.inputs.original_file,
+                                            datafile=self.inputs.in_file,
+                                            custom_confounds=self.inputs.custom_confounds,
+                                            confound_tsv=self.inputs.confounds)
+        else:
+            confound = load_confound_matrix(original_file=self.inputs.original_file,
+                                            datafile=self.inputs.in_file,
+                                            confound_tsv=self.inputs.confounds)
         confound = confound.to_numpy().T
-        # if self.inputs.custom_confounds:
-        #     confound_custom = pd.read_table(self.inputs.custom_confounds,
-        #                         header=None,delimiter=' ')
-        #     confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
-        #     confound = np.nan_to_num(confound)
-        # else:
-        #     confound = confound.to_numpy().T
 
         # get the nifti/cifti  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file,
                                  maskfile=self.inputs.mask)
         # demean and detrend the data
-        #
         # use afni order
         orderx = np.floor(1 + data_matrix.shape[1] * self.inputs.TR / 150)
         dd_data = demean_detrend_data(data=data_matrix,
                                       TR=self.inputs.TR,
                                       order=orderx)
-        # confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
-        # regress the confound regressors from data
         resid_data = linear_regression(data=dd_data, confound=confound)
 
         # writeout the data

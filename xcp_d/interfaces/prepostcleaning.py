@@ -246,11 +246,12 @@ class CensorScrub(SimpleInterface):
             suffix='_fmriprep_confounds_censored.tsv',
             newpath=os.getcwd(),
             use_ext=False)
-        self._results['custom_confounds_censored'] = fname_presuffix(
-            self.inputs.in_file,
-            suffix='_custom_confounds_censored.tsv',
-            newpath=os.getcwd(),
-            use_ext=False)
+        if self.inputs.custom_confounds:
+            self._results['custom_confounds_censored'] = fname_presuffix(
+                self.inputs.in_file,
+                suffix='_custom_confounds_censored.tsv',
+                newpath=os.getcwd(),
+                use_ext=False)
         self._results['tmask'] = fname_presuffix(self.inputs.in_file,
                                                  suffix='_temporal_mask.tsv',
                                                  newpath=os.getcwd(),

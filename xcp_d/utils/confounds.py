@@ -131,8 +131,8 @@ def load_acompcor(confoundspd, confoundjs):
 
 
 def derivative(confound):
-    dat = confound.to_numpy()
-    return pd.DataFrame(np.diff(dat, prepend=0))
+    data = confound.to_numpy()
+    return pd.DataFrame(np.diff(data, prepend=0))
 
 
 def confpower(confound, order=2):
@@ -164,13 +164,13 @@ def load_confound_matrix(datafile,
     if params == '24P':
         rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
+        motion = pd.concat([rot_2mm, trans_mm], axis=1)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
     elif params == '27P':
         rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
+        motion = pd.concat([rot_2mm, trans_mm], axis=1)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         wmcsf = load_WM_CSF(confoundtsv)
         gs = load_globalS(confoundtsv)
@@ -178,7 +178,7 @@ def load_confound_matrix(datafile,
     elif params == '36P':
         rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
+        motion = pd.concat([rot_2mm, trans_mm], axis=1)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         conf24p = pd.concat([mm_dev, confpower(mm_dev)], axis=1)
         gswmcsf = pd.concat(
@@ -189,7 +189,7 @@ def load_confound_matrix(datafile,
     elif params == 'acompcor':
         rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
+        motion = pd.concat([rot_2mm, trans_mm], axis=1)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv,
                                confoundjs=confoundjson)
@@ -207,7 +207,7 @@ def load_confound_matrix(datafile,
     elif params == 'acompcor_gsr':
         rot_2mm = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_mm = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_2mm, trans_mm], axis=1).to_numpy()
+        motion = pd.concat([rot_2mm, trans_mm], axis=1)
         mm_dev = pd.concat([motion, derivative(motion)], axis=1)
         acompc = load_acompcor(confoundspd=confoundtsv,
                                confoundjs=confoundjson)
