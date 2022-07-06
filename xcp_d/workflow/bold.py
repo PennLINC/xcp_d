@@ -470,7 +470,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
                       (censor_scrub, regression_wf,
                        [('bold_censored', 'in_file'),
-                        ('fmriprep_confounds_censored', 'confounds')])])
+                        ('fmriprep_confounds_censored', 'confounds'),
+                        ('custom_confounds_censored', 'custom_confounds')])])
 
     # interpolation workflow
     workflow.connect([
