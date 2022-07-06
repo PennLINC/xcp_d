@@ -130,20 +130,20 @@ def load_acompcor(confoundspd, confoundjs):
     return confoundspd[acompcor]
 
 
-def load_tcompcor(confoundspd, confoundjs):
-    """ select tcompcor."""
+# def load_tcompcor(confoundspd, confoundjs):
+#     """ select tcompcor."""
 
-    tcomp = []
-    for key, value in confoundjs.items():
-        if 't_comp_cor' in key:
-            if value['Method'] == 'tCompCor' and value['Retained']:
-                tcomp.append([key, value['VarianceExplained']])
-    # sort it by variance explained
-    # select the first five components
-    tcomplist = []
-    for i in range(0, 6):
-        tcomplist.append(tcomp[i][0])
-    return confoundspd[tcomplist]
+#     tcomp = []
+#     for key, value in confoundjs.items():
+#         if 't_comp_cor' in key:
+#             if value['Method'] == 'tCompCor' and value['Retained']:
+#                 tcomp.append([key, value['VarianceExplained']])
+#     # sort it by variance explained
+#     # select the first five components
+#     tcomplist = []
+#     for i in range(0, 6):
+#         tcomplist.append(tcomp[i][0])
+#     return confoundspd[tcomplist]
 
 
 def derivative(confound):
