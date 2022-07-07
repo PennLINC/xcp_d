@@ -25,7 +25,6 @@ def test_fd_interface_cifti(data_dir):  # Checking results
 
     # Run workflow
     cscrub = CensorScrub()
-    cscrub.inputs.bold_file = boldfile
     cscrub.inputs.in_file = boldfile
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.5
@@ -72,7 +71,6 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 
     # Run workflow
     cscrub = CensorScrub()
-    cscrub.inputs.bold_file = boldfile
     cscrub.inputs.in_file = boldfile
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.5
@@ -125,7 +123,6 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 
 #     # Run workflow
 #     cscrub = CensorScrub()
-#     cscrub.inputs.bold_file = boldfile
 #     cscrub.inputs.in_file = boldfile
 #     cscrub.inputs.TR = 0.8
 #     cscrub.inputs.fd_thresh = 0.5
@@ -168,7 +165,6 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 
 #     # Run workflow
 #     cscrub = CensorScrub()
-#     cscrub.inputs.bold_file = boldfile
 #     cscrub.inputs.in_file = boldfile
 #     cscrub.inputs.TR = 0.8
 #     cscrub.inputs.fd_thresh = 0.5

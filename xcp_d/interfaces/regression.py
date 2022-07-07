@@ -1,10 +1,5 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Handling regression.
-    .. testsetup::
-    # will comeback
-"""
 
 import numpy as np
 from nipype import logging
@@ -14,22 +9,20 @@ from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
-
+from os.path import exists
 LOGGER = logging.getLogger('nipype.interface')
 
 
 class _regressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
-                   desc="Input file either cifti or nifti file ")
+                   desc="The bold file to be regressed")
     confounds = File(
         exists=True,
         mandatory=True,
-        desc=" confound regressors selected from fmriprep's confound matrix.")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
-    mask = File(exists=False, mandatory=False, desc="brain mask nifti file")
-    motion_filter_type = traits.Str(exists=False, mandatory=True)
-    motion_filter_order = traits.Int(exists=False, mandatory=True)
+        desc="The fMRIPrep confounds tsv after censoring")
+    TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
+    mask = File(exists=False, mandatory=False, desc="Brain mask for nifti files")
     original_file = traits.Str(exists=True, mandatory=False,
                                desc="Name of original bold file- helps load in the confounds"
                                "file down the line using the original path name")
@@ -42,13 +35,19 @@ class _regressInputSpec(BaseInterfaceInputSpec):
 
 class _regressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
-                    manadatory=True,
-                    desc=" residual file after regression")
+                    mandatory=True,
+                    desc="Residual file after regression")
 
 
 class regress(SimpleInterface):
     r"""
-    #TODO: Clean up + add functionality for custom confounds
+    Takes in the confound tsv, turns it to a matrix and expands it. Custom
+    confounds are added in during this step if present.
+
+    Then reads in the bold file, does demeaning and a linear detrend.
+
+    Finally, uses sklearns's Linear  Regression to regress out the confounds from
+    the bold files and returns the residual image.
     """
 
     input_spec = _regressInputSpec
@@ -56,39 +55,35 @@ class regress(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        # get the confound matrix
-        confound = load_confound_matrix(original_file=self.inputs.original_file,
-                                        datafile=self.inputs.in_file,
-                                        TR=self.inputs.tr, confound_tsv=self.inputs.confounds,
-                                        motion_filter_type=self.inputs.motion_filter_type,
-                                        motion_filter_order=self.inputs.motion_filter_order,)
-        confound = confound.to_numpy().T
-        # if self.inputs.custom_confounds:
-        #     confound_custom = pd.read_table(self.inputs.custom_confounds,
-        #                         header=None,delimiter=' ')
-        #     confound = pd.concat((confound.T, confound_custom.T)).to_numpy()
-        #     confound = np.nan_to_num(confound)
-        # else:
-        #     confound = confound.to_numpy().T
+        # Get the confound matrix
+        # Do we have custom confounds?
+        if self.inputs.custom_confounds and exists(self.inputs.custom_confounds):
+            confound = load_confound_matrix(original_file=self.inputs.original_file,
+                                            datafile=self.inputs.in_file,
+                                            custom_confounds=self.inputs.custom_confounds,
+                                            confound_tsv=self.inputs.confounds)
+        else:  # No custom confounds
+            confound = load_confound_matrix(original_file=self.inputs.original_file,
+                                            datafile=self.inputs.in_file,
+                                            confound_tsv=self.inputs.confounds)
 
-        # get the nifti/cifti  matrix
-        data_matrix = read_ndata(datafile=self.inputs.in_file,
+        confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
+
+        # Get the nifti/cifti matrix
+        bold_matrix = read_ndata(datafile=self.inputs.in_file,
                                  maskfile=self.inputs.mask)
-        # demean and detrend the data
-        #
-        # use afni order
-        orderx = np.floor(1 + data_matrix.shape[1] * self.inputs.tr / 150)
-        dd_data = demean_detrend_data(data=data_matrix,
-                                      TR=self.inputs.tr,
-                                      order=orderx)
-        # confound = demean_detrend_data(data=confound,TR=self.inputs.tr,order=orderx)
-        # regress the confound regressors from data
-        resid_data = linear_regression(data=dd_data, confound=confound)
 
-        # writeout the data
-        if self.inputs.in_file.endswith('.dtseries.nii'):
+        # Demean and detrend the data
+        demeaned_detrended_data = demean_detrend_data(data=bold_matrix,
+                                                      TR=self.inputs.TR)
+
+        # Regress out the confounds via linear regression from sklearn
+        residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
+
+        # Write out the data
+        if self.inputs.in_file.endswith('.dtseries.nii'):  # If cifti
             suffix = '_residualized.dtseries.nii'
-        elif self.inputs.in_file.endswith('.nii.gz'):
+        elif self.inputs.in_file.endswith('.nii.gz'):  # If nifti
             suffix = '_residualized.nii.gz'
 
         # write the output out
@@ -99,7 +94,7 @@ class regress(SimpleInterface):
             use_ext=False,
         )
         self._results['res_file'] = write_ndata(
-            data_matrix=resid_data,
+            data_matrix=residualized_data,
             template=self.inputs.in_file,
             filename=self._results['res_file'],
             mask=self.inputs.mask)
@@ -109,41 +104,47 @@ class regress(SimpleInterface):
 def linear_regression(data, confound):
     '''
      data :
-       numpy ndarray- vertices by timepoints
+       numpy ndarray- vertices by timepoints for bold file
      confound:
-       nuissance regressors reg by timepoints
-     return:
-        residual matrix
+       nuissance regressors - vertices by timepoints for confounds matrix
+     returns:
+        residual matrix after regression
     '''
-    regr = LinearRegression(n_jobs=1)
-    regr.fit(confound.T, data.T)
-    y_pred = regr.predict(confound.T)
+    regression = LinearRegression(n_jobs=1)
+    regression.fit(confound.T, data.T)
+    y_predicted = regression.predict(confound.T)
 
-    return data - y_pred.T
+    return data - y_predicted.T
 
 
-def demean_detrend_data(data, TR, order):
+def demean_detrend_data(data, TR):
     '''
-    data should be voxels/vertices by timepoints dimension
-    order=1
-    # order of polynomial detrend is usually obtained from
-    # order = floor(1 + TR*nVOLS / 150)
-    TR= repetition time
-    this can be use for both confound and bold
+    data:
+        numpy ndarray- vertices by timepoints for bold file
+    TR:
+        Repetition time
+
+    Returns demeaned and detrended data
     '''
+    order = 1  # For linear detrending
+    # Demean the data
+    mean = np.mean(data, axis=1)  # Get the mean of each voxel across timepoints
+    # Replace each timepoint with the average
+    mean_data = np.outer(mean, np.ones(data.shape[1]))
+    demeaned = data - mean_data  # The demeaned data has the average across timepoints subtracted
+    # out
 
-    # demean the data first, check if it has been demean
-
-    mean_data = np.mean(data, axis=1)
-    means_expanded = np.outer(mean_data, np.ones(data.shape[1]))
-    demeand = data - means_expanded
-
-    x = np.linspace(0, (data.shape[1] - 1) * TR, num=data.shape[1])
-    predicted = np.zeros_like(demeand)
-    for j in range(demeand.shape[0]):
-        model = np.polyfit(x, demeand[j, :], order)
-        predicted[j, :] = np.polyval(model, x)
-    return demeand - predicted
+    # Create an array of false slice times with the same number of timepoints
+    evenly_spaced_slice_times = np.linspace(0, (data.shape[1] - 1) * TR, num=data.shape[1])
+    # An array of zeros with the same shape as the bold file
+    predicted_values = np.zeros_like(demeaned)
+    for voxel in range(demeaned.shape[0]):  # Looping through each voxel
+        # Create a linear model using the slice times array and the timepoints for each voxel
+        model = np.polyfit(evenly_spaced_slice_times, demeaned[voxel, :], order)
+        # Generate predicted values the values using the array slice times and model from the
+        # previous step
+        predicted_values[voxel, :] = np.polyval(model, evenly_spaced_slice_times)
+    return demeaned - predicted_values  # Subtract these predicted values from the demeaned data
 
 
 class _ciftidespikeInputSpec(BaseInterfaceInputSpec):

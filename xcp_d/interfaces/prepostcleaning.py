@@ -81,7 +81,7 @@ class RemoveTR(SimpleInterface):
 
         # If it's a Cifti Image:
         if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
+            dropped_data = data[volumes_to_drop:, ...]   # time series is the first element
             time_axis, brain_model_axis = [
                 bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
             new_total_volumes = dropped_data.shape[0]
@@ -118,9 +118,6 @@ class RemoveTR(SimpleInterface):
 
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True,
-                     mandatory=True,
-                     desc="Path to original bold or nifti file")
     in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
     fd_thresh = traits.Float(exists=True, mandatory=True, desc="Framewise displacement threshold. All"
                              "values above this will be dropped.")
@@ -168,8 +165,12 @@ class _CensorScrubOutputSpec(TraitedSpec):
 
 class CensorScrub(SimpleInterface):
     r"""
-    Generate temporal masking with volumes above fd threshold set to 1, then dropped. 
-    Confounds file filtered via Notch filter.
+    Takes in confound files, bold file to be censored, and information about filtering 
+    - including band stop values and motion filter type. Then proceeds to create a 
+    motion-filtered confounds matrix and recalculates FDfrom filtered motion parameters. 
+    Finally generates temporal mask with volumes above fd threshold set to 1, then dropped
+    from both confounds file and bolds file. Outputs temporal mask, framewise displacement
+    timeseries and censored bold files. 
     """
     input_spec = _CensorScrubInputSpec
     output_spec = _CensorScrubOutputSpec
@@ -229,16 +230,17 @@ class CensorScrub(SimpleInterface):
             time_axis, brain_model_axis = [
                 original_image.header.get_axis(i) for i in range(original_image.ndim)]
             new_total_volumes = bold_file_censored.shape[0]
-            dropped_time_axis = time_axis[:new_total_volumes]
-            dropped_header = nb.cifti2.Cifti2Header.from_axes(
-                (dropped_time_axis, brain_model_axis))
+            censored_time_axis = time_axis[:new_total_volumes]
+            censored_header = nb.cifti2.Cifti2Header.from_axes(
+                (censored_time_axis, brain_model_axis))
             bold_file_censored = nb.Cifti2Image(
                 bold_file_censored,
-                header=dropped_header,
+                header=censored_header,
                 nifti_header=original_image.nifti_header)
 
         # get the output
         self._results['bold_censored'] = fname_presuffix(self.inputs.in_file,
+                                                         suffix = '_censored',
                                                          newpath=os.getcwd(),
                                                          use_ext=True)
         self._results['fmriprep_confounds_censored'] = fname_presuffix(
@@ -246,11 +248,12 @@ class CensorScrub(SimpleInterface):
             suffix='_fmriprep_confounds_censored.tsv',
             newpath=os.getcwd(),
             use_ext=False)
-        self._results['custom_confounds_censored'] = fname_presuffix(
-            self.inputs.in_file,
-            suffix='_custom_confounds_censored.tsv',
-            newpath=os.getcwd(),
-            use_ext=False)
+        if self.inputs.custom_confounds:
+            self._results['custom_confounds_censored'] = fname_presuffix(
+                self.inputs.in_file,
+                suffix='_custom_confounds_censored.tsv',
+                newpath=os.getcwd(),
+                use_ext=False)
         self._results['tmask'] = fname_presuffix(self.inputs.in_file,
                                                  suffix='_temporal_mask.tsv',
                                                  newpath=os.getcwd(),

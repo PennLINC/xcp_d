@@ -188,7 +188,7 @@ tasks and sessions), the following post-processing was performed:
     # TR = get_ciftiTR(cifti_file=cifti_file)
     initial_volumes_to_drop = 0
     if dummytime > 0:
-        initial_volumes_to_drop = str(np.floor(dummytime / TR))
+        initial_volumes_to_drop = int(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + """ \
 before nuisance regression and filtering of the data,  the first {nvol} were discarded.
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
@@ -215,11 +215,11 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             highpass=lower_bpf)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'confound_file']),
+        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
         name='inputnode')
 
     inputnode.inputs.cifti_file = cifti_file
-    inputnode.inputs.confound_file = confounds_tsv
+    inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
         'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
@@ -300,11 +300,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(tr=TR,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                original_file=cifti_file,
-                custom_confounds=custom_confounds),
+        regress(TR=TR,
+                original_file=cifti_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -336,69 +333,50 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    # Remove TR first:
+# Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
-            mem_gb=0.1*mem_gb)
+            mem_gb=0.1*mem_gbx['timeseries'])
         workflow.connect([
-            (inputnode, rm_dummytime, [('confound_file', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime,[('cifti_file', 'bold_file')])])
-        if despike:
-            despike3d = pe.Node(ciftidespike(tr=TR),
-                                 name="cifti_despike",
-                                 mem_gb=mem_gbx['timeseries'],
-                                 n_procs=omp_nthreads)
+            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')])])
 
-            workflow.connect([(rm_dummytime, despike3d, [('bold_file_dropped_TR', 'in_file')])])
-            # Censor Scrub:
-            workflow.connect([
-                (rm_dummytime, censor_scrub, [
-                    ('bold_file_dropped_TR', 'bold_file'),
-                    ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
-                (despike3d, censor_scrub, [
-                    ('des_file', 'in_file')
-                    ])])
+        workflow.connect([
+            (rm_dummytime, censor_scrub, [
+                ('bold_file_dropped_TR', 'in_file'),
+                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')])])
 
-        else:
-            # Censor Scrub:
-            workflow.connect([
-                (rm_dummytime, censor_scrub, [
-                    ('bold_file_dropped_TR', 'bold_file'),
-                    ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')]),
-                (inputnode, censor_scrub, [
-                    ('cifti_file', 'in_file')
-                    ])])
-    else:
-        if despike:
-            despike3d = pe.Node(ciftidespike(tr=TR),
-                                 name="cifti_despike",
-                                 mem_gb=mem_gbx['timeseries'],
-                                 n_procs=omp_nthreads)
+    else:  # No need to remove TR
+        # Censor Scrub:
+        workflow.connect([
+            (inputnode, censor_scrub, [
+                ('cifti_file', 'in_file'),
+                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
+            ])])
 
-            workflow.connect([(inputnode, despike3d, [('cifti_file', 'in_file')])])
-            # Censor Scrub:
-            workflow.connect([
-                    (inputnode, censor_scrub, [
-                        ('cifti_file', 'bold_file')]),
-                    (despike3d, censor_scrub, [
-                        ('des_file', 'in_file')]),
-                    (inputnode, censor_scrub, [('confound_file', 'fmriprep_confounds_file')])])
+    if despike:  # If we despike
+        despike3d = pe.Node(ciftidespike(tr=TR),
+                            name="cifti_despike",
+                            mem_gb=mem_gbx['timeseries'],
+                            n_procs=omp_nthreads)
 
-        else:
-            # Censor Scrub only:
-            workflow.connect([
-                    (inputnode, censor_scrub, [
-                        ('cifti_file', 'bold_file'),
-                        ('bold', 'in_file'),
-                        ('confound_file', 'fmriprep_confounds_file')])])
+        workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
+        # Censor Scrub:
+        workflow.connect([
+            (despike3d, regression_wf, [
+                ('des_file', 'in_file')]),
+            (censor_scrub, regression_wf,
+             [('fmriprep_confounds_censored', 'confounds'),
+              ('custom_confounds_censored', 'custom_confounds')])])
 
-
-    # regression workflow
-    workflow.connect([(censor_scrub, regression_wf,
-                       [('bold_censored', 'in_file'),
-                        ('fmriprep_confounds_censored', 'confounds')])])
+    else:  # If we don't despike
+        # regression workflow
+        workflow.connect([(censor_scrub, regression_wf,
+                         [('bold_censored', 'in_file'),
+                          ('fmriprep_confounds_censored', 'confounds'),
+                          ('custom_confounds_censored', 'custom_confounds')])])
 
     # interpolation workflow
     workflow.connect([
@@ -475,7 +453,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('fd_timeseries',
-                                                'inputnode.fd')]),
+                                              'inputnode.fd')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
@@ -568,7 +546,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (filtering_wf, executivesummary_wf, [('filt_file',
                                               'inputnode.resddata')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
-                                                'inputnode.fd')]),
+                                              'inputnode.fd')]),
     ])
 
     return workflow
