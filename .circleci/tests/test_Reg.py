@@ -39,11 +39,6 @@ def test_Reg_Nifti(data_dir):
     r, p = scipy.stats.pearsonr(linear_drift, out_file[5, :])
     print(r, p)
 
-
-data_dir = '/Users/kahinim/Desktop/xcp_test/data'
-test_Reg_Nifti(data_dir)
-
-
 def test_Reg_Cifti(data_dir):
     in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
