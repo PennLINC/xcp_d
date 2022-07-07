@@ -1,5 +1,5 @@
 
-FROM pennbbl/xcpd_build:0.0.4
+FROM madisoth/xcpd_build:latest
 
 # Installing xcp_d
 COPY . /src/xcp_d
