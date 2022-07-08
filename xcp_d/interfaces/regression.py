@@ -11,6 +11,7 @@ from nipype.interfaces.base import (traits, TraitedSpec,
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
 from scipy import signal
+
 LOGGER = logging.getLogger('nipype.interface')
 
 
@@ -75,6 +76,7 @@ class regress(SimpleInterface):
                                  maskfile=self.inputs.mask)
 
         # Demean and detrend the data
+
         demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
 
         # Regress out the confounds via linear regression from sklearn
@@ -118,14 +120,14 @@ def linear_regression(data, confound):
 
 
 def demean_detrend_data(data):
+
     '''
     data:
         numpy ndarray- vertices by timepoints for bold file
-    TR:
-        Repetition time
 
     Returns demeaned and detrended data
     '''
+
     demeaned = signal.detrend(data, axis=- 1, type='constant', bp=0,
                               overwrite_data=False)  # Demean data using "constant" detrend,
     # which subtracts mean
