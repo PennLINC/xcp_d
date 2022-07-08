@@ -10,6 +10,7 @@ from nipype.interfaces.base import (traits, TraitedSpec,
                                     SimpleInterface)
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
+from scipy import signal
 LOGGER = logging.getLogger('nipype.interface')
 
 
@@ -74,8 +75,7 @@ class regress(SimpleInterface):
                                  maskfile=self.inputs.mask)
 
         # Demean and detrend the data
-        demeaned_detrended_data = demean_detrend_data(data=bold_matrix,
-                                                      TR=self.inputs.TR)
+        demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
 
         # Regress out the confounds via linear regression from sklearn
         residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
@@ -117,7 +117,7 @@ def linear_regression(data, confound):
     return data - y_predicted.T
 
 
-def demean_detrend_data(data, TR):
+def demean_detrend_data(data):
     '''
     data:
         numpy ndarray- vertices by timepoints for bold file
@@ -126,25 +126,13 @@ def demean_detrend_data(data, TR):
 
     Returns demeaned and detrended data
     '''
-    order = 1  # For linear detrending
-    # Demean the data
-    mean = np.mean(data, axis=1)  # Get the mean of each voxel across timepoints
-    # Replace each timepoint with the average
-    mean_data = np.outer(mean, np.ones(data.shape[1]))
-    demeaned = data - mean_data  # The demeaned data has the average across timepoints subtracted
-    # out
+    demeaned = signal.detrend(data, axis=- 1, type='constant', bp=0,
+                              overwrite_data=False)  # Demean data using "constant" detrend,
+    # which subtracts mean
+    detrended = signal.detrend(demeaned, axis=- 1, type='linear', bp=0,
+                               overwrite_data=False)  # Detrend data using linear method
 
-    # Create an array of false slice times with the same number of timepoints
-    evenly_spaced_slice_times = np.linspace(0, (data.shape[1] - 1) * TR, num=data.shape[1])
-    # An array of zeros with the same shape as the bold file
-    predicted_values = np.zeros_like(demeaned)
-    for voxel in range(demeaned.shape[0]):  # Looping through each voxel
-        # Create a linear model using the slice times array and the timepoints for each voxel
-        model = np.polyfit(evenly_spaced_slice_times, demeaned[voxel, :], order)
-        # Generate predicted values the values using the array slice times and model from the
-        # previous step
-        predicted_values[voxel, :] = np.polyval(model, evenly_spaced_slice_times)
-    return demeaned - predicted_values  # Subtract these predicted values from the demeaned data
+    return detrended  # Subtract these predicted values from the demeaned data
 
 
 class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
