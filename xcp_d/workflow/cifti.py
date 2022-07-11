@@ -355,8 +355,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         workflow.connect([
             (inputnode, censor_scrub, [
                 ('cifti_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-                ('custom_confounds', 'custom_confounds')
+                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
             ])])
 
     if despike:  # If we despike
