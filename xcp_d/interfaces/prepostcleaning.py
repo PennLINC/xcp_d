@@ -133,7 +133,7 @@ class RemoveTR(SimpleInterface):
         self._results['bold_file_dropped_TR'] = dropped_bold_file
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
         self._results['custom_confounds_dropped'] = fname_presuffix(
-            self.inputs.in_file,
+            self.inputs.bold_file,
             suffix='_custom_confounds_dropped.tsv',
             newpath=os.getcwd(),
             use_ext=False)
