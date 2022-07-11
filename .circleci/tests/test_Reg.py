@@ -21,7 +21,7 @@ def test_Reg_Nifti(data_dir):
     ntimepoints = in_file_data.shape[1]
     linear_drift = (abs(np.arange(ntimepoints))).astype(float)
     linear_drift *= np.mean(in_file_data[5, :])  # Scale it to be close to the original signal
-    in_file_edited = in_file_data
+    in_file_edited = in_file_data.copy()
     in_file_edited[5, :] = linear_drift  # Add this linear noise to the edited file
     # Find correlation between linear noise
     r1, p1 = scipy.stats.pearsonr(linear_drift, in_file_data[5, :])
@@ -41,6 +41,7 @@ def test_Reg_Nifti(data_dir):
     out_file_data = read_ndata(results.outputs.res_file, mask)
     # See how the output file  correlates with the linear_drift
     r2, p2 = scipy.stats.pearsonr(linear_drift, out_file_data[5, :])
+    print (r1,r2)
     assert r1 > r2  # Has correlation with noise decreased after regression?
 
 
@@ -57,7 +58,7 @@ def test_Reg_Cifti(data_dir):
     ntimepoints = in_file_data.shape[1]
     linear_drift = (abs(np.arange(ntimepoints))).astype(float)
     linear_drift *= np.mean(in_file_data[5, :])  # Scale it to be close to the original signal
-    in_file_edited = in_file_data
+    in_file_edited = in_file_data.copy()
     in_file_edited[5, :] = linear_drift  # Add this linear noise to the edited file
     # Find correlation between linear noise
     r1, p1 = scipy.stats.pearsonr(linear_drift, in_file_data[5, :])
@@ -75,4 +76,5 @@ def test_Reg_Cifti(data_dir):
     out_file_data = read_ndata(results.outputs.res_file, mask)
     # See how the output file  correlates with the linear_drift
     r2, p2 = scipy.stats.pearsonr(linear_drift, out_file_data[5, :])
+    print (r1,r2)
     assert r1 > r2  # Has correlation with noise decreased after regression?

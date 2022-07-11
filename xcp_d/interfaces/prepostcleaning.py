@@ -38,8 +38,8 @@ class _RemoveTROutputSpec(TraitedSpec):
                                 desc="bold or cifti with volumes dropped")
 
     custom_confounds_dropped = File(exists=False,
-                                     mandatory=False,
-                                     desc="custom_confounds_tsv dropped")
+                                    mandatory=False,
+                                    desc="custom_confounds_tsv dropped")
 
 
 class RemoveTR(SimpleInterface):
@@ -119,24 +119,27 @@ class RemoveTR(SimpleInterface):
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
-            custom_confounds_tsv_undropped = pd.read_csv(
+            custom_confounds_tsv_undropped = pd.read_table(
                 self.inputs.custom_confounds, header=None)
-            custom_confounds_tsv_dropped = confounds_df.drop(np.arange(volumes_to_drop))
-            custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
-                                                 index=False,
-                                                 header=False,
-                                                 sep="\t")  # Assuming input is tab separated!
-        
+            custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
+                np.arange(volumes_to_drop))
+
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
         # Write to output node
         self._results['bold_file_dropped_TR'] = dropped_bold_file
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
-        self._results['custom_confounds_dropped'] = fname_presuffix(
-            self.inputs.bold_file,
-            suffix='_custom_confounds_dropped.tsv',
-            newpath=os.getcwd(),
-            use_ext=False)
+        if self.inputs.custom_confounds:
+            self._results['custom_confounds_dropped'] = fname_presuffix(
+                self.inputs.bold_file,
+                suffix='_custom_confounds_dropped.tsv',
+                newpath=os.getcwd(),
+                use_ext=False)
+
+            custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
+                                                index=False,
+                                                header=False, 
+                                                sep="\t")  # Assuming input is tab separated!
 
         return runtime
 
@@ -264,7 +267,7 @@ class CensorScrub(SimpleInterface):
 
         # get the output
         self._results['bold_censored'] = fname_presuffix(self.inputs.in_file,
-                                                         suffix = '_censored',
+                                                         suffix='_censored',
                                                          newpath=os.getcwd(),
                                                          use_ext=True)
         self._results['fmriprep_confounds_censored'] = fname_presuffix(
