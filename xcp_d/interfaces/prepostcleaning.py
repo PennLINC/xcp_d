@@ -21,6 +21,11 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     fmriprep_confounds_file = File(exists=True,
                                    mandatory=False,
                                    desc="fmriprep confounds tsv")
+    custom_confounds = traits.Either(traits.Undefined,
+                                     File,
+                                     desc="Name of custom confounds file, or True",
+                                     exists=False,
+                                     mandatory=False)
 
 
 class _RemoveTROutputSpec(TraitedSpec):
@@ -31,6 +36,10 @@ class _RemoveTROutputSpec(TraitedSpec):
     bold_file_dropped_TR = File(exists=True,
                                 mandatory=True,
                                 desc="bold or cifti with volumes dropped")
+
+    custom_confounds_dropped = File(exists=False,
+                                     mandatory=False,
+                                     desc="custom_confounds_tsv dropped")
 
 
 class RemoveTR(SimpleInterface):
@@ -108,18 +117,33 @@ class RemoveTR(SimpleInterface):
         confounds_df = pd.read_csv(self.inputs.fmriprep_confounds_file, sep="\t")
         dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
 
+        # Drop the first N rows from the custom confounds file, if provided:
+        if self.inputs.custom_confounds:
+            custom_confounds_tsv_undropped = pd.read_csv(
+                self.inputs.custom_confounds, header=None)
+            custom_confounds_tsv_dropped = confounds_df.drop(np.arange(volumes_to_drop))
+            custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
+                                                 index=False,
+                                                 header=False,
+                                                 sep="\t")  # Assuming input is tab separated!
+        
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
         # Write to output node
         self._results['bold_file_dropped_TR'] = dropped_bold_file
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
+        self._results['custom_confounds_dropped'] = fname_presuffix(
+            self.inputs.in_file,
+            suffix='_custom_confounds_dropped.tsv',
+            newpath=os.getcwd(),
+            use_ext=False)
 
         return runtime
 
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
-    fd_thresh = traits.Float(exists=True, mandatory=True, desc="Framewise displacement threshold. All"
+    fd_thresh = traits.Float(exists=True, mandatory=False, default_value=0.2, desc="Framewise displacement threshold. All"
                              "values above this will be dropped.")
     custom_confounds = traits.Either(traits.Undefined,
                                      File,
