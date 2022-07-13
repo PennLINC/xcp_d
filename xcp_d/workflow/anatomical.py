@@ -16,6 +16,7 @@ from ..utils import collect_data, CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from ..interfaces import BrainPlotx, RibbontoStatmap
@@ -231,198 +232,6 @@ def init_anatomical_wf(
 
     else:
         all_files = list(layout.get_files())
-        # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
-        h5_file = fnmatch.filter(
-            all_files,
-            "*sub-*" + subject_id + "*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        )[
-            0
-        ]  # MB
-
-        h5_inv_file = fnmatch.filter(
-            all_files,
-            "*sub-*" + subject_id + "*from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
-        )[
-            0
-        ]  # MB
-        disassemble_h5 = pe.Node(
-            CompositeTransformUtil(
-                process="disassemble",
-                in_file=h5_file,
-                output_prefix="T1w_to_MNI152Lin6Asym",
-            ),
-            name="disassemble_h5",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )  # MB
-
-        # Nipype's CompositeTransformUtil assumes a certain file naming and
-        # concatenation order of xfms which does not work for the inverse .h5,
-        # so we use our modified class, "CompositeInvTransformUtil"
-        disassemble_h5_inv = pe.Node(
-            CompositeInvTransformUtil(
-                process="disassemble",
-                in_file=h5_inv_file,
-                output_prefix="MNI152Lin6Asym_to_T1w",
-            ),
-            name="disassemble_h5_inv",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )  # TM
-
-        # merge new components
-        merge_xfms_list = pe.Node(
-            niu.Merge(2),
-            name="merge_xfms_list",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        merge_inv_xfms_list = pe.Node(
-            niu.Merge(2),
-            name="merge_inv_xfms_list",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # combine the affine and warpfield xfms from the
-        # disassembled h5 into a single warpfield xfm
-        #
-
-        combine_xfms = pe.Node(
-            antsapplytransforms(
-                reference_image=mnitemplate,
-                interpolation="LanczosWindowedSinc",
-                print_out_composite_warp_file=True,
-                output_image="ants_composite_xfm.nii.gz",
-            ),
-            name="combine_xfms",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        combine_inv_xfms = pe.Node(
-            antsapplytransforms(
-                reference_image=mnitemplate,
-                interpolation="LanczosWindowedSinc",
-                print_out_composite_warp_file=True,
-                output_image="ants_composite_inv_xfm.nii.gz",
-            ),
-            name="combine_inv_xfms",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        # use C3d to separate the combined warpfield xfm
-        # into x, y, and z components
-
-        get_xyz_components = pe.Node(
-            C3d(
-                is_4d=True,
-                multicomp_split=True,
-                out_files=["e1.nii.gz", "e2.nii.gz", "e3.nii.gz"],
-            ),
-            name="get_xyz_components",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        get_inv_xyz_components = pe.Node(
-            C3d(
-                is_4d=True,
-                multicomp_split=True,
-                out_files=["e1inv.nii.gz", "e2inv.nii.gz", "e3inv.nii.gz"],
-            ),
-            name="get_inv_xyz_components",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        # select x-component after separating warpfield above
-        select_x_component = pe.Node(
-            niu.Select(index=[0]),
-            name="select_x_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        select_inv_x_component = pe.Node(
-            niu.Select(index=[0]),
-            name="select_inv_x_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # select y-component
-        select_y_component = pe.Node(
-            niu.Select(index=[1]),
-            name="select_y_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        select_inv_y_component = pe.Node(
-            niu.Select(index=[1]),
-            name="select_inv_y_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # select z-component
-        select_z_component = pe.Node(
-            niu.Select(index=[2]),
-            name="select_z_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        select_inv_z_component = pe.Node(
-            niu.Select(index=[2]),
-            name="select_inv_z_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # reverse y-component of the warpfield
-        # (need to do this when converting a warpfield from ANTs to FNIRT format
-        # for use with wb_command -surface-apply-warpfield)
-
-        reverse_y_component = pe.Node(
-            fslbinarymaths(operation="mul", operand_value=-1.0),
-            name="reverse_y_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        reverse_inv_y_component = pe.Node(
-            fslbinarymaths(operation="mul", operand_value=-1.0),
-            name="reverse_inv_y_component",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # merge new components
-        merge_new_components = pe.Node(
-            niu.Merge(3),
-            name="merge_new_components",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        merge_new_inv_components = pe.Node(
-            niu.Merge(3),
-            name="merge_new_inv_components",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
-        remerge_warpfield = pe.Node(
-            fslmerge(dimension="t"),
-            name="remerge_warpfield",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-        remerge_inv_warpfield = pe.Node(
-            fslmerge(dimension="t"),
-            name="remerge_inv_warpfield",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
 
         t1w_transform_wf = pe.Node(
             ApplyTransformsx(
@@ -488,86 +297,6 @@ def init_anatomical_wf(
             ]
         )
 
-        workflow.connect(
-            [
-                (disassemble_h5, merge_xfms_list, [("displacement_field", "in1")]),
-                (disassemble_h5, merge_xfms_list, [("affine_transform", "in2")]),
-                (inputnode, combine_xfms, [("t1w", "input_image")]),
-                (merge_xfms_list, combine_xfms, [("out", "transforms")]),
-                (combine_xfms, get_xyz_components, [("output_image", "in_file")]),
-                (get_xyz_components, select_x_component, [("out_files", "inlist")]),
-                (get_xyz_components, select_y_component, [("out_files", "inlist")]),
-                (get_xyz_components, select_z_component, [("out_files", "inlist")]),
-                (select_y_component, reverse_y_component, [("out", "in_file")]),
-                (select_x_component, merge_new_components, [("out", "in1")]),
-                (reverse_y_component, merge_new_components, [("out_file", "in2")]),
-                (select_z_component, merge_new_components, [("out", "in3")]),
-                (merge_new_components, remerge_warpfield, [("out", "in_files")]),
-            ]
-        )
-
-        workflow.connect(
-            [  # concat order is affine 1st, field 2nd for inverse xfm (opposite of fwd xfm)
-                # but input and ref image are same for fwd and inv combine_xfms
-                (
-                    disassemble_h5_inv,
-                    merge_inv_xfms_list,
-                    [("displacement_field", "in2")],
-                ),
-                (
-                    disassemble_h5_inv,
-                    merge_inv_xfms_list,
-                    [("affine_transform", "in1")],
-                ),
-                (inputnode, combine_inv_xfms, [("t1w", "input_image")]),
-                (merge_inv_xfms_list, combine_inv_xfms, [("out", "transforms")]),
-                (
-                    combine_inv_xfms,
-                    get_inv_xyz_components,
-                    [("output_image", "in_file")],
-                ),
-                (
-                    get_inv_xyz_components,
-                    select_inv_x_component,
-                    [("out_files", "inlist")],
-                ),
-                (
-                    get_inv_xyz_components,
-                    select_inv_y_component,
-                    [("out_files", "inlist")],
-                ),
-                (
-                    get_inv_xyz_components,
-                    select_inv_z_component,
-                    [("out_files", "inlist")],
-                ),
-                (
-                    select_inv_y_component,
-                    reverse_inv_y_component,
-                    [("out", "in_file")],
-                ),
-                (
-                    select_inv_x_component,
-                    merge_new_inv_components,
-                    [("out", "in1")],
-                ),
-                (
-                    reverse_inv_y_component,
-                    merge_new_inv_components,
-                    [("out_file", "in2")],
-                ),
-                (
-                    select_inv_z_component,
-                    merge_new_inv_components,
-                    [("out", "in3")],
-                ),
-                (
-                    merge_new_inv_components,
-                    remerge_inv_warpfield,
-                    [("out", "in_files")],
-                ),
-            ]
-        )
         # verify freesurfer directory
 
         p = Path(fmri_dir)
@@ -639,6 +368,202 @@ def init_anatomical_wf(
                 str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"
             )  # MB, TM
 
+            # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
+            h5_file = fnmatch.filter(
+                all_files,
+                "*sub-*"
+                + subject_id
+                + "*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
+            )[
+                0
+            ]  # MB
+
+            h5_inv_file = fnmatch.filter(
+                all_files,
+                "*sub-*"
+                + subject_id
+                + "*from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
+            )[
+                0
+            ]  # MB
+            disassemble_h5 = pe.Node(
+                CompositeTransformUtil(
+                    process="disassemble",
+                    in_file=h5_file,
+                    output_prefix="T1w_to_MNI152Lin6Asym",
+                ),
+                name="disassemble_h5",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # MB
+
+            # Nipype's CompositeTransformUtil assumes a certain file naming and
+            # concatenation order of xfms which does not work for the inverse .h5,
+            # so we use our modified class, "CompositeInvTransformUtil"
+            disassemble_h5_inv = pe.Node(
+                CompositeInvTransformUtil(
+                    process="disassemble",
+                    in_file=h5_inv_file,
+                    output_prefix="MNI152Lin6Asym_to_T1w",
+                ),
+                name="disassemble_h5_inv",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            # merge new components
+            merge_xfms_list = pe.Node(
+                niu.Merge(2),
+                name="merge_xfms_list",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            merge_inv_xfms_list = pe.Node(
+                niu.Merge(2),
+                name="merge_inv_xfms_list",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # combine the affine and warpfield xfms from the
+            # disassembled h5 into a single warpfield xfm
+            #
+
+            combine_xfms = pe.Node(
+                antsapplytransforms(
+                    reference_image=mnitemplate,
+                    interpolation="LanczosWindowedSinc",
+                    print_out_composite_warp_file=True,
+                    output_image="ants_composite_xfm.nii.gz",
+                ),
+                name="combine_xfms",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            combine_inv_xfms = pe.Node(
+                antsapplytransforms(
+                    reference_image=mnitemplate,
+                    interpolation="LanczosWindowedSinc",
+                    print_out_composite_warp_file=True,
+                    output_image="ants_composite_inv_xfm.nii.gz",
+                ),
+                name="combine_inv_xfms",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            # use C3d to separate the combined warpfield xfm
+            # into x, y, and z components
+
+            get_xyz_components = pe.Node(
+                C3d(
+                    is_4d=True,
+                    multicomp_split=True,
+                    out_files=["e1.nii.gz", "e2.nii.gz", "e3.nii.gz"],
+                ),
+                name="get_xyz_components",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            get_inv_xyz_components = pe.Node(
+                C3d(
+                    is_4d=True,
+                    multicomp_split=True,
+                    out_files=["e1inv.nii.gz", "e2inv.nii.gz", "e3inv.nii.gz"],
+                ),
+                name="get_inv_xyz_components",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            # select x-component after separating warpfield above
+            select_x_component = pe.Node(
+                niu.Select(index=[0]),
+                name="select_x_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            select_inv_x_component = pe.Node(
+                niu.Select(index=[0]),
+                name="select_inv_x_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # select y-component
+            select_y_component = pe.Node(
+                niu.Select(index=[1]),
+                name="select_y_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            select_inv_y_component = pe.Node(
+                niu.Select(index=[1]),
+                name="select_inv_y_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # select z-component
+            select_z_component = pe.Node(
+                niu.Select(index=[2]),
+                name="select_z_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            select_inv_z_component = pe.Node(
+                niu.Select(index=[2]),
+                name="select_inv_z_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # reverse y-component of the warpfield
+            # (need to do this when converting a warpfield from ANTs to FNIRT format
+            # for use with wb_command -surface-apply-warpfield)
+
+            reverse_y_component = pe.Node(
+                fslbinarymaths(operation="mul", operand_value=-1.0),
+                name="reverse_y_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            reverse_inv_y_component = pe.Node(
+                fslbinarymaths(operation="mul", operand_value=-1.0),
+                name="reverse_inv_y_component",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # merge new components
+            merge_new_components = pe.Node(
+                niu.Merge(3),
+                name="merge_new_components",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            merge_new_inv_components = pe.Node(
+                niu.Merge(3),
+                name="merge_new_inv_components",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
+            remerge_warpfield = pe.Node(
+                fslmerge(dimension="t"),
+                name="remerge_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            remerge_inv_warpfield = pe.Node(
+                fslmerge(dimension="t"),
+                name="remerge_inv_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
             # convert spheres (from FreeSurfer surf dir) to gifti #MB
             left_sphere_raw_mris = pe.Node(
                 MRIsConvert(out_datatype="gii", in_file=left_sphere_raw),
@@ -873,6 +798,86 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            workflow.connect(
+                [
+                    (disassemble_h5, merge_xfms_list, [("displacement_field", "in1")]),
+                    (disassemble_h5, merge_xfms_list, [("affine_transform", "in2")]),
+                    (inputnode, combine_xfms, [("t1w", "input_image")]),
+                    (merge_xfms_list, combine_xfms, [("out", "transforms")]),
+                    (combine_xfms, get_xyz_components, [("output_image", "in_file")]),
+                    (get_xyz_components, select_x_component, [("out_files", "inlist")]),
+                    (get_xyz_components, select_y_component, [("out_files", "inlist")]),
+                    (get_xyz_components, select_z_component, [("out_files", "inlist")]),
+                    (select_y_component, reverse_y_component, [("out", "in_file")]),
+                    (select_x_component, merge_new_components, [("out", "in1")]),
+                    (reverse_y_component, merge_new_components, [("out_file", "in2")]),
+                    (select_z_component, merge_new_components, [("out", "in3")]),
+                    (merge_new_components, remerge_warpfield, [("out", "in_files")]),
+                ]
+            )
+
+            workflow.connect(
+                [  # concat order is affine 1st, field 2nd for inverse xfm (opposite of fwd xfm)
+                    # but input and ref image are same for fwd and inv combine_xfms
+                    (
+                        disassemble_h5_inv,
+                        merge_inv_xfms_list,
+                        [("displacement_field", "in2")],
+                    ),
+                    (
+                        disassemble_h5_inv,
+                        merge_inv_xfms_list,
+                        [("affine_transform", "in1")],
+                    ),
+                    (inputnode, combine_inv_xfms, [("t1w", "input_image")]),
+                    (merge_inv_xfms_list, combine_inv_xfms, [("out", "transforms")]),
+                    (
+                        combine_inv_xfms,
+                        get_inv_xyz_components,
+                        [("output_image", "in_file")],
+                    ),
+                    (
+                        get_inv_xyz_components,
+                        select_inv_x_component,
+                        [("out_files", "inlist")],
+                    ),
+                    (
+                        get_inv_xyz_components,
+                        select_inv_y_component,
+                        [("out_files", "inlist")],
+                    ),
+                    (
+                        get_inv_xyz_components,
+                        select_inv_z_component,
+                        [("out_files", "inlist")],
+                    ),
+                    (
+                        select_inv_y_component,
+                        reverse_inv_y_component,
+                        [("out", "in_file")],
+                    ),
+                    (
+                        select_inv_x_component,
+                        merge_new_inv_components,
+                        [("out", "in1")],
+                    ),
+                    (
+                        reverse_inv_y_component,
+                        merge_new_inv_components,
+                        [("out_file", "in2")],
+                    ),
+                    (
+                        select_inv_z_component,
+                        merge_new_inv_components,
+                        [("out", "in3")],
+                    ),
+                    (
+                        merge_new_inv_components,
+                        remerge_inv_warpfield,
+                        [("out", "in_files")],
+                    ),
+                ]
+            )
             workflow.connect(
                 [
                     (
