@@ -5,7 +5,9 @@
 from nipype.interfaces.workbench.base import WBCommand
 from nipype.interfaces.base import TraitedSpec, File, traits, CommandLineInputSpec
 from nipype import logging
+
 iflogger = logging.getLogger("nipype.interface")
+
 
 class CiftiParcellateInputSpec(CommandLineInputSpec):
     in_file = File(
@@ -37,13 +39,13 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
         position=3,
         desc="The output CIFTI",
     )
-    
+
     spatial_weights = traits.Str(
         argstr="-spatial-weights ",
         position=4,
         desc=" spatial weight file",
     )
-    
+
     left_area_surf = File(
         exists=True,
         position=5,
@@ -63,7 +65,7 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
         argstr="-cerebellum-area-surf %s",
         desc="specify the cerebellum surface to use",
     )
-    
+
     left_area_metric = File(
         exists=True,
         position=8,
@@ -83,7 +85,7 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
         argstr="-cerebellum-area-metric %s",
         desc="specify the cerebellum surface  metricto use",
     )
-    
+
     cifti_weights = File(
         exists=True,
         position=11,
@@ -97,6 +99,7 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
         desc=" correlation method, option inlcude MODE",
     )
 
+
 class CiftiParcellateOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output CIFTI file")
 
@@ -105,18 +108,17 @@ class CiftiParcellate(WBCommand):
     r"""
     Extract timeseries from CIFTI file
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .dtseries,  
+    dimension, columns for .dtseries,
     >>> ciftiparcel = CiftiParcellate()
     >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
     >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
-    >>>  ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii' 
+    >>> ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii'
     >>> ciftiparcel.inputs.direction = 'COLUMN'
     >>> ciftiparcel.cmdline
     wb_command -cifti-parcellate sub-01XX_task-rest.dtseries.nii \
-    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \  
+    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \
     sub_01XX_task-rest.ptseries.nii
     """
     input_spec = CiftiParcellateInputSpec
     output_spec = CiftiParcellateOutputSpec
     _cmd = "wb_command -cifti-parcellate"
-

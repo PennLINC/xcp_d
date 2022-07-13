@@ -2,7 +2,6 @@
     "restructuredtext.confPath": "",
     "restructuredtext.preview.name": "sphinx",
     "restructuredtext.preview.docutil.disabled": true,
-    "python.pythonPath": "/Users/kahinim/opt/anaconda3/envs/XCP/bin/python",
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true
     

@@ -16,24 +16,21 @@ from ..utils import collect_data, CiftiSurfaceResample
 from nipype.interfaces.freesurfer import MRIsConvert
 from ..interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from pkg_resources import resource_filename as pkgrf
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from ..interfaces import BrainPlotx, RibbontoStatmap
 from ..utils import bid_derivative
 from nipype.interfaces.ants.resampling import (
-    ApplyTransforms as antsapplytransforms,
-)  # TM
-from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths  # TM
-from nipype.interfaces.fsl import Merge as fslmerge  # TM
-from ..interfaces.c3 import C3d  # TM
-from ..interfaces.ants import CompositeInvTransformUtil  # TM
+    ApplyTransforms as antsapplytransforms)
+from nipype.interfaces.ants import CompositeTransformUtil
+from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths
+from nipype.interfaces.fsl import Merge as fslmerge
+from ..interfaces.c3 import C3d
+from ..interfaces.ants import CompositeInvTransformUtil
 from ..interfaces.workbench import (
     ApplyWarpfield,
     SurfaceGenerateInflated,
-    SurfaceAverage,
-)  # MB,TM
+    SurfaceAverage)
 
 
 class DerivativesDataSink(bid_derivative):
@@ -48,7 +45,7 @@ def init_anatomical_wf(
     t1w_to_mni,
     input_type,
     mem_gb,
-    name="anatomical_wf",
+    name="anatomical_wf"
 ):
     """
     This workflow is convert surfaces (gifti) from fMRI to standard space-fslr-32k
@@ -429,7 +426,10 @@ def init_anatomical_wf(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)], #TM: need to replace MNI92FSL xfm with the correct xfm from the MNI output space of fMRIPrep/NiBabies (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym) to MNI152NLin6Asym.
+                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
+                # TM: need to replace MNI92FSL xfm with the correct xfm from the MNI output space
+                # of fMRIPrep/NiBabies (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
+                # to MNI152NLin6Asym.
                 transforms=t1w_to_mni,
                 interpolation="LanczosWindowedSinc",
                 input_image_type=3,
@@ -444,7 +444,10 @@ def init_anatomical_wf(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)], #TM: need to replace MNI92FSL xfm with the correct xfm from the MNI output space of fMRIPrep/NiBabies (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym) to MNI152NLin6Asym.
+                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
+                # TM: need to replace MNI92FSL xfm with the correct xfm from the MNI output space
+                # of fMRIPrep/NiBabies (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
+                # to MNI152NLin6Asym.
                 transforms=t1w_to_mni,
                 interpolation="MultiLabel",
                 input_image_type=3,
