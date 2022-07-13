@@ -8,6 +8,8 @@ from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
+
+from xcp_d.utils import confounds
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
 from scipy import signal
@@ -39,7 +41,9 @@ class _regressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
-
+    confound_matrix = File(exists=True,
+                            mandatory=True,
+                            desc="Confounds matrix returned for testing purposes only")
 
 class regress(SimpleInterface):
     r"""
@@ -48,8 +52,8 @@ class regress(SimpleInterface):
 
     Then reads in the bold file, does demeaning and a linear detrend.
 
-    Finally, uses sklearns's Linear  Regression to regress out the confounds from
-    the bold files and returns the residual image.
+    Finally, uses sklearns's Linear Regression to regress out the confounds from
+    the bold files and returns the residual image, as well as the confounds for testing.
     """
 
     input_spec = _regressInputSpec
@@ -68,9 +72,17 @@ class regress(SimpleInterface):
             confound = load_confound_matrix(original_file=self.inputs.original_file,
                                             datafile=self.inputs.in_file,
                                             confound_tsv=self.inputs.confounds)
+        # for testing, let's write out the confounds file:
+        confounds_file_output_name = fname_presuffix(
+            self.inputs.confounds,
+            suffix='_matrix.tsv',
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        self._results['confound_matrix'] = confounds_file_output_name
+        confound.to_csv(confounds_file_output_name, sep="\t", header=True, index=False)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
-
         # Get the nifti/cifti matrix
         bold_matrix = read_ndata(datafile=self.inputs.in_file,
                                  maskfile=self.inputs.mask)
