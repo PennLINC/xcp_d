@@ -31,7 +31,7 @@ def read_ndata(datafile, maskfile=None, scale=0):
     return data
 
 
-def write_ndata(data_matrix, template, filename, mask=None, tr=1, scale=0):
+def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     '''
     input:
       data matrix : veritices by timepoint
