@@ -149,7 +149,7 @@ def load_confound_matrix(datafile,
                          original_file,
                          custom_confounds=None,
                          confound_tsv=None,
-                         params='27P'):
+                         params='36P'):
     """ extract confound """
     '''
     original_file:
@@ -161,7 +161,7 @@ def load_confound_matrix(datafile,
     custom_confounds:
         custom confounds tsv if there is one
     params:
-       confound requested based on Ciric et. al 2017, default is '27P'
+       default is 36p, most expansive option
     '''
 
     #  Get the confounds dat from the json and tsv

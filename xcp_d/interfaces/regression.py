@@ -8,8 +8,12 @@ from nipype.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
+
+from xcp_d.utils import confounds
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
+from scipy import signal
+
 LOGGER = logging.getLogger('nipype.interface')
 
 
@@ -37,7 +41,9 @@ class _regressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
-
+    confound_matrix = File(exists=True,
+                            mandatory=True,
+                            desc="Confounds matrix returned for testing purposes only")
 
 class regress(SimpleInterface):
     r"""
@@ -46,8 +52,8 @@ class regress(SimpleInterface):
 
     Then reads in the bold file, does demeaning and a linear detrend.
 
-    Finally, uses sklearns's Linear  Regression to regress out the confounds from
-    the bold files and returns the residual image.
+    Finally, uses sklearns's Linear Regression to regress out the confounds from
+    the bold files and returns the residual image, as well as the confounds for testing.
     """
 
     input_spec = _regressInputSpec
@@ -66,16 +72,24 @@ class regress(SimpleInterface):
             confound = load_confound_matrix(original_file=self.inputs.original_file,
                                             datafile=self.inputs.in_file,
                                             confound_tsv=self.inputs.confounds)
+        # for testing, let's write out the confounds file:
+        confounds_file_output_name = fname_presuffix(
+            self.inputs.confounds,
+            suffix='_matrix.tsv',
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        self._results['confound_matrix'] = confounds_file_output_name
+        confound.to_csv(confounds_file_output_name, sep="\t", header=True, index=False)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
-
         # Get the nifti/cifti matrix
         bold_matrix = read_ndata(datafile=self.inputs.in_file,
                                  maskfile=self.inputs.mask)
 
         # Demean and detrend the data
-        demeaned_detrended_data = demean_detrend_data(data=bold_matrix,
-                                                      TR=self.inputs.TR)
+
+        demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
 
         # Regress out the confounds via linear regression from sklearn
         residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
@@ -117,34 +131,22 @@ def linear_regression(data, confound):
     return data - y_predicted.T
 
 
-def demean_detrend_data(data, TR):
+def demean_detrend_data(data):
+
     '''
     data:
         numpy ndarray- vertices by timepoints for bold file
-    TR:
-        Repetition time
 
     Returns demeaned and detrended data
     '''
-    order = 1  # For linear detrending
-    # Demean the data
-    mean = np.mean(data, axis=1)  # Get the mean of each voxel across timepoints
-    # Replace each timepoint with the average
-    mean_data = np.outer(mean, np.ones(data.shape[1]))
-    demeaned = data - mean_data  # The demeaned data has the average across timepoints subtracted
-    # out
 
-    # Create an array of false slice times with the same number of timepoints
-    evenly_spaced_slice_times = np.linspace(0, (data.shape[1] - 1) * TR, num=data.shape[1])
-    # An array of zeros with the same shape as the bold file
-    predicted_values = np.zeros_like(demeaned)
-    for voxel in range(demeaned.shape[0]):  # Looping through each voxel
-        # Create a linear model using the slice times array and the timepoints for each voxel
-        model = np.polyfit(evenly_spaced_slice_times, demeaned[voxel, :], order)
-        # Generate predicted values the values using the array slice times and model from the
-        # previous step
-        predicted_values[voxel, :] = np.polyval(model, evenly_spaced_slice_times)
-    return demeaned - predicted_values  # Subtract these predicted values from the demeaned data
+    demeaned = signal.detrend(data, axis=- 1, type='constant', bp=0,
+                              overwrite_data=False)  # Demean data using "constant" detrend,
+    # which subtracts mean
+    detrended = signal.detrend(demeaned, axis=- 1, type='linear', bp=0,
+                               overwrite_data=False)  # Detrend data using linear method
+
+    return detrended  # Subtract these predicted values from the demeaned data
 
 
 class _ciftidespikeInputSpec(BaseInterfaceInputSpec):

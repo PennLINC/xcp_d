@@ -38,7 +38,7 @@ def init_post_process_wf(
         initial_volumes_to_drop,
         cifti=False,
         dummytime=0,
-        fd_thresh=0,
+        fd_thresh=0.2,
         name="post_process_wf"):
     """
     This workflow is organizing workflows including

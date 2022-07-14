@@ -27,7 +27,7 @@ def test_fd_interface_cifti(data_dir):  # Checking results
     cscrub = CensorScrub()
     cscrub.inputs.in_file = boldfile
     cscrub.inputs.TR = 0.8
-    cscrub.inputs.fd_thresh = 0.5
+    cscrub.inputs.fd_thresh = 0.2
     cscrub.inputs.motion_filter_type = 'None'
     cscrub.inputs.motion_filter_order = 4
     cscrub.inputs.low_freq = 0
@@ -73,7 +73,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
     cscrub = CensorScrub()
     cscrub.inputs.in_file = boldfile
     cscrub.inputs.TR = 0.8
-    cscrub.inputs.fd_thresh = 0.5
+    cscrub.inputs.fd_thresh = 0.2
     cscrub.inputs.motion_filter_type = 'None'
     cscrub.inputs.motion_filter_order = 4
     cscrub.inputs.low_freq = 0
@@ -125,7 +125,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #     cscrub = CensorScrub()
 #     cscrub.inputs.in_file = boldfile
 #     cscrub.inputs.TR = 0.8
-#     cscrub.inputs.fd_thresh = 0.5
+#     cscrub.inputs.fd_thresh = 0.2
 #     cscrub.inputs.motion_filter_type = 'None'
 #     cscrub.inputs.low_freq = 0
 #     cscrub.inputs.high_freq = 0
@@ -167,7 +167,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #     cscrub = CensorScrub()
 #     cscrub.inputs.in_file = boldfile
 #     cscrub.inputs.TR = 0.8
-#     cscrub.inputs.fd_thresh = 0.5
+#     cscrub.inputs.fd_thresh = 0.2
 #     cscrub.inputs.motion_filter_type = 'None'
 #     cscrub.inputs.low_freq = 0
 #     cscrub.inputs.high_freq = 0
