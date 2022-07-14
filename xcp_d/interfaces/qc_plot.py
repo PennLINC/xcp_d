@@ -157,7 +157,7 @@ class computeqcplot(SimpleInterface):
                     template=self.inputs.bold_file,
                     mask=self.inputs.mask_file,
                     filename=filex,
-                    tr=self.inputs.TR)
+                    TR=self.inputs.TR)
 
         conf = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_bf})
 
@@ -197,7 +197,7 @@ class computeqcplot(SimpleInterface):
                         template=self.inputs.bold_file,
                         mask=self.inputs.mask_file,
                         filename=filey,
-                        tr=self.inputs.TR)
+                        TR=self.inputs.TR)
 
             figy = fMRIPlot(func_file=filey,
                             seg_file=self.inputs.seg_file,

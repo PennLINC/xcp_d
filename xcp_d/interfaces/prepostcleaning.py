@@ -378,7 +378,7 @@ class interpolate(SimpleInterface):
         write_ndata(data_matrix=recon_data,
                     template=self.inputs.bold_file,
                     mask=self.inputs.mask_file,
-                    tr=self.inputs.TR,
+                    TR=self.inputs.TR,
                     filename=self._results['bold_interpolated'])
 
         return runtime

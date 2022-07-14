@@ -177,6 +177,6 @@ class ciftidespike(SimpleInterface):
             use_ext=False,
         )
         self._results['des_file'] = despikedatacifti(cifti=self.inputs.in_file,
-                                                     tr=self.inputs.tr,
+                                                     TR=self.inputs.tr,
                                                      basedir=runtime.cwd)
         return runtime

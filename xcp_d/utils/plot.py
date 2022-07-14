@@ -600,12 +600,12 @@ def plot_svgx(rawdata,
                                 template=rawdata,
                                 filename=scaledrawdata,
                                 mask=mask,
-                                tr=tr)
+                                TR=tr)
     scaledresdata = write_ndata(data_matrix=resddatax,
                                 template=resddata,
                                 filename=scaledresdata,
                                 mask=mask,
-                                tr=tr)
+                                TR=tr)
 
     plt.cla()
     plt.clf()
