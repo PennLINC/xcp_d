@@ -427,6 +427,14 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
             ])])
 
     if despike:  # If we despike
+        # Despiking truncates large spikes in the BOLD times series 
+        # Despiking reduces/limits the amplitude or magnitude of 
+        # large spikes but preserves those data points with an imputed 
+        # reduced amplitude. Despiking is done before regression and filtering 
+        # to minimize the impact of spike. Despiking is applied to whole volumes 
+        # and data, and different from temporal censoring. It can be added to the 
+        # command line arguments with --despike.
+
         despike3d = pe.Node(DespikePatch(
             outputtype='NIFTI_GZ',
             args='-NEW'),

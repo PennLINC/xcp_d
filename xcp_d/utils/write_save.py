@@ -177,7 +177,7 @@ def read_gii(surf_gii):
     return datat
 
 
-def despikedatacifti(cifti, tr, basedir):
+def despikedatacifti(cifti, TR, basedir):
     """ despiking cifti """
     fake_cifti1 = str(basedir + '/fake_niftix.nii.gz')
     fake_cifti1_depike = str(basedir + '/fake_niftix_depike.nii.gz')
@@ -191,7 +191,7 @@ def despikedatacifti(cifti, tr, basedir):
     run_shell([
         'OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',
         fake_cifti1_depike, cifti, cifti_despike, '-reset-timepoints',
-        str(tr),
+        str(TR),
         str(0)
     ])
     return cifti_despike
