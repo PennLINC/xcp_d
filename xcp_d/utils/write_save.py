@@ -64,7 +64,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
             orig_cifti0 = str(basedir + '/' + fileid + 'edited_nifti2cifti.dtseries.nii')
             run_shell(['OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',
                        fake_cifti0, template,
-                       orig_cifti0, '-reset-timepoints', str(tr), str(0)]) #fix
+                       orig_cifti0, '-reset-timepoints', str(TR), str(0)]) #fix
             template_file2 = nb.load(orig_cifti0)
             dataimg = Cifti2Image(dataobj=data_matrix.T,
                                   header=template_file2.header,
