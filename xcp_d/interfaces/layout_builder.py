@@ -8,12 +8,11 @@ the DCAN-Labs fMRI pipelines.
 __version__ = "2.0.0"
 
 import os
-from os import (path, getcwd, chmod, listdir)
 import re
 import glob as glob
 from pathlib import Path
 from .constants import *
-from .helpers import (find_one_file,find_and_copy_files)
+from .helpers import (find_one_file, find_and_copy_files)
 
 
 class ModalContainer(object):
@@ -34,7 +33,7 @@ class ModalContainer(object):
     # buttons or clickable images or whatever, can display the
     # correct container.
     #
-    def __init__ (self, modal_id, image_class):
+    def __init__(self, modal_id, image_class):
 
         self.modal_id = modal_id
         self.modal_container = MODAL_START.format(modal_id=self.modal_id)
@@ -47,20 +46,17 @@ class ModalContainer(object):
 
         self.state = 'open'
 
-
     def get_modal_id(self):
         return self.modal_id
-
 
     def get_image_class(self):
         return self.image_class
 
-
     def get_button(self, btn_label):
         # Return HTML to creates a button that displays the modal container.
-        self.button += DISPLAY_MODAL_BUTTON.format(modal_id=self.modal_id, btn_label=btn_label)
+        self.button += DISPLAY_MODAL_BUTTON.format(modal_id=self.modal_id,
+                                                   btn_label=btn_label)
         return self.button
-
 
     def get_container(self):
         # Add the close button after all images have been added (so
@@ -73,16 +69,15 @@ class ModalContainer(object):
         # Return the HTML.
         return self.modal_container
 
-
     def get_scripts(self):
         # The containter needs the scripts to show the correct
         # image when the container is opened.
         self.scripts += MODAL_SCRIPTS % {
-                'modal_id'   : self.modal_id,
-                'image_class': self.image_class }
+            'modal_id': self.modal_id,
+            'image_class': self.image_class
+        }
 
         return self.scripts
-
 
     def add_images(self, image_list):
         # Add each image in the list to the slider.
@@ -92,10 +87,9 @@ class ModalContainer(object):
         # Return the final index.
         return self.image_class_idx
 
-
     def add_image(self, image_file):
 
-        if self.state is not 'open':
+        if self.state != 'open':
             print('ERROR: Cannot add images after the HTML has been written.')
             return 0
 
@@ -105,10 +99,10 @@ class ModalContainer(object):
 
         # Add the image to container, and assign the class.
         self.modal_container += IMAGE_WITH_CLASS.format(
-                modal_id      = self.modal_id,
-                image_class   = self.image_class,
-                image_file    = image_file,
-                display_name  = display_name)
+            modal_id=self.modal_id,
+            image_class=self.image_class,
+            image_file=image_file,
+            display_name=display_name)
 
         self.image_class_idx += 1
         return self.image_class_idx
@@ -127,9 +121,8 @@ class ModalSlider(ModalContainer):
     # The image class must be unique to this slider so that
     # the scripts can find the images used by the slider.
     #
-    def __init__ (self, modal_id, image_class):
+    def __init__(self, modal_id, image_class):
         ModalContainer.__init__(self, modal_id, image_class)
-
 
     def get_container(self):
         # Must add buttons after all images have been added.
@@ -141,19 +134,22 @@ class ModalSlider(ModalContainer):
         # Return the HTML.
         return self.modal_container
 
-
     def get_scripts(self):
         # The slider needs the scripts to go along with the
         # right and left buttons.
         self.scripts += SLIDER_SCRIPTS % {
-                'modal_id'   : self.modal_id,
-                'image_class': self.image_class }
+            'modal_id': self.modal_id,
+            'image_class': self.image_class
+        }
         return self.scripts
 
 
-
 class Section(object):
-    def __init__ (self, img_path='./', regs_slider=None, img_modal=None, **kwargs):
+    def __init__(self,
+                 img_path='./',
+                 regs_slider=None,
+                 img_modal=None,
+                 **kwargs):
         self.section = ''
         self.scripts = ''
         self.img_path = img_path
@@ -168,10 +164,9 @@ class Section(object):
 
 
 class TxSection(Section):
-
-    def __init__ (self, tx='', img_path='',**kwargs):
+    def __init__(self, tx='', img_path='', **kwargs):
         Section.__init__(self, **kwargs)
-        
+
         self.tx = tx
         self.img_path = img_path
 
@@ -179,25 +174,31 @@ class TxSection(Section):
 
     def run(self):
         values = IMAGE_INFO['t1w_brainplot']
-        tx_file = Path(find_one_file(self.img_path, values['pattern'] ))
-        t1wbrainplot = re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE).findall((tx_file).read_text())[0].strip()
+        tx_file = Path(find_one_file(self.img_path, values['pattern']))
+        t1wbrainplot = re.compile("<body>(.*?)</body>",
+                                  re.DOTALL | re.IGNORECASE).findall(
+                                      (tx_file).read_text())[0].strip()
         values2 = IMAGE_INFO['t2w_brainplot']
-        tx2_file = Path(find_one_file(self.img_path, values2['pattern'] ))
-        t2wbrainplot = re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE).findall((tx2_file).read_text())[0].strip()
+        tx2_file = Path(find_one_file(self.img_path, values2['pattern']))
+        t2wbrainplot = re.compile("<body>(.*?)</body>",
+                                  re.DOTALL | re.IGNORECASE).findall(
+                                      (tx2_file).read_text())[0].strip()
         self.section += TX_SECTION_START.format(txx='t1w')
 
         src1 = Path(tx_file)
         t1wbrainplot = src1.read_text().strip()
         src2 = Path(tx2_file)
         t2wbrainplot = src2.read_text().strip()
-        self.section += T1X_SECTION.format(tx1='T1w',t1wbrainplot=t1wbrainplot)
-        self.section += T2X_SECTION.format(tx2='T2w',t2wbrainplot=t2wbrainplot)
-        #self.section += T2X_SECTION.format(tx='T2w',t2wbrainplot=t2wbrainplot)
-        self.section += TX_SECTION_END.format() 
+        self.section += T1X_SECTION.format(tx1='T1w',
+                                           t1wbrainplot=t1wbrainplot)
+        self.section += T2X_SECTION.format(tx2='T2w',
+                                           t2wbrainplot=t2wbrainplot)
+        # self.section += T2X_SECTION.format(tx='T2w',t2wbrainplot=t2wbrainplot)
+        self.section += TX_SECTION_END.format()
+
 
 class TasksSection(Section):
-
-    def __init__ (self, tasks=[], img_path='./figures', **kwargs):
+    def __init__(self, tasks=[], img_path='./figures', **kwargs):
         Section.__init__(self, **kwargs)
 
         self.img_path = img_path
@@ -207,19 +208,20 @@ class TasksSection(Section):
     def write_T1_reg_rows(self, task_name, task_num):
 
         # Write the header for the next few rows.
-        self.section += TASK_LABEL_ROW.format( task_name = task_name, task_num = task_num )
+        self.section += TASK_LABEL_ROW.format(task_name=task_name,
+                                              task_num=task_num)
 
         row_data = {}
         row_data['row_modal'] = self.regs_slider.get_modal_id()
 
         # Using glob patterns to find the files for this task; start
         # with a pattern for the task/run itself.
-        task_pattern = task_name 
+        task_pattern = task_name
 
         # For the processed files, it's as simple as looking for the pattern in
         # the source-directory. When found and copied to the directory of images,
         # add the row.
-        
+
         for key in ['bold_t1w_reg']:
             values = IMAGE_INFO[key]
             pattern = values['pattern'] % task_pattern
@@ -231,8 +233,8 @@ class TasksSection(Section):
                 row_data['row_idx'] = self.regs_slider.add_image(task_file)
                 self.section += LAYOUT_ROW.format(**row_data)
             else:
-                self.section += PLACEHOLDER_ROW.format( row_label=values['title'] )
-
+                self.section += PLACEHOLDER_ROW.format(
+                    row_label=values['title'])
 
     def write_bold_gray_row(self, task_name, task_num):
         bold_data = {}
@@ -240,13 +242,13 @@ class TasksSection(Section):
 
         # Using glob patterns to find the files for this task; start
         # with a pattern for the task/run itself.
-        task_pattern = task_name 
+        task_pattern = task_name
 
         # Make the first half of the row - bold and ref data.
         self.section += BOLD_GRAY_START
 
         # For bold and ref files, may include run number or not.
-        for key in [ 'ref' ]:
+        for key in ['ref']:
             values = IMAGE_INFO[key]
             pattern = values['pattern'] % task_pattern
             task_file = find_one_file(self.img_path, pattern)
@@ -268,12 +270,13 @@ class TasksSection(Section):
                     bold_data['row_idx'] = self.img_modal.add_image(task_file)
                     self.section += LAYOUT_HALF_ROW.format(**bold_data)
                 else:
-                    self.section += PLACEHOLDER_HALF_ROW.format( row_label = values['title'] )
+                    self.section += PLACEHOLDER_HALF_ROW.format(
+                        row_label=values['title'])
 
         self.section += BOLD_GRAY_SPLIT
 
         # For each gray-plot, there is only one name to look for.
-        for key in [ 'task_pre_reg_gray', 'task_post_reg_gray' ]:
+        for key in ['task_pre_reg_gray', 'task_post_reg_gray']:
             values = IMAGE_INFO[key]
             pattern = values['pattern'] % task_pattern
             task_file = find_one_file(self.img_path, pattern)
@@ -284,13 +287,13 @@ class TasksSection(Section):
                 bold_data['row_idx'] = self.img_modal.add_image(task_file)
                 self.section += LAYOUT_QUARTER_ROW.format(**bold_data)
             else:
-                self.section += PLACEHOLDER_QUARTER_ROW.format( row_label = values['title'] )
+                self.section += PLACEHOLDER_QUARTER_ROW.format(
+                    row_label=values['title'])
 
         self.section += BOLD_GRAY_END
 
-
     def run(self, tasks):
-        if len(tasks) is 0:
+        if len(tasks) == 0:
             print('No tasks were found.')
             return
 
@@ -299,9 +302,9 @@ class TasksSection(Section):
 
         # Each entry in task_entries is a tuple of the task-name (without
         # task-) and run number (without run-).
-        for task_name  in tasks:
+        for task_name in tasks:
             if 'run-' in task_name:
-                task_num= task_name.split('_run-')[1].split('_')[0]
+                task_num = task_name.split('_run-')[1].split('_')[0]
             else:
                 task_num = 'ALL'
 
@@ -313,8 +316,7 @@ class TasksSection(Section):
 
 
 class layout_builder(object):
-
-    def __init__ (self, html_path, subject_id, session_id=None):
+    def __init__(self, html_path, subject_id, session_id=None):
 
         self.working_dir = os.getcwd()
 
@@ -324,7 +326,7 @@ class layout_builder(object):
             self.session_id = 'ses-' + session_id
         else:
             self.session_id = None
-        
+
         self.summary_path = html_path + '/' + self.subject_id + '/figures/'
         self.files_path = html_path + '/' + self.subject_id + '/figures/'
         self.images_path = html_path + '/' + self.subject_id + '/figures/'
@@ -339,18 +341,15 @@ class layout_builder(object):
         self.run()
         self.teardown()
 
-
     def setup(self):
         # As we write the HTML, we use the relative paths to the image files that
         # the HTML will reference. Therefore, best to be in the directory to which
         # the HTML will be written.
         os.chdir(self.html_path)
 
-
     def teardown(self):
         # Go back to the path where we started.
         os.chdir(self.working_dir)
-
 
     def get_list_of_tasks(self):
         # Walks through the MNINonLinear/Results directory to find all the
@@ -358,20 +357,19 @@ class layout_builder(object):
         # method. If there is no MNINonLinear/Results directory, uses the
         # files directory in the same way.
 
-        taskset=set()
+        taskset = set()
 
-        use_path = os.path.join(self.files_path)
+        # use_path = os.path.join(self.files_path)
         if os.path.isdir(self.files_path):
             print('\n All tasks completed')
-    
-        filex =  glob.glob(self.files_path + '/*bbregister_bold.svg')
-        
+
+        filex = glob.glob(self.files_path + '/*bbregister_bold.svg')
+
         for name in filex:
             taskbase = os.path.basename(name)
             taskset.add(taskbase.split('_task-')[1].split('_desc')[0])
 
         return sorted(taskset)
-
 
     def write_html(self, document, filename):
         """
@@ -389,24 +387,26 @@ class layout_builder(object):
             print('Error: {0}'.format(err))
 
         fd.writelines(document)
-        print('\nExecutive summary can be found in path:\n\t%s/%s' % (os.getcwd(), filename))
+        print('\nExecutive summary can be found in path:\n\t%s/%s' %
+              (os.getcwd(), filename))
         fd.close()
-
-
 
     def run(self):
 
         # Copy gray plot pngs, generated by DCAN-BOLD processing, to the
         # directory of images used by the HTML.
-        find_and_copy_files(self.summary_path, '*DVARS_and_FD*.png', self.images_path)
+        find_and_copy_files(self.summary_path, '*DVARS_and_FD*.png',
+                            self.images_path)
 
         # Start building the HTML document, and put the subject and session
         # into the title and page header.
         head = HTML_START
         if self.session_id is None:
-            head += TITLE.format(subject=self.subject_id, sep='' , session='')
+            head += TITLE.format(subject=self.subject_id, sep='', session='')
         else:
-            head += TITLE.format(subject=self.subject_id, sep=': ', session=self.session_id)
+            head += TITLE.format(subject=self.subject_id,
+                                 sep=': ',
+                                 session=self.session_id)
         body = ''
 
         # Images included in the Registrations slider and the Images container
@@ -419,45 +419,47 @@ class layout_builder(object):
         img_modal = ModalContainer('img_modal', 'Images')
 
         # Some sections require more args, but most will need these:
-        kwargs = { 'img_path'     : self.images_path,
-                   'regs_slider'  : regs_slider,
-                   'img_modal'    : img_modal }
-        
-    
+        kwargs = {
+            'img_path': self.images_path,
+            'regs_slider': regs_slider,
+            'img_modal': img_modal
+        }
+
         # Make sections for 'T1' and 'T2' images. Include pngs slider and
         # BrainSprite for each.
-       
+
         # Data for this subject/session: i.e., concatenated gray plots and atlas
         # images. (The atlas images will be added to the Registrations slider.)
-        #anat_section = AnatSection(**kwargs)
-        #body += anat_section.get_section()
+        # anat_section = AnatSection(**kwargs)
+        # body += anat_section.get_section()
 
         # Tasks section: data specific to each task/run. Get a list of tasks processed
         # for this subject. (The <task>-in-T1 and T1-in-<task> images will be added to
         # the Registrations slider.)
 
-    
         body += TxSection(**kwargs).get_section()
-     
+
         tasks_list = self.get_list_of_tasks()
         tasks_section = TasksSection(tasks=tasks_list, **kwargs)
         body += tasks_section.get_section()
 
         # Close up the Registrations elements and get the HTML.
         body += img_modal.get_container() + regs_slider.get_container()
-  
+
         # There are a bunch of scripts used in this page. Keep their HTML together.
-        #scripts = t1_section.get_scripts() + t2_section.get_scripts() 
+        # scripts = t1_section.get_scripts() + t2_section.get_scripts()
         scripts = img_modal.get_scripts() + regs_slider.get_scripts()
-        
-        
-        #src1 = ' <div class="boiler-html"> ' + src11 + ' </div>'
-        #src2 = ' <div class="boiler-html"> ' + src22 + ' </div>'
-        #t1_section = TxSection(tx='T1',brainplot=src1)
-        #t2_section = TxSection(tx='T2',brainplot=src2)
+
+        # src1 = ' <div class="boiler-html"> ' + src11 + ' </div>'
+        # src2 = ' <div class="boiler-html"> ' + src22 + ' </div>'
+        # t1_section = TxSection(tx='T1',brainplot=src1)
+        # t2_section = TxSection(tx='T2',brainplot=src2)
         # Assemble and write the document.
         html_doc = head + body + scripts + HTML_END
         if self.session_id is None:
-            self.write_html(html_doc, '%s_executive_summary.html' % (self.subject_id))
+            self.write_html(html_doc,
+                            '%s_executive_summary.html' % (self.subject_id))
         else:
-            self.write_html(html_doc, '%s_%s_executive_summary.html' % (self.subject_id, self.session_id))
+            self.write_html(
+                html_doc, '%s_%s_executive_summary.html' %
+                (self.subject_id, self.session_id))

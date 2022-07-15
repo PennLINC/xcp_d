@@ -7,4 +7,6 @@ xcp_surface/.DS_Store
 docs/_build
 .eggs
 .Rhistory
+*.egg-info
+.vscode
 xcp_abcd/notebooks/.ipynb_checkpoints/restingstate-checkpoint.ipynb

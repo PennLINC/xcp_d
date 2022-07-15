@@ -9,22 +9,19 @@ import sentry_sdk
 CHUNK_SIZE = 16384
 # Group common events with pre specified fingerprints
 KNOWN_ERRORS = {
-    'permission-denied': [
-        "PermwissionError: [Errno 13] Permission denied"
-    ],
+    'permission-denied': ["PermwissionError: [Errno 13] Permission denied"],
     'memory-error': [
         "MemoryError",
         "Cannot allocate memory",
         "Return code: 134",
     ],
-    'no-disk-space': [
-        "[Errno 28] No space left on device",
-        "[Errno 122] Disk quota exceeded"
-    ],
+    'no-disk-space':
+    ["[Errno 28] No space left on device", "[Errno 122] Disk quota exceeded"],
     'keyboard-interrupt': [
         "KeyboardInterrupt",
     ],
 }
+
 
 def start_ping(run_uuid, npart):
     with sentry_sdk.configure_scope() as scope:
@@ -38,7 +35,6 @@ def start_ping(run_uuid, npart):
 def sentry_setup(opts, exec_env):
     from os import cpu_count
     import psutil
-    import hashlib
     from ..__about__ import __version__
 
     environment = "develop"
@@ -49,13 +45,14 @@ def sentry_setup(opts, exec_env):
     else:
         environment = "dev"
 
-    sentry_sdk.init("https://729b52a70da149da97c69af55eebc4eb@o317280.ingest.sentry.io/5645951",
-                    release=release,
-                    environment=environment,
-                    before_send=before_send)
     sentry_sdk.init(
-    "https://729b52a70da149da97c69af55eebc4eb@o317280.ingest.sentry.io/5645951",
-     traces_sample_rate=1.0)
+        "https://729b52a70da149da97c69af55eebc4eb@o317280.ingest.sentry.io/5645951",
+        release=release,
+        environment=environment,
+        before_send=before_send)
+    sentry_sdk.init(
+        "https://729b52a70da149da97c69af55eebc4eb@o317280.ingest.sentry.io/5645951",
+        traces_sample_rate=1.0)
     with sentry_sdk.configure_scope() as scope:
         scope.set_tag('exec_env', exec_env)
         free_mem_at_start = round(psutil.virtual_memory().free / 1024**3, 1)
@@ -65,9 +62,11 @@ def sentry_setup(opts, exec_env):
         # Memory policy may have a large effect on types of errors experienced
         overcommit_memory = Path('/proc/sys/vm/overcommit_memory')
         if overcommit_memory.exists():
-            policy = {'0': 'heuristic',
-                      '1': 'always',
-                      '2': 'never'}.get(overcommit_memory.read_text().strip(), 'unknown')
+            policy = {
+                '0': 'heuristic',
+                '1': 'always',
+                '2': 'never'
+            }.get(overcommit_memory.read_text().strip(), 'unknown')
             scope.set_tag('overcommit_memory', policy)
             if policy == 'never':
                 overcommit_kbytes = Path('/proc/sys/vm/overcommit_memory')
@@ -144,7 +143,8 @@ def process_crashfile(crashfile):
             # remove file paths
             fingerprint = re.sub(r"(/[^/ ]*)+/?", '', message)
             # remove words containing numbers
-            fingerprint = re.sub(r"([a-zA-Z]*[0-9]+[a-zA-Z]*)+", '', fingerprint)
+            fingerprint = re.sub(r"([a-zA-Z]*[0-9]+[a-zA-Z]*)+", '',
+                                 fingerprint)
             # adding the return code if it exists
             for line in message.splitlines():
                 if line.startswith("Return code"):
@@ -167,8 +167,10 @@ def before_send(event, hints):
             return None
 
     if 'breadcrumbs' in event and isinstance(event['breadcrumbs'], list):
-        fingerprints_to_propagate = ['no-disk-space', 'memory-error', 'permission-denied',
-                                     'keyboard-interrupt']
+        fingerprints_to_propagate = [
+            'no-disk-space', 'memory-error', 'permission-denied',
+            'keyboard-interrupt'
+        ]
         for bc in event['breadcrumbs']:
             msg = bc.get('message', 'empty-msg')
             if msg in fingerprints_to_propagate:
@@ -186,5 +188,4 @@ def _chunks(string, length=CHUNK_SIZE):
     ['som', 'e l', 'ong', 'er ', 'str', 'ing', '.']
 
     """
-    return (string[i:i + length]
-            for i in range(0, len(string), length))
+    return (string[i:i + length] for i in range(0, len(string), length))

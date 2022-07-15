@@ -1,6 +1,8 @@
 {
     "restructuredtext.confPath": "",
     "restructuredtext.preview.name": "sphinx",
-    "restructuredtext.preview.docutil.disabled": true
+    "restructuredtext.preview.docutil.disabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true
     
 }

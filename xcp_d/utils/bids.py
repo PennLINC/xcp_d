@@ -4,7 +4,7 @@
 
 from pathlib import Path
 from collections import defaultdict
-import fnmatch,os
+import fnmatch, os
 import re
 import warnings
 from bids import BIDSLayout
@@ -48,6 +48,7 @@ LOGGER = logging.getLogger("nipype.interface")
 def _none():
     return None
 
+
 # Automatically coerce certain suffixes (DerivativesDataSink)
 DEFAULT_DTYPES = defaultdict(
     _none,
@@ -74,9 +75,11 @@ class BIDSError(ValueError):
         )
         super(BIDSError, self).__init__(self.msg)
         self.bids_root = bids_root
-        
+
+
 class BIDSWarning(RuntimeWarning):
-    pass 
+    pass
+
 
 def collect_participants(
     bids_dir, participant_label=None, strict=False, bids_validate=False
@@ -146,8 +149,6 @@ def collect_participants(
     return found_label
 
 
-
-
 def collect_data(
     bids_dir,
     participant_label,
@@ -155,18 +156,18 @@ def collect_data(
     bids_validate=False,
     bids_filters=None,
 ):
-   
+
     layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
 
     queries = {
-        'regfile': {'datatype': 'anat','suffix':'xfm'},
-        'boldfile': {'datatype':'func','suffix': 'bold'},
-        't1w': {'datatype':'anat','suffix':'T1w'},
-        'seg': {'datatype':'anat','suffix':'dseg'},
-        'pial': { 'datatype': 'anat','suffix':'pial'},
-        'wm': {'datatype': 'anat','suffix':'smoothwm'},
-        'midthickness':{'datatype': 'anat','suffix':'midthickness'},
-        'inflated':{'datatype': 'anat','suffix':'inflated'}
+        "regfile": {"datatype": "anat", "suffix": "xfm"},
+        "boldfile": {"datatype": "func", "suffix": "bold"},
+        "t1w": {"datatype": "anat", "suffix": "T1w"},
+        "seg": {"datatype": "anat", "suffix": "dseg"},
+        "pial": {"datatype": "anat", "suffix": "pial"},
+        "wm": {"datatype": "anat", "suffix": "smoothwm"},
+        "midthickness": {"datatype": "anat", "suffix": "midthickness"},
+        "inflated": {"datatype": "anat", "suffix": "inflated"},
     }
 
     bids_filters = bids_filters or {}
@@ -174,78 +175,88 @@ def collect_data(
         queries[acq].update(entities)
 
     if task:
-        #queries["preproc_bold"]["task"] = task
-        queries['boldfile']["task"] = task
+        # queries["preproc_bold"]["task"] = task
+        queries["boldfile"]["task"] = task
 
     subj_data = {
         dtype: sorted(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz","dtseries.nii","h5",'gii'],
+                extension=["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
                 **query,
             )
         )
         for dtype, query in queries.items()
     }
-    
-    #reg_file = select_registrationfile(subj_data,template=template)
-    
-    #bold_file= select_cifti_bold(subj_data)
+
+    # reg_file = select_registrationfile(subj_data,template=template)
+
+    # bold_file= select_cifti_bold(subj_data)
 
     return layout, subj_data
 
 
 def select_registrationfile(subj_data):
-    
-    regfile = subj_data['regfile']
+
+    regfile = subj_data["regfile"]
 
     # get the file with the template name
-    template1 = 'MNI152NLin2009cAsym'  # default template for fmriprep,dcan and hcp
-    template2 = 'MNIInfant' # nibabies
+    template1 = "MNI152NLin6Asym"  # default for fmriprep / nibabies with cifti output
+    template2 = "MNI152NLin2009cAsym"  # default template for fmriprep,dcan and hcp
+    template3 = "MNIInfant"  # nibabies
 
-    for j in regfile: 
-        if 'from-' + template1  in j or 'from-' + template2 in j: 
+    mni_to_t1w = None
+    t1w_to_mni = None
+
+    for j in regfile:
+        if (
+            "from-" + template1 in j
+            or ("from-" + template2 in j and mni_to_t1w is None)
+            or ("from-" + template3 in j and mni_to_t1w is None)
+        ):
             mni_to_t1w = j
-        elif 'to-' + template1 in j or 'to-' + template2 in j:
+        elif (
+            "to-" + template1 in j
+            or ("to-" + template2 in j and t1w_to_mni is None)
+            or ("to-" + template3 in j and t1w_to_mni is None)
+        ):
             t1w_to_mni = j
-    ## for validation, we need to check presence of MNI152NLin2009cAsym 
-    ## if not we use MNI152NLin2006cAsym for nibabies 
-    #print(mni_to_t1w)
-    
+    # for validation, we need to check presence of MNI152NLin2009cAsym
+    # if not we use MNI152NLin2006cAsym for nibabies
+    # print(mni_to_t1w)
+
     return mni_to_t1w, t1w_to_mni
 
 
 def select_cifti_bold(subj_data):
-    
-    boldfile = subj_data['boldfile']
+
+    boldfile = subj_data["boldfile"]
     bold_file = []
-    cifti_file = [] 
-    
-    
+    cifti_file = []
+
     for j in boldfile:
-        if 'preproc_bold' in  j:
+        if "preproc_bold" in j:
             bold_file.append(j)
-        if 'bold.dtseries.nii' in  j:
+        if "bold.dtseries.nii" in j:
             cifti_file.append(j)
     return bold_file, cifti_file
 
+
 def extract_t1w_seg(subj_data):
-    all_t1w = subj_data['t1w'] 
+    all_t1w = subj_data["t1w"]
     for i in all_t1w:
         ii = os.path.basename(i)
-        if  not fnmatch.fnmatch(ii,'*_space-*'):
+        if not fnmatch.fnmatch(ii, "*_space-*"):
             t1w = i
-     
-     
-    all_seg = subj_data['seg']
+
+    all_seg = subj_data["seg"]
     for j in all_seg:
-        ii=os.path.basename(j)
-        if  not (fnmatch.fnmatch(ii,'*_space-*') or fnmatch.fnmatch(ii,'*aseg*')):
-            t1seg  = j
-               
-    return t1w,t1seg
-     
+        ii = os.path.basename(j)
+        if not (fnmatch.fnmatch(ii, "*_space-*") or fnmatch.fnmatch(ii, "*aseg*")):
+            t1seg = j
+
+    return t1w, t1seg
 
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
@@ -273,7 +284,10 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     )
     meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
     source_file = InputMultiObject(
-        File(exists=False), mandatory=True, desc="the source file(s) to extract entities from")
+        File(exists=False),
+        mandatory=True,
+        desc="the source file(s) to extract entities from",
+    )
 
 
 class _DerivativesDataSinkOutputSpec(TraitedSpec):
@@ -294,7 +308,7 @@ class DerivativesDataSink(SimpleInterface):
     Saves the ``in_file`` into a BIDS-Derivatives folder provided
     by ``base_directory``, given the input reference ``source_file``.
 
-    
+
 
     """
 
@@ -350,8 +364,11 @@ class DerivativesDataSink(SimpleInterface):
             parse_file_entities(str(relative_to_root(source_file)))
             for source_file in self.inputs.source_file
         ]
-        out_entities = {k: v for k, v in in_entities[0].items()
-                        if all(ent.get(k) == v for ent in in_entities[1:])}
+        out_entities = {
+            k: v
+            for k, v in in_entities[0].items()
+            if all(ent.get(k) == v for ent in in_entities[1:])
+        }
         for drop_entity in listify(self.inputs.dismiss_entities or []):
             out_entities.pop(drop_entity, None)
 
@@ -455,7 +472,9 @@ class DerivativesDataSink(SimpleInterface):
 
                 if data_dtype == "source":  # match source dtype
                     try:
-                        data_dtype = nb.load(self.inputs.source_file[0]).get_data_dtype()
+                        data_dtype = nb.load(
+                            self.inputs.source_file[0]
+                        ).get_data_dtype()
                     except Exception:
                         LOGGER.warning(
                             f"Could not get data type of file {self.inputs.source_file[0]}"
@@ -499,12 +518,22 @@ class DerivativesDataSink(SimpleInterface):
                 # only the existing keys should keep going into them.
                 if out_file.name.endswith(".dtseries.nii"):
                     legacy_metadata = {}
-                    for key in ("grayordinates", "space", "surface", "surface_density", "volume"):
+                    for key in (
+                        "grayordinates",
+                        "space",
+                        "surface",
+                        "surface_density",
+                        "volume",
+                    ):
                         if key in self._metadata:
                             legacy_metadata[key] = self._metadata.pop(key)
                     if legacy_metadata:
-                        sidecar = out_file.parent / f"{_splitext(str(out_file))[0]}.json"
-                        sidecar.write_text(dumps(legacy_metadata, sort_keys=True, indent=2))
+                        sidecar = (
+                            out_file.parent / f"{_splitext(str(out_file))[0]}.json"
+                        )
+                        sidecar.write_text(
+                            dumps(legacy_metadata, sort_keys=True, indent=2)
+                        )
                 # The future: the extension is the first . and everything after
                 sidecar = out_file.parent / f"{out_file.name.split('.', 1)[0]}.json"
                 sidecar.write_text(dumps(self._metadata, sort_keys=True, indent=2))
