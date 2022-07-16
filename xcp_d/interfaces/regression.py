@@ -4,7 +4,7 @@
 import numpy as np
 from nipype import logging
 from sklearn.linear_model import LinearRegression
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)

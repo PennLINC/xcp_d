@@ -8,7 +8,7 @@ Handling filtering.
 import numpy as np
 from scipy.signal import butter, filtfilt
 from nipype import logging
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)

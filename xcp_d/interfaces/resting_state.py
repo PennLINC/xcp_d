@@ -16,7 +16,7 @@ from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
 from nipype import logging
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
 

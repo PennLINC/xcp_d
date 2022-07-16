@@ -10,7 +10,7 @@ import os
 import numpy as np
 from ..utils.confounds import load_confound, load_motion
 from nipype import logging
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
