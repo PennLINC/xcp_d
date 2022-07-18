@@ -7,7 +7,7 @@ from ..utils import (read_ndata, write_ndata, compute_FD,
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):

@@ -11,7 +11,7 @@ from nipype.interfaces.base import (
     SimpleInterface,
 )
 from nipype import logging
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 from sqlalchemy import false
 
 iflogger = logging.getLogger("nipype.interface")

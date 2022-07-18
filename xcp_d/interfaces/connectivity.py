@@ -6,7 +6,7 @@ Handling functional connectvity.
     # will comeback
 """
 from nipype import logging
-from nipype.utils.filemanip import fname_presuffix
+from ..utils.filemanip import fname_presuffix
 from pkg_resources import resource_filename as pkgrf
 from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
 from nipype.interfaces.base import (traits, TraitedSpec,
