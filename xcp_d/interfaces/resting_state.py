@@ -66,7 +66,7 @@ class surfaceReho(SimpleInterface):
 
         # write the output out
         self._results['surf_gii'] = fname_presuffix(self.inputs.surf_bold,
-                                                    suffix='.gii',
+                                                    suffix='shape.gii',
                                                     newpath=runtime.cwd,
                                                     use_ext=False)
         write_gii(datat=reho_surf,
