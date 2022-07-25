@@ -130,7 +130,7 @@ def get_parser():
         required=False,
         default='fmriprep',
         type=str,
-        choices=['fmirprep', 'dcan', 'hpc'],
+        choices=['fmriprep', 'dcan', 'hpc'],
         help='fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
 
     g_param = parser.add_argument_group('Parameters for postprocessing')

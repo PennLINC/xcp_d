@@ -107,7 +107,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
 
     inputnode.inputs.bold_file = bold_file
 
-    # get atlases # ietration will be used later # RF: Why?
+    # get atlases # ietration will be used later # RF: Why? this is actually a problem. See issue #379
     sc117atlas = get_atlas_nifti(atlasname='schaefer100x17')
     sc217atlas = get_atlas_nifti(atlasname='schaefer200x17')
     sc317atlas = get_atlas_nifti(atlasname='schaefer300x17')
@@ -127,15 +127,91 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                       mni_to_t1w=mni_to_t1w,
                                       t1w_to_native=t1w_to_native)
 
-    schaefer_transform = pe.Node(ApplyTransformsx(input_image=sc117atlas,
-                                                  transforms=transformfile,
-                                                  interpolation="MultiLabel",
-                                                  input_image_type=3,
-                                                  dimension=3),
-                                 name="apply_transform_schaefer",
-                                 mem_gb=mem_gb,
-                                 n_procs=omp_nthreads)
+    schaefer_117_transform = pe.Node(ApplyTransformsx(input_image=sc117atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_117",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
 
+    schaefer_217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_217",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+    schaefer_317_transform = pe.Node(ApplyTransformsx(input_image=sc317atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_317",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+
+    schaefer_417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_417",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+    schaefer_517_transform = pe.Node(ApplyTransformsx(input_image=sc517atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_517",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+
+    schaefer_617_transform = pe.Node(ApplyTransformsx(input_image=sc617atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_617",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+    schaefer_717_transform = pe.Node(ApplyTransformsx(input_image=sc717atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_717",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+
+    schaefer_817_transform = pe.Node(ApplyTransformsx(input_image=sc817atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_817",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+    schaefer_917_transform = pe.Node(ApplyTransformsx(input_image=sc917atlas,
+                                                      transforms=transformfile,
+                                                      interpolation="MultiLabel",
+                                                      input_image_type=3,
+                                                      dimension=3),
+                                     name="apply_transform_schaefer_917",
+                                     mem_gb=mem_gb,
+                                     n_procs=omp_nthreads)
+
+    schaefer_1017_transform = pe.Node(ApplyTransformsx(input_image=sc1017atlas,
+                                                       transforms=transformfile,
+                                                       interpolation="MultiLabel",
+                                                       input_image_type=3,
+                                                       dimension=3),
+                                      name="apply_transform_schaefe_1017",
+                                      mem_gb=mem_gb,
+                                      n_procs=omp_nthreads)
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
                                                transforms=transformfile,
                                                interpolation="MultiLabel",
@@ -208,7 +284,16 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
 
     workflow.connect([
         # tansform atlas to bold space
-        (inputnode, schaefer_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_117_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_217_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_317_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_417_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_517_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_617_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_717_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_817_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_917_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_1017_transform, [('ref_file', 'reference_image')]),
         (inputnode, gs360_transform, [('ref_file', 'reference_image')]),
         (inputnode, gd333_transform, [('ref_file', 'reference_image')]),
         (inputnode, ts50_transform, [('ref_file', 'reference_image')]),
@@ -229,16 +314,16 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         (inputnode, nifticonnect_ts50, [('clean_bold', 'regressed_file')]),
 
         # linked atlas
-        (schaefer_transform, nifticonnect_sc17, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc27, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc37, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc47, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc57, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc67, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc77, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc87, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc97, [('output_image', 'atlas')]),
-        (schaefer_transform, nifticonnect_sc107, [('output_image', 'atlas')]),
+        (schaefer_117_transform, nifticonnect_sc17, [('output_image', 'atlas')]),
+        (schaefer_217_transform, nifticonnect_sc27, [('output_image', 'atlas')]),
+        (schaefer_317_transform, nifticonnect_sc37, [('output_image', 'atlas')]),
+        (schaefer_417_transform, nifticonnect_sc47, [('output_image', 'atlas')]),
+        (schaefer_517_transform, nifticonnect_sc57, [('output_image', 'atlas')]),
+        (schaefer_617_transform, nifticonnect_sc67, [('output_image', 'atlas')]),
+        (schaefer_717_transform, nifticonnect_sc77, [('output_image', 'atlas')]),
+        (schaefer_817_transform, nifticonnect_sc87, [('output_image', 'atlas')]),
+        (schaefer_917_transform, nifticonnect_sc97, [('output_image', 'atlas')]),
+        (schaefer_1017_transform, nifticonnect_sc107, [('output_image', 'atlas')]),
         (gd333_transform, nifticonnect_gd33, [('output_image', 'atlas')]),
         (gs360_transform, nifticonnect_gs36, [('output_image', 'atlas')]),
         (ts50_transform, nifticonnect_ts50, [('output_image', 'atlas')]),

@@ -25,7 +25,7 @@ LOGGER = logging.getLogger('nipype.interface')
 class _qcInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
-                     desc=" raw  bold or cifit file from fmirprep")
+                     desc=" raw  bold or cifti file from fmriprep")
     mask_file = File(exists=False, mandatory=False, desc=" mask file")
     seg_file = File(exists=False, mandatory=False, desc=" seg file for nifti")
     cleaned_file = File(exists=True,
