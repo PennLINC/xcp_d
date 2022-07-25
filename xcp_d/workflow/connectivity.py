@@ -285,15 +285,15 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
     workflow.connect([
         # tansform atlas to bold space
         (inputnode, schaefer_117_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_217_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_317_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_417_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_517_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_617_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_717_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_817_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_917_transform, [('ref_file', 'reference_image')])
-        (inputnode, schaefer_1017_transform, [('ref_file', 'reference_image')])
+        (inputnode, schaefer_217_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_317_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_417_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_517_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_617_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_717_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_817_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_917_transform, [('ref_file', 'reference_image')]),
+        (inputnode, schaefer_1017_transform, [('ref_file', 'reference_image')]),
         (inputnode, gs360_transform, [('ref_file', 'reference_image')]),
         (inputnode, gd333_transform, [('ref_file', 'reference_image')]),
         (inputnode, ts50_transform, [('ref_file', 'reference_image')]),
