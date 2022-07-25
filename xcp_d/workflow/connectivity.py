@@ -132,7 +132,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_117",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
 
@@ -141,7 +141,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_217",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
     schaefer_317_transform = pe.Node(ApplyTransformsx(input_image=sc317atlas,
@@ -149,7 +149,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_317",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
 
@@ -158,7 +158,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_417",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
     schaefer_517_transform = pe.Node(ApplyTransformsx(input_image=sc517atlas,
@@ -166,7 +166,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_517",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
 
@@ -175,7 +175,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_617",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
     schaefer_717_transform = pe.Node(ApplyTransformsx(input_image=sc717atlas,
@@ -183,7 +183,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_717",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
 
@@ -192,7 +192,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_817",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
     schaefer_917_transform = pe.Node(ApplyTransformsx(input_image=sc917atlas,
@@ -200,7 +200,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                       interpolation="MultiLabel",
                                                       input_image_type=3,
                                                       dimension=3),
-                                     name="apply_transform_schaefer",
+                                     name="apply_transform_schaefer_917",
                                      mem_gb=mem_gb,
                                      n_procs=omp_nthreads)
 
@@ -209,7 +209,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                        interpolation="MultiLabel",
                                                        input_image_type=3,
                                                        dimension=3),
-                                      name="apply_transform_schaefer",
+                                      name="apply_transform_schaefe_1017",
                                       mem_gb=mem_gb,
                                       n_procs=omp_nthreads)
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
