@@ -335,23 +335,11 @@ class _interpolateOutputSpec(TraitedSpec):
 
 
 class interpolate(SimpleInterface):
-    r"""
-    interpolate data over the clean bold
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    >>> interpolatewf = interpolate()
-    >>> interpolatewf.inputs.in_file = datafile
-    >>> interpolatewf.inputs.bold_file = rawbold
-    >>> interpolatewf.inputs.TR = TR
-    >>> interpolatewf.inputs.tmask = temporalmask
-    >>> interpolatewf.inputs.mask_file = mask
-    >>> interpolatewf.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-
+    """
+    Interpolation takes in the scrubbed bold file and temporal mask, 
+    subs in the scrubbed values with 0, and then uses scipy's
+    interpolate functionality to interpolate values into these 0s. 
+    It outputs the interpolated file. 
     """
     input_spec = _interpolateInputSpec
     output_spec = _interpolateOutputSpec
