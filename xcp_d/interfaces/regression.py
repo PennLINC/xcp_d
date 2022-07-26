@@ -92,6 +92,10 @@ class regress(SimpleInterface):
         demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
 
         # Regress out the confounds via linear regression from sklearn
+        if demeaned_detrended_data.shape[1] < confound.shape[0]:
+            print("Warning: Regression might not be effective due to rank deficiency, i.e:"
+                  "the number of volumes in the bold file is much smaller than the number of"
+                  " egressors.")
         residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
 
         # Write out the data
