@@ -143,7 +143,3 @@ def test_interpolate_nifti(data_dir):  # Checking results - first must censor fi
     assert interpolated_file.shape == original_file.shape
     # assert RMSD is less for signals after interpolation
     assert sum(abs(freq_censored-freq_original)) > sum(abs(freq_interpolated-freq_original))
-
-
-data_dir = '/Users/kahinim/Desktop/xcp_test/data'
-test_interpolate_cifti(data_dir)
