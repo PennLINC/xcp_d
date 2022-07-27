@@ -32,11 +32,11 @@ def test_interpolate_cifti(data_dir):
     original_file = nb.load(boldfile).get_fdata()
     file_data = read_ndata(boldfile, mask)
     voxel_data = file_data[2, :]  # a volume that will be scrubbed
-    freq_original = fft(voxel_data)
+    fft_original = fft(voxel_data)
     # FFT for fake data that might have been censored in the bold_file
     stdev = np.std(file_data)  # Standard deviation of voxels in image
-    voxel_data = np.linspace(2*stdev, 3*stdev, num=len(freq_original))
-    freq_censored = fft(voxel_data)
+    voxel_data = np.linspace(2*stdev, 3*stdev, num=len(fft_original))
+    fft_censored = fft(voxel_data)
 
     # Run censorscrub workflow
     cscrub = CensorScrub()
@@ -69,13 +69,13 @@ def test_interpolate_cifti(data_dir):
     # FFT for interpolated bold_file
     file_data = read_ndata(results.outputs.bold_interpolated, mask)
     voxel_data = file_data[2, :]
-    freq_interpolated = fft(voxel_data)
+    fft_interpolated = fft(voxel_data)
 
     # assert all values were interpolated in, and censoring took place
     assert censored_file.shape != original_file.shape
     assert interpolated_file.shape == original_file.shape
     # assert RMSD is less for signals after interpolation
-    assert sum(abs(freq_censored-freq_original)) > sum(abs(freq_interpolated-freq_original))
+    assert sum(abs(fft_censored-fft_original)) > sum(abs(fft_interpolated-fft_original))
 
 
 def test_interpolate_nifti(data_dir):  # Checking results - first must censor file
@@ -99,11 +99,11 @@ def test_interpolate_nifti(data_dir):  # Checking results - first must censor fi
     original_file = nb.load(boldfile).get_fdata()
     file_data = read_ndata(boldfile, mask)
     voxel_data = file_data[2, :]  # a volume that will be scrubbed
-    freq_original = fft(voxel_data)
+    fft_original = fft(voxel_data)
     # FFT for fake data that might have been censored in the bold_file
     stdev = np.std(file_data)  # Standard deviation of voxels in image
-    voxel_data = np.linspace(2*stdev, 3*stdev, num=len(freq_original))
-    freq_censored = fft(voxel_data)
+    voxel_data = np.linspace(2*stdev, 3*stdev, num=len(fft_original))
+    fft_censored = fft(voxel_data)
 
     # Run censorscrub workflow
     cscrub = CensorScrub()
@@ -136,10 +136,10 @@ def test_interpolate_nifti(data_dir):  # Checking results - first must censor fi
     # FFT for interpolated bold_file
     file_data = read_ndata(results.outputs.bold_interpolated, mask)
     voxel_data = file_data[2, :]
-    freq_interpolated = fft(voxel_data)
+    fft_interpolated = fft(voxel_data)
 
     # assert all values were interpolated in, and censoring took place
     assert censored_file.shape != original_file.shape
     assert interpolated_file.shape == original_file.shape
     # assert RMSD is less for signals after interpolation
-    assert sum(abs(freq_censored-freq_original)) > sum(abs(freq_interpolated-freq_original))
+    assert sum(abs(fft_censored-fft_original)) > sum(abs(fft_interpolated-fft_original))
