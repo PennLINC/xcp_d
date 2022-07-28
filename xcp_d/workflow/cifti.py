@@ -290,7 +290,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     filtering_wf = pe.Node(
         FilteringData(
-            tr=TR,
+            TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             filter_order=bpf_order,
@@ -393,27 +393,27 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     # residual smoothing
     workflow.connect([(filtering_wf, resdsmoothing_wf,
-                       [('filt_file', 'inputnode.bold_file')])])
+                       [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
     workflow.connect([(filtering_wf, cifti_conts_wf,
-                       [('filt_file', 'inputnode.clean_cifti')])])
+                       [('filtered_file', 'inputnode.clean_cifti')])])
 
     # reho and alff
     workflow.connect([(filtering_wf, alff_compute_wf,
-                       [('filt_file', 'inputnode.clean_bold')]),
+                       [('filtered_file', 'inputnode.clean_bold')]),
                       (filtering_wf, reho_compute_wf,
-                       [('filt_file', 'inputnode.clean_bold')])])
+                       [('filtered_file', 'inputnode.clean_bold')])])
 
     # qc report
     workflow.connect([
-        (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
+        (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (qcreport, outputnode, [('qc_file', 'qc_file')])
     ])
 
     workflow.connect([
-        (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
+        (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
@@ -450,7 +450,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     # write derivatives
     workflow.connect([
-        (filtering_wf, write_derivative_wf, [('filt_file',
+        (filtering_wf, write_derivative_wf, [('filtered_file',
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
@@ -545,7 +545,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                                           ]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')
                                               ]),
-        (filtering_wf, executivesummary_wf, [('filt_file',
+        (filtering_wf, executivesummary_wf, [('filtered_file',
                                               'inputnode.resddata')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
                                               'inputnode.fd')]),

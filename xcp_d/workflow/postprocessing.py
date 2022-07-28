@@ -213,7 +213,7 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
                 name="cifti_smoothing",
                 mem_gb=mem_gb)
             workflow.connect([
-                (filterdx, smooth_data, [('filt_file', 'in_file')]),
+                (filterdx, smooth_data, [('filtered_file', 'in_file')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_bold')])
             ])
 
@@ -227,7 +227,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
                                   mem_gb=mem_gb)
 
             workflow.connect([
-                (filterdx, smooth_data, [('filt_file', 'in_file')]),
+                (filterdx, smooth_data, [('filtered_file', 'in_file')]),
                 (smooth_data, outputnode, [('smoothed_file', 'smoothed_bold')])
             ])
 

@@ -302,7 +302,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     filtering_wf = pe.Node(
         FilteringData(
-            tr=TR,
+            TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             filter_order=bpf_order,
@@ -475,28 +475,28 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # residual smoothing
     workflow.connect([(filtering_wf, resdsmoothing_wf,
-                       [('filt_file', 'inputnode.bold_file')])])
+                       [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
     workflow.connect([
         (inputnode, fcon_ts_wf, [('ref_file', 'inputnode.ref_file')]),
-        (filtering_wf, fcon_ts_wf, [('filt_file', 'inputnode.clean_bold')])
+        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
     workflow.connect([
         (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
         (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (filtering_wf, alff_compute_wf, [('filt_file', 'inputnode.clean_bold')
+        (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')
                                          ]),
-        (filtering_wf, reho_compute_wf, [('filt_file', 'inputnode.clean_bold')
+        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')
                                          ]),
     ])
 
     # qc report
     workflow.connect([
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
-        (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
+        (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
@@ -507,7 +507,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # write  to the outputnode, may be use in future
     workflow.connect([
-        (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
+        (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
@@ -545,7 +545,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # write derivatives
     workflow.connect([
-        (filtering_wf, write_derivative_wf, [('filt_file',
+        (filtering_wf, write_derivative_wf, [('filtered_file',
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
@@ -658,7 +658,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                           ('bold_mask', 'inputnode.mask')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')
                                               ]),
-        (filtering_wf, executivesummary_wf, [('filt_file',
+        (filtering_wf, executivesummary_wf, [('filtered_file',
                                               'inputnode.resddata')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
