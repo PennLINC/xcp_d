@@ -1,145 +1,204 @@
 # source: https://pythonnumericalmethods.berkeley.edu/notebooks/chapter24.04-FFT-in-Python.html
-from xcp_d.interfaces.prepostcleaning import CensorScrub, interpolate
+from xcp_d.interfaces.prepostcleaning import interpolate
 import os
-import pandas as pd
 import tempfile
-import nibabel as nb
 from scipy.fftpack import fft
 import numpy as np
-from xcp_d.utils import read_ndata
+from xcp_d.utils import read_ndata, write_ndata
 
 
 def test_interpolate_cifti(data_dir):
-    # Checking results - first must censor file
+    # CIFTI - ORIGINAL SIGNAL
     # Feed in inputs
     boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
-    confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv"
     mask = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+    TR = 2.5
 
-    df = pd.read_table(confounds_file)
-    # Replace confounds tsv values with values that should be omitted
-    df.loc[1:3, "trans_x"] = [6, 8, 9]  # Let's make sure first few values are censored
-    tmpdir = tempfile.mkdtemp()
-    os.chdir(tmpdir)
-    # Rename with same convention as initial confounds tsv
-    confounds_tsv = "edited_" + confounds_file.split('/func/')[1]
-    df.to_csv(confounds_tsv, sep='\t', index=False, header=True)
-
-    # FFT for original bold_file
-    original_file = nb.load(boldfile).get_fdata()
+    # Let's replace some voxels in the original bold_file
     file_data = read_ndata(boldfile, mask)
-    voxel_data = file_data[2, :]  # a volume that will be scrubbed
-    fft_original = fft(voxel_data)
-    # FFT for fake data that might have been censored in the bold_file
-    stdev = np.std(file_data)  # Standard deviation of voxels in image
-    voxel_data = np.linspace(2*stdev, 3*stdev, num=len(fft_original))
-    fft_censored = fft(voxel_data)
 
-    # Run censorscrub workflow
-    cscrub = CensorScrub()
-    cscrub.inputs.in_file = boldfile
-    cscrub.inputs.TR = 0.8
-    cscrub.inputs.fd_thresh = 0.2
-    cscrub.inputs.motion_filter_type = 'None'
-    cscrub.inputs.motion_filter_order = 4
-    cscrub.inputs.low_freq = 0
-    cscrub.inputs.high_freq = 0
-    cscrub.inputs.fmriprep_confounds_file = confounds_tsv
-    cscrub.inputs.head_radius = 50
-    results = cscrub.run()
+    # Let's make a basic signal to replace the data
+    ts = file_data.shape[1]
+    t = np.linspace(0, 1, ts)
+    freq = 1.
+    x = 3*np.sin(2*np.pi*freq*t)
+    freq = 4
+    x += np.sin(2*np.pi*freq*t)
+    freq = 7
+    x += 0.5 * np.sin(2*np.pi*freq*t)
 
-    # Write out censored file
-    censored_file = nb.load(results.outputs.bold_censored)
+    # Let's get the fft of x and plot it
+    X = fft(x)
+    fft_original = X
+
+    # Create some spikes we can add later
+    stdev = np.std(x)
+    spike = 2*stdev + np.mean(x)
+
+    # Let's replace voxel 3
+    file_data[3, :] = x
+
+    # Let's replace some timepoints with a spike
+    # in each of these columns
+    file_data[3, 3] = spike
+    file_data[3, 88] = spike
+    file_data[3, 48] = spike
+    file_data[3, 20] = spike
+    file_data[3, 100] = spike
+
+    # Let's get the fft of a noisy timepoint and plot it:
+    X = fft(file_data[3, :])
+    fft_spike = X
+    # sourced from python notebook - FFT
+    N = len(X)
+    n = np.arange(N)
+    freq = n/(N*TR)
+
+    # let's save out this noisy file
+    tmpdir = tempfile.mkdtemp()  # edit this if you want to see the edited confounds
+    # on your Desktop, etc.
+    os.chdir(tmpdir)
+    write_ndata(data_matrix=file_data,
+                template=boldfile,
+                mask=mask,
+                TR=TR,
+                filename='noisy_file.dtseries.nii')
 
     # Start testing interpolation - feed in input
+    # Let's create a fake tmask...
+    tmask = np.zeros(N)
+    tmask[3] = 1
+    tmask[88] = 1
+    tmask[48] = 1
+    tmask[20] = 1
+    tmask[100] = 1
+    np.savetxt('tmask.tsv', tmask)
+
     interpolation = interpolate()
-    interpolation.inputs.tmask = results.outputs.tmask
-    interpolation.inputs.in_file = results.outputs.bold_censored
+    interpolation.inputs.tmask = 'tmask.tsv'
+    interpolation.inputs.in_file = 'noisy_file.dtseries.nii'
     interpolation.inputs.bold_file = boldfile
-    interpolation.inputs.TR = 1
+    interpolation.inputs.TR = TR
     interpolation.inputs.mask_file = mask
     results = interpolation.run()
 
-    # Write out interpolated file
-    interpolated_file = nb.load(results.outputs.bold_interpolated).get_fdata()
-
     # FFT for interpolated bold_file
+    # Read in file
     file_data = read_ndata(results.outputs.bold_interpolated, mask)
-    voxel_data = file_data[2, :]
-    fft_interpolated = fft(voxel_data)
+    voxel_data = file_data[3, :]  # the previously noisy voxel
 
-    # assert all values were interpolated in, and censoring took place
-    assert censored_file.shape != original_file.shape
-    assert interpolated_file.shape == original_file.shape
-    # assert RMSD is less for signals after interpolation
-    assert sum(abs(fft_censored-fft_original)) > sum(abs(fft_interpolated-fft_original))
+    # Let's get the FFT of this voxel and plot it
+    # from python notebook
+    X = fft(voxel_data)  # i.e: fft_interpolated
+    fft_interpolated = X
+    N = len(X)
+    n = np.arange(N)
+    freq = n/(N*TR)
+
+    # Are the differences between the interpolated and original signal less
+    # than the differences between the interpolated and spiky signal?
+    diff1 = (sum(abs(fft_interpolated-fft_original)))
+    diff2 = (sum(abs(fft_interpolated-fft_spike)))
+
+    assert diff1 < diff2
 
 
 def test_interpolate_nifti(data_dir):  # Checking results - first must censor file
-    boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
-    mask = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-
-    df = pd.read_table(confounds_file)
-    # Replace confounds tsv values with values that should be omitted
-    df.loc[1:3, "trans_x"] = [6, 8, 9]  # Let's make sure first few values are censored
-    tmpdir = tempfile.mkdtemp()
-    os.chdir(tmpdir)
-    # Rename with same convention as initial confounds tsv
-    confounds_tsv = "edited_" + confounds_file.split('/func/')[1]
-    df.to_csv(confounds_tsv, sep='\t', index=False, header=True)
-
-    # FFT for original bold_file
-    original_file = nb.load(boldfile).get_fdata()
+    boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
+        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+    TR = 0.5
+    mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
+        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+    # Let's replace some voxels in the original bold_file
     file_data = read_ndata(boldfile, mask)
-    voxel_data = file_data[2, :]  # a volume that will be scrubbed
-    fft_original = fft(voxel_data)
-    # FFT for fake data that might have been censored in the bold_file
-    stdev = np.std(file_data)  # Standard deviation of voxels in image
-    voxel_data = np.linspace(2*stdev, 3*stdev, num=len(fft_original))
-    fft_censored = fft(voxel_data)
 
-    # Run censorscrub workflow
-    cscrub = CensorScrub()
-    cscrub.inputs.in_file = boldfile
-    cscrub.inputs.TR = 0.8
-    cscrub.inputs.fd_thresh = 0.2
-    cscrub.inputs.motion_filter_type = 'None'
-    cscrub.inputs.motion_filter_order = 4
-    cscrub.inputs.low_freq = 0
-    cscrub.inputs.high_freq = 0
-    cscrub.inputs.fmriprep_confounds_file = confounds_tsv
-    cscrub.inputs.head_radius = 50
-    results = cscrub.run()
+    # Let's make a basic signal to replace the data
 
-    # Write out censored file
-    censored_file = nb.load(results.outputs.bold_censored)
+    ts = file_data.shape[1]
+    t = np.linspace(0, 1, ts)
+    freq = 1.
+    x = 3*np.sin(2*np.pi*freq*t)
+    freq = 4
+    x += np.sin(2*np.pi*freq*t)
+    freq = 7
+    x += 0.5 * np.sin(2*np.pi*freq*t)
+
+    # Let's get the fft of x and plot it
+    X = fft(x)
+    fft_original = X
+    # sourced from python notebook - FFT
+    N = len(X)
+    n = np.arange(N)
+    freq = n/(N*TR)
+
+    # Create some spikes we can add later
+    stdev = np.std(x)
+    spike = 2*stdev + np.mean(x)
+
+    # Let's replace voxel 3
+    file_data[3, :] = x
+
+    # Let's replace some timepoints with a spike
+    # in each of these columns
+    file_data[3, 3] = spike
+    file_data[3, 12] = spike
+    file_data[3, 10] = spike
+    file_data[3, 6] = spike
+    file_data[3, 8] = spike
+
+    # Let's get the fft of a noisy timepoint and plot it:
+    X = fft(file_data[3, :])
+    fft_spike = X
+    # sourced from python notebook - FFT
+    N = len(X)
+    n = np.arange(N)
+    freq = n/(N*TR)
+
+    # Since this looks good, let's save out this noisy file
+    tmpdir = tempfile.mkdtemp()  # edit this if you want to see the edited confounds
+    # on your Desktop, etc.
+    os.chdir(tmpdir)
+    write_ndata(data_matrix=file_data,
+                template=boldfile,
+                mask=mask,
+                TR=TR,
+                filename='noisy_file.nii.gz')
 
     # Start testing interpolation - feed in input
+    # Let's create a fake tmask...
+    tmask = np.zeros(N)
+    tmask[3] = 1
+    tmask[12] = 1
+    tmask[10] = 1
+    tmask[6] = 1
+    tmask[8] = 1
+    np.savetxt('tmask.tsv', tmask)
+
     interpolation = interpolate()
-    interpolation.inputs.tmask = results.outputs.tmask
-    interpolation.inputs.in_file = results.outputs.bold_censored
+    interpolation.inputs.tmask = 'tmask.tsv'
+    interpolation.inputs.in_file = 'noisy_file.nii.gz'
     interpolation.inputs.bold_file = boldfile
-    interpolation.inputs.TR = 1
+    interpolation.inputs.TR = TR
     interpolation.inputs.mask_file = mask
     results = interpolation.run()
 
-    # Write out interpolated file
-    interpolated_file = nb.load(results.outputs.bold_interpolated).get_fdata()
-
     # FFT for interpolated bold_file
+    # Read in file
     file_data = read_ndata(results.outputs.bold_interpolated, mask)
-    voxel_data = file_data[2, :]
-    fft_interpolated = fft(voxel_data)
+    voxel_data = file_data[3, :]  # the previously noisy voxel
 
-    # assert all values were interpolated in, and censoring took place
-    assert censored_file.shape != original_file.shape
-    assert interpolated_file.shape == original_file.shape
-    # assert RMSD is less for signals after interpolation
-    assert sum(abs(fft_censored-fft_original)) > sum(abs(fft_interpolated-fft_original))
+    # Let's get the FFT of this voxel and plot it
+    # from python notebook
+    X = fft(voxel_data)  # i.e: fft_interpolated
+    fft_interpolated = X
+    N = len(X)
+    n = np.arange(N)
+    freq = n/(N*TR)
+
+    # Are the differences between the interpolated and original signal less
+    # than the differences between the interpolated and spiky signal?
+    diff1 = (sum(abs(fft_interpolated-fft_original)))
+    diff2 = (sum(abs(fft_interpolated-fft_spike)))
+    assert diff1 < diff2
