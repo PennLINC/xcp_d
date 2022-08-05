@@ -20,30 +20,30 @@ LOGGER = logging.getLogger('nipype.interface')
 class _filterdataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
-                   desc="Input file : either cifti or nifti file")
-    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
+                   desc="Bold file")
+    TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
     filter_order = traits.Int(exists=True,
                               mandatory=True,
                               default_value=2,
-                              desc="filter order")
+                              desc="Filter order")
     lowpass = traits.Float(exists=True,
                            mandatory=True,
                            default_value=0.10,
-                           desc="lowpass filter in Hz")
+                           desc="Lowpass filter in Hz")
     highpass = traits.Float(exists=True,
                             mandatory=True,
                             default_value=0.01,
-                            desc="highpass filter in Hz")
+                            desc="Highpass filter in Hz")
     mask = File(exists=False,
                 mandatory=False,
-                desc=" brain mask for nifti file")
+                desc="Bain mask for nifti file")
     bandpass_filter = traits.Bool(exists=False,
                                   mandatory=True,
-                                  desc="apply bandpass or not")
+                                  desc="To apply bandpass or not")
 
 
 class _filterdataOutputSpec(TraitedSpec):
-    filt_file = File(exists=True, manadatory=True, desc=" filtered file")
+    filtered_file = File(exists=True, manadatory=True, desc="Filtered file")
 
 
 class FilteringData(SimpleInterface):
@@ -89,16 +89,16 @@ class FilteringData(SimpleInterface):
             suffix = '_filtered.nii.gz'
 
         # write the output out
-        self._results['filt_file'] = fname_presuffix(
+        self._results['filtered_file'] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results['filt_file'] = write_ndata(
+        self._results['filtered_file'] = write_ndata(
             data_matrix=filt_data,
             template=self.inputs.in_file,
-            filename=self._results['filt_file'],
+            filename=self._results['filtered_file'],
             mask=self.inputs.mask)
         return runtime
 
