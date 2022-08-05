@@ -283,43 +283,45 @@ def motion_regression_filter(data,
     """
     Apply motion filter to trans and rot values.
     """
-    # TODO: NEEDS TO BE REFACTORED AFTER CHECKING IN
-    LP_freq_min = cutoff
-    fc_RR_min, fc_RR_max = freqband
 
+    LP_freq_min = cutoff  # set the variable again for casting reasons
+    fc_RR_min, fc_RR_max = freqband  # get the frequency band
+
+    # casting all variables
     TR = float(TR)
     order = float(motion_filter_order)
     LP_freq_min = float(LP_freq_min)
     fc_RR_min = float(fc_RR_min)
     fc_RR_max = float(fc_RR_max)
+
     if motion_filter_type:
-        if motion_filter_type == 'lp':
+        if motion_filter_type == 'lp':  # low-pass filter
             hr_min = LP_freq_min
-            hr = hr_min
-            fs = 1. / TR
-            fNy = fs / 2.
-            fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)
+            hr = hr_min / 60  # change BPM to right time unit
+            fs = 1. / TR  # sampling frequency
+            fNy = fs / 2.  # Nyquist frequency
+            fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)  # cutting frequency
             # cutting frequency normalized between 0 and nyquist
-            Wn = np.amin(fa) / fNy
-            b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')
+            Wn = np.amin(fa) / fNy  # cutoffs
+            b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')  # create b_filt
             a_filt = 1.
-            num_f_apply = 1.
+            num_f_apply = 1  # num of times to apply
         else:
-            if motion_filter_type == 'notch':
-                fc_RR_bw = np.array([fc_RR_min, fc_RR_max])
-                rr = fc_RR_bw
-                fs = 1. / TR
-                fNy = fs / 2.
-                fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)
-                W_notch = fa / fNy
+            if motion_filter_type == 'notch':  # notch filter
+                fc_RR_bw = np.array([fc_RR_min, fc_RR_max])  # bandwidth as an array
+                rr = fc_RR_bw / 60  # change BPM to right time unit
+                fs = 1. / TR  # sampling frequency
+                fNy = fs / 2.  # nyquist frequency
+                fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)  # cutting frequency
+                W_notch = fa / fNy  # normalize cutting frequency
                 Wn = np.mean(W_notch)
                 Wd = np.diff(W_notch)
-                bw = np.abs(Wd)
-                b_filt, a_filt = iirnotch(Wn, Wn / bw)
-                num_f_apply = np.int(np.floor(order / 2))
-        for j in range(num_f_apply):
-            for k in range(data.shape[0]):
-                data[k, :] = filtfilt(b_filt, a_filt, data[k, :])
+                bw = np.abs(Wd)  # bandwidth
+                b_filt, a_filt = iirnotch(Wn, Wn / bw)  # create filter coefficients
+                num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
+        for ii in range(num_f_apply):
+            for jj in range(data.shape[0]):  # apply filters across columns
+                data[jj, :] = filtfilt(b_filt, a_filt, data[jj, :])
     else:
         data = data
     return data
