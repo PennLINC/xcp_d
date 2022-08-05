@@ -56,7 +56,7 @@ class FilteringData(SimpleInterface):
     .. doctest::
     >>> filt=FilteringData()
     >>> filt.inputs.in_file = reg._results['res_file']
-    >>> filt.inputs.tr = 3
+    >>> filt.inputs.TR = 3
     >>> filt.inputs.lowpass = 0.08
     >>> filt.inputs.highpass = 0.01
     >>> filt.run()
@@ -75,7 +75,7 @@ class FilteringData(SimpleInterface):
         # filter the data
         if self.inputs.bandpass_filter:
             filt_data = butter_bandpass(data=data_matrix,
-                                        fs=1 / self.inputs.tr,
+                                        fs=1 / self.inputs.TR,
                                         lowpass=self.inputs.lowpass,
                                         highpass=self.inputs.highpass,
                                         order=self.inputs.filter_order)
