@@ -21,7 +21,7 @@ class _filterdataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="Input file : either cifti or nifti file")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
     filter_order = traits.Int(exists=True,
                               mandatory=True,
                               default_value=2,
