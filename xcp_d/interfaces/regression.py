@@ -155,7 +155,7 @@ def demean_detrend_data(data):
 
 class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
 
 
 class _ciftidespikeOutputSpec(TraitedSpec):
@@ -181,6 +181,6 @@ class ciftidespike(SimpleInterface):
             use_ext=False,
         )
         self._results['des_file'] = despikedatacifti(cifti=self.inputs.in_file,
-                                                     TR=self.inputs.tr,
+                                                     TR=self.inputs.TR,
                                                      basedir=runtime.cwd)
         return runtime

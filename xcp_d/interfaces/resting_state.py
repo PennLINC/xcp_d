@@ -78,7 +78,7 @@ class surfaceReho(SimpleInterface):
 
 class _alffInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
     lowpass = traits.Float(exists=True,
                            mandatory=True,
                            default_value=0.10,
@@ -127,7 +127,7 @@ class computealff(SimpleInterface):
         alff_mat = compute_alff(data_matrix=data_matrix,
                                 low_pass=self.inputs.lowpass,
                                 high_pass=self.inputs.highpass,
-                                TR=self.inputs.tr)
+                                TR=self.inputs.TR)
 
         # writeout the data
         if self.inputs.in_file.endswith('.dtseries.nii'):

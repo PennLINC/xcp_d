@@ -171,15 +171,14 @@ frequency band {highpass}-{lowpass} Hz.
         name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
-
-    filtering_wf = pe.Node(FilteringData(tr=TR,
+    filtering_wf = pe.Node(FilteringData(TR=TR,
                                      lowpass=upper_bpf,
                                      highpass=lower_bpf,
                                      filter_order=bpf_order),
                        name="filter_the_data",
                        mem_gb=0.25 * mem_gb)
 
-    regressy = pe.Node(regress(tr=TR),
+    regressy = pe.Node(regress(TR=TR),
                        name="regress_the_data",
                        mem_gb=0.25 * mem_gb)
 
@@ -238,7 +237,7 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def init_resd_smoohthing(mem_gb,
+def init_resd_smoothing(mem_gb,
                          smoothing,
                          omp_nthreads,
                          cifti=False,

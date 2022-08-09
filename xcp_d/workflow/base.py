@@ -4,7 +4,7 @@
 post processing
 ^^^^^^^^^^^^^^^
 
-.. autofunction:: init_xcpabcd_wf
+.. autofunction:: init_xcpd_wf
 
 """
 
@@ -51,7 +51,7 @@ def init_xcpd_wf(layout,
                  dummytime,
                  fd_thresh,
                  input_type='fmriprep',
-                 name='xcpabcd_wf'):
+                 name='xcpd_wf'):
     """
     This workflow builds and organizes  execution of  xcp_d  pipeline.
     It is also connect the subworkflows under the xcp_d
@@ -59,8 +59,8 @@ def init_xcpd_wf(layout,
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflow.base import init_xcpabcd_wf
-            wf = init_xcpabcd_wf(
+            from xcp_d.workflow.base import init_xcpd_wf
+            wf = init_xcpd_wf(
                 layout,
                 lower_bpf,
                 upper_bpf,
@@ -134,11 +134,11 @@ def init_xcpd_wf(layout,
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-
+s
     """
 
-    xcpabcd_wf = Workflow(name='xcpabcd_wf')
-    xcpabcd_wf.base_dir = work_dir
+    xcpd_wf = Workflow(name='xcpd_wf')
+    xcpd_wf.base_dir = work_dir
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
@@ -171,9 +171,9 @@ def init_xcpd_wf(layout,
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
-        xcpabcd_wf.add_nodes([single_subj_wf])
+        xcpd_wf.add_nodes([single_subj_wf])
 
-    return xcpabcd_wf
+    return xcpd_wf
 
 
 def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order,
@@ -293,7 +293,7 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1].
 
 Many internal operations of *XCP* use *Nibabel* [@nilearn], *numpy*
 [@harris2020array], and  *scipy* [@2020SciPy-NMeth]. For more details,
-see the *xcp_d* website https://xcp-abcd.readthedocs.io.
+see the *xcp_d* website https://xcp-d.readthedocs.io.
 
 
 #### Copyright Waiver

@@ -22,7 +22,7 @@ from .restingstate import init_compute_alff_wf, init_surface_reho_wf
 from .execsummary import init_execsummary_wf
 from ..interfaces import interpolate
 from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_resd_smoohthing
+from .postprocessing import init_resd_smoothing
 from num2words import num2words
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
@@ -281,7 +281,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
-    resdsmoothing_wf = init_resd_smoohthing(
+    resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
         cifti=True,
@@ -325,7 +325,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     executivesummary_wf = init_execsummary_wf(
-        tr=TR,
+        TR=TR,
         bold_file=cifti_file,
         layout=layout,
         output_dir=output_dir,
@@ -341,8 +341,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             mem_gb=0.1*mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')],
-            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')]))])
+            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
+            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
             (rm_dummytime, censor_scrub, [
@@ -359,7 +359,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             ])])
 
     if despike:  # If we despike
-        despike3d = pe.Node(ciftidespike(tr=TR),
+        despike3d = pe.Node(ciftidespike(TR=TR),
                             name="cifti_despike",
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
@@ -492,7 +492,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, tr=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=True)
 

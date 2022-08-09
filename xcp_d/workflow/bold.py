@@ -22,7 +22,7 @@ from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from ..interfaces import (FilteringData, regress)
 from ..interfaces import interpolate
-from .postprocessing import init_resd_smoohthing
+from .postprocessing import init_resd_smoothing
 from .execsummary import init_execsummary_wf
 from num2words import num2words
 
@@ -293,7 +293,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
-    resdsmoothing_wf = init_resd_smoohthing(
+    resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
         cifti=False,
@@ -325,7 +325,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     executivesummary_wf = init_execsummary_wf(
-        tr=TR,
+        TR=TR,
         bold_file=bold_file,
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
@@ -586,7 +586,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, tr=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=False,
                             mem_gb=mem_gbx['timeseries'])

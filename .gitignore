@@ -9,4 +9,4 @@ docs/_build
 .Rhistory
 *.egg-info
 .vscode
-xcp_abcd/notebooks/.ipynb_checkpoints/restingstate-checkpoint.ipynb
+xcp_d/notebooks/.ipynb_checkpoints/restingstate-checkpoint.ipynb

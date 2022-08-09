@@ -108,7 +108,7 @@ def get_parser():
         '--mem_gb',
         action='store',
         type=int,
-        help='upper bound memory limit for xcp_abcd processes')
+        help='upper bound memory limit for xcp_d processes')
     g_perfm.add_argument(
         '--use-plugin',
         action='store',
@@ -255,14 +255,14 @@ def get_parser():
         '--work_dir',
         action='store',
         type=Path,
-        default=Path('work'),
+        default=Path('working_dir'),
         help='path where intermediate results should be stored')
     g_other.add_argument(
         '--clean-workdir',
         action='store_true',
         default=False,
         help='Clears working directory of contents. Use of this flag is not'
-        'recommended when running concurrent processes of xcp_abcd.')
+        'recommended when running concurrent processes of xcp_d.')
     g_other.add_argument(
         '--resource-monitor',
         action='store_true',
@@ -317,14 +317,14 @@ def main():
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
         run_uuid = retval.get('run_uuid', None)
-        xcpabcd_wf = retval.get('workflow', None)
+        xcpd_wf = retval.get('workflow', None)
 
-    retcode = retcode or int(xcpabcd_wf is None)
+    retcode = retcode or int(xcpd_wf is None)
     if retcode != 0:
         sys.exit(retcode)
 
     # Check workflow for missing commands
-    missing = check_deps(xcpabcd_wf)
+    missing = check_deps(xcpd_wf)
     if missing:
         print("Cannot run xcp_d. Missing dependencies:", file=sys.stderr)
         for iface, cmd in missing:
@@ -335,7 +335,7 @@ def main():
 
     errno = 1  # Default is error exit unless otherwise set
     try:
-        xcpabcd_wf.run(**plugin_settings)
+        xcpd_wf.run(**plugin_settings)
     except Exception as e:
         if not opts.notrack:
             from ..utils.sentry import process_crashfile
@@ -349,13 +349,13 @@ def main():
 
         if "Workflow did not execute cleanly" not in str(e):
             sentry_sdk.capture_exception(e)
-        logger.critical('xcp_abcd failed: %s', e)
+        logger.critical('xcp_d failed: %s', e)
         raise
     else:
         errno = 0
         logger.log(25, 'xcp_d finished without errors')
         if not opts.notrack:
-            sentry_sdk.capture_message('xcp_abcd finished without errors',
+            sentry_sdk.capture_message('xcp_d finished without errors',
                                        level='info')
     finally:
         from ..interfaces import generate_reports
@@ -374,7 +374,7 @@ def main():
                 'pandoc', '-s', '--bibliography',
                 pkgrf('xcp_d',
                       'data/boilerplate.bib'), '--filter', 'pandoc-citeproc',
-                '--metadata', 'pagetitle="xcp_abcd citation boilerplate"',
+                '--metadata', 'pagetitle="xcp_d citation boilerplate"',
                 str(citation_files['md']), '-o',
                 str(citation_files['html'])
             ]
@@ -405,7 +405,7 @@ def main():
                          citation_files['bib'])
         else:
             logger.warning(
-                'xcp_abcd could not find the markdown version of '
+                'xcp_d could not find the markdown version of '
                 'the citation boilerplate (%s). HTML and LaTeX versions'
                 ' of it will not be available', citation_files['md'])
 
@@ -449,7 +449,7 @@ def build_workflow(opts, retval):
     build_log = nlogging.getLogger('nipype.workflow')
 
     INIT_MSG = """
-    Running xcp_abcd version {version}:
+    Running xcp_d version {version}:
       * fMRI directory path: {fmri_dir}.
       * Participant list: {subject_list}.
       * Run identifier: {uuid}.
@@ -479,7 +479,7 @@ def build_workflow(opts, retval):
         build_log.error(
             'The selected output folder is the same as the input fmri input. '
             'Please modify the output path (suggestion: %s).', fmri_dir /
-            'derivatives' / ('xcp_abcd-%s' % __version__.split('+')[0]))
+            'derivatives' / ('xcp_d-%s' % __version__.split('+')[0]))
         retval['return_code'] = 1
         return retval
 
@@ -629,7 +629,7 @@ def build_workflow(opts, retval):
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         input_type=opts.input_type,
-        name='xcpabcd_wf')
+        name='xcpd_wf')
     retval['return_code'] = 0
 
     logs_path = Path(output_dir) / 'xcp_d' / 'logs'
@@ -659,4 +659,4 @@ def build_workflow(opts, retval):
 if __name__ == '__main__':
     raise RuntimeError(
         "xcp_d/cli/run.py should not be run directly;\n"
-        "Please `pip install` xcp_abcd and use the `xcp_d` command")
+        "Please `pip install` xcp_d and use the `xcp_d` command")

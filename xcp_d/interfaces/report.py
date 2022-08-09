@@ -21,7 +21,7 @@ SUBJECT_TEMPLATE = """\
 QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t<ul class="elem-desc">
 \t\t\t<li>BOLD volume space: {space}s</li>
-\t\t\t<li>Repetition Time (TR): {tr:.03g}s</li>
+\t\t\t<li>Repetition Time (TR): {TR:.03g}s</li>
 \t\t\t<li>Mean Framewise Displacement: {meanFD}</li>
 \t\t\t<li>Mean Relative RMS Motion: {meanRMS}</li>
 \t\t\t<li>Max Relative RMS Motion: {maxRMS}</li>
@@ -92,7 +92,7 @@ class SubjectSummary(SummaryInterface):
 class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
     bold_file = traits.File(True, True, desc='cifti or bold File')
     qc_file = traits.File(exists=True, desc='qc file')
-    tr = traits.Float(
+    TR = traits.Float(
         mandatory=True,
         desc='Repetition time',
     )
@@ -103,7 +103,7 @@ class FunctionalSummary(SummaryInterface):
 
     def _generate_segment(self):
         space = get_space(self.inputs.bold_file)
-        tr = self.inputs.tr
+        TR = self.inputs.TR
         qcfile = pd.read_csv(self.inputs.qc_file)
         meanFD = "{} ".format(round(qcfile['meanFD'][0], 4))
         meanRMS = " {} ".format(round(qcfile['relMeansRMSMotion'][0], 4))
@@ -115,7 +115,7 @@ class FunctionalSummary(SummaryInterface):
         nvolcen = " {} ".format(round(qcfile['nVolCensored'][0], 4))
 
         return QC_TEMPLATE.format(space=space,
-                                  tr=tr,
+                                  TR=TR,
                                   meanFD=meanFD,
                                   meanRMS=meanRMS,
                                   maxRMS=maxRMS,
