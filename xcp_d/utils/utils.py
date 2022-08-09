@@ -70,7 +70,7 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     elif 'space-MNIInfant' in file_base:
 
         transformfileMNI = str(
-            pkgrf('xcp_d', 'data/transform/infant_to_2009_Compoiste.h5'))
+            pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5'))
         transformfileT1W = str(mni_to_t1w)
 
     elif 'space-MNIPediatricAsym' in file_base:

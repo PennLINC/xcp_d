@@ -341,8 +341,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             mem_gb=0.1*mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')],
-            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')]))])
+            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
+            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
             (rm_dummytime, censor_scrub, [
