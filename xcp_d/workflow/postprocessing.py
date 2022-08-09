@@ -171,7 +171,6 @@ frequency band {highpass}-{lowpass} Hz.
         name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
-
     filtering_wf = pe.Node(FilteringData(TR=TR,
                                      lowpass=upper_bpf,
                                      highpass=lower_bpf,
