@@ -255,7 +255,7 @@ def get_parser():
         '--work_dir',
         action='store',
         type=Path,
-        default=Path('work'),
+        default=Path('working_dir'),
         help='path where intermediate results should be stored')
     g_other.add_argument(
         '--clean-workdir',
