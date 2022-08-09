@@ -106,8 +106,8 @@ def collect_participants(
     # Error: bids_dir does not contain subjects
     if not all_participants:
         raise BIDSError(
-            "Could not find participants. Please make sure the BIDS data "
-            "is within a 'derivatives' folder.',
+            "Could not find participants. Please make sure the BIDS derivatives "
+            "are accessible and contains subjects in the format: sub-*.',
             bids_dir,
         )
 
