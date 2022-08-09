@@ -107,10 +107,7 @@ def collect_participants(
     if not all_participants:
         raise BIDSError(
             "Could not find participants. Please make sure the BIDS data "
-            "structure is present and correct. Datasets can be validated online "
-            "using the BIDS Validator (http://bids-standard.github.io/bids-validator/).\n"
-            "If you are using Docker for Mac or Docker for Windows, you "
-            'may need to adjust your "File sharing" preferences.',
+            "is within a 'derivatives' folder.',
             bids_dir,
         )
 
