@@ -74,7 +74,7 @@ def init_compute_alff_wf(mem_gb,
     smoothed_alff
         smoothed alff  output
     tmask
-        temporal mask
+        temporal mask  #TODO: Fix, this is inaccurate
     """
 
     workflow = Workflow(name=name)
