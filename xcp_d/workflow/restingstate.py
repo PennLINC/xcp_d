@@ -93,7 +93,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         fields=['alff_out', 'smoothed_alff', 'alffhtml']),
         name='outputnode')
 
-    alff_compt = pe.Node(computealff(tr=TR, lowpass=lowpass,
+    alff_compt = pe.Node(computealff(TR=TR, lowpass=lowpass,
                                      highpass=highpass),
                          mem_gb=mem_gb,
                          name='alff_compt',

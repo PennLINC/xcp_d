@@ -54,7 +54,7 @@ compared them to the HCP distributed timeseries, ensuring they are identical. Th
 formatted into fMRIprep outputs by renaming the files, creating the regression json, and creating
 dummy transforms.
 
-These inputs were then analyzed by xcp_abcd with the following command:
+These inputs were then analyzed by xcp_d with the following command:
 
 singularity run --cleanenv -B ${PWD} ~/xcp_hcp/xcp-abcd-latest.sif /$SUBJECT/fmriprepdir/
 ~/xcp_hcp/xcp_results/ participant --cifti --despike --lower-bpf 0.01 --upper-bpf 0.08
@@ -110,7 +110,7 @@ def audit():
         results = []
 
         for r in glob.glob(
-                '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/sub-%s/func/*Schaefer417*pconn*'
+                '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-%s/func/*Schaefer417*pconn*'
                 % (subid)):
             results.append(
                 r.split('/')[-1].split('-')[2].split('_')[0] + '_' +
@@ -136,13 +136,13 @@ def audit():
         sdf['subject'] = [subid]
         sdf['error'] = [line]
         df = df.append(sdf, ignore_index=True)
-    df.to_csv('/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/audit.csv',
+    df.to_csv('/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/audit.csv',
               index=False)
 
 
 def remove(subid):
     for f in glob.glob(
-            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/sub-%s/func/**'
+            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-%s/func/**'
             % (subid)):
         if 'Schaefer417_den-91k_den-91k_bold.pconn.nii' not in f and 'Schaefer417_den-9'\
            '1k_den-91k_bold.ptseries.nii' not in f and 'qc_den-91k_bold.tsv' not in f:
@@ -152,7 +152,7 @@ def remove(subid):
 if function == 'sge':
     audit()
     audit = pd.read_csv(
-        '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/audit.csv')
+        '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/audit.csv')
     for sub in glob.glob('/cbica/projects/HCP_Data_Releases/HCP_1200/**'):
         sub = sub.split('/')[-1]
         if audit[audit.subject == sub].ran.values[0]:
@@ -351,9 +351,9 @@ if function == 'run':
         os.system('cp {0} {1}'.format(ciftip, ciftib))
         os.system('cp {0} {1}'.format(niftip, niftib))
 
-        tr = nb.load(niftip).header.get_zooms()[-1]  # repetition time
+        TR = nb.load(niftip).header.get_zooms()[-1]  # repetition time
 
-        jsontis = {"RepetitionTime": np.float(tr), "TaskName": taskname}
+        jsontis = {"RepetitionTime": np.float(TR), "TaskName": taskname}
         json2 = {
             "grayordinates": "91k",
             "space": "HCP grayordinates",
@@ -389,7 +389,7 @@ if function == 'run':
         os.system(cmd)
 
     os.chdir(working_dir)
-    # singularity build xcp-abcd-latest.sif docker://pennlinc/xcp_abcd:latest
+    # singularity build xcp-abcd-latest.sif docker://pennlinc/xcp_d:latest
     os.system('export SINGULARITYENV_OMP_NUM_THREADS=4')
     cmd = 'singularity run --cleanenv -B ${PWD} ~/xcp_hcp/xcp-abcd-latest.sif'\
           '/%s/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ participant'\
@@ -409,11 +409,11 @@ if function == 'audit':
 if function == 'zipit':
 
     # audit()
-    # audit = pd.read_csv('/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/audit.csv')
+    # audit = pd.read_csv('/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/audit.csv')
 
     df = pd.DataFrame()
     for csv in glob.glob(
-            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/**/func/*qc_den-91k_bold.tsv'
+            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/**/func/*qc_den-91k_bold.tsv'
     ):
         df = df.append(pd.read_csv(csv), ignore_index=True)
 
@@ -427,7 +427,7 @@ if function == 'zipit':
     for parcel in parcels:
         for matrix in df.iterrows():
             matrix = dict(matrix[1])
-            fname = '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/sub-{0}/func'
+            fname = '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{0}/func'
             '/sub-{0}_task-{1}_acq-{3}_space-fsLR_atlas-{2}_den-91k_den-91k_bold.pconn.nii'.format(
                 matrix['sub'], matrix['task'], parcel, matrix['acq'])
             m = nb.load(fname).get_fdata()
@@ -441,7 +441,7 @@ if function == 'zipit':
                 data['bold/{0}/matrix/{1}'.format(
                     matrix['sub'], fname)].attrs[key] = matrix[key]
 
-            fname = '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/sub-{0}/func/'
+            fname = '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{0}/func/'
             'sub-{0}_task-{1}_acq-{3}_space-fsLR_atlas-{2}_den-91k_den-91k_bold.ptseries'
             '.nii'.format(matrix['sub'], matrix['task'], parcel, matrix['acq'])
             m = nb.load(fname).get_fdata()
@@ -530,7 +530,7 @@ def compare():
         hcp_m = np.load(m)
         xcp = []
         files = glob.glob(
-            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_abcd/sub-{0}/func/*REST*pconn*'
+            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{0}/func/*REST*pconn*'
             .format(s))
         if len(files) == 0:
             continue

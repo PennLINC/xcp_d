@@ -325,7 +325,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     executivesummary_wf = init_execsummary_wf(
-        tr=TR,
+        TR=TR,
         bold_file=bold_file,
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
@@ -586,7 +586,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, tr=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=False,
                             mem_gb=mem_gbx['timeseries'])

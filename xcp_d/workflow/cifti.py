@@ -325,7 +325,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     executivesummary_wf = init_execsummary_wf(
-        tr=TR,
+        TR=TR,
         bold_file=cifti_file,
         layout=layout,
         output_dir=output_dir,
@@ -359,7 +359,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
             ])])
 
     if despike:  # If we despike
-        despike3d = pe.Node(ciftidespike(tr=TR),
+        despike3d = pe.Node(ciftidespike(TR=TR),
                             name="cifti_despike",
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
@@ -492,7 +492,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, tr=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=True)
 
