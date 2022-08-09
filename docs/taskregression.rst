@@ -147,7 +147,7 @@ GLM task regression with ``xcp_d``
 ----------------------------------
 Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv file to xcp_d with ``-c`` option. -c should point to the directory where this file exists, rather than to the file itself; ``xcp_d`` will identify the correct file based on the subid, sesid, and taskid. You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call::
 
-  singularity run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
+  singularity run --cleanenv -B /my/project/directory:/mnt xcpd_latest.simg \
   /mnt/input/fmriprep /mnt/output/directory participant --despike \
   --lower-bpf 0.01 --upper-bpf 0.08 --participant_label $subid -p 36P -f 10 -t emotionid -c /mnt/taskarray_file_dir 
 

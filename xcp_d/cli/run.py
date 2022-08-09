@@ -317,14 +317,14 @@ def main():
         plugin_settings = retval.get('plugin_settings', None)
         subject_list = retval.get('subject_list', None)
         run_uuid = retval.get('run_uuid', None)
-        xcpabcd_wf = retval.get('workflow', None)
+        xcpd_wf = retval.get('workflow', None)
 
-    retcode = retcode or int(xcpabcd_wf is None)
+    retcode = retcode or int(xcpd_wf is None)
     if retcode != 0:
         sys.exit(retcode)
 
     # Check workflow for missing commands
-    missing = check_deps(xcpabcd_wf)
+    missing = check_deps(xcpd_wf)
     if missing:
         print("Cannot run xcp_d. Missing dependencies:", file=sys.stderr)
         for iface, cmd in missing:
@@ -335,7 +335,7 @@ def main():
 
     errno = 1  # Default is error exit unless otherwise set
     try:
-        xcpabcd_wf.run(**plugin_settings)
+        xcpd_wf.run(**plugin_settings)
     except Exception as e:
         if not opts.notrack:
             from ..utils.sentry import process_crashfile
@@ -629,7 +629,7 @@ def build_workflow(opts, retval):
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         input_type=opts.input_type,
-        name='xcpabcd_wf')
+        name='xcpd_wf')
     retval['return_code'] = 0
 
     logs_path = Path(output_dir) / 'xcp_d' / 'logs'

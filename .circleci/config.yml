@@ -48,7 +48,7 @@ jobs:
             fi
       - run: *runinstall
       - run:
-          name: Run full xcpd_abcd on nifti without freesurfer
+          name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
             cd /src/xcp_d/.circleci
