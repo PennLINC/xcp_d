@@ -237,7 +237,7 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def init_resd_smoohthing(mem_gb,
+def init_resd_smoothing(mem_gb,
                          smoothing,
                          omp_nthreads,
                          cifti=False,

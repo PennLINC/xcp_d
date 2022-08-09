@@ -22,7 +22,7 @@ from .restingstate import init_compute_alff_wf, init_surface_reho_wf
 from .execsummary import init_execsummary_wf
 from ..interfaces import interpolate
 from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_resd_smoohthing
+from .postprocessing import init_resd_smoothing
 from num2words import num2words
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
@@ -281,7 +281,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
-    resdsmoothing_wf = init_resd_smoohthing(
+    resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
         cifti=True,
