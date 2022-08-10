@@ -74,7 +74,7 @@ def init_compute_alff_wf(mem_gb,
     smoothed_alff
         smoothed alff  output
     tmask
-        temporal mask
+        temporal mask  #TODO: Fix, this is inaccurate
     """
 
     workflow = Workflow(name=name)
@@ -122,7 +122,7 @@ The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize
         """.format(kernelsize=str(smoothing))
             smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
                                          fwhm=smoothing),
-                                  name="ciftismoothing",
+                                  name="ciftismoothing", #TODO: Rename to nifti smoothing
                                   mem_gb=mem_gb,
                                   n_procs=omp_nthreads)
             workflow.connect([
