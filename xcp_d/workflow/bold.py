@@ -415,8 +415,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         workflow.connect([
             (rm_dummytime, censor_scrub, [
                 ('bold_file_dropped_TR', 'in_file'),
-                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')
-                ('custom_confounds_dropped', 'custom_confounds')])])
+                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
+                ('custom_confounds_dropped', 'custom_confounds')
+                ])])
 
     else:  # No need to remove TR
         # Censor Scrub:
