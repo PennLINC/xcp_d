@@ -118,18 +118,21 @@ class RemoveTR(SimpleInterface):
         dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
 
         # Drop the first N rows from the custom confounds file, if provided:
-        if self.inputs.custom_confounds:
+        if os.path.exists(self.inputs.custom_confounds):
             custom_confounds_tsv_undropped = pd.read_table(
                 self.inputs.custom_confounds, header=None)
             custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
                 np.arange(volumes_to_drop))
+        else:
+            print("No custom confounds were found or had their volumes dropped")
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
         # Write to output node
         self._results['bold_file_dropped_TR'] = dropped_bold_file
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
-        if self.inputs.custom_confounds:
+
+        if os.path.exists(self.inputs.custom_confounds):
             self._results['custom_confounds_dropped'] = fname_presuffix(
                 self.inputs.bold_file,
                 suffix='_custom_confounds_dropped.tsv',
