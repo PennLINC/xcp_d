@@ -113,7 +113,7 @@ class computeqcplot(SimpleInterface):
         rmsd = confound_matrix['rmsd']
 
         if self.inputs.dummytime > 0:
-            num_vold = np.int(self.inputs.dummytime / self.inputs.TR)
+            num_vold = int(np.ceil(self.inputs.dummytime / self.inputs.TR))
         else:
             num_vold = 0
 

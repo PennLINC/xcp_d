@@ -13,6 +13,7 @@ from xcp_d.utils import confounds
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
 from scipy import signal
+import pandas as pd
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -80,6 +81,7 @@ class regress(SimpleInterface):
             use_ext=False,
         )
         self._results['confound_matrix'] = confounds_file_output_name
+        confound = pd.DataFrame(confound)
         confound.to_csv(confounds_file_output_name, sep="\t", header=True, index=False)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix

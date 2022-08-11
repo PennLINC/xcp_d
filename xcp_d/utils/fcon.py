@@ -48,25 +48,26 @@ def compute_2d_reho(datat, adjacency_matrix):
        surface adjacency matrix
 
     """
-    KCC = np.zeros(datat.shape[0])
+    KCC = np.zeros(datat.shape[0])  # a zero for each voxel
 
-    for i in range(datat.shape[0]):
-        neigbor_index = np.where(adjacency_matrix[i, :] > 0)[0]
-        nn = np.hstack((neigbor_index, np.array(i)))
-        neidata = datat[nn, :]
+    for i in range(datat.shape[0]):  # loop through each voxel
+        neigbor_index = np.where(adjacency_matrix[i, :] > 0)[0]  # the index of 4 neightbouts
+        nn = np.hstack((neigbor_index, np.array(i)))  # stack those indexes with voxel number
+        neidata = datat[nn, :]  # pull out data for relevant voxels
 
-        rankeddata = np.zeros_like(neidata)
+        rankeddata = np.zeros_like(neidata)  # TODO: Fix typos #create 0s in same shape
+        # pull out index of voxel, timepoint
         neigbor, timepoint = neidata.shape[0], neidata.shape[1]
 
-        for j in range(neidata.shape[0]):
-            rankeddata[j, :] = rankdata(neidata[j, ])
-        rankmean = np.sum(rankeddata, axis=0)
-
+        for j in range(neidata.shape[0]):  # loop through each neighbour
+            rankeddata[j, :] = rankdata(neidata[j, ])  # assign ranks to timepoints for each voxel
+        rankmean = np.sum(rankeddata, axis=0)  # add up ranks
+        # KC is the sum of the squared rankmean minus the timepoints into the mean of the rankmean squared
         KC = np.sum(np.power(rankmean, 2)) - \
             timepoint * np.power(np.mean(rankmean), 2)
-
+        # square number of neighbours, multiply by (cubed timepoint - timepoint)
         denom = np.power(neigbor, 2) * (np.power(timepoint, 3) - timepoint)
-
+        # the voxel value is 12*KC divided by denom
         KCC[i] = 12 * KC / (denom)
 
     return KCC
@@ -81,21 +82,23 @@ def mesh_adjacency(hemi):
                      space='fsaverage',
                      hemi=hemi,
                      suffix='sphere',
-                     density='32k'))
+                     density='32k'))  # Get relevant template
 
-    surf = nb.load(surf)
+    surf = nb.load(surf)  # load via nibabel
+    #  Aggregate GIFTI data arrays into an ndarray or tuple of ndarray
+    # select the arrays in a specific order
     vertices_faces = surf.agg_data(('pointset', 'triangle'))
-
-    vertices = vertices_faces[0]
-    faces = vertices_faces[1]
+    vertices = vertices_faces[0]  # the first array of the tuple
+    faces = vertices_faces[1]  # the second array in the tuples
+    # create an array of 0s = voxel*voxel
     A = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
 
-    for i in range(1, len(faces)):
-        A[faces[i, 0], faces[i, 2]] = 1
+    for i in range(1, len(faces)): # looping thorugh each value in faces
+        A[faces[i, 0], faces[i, 2]] = 1 # use to index into A and turn select values to 1
         A[faces[i, 1], faces[i, 1]] = 1
         A[faces[i, 2], faces[i, 0]] = 1
 
-    return A + A.T
+    return A + A.T # transpose A and add it to itself
 
 
 def compute_alff(data_matrix, low_pass, high_pass, TR):
