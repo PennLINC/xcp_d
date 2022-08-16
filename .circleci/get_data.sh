@@ -5,7 +5,7 @@ fi
 
 # Edit these for project-wide testing
 WGET="wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q"
-LOCAL_PATCH=~/projects/xcp_d/xcp_d
+LOCAL_PATCH=/Users/kahinim/Desktop/Repos/xcp_d/xcp_d
 IMAGE=pennlinc/xcp_d:unstable
 
 # Determine if we're in a CI test
@@ -32,7 +32,7 @@ run_xcpd_cmd () {
   # test that uses 
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} -w ${workdir}"
+    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
