@@ -60,6 +60,10 @@ def get_parser():
                         action='store',
                         type=Path,
                         help='the output path for xcp_d')
+    parser.add_argument('analysis_level',
+                        action='store',
+                        type=Path,
+                        help='the output path for xcp_d')
 
     # optional arguments
     parser.add_argument('--version', action='version', version=verstr)
@@ -482,6 +486,12 @@ def build_workflow(opts, retval):
             'derivatives' / ('xcp_d-%s' % __version__.split('+')[0]))
         retval['return_code'] = 1
         return retval
+    if str(opts.analysis_level) != 'participant':
+        print (opts.analysis_level)
+        build_log.error(
+            'Please select analysis level "participant"')
+        retval['return_code'] = 1
+        return retval
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type == 'dcan':
@@ -623,6 +633,7 @@ def build_workflow(opts, retval):
         smoothing=opts.smoothing,
         params=opts.nuissance_regressors,
         cifti=opts.cifti,
+        analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
         custom_confounds=opts.custom_confounds,
