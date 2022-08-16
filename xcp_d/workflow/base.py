@@ -44,6 +44,7 @@ def init_xcpd_wf(layout,
                  head_radius,
                  params,
                  subject_list,
+                 analysis_level,
                  smoothing,
                  custom_confounds,
                  output_dir,
@@ -79,6 +80,7 @@ def init_xcpd_wf(layout,
                 brain_template,
                 subject_list,
                 smoothing,
+                analysis_level,
                 custom_confounds,
                 output_dir,
                 work_dir,
@@ -96,6 +98,8 @@ def init_xcpd_wf(layout,
         BIDS dataset layout
     despike: bool
         afni depsike
+    analysis_level: str
+        only option is 'participant'
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: str
