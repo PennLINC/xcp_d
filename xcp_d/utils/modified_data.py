@@ -43,11 +43,13 @@ def compute_FD(confound, head_radius=50):
 
 
 def generate_mask(
+    initial_volumes_to_drop,
     fd_res,
     fd_thresh,
 ):
 
     tmask = np.zeros(len(fd_res))
+    tmask[:initial_volumes_to_drop] = 1
     tmask[fd_res > fd_thresh] = 1
 
     # marker = 0

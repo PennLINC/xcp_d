@@ -350,44 +350,44 @@ def confoundplotx(tseries,
             fda = tseries[c].copy()
             fdx = tseries[c].copy()
             fdx[fdx > 0] = 1.05
-            ax_ts.plot(fda, '.', color='gray', markersize=40)
-            ax_ts.plot(fdx, '.', color='gray', markersize=40)
+            ax_ts.plot(fda, '.', color='gray', markersize=25)
+            ax_ts.plot(fdx, '.', color='gray', markersize=25)
 
             ax_ts.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
             fda[fda < 0.05] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.05] = 1.05
             fdx[fdx < 0.05] = np.nan
-            ax_ts.plot(fda, '.', color='gray', markersize=40)
-            ax_ts.plot(fdx, '.', color='gray', markersize=40)
+            ax_ts.plot(fda, '.', color='gray', markersize=25)
+            ax_ts.plot(fdx, '.', color='gray', markersize=25)
 
             ax_ts.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
             fda[fda < 0.1] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.1] = 1.05
             fdx[fdx < 0.1] = np.nan
-            ax_ts.plot(fda, '.', color='#66c2a5', markersize=40)
-            ax_ts.plot(fdx, '.', color='#66c2a5', markersize=40)
+            ax_ts.plot(fda, '.', color='#66c2a5', markersize=25)
+            ax_ts.plot(fdx, '.', color='#66c2a5', markersize=25)
 
             ax_ts.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
             fda[fda < 0.2] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.2] = 1.05
             fdx[fdx < 0.2] = np.nan
-            ax_ts.plot(fda, '.', color='#fc8d62', markersize=40)
-            ax_ts.plot(fdx, '.', color='#fc8d62', markersize=40)
+            ax_ts.plot(fda, '.', color='#fc8d62', markersize=25)
+            ax_ts.plot(fdx, '.', color='#fc8d62', markersize=25)
 
             ax_ts.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
             fda[fda < 0.5] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.5] = 1.05
             fdx[fdx < 0.5] = np.nan
-            ax_ts.plot(fda, '.', color='#8da0cb', markersize=40)
-            ax_ts.plot(fdx, '.', color='#8da0cb', markersize=40)
+            ax_ts.plot(fda, '.', color='#8da0cb', markersize=25)
+            ax_ts.plot(fdx, '.', color='#8da0cb', markersize=25)
 
             good_vols = len(tseries[c][tseries[c] < 0.1])
             ax_ts.text(1.01,
-                       .1,
+                       .05,
                        good_vols,
                        c='#66c2a5',
                        verticalalignment='top',
@@ -396,7 +396,7 @@ def confoundplotx(tseries,
                        fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.2])
             ax_ts.text(1.01,
-                       .2,
+                       .15,
                        good_vols,
                        c='#fc8d62',
                        verticalalignment='top',
@@ -405,7 +405,7 @@ def confoundplotx(tseries,
                        fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.5])
             ax_ts.text(1.01,
-                       .5,
+                       .35,
                        good_vols,
                        c='#8da0cb',
                        verticalalignment='top',
@@ -414,7 +414,7 @@ def confoundplotx(tseries,
                        fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.05])
             ax_ts.text(1.01,
-                       .05,
+                       .025,
                        good_vols,
                        c='grey',
                        verticalalignment='top',
@@ -511,6 +511,7 @@ def plot_svgx(rawdata,
               regdata,
               resddata,
               fd,
+              fd_unfiltered,
               filenamebf,
               filenameaf,
               mask=None,
@@ -537,6 +538,8 @@ def plot_svgx(rawdata,
         repetition times
     fd:
       framewise displacement
+    fd_unfiltered:
+      framewise displacement without motion filtering
     filenamebf:
       output file svg before processing
     filenameaf:
@@ -570,6 +573,7 @@ def plot_svgx(rawdata,
     })
 
     fdx = pd.DataFrame({'FD': np.loadtxt(fd)})
+    fdx_unfiltered = pd.DataFrame({'unfilteredFD': np.loadtxt(fd_unfiltered)})
 
     wbbf = pd.DataFrame({
         'Mean': np.nanmean(rw, axis=0),
@@ -609,12 +613,12 @@ def plot_svgx(rawdata,
 
     plt.cla()
     plt.clf()
-    figx = plt.figure(constrained_layout=True, figsize=(45, 60))
+    figx = plt.figure(constrained_layout=True, figsize=(45, 65))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
-                        height_ratios=[1, 1, 0.2, 2.5, 1])
+                        height_ratios=[1, 1, 0.2, 2.5, 1.5])
     confoundplotx(tseries=conf,
                   gs_ts=grid[0],
                   tr=tr,
@@ -628,7 +632,7 @@ def plot_svgx(rawdata,
                 tr=tr,
                 subplot=grid[3],
                 legend=False)
-    confoundplotx(tseries=fdx,
+    confoundplotx(tseries=fdx_unfiltered,
                   gs_ts=grid[4],
                   tr=tr,
                   hide_x=False,

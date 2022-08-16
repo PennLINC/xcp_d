@@ -150,7 +150,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         '_atlas-Schaefer517_desc-timeseries_bold.tsv',
         '_atlas-Schaefer1017_desc-timeseries_bold.tsv',
         '_atlas-subcortical_desc-timeseries_bold.tsv',
-        '_desc-framewisedisplacement_bold.tsv', '_desc-residual_bold.nii.gz',
+        '_desc-framewisedisplacement_bold.tsv',
+        '_desc-framewisedisplacementunfiltered_bold.tsv',  
+        '_desc-residual_bold.nii.gz',
         '_desc-residual_smooth_bold.nii.gz'
     ]
 
@@ -192,11 +194,20 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         res.split('run-')[0] + '*run*' +
                         resid.partition('_desc')[0] + j))
 
-                if j.endswith('tsv'):
+                if j.endswith('.tsv'):
                     combine_fd(filex, outfile)
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
+                    for f in filex:
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        make_DCAN_DF(f, name)
+                if j.endswith('_desc-framewisedisplacementunfiltered_bold.tsv'):
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    make_DCAN_DF(filex, name)
+                    for f in filex:
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        make_DCAN_DF(f, name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)
@@ -236,6 +247,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                       regdata=fileid + '_desc-residual_bold.nii.gz',
                       resddata=fileid + '_desc-residual_bold.nii.gz',
                       fd=fileid + '_desc-framewisedisplacement_bold.tsv',
+                      fd_unfiltered=fileid + '_desc-framewisedisplacementunfiltered_bold.tsv',
                       raw_dvars=raw_dvars,
                       reg_dvars=reg_dvars,
                       regf_dvars=reg_dvars,
@@ -295,6 +307,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         '_atlas-Schaefer917_den-91k_bold.ptseries.nii',
         '_atlas-Schaefer1017_den-91k_bold.ptseries.nii',
         '_desc-framewisedisplacement_bold.tsv',
+        '_desc-framewisedisplacementunfiltered_bold.tsv',
         '_atlas-subcortical_den-91k_bold.ptseries.nii'
     ]
 
@@ -348,6 +361,20 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combine_fd(filex, outfile)
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
+                    for f in filex:
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        make_DCAN_DF(f, name)
+                if j.endswith('framewisedisplacementunfiltered_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    outfile = fileid + j
+                    filex = natsorted(
+                        glob.glob(res.split('run-')[0] + '*run*' + j))
+                    combine_fd(filex, outfile)
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    make_DCAN_DF(filex, name)
+                    for f in filex:
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        make_DCAN_DF(f, name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(
@@ -394,6 +421,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 '_desc-residual_bold.dtseries.nii',
                 fd=res.split('run-')[0] + resid.partition('_den-91k')[0] +
                 '_desc-framewisedisplacement_bold.tsv',
+                fd_unfiltered=res.split('run-')[0] + resid.partition('_den-91k')[0] +
+                '_desc-framewisedisplacementunfiltered_bold.tsv',
                 raw_dvars=raw_dvars,
                 reg_dvars=reg_dvars,
                 regf_dvars=reg_dvars,

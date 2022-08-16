@@ -145,9 +145,12 @@ class RemoveTR(SimpleInterface):
 
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
-    fd_thresh = traits.Float(exists=True, mandatory=False, default_value=0.2, desc="Framewise displacement threshold. All"
-                             "values above this will be dropped.")
+    in_file = File(exists=True, mandatory=True, desc="Partially processed bold or nifti")
+    fd_thresh = traits.Float(exists=True,
+                             mandatory=False,
+                             default_value=0.2,
+                             desc="Framewise displacement threshold. All "
+                                  "values above this will be dropped.")
     custom_confounds = traits.Either(traits.Undefined,
                                      File,
                                      desc="Name of custom confounds file, or True",
@@ -164,6 +167,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     motion_filter_type = traits.Str(exists=False, mandatory=True)
     motion_filter_order = traits.Int(exists=False, mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
+    initial_volumes_to_drop = traits.Int(exists=False, mandatory=True)
     low_freq = traits.Float(
         exists=True,
         mandatory=True,
@@ -178,16 +182,27 @@ class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True,
                          manadatory=True,
                          desc="FD-censored bold file")
-
+    fmriprep_confounds_uncensored = File(exists=True,
+                                         mandatory=True,
+                                         desc="fmriprep_confounds_tsv, "
+                                              "only motion filtering applied")
     fmriprep_confounds_censored = File(exists=True,
                                        mandatory=True,
                                        desc="fmriprep_confounds_tsv censored")
+    custom_confounds_uncensored = File(exists=False,
+                                       mandatory=False,
+                                       desc="custom_confounds_tsv, "
+                                            "only motion filtering applied")
     custom_confounds_censored = File(exists=False,
                                      mandatory=False,
                                      desc="custom_confounds_tsv censored")
+
     tmask = File(exists=True, mandatory=True,
-                 desc="Temporal mask; all values above fd_thresh set to 1")
+                 desc="Temporal mask; initial frames to drop and "
+                      "all values above fd_thresh set to 1")
     fd_timeseries = File(exists=True, mandatory=True, desc="Framewise displacement timeseries")
+    fd_timeseries_unfiltered = File(exists=True, mandatory=True, desc="Framewise displacement "
+                                    "timeseries, no motion filtering applied")
 
 
 class CensorScrub(SimpleInterface):
@@ -205,14 +220,29 @@ class CensorScrub(SimpleInterface):
     def _run_interface(self, runtime):
         from ..utils.confounds import (load_motion)
 
-        # Read in fmriprep confounds tsv to calculate FD
+        # Read in fmriprep confounds tsv to calculate FD, w/o motion filter
         fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
+        motion_confounds_unfiltered = load_motion(
+            fmriprep_confounds_tsv_uncensored.copy(),
+            TR=self.inputs.TR,
+            motion_filter_type=None)
+        motion_unfiltered_df = pd.DataFrame(data=motion_confounds_unfiltered.values,
+                                            columns=[
+                                                "rot_x", "rot_y", "rot_z", "trans_x",
+                                                "trans_y", "trans_z"
+                                            ])
+        fd_timeseries_unfiltered = compute_FD(confound=motion_unfiltered_df,
+                                              head_radius=self.inputs.head_radius)
+
+        # Read in fmriprep confounds tsv to calculate FD, w/ motion filter if specified
         motion_confounds = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
-            freqband=[self.inputs.low_freq, self.inputs.high_freq])
+            freqband=[self.inputs.low_freq, self.inputs.high_freq],
+            cutoff=self.inputs.low_freq)
+
         motion_df = pd.DataFrame(data=motion_confounds.values,
                                  columns=[
                                      "rot_x", "rot_y", "rot_z", "trans_x",
@@ -229,7 +259,8 @@ class CensorScrub(SimpleInterface):
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
         tmask = generate_mask(fd_res=fd_timeseries_uncensored,
-                              fd_thresh=self.inputs.fd_thresh)
+                              fd_thresh=self.inputs.fd_thresh,
+                              initial_volumes_to_drop=self.inputs.initial_volumes_to_drop)
         if np.sum(tmask) > 0:  # If any FD values exceed the threshold
             if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
                 bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
@@ -273,12 +304,22 @@ class CensorScrub(SimpleInterface):
                                                          suffix='_censored',
                                                          newpath=os.getcwd(),
                                                          use_ext=True)
+        self._results['fmriprep_confounds_uncensored'] = fname_presuffix(
+            self.inputs.in_file,
+            suffix='_fmriprep_confounds_uncensored.tsv',
+            newpath=os.getcwd(),
+            use_ext=False)
         self._results['fmriprep_confounds_censored'] = fname_presuffix(
             self.inputs.in_file,
             suffix='_fmriprep_confounds_censored.tsv',
             newpath=os.getcwd(),
             use_ext=False)
         if self.inputs.custom_confounds:
+            self._results['custom_confounds_uncensored'] = fname_presuffix(
+                self.inputs.in_file,
+                suffix='_custom_confounds_uncensored.tsv',
+                newpath=os.getcwd(),
+                use_ext=False)
             self._results['custom_confounds_censored'] = fname_presuffix(
                 self.inputs.in_file,
                 suffix='_custom_confounds_censored.tsv',
@@ -293,9 +334,18 @@ class CensorScrub(SimpleInterface):
             suffix='_fd_timeseries.tsv',
             newpath=os.getcwd(),
             use_ext=False)
+        self._results['fd_timeseries_unfiltered'] = fname_presuffix(
+            self.inputs.in_file,
+            suffix='_fd_timeseries_unfiltered.tsv',
+            newpath=os.getcwd(),
+            use_ext=False)
 
         bold_file_censored.to_filename(self._results['bold_censored'])
 
+        fmriprep_confounds_tsv_uncensored.to_csv(self._results['fmriprep_confounds_uncensored'],
+                                                 index=False,
+                                                 header=True,
+                                                 sep="\t")
         fmriprep_confounds_tsv_censored.to_csv(self._results['fmriprep_confounds_censored'],
                                                index=False,
                                                header=True,
@@ -305,11 +355,20 @@ class CensorScrub(SimpleInterface):
                    fd_timeseries_uncensored,
                    fmt="%1.4f",
                    delimiter=',')
+        np.savetxt(self._results['fd_timeseries_unfiltered'],
+                   fd_timeseries_unfiltered,
+                   fmt="%1.4f",
+                   delimiter=',')
         if self.inputs.custom_confounds:
+            custom_confounds_tsv_uncensored.to_csv(self._results['custom_confounds_uncensored'],
+                                                   index=False,
+                                                   header=False,
+                                                   sep="\t")  # Assuming input is tab separated!
             custom_confounds_tsv_censored.to_csv(self._results['custom_confounds_censored'],
                                                  index=False,
                                                  header=False,
                                                  sep="\t")  # Assuming input is tab separated!
+
         return runtime
 
 

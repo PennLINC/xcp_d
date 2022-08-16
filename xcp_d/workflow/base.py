@@ -339,6 +339,7 @@ It is released under the [CC0]\
 
     # loop over each bold data to be postprocessed
     # RF: get rid of ii's
+    # RF: inputnode of new concat wf will connect to outputnode of bold/cifti wf
     if cifti:
         ii = 0
         for cifti_file in subject_data[1]:

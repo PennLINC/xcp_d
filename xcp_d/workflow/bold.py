@@ -21,11 +21,9 @@ from ..interfaces import FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from ..interfaces import (FilteringData, regress)
-from ..interfaces import interpolate
 from .postprocessing import init_resd_smoohthing
 from .execsummary import init_execsummary_wf
 from num2words import num2words
-
 from ..workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
@@ -171,6 +169,32 @@ def init_boldpostprocess_wf(lower_bpf,
         gordon 333 func matrices
     qc_file
         quality control files
+    fd
+        framewise displacement timeseries
+    filtered_confounds
+        confounds after motion motion filtering
+        (no frame censoring applied)
+    filtered_custom_confounds
+        custom confounds after motion motion filtering
+        (no frame censoring applied)
+    dcan_motion
+        per-run motion data files, derived from fmriprep
+        confounds, with fields corresponding to DCAN pipelines'
+        "_power2014_FD_only.mat"
+    filtered_dcan_motion
+        per-run motion data files, derived from fmriprep
+        confounds, with fields corresponding to DCAN pipelines'
+        "_power2014_FD_only.mat" after motion filtering
+        (no frame censoring applied)
+    custom_dcan_motion
+        per-run motion data files, derived from custom 
+        confounds,with fields corresponding to DCAN pipelines'
+        "_power2014_FD_only.mat"
+    filtered_custom_dcan_motion
+        per-run motion data files, derived from custom 
+        confounds,with fields corresponding to DCAN pipelines'
+        "_power2014_FD_only.mat", after motion filtering
+        (no frame censoring applied)
     """
 
     # Ensure that we know the TR
@@ -241,7 +265,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         'sc317_fc', 'sc417_ts', 'sc417_fc', 'sc517_ts', 'sc517_fc', 'sc617_ts',
         'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts',
         'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'ts50_ts', 'ts50_fc', 'gs360_ts',
-        'gs360_fc', 'gd333_ts', 'gd333_fc', 'qc_file', 'fd'
+        'gs360_fc', 'gd333_ts', 'gd333_fc', 'qc_file', 'fd', 'fd_unfiltered',
+        'filtered_confounds', 'filtered_custom_confounds', 'dcan_motion', 
+        'filtered_dcan_motion', 'custom_dcan_motion', 'filtered_custom_dcan_motion'
     ]),
         name='outputnode')
 
@@ -282,9 +308,10 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
+        initial_volumes_to_drop=initial_volumes_to_drop,
         custom_confounds=custom_confounds,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
+        low_freq=band_stop_min,
+        high_freq=band_stop_max,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         head_radius=head_radius,
@@ -394,37 +421,18 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                              suffix='mask',
                                              extension=['.nii', '.nii.gz'])),
                                      head_radius=head_radius,
-                                     low_freq=band_stop_max,
-                                     high_freq=band_stop_min),
+                                     low_freq=band_stop_min,
+                                     high_freq=band_stop_max),
                        name="qc_report",
                        mem_gb=mem_gbx['timeseries'],
                        n_procs=omp_nthreads)
 
-# Remove TR first:
-    if dummytime > 0:
-        rm_dummytime = pe.Node(
-            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
-                     custom_confounds=custom_confounds),
-            name="remove_dummy_time",
-            mem_gb=0.1*mem_gbx['timeseries'])
-        workflow.connect([
-            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
-            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
-
-        workflow.connect([
-            (rm_dummytime, censor_scrub, [
-                ('bold_file_dropped_TR', 'in_file'),
-                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file')
-                ('custom_confounds_dropped', 'custom_confounds')])])
-
-    else:  # No need to remove TR
-        # Censor Scrub:
-        workflow.connect([
-            (inputnode, censor_scrub, [
-                ('bold_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-            ])])
+    # Censor Scrub:
+    workflow.connect([
+        (inputnode, censor_scrub, [
+            ('bold_file', 'in_file'),
+            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
+        ])])
 
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series 
@@ -509,6 +517,9 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     workflow.connect([
         (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
+        (censor_scrub, outputnode, [('fd_timeseries_unfiltered', 'fd_unfiltered')]),
+        (censor_scrub, outputnode, [('fmriprep_confounds_uncensored', 'filtered_confounds')]),
+        (censor_scrub, outputnode, [('custom_confounds_uncensored', 'filtered_custom_confounds')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
@@ -551,6 +562,10 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('fmriprep_confounds_uncensored',
+                                              'inputnode.filtered_confounds')]),
+        (censor_scrub, write_derivative_wf, [('custom_confounds_uncensored',
+                                              'inputnode.filtered_custom_confounds')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),

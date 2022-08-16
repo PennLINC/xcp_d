@@ -33,19 +33,17 @@ def init_writederivatives_wf(
             :simple_form: yes
             from xcp_d.workflows import init_writederivatives_wf
             wf = init_writederivatives_wf(
-                mem_gb,
                 bold_file,
                 lowpass,
                 highpass,
                 smoothing,
                 params,
                 omp_nthreads,
-                scrub,
                 cifti,
                 dummytime,
                 output_dir,
                 TR,
-                name="fcons_ts_wf",
+                name='write_derivatives_wf',
              )
     Parameters
     ----------
@@ -64,8 +62,6 @@ def init_writederivatives_wf(
         parameter regressed out from bold
     omp_nthreads: int
         number of threads
-    scrub: bool
-        scrubbing
     cifti: bool
         if cifti or bold
     dummytime: float
@@ -117,7 +113,9 @@ def init_writederivatives_wf(
         'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts', 'sc917_fc',
         'sc1017_ts', 'sc1017_fc', 'reho_lh', 'reho_rh', 'reho_out', 'gs360_ts',
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
-        'fd'
+        'fd', 'filtered_confounds', 'filtered_custom_confounds' #, 'dcan_motion',
+        # 'filtered_dcan_motion', 'custom_dcan_motion',
+        # 'filtered_custom_dcan_motion'
     ]),
         name='inputnode')
 
@@ -142,278 +140,371 @@ def init_writederivatives_wf(
             run_without_submitting=True,
             mem_gb=2)
 
-        dv_alff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                 dismiss_entities=['desc'],
-                                                 compression=True,
-                                                 desc='alff',
-                                                 extension='.nii.gz',
-                                                 source_file=bold_file),
-                             name='dv_alff_wf',
-                             run_without_submitting=True,
-                             mem_gb=1)
+        dv_alff_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            compression=True,
+            desc='alff',
+            extension='.nii.gz',
+            source_file=bold_file),
+            name='dv_alff_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_qcfile_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                   dismiss_entities=['desc'],
-                                                   desc='qc',
-                                                   source_file=bold_file,
-                                                   compression=True,
-                                                   extension='.csv'),
-                               name='dv_qcfile_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+        dv_qcfile_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            desc='qc',
+            source_file=bold_file,
+            compression=True,
+            extension='.csv'),
+            name='dv_qcfile_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc117ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer117',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc117ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc117ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer117',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc117ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc217ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer217',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc217ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc217ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer217',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc217ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc317ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer317',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc317ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc317ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer317',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc317ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc417ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer417',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc417ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc417ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer417',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc417ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc517ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer517',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc517ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc517ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer517',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc517ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc617ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer617',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc617ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc617ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer617',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc617ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc717ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer717',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc717ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc717ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer717',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc717ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc817ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer817',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc817ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc817ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer817',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc817ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc917ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer917',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_sc917ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc917ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer917',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc917ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc1017ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                     dismiss_entities=['desc'],
-                                                     atlas='Schaefer1017',
-                                                     desc='timeseries',
-                                                     source_file=bold_file),
-                                 name='dv_sc1017ts_wf',
-                                 run_without_submitting=True,
-                                 mem_gb=1)
+        dv_sc1017ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer1017',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_sc1017ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_gs360ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Glasser',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_gs360ts_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_gs360ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Glasser',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_gs360ts_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_gd333ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Gordon',
-                                                    desc='timeseries',
-                                                    source_file=bold_file),
-                                name='dv_gd333_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_gd333ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Gordon',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_gd333_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_ts50ts_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                   dismiss_entities=['desc'],
-                                                   atlas='subcortical',
-                                                   desc='timeseries',
-                                                   source_file=bold_file),
-                               name='dv_ts50_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+        dv_ts50ts_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='subcortical',
+            desc='timeseries',
+            source_file=bold_file),
+            name='dv_ts50_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc117fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer117',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc117fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc117fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer117',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc117fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc217fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer217',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc217fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc217fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer217',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc217fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc317fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer317',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc317fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc317fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer317',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc317fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc417fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer417',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc417fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc417fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer417',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc417fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc517fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer517',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc517fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc517fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer517',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc517fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc617fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer617',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc617fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc617fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer617',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc617fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc717fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer717',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc717fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc717fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer717',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc717fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc817fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer817',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc817fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc817fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer817',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc817fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc917fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Schaefer917',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_sc917fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_sc917fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer917',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc917fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_sc1017fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                     dismiss_entities=['desc'],
-                                                     atlas='Schaefer1017',
-                                                     desc='connectivity',
-                                                     source_file=bold_file),
-                                 name='dv_sc1017fc_wf',
-                                 run_without_submitting=True,
-                                 mem_gb=1)
+        dv_sc1017fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Schaefer1017',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_sc1017fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_gs360fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Glaseer',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_gs333_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_gs360fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Glasser',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_gs360fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_gd333fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                    dismiss_entities=['desc'],
-                                                    atlas='Gordon',
-                                                    desc='connectivity',
-                                                    source_file=bold_file),
-                                name='dv_gd333fc_wf',
-                                run_without_submitting=True,
-                                mem_gb=1)
+        dv_gd333fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='Gordon',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_gd333fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_ts50fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                   dismiss_entities=['desc'],
-                                                   atlas='subcortical',
-                                                   desc='connectivity',
-                                                   source_file=bold_file),
-                               name='dv_ts50fc_wf',
-                               run_without_submitting=True,
-                               mem_gb=1)
+        dv_ts50fc_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            atlas='subcortical',
+            desc='connectivity',
+            source_file=bold_file),
+            name='dv_ts50fc_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_reho_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                 extension='.nii.gz',
-                                                 dismiss_entities=['desc'],
-                                                 compression=True,
-                                                 desc='reho',
-                                                 source_file=bold_file),
-                             name='dv_reho_wf',
-                             run_without_submitting=True,
-                             mem_gb=1)
+        dv_reho_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            extension='.nii.gz',
+            dismiss_entities=['desc'],
+            compression=True,
+            desc='reho',
+            source_file=bold_file),
+            name='dv_reho_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
-        dv_fd_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+        dv_fd_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            desc='framewisedisplacement',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_fd_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+        
+        dv_fdunfiltered_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            desc='framewisedisplacementunfiltered',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_fdunfiltered_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+        dv_confounds_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            desc='filteredconfounds',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_confounds_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+        dv_customconfounds_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            desc='filteredcustomconfounds',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_customconfounds_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+
+        """         
+        dv_dcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                dismiss_entities=['desc'],
-                                               desc='framewisedisplacement',
-                                               extension='.tsv',
+                                               desc='dcanmotion',
+                                               extension='.hdf5',
                                                source_file=bold_file),
-                           name='dv_fd_wf',
+                           name='dv_dcanmotion_wf',
                            run_without_submitting=True,
                            mem_gb=1)
+        dv_filtereddcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='filtereddcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_filtereddcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1)
+        dv_customdcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='customdcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_customdcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1)
+        dv_filteredcustomdcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='filteredcustomdcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_filteredcustomdcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1)
+        """
 
         workflow.connect([
             (inputnode, dv_cleandata_wf, [('processed_bold', 'in_file')]),
@@ -447,7 +538,16 @@ def init_writederivatives_wf(
             (inputnode, dv_gd333fc_wf, [('gd333_fc', 'in_file')]),
             (inputnode, dv_ts50fc_wf, [('ts50_fc', 'in_file')]),
             (inputnode, dv_fd_wf, [('fd', 'in_file')]),
+            (inputnode, dv_fdunfiltered_wf, [('fd_unfiltered', 'in_file')]),
+            (inputnode, dv_confounds_wf, [('filtered_confounds', 'in_file')]),
+            (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')])
+            # (inputnode, dv_dcanmotion_wf, [('dcan_motion', 'in_file')]),
+            # (inputnode, dv_filtereddcanmotion_wf, [('filtered_dcan_motion', 'in_file')]),
+            # (inputnode, dv_customdcanmotion_wf, [('custom_dcan_motion', 'in_file')]),
+            # (inputnode, dv_filteredcustomdcanmotion_wf, [('filtered_custom_dcan_motion', 'in_file')]),
+
         ])
+        
         if smoothing:
             dv_smoothcleandata_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
@@ -798,7 +898,7 @@ def init_writederivatives_wf(
             density='91k',
             source_file=bold_file,
             check_hdr=False),
-            name='dv_gs333_wf',
+            name='dv_gs360fc_wf',
             run_without_submitting=True,
             mem_gb=1)
 
@@ -862,6 +962,70 @@ def init_writederivatives_wf(
             run_without_submitting=True,
             mem_gb=1)
 
+        dv_fdunfiltered_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc', 'den'],
+            desc='framewisedisplacementunfiltered',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_fdunfiltered_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+
+        dv_confounds_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc', 'den'],
+            desc='filteredconfounds',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_confounds_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+
+        dv_customconfounds_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc', 'den'],
+            desc='filteredcustomconfounds',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_customconfounds_wf',
+            run_without_submitting=True,
+            mem_gb=1)
+        """
+        dv_dcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='dcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_dcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1)
+        dv_filtereddcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='filtereddcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_filtereddcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1)
+        dv_customdcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='customdcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_customdcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1)
+        dv_filteredcustomdcanmotion_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                               dismiss_entities=['desc'],
+                                               desc='filteredcustomdcanmotion',
+                                               extension='.hdf5',
+                                               source_file=bold_file),
+                           name='dv_filteredcustomdcanmotion_wf',
+                           run_without_submitting=True,
+                           mem_gb=1) 
+        """
+
         workflow.connect([
             (inputnode, dv_cleandata_wf, [('processed_bold', 'in_file')]),
             (inputnode, dv_alff_wf, [('alff_out', 'in_file')]),
@@ -895,6 +1059,13 @@ def init_writederivatives_wf(
             (inputnode, dv_reholh_wf, [('reho_lh', 'in_file')]),
             (inputnode, dv_rehorh_wf, [('reho_rh', 'in_file')]),
             (inputnode, dv_fd_wf, [('fd', 'in_file')]),
+            (inputnode, dv_fdunfiltered_wf, [('fd_unfiltered', 'in_file')]),
+            (inputnode, dv_confounds_wf, [('filtered_confounds', 'in_file')]),
+            (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')])
+            # (inputnode, dv_dcanmotion_wf, [('dcan_motion', 'in_file')]),
+            # (inputnode, dv_filtereddcanmotion_wf, [('filtered_dcan_motion', 'in_file')]),
+            # (inputnode, dv_customdcanmotion_wf, [('custom_dcan_motion', 'in_file')]),
+            # (inputnode, dv_filteredcustomdcanmotion_wf, [('filtered_custom_dcan_motion', 'in_file')]),
         ])
 
         if smoothing:

@@ -295,7 +295,7 @@ def motion_regression_filter(data,
     if motion_filter_type:
         if motion_filter_type == 'lp':
             hr_min = LP_freq_min
-            hr = hr_min
+            hr = hr_min / 60
             fs = 1. / TR
             fNy = fs / 2.
             fa = np.abs(hr - (np.floor((hr + fNy) / fs)) * fs)
@@ -307,7 +307,7 @@ def motion_regression_filter(data,
         else:
             if motion_filter_type == 'notch':
                 fc_RR_bw = np.array([fc_RR_min, fc_RR_max])
-                rr = fc_RR_bw
+                rr = fc_RR_bw / 60
                 fs = 1. / TR
                 fNy = fs / 2.
                 fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)

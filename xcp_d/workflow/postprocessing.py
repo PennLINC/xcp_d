@@ -183,12 +183,10 @@ frequency band {highpass}-{lowpass} Hz.
                        name="regress_the_data",
                        mem_gb=0.25 * mem_gb)
 
-
     # RF: rename to match
     interpolatewf = pe.Node(interpolate(TR=TR),
                             name="interpolation",
                             mem_gb=0.25 * mem_gb)
-
 
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
