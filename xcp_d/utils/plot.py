@@ -345,43 +345,44 @@ def confoundplotx(tseries,
             maxim_value.append(max(tseries[c]))
             minim_value.append(min(tseries[c]))
 
-            # threshold fd at 0.1,0.2 and 0.5
+            # threshold fd at 0.05, 0.1, 0.2, 0.5, 1.0 mm
             ax_ts.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
-            fda = tseries[c].copy()
-            fdx = tseries[c].copy()
-            fdx[fdx > 0] = 1.05
-            ax_ts.plot(fda, '.', color='gray', markersize=25)
-            ax_ts.plot(fdx, '.', color='gray', markersize=25)
-
-            ax_ts.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
-            fda[fda < 0.05] = np.nan
-            fdx = tseries[c].copy()
-            fdx[fdx >= 0.05] = 1.05
-            fdx[fdx < 0.05] = np.nan
-            ax_ts.plot(fda, '.', color='gray', markersize=25)
-            ax_ts.plot(fdx, '.', color='gray', markersize=25)
-
-            ax_ts.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
-            fda[fda < 0.1] = np.nan
-            fdx = tseries[c].copy()
-            fdx[fdx >= 0.1] = 1.05
-            fdx[fdx < 0.1] = np.nan
-            ax_ts.plot(fda, '.', color='#66c2a5', markersize=25)
-            ax_ts.plot(fdx, '.', color='#66c2a5', markersize=25)
-
-            ax_ts.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
-            fda[fda < 0.2] = np.nan
-            fdx = tseries[c].copy()
-            fdx[fdx >= 0.2] = 1.05
-            fdx[fdx < 0.2] = np.nan
-            ax_ts.plot(fda, '.', color='#fc8d62', markersize=25)
-            ax_ts.plot(fdx, '.', color='#fc8d62', markersize=25)
-
-            ax_ts.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
             fda[fda < 0.5] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.5] = 1.05
             fdx[fdx < 0.5] = np.nan
+            ax_ts.plot(fda, '.', color='gray', markersize=25)
+            ax_ts.plot(fdx, '.', color='gray', markersize=25)
+
+            ax_ts.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
+            fda[fda < 0.00] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.00] = 1.05
+            fdx[fdx < 0.00] = np.nan
+            ax_ts.plot(fda, '.', color='gray', markersize=25)
+            ax_ts.plot(fdx, '.', color='gray', markersize=25)
+
+            ax_ts.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
+            fda[fda < 0.05] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.05] = 1.05
+            fdx[fdx < 0.05] = np.nan
+            ax_ts.plot(fda, '.', color='#66c2a5', markersize=25)
+            ax_ts.plot(fdx, '.', color='#66c2a5', markersize=25)
+
+            ax_ts.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
+            fda[fda < 0.1] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.1] = 1.05
+            fdx[fdx < 0.1] = np.nan
+            ax_ts.plot(fda, '.', color='#fc8d62', markersize=25)
+            ax_ts.plot(fdx, '.', color='#fc8d62', markersize=25)
+
+            ax_ts.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
+            fda[fda < 0.2] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.2] = 1.05
+            fdx[fdx < 0.2] = np.nan
             ax_ts.plot(fda, '.', color='#8da0cb', markersize=25)
             ax_ts.plot(fdx, '.', color='#8da0cb', markersize=25)
 
@@ -433,7 +434,18 @@ def confoundplotx(tseries,
     ax_ts.legend(fontsize=40)
     if FD is True:
         ax_ts.set_ylim(0, 1.1)
-        ax_ts.set_yticks([0, 0.05, .1, 0.2, .5, 1])
+        ax_ts.set_yticks([0,
+                          .05,
+                          .1,
+                          .2,
+                          .3,
+                          .4,
+                          .5,
+                          .6,
+                          .7,
+                          .8,
+                          .9,
+                          1.0])
     elif ylims:
         ax_ts.set_ylim(ylims)
     else:
@@ -573,7 +585,7 @@ def plot_svgx(rawdata,
     })
 
     fdx = pd.DataFrame({'FD': np.loadtxt(fd)})
-    fdx_unfiltered = pd.DataFrame({'unfilteredFD': np.loadtxt(fd_unfiltered)})
+    fdx_unfiltered = pd.DataFrame({'FD': np.loadtxt(fd_unfiltered)})
 
     wbbf = pd.DataFrame({
         'Mean': np.nanmean(rw, axis=0),
@@ -644,12 +656,12 @@ def plot_svgx(rawdata,
     plt.cla()
     plt.clf()
 
-    figy = plt.figure(constrained_layout=True, figsize=(45, 60))
+    figy = plt.figure(constrained_layout=True, figsize=(45, 65))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
-                        height_ratios=[1, 1, 0.2, 2.5, 1])
+                        height_ratios=[1, 1, 0.2, 2.5, 1.5])
     confoundplotx(tseries=conf,
                   gs_ts=grid[0],
                   TR=TR,
