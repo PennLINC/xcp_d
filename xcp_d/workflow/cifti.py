@@ -470,6 +470,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('fd_timeseries_unfiltered',
+                                              'inputnode.fd_unfiltered')]),
         (censor_scrub, write_derivative_wf, [('fmriprep_confounds_uncensored',
                                               'inputnode.filtered_confounds')]),
         (censor_scrub, write_derivative_wf, [('custom_confounds_uncensored',

@@ -150,7 +150,7 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
                    desc="data after regreesion data ")
     resddata = File(exists=True, mandatory=True, desc="resdiual data ")
     fd = File(exists=True, mandatory=True, desc="fd")
-    fdunfiltered = File(exists=True, mandatory=True, desc="fd, unfiltered")   
+    fd_unfiltered = File(exists=True, mandatory=True, desc="fd, unfiltered")   
     mask = File(exists=False, mandatory=False, desc="mask file ")
     seg = File(exists=False, mandatory=False, desc="seg file ")
     TR = traits.Float(default_value=1, desc="TR")
@@ -194,7 +194,7 @@ class PlotSVGData(SimpleInterface):
                 TR=self.inputs.TR,
                 mask=self.inputs.mask,
                 fd=self.inputs.fd,
-                fd_unfiltered=self.inputs.fdunfiltered,
+                fd_unfiltered=self.inputs.fd_unfiltered,
                 seg=self.inputs.seg,
                 filenameaf=self._results['after_process'],
                 filenamebf=self._results['before_process'])

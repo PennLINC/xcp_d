@@ -30,7 +30,14 @@ def init_execsummary_wf(omp_nthreads,
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=[
-        't1w', 't1seg', 'regdata', 'resddata', 'fd', 'rawdata', 'mask'
+        't1w',
+        't1seg',
+        'regdata',
+        'resddata',
+        'fd',
+        'fd_unfiltered',
+        'rawdata',
+        'mask'
     ]),
         name='inputnode')
     inputnode.inputs.bold_file = bold_file
@@ -120,8 +127,11 @@ def init_execsummary_wf(omp_nthreads,
     workflow.connect([
         # plotrefbold # output node will be repalced with reportnode
         (plotrefbold_wf, ds_plotboldref_wf, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [('fd', 'fd'), ('regdata', 'regdata'),
-                                   ('resddata', 'resddata'), ('mask', 'mask'),
+        (inputnode, plot_svgx_wf, [('fd', 'fd'),
+                                   ('fd_unfiltered', 'fd_unfiltered'),
+                                   ('regdata', 'regdata'),
+                                   ('resddata', 'resddata'),
+                                   ('mask', 'mask'),
                                    ('bold_file', 'rawdata')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg')]),
         (plot_svgx_wf, ds_plot_svgxbe_wf, [('before_process', 'in_file')]),
