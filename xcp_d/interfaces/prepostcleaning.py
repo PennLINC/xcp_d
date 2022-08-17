@@ -232,7 +232,11 @@ class CensorScrub(SimpleInterface):
         motion_confounds_unfiltered = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
-            motion_filter_type=None)
+            motion_filter_type=None,
+            motion_filter_order=self.inputs.motion_filter_order,
+            freqband=[self.inputs.low_freq, self.inputs.high_freq],
+            cutoff=self.inputs.low_freq
+        )
         motion_unfiltered_df = pd.DataFrame(data=motion_confounds_unfiltered.values,
                                             columns=[
                                                 "rot_x", "rot_y", "rot_z", "trans_x",

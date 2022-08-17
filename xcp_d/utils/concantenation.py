@@ -179,9 +179,20 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     for task in tasklist:
         resbold = natsorted(
             fnmatch.filter(all_func_files,
-                           '*' + task + '*run*_desc-residual*bold*.nii.gz'))
+                           '*' + task + '*_desc-residual*bold*.nii.gz'))
         reg_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
+        if len(resbold) == 1:
+            res = resbold[0]
+            resid = res.split('task-')[1].partition('_')[-1]
+            # print(resid)
+            for j in datafile:
+                fileid = res.split('task-')[0] + resid.partition('_desc')[0]
+                outfile = fileid + j
+                filex = glob.glob(res.split('task-')[0] + '*task*' + j)
+                if j.endswith('framewisedisplacement_bold.tsv') or j.endswith('framewisedisplacementunfiltered_bold.tsv'):
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    make_DCAN_DF(filex, name)
         if len(resbold) > 1:
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
@@ -201,13 +212,13 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     make_DCAN_DF(filex, name)
                     for f in filex:
                         name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
-                        make_DCAN_DF(f, name)
+                        make_DCAN_DF([f], name)
                 if j.endswith('_desc-framewisedisplacementunfiltered_bold.tsv'):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
                     for f in filex:
                         name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
-                        make_DCAN_DF(f, name)
+                        make_DCAN_DF([f], name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)
@@ -335,7 +346,19 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         resbold = natsorted(
             fnmatch.filter(
                 all_func_files,
-                '*' + task + '*run*den-91k_desc-residual*bold.dtseries.nii'))
+                '*' + task + '*den-91k_desc-residual*bold.dtseries.nii'))
+        if len(resbold) == 1:
+            res = resbold[0]
+            resid = res.split('task-')[1].partition('_')[-1]
+            # print(resid)
+            for j in datafile:
+                fileid = res.split('task-')[0] + resid.partition('_desc')[0]
+                outfile = fileid + j
+                if j.endswith('framewisedisplacement_bold.tsv') or j.endswith('framewisedisplacementunfiltered_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    filex = glob.glob(res.split('task-')[0] + '*task*' + j)
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    make_DCAN_DF(filex, name)
         if len(resbold) > 1:
             reg_dvars = []
             res = resbold[0]
@@ -353,7 +376,14 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile +
                               ' -cifti ' + combinefile)
-                if j.endswith('framewisedisplacement_bold.tsv'):
+                if j.endswith('framewisedisplacement_bold.tsv') or j.endswith('framewisedisplacementunfiltered_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    outfile = fileid + j
+                    filex = natsorted(
+                        glob.glob(res.split('run-')[0] + '*run*' + j))
+                    combine_fd(filex, outfile)
+                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    make_DCAN_DF(filex, name)
                     fileid = fileid.split('_den-91k')[0]
                     outfile = fileid + j
                     filex = natsorted(
@@ -363,18 +393,11 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     make_DCAN_DF(filex, name)
                     for f in filex:
                         name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
-                        make_DCAN_DF(f, name)
-                if j.endswith('framewisedisplacementunfiltered_bold.tsv'):
-                    fileid = fileid.split('_den-91k')[0]
-                    outfile = fileid + j
-                    filex = natsorted(
-                        glob.glob(res.split('run-')[0] + '*run*' + j))
-                    combine_fd(filex, outfile)
-                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
-                    make_DCAN_DF(filex, name)
+                        make_DCAN_DF([f], name)
+
                     for f in filex:
                         name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
-                        make_DCAN_DF(f, name)
+                        make_DCAN_DF([f], name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(

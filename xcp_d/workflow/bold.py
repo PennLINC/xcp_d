@@ -680,6 +680,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                               'inputnode.resddata')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
+        (censor_scrub, executivesummary_wf, [('fd_timeseries_unfiltered',
+                                              'inputnode.fd_unfiltered')])
     ])
 
     return workflow
