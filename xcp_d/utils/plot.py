@@ -396,7 +396,7 @@ def confoundplotx(tseries,
                        verticalalignment='top',
                        horizontalalignment='left',
                        transform=ax_ts.transAxes,
-                       fontsize=25)
+                       fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.2])
             ax_ts.text(1.01,
                        .2,
@@ -405,7 +405,7 @@ def confoundplotx(tseries,
                        verticalalignment='top',
                        horizontalalignment='left',
                        transform=ax_ts.transAxes,
-                       fontsize=25)
+                       fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.5])
             ax_ts.text(1.01,
                        .5,
@@ -414,7 +414,7 @@ def confoundplotx(tseries,
                        verticalalignment='top',
                        horizontalalignment='left',
                        transform=ax_ts.transAxes,
-                       fontsize=25)
+                       fontsize=30)
             good_vols = len(tseries[c][tseries[c] < 0.05])
             ax_ts.text(1.01,
                        .05,
@@ -423,7 +423,7 @@ def confoundplotx(tseries,
                        verticalalignment='top',
                        horizontalalignment='left',
                        transform=ax_ts.transAxes,
-                       fontsize=25)
+                       fontsize=30)
     else:
         for c in columns:
             ax_ts.plot(tseries[c], label=c, linewidth=5)
