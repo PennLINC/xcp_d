@@ -64,7 +64,7 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=0.1, motion_filter_order=4):
+def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=6.0, motion_filter_order=4):
     """Load the 6 motion regressors."""
 
     # Pull out rot and trans values and concatenate them
