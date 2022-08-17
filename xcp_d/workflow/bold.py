@@ -267,7 +267,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts',
         'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'ts50_ts', 'ts50_fc', 'gs360_ts',
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'qc_file', 'fd', 'fd_unfiltered',
-        'filtered_confounds', 'filtered_custom_confounds', 'dcan_motion', 
+        'filtered_confounds', 'filtered_custom_confounds', 'dcan_motion', 'tmask',
         'filtered_dcan_motion', 'custom_dcan_motion', 'filtered_custom_dcan_motion'
     ]),
         name='outputnode')
@@ -521,6 +521,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         (censor_scrub, outputnode, [('fd_timeseries_unfiltered', 'fd_unfiltered')]),
         (censor_scrub, outputnode, [('fmriprep_confounds_uncensored', 'filtered_confounds')]),
         (censor_scrub, outputnode, [('custom_confounds_uncensored', 'filtered_custom_confounds')]),
+        (censor_scrub, outputnode, [('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
@@ -569,6 +570,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                               'inputnode.filtered_confounds')]),
         (censor_scrub, write_derivative_wf, [('custom_confounds_uncensored',
                                               'inputnode.filtered_custom_confounds')]),
+        (censor_scrub, write_derivative_wf, [('tmask',
+                                              'inputnode.tmask')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
