@@ -346,15 +346,9 @@ def confoundplotx(tseries,
             minim_value.append(min(tseries[c]))
 
             # threshold fd at 0.05, 0.1, 0.2, 0.5, 1.0 mm
-            ax_ts.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
-            fda[fda < 0.5] = np.nan
-            fdx = tseries[c].copy()
-            fdx[fdx >= 0.5] = 1.05
-            fdx[fdx < 0.5] = np.nan
-            ax_ts.plot(fda, '.', color='gray', markersize=25)
-            ax_ts.plot(fdx, '.', color='gray', markersize=25)
 
             ax_ts.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
+            fda = tseries[c].copy()
             fda[fda < 0.00] = np.nan
             fdx = tseries[c].copy()
             fdx[fdx >= 0.00] = 1.05
@@ -385,6 +379,14 @@ def confoundplotx(tseries,
             fdx[fdx < 0.2] = np.nan
             ax_ts.plot(fda, '.', color='#8da0cb', markersize=25)
             ax_ts.plot(fdx, '.', color='#8da0cb', markersize=25)
+
+            ax_ts.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
+            fda[fda < 0.5] = np.nan
+            fdx = tseries[c].copy()
+            fdx[fdx >= 0.5] = 1.05
+            fdx[fdx < 0.5] = np.nan
+            ax_ts.plot(fda, '.', color='gray', markersize=25)
+            ax_ts.plot(fdx, '.', color='gray', markersize=25)
 
             good_vols = len(tseries[c][tseries[c] < 0.1])
             ax_ts.text(1.01,
