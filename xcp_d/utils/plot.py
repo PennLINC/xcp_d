@@ -48,7 +48,7 @@ def plotimage(img, out_file):
     return out_file
 
 
-def plot_svg(fdata, fd, dvars, filename, tr=1):
+def plot_svg(fdata, fd, dvars, filename, TR=1):
     '''
     plot carpetplot with fd and dvars
     ------------
@@ -60,7 +60,7 @@ def plot_svg(fdata, fd, dvars, filename, tr=1):
       dvars
     filename
       filename
-    tr:
+    TR:
     repetion time
     '''
     sns.set_style('whitegrid')
@@ -70,12 +70,12 @@ def plot_svg(fdata, fd, dvars, filename, tr=1):
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1] * (3 - 1) + [5])
-    confoundplot(fd, grid[0], tr=tr, color='b', name='FD')
-    confoundplot(dvars, grid[1], tr=tr, color='r', name='DVARS')
+    confoundplot(fd, grid[0], TR=TR, color='b', name='FD')
+    confoundplot(dvars, grid[1], TR=TR, color='r', name='DVARS')
     plot_carpet(
         func_data=fdata,
         subplot=grid[-1],
-        tr=tr,
+        TR=TR,
     )
     fig.savefig(filename, bbox_inches="tight", pad_inches=None)
 
@@ -98,7 +98,7 @@ def confoundplot(tseries,
                  gs_dist=None,
                  name=None,
                  units=None,
-                 tr=None,
+                 TR=None,
                  hide_x=True,
                  color='b',
                  nskip=0,
@@ -114,15 +114,15 @@ def confoundplot(tseries,
       file name
     units:
       tseries unit
-    tr:
+    TR:
       repetition time
     '''
     sns.set_style('whitegrid')
     # Define TR and number of frames
     notr = False
-    if tr is None:
+    if TR is None:
         notr = True
-        tr = 1.
+        TR = 1.
     ntsteps = len(tseries)
     tseries = np.array(tseries)
 
@@ -146,7 +146,7 @@ def confoundplot(tseries,
             ax_ts.set_xlabel('time (frame #)')
         else:
             ax_ts.set_xlabel('time (s)')
-            labels = tr * np.array(xticks)
+            labels = TR * np.array(xticks)
             ax_ts.set_xticklabels(['%.02f' % t for t in labels.tolist()])
     else:
         ax_ts.set_xticklabels([])
@@ -286,7 +286,7 @@ def confoundplot(tseries,
 
 def confoundplotx(tseries,
                   gs_ts,
-                  tr=None,
+                  TR=None,
                   hide_x=True,
                   ylims=None,
                   ylabel=None,
@@ -297,9 +297,9 @@ def confoundplotx(tseries,
 
     # Define TR and number of frames
     notr = False
-    if tr is None:
+    if TR is None:
         notr = True
-        tr = 1.0
+        TR = 1.0
 
     ntsteps = tseries.shape[0]
     # tseries = np.array(tseries)
@@ -324,7 +324,7 @@ def confoundplotx(tseries,
             ax_ts.set_xlabel("Time (frame #)")
         else:
             ax_ts.set_xlabel("Time (s)")
-            labels = tr * np.array(xticks)
+            labels = TR * np.array(xticks)
             labels = labels.astype(int)
             ax_ts.set_xticklabels(labels)
     else:
@@ -454,12 +454,12 @@ def plotseries(conf,
                ylim=None,
                ylabelx=None,
                hide_x=None,
-               tr=None,
+               TR=None,
                ax=None):
     colums = conf.columns
-    if tr is None:
-        tr = 1.
-    xtick = np.linspace(0, conf.shape[0] * tr, num=conf.shape[0])
+    if TR is None:
+        TR = 1.
+    xtick = np.linspace(0, conf.shape[0] * TR, num=conf.shape[0])
     plt.style.use('seaborn-white')
     plt.xticks(color='k')
     plt.yticks(color='k')
@@ -491,12 +491,12 @@ def plotseries(conf,
 
     ax.set_xticks(xticks)
     if not hide_x:
-        if tr is None:
+        if TR is None:
             ax.set_xlabel("time (frame #)")
         else:
             ax.set_xlabel("time (s)")
             ax.set_xticklabels(
-                ["%.01f" % t for t in (tr * np.array(xticks)).tolist()])
+                ["%.01f" % t for t in (TR * np.array(xticks)).tolist()])
 
     for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(2)
@@ -516,7 +516,7 @@ def plot_svgx(rawdata,
               filenameaf,
               mask=None,
               seg=None,
-              tr=1,
+              TR=1,
               raw_dvars=None,
               reg_dvars=None,
               regf_dvars=None,
@@ -534,7 +534,7 @@ def plot_svgx(rawdata,
          mask for nifti if available
     seg:
         3 tissues seg files
-    tr:
+    TR:
         repetition times
     fd:
       framewise displacement
@@ -604,12 +604,12 @@ def plot_svgx(rawdata,
                                 template=rawdata,
                                 filename=scaledrawdata,
                                 mask=mask,
-                                TR=tr)
+                                TR=TR)
     scaledresdata = write_ndata(data_matrix=resddatax,
                                 template=resddata,
                                 filename=scaledresdata,
                                 mask=mask,
-                                TR=tr)
+                                TR=TR)
 
     plt.cla()
     plt.clf()
@@ -621,20 +621,20 @@ def plot_svgx(rawdata,
                         height_ratios=[1, 1, 0.2, 2.5, 1.5])
     confoundplotx(tseries=conf,
                   gs_ts=grid[0],
-                  tr=tr,
+                  TR=TR,
                   ylabel='DVARS',
                   hide_x=True)
-    confoundplotx(tseries=wbbf, gs_ts=grid[1], tr=tr, hide_x=True, ylabel='WB')
+    confoundplotx(tseries=wbbf, gs_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
     # plot_text(imgdata=rawdata,gs_ts=grid[2])
     # display_cb(gs_ts=grid[3])
     plot_carpet(func=scaledrawdata,
                 atlaslabels=atlaslabels,
-                tr=tr,
+                TR=TR,
                 subplot=grid[3],
                 legend=False)
     confoundplotx(tseries=fdx_unfiltered,
                   gs_ts=grid[4],
-                  tr=tr,
+                  TR=TR,
                   hide_x=False,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
@@ -652,13 +652,13 @@ def plot_svgx(rawdata,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
     confoundplotx(tseries=conf,
                   gs_ts=grid[0],
-                  tr=tr,
+                  TR=TR,
                   ylabel='DVARS',
                   hide_x=True,
                   work_dir=work_dir)
     confoundplotx(tseries=wbaf,
                   gs_ts=grid[1],
-                  tr=tr,
+                  TR=TR,
                   hide_x=True,
                   ylabel='WB',
                   work_dir=work_dir)
@@ -668,12 +668,12 @@ def plot_svgx(rawdata,
 
     plot_carpet(func=scaledresdata,
                 atlaslabels=atlaslabels,
-                tr=tr,
+                TR=TR,
                 subplot=grid[3],
                 legend=True)
     confoundplotx(tseries=fdx,
                   gs_ts=grid[4],
-                  tr=tr,
+                  TR=TR,
                   hide_x=False,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
@@ -687,7 +687,7 @@ def plot_svgx(rawdata,
 class fMRIPlot:
     """Generates the fMRI Summary Plot."""
 
-    __slots__ = ("func_file", "mask_data", "tr", "seg_data", "confounds",
+    __slots__ = ("func_file", "mask_data", "TR", "seg_data", "confounds",
                  "spikes")
 
     def __init__(
@@ -697,7 +697,7 @@ class fMRIPlot:
         data=None,
         confound_file=None,
         seg_file=None,
-        tr=None,
+        TR=None,
         usecols=None,
         units=None,
         vlines=None,
@@ -705,7 +705,7 @@ class fMRIPlot:
     ):
         func_img = nb.load(func_file)
         self.func_file = func_file
-        self.tr = tr or _get_tr(func_img)
+        self.TR = TR or _get_tr(func_img)
         self.mask_data = None
         self.seg_data = None
         sns.set_style("whitegrid")
@@ -770,7 +770,7 @@ class fMRIPlot:
             spikesplot(tsz,
                        title=name,
                        outer_gs=grid[grid_id],
-                       tr=self.tr,
+                       TR=self.TR,
                        zscored=iszs)
             grid_id += 1
 
@@ -783,7 +783,7 @@ class fMRIPlot:
             tseries = kwargs.pop("values")
             confoundplot(tseries,
                          grid[grid_id],
-                         tr=self.tr,
+                         TR=self.TR,
                          color=palette[i],
                          name=name,
                          **kwargs)
@@ -792,7 +792,7 @@ class fMRIPlot:
         plot_carpet(self.func_file,
                     atlaslabels=self.seg_data,
                     subplot=grid[-1],
-                    tr=self.tr,
+                    TR=self.TR,
                     labelsize=labelsize)
         # spikesplot_cb([0.7, 0.78, 0.2, 0.008])
         return figure
@@ -809,7 +809,7 @@ def plot_carpet(
     title=None,
     output_file=None,
     legend=True,
-    tr=None,
+    TR=None,
     lut=None,
 ):
     """
@@ -843,7 +843,7 @@ def plot_carpet(
         legend : bool
             Whether to render the average functional series with ``atlaslabels`` as
             overlay.
-        tr : float , optional
+        TR : float , optional
             Specify the TR, if specified it uses this value. If left as None,
             # of frames is plotted instead of time.
         lut : ndarray, optional
@@ -937,7 +937,7 @@ def plot_carpet(
         epinii=epinii,
         segnii=segnii,
         nslices=nslices,
-        tr=tr,
+        TR=TR,
         subplot=subplot,
         title=title,
         output_file=output_file,
@@ -950,7 +950,7 @@ def _carpet(func,
             order,
             cmap,
             labelsize,
-            tr=None,
+            TR=None,
             detrend=True,
             subplot=None,
             legend=False,
@@ -960,13 +960,13 @@ def _carpet(func,
             segnii=None,
             nslices=None):
     """Common carpetplot building code for volumetric / CIFTI plots"""
-    if tr is None:
-        tr = 1.0
+    if TR is None:
+        TR = 1.0
     sns.set_style("whitegrid")
     # Detrend data
     v = (None, None)
     if detrend:
-        data = clean(data.T, t_r=tr).T
+        data = clean(data.T, t_r=TR).T
         v = (-2, 2)
 
     # If subplot is not defined
@@ -1034,7 +1034,7 @@ def _carpet(func,
     # xticks = list(range(0, data.shape[-1])[::interval])
     # ax1.set_xticks(xticks)
     # ax1.set_xlabel("time (frame #)" if notr else "time (s)")
-    # labels = tr * (np.array(xticks))
+    # labels = TR * (np.array(xticks))
     # ax1.set_xticklabels(["%.02f" % t for t in labels.tolist()], fontsize=5)
 
     # Remove and redefine spines

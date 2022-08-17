@@ -87,7 +87,7 @@ def split_filename(fname):
 
     """
 
-    # TM 07152022 - edited to add cifti extensions 
+    # TM 07152022 - edited to add cifti and workbench extensions 
     special_extensions = [
         ".nii.gz",
         ".tar.gz",
@@ -111,6 +111,10 @@ def split_filename(fname):
         ".shape.gii",
         ".rgba.gii",
         ".surf.gii",
+        ".dpconn.nii",
+        ".dtraj.nii",
+        ".pconnseries.nii",
+        ".pconnscalar.nii"
     ]
 
     pth = op.dirname(fname)

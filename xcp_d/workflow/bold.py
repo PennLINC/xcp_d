@@ -21,7 +21,8 @@ from ..interfaces import FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_resd_smoohthing
+from ..interfaces import interpolate
+from .postprocessing import init_resd_smoothing
 from .execsummary import init_execsummary_wf
 from num2words import num2words
 from ..workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
@@ -320,7 +321,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
-    resdsmoothing_wf = init_resd_smoohthing(
+    resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
         cifti=False,
@@ -329,7 +330,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     filtering_wf = pe.Node(
         FilteringData(
-            tr=TR,
+            TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             filter_order=bpf_order,
@@ -352,7 +353,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     executivesummary_wf = init_execsummary_wf(
-        tr=TR,
+        TR=TR,
         bold_file=bold_file,
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
@@ -483,28 +484,28 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # residual smoothing
     workflow.connect([(filtering_wf, resdsmoothing_wf,
-                       [('filt_file', 'inputnode.bold_file')])])
+                       [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
     workflow.connect([
         (inputnode, fcon_ts_wf, [('ref_file', 'inputnode.ref_file')]),
-        (filtering_wf, fcon_ts_wf, [('filt_file', 'inputnode.clean_bold')])
+        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
     workflow.connect([
         (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
         (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (filtering_wf, alff_compute_wf, [('filt_file', 'inputnode.clean_bold')
+        (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')
                                          ]),
-        (filtering_wf, reho_compute_wf, [('filt_file', 'inputnode.clean_bold')
+        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')
                                          ]),
     ])
 
     # qc report
     workflow.connect([
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
-        (filtering_wf, qcreport, [('filt_file', 'cleaned_file')]),
+        (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
@@ -515,7 +516,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # write  to the outputnode, may be use in future
     workflow.connect([
-        (filtering_wf, outputnode, [('filt_file', 'processed_bold')]),
+        (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
         (censor_scrub, outputnode, [('fd_timeseries_unfiltered', 'fd_unfiltered')]),
         (censor_scrub, outputnode, [('fmriprep_confounds_uncensored', 'filtered_confounds')]),
@@ -556,7 +557,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
 
     # write derivatives
     workflow.connect([
-        (filtering_wf, write_derivative_wf, [('filt_file',
+        (filtering_wf, write_derivative_wf, [('filtered_file',
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
@@ -601,7 +602,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, tr=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=False,
                             mem_gb=mem_gbx['timeseries'])
@@ -673,7 +674,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                           ('bold_mask', 'inputnode.mask')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')
                                               ]),
-        (filtering_wf, executivesummary_wf, [('filt_file',
+        (filtering_wf, executivesummary_wf, [('filtered_file',
                                               'inputnode.resddata')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
@@ -711,7 +712,10 @@ def _get_ref_mask(fname):
     return mask, ref
 
 
-def _t12native(fname):
+def _t12native(fname): #TODO: Update names and refactor
+    '''
+    Takes in bold filename, finds transform from T1W to native space
+    '''
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]

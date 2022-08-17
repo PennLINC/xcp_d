@@ -22,7 +22,7 @@ def init_execsummary_wf(omp_nthreads,
                         bold_file,
                         output_dir,
                         mni_to_t1w,
-                        tr,
+                        TR,
                         mem_gb,
                         layout,
                         name='execsummary_wf'):
@@ -83,7 +83,7 @@ def init_execsummary_wf(omp_nthreads,
         n_procs=omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads)
 
-    plot_svgx_wf = pe.Node(PlotSVGData(tr=tr, rawdata=bold_file),
+    plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file),
                            name='plot_svgx_wf',
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)

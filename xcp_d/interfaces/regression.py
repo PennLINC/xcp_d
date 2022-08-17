@@ -13,6 +13,7 @@ from xcp_d.utils import confounds
 from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
 from scipy import signal
+import pandas as pd
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -80,6 +81,7 @@ class regress(SimpleInterface):
             use_ext=False,
         )
         self._results['confound_matrix'] = confounds_file_output_name
+        confound = pd.DataFrame(confound)
         confound.to_csv(confounds_file_output_name, sep="\t", header=True, index=False)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
@@ -92,6 +94,10 @@ class regress(SimpleInterface):
         demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
 
         # Regress out the confounds via linear regression from sklearn
+        if demeaned_detrended_data.shape[1] < confound.shape[0]:
+            print("Warning: Regression might not be effective due to rank deficiency, i.e:"
+                  "the number of volumes in the bold file is much smaller than the number of"
+                  " egressors.")
         residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
 
         # Write out the data
@@ -151,7 +157,7 @@ def demean_detrend_data(data):
 
 class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
 
 
 class _ciftidespikeOutputSpec(TraitedSpec):
@@ -177,6 +183,6 @@ class ciftidespike(SimpleInterface):
             use_ext=False,
         )
         self._results['des_file'] = despikedatacifti(cifti=self.inputs.in_file,
-                                                     TR=self.inputs.tr,
+                                                     TR=self.inputs.TR,
                                                      basedir=runtime.cwd)
         return runtime

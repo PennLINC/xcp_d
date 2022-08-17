@@ -153,7 +153,7 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
     fdunfiltered = File(exists=True, mandatory=True, desc="fd, unfiltered")   
     mask = File(exists=False, mandatory=False, desc="mask file ")
     seg = File(exists=False, mandatory=False, desc="seg file ")
-    tr = traits.Float(default_value=1, desc="TR")
+    TR = traits.Float(default_value=1, desc="TR")
 
 
 class _plotsvgOutputSpec(TraitedSpec):
@@ -191,7 +191,7 @@ class PlotSVGData(SimpleInterface):
                 rawdata=self.inputs.rawdata,
                 regdata=self.inputs.regdata,
                 resddata=self.inputs.resddata,
-                tr=self.inputs.tr,
+                TR=self.inputs.TR,
                 mask=self.inputs.mask,
                 fd=self.inputs.fd,
                 fd_unfiltered=self.inputs.fdunfiltered,

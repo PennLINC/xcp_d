@@ -20,30 +20,30 @@ LOGGER = logging.getLogger('nipype.interface')
 class _filterdataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
-                   desc="Input file : either cifti or nifti file")
-    tr = traits.Float(exists=True, mandatory=True, desc="repetition time")
+                   desc="Bold file")
+    TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
     filter_order = traits.Int(exists=True,
                               mandatory=True,
                               default_value=2,
-                              desc="filter order")
+                              desc="Filter order")
     lowpass = traits.Float(exists=True,
                            mandatory=True,
                            default_value=0.10,
-                           desc="lowpass filter in Hz")
+                           desc="Lowpass filter in Hz")
     highpass = traits.Float(exists=True,
                             mandatory=True,
                             default_value=0.01,
-                            desc="highpass filter in Hz")
+                            desc="Highpass filter in Hz")
     mask = File(exists=False,
                 mandatory=False,
-                desc=" brain mask for nifti file")
+                desc="Bain mask for nifti file")
     bandpass_filter = traits.Bool(exists=False,
                                   mandatory=True,
-                                  desc="apply bandpass or not")
+                                  desc="To apply bandpass or not")
 
 
 class _filterdataOutputSpec(TraitedSpec):
-    filt_file = File(exists=True, manadatory=True, desc=" filtered file")
+    filtered_file = File(exists=True, manadatory=True, desc="Filtered file")
 
 
 class FilteringData(SimpleInterface):
@@ -56,7 +56,7 @@ class FilteringData(SimpleInterface):
     .. doctest::
     >>> filt=FilteringData()
     >>> filt.inputs.in_file = reg._results['res_file']
-    >>> filt.inputs.tr = 3
+    >>> filt.inputs.TR = 3
     >>> filt.inputs.lowpass = 0.08
     >>> filt.inputs.highpass = 0.01
     >>> filt.run()
@@ -75,7 +75,7 @@ class FilteringData(SimpleInterface):
         # filter the data
         if self.inputs.bandpass_filter:
             filt_data = butter_bandpass(data=data_matrix,
-                                        fs=1 / self.inputs.tr,
+                                        fs=1 / self.inputs.TR,
                                         lowpass=self.inputs.lowpass,
                                         highpass=self.inputs.highpass,
                                         order=self.inputs.filter_order)
@@ -89,16 +89,16 @@ class FilteringData(SimpleInterface):
             suffix = '_filtered.nii.gz'
 
         # write the output out
-        self._results['filt_file'] = fname_presuffix(
+        self._results['filtered_file'] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results['filt_file'] = write_ndata(
+        self._results['filtered_file'] = write_ndata(
             data_matrix=filt_data,
             template=self.inputs.in_file,
-            filename=self._results['filt_file'],
+            filename=self._results['filtered_file'],
             mask=self.inputs.mask)
         return runtime
 
@@ -110,33 +110,19 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     lowpass frequency
     highpass frequency
     '''
+    nyq = 0.5 * fs  # nyquist frequency
 
-    nyq = 0.5 * fs
+    # normalize the cutoffs
     lowcut = np.float(highpass) / nyq
     highcut = np.float(lowpass) / nyq
 
-    b, a = butter(order / 2, [lowcut, highcut], btype='band')
+    b, a = butter(order / 2, [lowcut, highcut], btype='band')  # get filter coeff
 
-    # pad the data with zeros to avoid filter artifacts
-    n = np.int(data.shape[1] / 4)
-    datax = np.hstack((data[:, 0:n], data, data[:, 0:n]))
+    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
 
-    # get the mean of the data
-    mean_data = np.mean(data, axis=1)
+    # apply the filter, loop through columns of regressors
+    for ii in range(filtered_data.shape[0]):
+        filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
+                                        padlen=3*(max(len(b), len(a))-1))
 
-    filtdata = np.zeros_like(datax)
-
-    # filter_dir = np.floor(order/2)
-
-    # filter once first
-    for i in range(datax.shape[0]):
-        filtdata[i, :] = filtfilt(b, a, datax[i, :])
-
-    nn = datax.shape[1]
-
-    # add mean back
-    mean_datag = np.outer(mean_data, np.ones(filtdata.shape[1]))
-
-    filtered_data = np.add(mean_datag, filtdata)
-
-    return filtered_data[:, n:(nn - n)]
+    return filtered_data

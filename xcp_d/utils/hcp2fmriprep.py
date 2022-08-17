@@ -161,9 +161,9 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
             idx[1] + '_acq-' + idx[2] + '_space-fsLR_den-91k_bold.dtseries.nii'
 
         niftip = k + '/' + filenamex + '.nii.gz'
-        tr = nb.load(niftip).header.get_zooms()[-1]  # repetition time
+        TR = nb.load(niftip).header.get_zooms()[-1]  # repetition time
 
-        jsontis = {"RepetitionTime": np.float(tr), "TaskName": idx[1]}
+        jsontis = {"RepetitionTime": np.float(TR), "TaskName": idx[1]}
 
         json2 = {
             "grayordinates": "91k",
