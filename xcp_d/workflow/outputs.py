@@ -113,7 +113,7 @@ def init_writederivatives_wf(
         'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts', 'sc917_fc',
         'sc1017_ts', 'sc1017_fc', 'reho_lh', 'reho_rh', 'reho_out', 'gs360_ts',
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
-        'fd', 'fd_unfiltered' 'filtered_confounds', 'filtered_custom_confounds'
+        'fd', 'fd_unfiltered', 'filtered_confounds', 'filtered_custom_confounds'
         # 'dcan_motion',
         # 'filtered_dcan_motion', 'custom_dcan_motion',
         # 'filtered_custom_dcan_motion'
