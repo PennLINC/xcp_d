@@ -211,13 +211,13 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
                     for f in filex:
-                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('_space-')[0], j.split('.')[0])
                         make_DCAN_DF([f], name)
                 if j.endswith('_desc-framewisedisplacementunfiltered_bold.tsv'):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
                     for f in filex:
-                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('_space-')[0], j.split('.')[0])
                         make_DCAN_DF([f], name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
@@ -392,11 +392,11 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
                     for f in filex:
-                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('_space-')[0], j.split('.')[0])
                         make_DCAN_DF([f], name)
 
                     for f in filex:
-                        name = '{0}{1}-DCAN.hdf5'.format(f.split('space-')[0], j.split('.')[0])
+                        name = '{0}{1}-DCAN.hdf5'.format(f.split('_space-')[0], j.split('.')[0])
                         make_DCAN_DF([f], name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
