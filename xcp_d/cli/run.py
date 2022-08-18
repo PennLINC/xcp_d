@@ -248,9 +248,9 @@ def get_parser():
     g_censor.add_argument(
         '-f',
         '--fd-thresh',
-        default=0.3,
+        default=0.2,
         type=float,
-        help='framewise displacement threshold for censoring, default is 0.3mm'
+        help='framewise displacement threshold for censoring, default is 0.2mm'
     )
 
     g_other = parser.add_argument_group('Other options')
