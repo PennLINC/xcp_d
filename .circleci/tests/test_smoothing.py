@@ -7,16 +7,8 @@ import tempfile
 import os
 import numpy as np
 
-# establish necessary variables
-smoothing = 6
 
-# # turn into standard deviation
-# def fwhm2sigma(fwhm):
-#     return fwhm / np.sqrt(8 * np.log(2))
-# sigma_lx = fwhm2sigma(smoothing)
-
-
-def test_smoothing_Nifti(data_dir, smoothing):
+def test_smoothing_Nifti(data_dir):
     #  Specify inputs
     in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -43,9 +35,8 @@ def test_smoothing_Nifti(data_dir, smoothing):
     # else this will need to be overwritten later
     os.system('rm -rf 3dFWHMx.1D test_fwhm.out test_file.out')
 
-
     # Smooth the data
-    smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),  # FWHM = kernel size
+    smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=6),  # FWHM = kernel size
                           name="nifti_smoothing")  # Use fslmaths to smooth the image
     smooth_data.inputs.in_file = in_file
     results = smooth_data.run()
@@ -72,6 +63,12 @@ def test_smoothing_Nifti(data_dir, smoothing):
 
 
 # TODO: SMOOTHING ESTIMATIONS VIA CONNECTOME WORKBENCH ARE A ROADMAP ITEM
+# establish necessary variables
+# smoothing = 6
+# # turn into standard deviation
+# def fwhm2sigma(fwhm):
+#     return fwhm / np.sqrt(8 * np.log(2))
+# sigma_lx = fwhm2sigma(smoothing)
 # def test_smoothing_Cifti(data_dir, sigma_lx):
 #     # Specify inputs
 #     in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
