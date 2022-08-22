@@ -14,21 +14,17 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from num2words import num2words
 from ..interfaces import computeqcplot
 from ..utils import bid_derivative, stringforparams
 from ..interfaces import FunctionalSummary, ciftidespike
 from .connectivity import init_cifti_conts_wf
 from .restingstate import init_compute_alff_wf, init_surface_reho_wf
 from .execsummary import init_execsummary_wf
-from ..interfaces import interpolate
 from ..interfaces import (FilteringData, regress)
 from .postprocessing import init_resd_smoothing
-from num2words import num2words
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
-from ..interfaces import ciftidespike
-
-
 LOGGER = logging.getLogger('nipype.workflow')
 
 
@@ -572,6 +568,5 @@ class DerivativesDataSink(bid_derivative):
 
 
 def get_ciftiTR(cifti_file):
-    import nibabel as nb
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step
