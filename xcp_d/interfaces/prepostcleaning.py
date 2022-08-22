@@ -1,13 +1,14 @@
-import numpy as np
 import os
+import numpy as np
 import pandas as pd
 import nibabel as nb
 from ..utils import (read_ndata, write_ndata, compute_FD,
                      generate_mask, interpolate_masked_data)
+from ..utils.filemanip import fname_presuffix
+from ..utils.confounds import (load_motion)
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
-from ..utils.filemanip import fname_presuffix
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
@@ -145,7 +146,7 @@ class RemoveTR(SimpleInterface):
 
                 custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
                                                     index=False,
-                                                    header=False, 
+                                                    header=False,
                                                     sep="\t")  # Assuming input is tab separated!
 
         return runtime
@@ -153,8 +154,9 @@ class RemoveTR(SimpleInterface):
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
-    fd_thresh = traits.Float(exists=True, mandatory=False, default_value=0.2, desc="Framewise displacement threshold. All"
-                             "values above this will be dropped.")
+    fd_thresh = traits.Float(exists=True, mandatory=False, default_value=0.2,
+                             desc="Framewise displacement"
+                             "threshold. All values above this will be dropped.")
     custom_confounds = traits.Either(traits.Undefined,
                                      File,
                                      desc="Name of custom confounds file, or True",
@@ -199,18 +201,17 @@ class _CensorScrubOutputSpec(TraitedSpec):
 
 class CensorScrub(SimpleInterface):
     r"""
-    Takes in confound files, bold file to be censored, and information about filtering 
-    - including band stop values and motion filter type. Then proceeds to create a 
-    motion-filtered confounds matrix and recalculates FDfrom filtered motion parameters. 
+    Takes in confound files, bold file to be censored, and information about filtering
+    - including band stop values and motion filter type. Then proceeds to create a
+    motion-filtered confounds matrix and recalculates FDfrom filtered motion parameters.
     Finally generates temporal mask with volumes above fd threshold set to 1, then dropped
     from both confounds file and bolds file. Outputs temporal mask, framewise displacement
-    timeseries and censored bold files. 
+    timeseries and censored bold files.
     """
     input_spec = _CensorScrubInputSpec
     output_spec = _CensorScrubOutputSpec
 
     def _run_interface(self, runtime):
-        from ..utils.confounds import (load_motion)
 
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
@@ -219,7 +220,8 @@ class CensorScrub(SimpleInterface):
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
-            freqband=[self.inputs.low_freq, self.inputs.high_freq])
+            freqband=[self.inputs.low_freq, self.inputs.high_freq],
+            cutoff=np.min([self.inputs.low_freq, self.inputs.high_freq]))
         motion_df = pd.DataFrame(data=motion_confounds.values,
                                  columns=[
                                      "rot_x", "rot_y", "rot_z", "trans_x",
@@ -346,7 +348,7 @@ class interpolate(SimpleInterface):
     Interpolation takes in the scrubbed/regressed bold file and temporal mask,
     subs in the scrubbed values with 0, and then uses scipy's
     interpolate functionality to interpolate values into these 0s.
-    It outputs the interpolated file. 
+    It outputs the interpolated file.
     """
     input_spec = _interpolateInputSpec
     output_spec = _interpolateOutputSpec
@@ -369,7 +371,7 @@ class interpolate(SimpleInterface):
         interpolated_data = interpolate_masked_data(bold_data=data_with_zeros,
                                                     tmask=tmask,
                                                     TR=self.inputs.TR)
-        # save out results 
+        # save out results
         self._results['bold_interpolated'] = fname_presuffix(
             self.inputs.in_file, newpath=os.getcwd(), use_ext=True)
 

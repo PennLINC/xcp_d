@@ -21,15 +21,12 @@ from ..interfaces import FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from ..interfaces import (FilteringData, regress)
-from ..interfaces import interpolate
 from .postprocessing import init_resd_smoothing
 from .execsummary import init_execsummary_wf
 from num2words import num2words
-
 from ..workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
 from .outputs import init_writederivatives_wf
 from ..interfaces import (interpolate, RemoveTR, CensorScrub)
-from ..interfaces import ciftidespike
 from ..utils import DespikePatch
 
 LOGGER = logging.getLogger('nipype.workflow')
@@ -417,7 +414,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                 ('bold_file_dropped_TR', 'in_file'),
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
                 ('custom_confounds_dropped', 'custom_confounds')
-                ])])
+            ])])
+
 
     else:  # No need to remove TR
         # Censor Scrub:
@@ -428,12 +426,12 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
             ])])
 
     if despike:  # If we despike
-        # Despiking truncates large spikes in the BOLD times series 
-        # Despiking reduces/limits the amplitude or magnitude of 
-        # large spikes but preserves those data points with an imputed 
-        # reduced amplitude. Despiking is done before regression and filtering 
-        # to minimize the impact of spike. Despiking is applied to whole volumes 
-        # and data, and different from temporal censoring. It can be added to the 
+        # Despiking truncates large spikes in the BOLD times series
+        # Despiking reduces/limits the amplitude or magnitude of
+        # large spikes but preserves those data points with an imputed
+        # reduced amplitude. Despiking is done before regression and filtering
+        # to minimize the impact of spike. Despiking is applied to whole volumes
+        # and data, and different from temporal censoring. It can be added to the
         # command line arguments with --despike.
 
         despike3d = pe.Node(DespikePatch(
@@ -697,7 +695,7 @@ def _get_ref_mask(fname):
     return mask, ref
 
 
-def _t12native(fname): #TODO: Update names and refactor
+def _t12native(fname):  # TODO: Update names and refactor
     '''
     Takes in bold filename, finds transform from T1W to native space
     '''
