@@ -107,7 +107,7 @@ def collect_participants(
     if not all_participants:
         raise BIDSError(
             "Could not find participants. Please make sure the BIDS derivatives "
-            "are accessible to Docker/ the participants are labelled correctly.",
+            "are accessible to Docker/ are in BIDS directory structure.",
             bids_dir,
         )
 

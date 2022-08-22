@@ -416,6 +416,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                 ('custom_confounds_dropped', 'custom_confounds')
             ])])
 
+
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
