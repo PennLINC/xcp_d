@@ -123,12 +123,11 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
     ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
 
     # get transfrom file via string manipulation
-
     transformfile = get_transformfile(bold_file=bold_file,
                                       mni_to_t1w=mni_to_t1w,
                                       t1w_to_native=t1w_to_native)
 
-    # Using the generated transforms, apply them to get everything in MNI form
+    # Using the generated transforms, apply them to get everything in the correct MNI form
     schaefer_117_transform = pe.Node(ApplyTransformsx(input_image=sc117atlas,
                                                       transforms=transformfile,
                                                       interpolation="MultiLabel",
@@ -241,7 +240,6 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                              n_procs=omp_nthreads)
 
     # Create a node to plot the matrixes
-
     matrix_plot = pe.Node(connectplot(in_file=bold_file),
                           name="matrix_plot_wf",
                           mem_gb=mem_gb)
@@ -290,7 +288,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                 mem_gb=mem_gb)
 
     workflow.connect([
-        # Transform Atlas to correct MNI2009 space 
+        # Transform Atlas to correct MNI2009 space
         (inputnode, schaefer_117_transform, [('ref_file', 'reference_image')]),
         (inputnode, schaefer_217_transform, [('ref_file', 'reference_image')]),
         (inputnode, schaefer_317_transform, [('ref_file', 'reference_image')]),
@@ -607,7 +605,7 @@ timeseries with the Connectome Workbench.
         (gs360parcel, outputnode, [('out_file', 'gs360_ts')]),
         (gd333parcel, outputnode, [('out_file', 'gd333_ts')]),
         (ts50parcel, outputnode, [('out_file', 'ts50_ts')]),
-        (sc117parcel, sc117corr, [('out_file', 'in_file')]), #  for correlation
+        (sc117parcel, sc117corr, [('out_file', 'in_file')]),  # for correlation
         (sc217parcel, sc217corr, [('out_file', 'in_file')]),
         (sc317parcel, sc317corr, [('out_file', 'in_file')]),
         (sc417parcel, sc417corr, [('out_file', 'in_file')]),
@@ -633,7 +631,7 @@ timeseries with the Connectome Workbench.
         (gs360corr, outputnode, [('out_file', 'gs360_fc')]),
         (gd333corr, outputnode, [('out_file', 'gd333_fc')]),
         (ts50corr, outputnode, [('out_file', 'ts50_fc')]),
-        (inputnode, matrix_plot, [('clean_cifti', 'in_file')]),  #  for plotting
+        (inputnode, matrix_plot, [('clean_cifti', 'in_file')]),   # for plotting
         (sc217parcel, matrix_plot, [('out_file', 'sc217_timeseries')]),
         (sc417parcel, matrix_plot, [('out_file', 'sc417_timeseries')]),
         (gd333parcel, matrix_plot, [('out_file', 'gd333_timeseries')]),
