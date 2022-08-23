@@ -107,7 +107,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
 
     inputnode.inputs.bold_file = bold_file
 
-    # get atlases # ietration will be used later # RF: Why? this is actually a problem. See issue #379
+    # get atlases via pkgrf
     sc117atlas = get_atlas_nifti(atlasname='schaefer100x17')
     sc217atlas = get_atlas_nifti(atlasname='schaefer200x17')
     sc317atlas = get_atlas_nifti(atlasname='schaefer300x17')
@@ -122,11 +122,13 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
     gd333atlas = get_atlas_nifti(atlasname='gordon333')
     ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
 
-    # get transfrom file
+    # get transfrom file via string manipulation
+
     transformfile = get_transformfile(bold_file=bold_file,
                                       mni_to_t1w=mni_to_t1w,
                                       t1w_to_native=t1w_to_native)
 
+    # Using the generated transforms, apply them to get everything in MNI form
     schaefer_117_transform = pe.Node(ApplyTransformsx(input_image=sc117atlas,
                                                       transforms=transformfile,
                                                       interpolation="MultiLabel",
@@ -209,7 +211,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                                        interpolation="MultiLabel",
                                                        input_image_type=3,
                                                        dimension=3),
-                                      name="apply_transform_schaefe_1017",
+                                      name="apply_transform_schaefer_1017",
                                       mem_gb=mem_gb,
                                       n_procs=omp_nthreads)
     gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
@@ -238,6 +240,8 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                              mem_gb=mem_gb,
                              n_procs=omp_nthreads)
 
+    # Start getting the connectivity matrix
+    
     matrix_plot = pe.Node(connectplot(in_file=bold_file),
                           name="matrix_plot_wf",
                           mem_gb=mem_gb)

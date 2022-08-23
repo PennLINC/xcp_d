@@ -96,6 +96,7 @@ class ApplyTransformsx(ApplyTransforms):
 def get_atlas_nifti(atlasname):
     r"""
     select atlas by name from xcp_d/data
+    using pkgrf
     all atlases are in MNI dimension
     atlas list:
       schaefer100x17
@@ -133,7 +134,7 @@ def get_atlas_nifti(atlasname):
             'xcp_d',
             'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
     else:
-        raise RuntimeError('atlas not available')
+        raise RuntimeError('Atlas not available')
     return atlasfile
 
 
@@ -205,7 +206,8 @@ class connectplot(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        if self.inputs.in_file.endswith('dtseries.nii'):
+        if self.inputs.in_file.endswith('dtseries.nii'): #  for cifti
+            #  Get the correlation coefficient of the data
             sc217 = np.corrcoef(
                 nb.load(self.inputs.sc217_timeseries).get_fdata().T)
             sc417 = np.corrcoef(
@@ -215,7 +217,8 @@ class connectplot(SimpleInterface):
             gs360 = np.corrcoef(
                 nb.load(self.inputs.gs360_timeseries).get_fdata().T)
 
-        else:
+        else:  # for nifti
+            #  Get the correlation coefficient of the data
             sc217 = np.corrcoef(
                 np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
             sc417 = np.corrcoef(
@@ -225,6 +228,7 @@ class connectplot(SimpleInterface):
             gs360 = np.corrcoef(
                 np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
 
+        # Generate a plot of each matrix's correlation coefficients
         fig, ax1 = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
         font = {'weight': 'normal', 'size': 20}
@@ -237,6 +241,7 @@ class connectplot(SimpleInterface):
         plot_matrix(mat=gs360, colorbar=False, vmax=1, vmin=-1, axes=ax1[1, 1])
         ax1[1, 1].set_title('Glasser 360', fontdict=font)
 
+        # Write the results out
         self._results['connectplot'] = fname_presuffix(
             'connectivityplot',
             suffix='_matrixplot.svg',
