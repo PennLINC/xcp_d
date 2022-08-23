@@ -10,7 +10,7 @@ functional connectvity matrix
 
 from nipype.pipeline import engine as pe
 import nilearn as nl
-from ..interfaces.connectivity import (nifticonnect, get_atlas_nifti,
+from ..interfaces.connectivity import (NiftiConnect, get_atlas_nifti,
                                        get_atlas_cifti, ApplyTransformsx)
 from ..interfaces import connectplot
 from nipype.interfaces import utility as niu
@@ -56,7 +56,7 @@ def init_fcon_ts_wf(
     bold_file
         bold file from frmiprep
     clean_bold
-        clean bold after regressed out nuisscance and filtering
+        clean bold after filtered out nuisscance and filtering
     ref_file
         reference file
     mni_tot1w
@@ -240,54 +240,57 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                              mem_gb=mem_gb,
                              n_procs=omp_nthreads)
 
-    # Start getting the connectivity matrix
-    
+    # Create a node to plot the matrixes
+
     matrix_plot = pe.Node(connectplot(in_file=bold_file),
                           name="matrix_plot_wf",
                           mem_gb=mem_gb)
 
-    nifticonnect_sc17 = pe.Node(nifticonnect(),
+    # Get the timeseries and the correlation coefficient of the timeseries
+    # i.e: functional connectivity matrix
+
+    NiftiConnect_sc17 = pe.Node(NiftiConnect(),
                                 name="sc17_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc27 = pe.Node(nifticonnect(),
+    NiftiConnect_sc27 = pe.Node(NiftiConnect(),
                                 name="sc27_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc37 = pe.Node(nifticonnect(),
+    NiftiConnect_sc37 = pe.Node(NiftiConnect(),
                                 name="sc37_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc47 = pe.Node(nifticonnect(),
+    NiftiConnect_sc47 = pe.Node(NiftiConnect(),
                                 name="sc47_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc57 = pe.Node(nifticonnect(),
+    NiftiConnect_sc57 = pe.Node(NiftiConnect(),
                                 name="sc57_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc67 = pe.Node(nifticonnect(),
+    NiftiConnect_sc67 = pe.Node(NiftiConnect(),
                                 name="sc67_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc77 = pe.Node(nifticonnect(),
+    NiftiConnect_sc77 = pe.Node(NiftiConnect(),
                                 name="sc77_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc87 = pe.Node(nifticonnect(),
+    NiftiConnect_sc87 = pe.Node(NiftiConnect(),
                                 name="sc87_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc97 = pe.Node(nifticonnect(),
+    NiftiConnect_sc97 = pe.Node(NiftiConnect(),
                                 name="sc97_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_sc107 = pe.Node(nifticonnect(),
+    NiftiConnect_sc107 = pe.Node(NiftiConnect(),
                                  name="sc107_connect",
                                  mem_gb=mem_gb)
-    nifticonnect_gd33 = pe.Node(nifticonnect(),
+    NiftiConnect_gd33 = pe.Node(NiftiConnect(),
                                 name="gd33_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_gs36 = pe.Node(nifticonnect(),
+    NiftiConnect_gs36 = pe.Node(NiftiConnect(),
                                 name="gs36_connect",
                                 mem_gb=mem_gb)
-    nifticonnect_ts50 = pe.Node(nifticonnect(),
+    NiftiConnect_ts50 = pe.Node(NiftiConnect(),
                                 name="tiansub_connect",
                                 mem_gb=mem_gb)
 
     workflow.connect([
-        # tansform atlas to bold space
+        # Transform Atlas to correct MNI2009 space 
         (inputnode, schaefer_117_transform, [('ref_file', 'reference_image')]),
         (inputnode, schaefer_217_transform, [('ref_file', 'reference_image')]),
         (inputnode, schaefer_317_transform, [('ref_file', 'reference_image')]),
@@ -302,71 +305,71 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         (inputnode, gd333_transform, [('ref_file', 'reference_image')]),
         (inputnode, ts50_transform, [('ref_file', 'reference_image')]),
 
-        # load bold for timeseries extraction and connectivity
-        (inputnode, nifticonnect_sc17, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc27, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc37, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc47, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc57, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc67, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc77, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc87, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc97, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_sc107, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_gd33, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_gs36, [('clean_bold', 'regressed_file')]),
-        (inputnode, nifticonnect_ts50, [('clean_bold', 'regressed_file')]),
+        # Load bold for timeseries extraction and connectivity
+        (inputnode, NiftiConnect_sc17, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc27, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc37, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc47, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc57, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc67, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc77, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc87, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc97, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_sc107, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_gd33, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_gs36, [('clean_bold', 'filtered_file')]),
+        (inputnode, NiftiConnect_ts50, [('clean_bold', 'filtered_file')]),
 
-        # linked atlas
-        (schaefer_117_transform, nifticonnect_sc17, [('output_image', 'atlas')]),
-        (schaefer_217_transform, nifticonnect_sc27, [('output_image', 'atlas')]),
-        (schaefer_317_transform, nifticonnect_sc37, [('output_image', 'atlas')]),
-        (schaefer_417_transform, nifticonnect_sc47, [('output_image', 'atlas')]),
-        (schaefer_517_transform, nifticonnect_sc57, [('output_image', 'atlas')]),
-        (schaefer_617_transform, nifticonnect_sc67, [('output_image', 'atlas')]),
-        (schaefer_717_transform, nifticonnect_sc77, [('output_image', 'atlas')]),
-        (schaefer_817_transform, nifticonnect_sc87, [('output_image', 'atlas')]),
-        (schaefer_917_transform, nifticonnect_sc97, [('output_image', 'atlas')]),
-        (schaefer_1017_transform, nifticonnect_sc107, [('output_image', 'atlas')]),
-        (gd333_transform, nifticonnect_gd33, [('output_image', 'atlas')]),
-        (gs360_transform, nifticonnect_gs36, [('output_image', 'atlas')]),
-        (ts50_transform, nifticonnect_ts50, [('output_image', 'atlas')]),
+        # Link the atlas to the transformed file as necessary
+        (schaefer_117_transform, NiftiConnect_sc17, [('output_image', 'atlas')]),
+        (schaefer_217_transform, NiftiConnect_sc27, [('output_image', 'atlas')]),
+        (schaefer_317_transform, NiftiConnect_sc37, [('output_image', 'atlas')]),
+        (schaefer_417_transform, NiftiConnect_sc47, [('output_image', 'atlas')]),
+        (schaefer_517_transform, NiftiConnect_sc57, [('output_image', 'atlas')]),
+        (schaefer_617_transform, NiftiConnect_sc67, [('output_image', 'atlas')]),
+        (schaefer_717_transform, NiftiConnect_sc77, [('output_image', 'atlas')]),
+        (schaefer_817_transform, NiftiConnect_sc87, [('output_image', 'atlas')]),
+        (schaefer_917_transform, NiftiConnect_sc97, [('output_image', 'atlas')]),
+        (schaefer_1017_transform, NiftiConnect_sc107, [('output_image', 'atlas')]),
+        (gd333_transform, NiftiConnect_gd33, [('output_image', 'atlas')]),
+        (gs360_transform, NiftiConnect_gs36, [('output_image', 'atlas')]),
+        (ts50_transform, NiftiConnect_ts50, [('output_image', 'atlas')]),
 
-        # output file
-        (nifticonnect_sc17, outputnode, [('time_series_tsv', 'sc117_ts'),
+        # Connect out the matrixes as needed to the output node
+        (NiftiConnect_sc17, outputnode, [('time_series_tsv', 'sc117_ts'),
                                          ('fcon_matrix_tsv', 'sc117_fc')]),
-        (nifticonnect_sc27, outputnode, [('time_series_tsv', 'sc217_ts'),
+        (NiftiConnect_sc27, outputnode, [('time_series_tsv', 'sc217_ts'),
                                          ('fcon_matrix_tsv', 'sc217_fc')]),
-        (nifticonnect_sc37, outputnode, [('time_series_tsv', 'sc317_ts'),
+        (NiftiConnect_sc37, outputnode, [('time_series_tsv', 'sc317_ts'),
                                          ('fcon_matrix_tsv', 'sc317_fc')]),
-        (nifticonnect_sc47, outputnode, [('time_series_tsv', 'sc417_ts'),
+        (NiftiConnect_sc47, outputnode, [('time_series_tsv', 'sc417_ts'),
                                          ('fcon_matrix_tsv', 'sc417_fc')]),
-        (nifticonnect_sc57, outputnode, [('time_series_tsv', 'sc517_ts'),
+        (NiftiConnect_sc57, outputnode, [('time_series_tsv', 'sc517_ts'),
                                          ('fcon_matrix_tsv', 'sc517_fc')]),
-        (nifticonnect_sc67, outputnode, [('time_series_tsv', 'sc617_ts'),
+        (NiftiConnect_sc67, outputnode, [('time_series_tsv', 'sc617_ts'),
                                          ('fcon_matrix_tsv', 'sc617_fc')]),
-        (nifticonnect_sc77, outputnode, [('time_series_tsv', 'sc717_ts'),
+        (NiftiConnect_sc77, outputnode, [('time_series_tsv', 'sc717_ts'),
                                          ('fcon_matrix_tsv', 'sc717_fc')]),
-        (nifticonnect_sc87, outputnode, [('time_series_tsv', 'sc817_ts'),
+        (NiftiConnect_sc87, outputnode, [('time_series_tsv', 'sc817_ts'),
                                          ('fcon_matrix_tsv', 'sc817_fc')]),
-        (nifticonnect_sc97, outputnode, [('time_series_tsv', 'sc917_ts'),
+        (NiftiConnect_sc97, outputnode, [('time_series_tsv', 'sc917_ts'),
                                          ('fcon_matrix_tsv', 'sc917_fc')]),
-        (nifticonnect_sc107, outputnode, [('time_series_tsv', 'sc1017_ts'),
+        (NiftiConnect_sc107, outputnode, [('time_series_tsv', 'sc1017_ts'),
                                           ('fcon_matrix_tsv', 'sc1017_fc')]),
-        (nifticonnect_gs36, outputnode, [('time_series_tsv', 'gs360_ts'),
+        (NiftiConnect_gs36, outputnode, [('time_series_tsv', 'gs360_ts'),
                                          ('fcon_matrix_tsv', 'gs360_fc')]),
-        (nifticonnect_gd33, outputnode, [('time_series_tsv', 'gd333_ts'),
+        (NiftiConnect_gd33, outputnode, [('time_series_tsv', 'gd333_ts'),
                                          ('fcon_matrix_tsv', 'gd333_fc')]),
-        (nifticonnect_ts50, outputnode, [('time_series_tsv', 'ts50_ts'),
+        (NiftiConnect_ts50, outputnode, [('time_series_tsv', 'ts50_ts'),
                                          ('fcon_matrix_tsv', 'ts50_fc')]),
-        # to qcplot
-        (nifticonnect_sc27, matrix_plot, [('time_series_tsv',
+        # Have the timeseries plotted and connected to the output node
+        (NiftiConnect_sc27, matrix_plot, [('time_series_tsv',
                                            'sc217_timeseries')]),
-        (nifticonnect_sc47, matrix_plot, [('time_series_tsv',
+        (NiftiConnect_sc47, matrix_plot, [('time_series_tsv',
                                            'sc417_timeseries')]),
-        (nifticonnect_gs36, matrix_plot, [('time_series_tsv',
+        (NiftiConnect_gs36, matrix_plot, [('time_series_tsv',
                                            'gd333_timeseries')]),
-        (nifticonnect_gd33, matrix_plot, [('time_series_tsv',
+        (NiftiConnect_gd33, matrix_plot, [('time_series_tsv',
                                            'gs360_timeseries')]),
         (matrix_plot, outputnode, [('connectplot', 'connectplot')])
     ])
@@ -400,7 +403,7 @@ def init_cifti_conts_wf(
     Inputs
     ------
     clean_cifti
-        clean cifti after regressed out nuisscance and filtering
+        clean cifti after filtered out nuisscance and filtering
     Outputs
     -------
     schaefer time series and func matrices, 100-1000 nodes
@@ -438,7 +441,7 @@ timeseries with the Connectome Workbench.
     ]),
         name='outputnode')
 
-    # get atlas list
+    # Get the correct atlas for each cifti
     sc117atlas = get_atlas_cifti(atlasname='schaefer100x17')
     sc217atlas = get_atlas_cifti(atlasname='schaefer200x17')
     sc317atlas = get_atlas_cifti(atlasname='schaefer300x17')
@@ -453,7 +456,7 @@ timeseries with the Connectome Workbench.
     gd333atlas = get_atlas_cifti(atlasname='gordon333')
     ts50atlas = get_atlas_cifti(atlasname='tiansubcortical')
 
-    # timeseries extraction
+    # Use Connectome Workbench for Parcellation
     sc117parcel = pe.Node(CiftiParcellate(atlas_label=sc117atlas,
                                           direction='COLUMN'),
                           mem_gb=mem_gb,
@@ -520,8 +523,10 @@ timeseries with the Connectome Workbench.
                          name='ts50parcel',
                          n_procs=omp_nthreads)
 
+    # Create a node for plotting the matrixes
     matrix_plot = pe.Node(connectplot(), name="matrix_plot_wf", mem_gb=mem_gb)
-    # correlation
+
+    # Compute correlation matrixes via Connectome Workbench
     sc117corr = pe.Node(CiftiCorrelation(),
                         mem_gb=mem_gb,
                         name='sc117corr',
@@ -575,7 +580,7 @@ timeseries with the Connectome Workbench.
                        name='ts50corr',
                        n_procs=omp_nthreads)
 
-    workflow.connect([
+    workflow.connect([ # for parcellation
         (inputnode, sc117parcel, [('clean_cifti', 'in_file')]),
         (inputnode, sc217parcel, [('clean_cifti', 'in_file')]),
         (inputnode, sc317parcel, [('clean_cifti', 'in_file')]),
@@ -602,7 +607,7 @@ timeseries with the Connectome Workbench.
         (gs360parcel, outputnode, [('out_file', 'gs360_ts')]),
         (gd333parcel, outputnode, [('out_file', 'gd333_ts')]),
         (ts50parcel, outputnode, [('out_file', 'ts50_ts')]),
-        (sc117parcel, sc117corr, [('out_file', 'in_file')]),
+        (sc117parcel, sc117corr, [('out_file', 'in_file')]), #  for correlation
         (sc217parcel, sc217corr, [('out_file', 'in_file')]),
         (sc317parcel, sc317corr, [('out_file', 'in_file')]),
         (sc417parcel, sc417corr, [('out_file', 'in_file')]),
@@ -628,7 +633,7 @@ timeseries with the Connectome Workbench.
         (gs360corr, outputnode, [('out_file', 'gs360_fc')]),
         (gd333corr, outputnode, [('out_file', 'gd333_fc')]),
         (ts50corr, outputnode, [('out_file', 'ts50_fc')]),
-        (inputnode, matrix_plot, [('clean_cifti', 'in_file')]),
+        (inputnode, matrix_plot, [('clean_cifti', 'in_file')]),  #  for plotting
         (sc217parcel, matrix_plot, [('out_file', 'sc217_timeseries')]),
         (sc417parcel, matrix_plot, [('out_file', 'sc417_timeseries')]),
         (gd333parcel, matrix_plot, [('out_file', 'gd333_timeseries')]),
