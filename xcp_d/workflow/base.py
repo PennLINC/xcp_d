@@ -381,6 +381,7 @@ It is released under the [CC0]\
             ),
                 name='ds_report_about',
                 run_without_submitting=True)
+                
             workflow.connect([(inputnode, cifti_postproc_wf,
                                [('custom_confounds', 'inputnode.custom_confounds'),
                                 ('t1w', 'inputnode.t1w'),
@@ -424,6 +425,7 @@ It is released under the [CC0]\
                 datatype="figures"),
                 name='ds_report_about',
                 run_without_submitting=True)
+
             workflow.connect([(inputnode, bold_postproc_wf,
                                [('mni_to_t1w', 'inputnode.mni_to_t1w'),
                                 ('t1w', 'inputnode.t1w'),

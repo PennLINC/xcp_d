@@ -22,12 +22,12 @@ LOGGER = logging.getLogger('nipype.interface')
 # nifti functional connectivity
 
 
-class _nifticonnectInputSpec(BaseInterfaceInputSpec):
-    regressed_file = File(exists=True, mandatory=True, desc="regressed file")
+class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
+    filtered_file = File(exists=True, mandatory=True, desc="filtered file")
     atlas = File(exists=True, mandatory=True, desc="atlas file")
 
 
-class _nifticonnectOutputSpec(TraitedSpec):
+class _NiftiConnectOutputSpec(TraitedSpec):
     time_series_tsv = File(exists=True,
                            manadatory=True,
                            desc=" time series file")
@@ -36,31 +36,32 @@ class _nifticonnectOutputSpec(TraitedSpec):
                            desc=" time series file")
 
 
-# RF: Should be capitalized
-class nifticonnect(SimpleInterface):
+class NiftiConnect(SimpleInterface):
     r"""
-    extract timeseries and compute connectvtioy matrices.
+    extract timeseries and compute connectivity matrices.
 
     """
-    input_spec = _nifticonnectInputSpec
-    output_spec = _nifticonnectOutputSpec
+    input_spec = _NiftiConnectInputSpec
+    output_spec = _NiftiConnectOutputSpec
 
     def _run_interface(self, runtime):
-
+        # Write out time series using Nilearn's NiftiLabelMasker
+        # Then write out functional correlation matrix of
+        # timeseries using numpy.
         self._results['time_series_tsv'] = fname_presuffix(
-            self.inputs.regressed_file,
+            self.inputs.filtered_file,
             suffix='time_series.tsv',
             newpath=runtime.cwd,
             use_ext=False)
         self._results['fcon_matrix_tsv'] = fname_presuffix(
-            self.inputs.regressed_file,
+            self.inputs.filtered_file,
             suffix='fcon_matrix.tsv',
             newpath=runtime.cwd,
             use_ext=False)
 
         self._results['time_series_tsv'], self._results['fcon_matrix_tsv'] = \
             extract_timeseries_funct(
-                in_file=self.inputs.regressed_file,
+                in_file=self.inputs.filtered_file,
                 atlas=self.inputs.atlas,
                 timeseries=self._results['time_series_tsv'],
                 fconmatrix=self._results['fcon_matrix_tsv'])
@@ -78,7 +79,7 @@ class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
 
 class ApplyTransformsx(ApplyTransforms):
     """
-    ApplyTransforms  dfrom nipype as workflow
+    ApplyTransforms from nipype as workflow
     """
 
     input_spec = _ApplyTransformsInputSpec
@@ -96,6 +97,7 @@ class ApplyTransformsx(ApplyTransforms):
 def get_atlas_nifti(atlasname):
     r"""
     select atlas by name from xcp_d/data
+    using pkgrf
     all atlases are in MNI dimension
     atlas list:
       schaefer100x17
@@ -133,7 +135,7 @@ def get_atlas_nifti(atlasname):
             'xcp_d',
             'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
     else:
-        raise RuntimeError('atlas not available')
+        raise RuntimeError('Atlas not available')
     return atlasfile
 
 
@@ -198,14 +200,15 @@ class _connectplotOutputSpec(TraitedSpec):
 
 class connectplot(SimpleInterface):
     r"""
-    extract timeseries and compute connectvtioy matrices.
+    extract timeseries and compute connectivity matrices.
     """
     input_spec = _connectplotInputSpec
     output_spec = _connectplotOutputSpec
 
     def _run_interface(self, runtime):
 
-        if self.inputs.in_file.endswith('dtseries.nii'):
+        if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
+            #  Get the correlation coefficient of the data
             sc217 = np.corrcoef(
                 nb.load(self.inputs.sc217_timeseries).get_fdata().T)
             sc417 = np.corrcoef(
@@ -215,7 +218,8 @@ class connectplot(SimpleInterface):
             gs360 = np.corrcoef(
                 nb.load(self.inputs.gs360_timeseries).get_fdata().T)
 
-        else:
+        else:  # for nifti
+            #  Get the correlation coefficient of the data
             sc217 = np.corrcoef(
                 np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
             sc417 = np.corrcoef(
@@ -225,6 +229,7 @@ class connectplot(SimpleInterface):
             gs360 = np.corrcoef(
                 np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
 
+        # Generate a plot of each matrix's correlation coefficients
         fig, ax1 = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
         font = {'weight': 'normal', 'size': 20}
@@ -237,6 +242,7 @@ class connectplot(SimpleInterface):
         plot_matrix(mat=gs360, colorbar=False, vmax=1, vmin=-1, axes=ax1[1, 1])
         ax1[1, 1].set_title('Glasser 360', fontdict=font)
 
+        # Write the results out
         self._results['connectplot'] = fname_presuffix(
             'connectivityplot',
             suffix='_matrixplot.svg',

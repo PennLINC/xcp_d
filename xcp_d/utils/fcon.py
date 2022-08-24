@@ -28,7 +28,9 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
     masker = NiftiLabelsMasker(labels_img=atlas,
                                smoothing_fwhm=None,
                                standardize=False)
+    # Use nilearn for time_series                            
     time_series = masker.fit_transform(in_file)
+    # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
 
     np.savetxt(fconmatrix, correlation_matrices, delimiter=",")
