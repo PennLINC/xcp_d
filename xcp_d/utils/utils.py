@@ -107,12 +107,6 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
 
 def get_maskfiles(bold_file, mni_to_t1w):
 
-    # get the template  first fmriprep or nibabies
-    # if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
-    # template = 'MNI152NLin2009cAsym'
-    # elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-    # template = 'MNIInfant'
-
     boldmask = bold_file.split(
         'desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
     t1mask = mni_to_t1w.split('from-')[0] + 'desc-brain_mask.nii.gz'
@@ -121,7 +115,15 @@ def get_maskfiles(bold_file, mni_to_t1w):
 
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     """"
-      Obtain transfromation to transfrom MNI mask to  any bold space
+    Obtain the correct transform files in reverse order to transform
+    the atlases from MNI space to the same space as the bold file.
+    First, we find the correct relevant transforms (i.e: t1w to native),
+    then find the mni_to_t1w file.
+
+    Lastly, we specify the FSL2MNI composite file.
+
+    Since ANTSApplyTransforms takes in the transform files as a stack, these are
+    applied in the reverse order of which they are specified.
 
     """
 
@@ -135,21 +137,19 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
                      extension='.h5'))                
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
 
-    # get the template for registration
-    if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
-        template = 'MNI152NLin2009cAsym'
+    # # get the template for registration
+    # if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
+    #     template = 'MNI152NLin2009cAsym'
 
-    elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-        template = 'MNIInfant'
+    # elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
+    #     template = 'MNIInfant'
 
-    # now get transform files for bold file
+    # Transform to MNI9
     if 'space-MNI152NLin6Asym' in file_base:
         transformfile = [str(fMNI6)]
-    # Get a template in MNI152NLin2009cAsym formt
-
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
-    # Get the FSL2MNI9Composite.h5 file
+
     elif 'space-PNC' in file_base:
         #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]
