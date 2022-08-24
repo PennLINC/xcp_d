@@ -180,9 +180,12 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         resbold = natsorted(
             fnmatch.filter(all_func_files,
                            '*' + task + '*_desc-residual*bold*.nii.gz'))
+        resbold_unsmoothed_only = natsorted(
+            fnmatch.filter(all_func_files,
+                           '*' + task + '*_desc-residual*bold*.nii.gz'))
         reg_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
-        if len(resbold) == 1:
+        if len(resbold_unsmoothed_only) == 1:
             res = resbold[0]
             resid = res.split('task-')[1].partition('_')[-1]
             # print(resid)
@@ -193,7 +196,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 if j.endswith('framewisedisplacement_bold.tsv') or j.endswith('framewisedisplacementunfiltered_bold.tsv'):
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
-        if len(resbold) > 1:
+        if len(resbold_unsmoothed_only) > 1:
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
             for j in datafile:
@@ -347,7 +350,11 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             fnmatch.filter(
                 all_func_files,
                 '*' + task + '*den-91k_desc-residual*bold.dtseries.nii'))
-        if len(resbold) == 1:
+        resbold_unsmoothed_only = natsorted(
+            fnmatch.filter(
+                all_func_files,
+                '*' + task + '*den-91k_desc-residual_bold.dtseries.nii'))
+        if len(resbold_unsmoothed_only) == 1:
             res = resbold[0]
             resid = res.split('task-')[1].partition('_')[-1]
             # print(resid)
@@ -359,7 +366,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     filex = glob.glob(res.split('task-')[0] + '*task*' + j)
                     name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
                     make_DCAN_DF(filex, name)
-        if len(resbold) > 1:
+        if len(resbold_unsmoothed_only) > 1:
             reg_dvars = []
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
