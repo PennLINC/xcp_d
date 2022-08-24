@@ -444,7 +444,7 @@ def init_writederivatives_wf(
             name='dv_fd_wf',
             run_without_submitting=True,
             mem_gb=1)
-        
+
         dv_fdunfiltered_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=['desc'],
@@ -454,6 +454,7 @@ def init_writederivatives_wf(
             name='dv_fdunfiltered_wf',
             run_without_submitting=True,
             mem_gb=1)
+
         dv_confounds_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=['desc'],
@@ -463,6 +464,7 @@ def init_writederivatives_wf(
             name='dv_confounds_wf',
             run_without_submitting=True,
             mem_gb=1)
+       
         dv_customconfounds_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=['desc'],
@@ -472,6 +474,7 @@ def init_writederivatives_wf(
             name='dv_customconfounds_wf',
             run_without_submitting=True,
             mem_gb=1)
+        
         dv_tmask_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=['desc'],
@@ -551,7 +554,6 @@ def init_writederivatives_wf(
             (inputnode, dv_fd_wf, [('fd', 'in_file')]),
             (inputnode, dv_fdunfiltered_wf, [('fd_unfiltered', 'in_file')]),
             (inputnode, dv_confounds_wf, [('filtered_confounds', 'in_file')]),
-            (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')]),
             (inputnode, dv_tmask_wf, [('tmask', 'in_file')])
             # (inputnode, dv_dcanmotion_wf, [('dcan_motion', 'in_file')]),
             # (inputnode, dv_filtereddcanmotion_wf, [('filtered_dcan_motion', 'in_file')]),
@@ -559,6 +561,11 @@ def init_writederivatives_wf(
             # (inputnode, dv_filteredcustomdcanmotion_wf, [('filtered_custom_dcan_motion', 'in_file')]),
 
         ])
+
+        if inputnode.filtered_custom_confounds:
+            workflow.connect([
+                (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')]),
+            ])
 
         if smoothing:
             dv_smoothcleandata_wf = pe.Node(DerivativesDataSink(
@@ -1083,14 +1090,16 @@ def init_writederivatives_wf(
             (inputnode, dv_fd_wf, [('fd', 'in_file')]),
             (inputnode, dv_fdunfiltered_wf, [('fd_unfiltered', 'in_file')]),
             (inputnode, dv_confounds_wf, [('filtered_confounds', 'in_file')]),
-            (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')]),
             (inputnode, dv_tmask_wf, [('tmask', 'in_file')])
             # (inputnode, dv_dcanmotion_wf, [('dcan_motion', 'in_file')]),
             # (inputnode, dv_filtereddcanmotion_wf, [('filtered_dcan_motion', 'in_file')]),
             # (inputnode, dv_customdcanmotion_wf, [('custom_dcan_motion', 'in_file')]),
             # (inputnode, dv_filteredcustomdcanmotion_wf, [('filtered_custom_dcan_motion', 'in_file')]),
         ])
-
+        if inputnode.filtered_custom_confounds:
+            workflow.connect([
+                (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')]),
+            ])
         if smoothing:
             dv_smoothcleandata_wf = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
