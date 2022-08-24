@@ -587,7 +587,7 @@ def plot_svgx(rawdata,
     })
 
     fdx = pd.DataFrame({'FD': np.loadtxt(fd)})
-    fdx_unfiltered = pd.DataFrame({'FD': np.loadtxt(fd_unfiltered)})
+    fdx_unfiltered = pd.DataFrame({'FD': np.loadtxt(fd)})
 
     wbbf = pd.DataFrame({
         'Mean': np.nanmean(rw, axis=0),
@@ -646,7 +646,7 @@ def plot_svgx(rawdata,
                 TR=TR,
                 subplot=grid[3],
                 legend=False)
-    confoundplotx(tseries=fdx_unfiltered,
+    confoundplotx(tseries=fdx,
                   gs_ts=grid[4],
                   TR=TR,
                   hide_x=False,
