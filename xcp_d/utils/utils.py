@@ -9,7 +9,17 @@ from pkg_resources import resource_filename as pkgrf
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
-    """ obtain transfromation to transfrom MNI6 mask to  any bold space """
+    """ 
+    Obtain the correct transform files in reverse order to transform
+    the atlases from MNI space to the same space as the bold file.
+    First, we find the correct relevant transforms (i.e: t1w to native),
+    then find the mni_to_t1w file.
+
+    Lastly, we specify the FSL2MNI composite file.
+
+    Since ANTSApplyTransforms takes in the transform files as a stack, these are
+    applied in the reverse order of which they are specified.
+    """
 
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
@@ -19,14 +29,15 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
                      suffix='xfm',
                      extension='.h5'))
 
-    # get default template MNI152NLin2009cAsym for fmriprep and
+    # get default template MNI152NLin2009cAsym for fmriprep 
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
 
     elif 'MNIInfant' in os.path.basename(mni_to_t1w):
         template = 'MNIInfant'
-        # MNI6 = pkgrf('xcp_d', 'data/transform/oneratiotransform.txt')
 
+    # Pull out the correct transforms based on bold_file name
+    # and string them together.
     if 'space-MNI152NLin2009cAsym' in file_base:
         transformfileMNI = str(MNI6)
         transformfileT1W = str(mni_to_t1w)
