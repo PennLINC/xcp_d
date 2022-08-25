@@ -216,7 +216,7 @@ def zscore_nifti(img, outputname, mask=None):
 
     img = nb.load(img)
 
-    if mask:  # i.e: if Nifti
+    if mask:  
         # z-score the data 
         maskdata = nb.load(mask).get_fdata()
         imgdata = img.get_fdata()
