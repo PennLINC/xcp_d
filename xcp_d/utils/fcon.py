@@ -93,14 +93,15 @@ def mesh_adjacency(hemi):
     vertices = vertices_faces[0]  # the first array of the tuple
     faces = vertices_faces[1]  # the second array in the tuples
     # create an array of 0s = voxel*voxel
-    A = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
+    data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
 
-    for i in range(1, len(faces)): # looping thorugh each value in faces
-        A[faces[i, 0], faces[i, 2]] = 1 # use to index into A and turn select values to 1
-        A[faces[i, 1], faces[i, 1]] = 1
-        A[faces[i, 2], faces[i, 0]] = 1
+    for i in range(1, len(faces)):  # looping thorugh each value in faces
+        data_array[faces[i, 0], faces[i, 2]] = 1  # use to index into data_array and
+        # turn select values to 1
+        data_array[faces[i, 1], faces[i, 1]] = 1
+        data_array[faces[i, 2], faces[i, 0]] = 1
 
-    return A + A.T # transpose A and add it to itself
+    return data_array + data_array.T  # transpose data_array and add it to itself
 
 
 def compute_alff(data_matrix, low_pass, high_pass, TR):
