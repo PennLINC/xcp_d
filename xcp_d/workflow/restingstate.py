@@ -163,6 +163,7 @@ kernel size of {kernelsize} mm (FWHM).
 #  For cifti
 def init_surface_reho_wf(mem_gb,
                          omp_nthreads,
+                         smoothing,
                          name="surface_reho_wf"):
     """
     This workflow compute surface reho
