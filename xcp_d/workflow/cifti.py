@@ -294,6 +294,8 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         highpass=lower_bpf,
         TR=TR,
         omp_nthreads=omp_nthreads,
+        custom_confounds=custom_confounds,
+
         name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(

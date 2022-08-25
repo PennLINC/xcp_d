@@ -23,6 +23,7 @@ def init_writederivatives_wf(
     dummytime,
     output_dir,
     TR,
+    custom_confounds,
     name='write_derivatives_wf',
 ):
     """
@@ -562,7 +563,7 @@ def init_writederivatives_wf(
 
         ])
 
-        if inputnode.filtered_custom_confounds:
+        if custom_confounds:
             workflow.connect([
                 (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')]),
             ])
@@ -1096,7 +1097,7 @@ def init_writederivatives_wf(
             # (inputnode, dv_customdcanmotion_wf, [('custom_dcan_motion', 'in_file')]),
             # (inputnode, dv_filteredcustomdcanmotion_wf, [('filtered_custom_dcan_motion', 'in_file')]),
         ])
-        if inputnode.filtered_custom_confounds:
+        if custom_confounds:
             workflow.connect([
                 (inputnode, dv_customconfounds_wf, [('filtered_custom_confounds', 'in_file')]),
             ])
