@@ -223,7 +223,7 @@ Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv fil
 
 Custom Parcellations
 ===============
-While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations. We suggest running XCP-D with the ``-cifti`` option, and then using the Human Connectome Project wb_command to generate the time series::
+While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations. We suggest running XCP-D with the ``-cifti`` option (assuming you have cifti files), and then using the Human Connectome Project wb_command to generate the time series::
 
    wb_command -cifti-parcellate {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii your_parcels.dlabel \
    {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii
