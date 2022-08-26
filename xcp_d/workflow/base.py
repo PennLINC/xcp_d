@@ -381,12 +381,12 @@ It is released under the [CC0]\
             ),
                 name='ds_report_about',
                 run_without_submitting=True)
-                
+
             try:
-                ds_report_about.result
+                test_var = ds_report_about.result
             except Exception as exc:
                 exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
-                      "participants."
+                      " participants."
                 print(exc)
                 sys.exit()
 
