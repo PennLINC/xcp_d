@@ -382,14 +382,6 @@ It is released under the [CC0]\
                 name='ds_report_about',
                 run_without_submitting=True)
 
-            try:
-                test_var = ds_report_about.result
-            except Exception as exc:
-                exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
-                      " participants."
-                print(exc)
-                sys.exit()
-
             workflow.connect([(inputnode, cifti_postproc_wf,
                                [('custom_confounds', 'inputnode.custom_confounds'),
                                 ('t1w', 'inputnode.t1w'),
@@ -438,9 +430,17 @@ It is released under the [CC0]\
                                [('mni_to_t1w', 'inputnode.mni_to_t1w'),
                                 ('t1w', 'inputnode.t1w'),
                                 ('t1seg', 'inputnode.t1seg')])])
-    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
-                                                    ]),
-                      (about, ds_report_about, [('out_report', 'in_file')])])
+
+    try:
+        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
+                                                        ]),
+                        (about, ds_report_about, [('out_report', 'in_file')])])
+    except Exception as exc:
+        exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
+            " participants."
+        print(exc)
+        sys.exit()
+        
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = 'xcp_d'
