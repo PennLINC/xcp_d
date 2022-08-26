@@ -434,13 +434,14 @@ It is released under the [CC0]\
     try:
         workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
                                                         ]),
-                        (about, ds_report_about, [('out_report', 'in_file')])])
+                          (about, ds_report_about, [('out_report', 'in_file')])])
     except Exception as exc:
-        exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
-            " participants."
-        print(exc)
-        sys.exit()
-        
+        if cifti:
+            exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
+                " participants."
+            print(exc)
+            sys.exit()
+
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = 'xcp_d'
