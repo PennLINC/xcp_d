@@ -630,11 +630,45 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )  # TM
 
-            fs_std_mesh_L = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_L/fsaverage.L.sphere.164k_fs_L.surf.gii')
-            fs_std_mesh_R = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_R/fsaverage.R.sphere.164k_fs_R.surf.gii')
+            fs_std_mesh_L = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    den="164k",
+                    desc=None,
+                    suffix="sphere",
+                )
+            )
+            
+            fs_std_mesh_R = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    den="164k",
+                    desc=None,
+                    suffix="sphere",
+                )
+            )
 
-            fs_LR2fs_L = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_L/fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii')
-            fs_LR2fs_R = pkgrf('xcp_d', 'data/standard_mesh_atlases/fs_R/fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii')
+            fs_LR2fs_L = str(
+                get_template(
+                    template="fsaverage",
+                    hemi="L",
+                    den="164k",
+                    desc="std",
+                    suffix="sphere",
+                )
+            )
+
+            fs_LR2fs_R = str(
+                get_template(
+                    template="fsaverage",
+                    hemi="R",
+                    den="164k",
+                    desc="std",
+                    suffix="sphere",
+                )
+            )
 
             surface_sphere_project_unproject_lh = pe.Node(
                 SurfaceSphereProjectUnproject(
