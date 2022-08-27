@@ -632,7 +632,7 @@ def init_anatomical_wf(
 
             fs_std_mesh_L = str(
                 get_template(
-                    template="fsLR",
+                    template="fsaverage",
                     hemi="L",
                     space=None,
                     density="164k",
@@ -643,7 +643,7 @@ def init_anatomical_wf(
 
             fs_std_mesh_R = str(
                 get_template(
-                    template="fsLR",
+                    template="fsaverage",
                     hemi="R",
                     space=None,
                     density="164k",
@@ -652,7 +652,7 @@ def init_anatomical_wf(
                 )
             )
 
-            fs_LR2fs_L = str(
+            fs_L2fsLR = str(
                 get_template(
                     template="fsaverage",
                     hemi="L",
@@ -662,7 +662,7 @@ def init_anatomical_wf(
                 )
             )
 
-            fs_LR2fs_R = str(
+            fs_R2fsLR = str(
                 get_template(
                     template="fsaverage",
                     hemi="R",
@@ -675,14 +675,14 @@ def init_anatomical_wf(
             surface_sphere_project_unproject_lh = pe.Node(
                 SurfaceSphereProjectUnproject(
                     sphere_project_to=fs_std_mesh_L,
-                    sphere_unproject_from=fs_LR2fs_L,
+                    sphere_unproject_from=fs_L2fsLR,
                     ),
                 name='surface_sphere_project_unproject_lh'
             )
             surface_sphere_project_unproject_rh = pe.Node(
                 SurfaceSphereProjectUnproject(
                     sphere_project_to=fs_std_mesh_R,
-                    sphere_unproject_from=fs_LR2fs_R,
+                    sphere_unproject_from=fs_R2fsLR,
                     ),
                 name='surface_sphere_project_unproject_rh'
             )
