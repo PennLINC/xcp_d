@@ -634,16 +634,18 @@ def init_anatomical_wf(
                 get_template(
                     template="fsLR",
                     hemi="L",
+                    space=None,
                     density="164k",
                     desc=None,
                     suffix="sphere",
                 )
             )
-            
+
             fs_std_mesh_R = str(
                 get_template(
                     template="fsLR",
                     hemi="R",
+                    space=None,
                     density="164k",
                     desc=None,
                     suffix="sphere",
