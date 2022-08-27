@@ -685,6 +685,8 @@ def init_anatomical_wf(
                 name='surface_sphere_project_unproject_rh'
             )
 
+            # collect the fsLR32k mid, pial, wm surfs per hemi
+
             lh_32k_surf_wf = pe.MapNode(
                 CiftiSurfaceResample(
                     new_sphere=left_sphere_fsLR,
@@ -709,24 +711,6 @@ def init_anatomical_wf(
             )
             rh_32k_surf_wf.inputs.in_file = [R_midthick_surf, R_pial_surf, R_wm_surf]
 
-            # collect the fsLR mid, pial, wm surfs per hemi and per res (native or 32k)
-            join_lh_native_warped_surfs = pe.JoinNode(
-                niu.Merge(1),
-                name="join_lh_native_warped_surfs",
-                joinsource="lh_surface_apply_affine",
-                joinfield="in1",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            join_rh_native_warped_surfs = pe.JoinNode(
-                niu.Merge(1),
-                name="join_rh_native_warped_surfs",
-                joinsource="rh_surface_apply_affine",
-                joinfield="in1",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
             select_lh_32k_midthick_surf = pe.Node(
                 niu.Select(index=[0]),
                 name="select_lh_32k_midthick_surf",
