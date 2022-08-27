@@ -634,7 +634,7 @@ def init_anatomical_wf(
                 get_template(
                     template="fsLR",
                     hemi="L",
-                    den="164k",
+                    density="164k",
                     desc=None,
                     suffix="sphere",
                 )
@@ -644,7 +644,7 @@ def init_anatomical_wf(
                 get_template(
                     template="fsLR",
                     hemi="R",
-                    den="164k",
+                    density="164k",
                     desc=None,
                     suffix="sphere",
                 )
@@ -654,7 +654,7 @@ def init_anatomical_wf(
                 get_template(
                     template="fsaverage",
                     hemi="L",
-                    den="164k",
+                    density="164k",
                     desc="std",
                     suffix="sphere",
                 )
@@ -664,7 +664,7 @@ def init_anatomical_wf(
                 get_template(
                     template="fsaverage",
                     hemi="R",
-                    den="164k",
+                    density="164k",
                     desc="std",
                     suffix="sphere",
                 )
