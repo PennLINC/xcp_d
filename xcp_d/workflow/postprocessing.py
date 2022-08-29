@@ -171,15 +171,14 @@ frequency band {highpass}-{lowpass} Hz.
         name='outputnode')
 
     inputnode.inputs.bold_file = bold_file
-
-    filterdx = pe.Node(FilteringData(tr=TR,
+    filtering_wf = pe.Node(FilteringData(TR=TR,
                                      lowpass=upper_bpf,
                                      highpass=lower_bpf,
                                      filter_order=bpf_order),
                        name="filter_the_data",
                        mem_gb=0.25 * mem_gb)
 
-    regressy = pe.Node(regress(tr=TR),
+    regressy = pe.Node(regress(TR=TR),
                        name="regress_the_data",
                        mem_gb=0.25 * mem_gb)
 
@@ -213,7 +212,7 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
                 name="cifti_smoothing",
                 mem_gb=mem_gb)
             workflow.connect([
-                (filterdx, smooth_data, [('filt_file', 'in_file')]),
+                (filtering_wf, smooth_data, [('filtered_file', 'in_file')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_bold')])
             ])
 
@@ -227,7 +226,7 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
                                   mem_gb=mem_gb)
 
             workflow.connect([
-                (filterdx, smooth_data, [('filt_file', 'in_file')]),
+                (filtering_wf, smooth_data, [('filtered_file', 'in_file')]),
                 (smooth_data, outputnode, [('smoothed_file', 'smoothed_bold')])
             ])
 
@@ -238,7 +237,7 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def init_resd_smoohthing(mem_gb,
+def init_resd_smoothing(mem_gb,
                          smoothing,
                          omp_nthreads,
                          cifti=False,
@@ -250,18 +249,20 @@ def init_resd_smoohthing(mem_gb,
     outputnode = pe.Node(niu.IdentityInterface(fields=['smoothed_bold']),
                          name='outputnode')
 
-    sigma_lx = fwhm2sigma(smoothing)
-    if cifti:
+    sigma_lx = fwhm2sigma(smoothing) # Turn specified FWHM (Full-Width at Half Maximum) 
+    # to standard deviation.
+    if cifti:  # For ciftis
         workflow.__desc__ = """ \
 The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
 size of {kernelsize} mm  (FWHM).
 """.format(kernelsize=str(smoothing))
 
-        smooth_data = pe.Node(CiftiSmooth(
-            sigma_surf=sigma_lx,
-            sigma_vol=sigma_lx,
-            direction='COLUMN',
-            right_surf=pkgrf(
+        smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
+            #  hemisphere
+            sigma_surf=sigma_lx,  # the size of the surface kernel
+            sigma_vol=sigma_lx,  # the volume of the surface kernel
+            direction='COLUMN',  # which direction to smooth along@
+            right_surf=pkgrf( # pull out atlases for each hemisphere
                 'xcp_d', 'data/ciftiatlas/'
                 'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
             ),
@@ -273,19 +274,21 @@ size of {kernelsize} mm  (FWHM).
             mem_gb=mem_gb,
             n_procs=omp_nthreads)
 
+        #  Connect to workflow
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
                           (smooth_data, outputnode, [('out_file',
                                                       'smoothed_bold')])])
 
-    else:
+    else:  #  for Nifti
         workflow.__desc__ = """ \
 The processed BOLD was smoothed using  FSL with a gaussian kernel size of {kernelsize} mm  (FWHM).
 """.format(kernelsize=str(smoothing))
-        smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),
+        smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),  # FWHM = kernel size
                               name="nifti_smoothing",
                               mem_gb=mem_gb,
-                              n_procs=omp_nthreads)
+                              n_procs=omp_nthreads)  #  Use fslmaths to smooth the image
 
+        #  Connect to workflow
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
                           (smooth_data, outputnode, [('smoothed_file',
                                                       'smoothed_bold')])])

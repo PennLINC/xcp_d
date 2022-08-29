@@ -10,12 +10,12 @@ from .fcon import (extract_timeseries_funct, compute_2d_reho, compute_alff,
 from .cifticonnectivity import CiftiCorrelation
 from .ciftiparcellation import CiftiParcellate
 from .ciftiseparatemetric import CiftiSeparateMetric
-from .cifitiresample import CiftiSurfaceResample
+from .ciftiresample import CiftiSurfaceResample
 from .bids import (collect_participants, collect_data, select_registrationfile,
                    select_cifti_bold, extract_t1w_seg)
 from .bids import DerivativesDataSink as bid_derivative
-from .modified_data import (interpolate_masked_data, interpolate_masked_datax,
-                            generate_mask, compute_FD, drop_tseconds_volume)
+from .modified_data import (interpolate_masked_data,
+                            generate_mask, compute_FD)
 from .sentry import sentry_setup
 
 from .qcmetrics import regisQ
@@ -52,7 +52,6 @@ __all__ = [
     'interpolate_masked_data',
     'generate_mask',
     'compute_FD',
-    'drop_tseconds_volume',
     'bid_derivative',
     'sentry_setup',
     'despikedatacifti',
@@ -82,6 +81,5 @@ __all__ = [
     'ReHoNamePatch',
     'DespikePatch',
     'concatenatebold',
-    'interpolate_masked_datax',
     'ContrastEnhancement',
 ]

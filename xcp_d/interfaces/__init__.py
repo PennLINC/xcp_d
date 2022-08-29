@@ -1,6 +1,6 @@
 from .filtering import FilteringData
 from .regression import regress, ciftidespike
-from .connectivity import (nifticonnect, ApplyTransformsx, get_atlas_cifti,
+from .connectivity import (NiftiConnect, ApplyTransformsx, get_atlas_cifti,
                            get_atlas_nifti, connectplot)
 from .resting_state import computealff, surfaceReho, brainplot
 
@@ -13,7 +13,7 @@ from .surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot,
 from .layout_builder import layout_builder
 
 __all__ = [
-    'regress','FilteringData', 'nifticonnect',
+    'regress','FilteringData', 'NiftiConnect',
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'interpolate', 'CensorScrub', 'RemoveTR',
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',

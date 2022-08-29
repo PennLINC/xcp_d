@@ -200,14 +200,7 @@ def init_anatomical_wf(
         brainspritex_wf = pe.Node(
             BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
         )
-        from ..utils import ContrastEnhancement
 
-        enhancet1w_wf = pe.Node(
-            ContrastEnhancement(),
-            name="enhancet1w",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
         ds_brainspriteplot_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -223,8 +216,7 @@ def init_anatomical_wf(
         workflow.connect(
             [
                 (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                (inputnode, enhancet1w_wf, [("t1w", "in_file")]),
-                (enhancet1w_wf, brainspritex_wf, [("out_file", "template")]),
+                (inputnode, brainspritex_wf, [("t1w", "template")]),
                 (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
                 (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
             ]
@@ -1270,15 +1262,6 @@ def init_anatomical_wf(
             if not Path(t1w_mgz).is_file():
                 t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/norm.mgz"
 
-            from ..utils import ContrastEnhancement
-
-            enhancet1w_wf = pe.Node(
-                ContrastEnhancement(in_file=t1w_mgz),
-                name="enhancet1w",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
             ribbon2statmap_wf = pe.Node(
                 RibbontoStatmap(ribbon=ribbon),
                 name="ribbon2statmap",
@@ -1306,7 +1289,7 @@ def init_anatomical_wf(
                 [
                     # (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
                     # (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
-                    (enhancet1w_wf, brainspritex_wf, [("out_file", "template")]),
+                    (inputnode, brainspritex_wf, [("t1w", "template")]),
                     (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
                     (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
                     (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
@@ -1314,14 +1297,6 @@ def init_anatomical_wf(
             )
 
         else:
-            from ..utils import ContrastEnhancement
-
-            enhancet1w_wf = pe.Node(
-                ContrastEnhancement(),
-                name="enhancet1w",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
             ribbon2statmap_wf = pe.Node(
                 RibbontoStatmap(),
                 name="ribbon2statmap",
@@ -1346,8 +1321,7 @@ def init_anatomical_wf(
 
             workflow.connect(
                 [
-                    (inputnode, enhancet1w_wf, [("t1w", "in_file")]),
-                    (enhancet1w_wf, brainspritex_wf, [("out_file", "template")]),
+                    (inputnode, brainspritex_wf, [("t1w", "template")]),
                     (inputnode, ribbon2statmap_wf, [("t1seg", "ribbon")]),
                     (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
                     (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),

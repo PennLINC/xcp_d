@@ -9,7 +9,17 @@ from pkg_resources import resource_filename as pkgrf
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
-    """ obtain transfromation to transfrom MNI6 mask to  any bold space """
+    """ 
+    Obtain the correct transform files in reverse order to transform
+    the atlases from MNI space to the same space as the bold file.
+    First, we find the correct relevant transforms (i.e: t1w to native),
+    then find the mni_to_t1w file.
+
+    Lastly, we specify the FSL2MNI composite file.
+
+    Since ANTSApplyTransforms takes in the transform files as a stack, these are
+    applied in the reverse order of which they are specified.
+    """
 
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
@@ -19,14 +29,21 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
                      suffix='xfm',
                      extension='.h5'))
 
-    # get default template MNI152NLin2009cAsym for fmriprep and
+    # get default template MNI152NLin2009cAsym for fmriprep 
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
 
+    # for infants
     elif 'MNIInfant' in os.path.basename(mni_to_t1w):
         template = 'MNIInfant'
-        # MNI6 = pkgrf('xcp_d', 'data/transform/oneratiotransform.txt')
 
+    # in case fMRIPrep outputs are generated in MNI6, as
+    # done in case of AROMA outputs
+    elif 'MNI152NLin6Sym' in os.path.basename(mni_to_t1w):
+        template = 'MNI152NLin6Sym'
+
+    # Pull out the correct transforms based on bold_file name
+    # and string them together.
     if 'space-MNI152NLin2009cAsym' in file_base:
         transformfileMNI = str(MNI6)
         transformfileT1W = str(mni_to_t1w)
@@ -70,7 +87,7 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     elif 'space-MNIInfant' in file_base:
 
         transformfileMNI = str(
-            pkgrf('xcp_d', 'data/transform/infant_to_2009_Compoiste.h5'))
+            pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5'))
         transformfileT1W = str(mni_to_t1w)
 
     elif 'space-MNIPediatricAsym' in file_base:
@@ -107,12 +124,6 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
 
 def get_maskfiles(bold_file, mni_to_t1w):
 
-    # get the template  first fmriprep or nibabies
-    # if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
-    # template = 'MNI152NLin2009cAsym'
-    # elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-    # template = 'MNIInfant'
-
     boldmask = bold_file.split(
         'desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
     t1mask = mni_to_t1w.split('from-')[0] + 'desc-brain_mask.nii.gz'
@@ -121,61 +132,79 @@ def get_maskfiles(bold_file, mni_to_t1w):
 
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     """"
-      obtain transfromation to transfrom MNI mask to  any bold space
+    Obtain the correct transform files in reverse order to transform
+    the atlases from MNI space to the same space as the bold file.
+    First, we find the correct relevant transforms (i.e: t1w to native),
+    then find the mni_to_t1w file.
+
+    Lastly, we specify the FSL2MNI composite file.
+
+    Since ANTSApplyTransforms takes in the transform files as a stack, these are
+    applied in the reverse order of which they are specified.
 
     """
 
-    file_base = os.path.basename(str(bold_file))
-    # FSL2MNI9  = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
-    fMNI6 = str(
+    file_base = os.path.basename(str(bold_file))  # file base is the bold_name
+
+    # get the correct template via templateflow/ pkgrf
+    fMNI6 = str(  # template
         get_template(template='MNI152NLin2009cAsym',
                      mode='image',
                      suffix='xfm',
-                     extension='.h5'))
+                     extension='.h5'))                
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
 
-    # get the template for registration
-    if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
-        template = 'MNI152NLin2009cAsym'
+    # # get the template for registration
+    # if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
+    #     template = 'MNI152NLin2009cAsym'
 
-    elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-        template = 'MNIInfant'
-        # FSL2MNI9  = pkgrf('xcp_d', 'data/transform/oneratiotransform.txt')
+    # elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
+    #     template = 'MNIInfant'
 
-    # now get transform files for bold file
+    # Transform to MNI9
     if 'space-MNI152NLin6Asym' in file_base:
         transformfile = [str(fMNI6)]
-
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
+
     elif 'space-PNC' in file_base:
+        #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
+        #  get all the transform files together
         transformfile = [str(t1w_to_pnc), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-NKI' in file_base:
+        #  get the NKI transforms
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
+        #  get all the transforms together
         transformfile = [str(t1w_to_nki), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-OASIS30ANTs' in file_base:
+        #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
         transformfile = [str(t1w_to_oasis), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-MNI152NLin6Sym' in file_base:
+        #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
         transformfile = [str(t1w_to_mni6c), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-MNIInfant' in file_base:
+        #  get the relevant transform, put all transforms together
         infant2mni9 = pkgrf('xcp_d',
                             'data/transform/infant_to_2009_Composite.h5')
         transformfile = [str(infant2mni9), str(FSL2MNI9)]
     elif 'space-MNIPediatricAsym' in file_base:
+        #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6cx = glob.glob(
             mnisf + 'from-T1w_to-MNIPediatricAsym*_mode-image_xfm.h5')[0]
         transformfile = [str(t1w_to_mni6cx), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-T1w' in file_base:
+        #  put all transforms together
         transformfile = [str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-' not in file_base:
+        #  put all transforms together
         transformfile = [str(t1w_to_native), str(mni_to_t1w), str(FSL2MNI9)]
     else:
         print('space not supported')

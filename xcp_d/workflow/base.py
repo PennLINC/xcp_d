@@ -4,7 +4,7 @@
 post processing
 ^^^^^^^^^^^^^^^
 
-.. autofunction:: init_xcpabcd_wf
+.. autofunction:: init_xcpd_wf
 
 """
 
@@ -44,6 +44,7 @@ def init_xcpd_wf(layout,
                  head_radius,
                  params,
                  subject_list,
+                 analysis_level,
                  smoothing,
                  custom_confounds,
                  output_dir,
@@ -51,7 +52,7 @@ def init_xcpd_wf(layout,
                  dummytime,
                  fd_thresh,
                  input_type='fmriprep',
-                 name='xcpabcd_wf'):
+                 name='xcpd_wf'):
     """
     This workflow builds and organizes  execution of  xcp_d  pipeline.
     It is also connect the subworkflows under the xcp_d
@@ -59,8 +60,8 @@ def init_xcpd_wf(layout,
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflow.base import init_xcpabcd_wf
-            wf = init_xcpabcd_wf(
+            from xcp_d.workflow.base import init_xcpd_wf
+            wf = init_xcpd_wf(
                 layout,
                 lower_bpf,
                 upper_bpf,
@@ -79,6 +80,7 @@ def init_xcpd_wf(layout,
                 brain_template,
                 subject_list,
                 smoothing,
+                analysis_level,
                 custom_confounds,
                 output_dir,
                 work_dir,
@@ -96,6 +98,8 @@ def init_xcpd_wf(layout,
         BIDS dataset layout
     despike: bool
         afni depsike
+    analysis_level: str
+        only option is 'participant'
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: str
@@ -134,11 +138,11 @@ def init_xcpd_wf(layout,
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-
+s
     """
 
-    xcpabcd_wf = Workflow(name='xcpabcd_wf')
-    xcpabcd_wf.base_dir = work_dir
+    xcpd_wf = Workflow(name='xcpd_wf')
+    xcpd_wf.base_dir = work_dir
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
@@ -171,9 +175,9 @@ def init_xcpd_wf(layout,
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
-        xcpabcd_wf.add_nodes([single_subj_wf])
+        xcpd_wf.add_nodes([single_subj_wf])
 
-    return xcpabcd_wf
+    return xcpd_wf
 
 
 def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order,
@@ -293,7 +297,7 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1].
 
 Many internal operations of *XCP* use *Nibabel* [@nilearn], *numpy*
 [@harris2020array], and  *scipy* [@2020SciPy-NMeth]. For more details,
-see the *xcp_d* website https://xcp-abcd.readthedocs.io.
+see the *xcp_d* website https://xcp-d.readthedocs.io.
 
 
 #### Copyright Waiver
@@ -377,6 +381,7 @@ It is released under the [CC0]\
             ),
                 name='ds_report_about',
                 run_without_submitting=True)
+
             workflow.connect([(inputnode, cifti_postproc_wf,
                                [('custom_confounds', 'inputnode.custom_confounds'),
                                 ('t1w', 'inputnode.t1w'),
@@ -420,13 +425,23 @@ It is released under the [CC0]\
                 datatype="figures"),
                 name='ds_report_about',
                 run_without_submitting=True)
+
             workflow.connect([(inputnode, bold_postproc_wf,
                                [('mni_to_t1w', 'inputnode.mni_to_t1w'),
                                 ('t1w', 'inputnode.t1w'),
                                 ('t1seg', 'inputnode.t1seg')])])
-    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
-                                                    ]),
-                      (about, ds_report_about, [('out_report', 'in_file')])])
+
+    try:
+        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
+                                                        ]),
+                          (about, ds_report_about, [('out_report', 'in_file')])])
+    except Exception as exc:
+        if cifti:
+            exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
+                " participants."
+            print(exc)
+            sys.exit()
+
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = 'xcp_d'

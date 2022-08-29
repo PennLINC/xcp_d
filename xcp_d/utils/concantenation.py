@@ -91,11 +91,11 @@ def make_DCAN_DF(fds_files, name):
     try:
         cifti = fds_files[0].split('space')[0] + \
             'space-fsLR_den-91k_desc-residual_bold.dtseries.nii'
-        tr = nb.load(cifti).header.get_axis(0).step
+        TR = nb.load(cifti).header.get_axis(0).step
     except Exception as exc:
         nii = fds_files[0].split('space')[0] + \
             'space-MNI152NLin6Asym_desc-residual_res-2_bold.nii.gz'
-        tr = nb.load(nii).header.get_zooms()[-1]
+        TR = nb.load(nii).header.get_zooms()[-1]
         print(exc)
 
     fd = np.loadtxt(fds_files[0], delimiter=',').T
@@ -124,7 +124,7 @@ def make_DCAN_DF(fds_files, name):
             dtype='float')
         dcan.create_dataset(
             "/dcan_motion/fd_{0}/remaining_seconds".format(thresh),
-            data=len(fd[fd <= thresh]) * tr,
+            data=len(fd[fd <= thresh]) * TR,
             dtype='float')
         dcan.create_dataset(
             "/dcan_motion/fd_{0}/remaining_frame_mean_FD".format(thresh),
@@ -216,7 +216,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                           '*_desc-brain_mask.nii.gz'))[0]
 
             segfile = get_segfile(filey[0])
-            tr = nb.load(filey[0]).header.get_zooms()[-1]
+            TR = nb.load(filey[0]).header.get_zooms()[-1]
 
             combinefiley = "  ".join(filey)
             rawdata = tempfile.mkdtemp() + '/rawdata.nii.gz'
@@ -243,7 +243,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                       filenamebf=precarpet,
                       mask=mask,
                       seg=segfile,
-                      tr=tr,
+                      TR=TR,
                       work_dir=work_dir)
 
             # link or copy bb svgs
@@ -373,7 +373,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
-            tr = get_ciftiTR(filey[0])
+            TR = get_ciftiTR(filey[0])
             rawdata = tempfile.mkdtemp() + '/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' +
@@ -399,7 +399,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 regf_dvars=reg_dvars,
                 filenameaf=postcarpet,
                 filenamebf=precarpet,
-                tr=tr,
+                TR=TR,
                 work_dir=work_dir)
 
             # link or copy bb svgs

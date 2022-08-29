@@ -71,7 +71,7 @@ def is_flagged():
     flagged = tuple()
     try:
         response = requests.get(url="""\
-https://raw.githubusercontent.com/xcp_abcd/xcp_d/master/.versions.json""",
+https://raw.githubusercontent.com/xcp_d/xcp_d/master/.versions.json""",
                                 timeout=1.0)
     except Exception:
         response = None

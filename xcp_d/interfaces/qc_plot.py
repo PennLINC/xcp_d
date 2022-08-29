@@ -25,7 +25,7 @@ LOGGER = logging.getLogger('nipype.interface')
 class _qcInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
-                     desc=" raw  bold or cifit file from fmirprep")
+                     desc=" raw  bold or cifti file from fmriprep")
     mask_file = File(exists=False, mandatory=False, desc=" mask file")
     seg_file = File(exists=False, mandatory=False, desc=" seg file for nifti")
     cleaned_file = File(exists=True,
@@ -113,7 +113,7 @@ class computeqcplot(SimpleInterface):
         rmsd = confound_matrix['rmsd']
 
         if self.inputs.dummytime > 0:
-            num_vold = np.int(self.inputs.dummytime / self.inputs.TR)
+            num_vold = int(np.ceil(self.inputs.dummytime / self.inputs.TR))
         else:
             num_vold = 0
 
@@ -167,7 +167,7 @@ class computeqcplot(SimpleInterface):
                        mask_file=self.inputs.mask_file).plot(labelsize=8)
         fig.savefig(self._results['raw_qcplot'], bbox_inches='tight')
 
-        # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,tr=self.inputs.TR,filename=self._results['raw_qcplot'])
+        # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,TR=self.inputs.TR,filename=self._results['raw_qcplot'])
 
         if nvolcensored > 0:
             mean_fd = np.mean(fd_timeseries[tmask == 0])
@@ -205,7 +205,7 @@ class computeqcplot(SimpleInterface):
                             mask_file=self.inputs.mask_file).plot(labelsize=8)
             figy.savefig(self._results['clean_qcplot'], bbox_inches='tight')
 
-            # plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
+            # plot_svg(fdata=dataxx,fd=fd_timeseries,dvars=dvars_af,TR=self.inputs.TR,
             #                  filename=self._results['clean_qcplot'])
         else:
             mean_fd = np.mean(fd_timeseries)
@@ -225,7 +225,7 @@ class computeqcplot(SimpleInterface):
                             mask_file=self.inputs.mask_file).plot(labelsize=8)
             figz.savefig(self._results['clean_qcplot'], bbox_inches='tight')
 
-            # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,tr=self.inputs.TR,
+            # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_af,TR=self.inputs.TR,
             #                  filename=self._results['clean_qcplot'])
 
         qc_pf = {
