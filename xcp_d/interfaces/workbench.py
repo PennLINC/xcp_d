@@ -247,6 +247,8 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     )
 
     out_file = File(
+        name_source="in_file",
+        name_template="%s_deformed.surf.gii",
         keep_extension=False,
         argstr="%s",
         position=3,
