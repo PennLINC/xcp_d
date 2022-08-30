@@ -33,8 +33,14 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
 
+    # for infants
     elif 'MNIInfant' in os.path.basename(mni_to_t1w):
         template = 'MNIInfant'
+
+    # in case fMRIPrep outputs are generated in MNI6, as
+    # done in case of AROMA outputs
+    elif 'MNI152NLin6Sym' in os.path.basename(mni_to_t1w):
+        template = 'MNI152NLin6Sym'
 
     # Pull out the correct transforms based on bold_file name
     # and string them together.

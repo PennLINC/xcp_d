@@ -160,10 +160,10 @@ kernel size of {kernelsize} mm (FWHM).
 
     return workflow
 
-
+#  For cifti
 def init_surface_reho_wf(mem_gb,
-                         smoothing,
                          omp_nthreads,
+                         smoothing,
                          name="surface_reho_wf"):
     """
     This workflow compute surface reho
@@ -211,6 +211,7 @@ vertices to yield ReHo.
     outputnode = pe.Node(niu.IdentityInterface(fields=['lh_reho', 'rh_reho']),
                          name='outputnode')
 
+    # Extract left and right hemispheres via Connectome Workbench
     lh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_LEFT',
                                           direction="COLUMN"),
                       name="separate_lh",
@@ -221,7 +222,7 @@ vertices to yield ReHo.
                       name="separate_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-
+    # Calculate the reho by hemipshere
     lh_reho = pe.Node(surfaceReho(surf_hemi='L'),
                       name="reho_lh",
                       mem_gb=mem_gb,
@@ -230,7 +231,7 @@ vertices to yield ReHo.
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-
+    # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
         (inputnode, rh_surf, [('clean_bold', 'in_file')]),
@@ -242,7 +243,7 @@ vertices to yield ReHo.
 
     return workflow
 
-
+# For nifti
 def init_3d_reho_wf(
     mem_gb,
     omp_nthreads,
@@ -294,16 +295,17 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         name='outputnode')
     from ..utils import ReHoNamePatch
 
+    # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),
                            name="reho_3d",
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
-
+    # Get the HTML
     brain_plot = pe.Node(brainplot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)
-
+    # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),

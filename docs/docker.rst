@@ -9,10 +9,12 @@ In order to run docker smoothly, it is best to prevent permissions issues associ
 
 A ``docker`` container can be created using the following command::
 
-    $ docker run -ti --rm \
-        -v path/to/data:/fmriprep_output:ro \
-        -v path/to/output:/out \
-        pennlinc/xcp_d:<latest-version> \
-        /data /out/out 
+    $ docker run --rm -it \
+   -v /fmriprepdata:/in/ \
+   -v /tmp/wkdir:/wkdir/ \
+   -v /tmp:/scrth/ \
+   -v /tmp/xcpd_ciftiF/:/out. \
+   pennlinc/xcp_d:latest \
+   /in/ /out/ pariticipant \
 
 See :ref:`usage` for more information.

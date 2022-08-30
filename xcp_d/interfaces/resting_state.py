@@ -55,17 +55,17 @@ class surfaceReho(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        # get the gifti
+        # Read the gifti data
         data_matrix = read_gii(self.inputs.surf_bold)
 
-        # get mesh adjacency matrix
+        # Get the mesh adjacency matrix
         mesh_matrix = mesh_adjacency(self.inputs.surf_hemi)
 
-        # compute reho
+        # Compute reho
         reho_surf = compute_2d_reho(datat=data_matrix,
                                     adjacency_matrix=mesh_matrix)
 
-        # write the output out
+        # Write the output out
         self._results['surf_gii'] = fname_presuffix(self.inputs.surf_bold,
                                                     suffix='.shape.gii',
                                                     newpath=runtime.cwd,

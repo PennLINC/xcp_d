@@ -371,7 +371,7 @@ def init_writederivatives_wf(
 
         dv_gs360fc_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                     dismiss_entities=['desc'],
-                                                    atlas='Glaseer',
+                                                    atlas='Glasser',
                                                     desc='connectivity',
                                                     source_file=bold_file),
                                 name='dv_gs333_wf',
