@@ -85,7 +85,6 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
         transformfileT1W = [str(mni6c_to_t1w)]
 
     elif 'space-MNIInfant' in file_base:
-
         transformfileMNI = str(
             pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5'))
         transformfileT1W = str(mni_to_t1w)
@@ -101,8 +100,6 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
 
     elif 'space-T1w' in file_base:
         mnisf = mni_to_t1w.split('from')[0]
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(t1w_to_mni)]
         transformfileT1W = [
             str(pkgrf('xcp_d', 'data/transform/oneratiotransform.txt'))
