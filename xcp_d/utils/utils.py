@@ -42,6 +42,10 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     elif 'MNI152NLin6Sym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin6Sym'
 
+
+    elif 'MNI152NLin6ASym' in os.path.basename(mni_to_t1w):
+        template = 'MNI152NLin6ASym'
+
     # Pull out the correct transforms based on bold_file name
     # and string them together.
     if 'space-MNI152NLin2009cAsym' in file_base:
