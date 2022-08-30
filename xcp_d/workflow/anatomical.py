@@ -694,6 +694,7 @@ def init_anatomical_wf(
 
             lh_32k_midthick_wf = pe.Node(
                 CiftiSurfaceResample(
+                    in_file=L_midthick_surf,
                     new_sphere=left_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
@@ -704,6 +705,7 @@ def init_anatomical_wf(
 
             lh_32k_pial_wf = pe.Node(
                 CiftiSurfaceResample(
+                    in_file=L_pial_surf,
                     new_sphere=left_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
@@ -714,6 +716,7 @@ def init_anatomical_wf(
 
             lh_32k_wm_wf = pe.Node(
                 CiftiSurfaceResample(
+                    in_file=L_wm_surf,
                     new_sphere=left_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
@@ -724,6 +727,7 @@ def init_anatomical_wf(
 
             rh_32k_midthick_wf = pe.Node(
                 CiftiSurfaceResample(
+                    in_file=R_midthick_surf,
                     new_sphere=right_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
@@ -734,6 +738,7 @@ def init_anatomical_wf(
 
             rh_32k_pial_wf = pe.Node(
                 CiftiSurfaceResample(
+                    in_file=R_pial_surf,
                     new_sphere=right_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
@@ -744,6 +749,7 @@ def init_anatomical_wf(
 
             rh_32k_wm_wf = pe.Node(
                 CiftiSurfaceResample(
+                    in_file=R_wm_surf,
                     new_sphere=right_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
