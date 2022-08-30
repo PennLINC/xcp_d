@@ -231,8 +231,6 @@ def zscore_nifti(img, outputname, mask=None):
         meandata = imgdata[np.abs(imgdata) > 0].mean()
         stddata = imgdata[np.abs(imgdata) > 0].std()
         zscore_fdata = (imgdata - meandata) / stddata
-        # TODO: Confirm this line is redundant
-        # zscore_fdata[np.abs(imgdata) < 0] = 0
 
     # turn image to nifti and write it out
     dataout = nb.Nifti1Image(zscore_fdata,
