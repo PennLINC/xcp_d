@@ -27,7 +27,7 @@ from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths  # TM
 from nipype.interfaces.fsl import Merge as fslmerge  # TM
 from ..interfaces.c3 import C3d  # TM
-from ..interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile  # TM
+from ..interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
 from ..interfaces.workbench import (
     ConvertAffine,
     ApplyAffine,
@@ -236,7 +236,7 @@ def init_anatomical_wf(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)], 
+                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
                 transforms=t1w_to_mni,
                 interpolation="LanczosWindowedSinc",
                 input_image_type=3,
@@ -618,7 +618,7 @@ def init_anatomical_wf(
                 "in_file",
                 [R_midthick_surf, R_pial_surf, R_wm_surf],
             )
-            # apply FNIRT-format warpfield 
+            # apply FNIRT-format warpfield
             lh_surface_apply_warpfield = pe.Node(
                 ApplyWarpfield(),
                 name="lh_surface_apply_warpfield",
@@ -690,65 +690,64 @@ def init_anatomical_wf(
                 name='surface_sphere_project_unproject_rh'
             )
 
-            # collect the fsLR32k mid, pial, wm surfs per hemi
+            # resample the mid, pial, wm surfs to fsLR32k
 
-            lh_32k_surf_wf = pe.MapNode(
+            lh_32k_midthick_wf = pe.Node(
                 CiftiSurfaceResample(
                     new_sphere=left_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
-                iterfield=["in_file"],
-                name="lh_32k_surf_wf",
+                name="lh_32k_midthick_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            lh_32k_surf_wf.inputs.in_file = [L_midthick_surf, L_pial_surf, L_wm_surf]
 
-            rh_32k_surf_wf = pe.MapNode(
+            lh_32k_pial_wf = pe.Node(
+                CiftiSurfaceResample(
+                    new_sphere=left_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
+                name="lh_32k_pial_wf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            lh_32k_wm_wf = pe.Node(
+                CiftiSurfaceResample(
+                    new_sphere=left_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
+                name="lh_32k_wm_wf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            rh_32k_midthick_wf = pe.Node(
                 CiftiSurfaceResample(
                     new_sphere=right_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
-                iterfield=["in_file"],
-                name="rh_32k_surf_wf",
+                name="rh_32k_midthick_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            rh_32k_surf_wf.inputs.in_file = [R_midthick_surf, R_pial_surf, R_wm_surf]
 
-            select_lh_32k_midthick_surf = pe.Node(
-                niu.Select(index=[0]),
-                name="select_lh_32k_midthick_surf",
+            rh_32k_pial_wf = pe.Node(
+                CiftiSurfaceResample(
+                    new_sphere=right_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
+                name="rh_32k_pial_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            select_lh_32k_pial_surf = pe.Node(
-                niu.Select(index=[1]),
-                name="select_lh_32k_pial_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_lh_32k_wm_surf = pe.Node(
-                niu.Select(index=[2]),
-                name="select_lh_32k_wm_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_rh_32k_midthick_surf = pe.Node(
-                niu.Select(index=[0]),
-                name="select_rh_32k_midthick_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_rh_32k_pial_surf = pe.Node(
-                niu.Select(index=[1]),
-                name="select_rh_32k_pial_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_rh_32k_wm_surf = pe.Node(
-                niu.Select(index=[2]),
-                name="select_rh_32k_wm_surf",
+
+            rh_32k_wm_wf = pe.Node(
+                CiftiSurfaceResample(
+                    new_sphere=right_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
+                name="rh_32k_wm_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
@@ -981,27 +980,22 @@ def init_anatomical_wf(
                     ),
                     (
                         surface_sphere_project_unproject_lh,
-                        lh_32k_surf_wf,
+                        lh_32k_midthick_wf,
                         [("out_file", "current_sphere")],
                     ),
                     (
-                        lh_32k_surf_wf,
-                        select_lh_32k_midthick_surf,
-                        [("out_file", "inlist")],
+                        surface_sphere_project_unproject_lh,
+                        lh_32k_pial_wf,
+                        [("out_file", "current_sphere")],
                     ),
                     (
-                        lh_32k_surf_wf,
-                        select_lh_32k_pial_surf,
-                        [("out_file", "inlist")],
+                        surface_sphere_project_unproject_lh,
+                        lh_32k_wm_wf,
+                        [("out_file", "current_sphere")],
                     ),
-                    (
-                        lh_32k_surf_wf,
-                        select_lh_32k_wm_surf,
-                        [("out_file", "inlist")],
-                    ),
-                    (select_lh_32k_midthick_surf, ds_midLsurf_wf, [("out", "in_file")]),
-                    (select_lh_32k_pial_surf, ds_pialLsurf_wf, [("out", "in_file")]),
-                    (select_lh_32k_wm_surf, ds_wmLsurf_wf, [("out", "in_file")]),
+                    (lh_32k_midthick_wf, ds_midLsurf_wf, [("out_file", "in_file")]),
+                    (lh_32k_pial_wf, ds_pialLsurf_wf, [("out_file", "in_file")]),
+                    (lh_32k_wm_wf, ds_wmLsurf_wf, [("out_file", "in_file")]),
                 ]
             )
             workflow.connect(
@@ -1033,27 +1027,21 @@ def init_anatomical_wf(
                     ),
                     (
                         surface_sphere_project_unproject_rh,
-                        rh_32k_surf_wf,
+                        rh_32k_midthick_wf,
+                        [("out_file", "current_sphere")],
+                    ),                    (
+                        surface_sphere_project_unproject_rh,
+                        rh_32k_pial_wf,
                         [("out_file", "current_sphere")],
                     ),
                     (
-                        rh_32k_surf_wf,
-                        select_rh_32k_midthick_surf,
-                        [("out_file", "inlist")],
+                        surface_sphere_project_unproject_rh,
+                        rh_32k_wm_wf,
+                        [("out_file", "current_sphere")],
                     ),
-                    (
-                        rh_32k_surf_wf,
-                        select_rh_32k_pial_surf,
-                        [("out_file", "inlist")],
-                    ),
-                    (
-                        rh_32k_surf_wf,
-                        select_rh_32k_wm_surf,
-                        [("out_file", "inlist")],
-                    ),
-                    (select_rh_32k_midthick_surf, ds_midRsurf_wf, [("out", "in_file")]),
-                    (select_rh_32k_pial_surf, ds_pialRsurf_wf, [("out", "in_file")]),
-                    (select_rh_32k_wm_surf, ds_wmRsurf_wf, [("out", "in_file")]),
+                    (rh_32k_midthick_wf, ds_midRsurf_wf, [("out_file", "in_file")]),
+                    (rh_32k_pial_wf, ds_pialRsurf_wf, [("out_file", "in_file")]),
+                    (rh_32k_wm_wf, ds_wmRsurf_wf, [("out_file", "in_file")]),
                 ]
             )
 
