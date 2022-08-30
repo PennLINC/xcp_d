@@ -166,15 +166,15 @@ def write_gii(datat, template, filename, hemi):
 
 def read_gii(surf_gii):
     """
-    using nibabel to read surface file
+    Using nibabel to read surface file
     """
-    bbx = nb.load(surf_gii)
-    datat = bbx.agg_data()
-    if not hasattr(datat, '__shape__'):
-        datat = np.zeros((len(bbx.darrays[0].data), len(bbx.darrays)))
-        for arr in range(len(bbx.darrays)):
-            datat[:, arr] = bbx.darrays[arr].data
-    return datat
+    bold_data = nb.load(surf_gii) # load the gifti 
+    gifti_data = bold_data.agg_data() # aggregate the data
+    if not hasattr(gifti_data, '__shape__'): # if it doesn't have 'shape', reshape
+        gifti_data = np.zeros((len(bold_data.darrays[0].data), len(bold_data.darrays)))
+        for arr in range(len(bold_data.darrays)):
+            gifti_data[:, arr] = bold_data.darrays[arr].data
+    return gifti_data
 
 
 def despikedatacifti(cifti, TR, basedir):
