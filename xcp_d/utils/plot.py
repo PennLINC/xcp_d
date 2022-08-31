@@ -345,42 +345,42 @@ def confoundplotx(time_series,
             # threshold fd at 0.1,0.2 and 0.5
             time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
             fda = time_series[c].copy()
-            fdx = time_series[c].copy()
-            fdx[fdx > 0] = 1.05
+            timeseries_copy = time_series[c].copy()
+            timeseries_copy[timeseries_copy > 0] = 1.05
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
-            time_series_axis.plot(fdx, '.', color='gray', markersize=40)
+            time_series_axis.plot(timeseries_copy, '.', color='gray', markersize=40)
 
             time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
             fda[fda < 0.05] = np.nan
-            fdx = time_series[c].copy()
-            fdx[fdx >= 0.05] = 1.05
-            fdx[fdx < 0.05] = np.nan
+            timeseries_copy = time_series[c].copy()
+            timeseries_copy[timeseries_copy >= 0.05] = 1.05
+            timeseries_copy[timeseries_copy < 0.05] = np.nan
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
-            time_series_axis.plot(fdx, '.', color='gray', markersize=40)
+            time_series_axis.plot(timeseries_copy, '.', color='gray', markersize=40)
 
             time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
             fda[fda < 0.1] = np.nan
-            fdx = time_series[c].copy()
-            fdx[fdx >= 0.1] = 1.05
-            fdx[fdx < 0.1] = np.nan
+            timeseries_copy = time_series[c].copy()
+            timeseries_copy[timeseries_copy >= 0.1] = 1.05
+            timeseries_copy[timeseries_copy < 0.1] = np.nan
             time_series_axis.plot(fda, '.', color='#66c2a5', markersize=40)
-            time_series_axis.plot(fdx, '.', color='#66c2a5', markersize=40)
+            time_series_axis.plot(timeseries_copy, '.', color='#66c2a5', markersize=40)
 
             time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
             fda[fda < 0.2] = np.nan
-            fdx = time_series[c].copy()
-            fdx[fdx >= 0.2] = 1.05
-            fdx[fdx < 0.2] = np.nan
+            timeseries_copy = time_series[c].copy()
+            timeseries_copy[timeseries_copy >= 0.2] = 1.05
+            timeseries_copy[timeseries_copy < 0.2] = np.nan
             time_series_axis.plot(fda, '.', color='#fc8d62', markersize=40)
-            time_series_axis.plot(fdx, '.', color='#fc8d62', markersize=40)
+            time_series_axis.plot(timeseries_copy, '.', color='#fc8d62', markersize=40)
 
             time_series_axis.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
             fda[fda < 0.5] = np.nan
-            fdx = time_series[c].copy()
-            fdx[fdx >= 0.5] = 1.05
-            fdx[fdx < 0.5] = np.nan
+            timeseries_copy = time_series[c].copy()
+            timeseries_copy[timeseries_copy >= 0.5] = 1.05
+            timeseries_copy[timeseries_copy < 0.5] = np.nan
             time_series_axis.plot(fda, '.', color='#8da0cb', markersize=40)
-            time_series_axis.plot(fdx, '.', color='#8da0cb', markersize=40)
+            time_series_axis.plot(timeseries_copy, '.', color='#8da0cb', markersize=40)
 
             good_vols = len(time_series[c][time_series[c] < 0.1])
             time_series_axis.text(1.01,
@@ -540,14 +540,14 @@ def plot_svgx(rawdata,
       output file svg after processing
     '''
 
-    # Compute dvars correctly if not lready done
+    # Compute dvars correctly if not already done
     if type(raw_dvars) != np.ndarray:
         raw_dvars = compute_dvars(read_ndata(datafile=rawdata, maskfile=mask))
     if type(regressed_dvars) != np.ndarray:
         regressed_dvars = compute_dvars(read_ndata(datafile=regressed_data, maskfile=mask))
     if type(filtered_dvars) != np.ndarray:
         filtered_dvars = compute_dvars(read_ndata(datafile=residual_data,
-                                              maskfile=mask))
+                                                  maskfile=mask))
     # Formatting & setting of files
     sns.set_style('whitegrid')
     rgdata = raw_dvars
@@ -571,15 +571,15 @@ def plot_svgx(rawdata,
         'Post all': rsdata
     })
 
-    fdx = pd.DataFrame({'FD': np.loadtxt(fd)})
+    timeseries_copy = pd.DataFrame({'FD': np.loadtxt(fd)})
 
     # The mean and standard deviation of raw data
-    wbbf = pd.DataFrame({
+    timeseries_before = pd.DataFrame({
         'Mean': np.nanmean(rw, axis=0),
         'Std': np.nanstd(rw, axis=0)
     })
     # The mean and standard deviation of regressed data
-    wbaf = pd.DataFrame({
+    timeseries_after = pd.DataFrame({
         'Mean': np.nanmean(rs, axis=0),
         'Std': np.nanstd(rs, axis=0)
     })
@@ -589,8 +589,8 @@ def plot_svgx(rawdata,
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    rawdatax = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
-    resddatax = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
+    scaled_raw_data = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
+    scaled_residual_data = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
@@ -601,12 +601,12 @@ def plot_svgx(rawdata,
         scaledresdata = tempfile.mkdtemp() + '/filex_red.dtseries.nii'
 
     # Write out the scaled data
-    scaledrawdata = write_ndata(data_matrix=rawdatax,
+    scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
                                 template=rawdata,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
-    scaledresdata = write_ndata(data_matrix=resddatax,
+    scaledresdata = write_ndata(data_matrix=scaled_residual_data,
                                 template=residual_data,
                                 filename=scaledresdata,
                                 mask=mask,
@@ -625,20 +625,21 @@ def plot_svgx(rawdata,
                   TR=TR,
                   ylabel='DVARS',
                   hide_x=True)
-    confoundplotx(time_series=wbbf, grid_spec_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
+    confoundplotx(time_series=timeseries_before,
+                  grid_spec_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
     plot_carpet(func=scaledrawdata,
                 atlaslabels=atlaslabels,
                 TR=TR,
                 subplot=grid[3],
                 legend=False)
-    confoundplotx(time_series=fdx,
+    confoundplotx(time_series=timeseries_copy,
                   grid_spec_ts=grid[4],
                   TR=TR,
                   hide_x=False,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
                   FD=True)
-    # Save out the before file
+    # Save out the before processing file
     figx.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
 
     plt.cla()
@@ -656,7 +657,7 @@ def plot_svgx(rawdata,
                   ylabel='DVARS',
                   hide_x=True,
                   work_dir=work_dir)
-    confoundplotx(time_series=wbaf,
+    confoundplotx(time_series=timeseries_after,
                   grid_spec_ts=grid[1],
                   TR=TR,
                   hide_x=True,
@@ -668,7 +669,7 @@ def plot_svgx(rawdata,
                 TR=TR,
                 subplot=grid[3],
                 legend=True)
-    confoundplotx(time_series=fdx,
+    confoundplotx(time_series=timeseries_copy,
                   grid_spec_ts=grid[4],
                   TR=TR,
                   hide_x=False,
@@ -677,7 +678,7 @@ def plot_svgx(rawdata,
                   FD=True,
                   work_dir=work_dir)
     figy.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
-    # Save out the after file
+    # Save out the after processing file
     return unprocessed_filename, processed_filename
 
 
@@ -700,6 +701,7 @@ class fMRIPlot:
         vlines=None,
         spikes_files=None,
     ):
+        #  Load in the necessary information
         func_img = nb.load(func_file)
         self.func_file = func_file
         self.TR = TR or _get_TR(func_img)
@@ -707,7 +709,7 @@ class fMRIPlot:
         self.seg_data = None
         sns.set_style("whitegrid")
 
-        if not isinstance(func_img, nb.Cifti2Image):
+        if not isinstance(func_img, nb.Cifti2Image):  # If Nifti
             self.mask_data = nb.fileslice.strided_scalar(
                 func_img.shape[:3], np.uint8(1))
             if mask_file:
@@ -726,7 +728,7 @@ class fMRIPlot:
                                sep=r"[\t\s]+",
                                usecols=usecols,
                                index_col=False)
-
+        # Confounds information
         if data is not None:
             for name in data.columns.ravel():
                 self.confounds[name] = {
@@ -734,7 +736,7 @@ class fMRIPlot:
                     "units": units.get(name),
                     "cutoff": vlines.get(name),
                 }
-
+        #  Spike information
         self.spikes = []
         if spikes_files:
             for sp_file in spikes_files:
@@ -1080,7 +1082,6 @@ def display_cb(grid_spec_ts):
                                                      subplot_spec=grid_spec_ts,
                                                      width_ratios=[1, 100],
                                                      wspace=0.0)
-    # tm = nb.load(imgdata).shape[-1]
     data = scalex(np.random.rand(40), -600, 600)
     ax2 = plt.subplot(grid_specification[1])
     PCM = ax2.scatter(data, data, cmap="gray", c=data)
