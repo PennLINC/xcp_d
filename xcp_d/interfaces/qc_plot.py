@@ -167,8 +167,6 @@ class computeqcplot(SimpleInterface):
                        mask_file=self.inputs.mask_file).plot(labelsize=8)
         fig.savefig(self._results['raw_qcplot'], bbox_inches='tight')
 
-        # plot_svg(fdata=datax,fd=fd_timeseries,dvars=dvars_bf,TR=self.inputs.TR,filename=self._results['raw_qcplot'])
-
         if nvolcensored > 0:
             mean_fd = np.mean(fd_timeseries[tmask == 0])
             mean_rms = np.mean(rmsd[tmask == 0])
