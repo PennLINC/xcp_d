@@ -178,7 +178,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         resbold = natsorted(
             fnmatch.filter(all_func_files,
                            '*' + task + '*run*_desc-residual*bold*.nii.gz'))
-        reg_dvars = []
+        regressed_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold) > 1:
             res = resbold[0]
@@ -203,7 +203,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     for b in filex:
                         dvar = compute_dvars(read_ndata(b))
                         dvar[0] = np.mean(dvar)
-                        reg_dvars.append(dvar)
+                        regressed_dvars.append(dvar)
 
             filey = natsorted(
                 glob.glob(fmri_files + os.path.basename(res.split('run-')[0]) +
@@ -233,16 +233,16 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 raw_dvars.append(dvar)
 
             plot_svgx(rawdata=rawdata,
-                      regdata=fileid + '_desc-residual_bold.nii.gz',
-                      resddata=fileid + '_desc-residual_bold.nii.gz',
+                      regressed_data=fileid + '_desc-residual_bold.nii.gz',
+                      residual_data=fileid + '_desc-residual_bold.nii.gz',
                       fd=fileid + '_desc-framewisedisplacement_bold.tsv',
                       raw_dvars=raw_dvars,
-                      reg_dvars=reg_dvars,
-                      regf_dvars=reg_dvars,
-                      filenameaf=postcarpet,
-                      filenamebf=precarpet,
+                      regressed_dvars=regressed_dvars,
+                      filtered_dvars=regressed_dvars,
+                      processed_filename=postcarpet,
+                      unprocessed_filename=precarpet,
                       mask=mask,
-                      seg=segfile,
+                      seg_data=segfile,
                       TR=TR,
                       work_dir=work_dir)
 
@@ -324,7 +324,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 all_func_files,
                 '*' + task + '*run*den-91k_desc-residual*bold.dtseries.nii'))
         if len(resbold) > 1:
-            reg_dvars = []
+            regressed_dvars = []
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
             # print(resid)
@@ -363,7 +363,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                                     resid.partition('_desc')[0] + j)):
                             dvar = compute_dvars(read_ndata(b))
                             dvar[0] = np.mean(dvar)
-                            reg_dvars.append(dvar)
+                            regressed_dvars.append(dvar)
 
             raw_dvars = []
             filey = natsorted(
@@ -385,20 +385,20 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 fileid) + '_desc-postcarpetplot_bold.svg'
 
             raw_dvars = np.array(raw_dvars).flatten()
-            reg_dvars = np.array(reg_dvars).flatten()
+            regressed_dvars = np.array(regressed_dvars).flatten()
             plot_svgx(
                 rawdata=rawdata,
-                regdata=res.split('run-')[0] + resid.partition('_desc')[0] +
+                regressed_data=res.split('run-')[0] + resid.partition('_desc')[0] +
                 '_desc-residual_bold.dtseries.nii',
-                resddata=res.split('run-')[0] + resid.partition('_desc')[0] +
+                residual_data=res.split('run-')[0] + resid.partition('_desc')[0] +
                 '_desc-residual_bold.dtseries.nii',
                 fd=res.split('run-')[0] + resid.partition('_den-91k')[0] +
                 '_desc-framewisedisplacement_bold.tsv',
                 raw_dvars=raw_dvars,
-                reg_dvars=reg_dvars,
-                regf_dvars=reg_dvars,
-                filenameaf=postcarpet,
-                filenamebf=precarpet,
+                regressed_dvars=regressed_dvars,
+                filtered_dvars=regressed_dvars,
+                processed_filename=postcarpet,
+                unprocessed_filename=precarpet,
                 TR=TR,
                 work_dir=work_dir)
 
@@ -446,7 +446,7 @@ def get_segfile(bold_file):
                      suffix='dseg',
                      extension=['.nii', '.nii.gz']))
 
-    # seg file to bold space
+    # seg_data file to bold space
     at = ApplyTransforms()
     at.inputs.dimension = 3
     at.inputs.input_image = carpet

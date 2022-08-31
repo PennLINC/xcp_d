@@ -17,14 +17,14 @@ from nilearn._utils.niimg import _safe_get_data
 import tempfile
 
 
-def _decimate_data(data, seg, size):
+def _decimate_data(data, seg_data, size):
     """Decimate timeseries data
 
     Parameters
     ----------
     data : ndarray
         2 element array of timepoints and samples
-    seg : ndarray
+    seg_data : ndarray
         1 element array of samples
     size : tuple
         2 element for P/T decimation
@@ -33,11 +33,11 @@ def _decimate_data(data, seg, size):
     p_dec = 1 + data.shape[0] // size[0]
     if p_dec:
         data = data[::p_dec, :]
-        seg = seg[::p_dec]
+        seg_data = seg_data[::p_dec]
     t_dec = 1 + data.shape[1] // size[1]
     if t_dec:
         data = data[:, ::t_dec]
-    return data, seg
+    return data, seg_data
 
 
 def plotimage(img, out_file):
@@ -93,106 +93,102 @@ def compute_dvars(datat):
     return np.sqrt(datax_ss)
 
 
-def confoundplot(tseries,
-                 gs_ts,
+def confoundplot(time_series,
+                 grid_spec_ts,
                  gs_dist=None,
                  name=None,
                  units=None,
                  TR=None,
                  hide_x=True,
                  color='b',
-                 nskip=0,
                  cutoff=None,
                  ylims=None):
     '''
     adapted from niworkflows
-    tseries:
+    time_series:
        numpy array
-    gs_ts:
+    grid_spec_ts:
        GridSpec
     name:
       file name
     units:
-      tseries unit
+      time_series unit
     TR:
       repetition time
     '''
     sns.set_style('whitegrid')
     # Define TR and number of frames
-    notr = False
-    if TR is None:
-        notr = True
+    no_repetition_time = False
+    if TR is None:  # Set default Repetition Time
+        no_repetition_time = True
         TR = 1.
-    ntsteps = len(tseries)
-    tseries = np.array(tseries)
+    ntsteps = len(time_series)
+    time_series = np.array(time_series)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(1,
-                                     2,
-                                     subplot_spec=gs_ts,
-                                     width_ratios=[1, 100],
-                                     wspace=0.0)
+    grid_specification = mgs.GridSpecFromSubplotSpec(1,
+                                                     2,
+                                                     subplot_spec=grid_spec_ts,
+                                                     width_ratios=[1, 100],
+                                                     wspace=0.0)
 
-    ax_ts = plt.subplot(gs[1])
-    ax_ts.grid(False)
+    time_series_axis = plt.subplot(grid_specification[1])
+    time_series_axis.grid(False)
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
     xticks = list(range(0, ntsteps)[::interval])
-    ax_ts.set_xticks(xticks)
+    time_series_axis.set_xticks(xticks)
 
     if not hide_x:
-        if notr:
-            ax_ts.set_xlabel('time (frame #)')
+        if no_repetition_time:
+            time_series_axis.set_xlabel('time (frame #)')
         else:
-            ax_ts.set_xlabel('time (s)')
+            time_series_axis.set_xlabel('time (s)')
             labels = TR * np.array(xticks)
-            ax_ts.set_xticklabels(['%.02f' % t for t in labels.tolist()])
+            time_series_axis.set_xticklabels(['%.02f' % t for t in labels.tolist()])
     else:
-        ax_ts.set_xticklabels([])
+        time_series_axis.set_xticklabels([])
 
     if name is not None:
         if units is not None:
             name += ' [%s]' % units
 
-        ax_ts.annotate(name,
-                       xy=(0.0, 0.7),
-                       xytext=(0, 0),
-                       xycoords='axes fraction',
-                       textcoords='offset points',
-                       va='center',
-                       ha='left',
-                       color=color,
-                       size=16,
-                       bbox={
-                           'boxstyle': 'round',
-                           'fc': 'w',
-                           'ec': 'none',
-                           'color': 'none',
-                           'lw': 0,
-                           'alpha': 0.8
-                       })
+        time_series_axis.annotate(name,
+                                  xy=(0.0, 0.7),
+                                  xytext=(0, 0),
+                                  xycoords='axes fraction',
+                                  textcoords='offset points',
+                                  va='center',
+                                  ha='left',
+                                  color=color,
+                                  size=16,
+                                  bbox={
+                                      'boxstyle': 'round',
+                                      'fc': 'w',
+                                      'ec': 'none',
+                                      'color': 'none',
+                                      'lw': 0,
+                                      'alpha': 0.8
+                                  })
 
     for side in ["top", "right"]:
-        ax_ts.spines[side].set_color('none')
-        ax_ts.spines[side].set_visible(False)
+        time_series_axis.spines[side].set_color('none')
+        time_series_axis.spines[side].set_visible(False)
 
     if not hide_x:
-        ax_ts.spines["bottom"].set_position(('outward', 20))
-        ax_ts.xaxis.set_ticks_position('bottom')
+        time_series_axis.spines["bottom"].set_position(('outward', 20))
+        time_series_axis.xaxis.set_ticks_position('bottom')
     else:
-        ax_ts.spines["bottom"].set_color('none')
-        ax_ts.spines["bottom"].set_visible(False)
+        time_series_axis.spines["bottom"].set_color('none')
+        time_series_axis.spines["bottom"].set_visible(False)
 
-    # ax_ts.spines["left"].set_position(('outward', 30))
-    ax_ts.spines["left"].set_color('none')
-    ax_ts.spines["left"].set_visible(False)
-    # ax_ts.yaxis.set_ticks_position('left')
+    time_series_axis.spines["left"].set_color('none')
+    time_series_axis.spines["left"].set_visible(False)
+    time_series_axis.set_yticks([])
+    time_series_axis.set_yticklabels([])
 
-    ax_ts.set_yticks([])
-    ax_ts.set_yticklabels([])
-
-    nonnan = tseries[~np.isnan(tseries)]
+    nonnan = time_series[~np.isnan(time_series)]
     if nonnan.size > 0:
         # Calculate Y limits
         valrange = (nonnan.max() - nonnan.min())
@@ -209,7 +205,7 @@ def confoundplot(tseries,
         # Add space for plot title and mean/SD annotation
         def_ylims[0] -= 0.1 * (def_ylims[1] - def_ylims[0])
 
-        ax_ts.set_ylim(def_ylims)
+        time_series_axis.set_ylim(def_ylims)
 
         # Annotate stats
         maxv = nonnan.max()
@@ -226,66 +222,66 @@ def confoundplot(tseries,
                    r'$\bullet$ $\sigma$: {sigma:.3f}').format(max=maxv,
                                                               mean=mean,
                                                               units=units or '', sigma=stdv)
-    ax_ts.annotate(stats_label,
-                   xy=(0.98, 0.7),
-                   xycoords='axes fraction',
-                   xytext=(0, 0),
-                   textcoords='offset points',
-                   va='center',
-                   ha='right',
-                   color=color,
-                   size=14,
-                   bbox={
-                       'boxstyle': 'round',
-                       'fc': 'w',
-                       'ec': 'none',
-                       'color': 'none',
-                       'lw': 0,
-                       'alpha': 0.8
-                   })
+    time_series_axis.annotate(stats_label,
+                              xy=(0.98, 0.7),
+                              xycoords='axes fraction',
+                              xytext=(0, 0),
+                              textcoords='offset points',
+                              va='center',
+                              ha='right',
+                              color=color,
+                              size=14,
+                              bbox={
+                                  'boxstyle': 'round',
+                                  'fc': 'w',
+                                  'ec': 'none',
+                                  'color': 'none',
+                                  'lw': 0,
+                                  'alpha': 0.8
+                              })
 
     # Annotate percentile 95
-    ax_ts.plot((0, ntsteps - 1), [p95] * 2, linewidth=.1, color='lightgray')
-    ax_ts.annotate('%.2f' % p95,
-                   xy=(0, p95),
-                   xytext=(-1, 0),
-                   textcoords='offset points',
-                   va='center',
-                   ha='right',
-                   color='lightgray',
-                   size=3)
+    time_series_axis.plot((0, ntsteps - 1), [p95] * 2, linewidth=.1, color='lightgray')
+    time_series_axis.annotate('%.2f' % p95,
+                              xy=(0, p95),
+                              xytext=(-1, 0),
+                              textcoords='offset points',
+                              va='center',
+                              ha='right',
+                              color='lightgray',
+                              size=3)
 
     if cutoff is None:
         cutoff = []
 
     for thr in enumerate(cutoff):
-        ax_ts.plot((0, ntsteps - 1), [thr] * 2, linewidth=.2, color='dimgray')
+        time_series_axis.plot((0, ntsteps - 1), [thr] * 2, linewidth=.2, color='dimgray')
 
-        ax_ts.annotate('%.2f' % thr,
-                       xy=(0, thr),
-                       xytext=(-1, 0),
-                       textcoords='offset points',
-                       va='center',
-                       ha='right',
-                       color='dimgray',
-                       size=3)
+        time_series_axis.annotate('%.2f' % thr,
+                                  xy=(0, thr),
+                                  xytext=(-1, 0),
+                                  textcoords='offset points',
+                                  va='center',
+                                  ha='right',
+                                  color='dimgray',
+                                  size=3)
 
-    ax_ts.plot(tseries, color=color, linewidth=2.5)
-    ax_ts.set_xlim((0, ntsteps - 1))
+    time_series_axis.plot(time_series, color=color, linewidth=2.5)
+    time_series_axis.set_xlim((0, ntsteps - 1))
 
     if gs_dist is not None:
         ax_dist = plt.subplot(gs_dist)
-        sns.distplot(tseries, vertical=True, ax=ax_dist)
+        sns.distplot(time_series, vertical=True, ax=ax_dist)
         ax_dist.set_xlabel('Timesteps')
-        ax_dist.set_ylim(ax_ts.get_ylim())
+        ax_dist.set_ylim(time_series_axis.get_ylim())
         ax_dist.set_yticklabels([])
 
-        return [ax_ts, ax_dist], gs
-    return ax_ts, gs
+        return [time_series_axis, ax_dist], grid_specification
+    return time_series_axis, grid_specification
 
 
-def confoundplotx(tseries,
-                  gs_ts,
+def confoundplotx(time_series,
+                  grid_spec_ts,
                   TR=None,
                   hide_x=True,
                   ylims=None,
@@ -296,161 +292,162 @@ def confoundplotx(tseries,
     sns.set_style('whitegrid')
 
     # Define TR and number of frames
-    notr = False
+    no_repetition_time = False
     if TR is None:
-        notr = True
+        no_repetition_time = True
         TR = 1.0
 
-    ntsteps = tseries.shape[0]
-    # tseries = np.array(tseries)
+    ntsteps = time_series.shape[0]
+    # time_series = np.array(time_series)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(1,
-                                     2,
-                                     subplot_spec=gs_ts,
-                                     width_ratios=[1, 100],
-                                     wspace=0.0)
+    grid_specification = mgs.GridSpecFromSubplotSpec(1,
+                                                     2,
+                                                     subplot_spec=grid_spec_ts,
+                                                     width_ratios=[1, 100],
+                                                     wspace=0.0)
 
-    ax_ts = plt.subplot(gs[1])
-    ax_ts.grid(False)
+    time_series_axis = plt.subplot(grid_specification[1])
+    time_series_axis.grid(False)
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
     xticks = list(range(0, ntsteps)[::interval])
-    ax_ts.set_xticks(xticks)
+    time_series_axis.set_xticks(xticks)
 
+    # Set the x-axis labels
     if not hide_x:
-        if notr:
-            ax_ts.set_xlabel("Time (frame #)")
+        if no_repetition_time:
+            time_series_axis.set_xlabel("Time (frame #)")
         else:
-            ax_ts.set_xlabel("Time (s)")
+            time_series_axis.set_xlabel("Time (s)")
             labels = TR * np.array(xticks)
             labels = labels.astype(int)
-            ax_ts.set_xticklabels(labels)
+            time_series_axis.set_xticklabels(labels)
     else:
-        ax_ts.set_xticklabels([])
+        time_series_axis.set_xticklabels([])
 
+    # Set y-axis labels
     if ylabel:
-        ax_ts.set_ylabel(ylabel)
-
+        time_series_axis.set_ylabel(ylabel)
     if work_dir is not None:
-        tseries.to_csv('/{0}/{1}_tseries.npy'.format(work_dir, ylabel))
-    columns = tseries.columns
+        time_series.to_csv('/{0}/{1}_tseries.npy'.format(work_dir, ylabel))
+    columns = time_series.columns
     maxim_value = []
     minim_value = []
 
     if FD is True:
         for c in columns:
-            ax_ts.plot(tseries[c], label=c, linewidth=3, color='black')
-            maxim_value.append(max(tseries[c]))
-            minim_value.append(min(tseries[c]))
+            time_series_axis.plot(time_series[c], label=c, linewidth=3, color='black')
+            maxim_value.append(max(time_series[c]))
+            minim_value.append(min(time_series[c]))
 
             # threshold fd at 0.1,0.2 and 0.5
-            ax_ts.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
-            fda = tseries[c].copy()
-            fdx = tseries[c].copy()
+            time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
+            fda = time_series[c].copy()
+            fdx = time_series[c].copy()
             fdx[fdx > 0] = 1.05
-            ax_ts.plot(fda, '.', color='gray', markersize=40)
-            ax_ts.plot(fdx, '.', color='gray', markersize=40)
+            time_series_axis.plot(fda, '.', color='gray', markersize=40)
+            time_series_axis.plot(fdx, '.', color='gray', markersize=40)
 
-            ax_ts.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
             fda[fda < 0.05] = np.nan
-            fdx = tseries[c].copy()
+            fdx = time_series[c].copy()
             fdx[fdx >= 0.05] = 1.05
             fdx[fdx < 0.05] = np.nan
-            ax_ts.plot(fda, '.', color='gray', markersize=40)
-            ax_ts.plot(fdx, '.', color='gray', markersize=40)
+            time_series_axis.plot(fda, '.', color='gray', markersize=40)
+            time_series_axis.plot(fdx, '.', color='gray', markersize=40)
 
-            ax_ts.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
             fda[fda < 0.1] = np.nan
-            fdx = tseries[c].copy()
+            fdx = time_series[c].copy()
             fdx[fdx >= 0.1] = 1.05
             fdx[fdx < 0.1] = np.nan
-            ax_ts.plot(fda, '.', color='#66c2a5', markersize=40)
-            ax_ts.plot(fdx, '.', color='#66c2a5', markersize=40)
+            time_series_axis.plot(fda, '.', color='#66c2a5', markersize=40)
+            time_series_axis.plot(fdx, '.', color='#66c2a5', markersize=40)
 
-            ax_ts.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
             fda[fda < 0.2] = np.nan
-            fdx = tseries[c].copy()
+            fdx = time_series[c].copy()
             fdx[fdx >= 0.2] = 1.05
             fdx[fdx < 0.2] = np.nan
-            ax_ts.plot(fda, '.', color='#fc8d62', markersize=40)
-            ax_ts.plot(fdx, '.', color='#fc8d62', markersize=40)
+            time_series_axis.plot(fda, '.', color='#fc8d62', markersize=40)
+            time_series_axis.plot(fdx, '.', color='#fc8d62', markersize=40)
 
-            ax_ts.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
             fda[fda < 0.5] = np.nan
-            fdx = tseries[c].copy()
+            fdx = time_series[c].copy()
             fdx[fdx >= 0.5] = 1.05
             fdx[fdx < 0.5] = np.nan
-            ax_ts.plot(fda, '.', color='#8da0cb', markersize=40)
-            ax_ts.plot(fdx, '.', color='#8da0cb', markersize=40)
+            time_series_axis.plot(fda, '.', color='#8da0cb', markersize=40)
+            time_series_axis.plot(fdx, '.', color='#8da0cb', markersize=40)
 
-            good_vols = len(tseries[c][tseries[c] < 0.1])
-            ax_ts.text(1.01,
-                       .1,
-                       good_vols,
-                       c='#66c2a5',
-                       verticalalignment='top',
-                       horizontalalignment='left',
-                       transform=ax_ts.transAxes,
-                       fontsize=30)
-            good_vols = len(tseries[c][tseries[c] < 0.2])
-            ax_ts.text(1.01,
-                       .2,
-                       good_vols,
-                       c='#fc8d62',
-                       verticalalignment='top',
-                       horizontalalignment='left',
-                       transform=ax_ts.transAxes,
-                       fontsize=30)
-            good_vols = len(tseries[c][tseries[c] < 0.5])
-            ax_ts.text(1.01,
-                       .5,
-                       good_vols,
-                       c='#8da0cb',
-                       verticalalignment='top',
-                       horizontalalignment='left',
-                       transform=ax_ts.transAxes,
-                       fontsize=30)
-            good_vols = len(tseries[c][tseries[c] < 0.05])
-            ax_ts.text(1.01,
-                       .05,
-                       good_vols,
-                       c='grey',
-                       verticalalignment='top',
-                       horizontalalignment='left',
-                       transform=ax_ts.transAxes,
-                       fontsize=30)
+            good_vols = len(time_series[c][time_series[c] < 0.1])
+            time_series_axis.text(1.01,
+                                  .1,
+                                  good_vols,
+                                  c='#66c2a5',
+                                  verticalalignment='top',
+                                  horizontalalignment='left',
+                                  transform=time_series_axis.transAxes,
+                                  fontsize=30)
+            good_vols = len(time_series[c][time_series[c] < 0.2])
+            time_series_axis.text(1.01,
+                                  .2,
+                                  good_vols,
+                                  c='#fc8d62',
+                                  verticalalignment='top',
+                                  horizontalalignment='left',
+                                  transform=time_series_axis.transAxes,
+                                  fontsize=30)
+            good_vols = len(time_series[c][time_series[c] < 0.5])
+            time_series_axis.text(1.01,
+                                  .5,
+                                  good_vols,
+                                  c='#8da0cb',
+                                  verticalalignment='top',
+                                  horizontalalignment='left',
+                                  transform=time_series_axis.transAxes,
+                                  fontsize=30)
+            good_vols = len(time_series[c][time_series[c] < 0.05])
+            time_series_axis.text(1.01,
+                                  .05,
+                                  good_vols,
+                                  c='grey',
+                                  verticalalignment='top',
+                                  horizontalalignment='left',
+                                  transform=time_series_axis.transAxes,
+                                  fontsize=30)
     else:
         for c in columns:
-            ax_ts.plot(tseries[c], label=c, linewidth=5)
-            maxim_value.append(max(tseries[c]))
-            minim_value.append(min(tseries[c]))
+            time_series_axis.plot(time_series[c], label=c, linewidth=5)
+            maxim_value.append(max(time_series[c]))
+            minim_value.append(min(time_series[c]))
 
     minx_value = [abs(x) for x in minim_value]
 
-    ax_ts.set_xlim((0, ntsteps - 1))
-    ax_ts.legend(fontsize=40)
+    time_series_axis.set_xlim((0, ntsteps - 1))
+    time_series_axis.legend(fontsize=40)
     if FD is True:
-        ax_ts.set_ylim(0, 1.1)
-        ax_ts.set_yticks([0, 0.05, .1, 0.2, .5, 1])
+        time_series_axis.set_ylim(0, 1.1)
+        time_series_axis.set_yticks([0, 0.05, .1, 0.2, .5, 1])
     elif ylims:
-        ax_ts.set_ylim(ylims)
+        time_series_axis.set_ylim(ylims)
     else:
-        ax_ts.set_ylim([-1.5 * max(minx_value), 1.5 * max(maxim_value)])
+        time_series_axis.set_ylim([-1.5 * max(minx_value), 1.5 * max(maxim_value)])
 
-    for item in ([ax_ts.title, ax_ts.xaxis.label, ax_ts.yaxis.label] +
-                 ax_ts.get_xticklabels() + ax_ts.get_yticklabels()):
+    for item in ([time_series_axis.title, time_series_axis.xaxis.label, time_series_axis.yaxis.label] +
+                 time_series_axis.get_xticklabels() + time_series_axis.get_yticklabels()):
         item.set_fontsize(30)
 
     for axis in ['top', 'bottom', 'left', 'right']:
-        ax_ts.spines[axis].set_linewidth(4)
+        time_series_axis.spines[axis].set_linewidth(4)
     sns.despine()
-    return ax_ts, gs
+    return time_series_axis, grid_specification
 
 
 def plotseries(conf,
-               gs_ts,
+               grid_spec_ts,
                ylim=None,
                ylabelx=None,
                hide_x=None,
@@ -463,13 +460,13 @@ def plotseries(conf,
     plt.style.use('seaborn-white')
     plt.xticks(color='k')
     plt.yticks(color='k')
-    gs = mgs.GridSpecFromSubplotSpec(1,
-                                     2,
-                                     subplot_spec=gs_ts,
-                                     width_ratios=[1, 100],
-                                     wspace=0.0)
+    grid_specification = mgs.GridSpecFromSubplotSpec(1,
+                                                     2,
+                                                     subplot_spec=grid_spec_ts,
+                                                     width_ratios=[1, 100],
+                                                     wspace=0.0)
 
-    ax = plt.subplot(gs[1])
+    ax = plt.subplot(grid_specification[1])
     ax.grid(False)
     for k in colums:
         ax.plot(xtick, conf[k], label=k, linewidth=2)
@@ -508,60 +505,65 @@ def plotseries(conf,
 
 
 def plot_svgx(rawdata,
-              regdata,
-              resddata,
+              regressed_data,
+              residual_data,
               fd,
-              filenamebf,
-              filenameaf,
+              unprocessed_filename,
+              processed_filename,
               mask=None,
-              seg=None,
+              seg_data=None,
               TR=1,
               raw_dvars=None,
-              reg_dvars=None,
-              regf_dvars=None,
+              regressed_dvars=None,
+              filtered_dvars=None,
               work_dir=None):
     '''
     generate carpet plot with dvars, fd, and WB
     ------------
     rawdata:
-       nifti or cifti
-    regdata:
+       nifti or cifti before processing
+    regressed_data:
       nifti or cifti after nuissance regression
-    resddata:
+    residual_data:
       nifti or cifti after regression and filtering
     mask:
          mask for nifti if available
-    seg:
-        3 tissues seg files
+    seg_data:
+        3 tissues seg_data files
     TR:
         repetition times
     fd:
       framewise displacement
-    filenamebf:
+    unprocessed_filename:
       output file svg before processing
-    filenameaf:
+    processed_filename:
       output file svg after processing
     '''
+
+    # Compute dvars correctly if not lready done
     if type(raw_dvars) != np.ndarray:
         raw_dvars = compute_dvars(read_ndata(datafile=rawdata, maskfile=mask))
-    if type(reg_dvars) != np.ndarray:
-        reg_dvars = compute_dvars(read_ndata(datafile=regdata, maskfile=mask))
-    if type(regf_dvars) != np.ndarray:
-        regf_dvars = compute_dvars(read_ndata(datafile=resddata,
+    if type(regressed_dvars) != np.ndarray:
+        regressed_dvars = compute_dvars(read_ndata(datafile=regressed_data, maskfile=mask))
+    if type(filtered_dvars) != np.ndarray:
+        filtered_dvars = compute_dvars(read_ndata(datafile=residual_data,
                                               maskfile=mask))
+    # Formatting & setting of files
     sns.set_style('whitegrid')
     rgdata = raw_dvars
-    rsdata = regf_dvars
+    rsdata = filtered_dvars
     rxdata = raw_dvars
-    # load files
+    # Load files
     rw = read_ndata(datafile=rawdata, maskfile=mask)
-    rs = read_ndata(datafile=resddata, maskfile=mask)
+    rs = read_ndata(datafile=residual_data, maskfile=mask)
 
-    # remove first n deleted
+    # Remove first N deleted
     if len(rxdata) > len(rsdata):
         rxdata = rxdata[0:len(rsdata)]
         rgdata = rxdata
         rw = rw[:, 0:len(rsdata)]
+
+    # Create dataframes for the bold_data, FD
 
     conf = pd.DataFrame({
         'Pre reg': rxdata,
@@ -571,24 +573,26 @@ def plot_svgx(rawdata,
 
     fdx = pd.DataFrame({'FD': np.loadtxt(fd)})
 
+    # The mean and standard deviation of raw data
     wbbf = pd.DataFrame({
         'Mean': np.nanmean(rw, axis=0),
         'Std': np.nanstd(rw, axis=0)
     })
+    # The mean and standard deviation of regressed data
     wbaf = pd.DataFrame({
         'Mean': np.nanmean(rs, axis=0),
         'Std': np.nanstd(rs, axis=0)
     })
-    if seg is not None:
-        atlaslabels = nb.load(seg).get_fdata()
+    if seg_data is not None:
+        atlaslabels = nb.load(seg_data).get_fdata()
     else:
         atlaslabels = None
-    #
 
-    # the plot going to carpet plot will be rescaled to [-600,600]
+    # The plot going to carpet plot will be rescaled to [-600,600]
     rawdatax = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
-    resddatax = read_ndata(datafile=resddata, maskfile=mask, scale=600)
+    resddatax = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
 
+    # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
         scaledrawdata = tempfile.mkdtemp() + '/filex_raw.nii.gz'
         scaledresdata = tempfile.mkdtemp() + '/filex_red.nii.gz'
@@ -596,17 +600,18 @@ def plot_svgx(rawdata,
         scaledrawdata = tempfile.mkdtemp() + '/filex_raw.dtseries.nii'
         scaledresdata = tempfile.mkdtemp() + '/filex_red.dtseries.nii'
 
+    # Write out the scaled data
     scaledrawdata = write_ndata(data_matrix=rawdatax,
                                 template=rawdata,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
     scaledresdata = write_ndata(data_matrix=resddatax,
-                                template=resddata,
+                                template=residual_data,
                                 filename=scaledresdata,
                                 mask=mask,
                                 TR=TR)
-
+    # Plot the data and confounds, plus the carpet plot
     plt.cla()
     plt.clf()
     figx = plt.figure(constrained_layout=True, figsize=(45, 60))
@@ -615,27 +620,26 @@ def plot_svgx(rawdata,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(tseries=conf,
-                  gs_ts=grid[0],
+    confoundplotx(time_series=conf,
+                  grid_spec_ts=grid[0],
                   TR=TR,
                   ylabel='DVARS',
                   hide_x=True)
-    confoundplotx(tseries=wbbf, gs_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
-    # plot_text(imgdata=rawdata,gs_ts=grid[2])
-    # display_cb(gs_ts=grid[3])
+    confoundplotx(time_series=wbbf, grid_spec_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
     plot_carpet(func=scaledrawdata,
                 atlaslabels=atlaslabels,
                 TR=TR,
                 subplot=grid[3],
                 legend=False)
-    confoundplotx(tseries=fdx,
-                  gs_ts=grid[4],
+    confoundplotx(time_series=fdx,
+                  grid_spec_ts=grid[4],
                   TR=TR,
                   hide_x=False,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
                   FD=True)
-    figx.savefig(filenamebf, bbox_inches="tight", pad_inches=None, dpi=300)
+    # Save out the before file
+    figx.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
 
     plt.cla()
     plt.clf()
@@ -646,38 +650,35 @@ def plot_svgx(rawdata,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(tseries=conf,
-                  gs_ts=grid[0],
+    confoundplotx(time_series=conf,
+                  grid_spec_ts=grid[0],
                   TR=TR,
                   ylabel='DVARS',
                   hide_x=True,
                   work_dir=work_dir)
-    confoundplotx(tseries=wbaf,
-                  gs_ts=grid[1],
+    confoundplotx(time_series=wbaf,
+                  grid_spec_ts=grid[1],
                   TR=TR,
                   hide_x=True,
                   ylabel='WB',
                   work_dir=work_dir)
-    # plot_text(imgdata=rawdata,gs_ts=grid[2])
-
-    # display_cb(gs_ts=grid[3])
 
     plot_carpet(func=scaledresdata,
                 atlaslabels=atlaslabels,
                 TR=TR,
                 subplot=grid[3],
                 legend=True)
-    confoundplotx(tseries=fdx,
-                  gs_ts=grid[4],
+    confoundplotx(time_series=fdx,
+                  grid_spec_ts=grid[4],
                   TR=TR,
                   hide_x=False,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
                   FD=True,
                   work_dir=work_dir)
-    figy.savefig(filenameaf, bbox_inches="tight", pad_inches=None, dpi=300)
-
-    return filenamebf, filenameaf
+    figy.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+    # Save out the after file
+    return unprocessed_filename, processed_filename
 
 
 class fMRIPlot:
@@ -701,7 +702,7 @@ class fMRIPlot:
     ):
         func_img = nb.load(func_file)
         self.func_file = func_file
-        self.TR = TR or _get_tr(func_img)
+        self.TR = TR or _get_TR(func_img)
         self.mask_data = None
         self.seg_data = None
         sns.set_style("whitegrid")
@@ -776,8 +777,8 @@ class fMRIPlot:
             palette = color_palette("husl", nconfounds)
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
-            tseries = kwargs.pop("values")
-            confoundplot(tseries,
+            time_series = kwargs.pop("values")
+            confoundplot(time_series,
                          grid[grid_id],
                          TR=self.TR,
                          color=palette[i],
@@ -798,7 +799,6 @@ def plot_carpet(
     func,
     atlaslabels=None,
     detrend=True,
-    nskip=0,
     size=(950, 800),
     labelsize=30,
     subplot=None,
@@ -823,9 +823,6 @@ def plot_carpet(
             Required if ``func`` is a NIfTI image.
         detrend : boolean, optional
             Detrend and standardize the data prior to plotting.
-        nskip : int, optional
-            Number of volumes at the beginning of the scan marked as nonsteady state.
-            Not used.
         size : tuple, optional
             Size of figure.
         subplot : matplotlib Subplot, optional
@@ -863,7 +860,7 @@ def plot_carpet(
             "SUBCORTICAL": 3,
             "CEREBELLUM": 4,
         }
-        seg = np.zeros((data.shape[0], ), dtype="uint32")
+        seg_data = np.zeros((data.shape[0], ), dtype="uint32")
         for bm in matrix.get_index_map(1).brain_models:
             if "CORTEX" in bm.brain_structure:
                 lidx = (1, 2)["RIGHT" in bm.brain_structure]
@@ -872,13 +869,13 @@ def plot_carpet(
             else:
                 lidx = 3
             index_final = bm.index_offset + bm.index_count
-            seg[bm.index_offset:index_final] = lidx
-        assert len(seg[seg < 1]) == 0, "Unassigned labels"
+            seg_data[bm.index_offset:index_final] = lidx
+        assert len(seg_data[seg_data < 1]) == 0, "Unassigned labels"
 
         # Decimate data
-        data, seg = _decimate_data(data, seg, size)
+        data, seg_data = _decimate_data(data, seg_data, size)
         # preserve as much continuity as possible
-        order = seg.argsort(kind="stable")
+        order = seg_data.argsort(kind="stable")
 
         cmap = ListedColormap(
             [cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
@@ -906,12 +903,12 @@ def plot_carpet(
             lut[30:99] = 3
             lut[100:201] = 4
         # Apply lookup table
-        seg = lut[oseg.astype(int)]
+        seg_data = lut[oseg.astype(int)]
 
         # Decimate data
-        data, seg = _decimate_data(data, seg, size)
+        data, seg_data = _decimate_data(data, seg_data, size)
         # Order following segmentation labels
-        order = np.argsort(seg)[::-1]
+        order = np.argsort(seg_data)[::-1]
         # Set colormap
         cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
 
@@ -926,7 +923,7 @@ def plot_carpet(
     return _carpet(
         func,
         data,
-        seg,
+        seg_data,
         order,
         cmap,
         labelsize,
@@ -942,7 +939,7 @@ def plot_carpet(
 
 def _carpet(func,
             data,
-            seg,
+            seg_data,
             order,
             cmap,
             labelsize,
@@ -971,7 +968,7 @@ def _carpet(func,
 
     # Define nested GridSpec
     wratios = [1, 100, 20]
-    gs = mgs.GridSpecFromSubplotSpec(
+    grid_specification = mgs.GridSpecFromSubplotSpec(
         1,
         2 + int(legend),
         subplot_spec=subplot,
@@ -980,9 +977,9 @@ def _carpet(func,
     )
 
     # Segmentation colorbar
-    ax0 = plt.subplot(gs[0])
+    ax0 = plt.subplot(grid_specification[0])
     ax0.set_xticks([])
-    ax0.imshow(seg[order, np.newaxis],
+    ax0.imshow(seg_data[order, np.newaxis],
                interpolation="none",
                aspect="auto",
                cmap=cmap)
@@ -993,8 +990,8 @@ def _carpet(func,
         labels = ['Left Cortex', 'Right Cortex', 'Subcortical', 'Cerebellum']
 
     tick_locs = []
-    for y in np.unique(seg[order]):
-        tick_locs.append(np.argwhere(seg[order] == y).mean())
+    for y in np.unique(seg_data[order]):
+        tick_locs.append(np.argwhere(seg_data[order] == y).mean())
 
     ax0.set_yticks(tick_locs)
     ax0.set_yticklabels(labels,
@@ -1009,7 +1006,7 @@ def _carpet(func,
     ax0.set_xticklabels([])
 
     # Carpet plot
-    ax1 = plt.subplot(gs[1])
+    ax1 = plt.subplot(grid_specification[1])
     ax1.imshow(
         data[order],
         interpolation="nearest",
@@ -1024,14 +1021,6 @@ def _carpet(func,
     ax1.set_yticklabels([])
     ax1.set_xticks([])
     ax1.set_xticklabels([])
-
-    # Set 10 frame markers in X axis
-    # interval = max((int(data.shape[-1] + 1) // 10, int(data.shape[-1] + 1) // 5, 1))
-    # xticks = list(range(0, data.shape[-1])[::interval])
-    # ax1.set_xticks(xticks)
-    # ax1.set_xlabel("time (frame #)" if notr else "time (s)")
-    # labels = TR * (np.array(xticks))
-    # ax1.set_xticklabels(["%.02f" % t for t in labels.tolist()], fontsize=5)
 
     # Remove and redefine spines
     for side in ["top", "right"]:
@@ -1056,17 +1045,17 @@ def _carpet(func,
         figure = None
         return output_file
 
-    return (ax0, ax1, ax2), gs
+    return (ax0, ax1, ax2), grid_specification
 
 
-def plot_text(imgdata, gs_ts):
+def plot_text(imgdata, grid_spec_ts):
     """
     """
-    gs = mgs.GridSpecFromSubplotSpec(1,
-                                     2,
-                                     subplot_spec=gs_ts,
-                                     width_ratios=[1, 100],
-                                     wspace=0.0)
+    grid_specification = mgs.GridSpecFromSubplotSpec(1,
+                                                     2,
+                                                     subplot_spec=grid_spec_ts,
+                                                     width_ratios=[1, 100],
+                                                     wspace=0.0)
     # tm = nb.load(imgdata).shape[-1]
     if imgdata.endswith('nii.gz'):
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
@@ -1075,25 +1064,25 @@ def plot_text(imgdata, gs_ts):
 
     text_kwargs = dict(ha='center', va='center', fontsize=50)
 
-    ax2 = plt.subplot(gs[1])
+    ax2 = plt.subplot(grid_specification[1])
     ax2.text(0.5, 0.1, label, **text_kwargs)
     plt.axis('off')
 
-    return ax2, gs
+    return ax2, grid_specification
 
 
-def display_cb(gs_ts):
+def display_cb(grid_spec_ts):
     """
 
     """
-    gs = mgs.GridSpecFromSubplotSpec(1,
-                                     2,
-                                     subplot_spec=gs_ts,
-                                     width_ratios=[1, 100],
-                                     wspace=0.0)
+    grid_specification = mgs.GridSpecFromSubplotSpec(1,
+                                                     2,
+                                                     subplot_spec=grid_spec_ts,
+                                                     width_ratios=[1, 100],
+                                                     wspace=0.0)
     # tm = nb.load(imgdata).shape[-1]
     data = scalex(np.random.rand(40), -600, 600)
-    ax2 = plt.subplot(gs[1])
+    ax2 = plt.subplot(grid_specification[1])
     PCM = ax2.scatter(data, data, cmap="gray", c=data)
     cbar = plt.colorbar(PCM, orientation="horizontal", shrink=1, fraction=12)
     for t in cbar.ax.get_xticklabels():
@@ -1102,25 +1091,24 @@ def display_cb(gs_ts):
     ax2.set_ylim([-700, -690])
     plt.axis('off')
 
-    return ax2, gs
+    return ax2, grid_specification
 
 
-def _get_tr(img):
+def _get_TR(img):
     """
     Attempt to extract repetition time from NIfTI/CIFTI header
 
     Examples
     --------
-    >>> _get_tr(nb.load(Path(test_data) /
+    >>> _get_TR(nb.load(Path(test_data) /
     ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
     2.2
-    >>> _get_tr(nb.load(Path(test_data) /
+    >>> _get_TR(nb.load(Path(test_data) /
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """
 
     try:
-        return img.header.matrix.get_index_map(0).series_step
-    except AttributeError:
-        return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
+        return img.header.matrix.get_index_map(0).series_step  # Get TR
+    except AttributeError:  # Error out
+        raise RuntimeError("Could not extract TR - unknown data structure type")

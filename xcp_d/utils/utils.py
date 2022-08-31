@@ -154,19 +154,12 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
                      extension='.h5'))                
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
 
-    # # get the template for registration
-    # if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
-    #     template = 'MNI152NLin2009cAsym'
-
-    # elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-    #     template = 'MNIInfant'
 
     # Transform to MNI9
     if 'space-MNI152NLin6Asym' in file_base:
         transformfile = [str(fMNI6)]
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
-
     elif 'space-PNC' in file_base:
         #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]

@@ -27,7 +27,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
                      mandatory=True,
                      desc=" raw  bold or cifti file from fmriprep")
     mask_file = File(exists=False, mandatory=False, desc=" mask file")
-    seg_file = File(exists=False, mandatory=False, desc=" seg file for nifti")
+    seg_file = File(exists=False, mandatory=False, desc=" seg_data file for nifti")
     cleaned_file = File(exists=True,
                         mandatory=True,
                         desc=" residual and filter file")
