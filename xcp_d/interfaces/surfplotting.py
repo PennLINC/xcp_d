@@ -144,31 +144,34 @@ class RegPlot(SimpleInterface):
 
 
 class _plotsvgInputSpec(BaseInterfaceInputSpec):
-    rawdata = File(exists=True, mandatory=True, desc="raw data ")
-    regdata = File(exists=True,
-                   mandatory=True,
-                   desc="data after regreesion data ")
-    resddata = File(exists=True, mandatory=True, desc="resdiual data ")
-    fd = File(exists=True, mandatory=True, desc="fd")
-    mask = File(exists=False, mandatory=False, desc="mask file ")
-    seg = File(exists=False, mandatory=False, desc="seg file ")
-    TR = traits.Float(default_value=1, desc="TR")
+    rawdata = File(exists=True, mandatory=True, desc="Raw data")
+    regressed_data = File(exists=True,
+                          mandatory=True,
+                          desc="Data after regression")
+    residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
+    fd = File(exists=True, mandatory=True, desc="Framewise displacement")
+    mask = File(exists=False, mandatory=False, desc="Bold mask")
+    seg_data = File(exists=False, mandatory=False, desc="Segmentation file")
+    TR = traits.Float(default_value=1, desc="Repetition time")
 
 
 class _plotsvgOutputSpec(TraitedSpec):
     before_process = File(exists=True,
                           manadatory=True,
-                          desc="svg file before pro")
+                          desc=".SVG file before processing")
     after_process = File(exists=True,
                          manadatory=True,
-                         desc="svg file before after")
+                         desc=".SVG file after processing")
 
 
 class PlotSVGData(SimpleInterface):
     r"""
-    this class plots of fd, dvars, carpet plots of bold data
-    before and after regression/filtering
+    This class plots fd, dvars, and carpet plots of the bold data
+    before and after regression/filtering. It takes in the data
+    that's regressed, the data that's filtered and regressed, as
+    well as the segmentation files, TR, FD, bold_mask and unprocessed data.
 
+    It outputs the .SVG files before after processing has taken place.
     """
     input_spec = _plotsvgInputSpec
     output_spec = _plotsvgOutputSpec
@@ -188,14 +191,14 @@ class PlotSVGData(SimpleInterface):
         self._results['before_process'], self._results[
             'after_process'] = plot_svgx(
                 rawdata=self.inputs.rawdata,
-                regdata=self.inputs.regdata,
-                resddata=self.inputs.resddata,
+                regressed_data=self.inputs.regressed_data,
+                residual_data=self.inputs.residual_data,
                 TR=self.inputs.TR,
                 mask=self.inputs.mask,
                 fd=self.inputs.fd,
-                seg=self.inputs.seg,
-                filenameaf=self._results['after_process'],
-                filenamebf=self._results['before_process'])
+                seg_data=self.inputs.seg_data,
+                processed_filename=self._results['after_process'],
+                unprocessed_filename=self._results['before_process'])
 
         return runtime
 

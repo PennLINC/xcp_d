@@ -145,7 +145,7 @@ def generate_brain_sprite(template_image, stat_map, out_file):
 
 def ribbon_to_statmap(ribbon, outfile):
 
-    # chek if the data is ribbon or seg files
+    # chek if the data is ribbon or seg_data files
 
     ngbdata = nb.load(ribbon)
 

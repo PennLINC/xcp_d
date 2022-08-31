@@ -9,13 +9,9 @@ from pkg_resources import resource_filename as pkgrf
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
-    """ 
+    """
     Obtain the correct transform files in reverse order to transform
-    the atlases from MNI space to the same space as the bold file.
-    First, we find the correct relevant transforms (i.e: t1w to native),
-    then find the mni_to_t1w file.
-
-    Lastly, we specify the FSL2MNI composite file.
+    to MNI space/ T1W space. 
 
     Since ANTSApplyTransforms takes in the transform files as a stack, these are
     applied in the reverse order of which they are specified.
@@ -29,7 +25,7 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
                      suffix='xfm',
                      extension='.h5'))
 
-    # get default template MNI152NLin2009cAsym for fmriprep 
+    # get default template MNI152NLin2009cAsym for fmriprep
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
 
@@ -39,8 +35,8 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
 
     # in case fMRIPrep outputs are generated in MNI6, as
     # done in case of AROMA outputs
-    elif 'MNI152NLin6Sym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin6Sym'
+    elif 'MNI152NLin6ASym' in os.path.basename(mni_to_t1w):
+        template = 'MNI152NLin6ASym'
 
     elif 'MNI152NLin6ASym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin6ASym'
@@ -132,12 +128,8 @@ def get_maskfiles(bold_file, mni_to_t1w):
 
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     """"
-    Obtain the correct transform files in reverse order to transform
+    Obtain the correct transform files to transform
     the atlases from MNI space to the same space as the bold file.
-    First, we find the correct relevant transforms (i.e: t1w to native),
-    then find the mni_to_t1w file.
-
-    Lastly, we specify the FSL2MNI composite file.
 
     Since ANTSApplyTransforms takes in the transform files as a stack, these are
     applied in the reverse order of which they are specified.
@@ -151,22 +143,14 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
         get_template(template='MNI152NLin2009cAsym',
                      mode='image',
                      suffix='xfm',
-                     extension='.h5'))                
+                     extension='.h5'))
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
-
-    # # get the template for registration
-    # if 'MNI152NLin2009cAsym' in os.path.basename(str(mni_to_t1w)):
-    #     template = 'MNI152NLin2009cAsym'
-
-    # elif 'MNIInfant' in os.path.basename(str(mni_to_t1w)):
-    #     template = 'MNIInfant'
 
     # Transform to MNI9
     if 'space-MNI152NLin6Asym' in file_base:
         transformfile = [str(fMNI6)]
     elif 'space-MNI152NLin2009cAsym' in file_base:
         transformfile = str(FSL2MNI9)
-
     elif 'space-PNC' in file_base:
         #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]
@@ -246,7 +230,8 @@ def stringforparams(params):
         signal, and the mean CSF signal were selected as nuisance regressors"
 
     if params == 'acompcor':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments were selected as \
+        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments \
+        were selected as \
         nuisance regressors. Additionally, the six motion parameters and their temporal \
         derivatives were added as confounds."
 
@@ -256,7 +241,8 @@ def stringforparams(params):
         selected as nuisance regressors"
 
     if params == 'acompcor_gsr':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments were selected as \
+        bsignal = "The top 5 principal aCompCor components from WM and CSF \
+        compartments were selected as \
         nuisance regressors. Additionally, the six motion parameters and their temporal \
         derivatives were added as confounds. The average global signal was also added as a \
         regressor."
