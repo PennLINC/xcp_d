@@ -54,11 +54,11 @@ def init_execsummary_wf(omp_nthreads,
     # Get the nifti reference file
     if bold_file.endswith('.nii.gz'):
         bold_reference_file = bold_file.split(
-            'desc-preproc_bold.nii.gz')[0] + 'bold_reference_file.nii.gz'
+            'desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
 
     else:  # Get the cifti reference file
         bb_file_prefix = bold_file.split('space-fsLR_den-91k_bold.dtseries.nii')[0]
-        bold_reference_file = glob.glob(bb_file_prefix + '*bold_reference_file.nii.gz')[0]
+        bold_reference_file = glob.glob(bb_file_prefix + '*boldref.nii.gz')[0]
         bold_file = glob.glob(bb_file_prefix + '*preproc_bold.nii.gz')[0]
 
     # Plot the reference bold image

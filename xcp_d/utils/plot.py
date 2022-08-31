@@ -73,7 +73,7 @@ def plot_svg(fdata, fd, dvars, filename, TR=1):
     confoundplot(fd, grid[0], TR=TR, color='b', name='FD')
     confoundplot(dvars, grid[1], TR=TR, color='r', name='DVARS')
     plot_carpet(
-        func_data=fdata,
+        func=fdata,
         subplot=grid[-1],
         TR=TR,
     )
@@ -744,6 +744,8 @@ class fMRIPlot:
 
     def plot(self, labelsize, figure=None):
         """Main plotter"""
+
+        # Layout settings
         import seaborn as sns
 
         sns.set_style("whitegrid")
@@ -752,31 +754,32 @@ class fMRIPlot:
         if figure is None:
             figure = plt.gcf()
 
-        nconfounds = len(self.confounds)
-        nspikes = len(self.spikes)
-        nrows = 1 + nconfounds + nspikes
+        n_confounds = len(self.confounds)
+        n_spikes = len(self.spikes)
+        n_rows = 1 + n_confounds + n_spikes
 
-        # Create grid
-        grid = mgs.GridSpec(nrows,
+        # Create grid specification
+        grid = mgs.GridSpec(n_rows,
                             1,
                             wspace=0.0,
                             hspace=0.05,
-                            height_ratios=[1] * (nrows - 1) + [5])
+                            height_ratios=[1] * (n_rows - 1) + [5])
 
         grid_id = 0
         for tsz, name, iszs in self.spikes:
             # RF: What is this?
-            spikesplot(tsz,
-                       title=name,
-                       outer_gs=grid[grid_id],
-                       TR=self.TR,
-                       zscored=iszs)
+            # spikesplot(tsz,
+            #            title=name,
+            #            outer_gs=grid[grid_id],
+            #            TR=self.TR,
+            #            zscored=iszs)
             grid_id += 1
-
+        
+        # Plot confounds
         if self.confounds:
             from seaborn import color_palette
 
-            palette = color_palette("husl", nconfounds)
+            palette = color_palette("husl", n_confounds)
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
             time_series = kwargs.pop("values")
@@ -788,6 +791,7 @@ class fMRIPlot:
                          **kwargs)
             grid_id += 1
 
+        # Carpet plot
         plot_carpet(self.func_file,
                     atlaslabels=self.seg_data,
                     subplot=grid[-1],
@@ -850,10 +854,10 @@ def plot_carpet(
     nslices = None
     img = nb.load(func)
     sns.set_style("whitegrid")
-    if isinstance(img, nb.Cifti2Image):
+    if isinstance(img, nb.Cifti2Image):  # Cifti
         assert (img.nifti_header.get_intent()[0] == "ConnDenseSeries"
                 ), "Not a dense timeseries"
-
+        # Get required information
         data = img.get_fdata().T
         matrix = img.header.matrix
         struct_map = {
@@ -863,22 +867,23 @@ def plot_carpet(
             "CEREBELLUM": 4,
         }
         seg_data = np.zeros((data.shape[0], ), dtype="uint32")
-        for bm in matrix.get_index_map(1).brain_models:
-            if "CORTEX" in bm.brain_structure:
-                lidx = (1, 2)["RIGHT" in bm.brain_structure]
-            elif "CEREBELLUM" in bm.brain_structure:
+        # Get brain model information
+        for brain_model in matrix.get_index_map(1).brain_models:
+            if "CORTEX" in brain_model.brain_structure:
+                lidx = (1, 2)["RIGHT" in brain_model.brain_structure]
+            elif "CEREBELLUM" in brain_model.brain_structure:
                 lidx = 4
             else:
                 lidx = 3
-            index_final = bm.index_offset + bm.index_count
-            seg_data[bm.index_offset:index_final] = lidx
+            index_final = brain_model.index_offset + brain_model.index_count
+            seg_data[brain_model.index_offset:index_final] = lidx
         assert len(seg_data[seg_data < 1]) == 0, "Unassigned labels"
 
         # Decimate data
         data, seg_data = _decimate_data(data, seg_data, size)
-        # preserve as much continuity as possible
+        # Preserve continuity
         order = seg_data.argsort(kind="stable")
-
+        # Get color maps
         cmap = ListedColormap(
             [cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
         assert len(cmap.colors) == len(
@@ -891,7 +896,7 @@ def plot_carpet(
         img_nii = check_niimg_4d(
             img,
             dtype="auto",
-        )
+        )  #  Check the image is in nifti format
         func_data = _safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -986,11 +991,12 @@ def _carpet(func,
                aspect="auto",
                cmap=cmap)
 
-    if func.endswith('nii.gz'):
+    if func.endswith('nii.gz'):  # Nifti
         labels = ['Cortical GM', 'Subcortical GM', 'Cerebellum', 'CSF and WM']
-    else:
+    else:  # Cifti
         labels = ['Left Cortex', 'Right Cortex', 'Subcortical', 'Cerebellum']
 
+    # Formatting the plot
     tick_locs = []
     for y in np.unique(seg_data[order]):
         tick_locs.append(np.argwhere(seg_data[order] == y).mean())
@@ -1039,7 +1045,7 @@ def _carpet(func,
     ax1.spines["left"].set_visible(False)
 
     ax2 = None
-
+    #  Write out file
     if output_file is not None:
         figure = plt.gcf()
         figure.savefig(output_file, bbox_inches="tight")
@@ -1052,16 +1058,16 @@ def _carpet(func,
 
 def plot_text(imgdata, grid_spec_ts):
     """
+    Get the correct text for each plot
     """
     grid_specification = mgs.GridSpecFromSubplotSpec(1,
                                                      2,
                                                      subplot_spec=grid_spec_ts,
                                                      width_ratios=[1, 100],
                                                      wspace=0.0)
-    # tm = nb.load(imgdata).shape[-1]
-    if imgdata.endswith('nii.gz'):
+    if imgdata.endswith('nii.gz'): #  Nifti
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
-    else:
+    else: #  Cifti
         label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
 
     text_kwargs = dict(ha='center', va='center', fontsize=50)
@@ -1075,7 +1081,7 @@ def plot_text(imgdata, grid_spec_ts):
 
 def display_cb(grid_spec_ts):
     """
-
+    Settings for colorbar display 
     """
     grid_specification = mgs.GridSpecFromSubplotSpec(1,
                                                      2,
