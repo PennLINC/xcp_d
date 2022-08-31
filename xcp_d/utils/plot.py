@@ -493,14 +493,18 @@ def plot_svgx(rawdata,
     if type(filtered_dvars) != np.ndarray:
         filtered_dvars = compute_dvars(read_ndata(datafile=residual_data,
                                                   maskfile=mask))
+    # For ease of reference later
+    residual_data_file = residual_data
+    raw_data_file = rawdata
+
     # Formatting & setting of files
     sns.set_style('whitegrid')
     regressed_dvars_data = regressed_dvars
     residual_dvars_data = filtered_dvars
     raw_dvars_data = raw_dvars
     # Load files
-    raw_data = read_ndata(datafile=rawdata, maskfile=mask)
-    residual_data = read_ndata(datafile=residual_data, maskfile=mask)
+    raw_data = read_ndata(datafile=raw_data_file, maskfile=mask)
+    residual_data = read_ndata(datafile=residual_data_file, maskfile=mask)
 
     # Remove first N deleted from raw_data so it's same length as censored files
     if len(raw_dvars_data) > len(residual_dvars_data):
@@ -533,8 +537,8 @@ def plot_svgx(rawdata,
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_raw_data = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
-    scaled_residual_data = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
+    scaled_raw_data = read_ndata(datafile=raw_data_file, maskfile=mask, scale=600)
+    scaled_residual_data = read_ndata(datafile=residual_data_file, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
@@ -546,12 +550,12 @@ def plot_svgx(rawdata,
 
     # Write out the scaled data
     scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
-                                template=rawdata,
+                                template=raw_data_file,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
     scaledresdata = write_ndata(data_matrix=scaled_residual_data,
-                                template=residual_data,
+                                template=residual_data_file,
                                 filename=scaledresdata,
                                 mask=mask,
                                 TR=TR)
