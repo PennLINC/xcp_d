@@ -502,14 +502,13 @@ def plot_svgx(rawdata,
     raw_data = read_ndata(datafile=rawdata, maskfile=mask)
     residual_data = read_ndata(datafile=residual_data, maskfile=mask)
 
-    # Remove first N deleted
+    # Remove first N deleted from raw_data so it's same length as censored files
     if len(raw_dvars_data) > len(residual_dvars_data):
         raw_dvars_data = raw_dvars_data[0:len(residual_dvars_data)]
         raw_data = raw_data[:, 0:len(residual_dvars_data)]
         # regressed_dvars_data = raw_dvars_data #TODO: Check if this is needed
 
-    # Create dataframes for the bold_data, FD
-
+    # Create dataframes for the bold_data DVARS, FD
     DVARS_timeseries = pd.DataFrame({
         'Pre regression': raw_dvars_data,
         'Post regression': regressed_dvars_data,
@@ -907,7 +906,7 @@ def _carpet(func,
             nslices=None):
     """Common carpetplot building code for volumetric / CIFTI plots"""
     if TR is None:
-        TR = 1.0
+        TR = 1.0  # Default TR
     sns.set_style("whitegrid")
     # Detrend data
     v = (None, None)
