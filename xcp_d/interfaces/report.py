@@ -114,7 +114,7 @@ class FunctionalSummary(SummaryInterface):
                                   round(qcfile['meanDVFinal'][0], 4))
         fd_dvars_correlation = " {},  {} ".format(round(qcfile['motionDVCorrInit'][0], 4),
                                                   round(qcfile['motionDVCorrFinal'][0], 4))
-        num_vols_censored = " {} ".format(round(qcfile['nVolCensored'][0], 4))
+        num_vols_censored = " {} ".format(round(qcfile['num_censored_volumes'][0], 4))
 
         return QC_TEMPLATE.format(space=space,
                                   TR=TR,
