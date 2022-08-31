@@ -1063,6 +1063,6 @@ def _get_TR(img):
 
     try:
         return img.header.matrix.get_index_map(0).series_step  # Get TR
-    except AttributeError:  # Error out
+    except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
     raise RuntimeError("Could not extract TR - unknown data structure type")
