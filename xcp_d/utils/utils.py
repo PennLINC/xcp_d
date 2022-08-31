@@ -11,11 +11,7 @@ from pkg_resources import resource_filename as pkgrf
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     """
     Obtain the correct transform files in reverse order to transform
-    the atlases from MNI space to the same space as the bold file.
-    First, we find the correct relevant transforms (i.e: t1w to native),
-    then find the mni_to_t1w file.
-
-    Lastly, we specify the FSL2MNI composite file.
+    to MNI space/ T1W space. 
 
     Since ANTSApplyTransforms takes in the transform files as a stack, these are
     applied in the reverse order of which they are specified.
@@ -132,12 +128,8 @@ def get_maskfiles(bold_file, mni_to_t1w):
 
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     """"
-    Obtain the correct transform files in reverse order to transform
+    Obtain the correct transform files to transform
     the atlases from MNI space to the same space as the bold file.
-    First, we find the correct relevant transforms (i.e: t1w to native),
-    then find the mni_to_t1w file.
-
-    Lastly, we specify the FSL2MNI composite file.
 
     Since ANTSApplyTransforms takes in the transform files as a stack, these are
     applied in the reverse order of which they are specified.
