@@ -140,6 +140,7 @@ def confoundplot(time_series,
     xticks = list(range(0, ntsteps)[::interval])
     time_series_axis.set_xticks(xticks)
 
+    # Set x_axis
     if not hide_x:
         if no_repetition_time:
             time_series_axis.set_xlabel('time (frame #)')
@@ -153,7 +154,7 @@ def confoundplot(time_series,
     if name is not None:
         if units is not None:
             name += ' [%s]' % units
-
+    #   Formatting 
         time_series_axis.annotate(name,
                                   xy=(0.0, 0.7),
                                   xytext=(0, 0),
@@ -171,7 +172,6 @@ def confoundplot(time_series,
                                       'lw': 0,
                                       'alpha': 0.8
                                   })
-
     for side in ["top", "right"]:
         time_series_axis.spines[side].set_color('none')
         time_series_axis.spines[side].set_visible(False)
@@ -254,11 +254,11 @@ def confoundplot(time_series,
     if cutoff is None:
         cutoff = []
 
-    for thr in enumerate(cutoff):
-        time_series_axis.plot((0, ntsteps - 1), [thr] * 2, linewidth=.2, color='dimgray')
+    for threshold in enumerate(cutoff):
+        time_series_axis.plot((0, ntsteps - 1), [threshold] * 2, linewidth=.2, color='dimgray')
 
-        time_series_axis.annotate('%.2f' % thr,
-                                  xy=(0, thr),
+        time_series_axis.annotate('%.2f' % threshold,
+                                  xy=(0, threshold),
                                   xytext=(-1, 0),
                                   textcoords='offset points',
                                   va='center',
@@ -268,7 +268,7 @@ def confoundplot(time_series,
 
     time_series_axis.plot(time_series, color=color, linewidth=2.5)
     time_series_axis.set_xlim((0, ntsteps - 1))
-
+    # Plotting
     if gs_dist is not None:
         ax_dist = plt.subplot(gs_dist)
         sns.distplot(time_series, vertical=True, ax=ax_dist)
@@ -333,16 +333,16 @@ def confoundplotx(time_series,
     if work_dir is not None:
         time_series.to_csv('/{0}/{1}_tseries.npy'.format(work_dir, ylabel))
     columns = time_series.columns
-    maxim_value = []
-    minim_value = []
+    maximum_value = []
+    minimum_value = []
 
     if FD is True:
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=3, color='black')
-            maxim_value.append(max(time_series[c]))
-            minim_value.append(min(time_series[c]))
+            maximum_value.append(max(time_series[c]))
+            minimum_value.append(min(time_series[c]))
 
-            # threshold fd at 0.1,0.2 and 0.5
+            # Threshold fd at 0.1, 0.2 and 0.5 and plot
             time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
             fda = time_series[c].copy()
             timeseries_copy = time_series[c].copy()
@@ -381,7 +381,8 @@ def confoundplotx(time_series,
             timeseries_copy[timeseries_copy < 0.5] = np.nan
             time_series_axis.plot(fda, '.', color='#8da0cb', markersize=40)
             time_series_axis.plot(timeseries_copy, '.', color='#8da0cb', markersize=40)
-
+            
+            #  Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
             good_vols = len(time_series[c][time_series[c] < 0.1])
             time_series_axis.text(1.01,
                                   .1,
@@ -418,13 +419,14 @@ def confoundplotx(time_series,
                                   horizontalalignment='left',
                                   transform=time_series_axis.transAxes,
                                   fontsize=30)
-    else:
+    else:  # If no thresholding
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=5)
-            maxim_value.append(max(time_series[c]))
-            minim_value.append(min(time_series[c]))
+            maximum_value.append(max(time_series[c]))
+            minimum_value.append(min(time_series[c]))
 
-    minx_value = [abs(x) for x in minim_value]
+    # Set limits and format
+    minimum_x_value = [abs(x) for x in minimum_value]
 
     time_series_axis.set_xlim((0, ntsteps - 1))
     time_series_axis.legend(fontsize=40)
@@ -434,7 +436,7 @@ def confoundplotx(time_series,
     elif ylims:
         time_series_axis.set_ylim(ylims)
     else:
-        time_series_axis.set_ylim([-1.5 * max(minx_value), 1.5 * max(maxim_value)])
+        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_value)])
 
     for item in ([time_series_axis.title, time_series_axis.xaxis.label,
                   time_series_axis.yaxis.label] +
@@ -445,64 +447,6 @@ def confoundplotx(time_series,
         time_series_axis.spines[axis].set_linewidth(4)
     sns.despine()
     return time_series_axis, grid_specification
-
-
-def plotseries(conf,
-               grid_spec_ts,
-               ylim=None,
-               ylabelx=None,
-               hide_x=None,
-               TR=None,
-               ax=None):
-    colums = conf.columns
-    if TR is None:
-        TR = 1.
-    xtick = np.linspace(0, conf.shape[0] * TR, num=conf.shape[0])
-    plt.style.use('seaborn-white')
-    plt.xticks(color='k')
-    plt.yticks(color='k')
-    grid_specification = mgs.GridSpecFromSubplotSpec(1,
-                                                     2,
-                                                     subplot_spec=grid_spec_ts,
-                                                     width_ratios=[1, 100],
-                                                     wspace=0.0)
-
-    ax = plt.subplot(grid_specification[1])
-    ax.grid(False)
-    for k in colums:
-        ax.plot(xtick, conf[k], label=k, linewidth=2)
-    if ylim:
-        ax.set_ylim(ylim)
-    else:
-        ax.set_ylim([-2 * conf[k].max(), 2 * conf[k].max()])
-    ax.set_ylabel(ylabelx, fontsize=40)
-    ax.legend(fontsize=20)
-
-    last = conf.shape[0] - 1
-    interval = max((last // 10, last // 5, 1))
-
-    ax.set_xlim(0, last)
-    if not hide_x:
-        xticks = list(range(0, last)[::interval])
-    else:
-        xticks = []
-
-    ax.set_xticks(xticks)
-    if not hide_x:
-        if TR is None:
-            ax.set_xlabel("time (frame #)")
-        else:
-            ax.set_xlabel("time (s)")
-            ax.set_xticklabels(
-                ["%.01f" % t for t in (TR * np.array(xticks)).tolist()])
-
-    for axis in ['top', 'bottom', 'left', 'right']:
-        ax.spines[axis].set_linewidth(2)
-    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                 ax.get_xticklabels() + ax.get_yticklabels()):
-        item.set_fontsize(20)
-
-    return ax
 
 
 def plot_svgx(rawdata,
@@ -646,12 +590,14 @@ def plot_svgx(rawdata,
     plt.cla()
     plt.clf()
 
+    # Plot the data and confounds, plus the carpet plot 
     figy = plt.figure(constrained_layout=True, figsize=(45, 60))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
+
     confoundplotx(time_series=conf,
                   grid_spec_ts=grid[0],
                   TR=TR,
@@ -1081,7 +1027,7 @@ def plot_text(imgdata, grid_spec_ts):
 
 def display_cb(grid_spec_ts):
     """
-    Settings for colorbar display 
+    Settings for colorbar display
     """
     grid_specification = mgs.GridSpecFromSubplotSpec(1,
                                                      2,
