@@ -9,7 +9,7 @@ from pkg_resources import resource_filename as pkgrf
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
-    """ 
+    """
     Obtain the correct transform files in reverse order to transform
     the atlases from MNI space to the same space as the bold file.
     First, we find the correct relevant transforms (i.e: t1w to native),
@@ -29,7 +29,7 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
                      suffix='xfm',
                      extension='.h5'))
 
-    # get default template MNI152NLin2009cAsym for fmriprep 
+    # get default template MNI152NLin2009cAsym for fmriprep
     if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
         template = 'MNI152NLin2009cAsym'
 
@@ -151,9 +151,8 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
         get_template(template='MNI152NLin2009cAsym',
                      mode='image',
                      suffix='xfm',
-                     extension='.h5'))                
+                     extension='.h5'))
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
-
 
     # Transform to MNI9
     if 'space-MNI152NLin6Asym' in file_base:
@@ -239,7 +238,8 @@ def stringforparams(params):
         signal, and the mean CSF signal were selected as nuisance regressors"
 
     if params == 'acompcor':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments were selected as \
+        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments \
+        were selected as \
         nuisance regressors. Additionally, the six motion parameters and their temporal \
         derivatives were added as confounds."
 
@@ -249,7 +249,8 @@ def stringforparams(params):
         selected as nuisance regressors"
 
     if params == 'acompcor_gsr':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments were selected as \
+        bsignal = "The top 5 principal aCompCor components from WM and CSF \
+        compartments were selected as \
         nuisance regressors. Additionally, the six motion parameters and their temporal \
         derivatives were added as confounds. The average global signal was also added as a \
         regressor."

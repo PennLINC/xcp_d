@@ -90,7 +90,6 @@ def init_execsummary_wf(omp_nthreads,
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
 
-
     # Write out the necessary files:
     # Reference file
     ds_plot_bold_reference_file_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
@@ -142,8 +141,12 @@ def init_execsummary_wf(omp_nthreads,
 
 
 def t1_to_native(file_name):
+    '''
+    Get t1 to native transform file
+    '''
     dir_name = os.path.dirname(file_name)
     filename = os.path.basename(file_name)
     file_name_prefix = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-    t1_to_native_file = dir_name + '/' + file_name_prefix + 'from-T1w_to-scanner_mode-image_xfm.txt'
+    t1_to_native_file = dir_name + '/' \
+        + file_name_prefix + 'from-T1w_to-scanner_mode-image_xfm.txt'
     return t1_to_native_file

@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""ploting tools."""
+"""Plotting tools."""
 import numpy as np
 from ..utils.write_save import scalex
 import nibabel as nb
@@ -436,7 +436,8 @@ def confoundplotx(time_series,
     else:
         time_series_axis.set_ylim([-1.5 * max(minx_value), 1.5 * max(maxim_value)])
 
-    for item in ([time_series_axis.title, time_series_axis.xaxis.label, time_series_axis.yaxis.label] +
+    for item in ([time_series_axis.title, time_series_axis.xaxis.label,
+                  time_series_axis.yaxis.label] +
                  time_series_axis.get_xticklabels() + time_series_axis.get_yticklabels()):
         item.set_fontsize(30)
 
@@ -746,7 +747,6 @@ class fMRIPlot:
         """Main plotter"""
 
         # Layout settings
-        import seaborn as sns
 
         sns.set_style("whitegrid")
         sns.set_context("paper", font_scale=1)
@@ -896,7 +896,7 @@ def plot_carpet(
         img_nii = check_niimg_4d(
             img,
             dtype="auto",
-        )  #  Check the image is in nifti format
+        )  # Check the image is in nifti format
         func_data = _safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -1065,9 +1065,9 @@ def plot_text(imgdata, grid_spec_ts):
                                                      subplot_spec=grid_spec_ts,
                                                      width_ratios=[1, 100],
                                                      wspace=0.0)
-    if imgdata.endswith('nii.gz'): #  Nifti
+    if imgdata.endswith('nii.gz'):  # Nifti
         label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
-    else: #  Cifti
+    else:  # Cifti
         label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
 
     text_kwargs = dict(ha='center', va='center', fontsize=50)
