@@ -23,7 +23,7 @@ from .qcmetrics import regisQ
 from .utils import (get_maskfiles, get_transformfile, get_transformfilex,
                     stringforparams, fwhm2sigma, get_customfile)
 
-from .plot import (plotseries, plot_svgx, plot_carpet, confoundplot)
+from .plot import (plot_svgx, plot_carpet, confoundplot)
 
 from .execsummary import (surf2vol, get_regplot, plot_registrationx,
                           generate_brain_sprite, ribbon_to_statmap)
@@ -65,7 +65,6 @@ __all__ = [
     'select_registrationfile',
     'select_cifti_bold',
     'CiftiSurfaceResample',
-    'plotseries',
     'plot_svgx',
     'plot_carpet',
     'confoundplot',

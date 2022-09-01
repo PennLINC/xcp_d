@@ -6,11 +6,13 @@ Running XCP-D
 
 Inputs
 ===============
-The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `DCAN` and `HCP` outputs in the form of BIDS derivatives. The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. In these examples, we use an fmriprep output directory.
+The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `DCAN` and `HCP` outputs in the form of BIDS derivatives. In these examples, we use an fmriprep output directory.
+
+The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. Additionally, each of theseshould be in directories that can be parsed by the BIDS online validator (even if it is not BIDS valid - we do not require BIDS valid directories.) The directories must also include a valid `dataset_description.json`.
 
 Command Structure
 ===============
-The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* :ref:`Manually Prepared Environment (Python 3.8+)` installation, as the command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
+The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* :ref:`Manually Prepared Environment` (Python 3.8+) installation, as the command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
 ::
    $ xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
@@ -21,13 +23,13 @@ Docker
 If you are computing locally, we recommend Docker. See :ref:`Installation:Docker Installation` for installation questions.
 ::
    $ docker run --rm -it \
-   -v /fmriprepdata:/data/ \
-   -v /tmp/wkdir:/wkdir \
-   -v /tmp:/scrth \
-   -v /tmp/xcpd_ciftiF/:/out \
+   -v /fmriprepdata:/in/ \
+   -v /tmp/wkdir:/wkdir/ \
+   -v /tmp:/scrth/ \
+   -v /tmp/xcpd_ciftiF/:/out. \
    pennlinc/xcp_d:latest \
-   /data/fmriprep /out \
-   --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   /in/ /out/ pariticipant \
+   --cifti --despike  --head_radius 40 -w wkdir --smoothing 6
 
 Singularity
 --------------------
@@ -35,7 +37,7 @@ If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend
 ::
 
     $ singularity run --cleanenv xcp_d.simg \
-      path/to/data/fmri_dir  path/to/output/dir \
+      path/to/data/fmri_dir  path/to/output/dir participant\
       --participant-label label
 
 
@@ -72,7 +74,9 @@ Command-Line Arguments
 Custom Confounds
 ===================
 
-XCP-D can implement custom confound regression (i.e., denoising). Here, you can supply your confounds, and optionally add these to a confound strategy already support in XCP-D. Here we document how to regress task block effects as well as the 36 parameter model confounds.
+XCP-D can implement custom confound regression (i.e., denoising). Here, you can supply your confounds, and optionally add these to a confound strategy already supported in XCP-D. Here we document how to regress task block effects as well as the 36 parameter model confounds.
+
+However, this method is still under development. 
 
 Regression of task effects from the BOLD timeseries is performed in 3 steps:
  1. Create a task event timing array
@@ -223,7 +227,7 @@ Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv fil
 
 Custom Parcellations
 ===============
-While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations. We suggest running XCP-D with the ``-cifti`` option, and then using the Human Connectome Project wb_command to generate the time series::
+While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations. We suggest running XCP-D with the ``-cifti`` option (assuming you have cifti files), and then using the Human Connectome Project wb_command to generate the time series::
 
    wb_command -cifti-parcellate {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii your_parcels.dlabel \
    {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii
@@ -233,7 +237,7 @@ After this, if one wishes to have a connectivity matrix::
    wb_command -cifti-correlation {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii \
    {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.pconn.nii
 
-More infomration can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_
+More information can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_
 
 Troubleshooting
 ===============
