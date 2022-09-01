@@ -342,7 +342,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     if presmoothing > 0:
         workflow.connect([
-            (inputnode, presmoothing_wf, [('bold_file', 'inputnode.bold_file')]),
+            (inputnode, presmoothing_wf, [('cifti_file', 'inputnode.bold_file')]),
             ])
 # Remove TR first:
     if dummytime > 0:
