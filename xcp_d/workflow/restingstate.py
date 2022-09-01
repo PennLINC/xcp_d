@@ -25,7 +25,7 @@ def init_compute_alff_wf(mem_gb,
                          omp_nthreads,
                          name="compute_alff_wf"):
     """
-    This workflow compute alff for both nifit and cifti
+    This workflow compute alff for both nifti and cifti
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -73,8 +73,8 @@ def init_compute_alff_wf(mem_gb,
         alff output
     smoothed_alff
         smoothed alff  output
-    tmask
-        temporal mask  #TODO: Fix, this is inaccurate
+    html
+        alff html for nifti
     """
 
     workflow = Workflow(name=name)
@@ -93,12 +93,13 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         fields=['alff_out', 'smoothed_alff', 'alffhtml']),
         name='outputnode')
 
+    # compute alff
     alff_compt = pe.Node(computealff(TR=TR, lowpass=lowpass,
                                      highpass=highpass),
                          mem_gb=mem_gb,
                          name='alff_compt',
                          n_procs=omp_nthreads)
-
+    # create a node for the Nifti HTML
     brain_plot = pe.Node(brainplot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
@@ -108,34 +109,36 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                                                ('bold_mask', 'mask')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])])
 
-    if not cifti:
+    if not cifti: # if Nifti, get the HTML
         workflow.connect([
             (alff_compt, brain_plot, [('alff_out', 'in_file')]),
             (inputnode, brain_plot, [('bold_mask', 'mask_file')]),
             (brain_plot, outputnode, [('nifti_html', 'alffhtml')]),
         ])
 
-    if smoothing:
-        if not cifti:
+    if smoothing:  # If we want to smooth
+        if not cifti:  # If nifti
             workflow.__desc__ = workflow.__desc__ + """ \
 The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM).
         """.format(kernelsize=str(smoothing))
+            # Smooth via FSL
             smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
                                          fwhm=smoothing),
-                                  name="ciftismoothing", #TODO: Rename to nifti smoothing
-                                  mem_gb=mem_gb,
+                                  name="niftismoothing",
                                   n_procs=omp_nthreads)
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
                 (smooth_data, outputnode, [('smoothed_file', 'smoothed_alff')])
             ])
 
-        else:
+        else: # If cifti
             workflow.__desc__ = workflow.__desc__ + """ \
 The ALFF maps were smoothed with the Connectome Workbench using a gaussian
 kernel size of {kernelsize} mm (FWHM).
         """.format(kernelsize=str(smoothing))
-            sigma_lx = fwhm2sigma(smoothing)
+            # Smooth via Connectome Workbench
+            sigma_lx = fwhm2sigma(smoothing)   # Convert fwhm to standard deviation
+            # Get templates for each hemisphere
             lh_midthickness = str(
                 get_template("fsLR", hemi='L', suffix='sphere',
                              density='32k')[0])
@@ -157,10 +160,10 @@ kernel size of {kernelsize} mm (FWHM).
 
     return workflow
 
-
+#  For cifti
 def init_surface_reho_wf(mem_gb,
-                         smoothing,
                          omp_nthreads,
+                         smoothing,
                          name="surface_reho_wf"):
     """
     This workflow compute surface reho
@@ -208,6 +211,7 @@ vertices to yield ReHo.
     outputnode = pe.Node(niu.IdentityInterface(fields=['lh_reho', 'rh_reho']),
                          name='outputnode')
 
+    # Extract left and right hemispheres via Connectome Workbench
     lh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_LEFT',
                                           direction="COLUMN"),
                       name="separate_lh",
@@ -218,7 +222,7 @@ vertices to yield ReHo.
                       name="separate_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-
+    # Calculate the reho by hemipshere
     lh_reho = pe.Node(surfaceReho(surf_hemi='L'),
                       name="reho_lh",
                       mem_gb=mem_gb,
@@ -227,7 +231,7 @@ vertices to yield ReHo.
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-
+    # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
         (inputnode, rh_surf, [('clean_bold', 'in_file')]),
@@ -239,7 +243,7 @@ vertices to yield ReHo.
 
     return workflow
 
-
+# For nifti
 def init_3d_reho_wf(
     mem_gb,
     omp_nthreads,
@@ -291,16 +295,17 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         name='outputnode')
     from ..utils import ReHoNamePatch
 
+    # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),
                            name="reho_3d",
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
-
+    # Get the HTML
     brain_plot = pe.Node(brainplot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)
-
+    # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),

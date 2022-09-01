@@ -160,7 +160,7 @@ def collect_data(
         "regfile": {"datatype": "anat", "suffix": "xfm"},
         "boldfile": {"datatype": "func", "suffix": "bold"},
         "t1w": {"datatype": "anat", "suffix": "T1w"},
-        "seg": {"datatype": "anat", "suffix": "dseg"},
+        "seg_data": {"datatype": "anat", "suffix": "dseg"},
         "pial": {"datatype": "anat", "suffix": "pial"},
         "wm": {"datatype": "anat", "suffix": "smoothwm"},
         "midthickness": {"datatype": "anat", "suffix": "midthickness"},
@@ -247,7 +247,7 @@ def extract_t1w_seg(subj_data):
         if not fnmatch.fnmatch(ii, "*_space-*"):
             t1w = i
 
-    all_seg = subj_data["seg"]
+    all_seg = subj_data["seg_data"]
     for j in all_seg:
         ii = os.path.basename(j)
         if not (fnmatch.fnmatch(ii, "*_space-*") or fnmatch.fnmatch(ii, "*aseg*")):

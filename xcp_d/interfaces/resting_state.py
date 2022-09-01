@@ -6,6 +6,7 @@ Handling computation of reho and alff.
     # will comeback
 """
 import os
+import tempita
 import nibabel as nb
 import numpy as np
 from brainsprite import viewer_substitute
@@ -54,17 +55,17 @@ class surfaceReho(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        # get the gifti
+        # Read the gifti data
         data_matrix = read_gii(self.inputs.surf_bold)
 
-        # get mesh adjacency matrix
+        # Get the mesh adjacency matrix
         mesh_matrix = mesh_adjacency(self.inputs.surf_hemi)
 
-        # compute reho
+        # Compute reho
         reho_surf = compute_2d_reho(datat=data_matrix,
                                     adjacency_matrix=mesh_matrix)
 
-        # write the output out
+        # Write the output out
         self._results['surf_gii'] = fname_presuffix(self.inputs.surf_bold,
                                                     suffix='.shape.gii',
                                                     newpath=runtime.cwd,
@@ -120,22 +121,22 @@ class computealff(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        # get the nifti/cifti into  matrix
+        # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file,
                                  maskfile=self.inputs.mask)
-
+        # compute the ALFF
         alff_mat = compute_alff(data_matrix=data_matrix,
                                 low_pass=self.inputs.lowpass,
                                 high_pass=self.inputs.highpass,
                                 TR=self.inputs.TR)
 
-        # writeout the data
+        # Write out the data
+
         if self.inputs.in_file.endswith('.dtseries.nii'):
             suffix = '_alff.dtseries.nii'
         elif self.inputs.in_file.endswith('.nii.gz'):
             suffix = '_alff.nii.gz'
 
-        # write the output out
         self._results['alff_out'] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
@@ -161,7 +162,7 @@ class _brainplotOutputSpec(TraitedSpec):
 
 class brainplot(SimpleInterface):
     r"""
-    coming
+    Convert to a z-score map
 
     """
     input_spec = _brainplotInputSpec
@@ -169,32 +170,32 @@ class brainplot(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        # convert nifti to zscore
-
-        tempnifti = os.path.split(os.path.abspath(
+        # create a file name
+        z_score_nifti = os.path.split(os.path.abspath(
             self.inputs.in_file))[0] + '/zscore.nii.gz'
 
-        tempnifti = zscore_nifti(img=self.inputs.in_file,
+        # create a nifti with z-scores
+        z_score_nifti = zscore_nifti(img=self.inputs.in_file,
                                  mask=self.inputs.mask_file,
-                                 outputname=tempnifti)
-
+                                 outputname=z_score_nifti)
+        #  get the right template
         temptlatehtml = pkgrf('xcp_d',
                               'data/transform/brainsprite_template.html')
-
+        # adjust settings for viewing in HTML
         bsprite = viewer_substitute(threshold=0,
                                     opacity=0.5,
                                     title="zcore",
                                     cut_coords=[0, 0, 0])
 
-        bsprite.fit(tempnifti, bg_img=None)
+        bsprite.fit(z_score_nifti, bg_img=None)
 
-        import tempita
         template = tempita.Template.from_filename(temptlatehtml,
                                                   encoding="utf-8")
         viewer = bsprite.transform(template,
                                    javascript='js',
                                    html='html',
                                    library='bsprite')
+        # write the html out
         self._results['nifti_html'] = fname_presuffix(
             'zscore_nifti_',
             suffix='stat.html',
@@ -208,26 +209,30 @@ class brainplot(SimpleInterface):
 
 def zscore_nifti(img, outputname, mask=None):
     """
-    image and mask must be in the same space
+    Turn image into z_score. 
+    Image and mask must be in the same space.
 
     """
 
     img = nb.load(img)
 
-    if mask:
+    if mask:  
+        # z-score the data 
         maskdata = nb.load(mask).get_fdata()
         imgdata = img.get_fdata()
         meandata = imgdata[maskdata > 0].mean()
         stddata = imgdata[maskdata > 0].std()
         zscore_fdata = (imgdata - meandata) / stddata
+        # values where the mask is less than 1 are set to 0
         zscore_fdata[maskdata < 1] = 0
     else:
+        # z-score the data
         imgdata = img.get_fdata()
         meandata = imgdata[np.abs(imgdata) > 0].mean()
         stddata = imgdata[np.abs(imgdata) > 0].std()
         zscore_fdata = (imgdata - meandata) / stddata
-        zscore_fdata[np.abs(imgdata) < 0] = 0
 
+    # turn image to nifti and write it out
     dataout = nb.Nifti1Image(zscore_fdata,
                              affine=img.affine,
                              header=img.header)

@@ -63,7 +63,7 @@ def get_parser():
     parser.add_argument('analysis_level',
                         action='store',
                         type=Path,
-                        help='the output path for xcp_d')
+                        help='the analysis level for xcp_d, must be specified as "participant".')
 
     # optional arguments
     parser.add_argument('--version', action='version', version=verstr)

@@ -576,10 +576,10 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                                           ('t1seg', 'inputnode.t1seg'),
                                           ('cifti_file', 'inputnode.bold_file')
                                           ]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')
+        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
                                               ]),
         (filtering_wf, executivesummary_wf, [('filtered_file',
-                                              'inputnode.resddata')]),
+                                              'inputnode.residual_data')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
     ])

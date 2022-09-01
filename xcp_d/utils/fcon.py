@@ -93,14 +93,15 @@ def mesh_adjacency(hemi):
     vertices = vertices_faces[0]  # the first array of the tuple
     faces = vertices_faces[1]  # the second array in the tuples
     # create an array of 0s = voxel*voxel
-    A = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
+    data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
 
-    for i in range(1, len(faces)): # looping thorugh each value in faces
-        A[faces[i, 0], faces[i, 2]] = 1 # use to index into A and turn select values to 1
-        A[faces[i, 1], faces[i, 1]] = 1
-        A[faces[i, 2], faces[i, 0]] = 1
+    for i in range(1, len(faces)):  # looping thorugh each value in faces
+        data_array[faces[i, 0], faces[i, 2]] = 1  # use to index into data_array and
+        # turn select values to 1
+        data_array[faces[i, 1], faces[i, 1]] = 1
+        data_array[faces[i, 2], faces[i, 0]] = 1
 
-    return A + A.T # transpose A and add it to itself
+    return data_array + data_array.T  # transpose data_array and add it to itself
 
 
 def compute_alff(data_matrix, low_pass, high_pass, TR):
@@ -117,18 +118,25 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     TR: numpy float
        repetition time in seconds
     """
-    fs = 1 / TR
-    alff = np.zeros(data_matrix.shape[0])
-    for i in range(data_matrix.shape[0]):
-        fx, Pxx_den = signal.periodogram(data_matrix[i, :],
-                                         fs,
-                                         scaling='spectrum')
-        # fx, Pxx_den = signal.periodogram(data_matrix[i,:], fs,scaling='density')
-        pxx_sqrt = np.sqrt(Pxx_den)
+    fs = 1 / TR  # sampling frequency
+    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of 
+    # number of voxels
+    for ii in range(data_matrix.shape[0]):  # Loop through the voxels
+        # get array of sample frequencies + power spectrum density
+        array_of_sample_frequencies, power_spec_density = signal.periodogram(data_matrix[ii, :],
+                                                                             fs,
+                                                                             scaling='spectrum')
+        # square root of power spectrum density
+        power_spec_density_sqrt = np.sqrt(power_spec_density)
+        # get the position of the arguments closest to high_pass and low_pass, respectively
         ff_alff = [
-            np.argmin(np.abs(fx - high_pass)),
-            np.argmin(np.abs(fx - low_pass))
+            np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
+            np.argmin(np.abs(array_of_sample_frequencies - low_pass))
         ]
-        alff[i] = len(ff_alff) * np.mean(pxx_sqrt[ff_alff[0]:ff_alff[1]])
+        # alff for that voxel is 2 * the mean of the sqrt of the power spec density
+        # from the value closest to the low pass cutoff, to the value closest
+        # to the high pass pass cutoff
+        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0]:ff_alff[1]])
+    # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
     alff = np.reshape(alff, [len(alff), 1])
     return alff
