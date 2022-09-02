@@ -221,8 +221,11 @@ def despikedatacifti(cifti, TR, basedir):
 
 
 def scalex(X, x_min, x_max):
+    """Scale data to between minimum and maximum values."""
     nom = (X - X.min()) * (x_max - x_min)
     denom = X.max() - X.min()
+
     if denom == 0:
         denom = 1
-    return x_min + nom / denom
+
+    return x_min + (nom / denom)
