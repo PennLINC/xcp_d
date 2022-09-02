@@ -695,8 +695,8 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
             ('bold_file', 'inputnode.bold_file'),
             ('bold_mask', 'inputnode.mask')
         ]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regdata')]),
-        (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.resddata')]),
+        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')]),
+        (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.residual_data')]),
         (censor_scrub, executivesummary_wf, [('fd_timeseries', 'inputnode.fd')]),
     ])
 
