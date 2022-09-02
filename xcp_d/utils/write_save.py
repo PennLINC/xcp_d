@@ -9,27 +9,38 @@ from templateflow.api import get as get_template
 
 
 def read_ndata(datafile, maskfile=None, scale=0):
-    '''
-    read nifti or cifti
-    input:
-      datafile:
+    """Read nifti or cifti file.
+
+    Parameters
+    ----------
+    datafile : str
         nifti or cifti file
-    output:
-       data:
-        numpy ndarry ( vertices or voxels by timepoints)
-    '''
+    maskfile
+    scale : ?
+
+    Outputs
+    -------
+    data : (TxS) :obj:`numpy.ndarray`
+        Vertices or voxels by timepoints.
+    """
     # read cifti series
-    if datafile.endswith('.dtseries.nii'):
-        data = nb.load(datafile).get_fdata().T
-    # or nifiti data, mask is required
-    elif datafile.endswith('.nii.gz'):
-        datax = nb.load(datafile).get_fdata()
-        mask = nb.load(maskfile).get_fdata()
-        data = datax[mask == 1]
+    if datafile.endswith(".dtseries.nii"):
+        data = nb.load(datafile).get_fdata()
+
+    # or nifti data, mask is required
+    elif datafile.endswith(".nii.gz"):
+        data = masking.apply_mask(datafile, maskfile)
+
+    else:
+        raise ValueError(f"Unknown extension for {datafile}")
+
+    # transpose from TxS to SxT
+    data = data.T
+
     if scale > 0:
         data = scalex(data, -scale, scale)
-    return data
 
+    return data
 
 def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     '''
