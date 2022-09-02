@@ -39,6 +39,7 @@ Workflows
                 motion_filter_type='notch',
                 band_stop_min=0.1,
                 band_stop_max=0.2,
+                presmoothing=0,
                 smoothing=5,
                 head_radius=50,
                 params='27P',
