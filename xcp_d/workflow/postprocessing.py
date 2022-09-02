@@ -253,7 +253,7 @@ def init_pre_smoothing(mem_gb,
     # to standard deviation.
     if cifti:  # For ciftis
         workflow.__desc__ = """ \
-The preprocessed BOLD was smoothed using Connectome Workbench with a
+The preprocessed BOLD input was pre-smoothed using Connectome Workbench with a
 gaussian kernel size of {kernelsize} mm  (FWHM).
 """.format(kernelsize=str(presmoothing))
 
@@ -281,14 +281,13 @@ gaussian kernel size of {kernelsize} mm  (FWHM).
 
     else:  #  for Nifti
         workflow.__desc__ = """ \
-Before further processing, the preprocessed BOLD was smoothed using
-FSL with a gaussian kernel size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(smoothing))
-        presmooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
-                                     fwhm=smoothing),  # FWHM = kernel size
-                              name="nifti_presmoothing",
-                              mem_gb=mem_gb,
-                              n_procs=omp_nthreads)  #  Use fslmaths to smooth the image
+The preprocessed BOLD input was pre-smoothed using FSL with a
+gaussian kernel size of {kernelsize} mm  (FWHM).
+""".format(kernelsize=str(presmoothing))
+        presmooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=presmoothing),
+                                 name="nifti_presmoothing",
+                                 mem_gb=mem_gb,
+                                 n_procs=omp_nthreads)  #  Use fslmaths to smooth the image
 
         #  Connect to workflow
         workflow.connect([(inputnode, presmooth_data, [('bold_file', 'in_file')]),
@@ -298,10 +297,10 @@ FSL with a gaussian kernel size of {kernelsize} mm  (FWHM).
 
 
 def init_resd_smoothing(mem_gb,
-                         smoothing,
-                         omp_nthreads,
-                         cifti=False,
-                         name="smoothing"):
+                        smoothing,
+                        omp_nthreads,
+                        cifti=False,
+                        name="smoothing"):
 
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
