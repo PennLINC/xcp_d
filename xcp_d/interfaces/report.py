@@ -14,7 +14,7 @@ from nipype.interfaces.base import (traits, TraitedSpec,
 SUBJECT_TEMPLATE = """\
 \t<ul class="elem-desc">
 \t\t<li>Subject ID: {subject_id}</li>
-\t\t<li>BOLD series: {num_bold:d}</li>
+\t\t<li>BOLD series: {num_bold_files:d}</li>
 \t</ul>
 """
 
@@ -25,7 +25,7 @@ QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t\t<li>Mean Framewise Displacement: {meanFD}</li>
 \t\t\t<li>Mean Relative RMS Motion: {meanRMS}</li>
 \t\t\t<li>Max Relative RMS Motion: {maxRMS}</li>
-\t\t\t<li>DVARS Before and After Processing : {dvarsbfaf}</li>
+\t\t\t<li>DVARS Before and After Processing : {dvars_before_after}</li>
 \t\t\t<li>Correlation between DVARS and FD  Before and After Processing : {corrfddv}</li>
 \t\t\t<li>Number of Volumes Censored : {volcensored}</li>
 \t\t</ul>
@@ -48,11 +48,12 @@ class SummaryInterface(SimpleInterface):
     output_spec = SummaryOutputSpec
 
     def _run_interface(self, runtime):
+        # Open a file to write information to
         segment = self._generate_segment()
-        fname = os.path.join(runtime.cwd, 'report.html')
-        with open(fname, 'w') as fobj:
-            fobj.write(segment)
-        self._results['out_report'] = fname
+        file_name = os.path.join(runtime.cwd, 'report.html')
+        with open(file_name, 'w') as file_object:
+            file_object.write(segment)
+        self._results['out_report'] = file_name
         return runtime
 
     def _generate_segment(self):
@@ -69,7 +70,7 @@ class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
 class SubjectSummaryOutputSpec(SummaryOutputSpec):
     # This exists to ensure that the summary is run prior to the first ReconAll
     # call, allowing a determination whether there is a pre-existing directory
-    subject_id = Str(desc='subject ID')
+    subject_id = Str(desc='Subject ID')
 
 
 class SubjectSummary(SummaryInterface):
@@ -83,10 +84,10 @@ class SubjectSummary(SummaryInterface):
 
     def _generate_segment(self):
         # Add list of tasks with number of runs
-        num_bold = len(self.inputs.bold)
+        num_bold_files = len(self.inputs.bold)
 
         return SUBJECT_TEMPLATE.format(subject_id=self.inputs.subject_id,
-                                       num_bold=num_bold)
+                                       num_bold_files=num_bold_files)
 
 
 class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
@@ -100,6 +101,7 @@ class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
 
 class FunctionalSummary(SummaryInterface):
     input_spec = FunctionalSummaryInputSpec
+    #   Get information from the QC file and return it
 
     def _generate_segment(self):
         space = get_space(self.inputs.bold_file)
@@ -110,18 +112,18 @@ class FunctionalSummary(SummaryInterface):
         maxRMS = " {} ".format(round(qcfile['relMaxRMSMotion'][0], 4))
         dvars = "  {},{} ".format(round(qcfile['meanDVInit'][0], 4),
                                   round(qcfile['meanDVFinal'][0], 4))
-        fddvars = " {},  {} ".format(round(qcfile['motionDVCorrInit'][0], 4),
-                                     round(qcfile['motionDVCorrFinal'][0], 4))
-        nvolcen = " {} ".format(round(qcfile['nVolCensored'][0], 4))
+        fd_dvars_correlation = " {},  {} ".format(round(qcfile['motionDVCorrInit'][0], 4),
+                                                  round(qcfile['motionDVCorrFinal'][0], 4))
+        num_vols_censored = " {} ".format(round(qcfile['num_censored_volumes'][0], 4))
 
         return QC_TEMPLATE.format(space=space,
                                   TR=TR,
                                   meanFD=meanFD,
                                   meanRMS=meanRMS,
                                   maxRMS=maxRMS,
-                                  dvarsbfaf=dvars,
-                                  corrfddv=fddvars,
-                                  volcensored=nvolcen)
+                                  dvars_before_after=dvars,
+                                  corrfddv=fd_dvars_correlation,
+                                  volcensored=num_vols_censored)
 
 
 class AboutSummaryInputSpec(BaseInterfaceInputSpec):
@@ -142,17 +144,17 @@ class AboutSummary(SummaryInterface):
 
 def get_space(bold_file):
     """
-     extract space from bold/cifti
+     Extract space from bold/cifti via string manipulation
     """
-    bbfile = os.path.basename(bold_file)
-    if bbfile.endswith('.dtseries.nii'):
+    bold_file = os.path.basename(bold_file)
+    if bold_file.endswith('.dtseries.nii'):
         return 'fsLR'
     else:
-        if 'space' not in bbfile:
+        if 'space' not in bold_file:
             return 'native'
-        elif 'space' in bbfile:
-            bbfileS = bbfile.split('_')
+        elif 'space' in bold_file:
+            bold_file_space = bold_file.split('_')
 
-            for j in bbfileS:
-                if 'space' in j:
-                    return j.split('-')[1]
+            for bold_file_name_component in bold_file_space:
+                if 'space' in bold_file_name_component:
+                    return bold_file_name_component.split('-')[1]

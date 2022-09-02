@@ -345,42 +345,42 @@ def confoundplotx(time_series,
             # Threshold fd at 0.1, 0.2 and 0.5 and plot
             time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
             fda = time_series[c].copy()
-            timeseries_copy = time_series[c].copy()
-            timeseries_copy[timeseries_copy > 0] = 1.05
+            FD_timeseries = time_series[c].copy()
+            FD_timeseries[FD_timeseries > 0] = 1.05
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
-            time_series_axis.plot(timeseries_copy, '.', color='gray', markersize=40)
+            time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
 
             time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
             fda[fda < 0.05] = np.nan
-            timeseries_copy = time_series[c].copy()
-            timeseries_copy[timeseries_copy >= 0.05] = 1.05
-            timeseries_copy[timeseries_copy < 0.05] = np.nan
+            FD_timeseries = time_series[c].copy()
+            FD_timeseries[FD_timeseries >= 0.05] = 1.05
+            FD_timeseries[FD_timeseries < 0.05] = np.nan
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
-            time_series_axis.plot(timeseries_copy, '.', color='gray', markersize=40)
+            time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
 
             time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
             fda[fda < 0.1] = np.nan
-            timeseries_copy = time_series[c].copy()
-            timeseries_copy[timeseries_copy >= 0.1] = 1.05
-            timeseries_copy[timeseries_copy < 0.1] = np.nan
+            FD_timeseries = time_series[c].copy()
+            FD_timeseries[FD_timeseries >= 0.1] = 1.05
+            FD_timeseries[FD_timeseries < 0.1] = np.nan
             time_series_axis.plot(fda, '.', color='#66c2a5', markersize=40)
-            time_series_axis.plot(timeseries_copy, '.', color='#66c2a5', markersize=40)
+            time_series_axis.plot(FD_timeseries, '.', color='#66c2a5', markersize=40)
 
             time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
             fda[fda < 0.2] = np.nan
-            timeseries_copy = time_series[c].copy()
-            timeseries_copy[timeseries_copy >= 0.2] = 1.05
-            timeseries_copy[timeseries_copy < 0.2] = np.nan
+            FD_timeseries = time_series[c].copy()
+            FD_timeseries[FD_timeseries >= 0.2] = 1.05
+            FD_timeseries[FD_timeseries < 0.2] = np.nan
             time_series_axis.plot(fda, '.', color='#fc8d62', markersize=40)
-            time_series_axis.plot(timeseries_copy, '.', color='#fc8d62', markersize=40)
+            time_series_axis.plot(FD_timeseries, '.', color='#fc8d62', markersize=40)
 
             time_series_axis.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
             fda[fda < 0.5] = np.nan
-            timeseries_copy = time_series[c].copy()
-            timeseries_copy[timeseries_copy >= 0.5] = 1.05
-            timeseries_copy[timeseries_copy < 0.5] = np.nan
+            FD_timeseries = time_series[c].copy()
+            FD_timeseries[FD_timeseries >= 0.5] = 1.05
+            FD_timeseries[FD_timeseries < 0.5] = np.nan
             time_series_axis.plot(fda, '.', color='#8da0cb', markersize=40)
-            time_series_axis.plot(timeseries_copy, '.', color='#8da0cb', markersize=40)
+            time_series_axis.plot(FD_timeseries, '.', color='#8da0cb', markersize=40)
             
             #  Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
             good_vols = len(time_series[c][time_series[c] < 0.1])
@@ -493,40 +493,43 @@ def plot_svgx(rawdata,
     if type(filtered_dvars) != np.ndarray:
         filtered_dvars = compute_dvars(read_ndata(datafile=residual_data,
                                                   maskfile=mask))
+    # For ease of reference later
+    residual_data_file = residual_data
+    raw_data_file = rawdata
+
     # Formatting & setting of files
     sns.set_style('whitegrid')
-    rgdata = raw_dvars
-    rsdata = filtered_dvars
-    rxdata = raw_dvars
+    regressed_dvars_data = regressed_dvars
+    residual_dvars_data = filtered_dvars
+    raw_dvars_data = raw_dvars
     # Load files
-    rw = read_ndata(datafile=rawdata, maskfile=mask)
-    rs = read_ndata(datafile=residual_data, maskfile=mask)
+    raw_data = read_ndata(datafile=raw_data_file, maskfile=mask)
+    residual_data = read_ndata(datafile=residual_data_file, maskfile=mask)
 
-    # Remove first N deleted
-    if len(rxdata) > len(rsdata):
-        rxdata = rxdata[0:len(rsdata)]
-        rgdata = rxdata
-        rw = rw[:, 0:len(rsdata)]
+    # Remove first N deleted from raw_data so it's same length as censored files
+    if len(raw_dvars_data) > len(residual_dvars_data):
+        raw_dvars_data = raw_dvars_data[0:len(residual_dvars_data)]
+        raw_data = raw_data[:, 0:len(residual_dvars_data)]
+        # regressed_dvars_data = raw_dvars_data #TODO: Check if this is needed
 
-    # Create dataframes for the bold_data, FD
-
-    conf = pd.DataFrame({
-        'Pre reg': rxdata,
-        'Post reg': rgdata,
-        'Post all': rsdata
+    # Create dataframes for the bold_data DVARS, FD
+    DVARS_timeseries = pd.DataFrame({
+        'Pre regression': raw_dvars_data,
+        'Post regression': regressed_dvars_data,
+        'Post all': residual_dvars_data
     })
 
-    timeseries_copy = pd.DataFrame({'FD': np.loadtxt(fd)})
+    FD_timeseries = pd.DataFrame({'FD': np.loadtxt(fd)})
 
     # The mean and standard deviation of raw data
-    timeseries_before = pd.DataFrame({
-        'Mean': np.nanmean(rw, axis=0),
-        'Std': np.nanstd(rw, axis=0)
+    unprocessed_data_timeseries = pd.DataFrame({
+        'Mean': np.nanmean(raw_data, axis=0),
+        'Std': np.nanstd(raw_data, axis=0)
     })
-    # The mean and standard deviation of regressed data
-    timeseries_after = pd.DataFrame({
-        'Mean': np.nanmean(rs, axis=0),
-        'Std': np.nanstd(rs, axis=0)
+    # The mean and standard deviation of filtered data
+    processed_data_timeseries = pd.DataFrame({
+        'Mean': np.nanmean(residual_data, axis=0),
+        'Std': np.nanstd(residual_data, axis=0)
     })
     if seg_data is not None:
         atlaslabels = nb.load(seg_data).get_fdata()
@@ -534,8 +537,8 @@ def plot_svgx(rawdata,
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_raw_data = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
-    scaled_residual_data = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
+    scaled_raw_data = read_ndata(datafile=raw_data_file, maskfile=mask, scale=600)
+    scaled_residual_data = read_ndata(datafile=residual_data_file, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
@@ -547,37 +550,37 @@ def plot_svgx(rawdata,
 
     # Write out the scaled data
     scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
-                                template=rawdata,
+                                template=raw_data_file,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
     scaledresdata = write_ndata(data_matrix=scaled_residual_data,
-                                template=residual_data,
+                                template=residual_data_file,
                                 filename=scaledresdata,
                                 mask=mask,
                                 TR=TR)
     # Plot the data and confounds, plus the carpet plot
     plt.cla()
     plt.clf()
-    figx = plt.figure(constrained_layout=True, figsize=(45, 60))
+    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(time_series=conf,
+    confoundplotx(time_series=DVARS_timeseries,
                   grid_spec_ts=grid[0],
                   TR=TR,
                   ylabel='DVARS',
                   hide_x=True)
-    confoundplotx(time_series=timeseries_before,
+    confoundplotx(time_series=unprocessed_data_timeseries,
                   grid_spec_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
     plot_carpet(func=scaledrawdata,
                 atlaslabels=atlaslabels,
                 TR=TR,
                 subplot=grid[3],
                 legend=False)
-    confoundplotx(time_series=timeseries_copy,
+    confoundplotx(time_series=FD_timeseries,
                   grid_spec_ts=grid[4],
                   TR=TR,
                   hide_x=False,
@@ -585,26 +588,26 @@ def plot_svgx(rawdata,
                   ylabel='FD[mm]',
                   FD=True)
     # Save out the before processing file
-    figx.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+    unprocessed_figure.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
 
     plt.cla()
     plt.clf()
 
     # Plot the data and confounds, plus the carpet plot 
-    figy = plt.figure(constrained_layout=True, figsize=(45, 60))
+    processed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
 
-    confoundplotx(time_series=conf,
+    confoundplotx(time_series=DVARS_timeseries,
                   grid_spec_ts=grid[0],
                   TR=TR,
                   ylabel='DVARS',
                   hide_x=True,
                   work_dir=work_dir)
-    confoundplotx(time_series=timeseries_after,
+    confoundplotx(time_series=processed_data_timeseries,
                   grid_spec_ts=grid[1],
                   TR=TR,
                   hide_x=True,
@@ -616,7 +619,7 @@ def plot_svgx(rawdata,
                 TR=TR,
                 subplot=grid[3],
                 legend=True)
-    confoundplotx(time_series=timeseries_copy,
+    confoundplotx(time_series=FD_timeseries,
                   grid_spec_ts=grid[4],
                   TR=TR,
                   hide_x=False,
@@ -624,7 +627,7 @@ def plot_svgx(rawdata,
                   ylabel='FD[mm]',
                   FD=True,
                   work_dir=work_dir)
-    figy.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+    processed_figure.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
     # Save out the after processing file
     return unprocessed_filename, processed_filename
 
@@ -907,7 +910,7 @@ def _carpet(func,
             nslices=None):
     """Common carpetplot building code for volumetric / CIFTI plots"""
     if TR is None:
-        TR = 1.0
+        TR = 1.0  # Default TR
     sns.set_style("whitegrid")
     # Detrend data
     v = (None, None)

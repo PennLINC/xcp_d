@@ -21,8 +21,7 @@ from natsort import natsorted
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     outdir = outputdir
     fmr = glob.glob(
-        str(outdir) + '/' + _prefix(subjlist[0]) +
-        '/*/func/*_desc-residual*bold*nii*')[0]
+        str(outdir) + '/*' + (subjlist[0]) + '/*func/*_desc-residual*bold*nii*')[0]
     if fmr.endswith('nii.gz'):
         cifti = False
     else:
@@ -93,8 +92,10 @@ def make_DCAN_DF(fds_files, name):
             'space-fsLR_den-91k_desc-residual_bold.dtseries.nii'
         TR = nb.load(cifti).header.get_axis(0).step
     except Exception as exc:
+        print(fds_files[0])
         nii = fds_files[0].split('space')[0] + \
-            'space-MNI152NLin6Asym_desc-residual_res-2_bold.nii.gz'
+            'space-MNI152NLin2009cAsym_desc-residual_bold.nii.gz'
+        print(nii)
         TR = nb.load(nii).header.get_zooms()[-1]
         print(exc)
 
@@ -199,9 +200,13 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     make_DCAN_DF(filex, name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
+                    mask = natsorted(
+                        glob.glob(fmri_files + os.path.basename(res.split('run-')[0]) +
+                                  '*' + resid.partition('_desc')[0] +
+                                  '*_desc-brain_mask.nii.gz'))[0]
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)
                     for b in filex:
-                        dvar = compute_dvars(read_ndata(b))
+                        dvar = compute_dvars(read_ndata(b, mask))
                         dvar[0] = np.mean(dvar)
                         regressed_dvars.append(dvar)
 
@@ -228,7 +233,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 fileid) + '_desc-postcarpetplot_bold.svg'
             raw_dvars = []
             for f in filey:
-                dvar = compute_dvars(read_ndata(f))
+                dvar = compute_dvars(read_ndata(f,mask))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
 
