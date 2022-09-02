@@ -191,9 +191,9 @@ def read_gii(surf_gii):
     """
     Using nibabel to read surface file
     """
-    bold_data = nb.load(surf_gii) # load the gifti 
-    gifti_data = bold_data.agg_data() # aggregate the data
-    if not hasattr(gifti_data, '__shape__'): # if it doesn't have 'shape', reshape
+    bold_data = nb.load(surf_gii)  # load the gifti
+    gifti_data = bold_data.agg_data()  # aggregate the data
+    if not hasattr(gifti_data, '__shape__'):  # if it doesn't have 'shape', reshape
         gifti_data = np.zeros((len(bold_data.darrays[0].data), len(bold_data.darrays)))
         for arr in range(len(bold_data.darrays)):
             gifti_data[:, arr] = bold_data.darrays[arr].data
