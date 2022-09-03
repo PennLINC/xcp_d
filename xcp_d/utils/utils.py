@@ -35,11 +35,11 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
 
     # in case fMRIPrep outputs are generated in MNI6, as
     # done in case of AROMA outputs
-    elif 'MNI152NLin6ASym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin6ASym'
+    elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
+        template = 'MNI152NLin6Asym'
 
-    elif 'MNI152NLin6ASym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin6ASym'
+    elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
+        template = 'MNI152NLin6Asym'
 
     # Pull out the correct transforms based on bold_file name
     # and string them together.
