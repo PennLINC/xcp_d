@@ -1,17 +1,27 @@
 # source: https://pythonnumericalmethods.berkeley.edu/notebooks/chapter24.04-FFT-in-Python.html
-from xcp_d.interfaces.prepostcleaning import interpolate
 import os
 import tempfile
-from scipy.fftpack import fft
+
 import numpy as np
+from scipy.fftpack import fft
+from xcp_d.interfaces.prepostcleaning import interpolate
 from xcp_d.utils import read_ndata, write_ndata
 
 
-def test_interpolate_cifti(data_dir):
+def test_interpolate_cifti(data_dir, tmp_path_factory):
+    """Test CIFTI interpolation."""
+    # edit this if you want to see the edited confounds
+    tmpdir = tmp_path_factory.mktemp("test_interpolate_cifti")
+
     # CIFTI - ORIGINAL SIGNAL
     # Feed in inputs
-    boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
-        'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
+    boldfile = os.path.join(
+        data_dir,
+        (
+            'fmriprep/sub-colornest001/ses-1/func/sub-col'
+            'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
+        )
+    )
     mask = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
     TR = 2.5
@@ -23,11 +33,11 @@ def test_interpolate_cifti(data_dir):
     ts = file_data.shape[1]
     t = np.linspace(0, 1, ts)
     freq = 1.
-    x = 3*np.sin(2*np.pi*freq*t)
+    x = 3 * np.sin(2 * np.pi * freq * t)
     freq = 4
-    x += np.sin(2*np.pi*freq*t)
+    x += np.sin(2 * np.pi * freq * t)
     freq = 7
-    x += 0.5 * np.sin(2*np.pi*freq*t)
+    x += 0.5 * np.sin(2 * np.pi * freq * t)
 
     # Let's get the fft of x and plot it
     X = fft(x)
@@ -35,7 +45,7 @@ def test_interpolate_cifti(data_dir):
 
     # Create some spikes we can add later
     stdev = np.std(x)
-    spike = 2*stdev + np.mean(x)
+    spike = 2 * stdev + np.mean(x)
 
     # Let's replace voxel 3
     file_data[3, :] = x
@@ -54,17 +64,18 @@ def test_interpolate_cifti(data_dir):
     # sourced from python notebook - FFT
     N = len(X)
     n = np.arange(N)
-    freq = n/(N*TR)
+    freq = n / (N * TR)
 
     # let's save out this noisy file
-    tmpdir = tempfile.mkdtemp()  # edit this if you want to see the edited confounds
-    # on your Desktop, etc.
-    os.chdir(tmpdir)
-    write_ndata(data_matrix=file_data,
-                template=boldfile,
-                mask=mask,
-                TR=TR,
-                filename='noisy_file.dtseries.nii')
+    noise_file = os.path.join(tmpdir, 'noisy_file.dtseries.nii')
+    write_ndata(
+        data_matrix=file_data,
+        template=boldfile,
+        mask=mask,
+        TR=TR,
+        filename=noise_file,
+    )
+    assert os.path.isfile(noise_file)
 
     # Start testing interpolation - feed in input
     # Let's create a fake tmask...
@@ -78,7 +89,7 @@ def test_interpolate_cifti(data_dir):
 
     interpolation = interpolate()
     interpolation.inputs.tmask = 'tmask.tsv'
-    interpolation.inputs.in_file = 'noisy_file.dtseries.nii'
+    interpolation.inputs.in_file = noise_file
     interpolation.inputs.bold_file = boldfile
     interpolation.inputs.TR = TR
     interpolation.inputs.mask_file = mask
@@ -95,12 +106,12 @@ def test_interpolate_cifti(data_dir):
     fft_interpolated = X
     N = len(X)
     n = np.arange(N)
-    freq = n/(N*TR)
+    freq = n / (N * TR)
 
     # Are the differences between the interpolated and original signal less
     # than the differences between the interpolated and spiky signal?
-    diff1 = (sum(abs(fft_interpolated-fft_original)))
-    diff2 = (sum(abs(fft_interpolated-fft_spike)))
+    diff1 = (sum(abs(fft_interpolated - fft_original)))
+    diff2 = (sum(abs(fft_interpolated - fft_spike)))
 
     assert diff1 < diff2
 
