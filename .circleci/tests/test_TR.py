@@ -56,9 +56,8 @@ def test_RemoveTR_nifti(data_dir):
     assert nb.load(results.
                    outputs.bold_file_dropped_TR).get_fdata().shape[3] == original_nvols_nifti
 
-    # Test a nifti file with 'n' volumes to remove
-    for n in range(0, original_nvols_nifti-1):  # Testing all n values till
-        # original_nvols_nifti - 1
+    # Test a nifti file with 1-10 volumes to remove
+    for n in range(0, 10):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
@@ -110,9 +109,8 @@ def test_RemoveTR_cifti(data_dir):
     assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata(
     ).shape[0] == original_nvols_cifti
 
-    # Test a cifti file with 'n' volumes to remove
-    for n in range(0, original_nvols_cifti-1):  # Testing all n values till
-        # original_nvols_cifti - 1
+    # Test a cifti file with 1-10 volumes to remove
+    for n in range(0, 10):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
