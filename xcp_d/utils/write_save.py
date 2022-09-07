@@ -71,7 +71,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     filename : str
         The name of the generated output file. Same as the "filename" input.
     """
-    assert data_matrix.ndim == 2, f"Input data must be a 2D array, not {data_matrix.ndim}."
+    assert data_matrix.ndim in (1, 2), f"Input data must be a 1-2D array, not {data_matrix.ndim}."
     assert os.path.isfile(template)
 
     if template.endswith(".dtseries.nii"):
@@ -93,7 +93,12 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
         # write cifti series
         template_img = nb.load(template)
 
-        if data_matrix.shape[1] == template_img.shape[1]:
+        if data_matrix.ndim == 1:
+            n_volumes, n_vertices = 0, data_matrix.shape[0]
+        else:
+            n_volumes, n_vertices = data_matrix.shape
+
+        if n_volumes == template_img.shape[0]:
             # same number of volumes in data as original image
             img = nb.Cifti2Image(
                 dataobj=data_matrix,
@@ -105,11 +110,18 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
         else:
             # different number of volumes in data from original image
             # the time axis must be constructed manually based on its new length
-            ax_0 = template_img.header.get_axis(0)
-            ax_1 = nb.cifti2.SeriesAxis(start=0, step=TR, size=data_matrix.shape[1])
+            ax_1 = template_img.header.get_axis(1)
 
-            # create new header and cifti object
-            new_header = nb.cifti2.Cifti2Header.from_axes((ax_0, ax_1))
+            if n_volumes > 0:
+                ax_0 = nb.cifti2.SeriesAxis(start=0, step=TR, size=data_matrix.shape[0])
+
+                # create new header and cifti object
+                new_header = nb.cifti2.Cifti2Header.from_axes((ax_0, ax_1))
+
+            else:
+                # create new header and cifti object
+                new_header = nb.cifti2.Cifti2Header.from_axes((ax_1,))
+
             img = nb.Cifti2Image(data_matrix, new_header)
 
         # NOTE: Intent is necessary for plotting functions,
