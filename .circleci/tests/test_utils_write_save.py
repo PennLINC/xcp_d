@@ -49,7 +49,6 @@ def test_read_ndata(data_dir):
 
 def test_write_ndata(data_dir, tmp_path_factory):
     """Test write_save.write_ndata."""
-    data_dir = "/Users/taylor/Documents/tsalo/xcp_d_testing/data/"
     tmpdir = tmp_path_factory.mktemp("test_write_ndata")
 
     cifti_file = os.path.join(
