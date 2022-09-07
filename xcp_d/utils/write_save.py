@@ -45,7 +45,7 @@ def read_ndata(datafile, maskfile=None, scale=0):
     return data
 
 
-def write_ndata(data_matrix, template_file, filename, mask=None, TR=1, scale=0):
+def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     """Save numpy array to a nifti or cifti file.
 
     Parameters
@@ -58,7 +58,7 @@ def write_ndata(data_matrix, template_file, filename, mask=None, TR=1, scale=0):
         Name of the output file to be written.
     mask : str or None, optional
         The path to a binary mask file.
-        The mask is only necessary for nifti files.
+        The mask is only used for nifti files- masking is not supported in ciftis.
         Default is None.
     TR : float, optional
     scale : float, optional
@@ -69,16 +69,16 @@ def write_ndata(data_matrix, template_file, filename, mask=None, TR=1, scale=0):
         The name of the generated output file. Same as the "filename" input.
     """
     assert data_matrix.ndim == 2, f"Input data must be a 2D array, not {data_matrix.ndim}."
-    assert os.path.isfile(template_file)
+    assert os.path.isfile(template)
 
-    if template_file.endswith(".dtseries.nii"):
+    if template.endswith(".dtseries.nii"):
         file_format = "cifti"
-    elif template_file.endswith(".nii.gz"):
+    elif template.endswith(".nii.gz"):
         file_format = "nifti"
         assert mask is not None, "A binary mask must be provided for nifti inputs."
         assert os.path.isfile(mask), f"The mask file does not exist: {mask}"
     else:
-        raise ValueError(f"Unknown extension for {template_file}")
+        raise ValueError(f"Unknown extension for {template}")
 
     if scale > 0:
         data_matrix = scalex(data_matrix, -scale, scale)
@@ -88,7 +88,7 @@ def write_ndata(data_matrix, template_file, filename, mask=None, TR=1, scale=0):
 
     if file_format == "cifti":
         # write cifti series
-        template_img = nb.load(template_file)
+        template_img = nb.load(template)
 
         if data_matrix.shape[1] == template_img.shape[0]:
             # same number of volumes in data as original image
@@ -101,18 +101,23 @@ def write_ndata(data_matrix, template_file, filename, mask=None, TR=1, scale=0):
 
         else:
             # different number of volumes in data from original image
+            # the time axis must be constructed manually based on its new length
             ax_0 = nb.cifti2.SeriesAxis(start=0, step=TR, size=data_matrix.shape[0])
-            ax_1 = template_img.get_axis(1)
+            ax_1 = template_img.header.get_axis(1)
 
             # create new header and cifti object
             new_header = nb.cifti2.Cifti2Header.from_axes((ax_0, ax_1))
-            img = nb.cifti2.Cifti2Image(data_matrix, new_header)
+            img = nb.Cifti2Image(data_matrix, new_header)
+
+        # NOTE: Intent is necessary for plotting functions,
+        # but I don't know if we should assume that any saved CIFTI is a ConnDenseSeries.
+        img.nifti_header.set_intent("ConnDenseSeries")
 
     else:
         # write nifti series
         img = masking.unmask(data_matrix, mask)
         # we'll override the default TR (1) in the header
-        pixdim = img.header.get_zooms()
+        pixdim = list(img.header.get_zooms())
         pixdim[3] = TR
         img.header.set_zooms(pixdim)
 
