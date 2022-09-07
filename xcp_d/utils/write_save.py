@@ -17,7 +17,9 @@ def read_ndata(datafile, maskfile=None, scale=0):
     ----------
     datafile : str
         nifti or cifti file
-    maskfile
+    maskfile : str
+        Path to a binary mask.
+        Unused for CIFTI data.
     scale : ?
 
     Outputs
@@ -31,6 +33,7 @@ def read_ndata(datafile, maskfile=None, scale=0):
 
     # or nifti data, mask is required
     elif datafile.endswith(".nii.gz"):
+        assert maskfile is not None, "Input `maskfile` must be provided if `datafile` is a nifti."
         data = masking.apply_mask(datafile, maskfile)
 
     else:
@@ -90,7 +93,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
         # write cifti series
         template_img = nb.load(template)
 
-        if data_matrix.shape[1] == template_img.shape[0]:
+        if data_matrix.shape[1] == template_img.shape[1]:
             # same number of volumes in data as original image
             img = nb.Cifti2Image(
                 dataobj=data_matrix,
@@ -102,8 +105,8 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
         else:
             # different number of volumes in data from original image
             # the time axis must be constructed manually based on its new length
-            ax_0 = nb.cifti2.SeriesAxis(start=0, step=TR, size=data_matrix.shape[0])
-            ax_1 = template_img.header.get_axis(1)
+            ax_0 = template_img.header.get_axis(0)
+            ax_1 = nb.cifti2.SeriesAxis(start=0, step=TR, size=data_matrix.shape[1])
 
             # create new header and cifti object
             new_header = nb.cifti2.Cifti2Header.from_axes((ax_0, ax_1))
