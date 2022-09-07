@@ -95,7 +95,7 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
 
     # FFT for interpolated bold_file
     # Read in file
-    file_data = read_ndata(results.outputs.bold_interpolated, mask=None)
+    file_data = read_ndata(results.outputs.bold_interpolated, maskfile=None)
     voxel_data = file_data[3, :]  # the previously noisy voxel
 
     # Let's get the FFT of this voxel and plot it
