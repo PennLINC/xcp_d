@@ -95,7 +95,7 @@ def init_execsummary_wf(omp_nthreads,
     ds_plot_bold_reference_file_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                                  dismiss_entities=['den'],
                                                                  datatype="figures",
-                                                                 desc='bold_reference_file'),
+                                                                 desc='boldref'),
                                              name='plotbold_reference_file',
                                              run_without_submitting=True)
 
@@ -118,7 +118,7 @@ def init_execsummary_wf(omp_nthreads,
                                                      in_file=bold_t1w_registration_file,
                                                      dismiss_entities=['den'],
                                                      datatype="figures",
-                                                     desc='bb_registration_file'),
+                                                     desc='bbregister'),
                                  name='bb_registration_file',
                                  run_without_submitting=True)
 
