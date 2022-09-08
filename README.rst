@@ -1,6 +1,10 @@
 *XCP-D* : A Robust Postprocessing Pipeline of  fMRI data
 ===========================================================
 
+.. image:: https://img.shields.io/badge/Source%20Code-pennlinc%2Fxcp__d-purple
+   :target: https://github.com/PennLINC/xcp_d
+   :alt: GitHub Repository
+
 .. image:: https://readthedocs.org/projects/xcp_d/badge/?version=latest
    :target: http://xcp_d.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
