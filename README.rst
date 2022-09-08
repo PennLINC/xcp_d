@@ -1,8 +1,25 @@
 *XCP-D* : A Robust Postprocessing Pipeline of  fMRI data
 ===========================================================
 
+.. image:: https://readthedocs.org/projects/xcp_d/badge/?version=latest
+   :target: http://xcp_d.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation
+
+.. image:: https://img.shields.io/badge/docker-pennlinc/xcp_d-brightgreen.svg?logo=docker&style=flat
+   :target: https://hub.docker.com/r/pennlinc/xcp_d/tags/
+   :alt: Docker
+
+.. image:: https://circleci.com/gh/pennlinc/xcp_d.svg?style=svg
+   :target: https://circleci.com/gh/pennlinc/xcp_d
+   :alt: Test Status
+
 .. image:: https://zenodo.org/badge/309485627.svg
    :target: https://zenodo.org/badge/latestdoi/309485627
+   :alt: DOI
+
+.. image:: https://img.shields.io/github/license/pennlinc/xcp_d
+   :target: https://opensource.org/licenses/BSD-3-Clause
+   :alt: License
 
 This fMRI post-processing and noise regression pipeline is developed by the `Satterthwaite lab at the University of Pennslyvania <https://www.satterthwaitelab.com/>`_ (**XCP**\; eXtensible Connectivity Pipeline)  and `Developmental Cognition and Neuroimaging lab at the University of Minnesota  <https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/>`_ (**-D**\CAN) for open-source software distribution.
 
