@@ -9,8 +9,8 @@
    :target: https://hub.docker.com/r/pennlinc/xcp_d/tags/
    :alt: Docker
 
-.. image:: https://circleci.com/gh/pennlinc/xcp_d.svg?style=svg
-   :target: https://circleci.com/gh/pennlinc/xcp_d
+.. image:: https://circleci.com/gh/PennLINC/xcp_d.svg?style=svg
+   :target: https://circleci.com/gh/PennLINC/xcp_d
    :alt: Test Status
 
 .. image:: https://zenodo.org/badge/309485627.svg
