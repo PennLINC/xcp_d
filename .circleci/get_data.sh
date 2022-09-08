@@ -29,7 +29,7 @@ run_xcpd_cmd () {
   output_dir="$2"
   workdir="$3"
   # Defines a call to qsiprep that works on circleci OR for a local
-  # test that uses 
+  # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
     XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
@@ -59,7 +59,7 @@ run_xcpd_cmd () {
 cat << DOC
 
 Create input data for tests. A few files are automatically
-created because they're used in all/most of the tests. 
+created because they're used in all/most of the tests.
 Imaging data is only downloaded as needed based on the
 second argument to the function.
 
@@ -215,7 +215,7 @@ regardless of what docker does
 DOC
 
 setup_dir(){
-    # Create the output and working directories for 
+    # Create the output and working directories for
     DIR=$1
     mkdir -p ${DIR}/derivatives
     mkdir -p ${DIR}/work

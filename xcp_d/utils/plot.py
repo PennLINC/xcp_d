@@ -1,20 +1,22 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
-import numpy as np
-from ..utils.write_save import scalex
-import nibabel as nb
-import pandas as pd
-from nilearn.signal import clean
-import matplotlib.pyplot as plt
-from matplotlib import gridspec as mgs
-import seaborn as sns
-from ..utils import read_ndata, write_ndata
-from matplotlib.colors import ListedColormap
+import tempfile
+
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import nibabel as nb
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import gridspec as mgs
+from matplotlib.colors import ListedColormap
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
-import tempfile
+from nilearn.signal import clean
+
+from ..utils import read_ndata, write_ndata
+from ..utils.write_save import scalex
 
 
 def _decimate_data(data, seg_data, size):
@@ -154,7 +156,7 @@ def confoundplot(time_series,
     if name is not None:
         if units is not None:
             name += ' [%s]' % units
-    #   Formatting 
+    #   Formatting
         time_series_axis.annotate(name,
                                   xy=(0.0, 0.7),
                                   xytext=(0, 0),
@@ -381,7 +383,7 @@ def confoundplotx(time_series,
             FD_timeseries[FD_timeseries < 0.5] = np.nan
             time_series_axis.plot(fda, '.', color='#8da0cb', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='#8da0cb', markersize=40)
-            
+
             #  Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
             good_vols = len(time_series[c][time_series[c] < 0.1])
             time_series_axis.text(1.01,
@@ -593,7 +595,7 @@ def plot_svgx(rawdata,
     plt.cla()
     plt.clf()
 
-    # Plot the data and confounds, plus the carpet plot 
+    # Plot the data and confounds, plus the carpet plot
     processed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
     grid = mgs.GridSpec(5,
                         1,
@@ -723,7 +725,7 @@ class fMRIPlot:
             #            TR=self.TR,
             #            zscored=iszs)
             grid_id += 1
-        
+
         # Plot confounds
         if self.confounds:
             from seaborn import color_palette
@@ -804,8 +806,10 @@ def plot_carpet(
     img = nb.load(func)
     sns.set_style("whitegrid")
     if isinstance(img, nb.Cifti2Image):  # Cifti
-        assert (img.nifti_header.get_intent()[0] == "ConnDenseSeries"
-                ), "Not a dense timeseries"
+        assert (
+            img.nifti_header.get_intent()[0] == "ConnDenseSeries"
+        ), f"Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}"
+
         # Get required information
         data = img.get_fdata().T
         matrix = img.header.matrix
