@@ -11,7 +11,7 @@ Regression of task effects from the BOLD timeseries is performed in 3 steps:
 
 Create a task event array
 --------------------------
-First, for each condition (i.e., each separate contrast) in your task, create an Nx2 array where N is equal to the number of measurements (volumes) in your task fMRI run. Values in the first array column should increase sequentially by the length of the TR, with the first index = 0. Values in the second array column should equal either 0 or 1; each volume during which the condition/contrast was being tested should = 1, all others should = 0. 
+First, for each condition (i.e., each separate contrast) in your task, create an Nx2 array where N is equal to the number of measurements (volumes) in your task fMRI run. Values in the first array column should increase sequentially by the length of the TR, with the first index = 0. Values in the second array column should equal either 0 or 1; each volume during which the condition/contrast was being tested should = 1, all others should = 0.
 
 For example, for an fMRI task run with 210 measurements and a 3 second TR during which happy faces (events) were presented for 5.5 seconds at time = 36, 54, 90 seconds etc::
 
@@ -54,13 +54,13 @@ For example, for an fMRI task run with 210 measurements and a 3 second TR during
 
 Convolve task events with the HRF
 ----------------------------------
-Next, the BOLD response to each event is modeled by convolving the task events with a canonical HRF. This can be done by first defining the HRF and then applying it to your task events array with numpy.convolve. 
+Next, the BOLD response to each event is modeled by convolving the task events with a canonical HRF. This can be done by first defining the HRF and then applying it to your task events array with numpy.convolve.
 
 .. code-block:: python
-   
-    import numpy as np 
+
+    import numpy as np
     from scipy.stats import gamma
-  
+
     # HRF function
     def hrf(times):
         """ Return values for HRF at given times """
@@ -81,30 +81,29 @@ Next, the BOLD response to each event is modeled by convolving the task events w
     realt=tt[:-N] # realt = the output we need!
 
 | The code block above contains the following user-defined variables
+
 - *TR*: a variable equal to the repetition time
-- *taskevents*: the Nx2 array created in the prior step 
+- *taskevents*: the Nx2 array created in the prior step
 
-
-| The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**. This tsv file will be used in the next step of ``xcp_d``. 
-
+| The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**. This tsv file will be used in the next step of ``xcp_d``.
 
 If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeated for each such that you generate one taskevents Nx2array per condition, and one corresponding realt numpy array. The realt outputs must all be combined into one space-delimited  ${subid}_${sesid}_task-${taskname}_desc-custom_timeseries.tsv file. A task with 5 conditions (e.g. happy, angry, sad, fearful, and neutral faces) will have 5 columns in the custom .tsv file. Multiple realt outputs can be combined by modifying the example code below.
 
 .. code-block:: python
-   
-    import pandas as pd 
-    # Create an empty task array to save realt outputs to 
+
+    import pandas as pd
+    # Create an empty task array to save realt outputs to
     taskarray = np.empty(shape=(measurements,0)) # measurements = the number of fMRI volumes
-    
+
     # Create a taskevents file for each condition and convolve with the HRF, using the code above
     ## code to compute realt
-    
+
     # Write a combined custom.tsv file
     taskarray = np.column_stack((taskarray, realt))
-    df = pd.DataFrame(taskarray)   
+    df = pd.DataFrame(taskarray)
     df.to_csv("{0}_{1}_task-{2}_desc-custom_timeseries.tsv".format(subid,sesid,taskid),index = False, header = False, sep=' ')
 
-The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may look like::
+The tab-delimited ``*desc-custom_timeseries.tsv`` file for a 5 condition task may look like::
 
   0.0 0.0 0.0 0.0 0.0
   0.0 0.0 0.0 0.0 0.3957422940438729
@@ -141,7 +140,7 @@ The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may 
   0.9957422940438729 -0.22350241191186113 0.5979640661963432 -6.512750410688139e-05 0.0
   1.1009022019820307 -0.12535358234687416 -0.08557033965129775 -8.104611114467545e-06 0.0
   0.5979640661963432 -0.04378800242207828 -0.22350241191186113 0.0 0.0
-  
+
 
 GLM task regression with ``xcp_d``
 ----------------------------------
@@ -149,5 +148,5 @@ Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv fil
 
   singularity run --cleanenv -B /my/project/directory:/mnt xcpd_latest.simg \
   /mnt/input/fmriprep /mnt/output/directory participant --despike \
-  --lower-bpf 0.01 --upper-bpf 0.08 --participant_label $subid -p 36P -f 10 -t emotionid -c /mnt/taskarray_file_dir 
+  --lower-bpf 0.01 --upper-bpf 0.08 --participant_label $subid -p 36P -f 10 -t emotionid -c /mnt/taskarray_file_dir
 
