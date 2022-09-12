@@ -1,0 +1,39 @@
+name: Lint code
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  stable:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Install flake8 and related packages
+        run: python -m pip install \
+          flake8 flake8-absolute-import flake8-docstrings \
+          flake8-isort flake8-unused-arguments flake8-use-fstring \
+          flake8-warnings pep8-naming
+      - name: Check xcp_d
+        run: python -m flake8 xcp_d
+      - name: Check wrapper
+        run: python -m flake8 wrapper
