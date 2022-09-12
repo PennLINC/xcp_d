@@ -322,10 +322,13 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 # The following is used by sphinx.ext.linkcode to provide links to github
-linkcode_resolve = make_linkcode_resolve('xcp_d',
-                                         u'https://github.com/pennlinc/'
-                                         'xcp_d/blob/{revision}/'
-                                         '{package}/{path}#L{lineno}')
+linkcode_resolve = make_linkcode_resolve(
+    'xcp_d',
+    (
+        u'https://github.com/pennlinc/xcp_d/blob/'
+        '{revision}/{package}/{path}#L{lineno}'  # noqa: FS003
+    ),
+)
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}

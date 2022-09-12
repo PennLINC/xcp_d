@@ -197,8 +197,8 @@ def check_forhash(filename):
     if isinstance(filename, list):
         filename = filename[0]
     path, name = op.split(filename)
-    if re.search("(_0x[a-z0-9]{32})", name):
-        hashvalue = re.findall("(_0x[a-z0-9]{32})", name)
+    if re.search(r"(_0x[a-z0-9]{32})", name):
+        hashvalue = re.findall(r"(_0x[a-z0-9]{32})", name)
         return True, hashvalue
     else:
         return False, None
@@ -373,7 +373,7 @@ def copyfile(
     if create_new:
         while op.exists(newfile):
             base, fname, ext = split_filename(newfile)
-            s = re.search("_c[0-9]{4,4}$", fname)
+            s = re.search(r"_c[0-9]{4,4}$", fname)
             i = 0
             if s:
                 i = int(s.group()[2:]) + 1
