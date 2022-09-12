@@ -79,12 +79,12 @@ def init_compute_alff_wf(mem_gb,
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """ \
+    workflow.__desc__ = f""" \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
 the processed BOLD timeseries  to the frequency domain. The power spectrum was computed within
 the {highpass}-{lowpass} Hz frequency band and the mean square root of the power spectrum was
 calculated at each voxel to yield voxel-wise ALFF measures.
-""".format(highpass=highpass, lowpass=lowpass)
+"""
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
@@ -118,9 +118,10 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
-            workflow.__desc__ = workflow.__desc__ + """ \
-The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize} mm (FWHM).
-        """.format(kernelsize=str(smoothing))
+            workflow.__desc__ = workflow.__desc__ + (
+                " The ALFF maps were smoothed with FSL using a gaussian kernel size of "
+                f"{str(smoothing)} mm (FWHM)."
+            )
             # Smooth via FSL
             smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
                                          fwhm=smoothing),
@@ -132,10 +133,11 @@ The ALFF maps were smoothed with FSL using a gaussian kernel size of {kernelsize
             ])
 
         else: # If cifti
-            workflow.__desc__ = workflow.__desc__ + """ \
-The ALFF maps were smoothed with the Connectome Workbench using a gaussian
-kernel size of {kernelsize} mm (FWHM).
-        """.format(kernelsize=str(smoothing))
+            workflow.__desc__ = workflow.__desc__ + (
+                " The ALFF maps were smoothed with the Connectome Workbench using a gaussian "
+                f"kernel size of {str(smoothing)} mm (FWHM)."
+            )
+
             # Smooth via Connectome Workbench
             sigma_lx = fwhm2sigma(smoothing)   # Convert fwhm to standard deviation
             # Get templates for each hemisphere
