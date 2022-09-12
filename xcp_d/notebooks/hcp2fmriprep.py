@@ -402,7 +402,7 @@ if function == 'run':
     os.system('export SINGULARITYENV_OMP_NUM_THREADS=4')
     # NOTE: TS- No spaces separating words/params across lines?
     cmd = (
-        'singularity run --cleanenv -B ${PWD} ~/xcp_hcp/xcp-abcd-latest.sif'
+        'singularity run --cleanenv -B $PWD ~/xcp_hcp/xcp-abcd-latest.sif'
         f'/{working_dir}/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ participant'
         '--cifti --despike --lower-bpf 0.01 --upper-bpf 0.08 --participant_label'
         f'sub-{subid} -p 36P -f 100 --omp-nthreads 4 --nthreads 4'
