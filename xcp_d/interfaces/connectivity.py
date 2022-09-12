@@ -12,7 +12,7 @@ from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsIn
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface, InputMultiObject)
-from xcp.utils import extract_timeseries_funct
+from xcp_d.utils import extract_timeseries_funct
 import matplotlib.pyplot as plt
 from nilearn.plotting import plot_matrix
 import nibabel as nb
