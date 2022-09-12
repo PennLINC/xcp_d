@@ -4,12 +4,12 @@
 import os
 import fnmatch
 import glob
-from ..interfaces.connectivity import ApplyTransformsx
+from xcp_d.interfaces.connectivity import ApplyTransformsx
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
-from ..interfaces import PlotSVGData, PlotImage
-from ..utils import bid_derivative, get_transformfile
+from xcp_d.interfaces import PlotSVGData, PlotImage
+from xcp_d.utils import bid_derivative, get_transformfile
 from templateflow.api import get as get_template
 
 

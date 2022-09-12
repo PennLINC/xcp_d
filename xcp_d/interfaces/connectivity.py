@@ -6,13 +6,13 @@ Handling functional connectvity.
     # will comeback
 """
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix
 from pkg_resources import resource_filename as pkgrf
 from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface, InputMultiObject)
-from ..utils import extract_timeseries_funct
+from xcp.utils import extract_timeseries_funct
 import matplotlib.pyplot as plt
 from nilearn.plotting import plot_matrix
 import nibabel as nb

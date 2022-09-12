@@ -1,16 +1,16 @@
-from .filtering import FilteringData
-from .regression import regress, ciftidespike
-from .connectivity import (NiftiConnect, ApplyTransformsx, get_atlas_cifti,
-                           get_atlas_nifti, connectplot)
-from .resting_state import computealff, surfaceReho, brainplot
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.regression import regress, ciftidespike
+from xcp_d.interfaces.connectivity import (NiftiConnect, ApplyTransformsx, get_atlas_cifti,
+                                           get_atlas_nifti, connectplot)
+from xcp_d.interfaces.resting_state import computealff, surfaceReho, brainplot
 
-from .prepostcleaning import interpolate, CensorScrub, RemoveTR
-from .qc_plot import computeqcplot
-from .report import SubjectSummary, AboutSummary, FunctionalSummary
-from .report_core import generate_reports
-from .surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot,
-                           PlotImage, RibbontoStatmap)
-from .layout_builder import layout_builder
+from xcp_d.interfaces.prepostcleaning import interpolate, CensorScrub, RemoveTR
+from xcp_d.interfaces.qc_plot import computeqcplot
+from xcp_d.interfaces.report import SubjectSummary, AboutSummary, FunctionalSummary
+from xcp_d.interfaces.report_core import generate_reports
+from xcp_d.interfaces.surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot,
+                                           PlotImage, RibbontoStatmap)
+from xcp_d.interfaces.layout_builder import layout_builder
 
 __all__ = [
     'regress','FilteringData', 'NiftiConnect',

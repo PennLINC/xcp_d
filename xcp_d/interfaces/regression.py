@@ -4,13 +4,13 @@
 import numpy as np
 from nipype import logging
 from sklearn.linear_model import LinearRegression
-from ..utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
 
 from xcp_d.utils import confounds
-from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
+from xcp_d.utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
 from os.path import exists
 from scipy import signal
 import pandas as pd

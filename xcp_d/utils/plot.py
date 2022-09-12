@@ -15,8 +15,8 @@ from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
-from ..utils import read_ndata, write_ndata
-from ..utils.write_save import scalex
+from xcp_d.utils import read_ndata, write_ndata
+from xcp_d.utils.write_save import scalex
 
 
 def _decimate_data(data, seg_data, size):

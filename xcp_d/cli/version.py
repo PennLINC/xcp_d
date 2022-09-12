@@ -5,7 +5,7 @@
 from pathlib import Path
 from datetime import datetime
 import requests
-from .. import __version__
+from xcp_d import __version__
 
 RELEASE_EXPIRY_DAYS = 14
 DATE_FMT = '%Y%m%d'

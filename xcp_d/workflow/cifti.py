@@ -15,16 +15,16 @@ from nipype.interfaces import utility as niu
 from nipype import logging
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
-from ..interfaces import computeqcplot
-from ..utils import bid_derivative, stringforparams
-from ..interfaces import FunctionalSummary, ciftidespike
-from .connectivity import init_cifti_conts_wf
-from .restingstate import init_compute_alff_wf, init_surface_reho_wf
-from .execsummary import init_execsummary_wf
-from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_resd_smoothing
-from .outputs import init_writederivatives_wf
-from ..interfaces import (interpolate, RemoveTR, CensorScrub)
+from xcp_d.interfaces import computeqcplot
+from xcp_d.utils import bid_derivative, stringforparams
+from xcp_d.interfaces import FunctionalSummary, ciftidespike
+from xcp_d.workflow.connectivity import init_cifti_conts_wf
+from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_wf
+from xcp_d.workflow.execsummary import init_execsummary_wf
+from xcp_d.interfaces import (FilteringData, regress)
+from xcp_d.workflow.postprocessing import init_resd_smoothing
+from xcp_d.workflow.outputs import init_writederivatives_wf
+from xcp_d.interfaces import (interpolate, RemoveTR, CensorScrub)
 LOGGER = logging.getLogger('nipype.workflow')
 
 

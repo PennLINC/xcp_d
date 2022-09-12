@@ -99,7 +99,7 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/dcanhcp'
             elif input_type == 'hcp':
                 fmri_dir = str(work_dir) + '/hcp/hcp'
-            from ..utils import concatenatebold
+            from xcp_d.utils import concatenatebold
             print('Concatenating bold files ...')
             concatenatebold(subjlist=subject_list,
                             fmridir=str(fmri_dir),
@@ -107,7 +107,7 @@ def generate_reports(subject_list,
                             work_dir=work_dir)
             print('Concatenation complete!')
 
-        from .layout_builder import layout_builder
+        from xcp_d.utils.layout_builder import layout_builder
         for subject_label in subject_list:
             brainplotfile = str(
                 glob.glob(

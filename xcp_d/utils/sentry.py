@@ -35,7 +35,7 @@ def start_ping(run_uuid, npart):
 def sentry_setup(opts, exec_env):
     from os import cpu_count
     import psutil
-    from ..__about__ import __version__
+    from xcp_d.__about__ import __version__
 
     environment = "develop"
     release = __version__
