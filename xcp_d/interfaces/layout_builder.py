@@ -315,7 +315,7 @@ class TasksSection(Section):
         self.section += TASKS_SECTION_END
 
 
-class layout_builder(object):
+class LayoutBuilder(object):
     def __init__(self, html_path, subject_id, session_id=None):
 
         self.working_dir = os.getcwd()

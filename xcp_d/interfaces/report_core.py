@@ -107,16 +107,16 @@ def generate_reports(subject_list,
                             work_dir=work_dir)
             print('Concatenation complete!')
 
-        from xcp_d.utils.layout_builder import layout_builder
+        from xcp_d.utils.layout_builder import LayoutBuilder
         for subject_label in subject_list:
             brainplotfile = str(
                 glob.glob(
                     str(Path(output_dir)) + '/xcp_d/sub-' +
                     str(subject_label) +
                     '/figures/*_desc-brainplot_T1w.html')[0])
-            layout_builder(html_path=str(Path(output_dir)) + '/xcp_d/',
-                           subject_id=subject_label,
-                           session_id=_getsesid(brainplotfile))
+            LayoutBuilder(html_path=str(Path(output_dir)) + '/xcp_d/',
+                          subject_id=subject_label,
+                          session_id=_getsesid(brainplotfile))
 
         print('Reports generated successfully')
     return errno

@@ -10,7 +10,7 @@ from xcp_d.interfaces.report import SubjectSummary, AboutSummary, FunctionalSumm
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.interfaces.surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData, RegPlot,
                                            PlotImage, RibbontoStatmap)
-from xcp_d.interfaces.layout_builder import layout_builder
+from xcp_d.interfaces.layout_builder import LayoutBuilder
 
 __all__ = [
     'regress','FilteringData', 'NiftiConnect',
@@ -19,5 +19,5 @@ __all__ = [
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
     'generate_reports', 'ciftidespike', 'connectplot', 'brainplot',
     'SurftoVolume', 'BrainPlotx', 'PlotSVGData', 'RegPlot', 'PlotImage',
-    'layout_builder', 'RibbontoStatmap'
+    'LayoutBuilder', 'RibbontoStatmap'
 ]
