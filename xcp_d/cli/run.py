@@ -43,7 +43,7 @@ def get_parser():
     from packaging.version import Version
     from ..__about__ import __version__
 
-    verstr = 'xcp_d v{}'.format(__version__)
+    verstr = f'xcp_d v{__version__}'
     currentv = Version(__version__)
 
     parser = ArgumentParser(
@@ -332,7 +332,7 @@ def main():
     if missing:
         print("Cannot run xcp_d. Missing dependencies:", file=sys.stderr)
         for iface, cmd in missing:
-            print("\t{} (Interface: {})".format(cmd, iface))
+            print(f"\t{cmd} (Interface: {iface})")
         sys.exit(2)
     # Clean up master process before running workflow, which may create forks
     gc.collect()
@@ -344,7 +344,7 @@ def main():
         if not opts.notrack:
             from ..utils.sentry import process_crashfile
         crashfolders = [
-            output_dir / 'xcp_d' / 'sub-{}'.format(s) / 'log' / run_uuid
+            output_dir / 'xcp_d' / f'sub-{s}' / 'log' / run_uuid
             for s in subject_list
         ]
         for crashfolder in crashfolders:
@@ -368,7 +368,7 @@ def main():
         from shutil import copyfile
 
         citation_files = {
-            ext: output_dir / 'xcp_d' / 'logs' / ('CITATION.%s' % ext)
+            ext: output_dir / 'xcp_d' / 'logs' / f'CITATION.{ext}'
             for ext in ('bib', 'tex', 'md', 'html')
         }
 
@@ -428,7 +428,7 @@ def main():
 
         if failed_reports and not opts.notrack:
             sentry_sdk.capture_message(
-                'Report generation failed for %d subjects' % failed_reports,
+                f'Report generation failed for {failed_reports} subjects',
                 level='error')
         sys.exit(int((errno + failed_reports) > 0))
 
@@ -452,26 +452,16 @@ def build_workflow(opts, retval):
     from ..workflow.base import init_xcpd_wf
     build_log = nlogging.getLogger('nipype.workflow')
 
-    INIT_MSG = """
-    Running xcp_d version {version}:
-      * fMRI directory path: {fmri_dir}.
-      * Participant list: {subject_list}.
-      * Run identifier: {uuid}.
-
-    """.format
-
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
 
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
-        build_log.info("Clearing previous xcp_d working directory: %s" %
-                       work_dir)
+        build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
         if not clean_directory(work_dir):
             build_log.warning(
-                "Could not clear all contents of working directory: %s" %
-                work_dir)
+                f"Could not clear all contents of working directory: {work_dir}")
 
     retval['return_code'] = 1
     retval['workflow'] = None
@@ -480,10 +470,11 @@ def build_workflow(opts, retval):
     retval['work_dir'] = str(work_dir)
 
     if output_dir == fmri_dir:
+        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
         build_log.error(
             'The selected output folder is the same as the input fmri input. '
-            'Please modify the output path (suggestion: %s).', fmri_dir /
-            'derivatives' / ('xcp_d-%s' % __version__.split('+')[0]))
+            'Please modify the output path '
+            f'(suggestion: {rec_path}).')
         retval['return_code'] = 1
         return retval
     if str(opts.analysis_level) != 'participant':
@@ -529,7 +520,7 @@ def build_workflow(opts, retval):
         fmri_dir = hcp_output_dir
 
     # Set up some instrumental utilities
-    run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
+    run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval['run_uuid'] = run_uuid
 
     layout = BIDSLayout(str(fmri_dir), validate=False, derivatives=True)
@@ -609,10 +600,13 @@ def build_workflow(opts, retval):
     # Build main workflow
     build_log.log(
         25,
-        INIT_MSG(version=__version__,
-                 fmri_dir=fmri_dir,
-                 subject_list=subject_list,
-                 uuid=run_uuid))
+        f"""
+    Running xcp_d version {__version__}:
+      * fMRI directory path: {fmri_dir}.
+      * Participant list: {subject_list}.
+      * Run identifier: {run_uuid}.
+
+    """)
 
     retval['workflow'] = init_xcpd_wf(
         layout=layout,
@@ -648,7 +642,7 @@ def build_workflow(opts, retval):
 
     if boilerplate:
         citation_files = {
-            ext: logs_path / ('CITATION.%s' % ext)
+            ext: logs_path / f'CITATION.{ext}'
             for ext in ('bib', 'tex', 'md', 'html')
         }
         # To please git-annex users and also to guarantee consistency
