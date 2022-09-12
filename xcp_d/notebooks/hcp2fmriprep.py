@@ -116,8 +116,8 @@ def audit():
         results = []
 
         for r in glob.glob(
-                '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-%s/func/*Schaefer417*pconn*'
-                % (subid)):
+            f'/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{subid}/func/*Schaefer417*pconn*'
+        ):
             results.append(
                 r.split('/')[-1].split('-')[2].split('_')[0] + '_' +
                 r.split('/')[-1].split('-')[3].split('_')[0])
@@ -148,11 +148,11 @@ def audit():
 
 def remove(subid):
     for f in glob.glob(
-            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-%s/func/**'
-            % (subid)):
+        f'/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{subid}/func/**'
+    ):
         if 'Schaefer417_den-91k_den-91k_bold.pconn.nii' not in f and 'Schaefer417_den-9'\
            '1k_den-91k_bold.ptseries.nii' not in f and 'qc_den-91k_bold.tsv' not in f:
-            os.system('rm -f %s' % (f))
+            os.system(f'rm -f {f}')
 
 
 if function == 'sge':
