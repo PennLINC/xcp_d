@@ -72,10 +72,10 @@ def sentry_setup(opts, exec_env):
                 overcommit_kbytes = Path('/proc/sys/vm/overcommit_memory')
                 kb = overcommit_kbytes.read_text().strip()
                 if kb != '0':
-                    limit = '{}kB'.format(kb)
+                    limit = f'{kb}kB'
                 else:
                     overcommit_ratio = Path('/proc/sys/vm/overcommit_ratio')
-                    limit = '{}%'.format(overcommit_ratio.read_text().strip())
+                    limit = f'{overcommit_ratio.read_text().strip()}%'
                 scope.set_tag('overcommit_limit', limit)
             else:
                 scope.set_tag('overcommit_limit', 'n/a')
@@ -122,10 +122,10 @@ def process_crashfile(crashfile):
                 scope.set_extra(k, strv[0])
             else:
                 for i, chunk in enumerate(strv):
-                    scope.set_extra('%s_%02d' % (k, i), chunk)
+                    scope.set_extra(f'{k}_{i:02d}', chunk)
 
         fingerprint = ''
-        issue_title = '{}: {}'.format(node_name, gist)
+        issue_title = f'{node_name}: {gist}'
         for new_fingerprint, error_snippets in KNOWN_ERRORS.items():
             for error_snippet in error_snippets:
                 if error_snippet in traceback:
