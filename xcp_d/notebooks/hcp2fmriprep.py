@@ -166,19 +166,19 @@ if function == 'sge':
             continue
         if sub == 'ToSync':
             continue
+
+        vmem = 36
         os.system(
-            'qsub -l h_vmem={0}G,s_vmem={0}G -N p{1} -pe threaded 4 -V -j y -b y -o'
-            ' ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py run {1}'
-            .format(36, sub))
+            f'qsub -l h_vmem={vmem}G,s_vmem={vmem}G -N p{sub} -pe threaded 4 -V -j y -b y -o'
+            f' ~/sge/ -e ~/sge/ python /cbica/home/bertolem/xcp_hcp/hcp2fmriprep.py run {sub}'
+        )
 
 if function == 'run':
-    os.system('rm -f -r /{0}/S1200/{1}'.format(working_dir, subid))
-    os.system('rm -f -r /{0}/fmriprepdir/sub-{1}'.format(working_dir, subid))
+    os.system(f'rm -f -r /{working_dir}/S1200/{subid}')
+    os.system(f'rm -f -r /{working_dir}/fmriprepdir/sub-{subid}')
 
     tasklist = []
-    os.makedirs('/{0}/S1200/{1}/MNINonLinear/Results/'.format(
-        working_dir, subid),
-        exist_ok=True)
+    os.makedirs(f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/', exist_ok=True)
 
     # for fdir in ["RL"]:
     # 	for orig_task in ["REST1"]:
@@ -190,49 +190,56 @@ if function == 'run':
         ]:
             if len(
                     glob.glob(
-                        '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/*Atlas_MSMAll.dtseries.nii'
-                        .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                        f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                        f'*{fdir}*/*Atlas_MSMAll.dtseries.nii'
+                    )) != 1:
                 continue
             if len(
                     glob.glob(
-                        '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/*{2}_{3}.nii.gz'
-                        .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                        f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                        f'*{fdir}*/*{orig_task}_{fdir}.nii.gz'
+                    )) != 1:
                 continue
             if len(
                     glob.glob(
-                        '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/Movement_Regressors.txt'
-                        .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                        f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                        f'*{fdir}*/Movement_Regressors.txt'
+                    )) != 1:
                 continue
             if len(
                     glob.glob(
-                        '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/Movement_AbsoluteRMS.txt'
-                        .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                        f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                        f'*{fdir}*/Movement_AbsoluteRMS.txt'
+                    )) != 1:
                 continue
             if len(
                     glob.glob(
-                        '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/SBRef_dc.nii.gz'
-                        .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                        f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                        f'*{fdir}*/SBRef_dc.nii.gz'
+                    )) != 1:
                 continue
             if len(
                     glob.glob(
-                        '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/**SBRef.nii.gz'
-                        .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                        f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                        f'*{fdir}*/**SBRef.nii.gz'
+                    )) != 1:
                 continue
-            tdir = glob.glob('/{0}/{1}/MNINonLinear/Results/*{2}*{3}*'.format(
-                hcp_dir, subid, orig_task, fdir))[0]
+            tdir = glob.glob(f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}*{fdir}*')[0]
             task = tdir.split('/')[-1]
             tasklist.append(task)
-            task_dir = '/{0}/S1200/{1}/MNINonLinear/Results/{2}'.format(
-                working_dir, subid, task)
+            task_dir = f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{task}'
 
             os.makedirs(task_dir, exist_ok=True)
             os.chdir(task_dir)
 
-            wbs_file = '{0}/{1}/MNINonLinear/Results/{2}/{2}_Atlas_MSMAll.dtseries.nii'.format(
-                hcp_dir, subid, task)
+            wbs_file = (
+                f'{hcp_dir}/{subid}/MNINonLinear/Results/{task}/{task}_Atlas_MSMAll.dtseries.nii'
+            )
             if os.path.exists(wbs_file):
-                command = 'OMP_NUM_THREADS=4 wb_command -cifti-stats {0} -reduce MEAN'
-                ' >> /{1}/{2}_WBS.txt'.format(wbs_file, task_dir, task)
+                command = (
+                    f'OMP_NUM_THREADS=4 wb_command -cifti-stats {wbs_file} -reduce MEAN'
+                    f' >> /{task_dir}/{task}_WBS.txt'
+                )
                 os.system(command)
 
     anatdir = outdir + '/sub-' + subid + '/anat/'
@@ -250,32 +257,33 @@ if function == 'run':
         os.makedirs(datadir, exist_ok=True)
 
         if 'REST' not in j:
-            ResultsFolder = '/{0}/{1}/MNINonLinear/Results/{2}/'.format(
-                hcp_dir, subid, j)
-            ROIFolder = "/{0}/{1}/MNINonLinear/ROIs".format(hcp_dir, subid)
+            ResultsFolder = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/'
+            ROIFolder = f"/{hcp_dir}/{subid}/MNINonLinear/ROIs"
 
-            xcp_file = '/{0}/S1200/{1}/MNINonLinear/Results/{2}/{3}_WM.txt'.format(
-                working_dir, subid, j, j)
-            cmd = "fslmeants -i {0}/{1}.nii.gz -o {2} -m {3}/WMReg.2.nii.gz".format(
-                ResultsFolder, j, xcp_file, ROIFolder)
+            xcp_file = f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{j}/{j}_WM.txt'
+            cmd = (
+                f"fslmeants -i {ResultsFolder}/{j}.nii.gz -o {xcp_file} "
+                f"-m {ROIFolder}/WMReg.2.nii.gz"
+            )
             os.system(cmd)
 
-            xcp_file = '/{0}/S1200/{1}/MNINonLinear/Results/{2}/{3}_CSF.txt'.format(
-                working_dir, subid, j, j)
-            cmd = "fslmeants -i {0}/{1}.nii.gz -o {2} -m {3}/CSFReg.2.nii.gz".format(
-                ResultsFolder, j, xcp_file, ROIFolder)
+            xcp_file = f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{j}/{j}_CSF.txt'
+            cmd = (
+                f"fslmeants -i {ResultsFolder}/{j}.nii.gz -o {xcp_file} "
+                f"-m {ROIFolder}/CSFReg.2.nii.gz"
+            )
             os.system(cmd)
 
-        orig = '/{0}/{1}/MNINonLinear/Results/{2}/Movement_Regressors.txt'.format(
-            hcp_dir, subid, j)
-        xcp_file = '/{0}/S1200/{1}/MNINonLinear/Results/{2}/Movement_Regressors.txt'.format(
-            working_dir, subid, j)
+        orig = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/Movement_Regressors.txt'
+        xcp_file = (
+            f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{j}/Movement_Regressors.txt'
+        )
         copyfile(orig, xcp_file)
 
-        orig = '/{0}/{1}/MNINonLinear/Results/{2}/Movement_AbsoluteRMS.txt'.format(
-            hcp_dir, subid, j)
-        xcp_file = '/{0}/S1200/{1}/MNINonLinear/Results/{2}/Movement_AbsoluteRMS.txt'.format(
-            working_dir, subid, j)
+        orig = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/Movement_AbsoluteRMS.txt'
+        xcp_file = (
+            f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{j}/Movement_AbsoluteRMS.txt'
+        )
         copyfile(orig, xcp_file)
 
         # create confound regressors
@@ -291,24 +299,21 @@ if function == 'run':
         mvreg['rot_y'] = mvreg['rot_y'] * np.pi / 180
         mvreg['rot_z'] = mvreg['rot_z'] * np.pi / 180
 
-        orig = '/{0}/{1}/MNINonLinear/Results/{2}/{3}_CSF.txt'.format(
-            hcp_dir, subid, j, j)
-        xcp_file = '/{0}//S1200/{1}/MNINonLinear/Results/{2}/{3}_CSF.txt'.format(
-            working_dir, subid, j, j)
+        orig = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/{j}_CSF.txt'
+        # NOTE: TS- double fslashes after working_dir seems like a typo
+        xcp_file = f'/{working_dir}//S1200/{subid}/MNINonLinear/Results/{j}/{j}_CSF.txt'
         if not os.path.exists(xcp_file):
             copyfile(orig, xcp_file)
 
-        orig = '/{0}/{1}/MNINonLinear/Results/{2}/{3}_WM.txt'.format(
-            hcp_dir, subid, j, j)
-        xcp_file = '/{0}/S1200/{1}/MNINonLinear/Results/{2}/{3}_WM.txt'.format(
-            working_dir, subid, j, j)
+        orig = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/{j}_WM.txt'
+        xcp_file = f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{j}/{j}_WM.txt'
         if not os.path.exists(xcp_file):
             copyfile(orig, xcp_file)
 
-        orig = '/{0}/{1}/MNINonLinear/Results/{2}/{3}_Atlas_MSMAll.dtseries.nii'.format(
-            hcp_dir, subid, j, j)
-        xcp_file = '/{0}/S1200/{1}/MNINonLinear/Results/{2}/{3}_Atlas_MSMAll.dtseries.nii'.format(
-            working_dir, subid, j, j)
+        orig = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/{j}_Atlas_MSMAll.dtseries.nii'
+        xcp_file = (
+            f'/{working_dir}/S1200/{subid}/MNINonLinear/Results/{j}/{j}_Atlas_MSMAll.dtseries.nii'
+        )
         copyfile(orig, xcp_file)
 
         csfreg = np.loadtxt(datadir + '/' + j + '_CSF.txt')
@@ -333,29 +338,28 @@ if function == 'run':
                            '_acq-' + acqname +
                            '_desc-confounds_timeseries.json')
 
-        hcp_mask = '/{0}/{1}//MNINonLinear/Results/{2}/{2}_SBRef.nii.gz'.format(
-            hcp_dir, subid, j)
+        hcp_mask = f'/{hcp_dir}/{subid}//MNINonLinear/Results/{j}/{j}_SBRef.nii.gz'
         prep_mask = funcdir + '/sub-' + subid + '_task-' + taskname + \
             '_acq-' + acqname + '_space-MNI152NLin6Asym_boldref.nii.gz'
         copyfile(hcp_mask, prep_mask)
 
-        hcp_mask = '/{0}/{1}//MNINonLinear/Results/{2}/brainmask_fs.2.nii.gz'.format(
-            hcp_dir, subid, j)
+        hcp_mask = f'/{hcp_dir}/{subid}//MNINonLinear/Results/{j}/brainmask_fs.2.nii.gz'
         prep_mask = funcdir + '/sub-' + subid + '_task-' + taskname + \
             '_acq-' + acqname + '_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
         copyfile(hcp_mask, prep_mask)
 
         # create/copy  cifti
-        niftip = '{0}/{1}/MNINonLinear/Results/{2}/{2}.nii.gz'.format(
-            hcp_dir, subid, j, j)  # to get TR  and just sample
+        niftip = (
+            f'{hcp_dir}/{subid}/MNINonLinear/Results/{j}/{j}.nii.gz'  # to get TR  and just sample
+        )
         niftib = funcdir + '/sub-' + subid + '_task-' + taskname + '_acq-' + \
             acqname + '_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
         ciftip = datadir + '/' + j + '_Atlas_MSMAll.dtseries.nii'
         ciftib = funcdir + '/sub-' + subid + '_task-' + taskname + \
             '_acq-' + acqname + '_space-fsLR_den-91k_bold.dtseries.nii'
 
-        os.system('cp {0} {1}'.format(ciftip, ciftib))
-        os.system('cp {0} {1}'.format(niftip, niftib))
+        os.system(f'cp {ciftip} {ciftib}')
+        os.system(f'cp {niftip} {niftib}')
 
         TR = nb.load(niftip).header.get_zooms()[-1]  # repetition time
 
@@ -381,30 +385,32 @@ if function == 'run':
             json.dump(json2, outfile)
 
         # just fake anatomical profile for xcp, it wont be use
-        orig = '/{0}/{1}/MNINonLinear/Results/{2}/SBRef_dc.nii.gz'.format(
-            hcp_dir, subid, j)
-        xcp_file = '/{0}//S1200/{1}/MNINonLinear/Results/{2}/SBRef_dc.nii.gz'.format(
-            working_dir, subid, j)
+        orig = f'/{hcp_dir}/{subid}/MNINonLinear/Results/{j}/SBRef_dc.nii.gz'
+        xcp_file = f'/{working_dir}//S1200/{subid}/MNINonLinear/Results/{j}/SBRef_dc.nii.gz'
         copyfile(orig, xcp_file)
+        # NOTE: TS- Double fslash?
         anat1 = datadir + '/' + '/SBRef_dc.nii.gz'
         mni2t1 = anatdir + 'sub-' + subid + '_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5'
         t1w2mni = anatdir + 'sub-' + subid + '_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5'
-        cmd = 'cp {0} {1}'.format(anat1, mni2t1)
+        cmd = f'cp {anat1} {mni2t1}'
         os.system(cmd)
-        cmd = 'cp {0} {1}'.format(anat1, t1w2mni)
+        cmd = f'cp {anat1} {t1w2mni}'
         os.system(cmd)
 
     os.chdir(working_dir)
     # singularity build xcp-abcd-latest.sif docker://pennlinc/xcp_d:latest
     os.system('export SINGULARITYENV_OMP_NUM_THREADS=4')
-    cmd = 'singularity run --cleanenv -B ${PWD} ~/xcp_hcp/xcp-abcd-latest.sif'\
-          '/%s/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ participant'\
-          '--cifti --despike --lower-bpf 0.01 --upper-bpf 0.08 --participant_label'\
-          'sub-%s -p 36P -f 100 --omp-nthreads 4 --nthreads 4' % (working_dir, subid)
+    # NOTE: TS- No spaces separating words/params across lines?
+    cmd = (
+        'singularity run --cleanenv -B ${PWD} ~/xcp_hcp/xcp-abcd-latest.sif'
+        f'/{working_dir}/fmriprepdir/ /cbica/home/bertolem/xcp_hcp/xcp_results/ participant'
+        '--cifti --despike --lower-bpf 0.01 --upper-bpf 0.08 --participant_label'
+        f'sub-{subid} -p 36P -f 100 --omp-nthreads 4 --nthreads 4'
+    )
     os.system(cmd)
     remove(subid)
-    os.system('rm -f -r /{0}/S1200/{1}'.format(working_dir, subid))
-    os.system('rm -f -r /{0}/fmriprepdir/sub-{1}'.format(working_dir, subid))
+    os.system(f'rm -f -r /{working_dir}/S1200/{subid}')
+    os.system(f'rm -f -r /{working_dir}/fmriprepdir/sub-{subid}')
 
 if function == 'audit':
     audit()
