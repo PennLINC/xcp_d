@@ -107,7 +107,7 @@ def generate_reports(subject_list,
                             work_dir=work_dir)
             print('Concatenation complete!')
 
-        from xcp_d.utils.layout_builder import LayoutBuilder
+        from xcp_d.interfaces.layout_builder import LayoutBuilder
         for subject_label in subject_list:
             brainplotfile = str(
                 glob.glob(
