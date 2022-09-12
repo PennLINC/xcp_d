@@ -124,12 +124,10 @@ class CompositeInvTransformUtil(ANTSCommand):
         outputs = self.output_spec().get()
         if self.inputs.process == "disassemble":
             outputs["affine_transform"] = os.path.abspath(
-                "01_{}_AffineTransform.mat".format(self.inputs.output_prefix)
+                f"01_{self.inputs.output_prefix}_AffineTransform.mat"
             )
             outputs["displacement_field"] = os.path.abspath(
-                "00_{}_DisplacementFieldTransform.nii.gz".format(
-                    self.inputs.output_prefix
-                )
+                f"00_{self.inputs.output_prefix}_DisplacementFieldTransform.nii.gz"
             )
         if self.inputs.process == "assemble":
             outputs["out_file"] = os.path.abspath(self.inputs.out_file)

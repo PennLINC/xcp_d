@@ -16,8 +16,8 @@ tmpdir = subprocess.run(['echo $SBIA_TMPDIR'],
                         stdout=subprocess.PIPE,
                         shell=True).stdout.decode('utf-8').split('\n')[0]
 
-outdir = '/{0}/xcp_hcp/fmriprepdir/'.format(tmpdir)
-working_dir = '/{0}/xcp_hcp/'.format(tmpdir)
+outdir = f'/{tmpdir}/xcp_hcp/fmriprepdir/'
+working_dir = f'/{tmpdir}/xcp_hcp/'
 hcp_dir = '/cbica/projects/HCP_Data_Releases/HCP_1200/'
 
 os.makedirs(outdir, exist_ok=True)
@@ -77,33 +77,39 @@ def audit():
             ]:
                 if len(
                         glob.glob(
-                            '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/*Atlas_MSMAll.dtseries.nii'
-                            .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                            f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                            f'*{fdir}*/*Atlas_MSMAll.dtseries.nii'
+                        )) != 1:
                     continue
                 if len(
                         glob.glob(
-                            '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/*{2}_{3}.nii.gz'
-                            .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                            f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                            f'*{fdir}*/*{orig_task}_{fdir}.nii.gz'
+                        )) != 1:
                     continue
                 if len(
                         glob.glob(
-                            '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/Movement_Regressors.txt'
-                            .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                            f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                            f'*{fdir}*/Movement_Regressors.txt'
+                        )) != 1:
                     continue
                 if len(
                         glob.glob(
-                            '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/Movement_AbsoluteRMS.txt'
-                            .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                            f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                            f'*{fdir}*/Movement_AbsoluteRMS.txt'
+                        )) != 1:
                     continue
                 if len(
                         glob.glob(
-                            '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/SBRef_dc.nii.gz'
-                            .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                            f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                            f'*{fdir}*/SBRef_dc.nii.gz'
+                        )) != 1:
                     continue
                 if len(
                         glob.glob(
-                            '/{0}/{1}/MNINonLinear/Results/*{2}*{3}*/**SBRef.nii.gz'
-                            .format(hcp_dir, subid, orig_task, fdir))) != 1:
+                            f'/{hcp_dir}/{subid}/MNINonLinear/Results/*{orig_task}'
+                            f'*{fdir}*/**SBRef.nii.gz'
+                        )) != 1:
                     continue
                 data.append('_'.join([orig_task, fdir]))
 
@@ -427,33 +433,35 @@ if function == 'zipit':
     for parcel in parcels:
         for matrix in df.iterrows():
             matrix = dict(matrix[1])
-            fname = '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{0}/func'
-            '/sub-{0}_task-{1}_acq-{3}_space-fsLR_atlas-{2}_den-91k_den-91k_bold.pconn.nii'.format(
-                matrix['sub'], matrix['task'], parcel, matrix['acq'])
+            fname = (
+                f"/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{matrix['sub']}/func/"
+                f"sub-{matrix['sub']}_task-{matrix['task']}_acq-{matrix['acq']}_space-fsLR_"
+                f"atlas-{parcel}_den-91k_den-91k_bold.pconn.nii"
+            )
             m = nb.load(fname).get_fdata()
             fname.replace('.pconn.nii', '').split('/')[-1]
-            data.create_dataset('bold/{0}/matrix/{1}'.format(
-                matrix['sub'], fname),
+            data.create_dataset(
+                f"bold/{matrix['sub']}/matrix/{fname}",
                 m.shape,
                 dtype=float,
                 data=m)
             for key in matrix.keys():
-                data['bold/{0}/matrix/{1}'.format(
-                    matrix['sub'], fname)].attrs[key] = matrix[key]
+                data[f"bold/{matrix['sub']}/matrix/{fname}"].attrs[key] = matrix[key]
 
-            fname = '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{0}/func/'
-            'sub-{0}_task-{1}_acq-{3}_space-fsLR_atlas-{2}_den-91k_den-91k_bold.ptseries'
-            '.nii'.format(matrix['sub'], matrix['task'], parcel, matrix['acq'])
+            fname = (
+                f"/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{matrix['sub']}/func/"
+                f"sub-{matrix['sub']}_task-{matrix['task']}_acq-{matrix['acq']}_"
+                f"space-fsLR_atlas-{parcel}_den-91k_den-91k_bold.ptseries.nii"
+            )
             m = nb.load(fname).get_fdata()
             fname.replace('.ptseries.nii', '').split('/')[-1]
-            data.create_dataset('bold/{0}/timeseries/{1}'.format(
-                matrix['sub'], fname),
+            data.create_dataset(
+                f"bold/{matrix['sub']}/timeseries/{fname}",
                 m.shape,
                 dtype=float,
                 data=m)
             for key in matrix.keys():
-                data['bold/{0}/timeseries/{1}'.format(
-                    matrix['sub'], fname)].attrs[key] = matrix[key]
+                data[f"bold/{matrix['sub']}/timeseries/{fname}"].attrs[key] = matrix[key]
 """
 This is not really required but here is how I made the HCP ICA-FIX plus GSR to sanity check
 mean corr is 0.92
@@ -484,16 +492,16 @@ def make_hcp():
         if subject == 'ToSync':
             continue
         files = glob.glob(
-            '/cbica/projects/HCP_Data_Releases/HCP_1200/{0}/MNINonLinear/Results/'
+            f'/cbica/projects/HCP_Data_Releases/HCP_1200/{subject}/MNINonLinear/Results/'
             '*rfMRI_REST*/rfMRI_**_Atlas_MSMAll_hp2000_clean.dtseries.nii'
-            .format(subject))
+        )
         m = []
         for f in files:
             run = f.split('/')[8]
             surf = nb.load(f)
             data = surf.get_fdata()
-            command = 'wb_command -cifti-stats {0} -reduce MEAN >> /cbica/home/bertolem/'\
-                      'xcp_hcp/WBS.txt'.format(f)
+            command = f'wb_command -cifti-stats {f} -reduce MEAN >> /cbica/home/bertolem/'\
+                      'xcp_hcp/WBS.txt'
             os.system(command)
             wbs = np.loadtxt('/cbica/home/bertolem/xcp_hcp/WBS.txt')
             os.system('rm /cbica/home/bertolem/xcp_hcp/WBS.txt')
@@ -501,23 +509,22 @@ def make_hcp():
             new_img = nb.Cifti2Image(d,
                                      header=surf.header,
                                      nifti_header=surf.nifti_header)
-            cifti_out = "/cbica/home/bertolem/xcp_hcp/{0}_{1}.dtseries.nii".format(
-                subject, run)
+            cifti_out = f"/cbica/home/bertolem/xcp_hcp/{subject}_{run}.dtseries.nii"
             new_img.to_filename(cifti_out)
             p = '/cbica/home/bertolem/yeo_parcels/Schaefer2018_400Parcels_17Networks_order.'\
                 'dlabel.nii'
-            out = '/cbica/home/bertolem/xcp_hcp/{0}_{1}_{2}.ptseries.nii'.format(
-                subject, run,
-                p.split('/')[-1].split('.')[0])
-            cmd = 'wb_command -cifti-parcellate {0} {1} COLUMN {2}'.format(
-                cifti_out, p, out)
+            out = (
+                f"/cbica/home/bertolem/xcp_hcp/{subject}_{run}_"
+                f"{p.split('/')[-1].split('.')[0]}.ptseries.nii"
+            )
+            cmd = f'wb_command -cifti-parcellate {cifti_out} {p} COLUMN {out}'
             os.system(cmd)
-            os.system('rm -f {0}'.format(cifti_out))
+            os.system(f'rm -f {cifti_out}')
             ts = nb.load(out).get_fdata()
-            os.system('rm -f {0}'.format(out))
+            os.system(f'rm -f {out}')
             m.append(np.arctanh(np.corrcoef(ts.T)))
         np.save(
-            '/cbica/home/bertolem/xcp_hcp/rest_fixgsr/{0}.npy'.format(subject),
+            f'/cbica/home/bertolem/xcp_hcp/rest_fixgsr/{subject}.npy',
             np.nanmean(m, axis=0))
 
 
@@ -530,8 +537,8 @@ def compare():
         hcp_m = np.load(m)
         xcp = []
         files = glob.glob(
-            '/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{0}/func/*REST*pconn*'
-            .format(s))
+            f'/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{s}/func/*REST*pconn*'
+        )
         if len(files) == 0:
             continue
         for f in files:
