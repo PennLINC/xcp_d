@@ -45,6 +45,11 @@ class SummaryOutputSpec(TraitedSpec):
 
 
 class SummaryInterface(SimpleInterface):
+    """A summary interface.
+
+    This is used as a base class for other summary interfaces.
+    """
+
     output_spec = SummaryOutputSpec
 
     def _run_interface(self, runtime):
@@ -74,6 +79,8 @@ class SubjectSummaryOutputSpec(SummaryOutputSpec):
 
 
 class SubjectSummary(SummaryInterface):
+    """A subject-level summary interface."""
+
     input_spec = SubjectSummaryInputSpec
     output_spec = SubjectSummaryOutputSpec
 
@@ -100,6 +107,8 @@ class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
 
 
 class FunctionalSummary(SummaryInterface):
+    """A functional MRI summary interface."""
+
     input_spec = FunctionalSummaryInputSpec
     #   Get information from the QC file and return it
 
@@ -133,6 +142,8 @@ class AboutSummaryInputSpec(BaseInterfaceInputSpec):
 
 
 class AboutSummary(SummaryInterface):
+    """A summary of the xcp_d software used."""
+
     input_spec = AboutSummaryInputSpec
 
     def _generate_segment(self):
@@ -143,8 +154,17 @@ class AboutSummary(SummaryInterface):
 
 
 def get_space(bold_file):
-    """
-     Extract space from bold/cifti via string manipulation
+    """Extract space from bold/cifti via string manipulation.
+
+    Parameters
+    ----------
+    bold_file : str
+        Path to the BOLD file.
+
+    Returns
+    -------
+    space : str
+        The BOLD file's space.
     """
     bold_file = os.path.basename(bold_file)
     if bold_file.endswith('.dtseries.nii'):

@@ -36,6 +36,14 @@ class _ConvertTransformFileOutputSpec(TraitedSpec):
 
 
 class ConvertTransformFile(CommandLine):
+    """Wrapper for the ANTS ConvertTransformFile command.
+
+    Utility to read in a transform file (presumed to be in binary format) and output it in various
+    formats.
+    Default output is legacy human-readable text format.
+    Without any options, the output filename extension must be .txt or .tfm to signify a
+    text-formatted transform file.
+    """
     _cmd = "ConvertTransformFile"
     input_spec = _ConvertTransformFileInputSpec
     output_spec = _ConvertTransformFileOutputSpec
@@ -79,9 +87,11 @@ class CompositeInvTransformUtilOutputSpec(TraitedSpec):
 
 
 class CompositeInvTransformUtil(ANTSCommand):
-    """
+    """Wrapper for the ANTS CompositeTransformUtil command.
+
     ANTs utility which can combine or break apart transform files into their individual
     constituent components.
+
     Examples
     --------
     >>> from nipype.interfaces.ants import CompositeInvTransformUtil
@@ -98,7 +108,7 @@ class CompositeInvTransformUtil(ANTSCommand):
     >>> tran.inputs.out_file = 'my.h5'
     >>> tran.inputs.in_file = ['AffineTransform.mat', 'DisplacementFieldTransform.nii.gz']
     >>> tran.cmdline
-    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat DisplacementFieldTransform.nii.gz '
+    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat DisplacementFieldTransform.nii.gz'
     >>> tran.run()  # doctest: +SKIP
     """
 

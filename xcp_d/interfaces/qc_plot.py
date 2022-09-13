@@ -69,8 +69,10 @@ class _qcOutputSpec(TraitedSpec):
 
 
 class computeqcplot(SimpleInterface):
-    r"""
-    qc and qc plot
+    """Generate a quality control (QC) figure.
+
+    Examples
+    --------
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
@@ -86,7 +88,6 @@ class computeqcplot(SimpleInterface):
     >>> computeqcwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-
     """
 
     input_spec = _qcInputSpec

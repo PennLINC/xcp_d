@@ -40,11 +40,10 @@ class C3dAffineToolOutputSpec(TraitedSpec):
 
 
 class C3dAffineTool(SEMLikeCommandLine):
-    """Converts fsl-style Affine registration into ANTS compatible itk format
+    """Convert FSL-style affine registration into ANTS-compatible itk format.
 
-    Example
-    =======
-
+    Examples
+    --------
     >>> from nipype.interfaces.c3 import C3dAffineTool
     >>> c3 = C3dAffineTool()
     >>> c3.inputs.source_file = 'cmatrix.mat'
@@ -165,7 +164,8 @@ class C3dOutputSpec(TraitedSpec):
 
 
 class C3d(CommandLine):
-    """
+    """A wrapper for the c3d command.
+
     Convert3d is a command-line tool for converting 3D (or 4D) images between
     common file formats. The tool also includes a growing list of commands for
     image manipulation, such as thresholding and resampling. The tool can also
@@ -173,10 +173,8 @@ class C3d(CommandLine):
     Convert3d can be found at:
     https://sourceforge.net/p/c3d/git/ci/master/tree/doc/c3d.md
 
-
-    Example
-    =======
-
+    Examples
+    --------
     >>> from nipype.interfaces.c3 import C3d
     >>> c3 = C3d()
     >>> c3.inputs.in_file = "T1.nii"

@@ -35,8 +35,10 @@ class _surfaceRehoOutputSpec(TraitedSpec):
 
 
 class surfaceReho(SimpleInterface):
-    r"""
-    surface reho computation
+    """Calculate regional homogeneity (ReHo) on a surface file.
+
+    Examples
+    --------
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
@@ -48,8 +50,8 @@ class surfaceReho(SimpleInterface):
     >>> surfaceRehowf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-
     """
+
     input_spec = _surfaceRehoInputSpec
     output_spec = _surfaceRehoOutputSpec
 
@@ -98,8 +100,10 @@ class _alffOutputSpec(TraitedSpec):
 
 
 class computealff(SimpleInterface):
-    r"""
-    ALFF computation
+    """Compute ALFF.
+
+    Examples
+    --------
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
@@ -114,8 +118,8 @@ class computealff(SimpleInterface):
     >>> computealffwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-
     """
+
     input_spec = _alffInputSpec
     output_spec = _alffOutputSpec
 
@@ -209,15 +213,15 @@ class brainplot(SimpleInterface):
 
 def zscore_nifti(img, outputname, mask=None):
     """
-    Turn image into z_score. 
+    Turn image into z_score.
     Image and mask must be in the same space.
 
     """
 
     img = nb.load(img)
 
-    if mask:  
-        # z-score the data 
+    if mask:
+        # z-score the data
         maskdata = nb.load(mask).get_fdata()
         imgdata = img.get_fdata()
         meandata = imgdata[maskdata > 0].mean()

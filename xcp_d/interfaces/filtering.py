@@ -47,8 +47,8 @@ class _filterdataOutputSpec(TraitedSpec):
 
 
 class FilteringData(SimpleInterface):
-    r"""filter the data.
-    the filtering was setup with scipy signal
+    """Filter the data with scipy.signal.
+
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
@@ -104,12 +104,26 @@ class FilteringData(SimpleInterface):
 
 
 def butter_bandpass(data, fs, lowpass, highpass, order=2):
-    '''
-    data : voxels/vertices by timepoints dimension
-    fs : sampling frequency,=1/TR(s)
-    lowpass frequency
-    highpass frequency
-    '''
+    """Apply a Butterworth bandpass filter to data.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Voxels/vertices by timepoints dimension.
+    fs : float
+        Sampling frequency. 1/TR(s).
+    lowpass : float
+        frequency
+    highpass : float
+        frequency
+    order : int
+        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+
+    Returns
+    -------
+    filtered_data : numpy.ndarray
+        The filtered data.
+    """
     nyq = 0.5 * fs  # nyquist frequency
 
     # normalize the cutoffs

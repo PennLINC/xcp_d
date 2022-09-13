@@ -46,10 +46,11 @@ class _regressOutputSpec(TraitedSpec):
                             mandatory=True,
                             desc="Confounds matrix returned for testing purposes only")
 
+
 class regress(SimpleInterface):
-    r"""
-    Takes in the confound tsv, turns it to a matrix and expands it. Custom
-    confounds are added in during this step if present.
+    """Takes in the confound tsv, turns it to a matrix and expands it.
+
+    Custom confounds are added in during this step if present.
 
     Then reads in the bold file, does demeaning and a linear detrend.
 
@@ -122,14 +123,20 @@ class regress(SimpleInterface):
 
 
 def linear_regression(data, confound):
-    '''
-     data :
-       numpy ndarray- vertices by timepoints for bold file
-     confound:
-       nuissance regressors - vertices by timepoints for confounds matrix
-     returns:
+    """Perform linear regression with sklearn's LinearRegression.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        vertices by timepoints for bold file
+    confound : numpy.ndarray
+       nuisance regressors - vertices by timepoints for confounds matrix
+
+    Returns
+    -------
+    numpy.ndarray
         residual matrix after regression
-    '''
+    """
     regression = LinearRegression(n_jobs=1)
     regression.fit(confound.T, data.T)
     y_predicted = regression.predict(confound.T)
@@ -138,14 +145,18 @@ def linear_regression(data, confound):
 
 
 def demean_detrend_data(data):
+    """Mean-center and remove linear trends over time from data.
 
-    '''
-    data:
-        numpy ndarray- vertices by timepoints for bold file
+    Parameters
+    ----------
+    data : numpy.ndarray
+        vertices by timepoints for bold file
 
-    Returns demeaned and detrended data
-    '''
-
+    Returns
+    -------
+    detrended : numpy.ndarray
+        demeaned and detrended data
+    """
     demeaned = signal.detrend(data, axis=- 1, type='constant', bp=0,
                               overwrite_data=False)  # Demean data using "constant" detrend,
     # which subtracts mean
@@ -165,10 +176,7 @@ class _ciftidespikeOutputSpec(TraitedSpec):
 
 
 class ciftidespike(SimpleInterface):
-    r"""
-
-
-    """
+    """Despike a CIFTI file."""
 
     input_spec = _ciftidespikeInputSpec
     output_spec = _ciftidespikeOutputSpec

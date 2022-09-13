@@ -16,23 +16,29 @@ from .helpers import (find_one_file, find_and_copy_files)
 
 
 class ModalContainer(object):
-    # Creates a modal container (with a close button), and
-    # creates a button to display the container.
-    #
-    # A ModalContainer object must be created with these steps:
-    #     1) Instantiate the object with an id and image class.
-    #     2) Add the images to be shown in the container.
-    #     3) Get the HTML for the container at the point in the
-    #        document at which you want to insert the HTML.
-    #
-    # The steps are necessary so that buttons can be created
-    # after all of the images have been added. Else, the images
-    # hide the button.
-    #
-    # The modal id must be unique to this container, so that
-    # buttons or clickable images or whatever, can display the
-    # correct container.
-    #
+    """A modal container (with a close button) and a button to display the container.
+
+    A ModalContainer object must be created with these steps:
+
+        1. Instantiate the object with an id and image class.
+        2. Add the images to be shown in the container.
+        3. Get the HTML for the container at the point in the document at which you want to insert
+           the HTML.
+
+    The steps are necessary so that buttons can be created
+    after all of the images have been added. Else, the images
+    hide the button.
+
+    The modal id must be unique to this container, so that
+    buttons or clickable images or whatever, can display the
+    correct container.
+
+    Parameters
+    ----------
+    modal_id
+    image_class
+    """
+
     def __init__(self, modal_id, image_class):
 
         self.modal_id = modal_id
@@ -109,18 +115,21 @@ class ModalContainer(object):
 
 
 class ModalSlider(ModalContainer):
+    """A modal container that contains a carousel/slider and a button to display the container.
 
-    # Creates a modal container that contains a carousel
-    # (aka slider), and a button to display the container.
-    #
-    # The slider will show each of the images in the list,
-    # with its filename in the upper left, previous and
-    # next buttons in the lower left and right respectively,
-    # and a close button in the upper right.
-    #
-    # The image class must be unique to this slider so that
-    # the scripts can find the images used by the slider.
-    #
+    The slider will show each of the images in the list,
+    with its filename in the upper left,
+    previous and next buttons in the lower left and right respectively,
+    and a close button in the upper right.
+
+    The image class must be unique to this slider so that the scripts can find the images used by
+    the slider.
+
+    Parameters
+    ----------
+    modal_id
+    image_class
+    """
     def __init__(self, modal_id, image_class):
         ModalContainer.__init__(self, modal_id, image_class)
 
@@ -145,6 +154,15 @@ class ModalSlider(ModalContainer):
 
 
 class Section(object):
+    """A Section object.
+
+    Parameters
+    ----------
+    img_path : str, optional
+    regs_slider : None or str, optional
+    img_modal : None or str, optional
+    kwargs : dict, optional
+    """
     def __init__(self,
                  img_path='./',
                  regs_slider=None,
@@ -164,6 +182,14 @@ class Section(object):
 
 
 class TxSection(Section):
+    """A TxSection object.
+
+    Parameters
+    ----------
+    tx : str, optional
+    img_path : str, optional
+    kwargs : dict, optional
+    """
     def __init__(self, tx='', img_path='', **kwargs):
         Section.__init__(self, **kwargs)
 
@@ -198,6 +224,14 @@ class TxSection(Section):
 
 
 class TasksSection(Section):
+    """A TasksSection object.
+
+    Parameters
+    ----------
+    tasks : list of str, optional
+    img_path : str, optional
+    kwargs : dict, optional
+    """
     def __init__(self, tasks=[], img_path='./figures', **kwargs):
         Section.__init__(self, **kwargs)
 
@@ -316,6 +350,15 @@ class TasksSection(Section):
 
 
 class layout_builder(object):
+    """A layout_builder object.
+
+    Parameters
+    ----------
+    html_path : str
+    subject_id : str
+    session_id : None or str, optional
+    """
+
     def __init__(self, html_path, subject_id, session_id=None):
 
         self.working_dir = os.getcwd()
@@ -342,21 +385,24 @@ class layout_builder(object):
         self.teardown()
 
     def setup(self):
-        # As we write the HTML, we use the relative paths to the image files that
-        # the HTML will reference. Therefore, best to be in the directory to which
-        # the HTML will be written.
+        """Prepare to write the HTML by changing the directory to the html_path.
+
+        As we write the HTML, we use the relative paths to the image files that
+        the HTML will reference. Therefore, best to be in the directory to which
+        the HTML will be written.
+        """
         os.chdir(self.html_path)
 
     def teardown(self):
-        # Go back to the path where we started.
+        """Go back to the path where we started."""
         os.chdir(self.working_dir)
 
     def get_list_of_tasks(self):
-        # Walks through the MNINonLinear/Results directory to find all the
-        # directories whose names contain 'task-'. This is the preferred
-        # method. If there is no MNINonLinear/Results directory, uses the
-        # files directory in the same way.
+        """Walk through the MNINonLinear/Results directory to find all paths containing 'task-'.
 
+        This is the preferred method.
+        If there is no MNINonLinear/Results directory, uses the files directory in the same way.
+        """
         taskset = set()
 
         # use_path = os.path.join(self.files_path)
@@ -372,12 +418,14 @@ class layout_builder(object):
         return sorted(taskset)
 
     def write_html(self, document, filename):
-        """
-        Writes an html document to a filename.
+        """Write an html document to a filename.
 
-        :parameter: document: html document.
-        :parameter: filename: name of html file.
-        :return: None
+        Parameters
+        ----------
+        document : str
+            html document.
+        filename : str
+            name of html file.
         """
         filepath = os.path.join(os.getcwd(), filename)
         try:
