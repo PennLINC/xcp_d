@@ -1,4 +1,4 @@
-"""workbench command for wb_command -convert-affine -from-itk"""
+"""Custom wb_command interfaces."""
 
 # from distutils.cmd import Command
 from signal import valid_signals
@@ -61,6 +61,8 @@ class ConvertWarpfieldOutputSpec(TraitedSpec):
 
 
 class ConvertWarpfield(WBCommand):
+    """Interface for wb_command's -convert-warpfield command."""
+
     input_spec = ConvertWarpfieldInputSpec
     output_spec = ConvertWarpfieldOutputSpec
     _cmd = "wb_command -convert-warpfield "
@@ -103,6 +105,8 @@ class ConvertAffineOutputSpec(TraitedSpec):
 
 
 class ConvertAffine(WBCommand):
+    """Interface for wb_command's -convert-affine command."""
+
     input_spec = ConvertAffineInputSpec
     output_spec = ConvertAffineOutputSpec
     _cmd = "wb_command -convert-affine "
@@ -140,20 +144,24 @@ class ApplyAffineOutputSpec(TraitedSpec):
 
 
 class ApplyAffine(WBCommand):
-    #    wb_command -surface-apply-affine
-    #       <in-surf> - the surface to transform
-    #       <affine> - the affine file
-    #       <out-surf> - output - the output transformed surface
+    """Interface for wb_command's -surface-apply-affine command.
 
-    #       [-flirt] - MUST be used if affine is a flirt affine
-    #          <source-volume> - the source volume used when generating the affine
-    #          <target-volume> - the target volume used when generating the affine
+    wb_command -surface-apply-affine
+       <in-surf> - the surface to transform
+       <affine> - the affine file
+       <out-surf> - output - the output transformed surface
 
-    #       For flirt matrices, you must use the -flirt option, because flirt
-    #       matrices are not a complete description of the coordinate transform they
-    #       represent.  If the -flirt option is not present, the affine must be a
-    #       nifti 'world' affine, which can be obtained with the -convert-affine
-    #       command, or aff_conv from the 4dfp suite.
+       [-flirt] - MUST be used if affine is a flirt affine
+          <source-volume> - the source volume used when generating the affine
+          <target-volume> - the target volume used when generating the affine
+
+    For flirt matrices, you must use the -flirt option, because flirt
+    matrices are not a complete description of the coordinate transform they
+    represent.  If the -flirt option is not present, the affine must be a
+    nifti 'world' affine, which can be obtained with the -convert-affine
+    command, or aff_conv from the 4dfp suite.
+    """
+
     input_spec = ApplyAffineInputSpec
     output_spec = ApplyAffineOutputSpec
     _cmd = "wb_command -surface-apply-affine "
@@ -197,23 +205,24 @@ class ApplyWarpfieldOutputSpec(TraitedSpec):
 
 
 class ApplyWarpfield(WBCommand):
-    # APPLY WARPFIELD TO SURFACE FILE
-    # wb_command -surface-apply-warpfield
-    # <in-surf> - the surface to transform
-    # <warpfield> - the INVERSE warpfield
-    # <out-surf> - output - the output transformed surface
+    """Apply warpfield to surface file.
 
-    # [-fnirt] - MUST be used if using a fnirt warpfield
-    #     <forward-warp> - the forward warpfield
+    wb_command -surface-apply-warpfield
+        <in-surf> - the surface to transform
+        <warpfield> - the INVERSE warpfield
+        <out-surf> - output - the output transformed surface
 
-    # warping a surface requires the INVERSE of the warpfield used to
-    # warp the volume it lines up with.  The header of the forward warp is
-    # needed by the -fnirt option in order to correctly interpret the
-    # displacements in the fnirt warpfield.
+        [-fnirt] - MUST be used if using a fnirt warpfield
+            <forward-warp> - the forward warpfield
 
-    # If the -fnirt option is not present, the warpfield must be a nifti
-    # 'world' warpfield, which can be obtained with the -convert-warpfield
-    # command.
+    Warping a surface requires the INVERSE of the warpfield used to warp the volume it lines up
+    with.
+    The header of the forward warp is needed by the -fnirt option in order to correctly
+    interpret the displacements in the fnirt warpfield.
+
+    If the -fnirt option is not present, the warpfield must be a nifti 'world' warpfield,
+    which can be obtained with the -convert-warpfield command.
+    """
 
     input_spec = ApplyWarpfieldInputSpec
     output_spec = ApplyWarpfieldOutputSpec
@@ -261,12 +270,14 @@ class SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
 
 
 class SurfaceSphereProjectUnproject(WBCommand):
-    # COPY REGISTRATION DEFORMATIONS TO DIFFERENT SPHERE
-    # wb_command -surface-sphere-project-unproject
-    # <sphere-in> - a sphere with the desired output mesh
-    # <sphere-project-to> - a sphere that aligns with sphere-in
-    # <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
-    # <sphere-out> - output - the output sphere
+    """Copy registration deformations to different sphere.
+
+    wb_command -surface-sphere-project-unproject
+    <sphere-in> - a sphere with the desired output mesh
+    <sphere-project-to> - a sphere that aligns with sphere-in
+    <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
+    <sphere-out> - output - the output sphere
+    """
 
     input_spec = SurfaceSphereProjectUnprojectInputSpec
     output_spec = SurfaceSphereProjectUnprojectOutputSpec
@@ -282,6 +293,8 @@ class _ChangeXfmTypeOutputSpec(TraitedSpec):
 
 
 class ChangeXfmType(SimpleInterface):
+    """Change transform type."""
+
     input_spec = _ChangeXfmTypeInputSpec
     output_spec = _ChangeXfmTypeOutputSpec
 
@@ -336,27 +349,30 @@ class SurfaceAverageOutputSpec(TraitedSpec):
 
 
 class SurfaceAverage(WBCommand):
-    #     AVERAGE SURFACE FILES TOGETHER
-    #    wb_command -surface-average
-    #       <surface-out> - output - the output averaged surface
-    #       [-stddev] - compute 3D sample standard deviation
-    #          <stddev-metric-out> - output - the output metric for 3D sample
-    #             standard deviation
-    #       [-uncertainty] - compute caret5 'uncertainty'
-    #          <uncert-metric-out> - output - the output metric for uncertainty
-    #       [-surf] - repeatable - specify a surface to include in the average
-    #          <surface> - a surface file to average
-    #          [-weight] - specify a weighted average
-    #             <weight> - the weight to use (default 1)
-    #
-    #       The 3D sample standard deviation is computed as
-    #       'sqrt(sum(squaredlength(xyz - mean(xyz)))/(n - 1))'.
-    #
-    #       Uncertainty is a legacy measure used in caret5, and is computed as
-    #       'sum(length(xyz - mean(xyz)))/n'.
-    #
-    #       When weights are used, the 3D sample standard deviation treats them as
-    #       reliability weights.
+    """Average surface files together.
+
+    wb_command -surface-average
+    <surface-out> - output - the output averaged surface
+    [-stddev] - compute 3D sample standard deviation
+       <stddev-metric-out> - output - the output metric for 3D sample
+          standard deviation
+    [-uncertainty] - compute caret5 'uncertainty'
+       <uncert-metric-out> - output - the output metric for uncertainty
+    [-surf] - repeatable - specify a surface to include in the average
+       <surface> - a surface file to average
+       [-weight] - specify a weighted average
+          <weight> - the weight to use (default 1)
+
+    The 3D sample standard deviation is computed as
+    'sqrt(sum(squaredlength(xyz - mean(xyz)))/(n - 1))'.
+
+    Uncertainty is a legacy measure used in caret5, and is computed as
+    'sum(length(xyz - mean(xyz)))/n'.
+
+    When weights are used, the 3D sample standard deviation treats them as
+    reliability weights.
+    """
+
     input_spec = SurfaceAverageInputSpec
     output_spec = SurfaceAverageOutputSpec
     _cmd = "wb_command -surface-average "
@@ -403,20 +419,23 @@ class SurfaceGenerateInflatedOutputSpec(TraitedSpec):
 
 
 class SurfaceGenerateInflated(WBCommand):
-    # SURFACE GENERATE INFLATED
-    #    wb_command -surface-generate-inflated
-    #       <anatomical-surface-in> - the anatomical surface
-    #       <inflated-surface-out> - output - the output inflated surface
-    #       <very-inflated-surface-out> - output - the output very inflated surface
+    """Generate inflated surface.
 
-    #       [-iterations-scale] - optional iterations scaling
-    #          <iterations-scale-value> - iterations-scale value
+    wb_command -surface-generate-inflated
+       <anatomical-surface-in> - the anatomical surface
+       <inflated-surface-out> - output - the output inflated surface
+       <very-inflated-surface-out> - output - the output very inflated surface
 
-    #       Generate inflated and very inflated surfaces. The output surfaces are
-    #       'matched' (have same XYZ range) to the anatomical surface. In most cases,
-    #       an iterations-scale of 1.0 (default) is sufficient.  However, if the
-    #       surface contains a large number of vertices (150,000), try an
-    #       iterations-scale of 2.5.
+       [-iterations-scale] - optional iterations scaling
+          <iterations-scale-value> - iterations-scale value
+
+       Generate inflated and very inflated surfaces. The output surfaces are
+       'matched' (have same XYZ range) to the anatomical surface. In most cases,
+       an iterations-scale of 1.0 (default) is sufficient.  However, if the
+       surface contains a large number of vertices (150,000), try an
+       iterations-scale of 2.5.
+    """
+
     input_spec = SurfaceGenerateInflatedInputSpec
     output_spec = SurfaceGenerateInflatedOutputSpec
     _cmd = "wb_command -surface-generate-inflated "

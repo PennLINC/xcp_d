@@ -45,7 +45,7 @@ class surfaceReho(SimpleInterface):
     >>> os.chdir(tmpdir.name)
     .. doctest::
     >>> surfaceRehowf = surfaceReho()
-    >>> surfaceRehowf.inputs.surf_bold= rhhemi.func.gii
+    >>> surfaceRehowf.inputs.surf_bold = 'rhhemi.func.gii'
     >>> surfaceRehowf.inputs.surf_hemi = 'R'
     >>> surfaceRehowf.run()
     .. testcleanup::
@@ -165,10 +165,11 @@ class _brainplotOutputSpec(TraitedSpec):
 
 
 class brainplot(SimpleInterface):
-    r"""
-    Convert to a z-score map
+    """Create a brainsprite figure from a NIFTI file.
 
+    The image will first be normalized (z-scored) before the figure is generated.
     """
+
     input_spec = _brainplotInputSpec
     output_spec = _brainplotOutputSpec
 
@@ -212,12 +213,25 @@ class brainplot(SimpleInterface):
 
 
 def zscore_nifti(img, outputname, mask=None):
-    """
-    Turn image into z_score.
+    """Normalize (z-score) a NIFTI image.
+
     Image and mask must be in the same space.
+    TODO: Use Nilearn for masking.
 
+    Parameters
+    ----------
+    img : str
+        Path to the NIFTI image to z-score.
+    outputname : str
+        Output filename.
+    mask : str or None, optional
+        Path to binary mask file. Default is None.
+
+    Returns
+    -------
+    outputname : str
+        Output filename. Same as the ``outputname`` parameter.
     """
-
     img = nb.load(img)
 
     if mask:
