@@ -19,6 +19,17 @@ from natsort import natsorted
 
 
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
+    """Concatenate BOLD files along time dimension.
+
+    This function does not return anything, but it writes out the concatenated file.
+
+    Parameters
+    ----------
+    subjlist
+    fmridir
+    outputdir
+    work_dir
+    """
     outdir = outputdir
     fmr = glob.glob(
         str(outdir) + '/*' + (subjlist[0]) + '/*func/*_desc-residual*bold*nii*')[0]
