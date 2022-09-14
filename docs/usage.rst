@@ -1,26 +1,30 @@
 .. include:: links.rst
 
-===============
+=============
 Running XCP-D
-===============
+=============
 
 Inputs
-===============
+======
 The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `DCAN` and `HCP` outputs in the form of BIDS derivatives. In these examples, we use an fmriprep output directory.
 
 The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image. Additionally, each of theseshould be in directories that can be parsed by the BIDS online validator (even if it is not BIDS valid - we do not require BIDS valid directories.) The directories must also include a valid `dataset_description.json`.
 
 Command Structure
-===============
-The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed. We start first with the the *bare-metal* :ref:`Manually Prepared Environment` (Python 3.8+) installation, as the command line is simpler. ``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
+=================
+The exact command to run in *xcp_d* depends on the Installation_ method and data that needs to be processed.
+We start first with the the *bare-metal* :ref:`Manually Prepared Environment` (Python 3.8+) installation, as the command line is simpler.
+``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following command-line structure, for example:
+
 ::
    $ xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`Installation:Container Technologies`. Here, the command-line will be composed of a preamble to configure the container execution followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal* installation.
 
 Docker
---------------------
+------
 If you are computing locally, we recommend Docker. See :ref:`Installation:Docker Installation` for installation questions.
+
 ::
    $ docker run --rm -it \
    -v /fmriprepdata:/in/ \
@@ -32,7 +36,7 @@ If you are computing locally, we recommend Docker. See :ref:`Installation:Docker
    --cifti --despike  --head_radius 40 -w wkdir --smoothing 6
 
 Singularity
---------------------
+-----------
 If you are computing on a :abbr:`HPC (High-Performance Computing)`, we recommend Singularity. See :ref:`Installation:Singularity Installation` for installation questions.
 ::
 
@@ -59,7 +63,7 @@ argument (``--home``) as follows: ::
 Therefore, once a user specifies the container options and the image to be run, the command line options are the same as the *bare-metal* installation.
 
 Command-Line Arguments
-===============
+======================
 .. argparse::
    :ref: xcp_d.cli.run.get_parser
    :prog: xcp_d
@@ -72,7 +76,7 @@ Command-Line Arguments
 
 
 Custom Confounds
-===================
+================
 
 XCP-D can implement custom confound regression (i.e., denoising). Here, you can supply your confounds, and optionally add these to a confound strategy already supported in XCP-D. Here we document how to regress task block effects as well as the 36 parameter model confounds.
 
@@ -84,7 +88,7 @@ Regression of task effects from the BOLD timeseries is performed in 3 steps:
  3. Regress out the effects of task via a general linear model implemented with xcp_d
 
 Create a task event array
---------------------------
+-------------------------
 First, for each condition (i.e., each separate contrast) in your task, create an Nx2 array where N is equal to the number of measurements (volumes) in your task fMRI run. Values in the first array column should increase sequentially by the length of the TR, with the first index = 0. Values in the second array column should equal either 0 or 1; each volume during which the condition/contrast was being tested should = 1, all others should = 0.
 
 For example, for an fMRI task run with 210 measurements and a 3 second TR during which happy faces (events) were presented for 5.5 seconds at time = 36, 54, 90 seconds etc::
@@ -126,7 +130,7 @@ For example, for an fMRI task run with 210 measurements and a 3 second TR during
 
 
 Convolve task events with the HRF
-----------------------------------
+---------------------------------
 Next, the BOLD response to each event is modeled by convolving the task events with a canonical HRF. This can be done by first defining the HRF and then applying it to your task events array with numpy.convolve.
 
 .. code-block:: python
@@ -154,12 +158,11 @@ Next, the BOLD response to each event is modeled by convolving the task events w
     realt=tt[:-N] # realt = the output we need!
 
 | The code block above contains the following user-defined variables
+
 - *TR*: a variable equal to the repetition time
 - *taskevents*: the Nx2 array created in the prior step
 
-
 | The code block above produces the numpy array *realt*, **which must be saved to a file named ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv**. This tsv file will be used in the next step of ``xcp_d``.
-
 
 If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeated for each such that you generate one taskevents Nx2array per condition, and one corresponding realt numpy array. The realt outputs must all be combined into one space-delimited  ${subid}_${sesid}_task-${taskname}_desc-custom_timeseries.tsv file. A task with 5 conditions (e.g. happy, angry, sad, fearful, and neutral faces) will have 5 columns in the custom .tsv file. Multiple realt outputs can be combined by modifying the example code below.
 
@@ -177,7 +180,7 @@ If you have multiple conditions/contrasts per task, steps 1 and 2 must be repeat
     df = pd.DataFrame(taskarray)
     df.to_csv("{0}_{1}_task-{2}_desc-custom_timeseries.tsv".format(subid,sesid,taskid),index = False, header = False, sep=' ')
 
-The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may look like::
+The space-delimited ``*desc-custom_timeseries.tsv`` file for a 5 condition task may look like::
 
   0.0 0.0 0.0 0.0 0.0
   0.0 0.0 0.0 0.0 0.3957422940438729
@@ -217,7 +220,7 @@ The space-delimited *desc-custom_timeseries.tsv file for a 5 condition task may 
 
 
 Command Line XCP-D with Custom Confounds
-------------------------------------------
+----------------------------------------
 
 Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv file to xcp_d with ``-c`` option. -c should point to the directory where this file exists, rather than to the file itself; ``xcp_d`` will identify the correct file based on the subid, sesid, and taskid. You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call::
 
@@ -226,7 +229,7 @@ Last, supply the ${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv fil
   --lower-bpf 0.01 --upper-bpf 0.08 --participant_label $subid -p 36P -f 10 -t emotionid -c /mnt/taskarray_file_dir
 
 Custom Parcellations
-===============
+====================
 While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations. We suggest running XCP-D with the ``-cifti`` option (assuming you have cifti files), and then using the Human Connectome Project wb_command to generate the time series::
 
    wb_command -cifti-parcellate {SUB}_ses-{SESSION}_task-{TASK_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii your_parcels.dlabel \
@@ -253,5 +256,5 @@ The documentation of this project is found here: https://xcp-abcd.readthedocs.io
 All bugs, concerns and enhancement requests for this software can be submitted here:
 https://github.com/PennLINC/xcp_d/issues.
 
-If you have a question about using ``xcp_d``, please create a new topic on `NeuroStars <https://neurostars.org>`_ with the `"xcp_d" tag https://neurostars.org/tag/xcp_d>`_.
+If you have a question about using ``xcp_d``, please create a new topic on `NeuroStars <https://neurostars.org>`_ with the `"xcp_d" tag <https://neurostars.org/tag/xcp_d>`_.
 The ``xcp_d`` developers follow NeuroStars, and will be able to answer your question there.
