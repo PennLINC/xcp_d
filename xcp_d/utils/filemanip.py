@@ -87,7 +87,7 @@ def split_filename(fname):
 
     """
 
-    # TM 07152022 - edited to add cifti and workbench extensions 
+    # TM 07152022 - edited to add cifti and workbench extensions
     special_extensions = [
         ".nii.gz",
         ".tar.gz",
@@ -290,14 +290,17 @@ def _parse_mount_table(exit_code, output):
 
 
 def _generate_cifs_table():
-    """Construct a reverse-length-ordered list of mount points that
-    fall under a CIFS mount.
+    """Construct a reverse-length-ordered list of mount points that fall under a CIFS mount.
 
     This precomputation allows efficient checking for whether a given path
     would be on a CIFS filesystem.
 
-    On systems without a ``mount`` command, or with no CIFS mounts, returns an
-    empty list.
+    On systems without a ``mount`` command, or with no CIFS mounts, returns an empty list.
+
+    Returns
+    -------
+    list
+        A list of mount points under a CIFS mount.
     """
     exit_code, output = sp.getstatusoutput("mount")
     return _parse_mount_table(exit_code, output)
@@ -307,9 +310,7 @@ _cifs_table = _generate_cifs_table()
 
 
 def on_cifs(fname):
-    """
-    Checks whether a file path is on a CIFS filesystem mounted in a POSIX
-    host (i.e., has the ``mount`` command).
+    """Check whether a file path is on a CIFS filesystem mounted in a POSIX host.
 
     On Windows, Docker mounts host directories into containers through CIFS
     shares, which has support for Minshall+French symlinks, or text files that
@@ -320,6 +321,15 @@ def on_cifs(fname):
 
     This check is written to support disabling symlinks on CIFS shares.
 
+    Parameters
+    ----------
+    fname : str
+        The file to be checked.
+
+    Returns
+    -------
+    bool or str
+        Either returns "cifs" if the file is on a CIFS filesystem or False if not.
     """
     # Only the first match (most recent parent) counts
     for fspath, fstype in _cifs_table:
@@ -351,20 +361,19 @@ def copyfile(
         full path to original file
     newfile : str
         full path to new file
-    copy : Bool
+    copy : bool
         specifies whether to copy or symlink files
         (default=False) but only for POSIX systems
-    use_hardlink : Bool
+    use_hardlink : bool
         specifies whether to hard-link files, when able
         (Default=False), taking precedence over copy
-    copy_related_files : Bool
+    copy_related_files : bool
         specifies whether to also operate on related files, as defined in
         ``related_filetype_sets``
 
     Returns
     -------
     None
-
     """
     newhash = None
     orighash = None
@@ -485,9 +494,9 @@ def copyfile(
 
 
 def get_related_files(filename, include_this_file=True):
-    """Returns a list of related files, as defined in
-    ``related_filetype_sets``, for a filename. (e.g., Nifti-Pair, Analyze (SPM)
-    and AFNI files).
+    """Return a list of related files, as defined in ``related_filetype_sets``, for a filename.
+
+    For example, Nifti-Pair, Analyze (SPM), and AFNI files.
 
     Parameters
     ----------
@@ -495,6 +504,11 @@ def get_related_files(filename, include_this_file=True):
         File name to find related filetypes of.
     include_this_file : bool
         If true, output includes the input filename.
+
+    Returns
+    -------
+    related_files : list of str
+        List of file related to ``filename``.
     """
     related_files = []
     path, name, this_type = split_filename(filename)
@@ -513,9 +527,9 @@ def copyfiles(filelist, dest, copy=False, create_new=False):
 
     Parameters
     ----------
-    filelist : list
+    filelist : list of str
         List of files to copy.
-    dest : path/files
+    dest : str or list of str
         full path to destination. If it is a list of length greater
         than 1, then it assumes that these are the names of the new
         files.
@@ -525,8 +539,8 @@ def copyfiles(filelist, dest, copy=False, create_new=False):
 
     Returns
     -------
-    None
-
+    newfiles : list of str
+        List of new copied files.
     """
     outfiles = ensure_list(dest)
     newfiles = []
@@ -544,7 +558,7 @@ def copyfiles(filelist, dest, copy=False, create_new=False):
 
 
 def ensure_list(filename):
-    """Returns a list given either a string or a list"""
+    """Return a list given either a string or a list."""
     if isinstance(filename, (str, bytes)):
         return [filename]
     elif isinstance(filename, list):
@@ -941,7 +955,6 @@ def canonicalize_env(env):
 
 def relpath(path, start=None):
     """Return a relative version of a path"""
-
     try:
         return op.relpath(path, start)
     except AttributeError:
