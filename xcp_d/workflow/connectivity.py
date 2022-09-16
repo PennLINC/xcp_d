@@ -20,7 +20,8 @@ from xcp_d.interfaces.connectivity import (
     get_atlas_cifti,
     get_atlas_nifti,
 )
-from xcp_d.utils import CiftiCorrelation, CiftiParcellate, get_transformfile
+from xcp_d.utils import CiftiCorrelation, CiftiParcellate
+from xcp_d.utils.utils import get_transformfile
 
 
 def init_fcon_ts_wf(

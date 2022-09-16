@@ -17,7 +17,6 @@ from scipy import signal
 from sklearn.linear_model import LinearRegression
 
 from xcp_d.utils import (
-    confounds,
     despikedatacifti,
     load_confound_matrix,
     read_ndata,

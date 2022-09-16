@@ -28,14 +28,13 @@ from xcp_d.interfaces import (
     interpolate,
     regress,
 )
-from xcp_d.utils import (
-    DespikePatch,
-    bid_derivative,
+from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
     stringforparams,
 )
+from xcp_d.utils import DespikePatch, bid_derivative
 from xcp_d.workflow import init_3d_reho_wf, init_compute_alff_wf, init_fcon_ts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf

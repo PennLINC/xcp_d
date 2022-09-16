@@ -12,7 +12,8 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces import PlotImage, PlotSVGData
 from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.utils import bid_derivative, get_transformfile
+from xcp_d.utils import bid_derivative
+from xcp_d.utils.utils import get_transformfile
 
 
 class DerivativesDataSink(bid_derivative):

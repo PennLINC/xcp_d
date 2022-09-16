@@ -14,7 +14,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces import brainplot, computealff, surfaceReho
-from xcp_d.utils import CiftiSeparateMetric, fwhm2sigma
+from xcp_d.utils import CiftiSeparateMetric
+from xcp_d.utils.utils import fwhm2sigma
 
 
 def init_compute_alff_wf(mem_gb,

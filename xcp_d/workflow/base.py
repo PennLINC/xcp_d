@@ -25,10 +25,10 @@ from xcp_d.utils import (
     bid_derivative,
     collect_data,
     extract_t1w_seg,
-    get_customfile,
     select_cifti_bold,
     select_registrationfile,
 )
+from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
