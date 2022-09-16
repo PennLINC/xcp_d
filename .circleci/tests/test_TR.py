@@ -75,8 +75,8 @@ def test_RemoveTR_nifti(data_dir):
                 == original_nvols_nifti - n
         except Exception as exc:
             exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
-            print("Tests failing at N = {}.".format(n))
-            raise Exception("Number of volumes in dropped nifti is {}.".format(exc))
+            print(f"Tests failing at N = {n}.")
+            raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
 def test_RemoveTR_cifti(data_dir):
@@ -129,8 +129,8 @@ def test_RemoveTR_cifti(data_dir):
                 == original_nvols_cifti - n
         except Exception as exc:
             exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
-            print("Tests failing at N = {}.".format(n))
-            raise Exception("Number of volumes in dropped cifti is {}.".format(exc))
+            print(f"Tests failing at N = {n}.")
+            raise Exception(f"Number of volumes in dropped cifti is {exc}.")
 
 # Testing with CUSTOM CONFOUNDS
 
@@ -164,7 +164,7 @@ def test_RemoveTR_cifti(data_dir):
 #         print(len(dropped_confounds_timeseries))
 #     except Exception as exc:
 #         exc = len(dropped_confounds_timeseries), dropped_image.get_fdata().shape[0]
-#         raise Exception("Sorry, the shapes are: {}.".format(exc))
+#         raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
 # def test_fd_interface_nifti_custom(data_dir):  # Checking results
@@ -191,4 +191,4 @@ def test_RemoveTR_cifti(data_dir):
 #         print(len(dropped_confounds_timeseries))
 #     except Exception as exc:
 #         exc = len(dropped_confounds_timeseries), dropped_image.get_fdata().shape[3]
-#         raise Exception("Sorry, the shapes are: {}.".format(exc))
+#         raise Exception(f"Sorry, the shapes are: {exc}.")

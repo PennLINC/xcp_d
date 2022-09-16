@@ -86,7 +86,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'xcp_d'
 author = 'xcp_d team'
-copyright = '2021-%s, %s' % (datetime.now().year, author)
+copyright = f'2021-{datetime.now().year}, {author}'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -356,7 +356,10 @@ texinfo_documents = [
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(
     'xcp_d',
-    'https://github.com/pennlinc/xcp_d/blob/{revision}/{package}/{path}#L{lineno}',
+    (
+        u'https://github.com/pennlinc/xcp_d/blob/'
+        '{revision}/{package}/{path}#L{lineno}'  # noqa: FS003
+    ),
 )
 
 # -----------------------------------------------------------------------------

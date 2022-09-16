@@ -80,15 +80,15 @@ def init_fcon_ts_wf(
     """
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """
+    workflow.__desc__ = f"""
 Processed functional timeseries were extracted  from  the residual BOLD signal
-with  *Nilearn* {nilearnver}'s *NiftiLabelsMasker* for the following atlases
+with  *Nilearn* {nl.__version__}'s *NiftiLabelsMasker* for the following atlases
 [@nilearn]: the Schaefer 200 and 400-parcel resolution atlas
 [@Schaefer_2017],the Glasser atlas [@Glasser_2016], and the Gordon atlas
 [@Gordon_2014] atlases.  Corresponding pair-wise functional connectivity between
 all regions was computed for each atlas, which was operationalized as the
 Pearson's correlation of each parcel's (unsmoothed) timeseries.
- """.format(nilearnver=nl.__version__)
+ """
 
     inputnode = pe.Node(niu.IdentityInterface(fields=[
         'bold_file',

@@ -1,0 +1,23 @@
+# Configuration for new-pr-welcome - https://github.com/behaviorbot/new-pr-welcome
+
+# Comment to be posted to on PRs from first time contributors in your repository
+newPRWelcomeComment: >
+  Thanks for opening this pull request!
+  We have detected this is the first time you have contributed
+  to *xcp_d*.
+  We ask you to read through the Contributing Guide:
+  https://github.com/pennlinc/xcp_d/blob/main/CONTRIBUTING.md
+
+  These are guidelines intended to make communication easier by describing a consistent process, but
+  don't worry if you don't get it everything exactly "right" on the first try.
+
+  To boil it down, here are some highlights:
+
+  1.  Consider starting a conversation in the issues list before submitting a pull request.
+      The discussion might save you a lot of time coding.
+  2.  Please use descriptive prefixes in your pull request title, such as "ENH:" for an enhancement or "FIX:" for a bug fix.
+      (See the Contributing guide for the full set.) And consider adding a "WIP" tag for works-in-progress.
+  3.  Any code you submit will be licensed under the same terms (BSD 3-Clause) as the rest of xcp_d.
+
+  A pull request is a conversation. We may ask you to make some changes before accepting your PR,
+  and likewise, you should feel free to ask us any questions you have.
