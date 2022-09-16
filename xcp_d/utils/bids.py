@@ -1,6 +1,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Utilities for fmriprep bids derivatives and layout. most of the code copied from niworkflows, A PR will be submit to"""
+"""Utilities for fmriprep bids derivatives and layout.
+Most of the code copied from niworkflows,
+A PR will be submit to"""
 
 import fnmatch
 import os
@@ -26,7 +28,6 @@ from nipype.interfaces.base import (
     SimpleInterface,
     Str,
     TraitedSpec,
-    Undefined,
     isdefined,
     traits,
 )

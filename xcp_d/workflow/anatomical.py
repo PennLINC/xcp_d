@@ -680,14 +680,14 @@ def init_anatomical_wf(
                 SurfaceSphereProjectUnproject(
                     sphere_project_to=fs_std_mesh_L,
                     sphere_unproject_from=fs_L2fsLR,
-                    ),
+                ),
                 name='surface_sphere_project_unproject_lh'
             )
             surface_sphere_project_unproject_rh = pe.Node(
                 SurfaceSphereProjectUnproject(
                     sphere_project_to=fs_std_mesh_R,
                     sphere_unproject_from=fs_R2fsLR,
-                    ),
+                ),
                 name='surface_sphere_project_unproject_rh'
             )
 
@@ -1036,7 +1036,7 @@ def init_anatomical_wf(
                         surface_sphere_project_unproject_rh,
                         rh_32k_midthick_wf,
                         [("out_file", "current_sphere")],
-                    ),                    (
+                    ), (
                         surface_sphere_project_unproject_rh,
                         rh_32k_pial_wf,
                         [("out_file", "current_sphere")],

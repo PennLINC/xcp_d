@@ -111,7 +111,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                                                ('bold_mask', 'mask')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])])
 
-    if not cifti: # if Nifti, get the HTML
+    if not cifti:  # if Nifti, get the HTML
         workflow.connect([
             (alff_compt, brain_plot, [('alff_out', 'in_file')]),
             (inputnode, brain_plot, [('bold_mask', 'mask_file')]),
@@ -134,7 +134,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                 (smooth_data, outputnode, [('smoothed_file', 'smoothed_alff')])
             ])
 
-        else: # If cifti
+        else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
                 " The ALFF maps were smoothed with the Connectome Workbench using a gaussian "
                 f"kernel size of {str(smoothing)} mm (FWHM)."
@@ -163,6 +163,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             ])
 
     return workflow
+
 
 #  For cifti
 def init_surface_reho_wf(mem_gb,
@@ -246,6 +247,7 @@ vertices to yield ReHo.
     ])
 
     return workflow
+
 
 # For nifti
 def init_3d_reho_wf(

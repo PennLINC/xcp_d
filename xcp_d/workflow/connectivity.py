@@ -584,7 +584,7 @@ timeseries with the Connectome Workbench.
                        name='ts50corr',
                        n_procs=omp_nthreads)
 
-    workflow.connect([ # for parcellation
+    workflow.connect([  # for parcellation
         (inputnode, sc117parcel, [('clean_cifti', 'in_file')]),
         (inputnode, sc217parcel, [('clean_cifti', 'in_file')]),
         (inputnode, sc317parcel, [('clean_cifti', 'in_file')]),

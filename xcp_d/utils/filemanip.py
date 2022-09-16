@@ -755,7 +755,7 @@ def savepkl(filename, record, versioning=False):
             fmlogger.debug(str(e))
             sleep(2)
         else:
-            raise e
+            raise FileNotFoundError
 
 
 rst_levels = ["=", "-", "~", "+"]

@@ -23,7 +23,7 @@ from xcp_d.interfaces.surfplotting import (
 )
 
 __all__ = [
-    'regress','FilteringData', 'NiftiConnect',
+    'regress', 'FilteringData', 'NiftiConnect',
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'interpolate', 'CensorScrub', 'RemoveTR',
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',

@@ -120,8 +120,8 @@ def audit():
             f'/cbica/home/bertolem/xcp_hcp/xcp_results/xcp_d/sub-{subid}/func/*Schaefer417*pconn*'
         ):
             results.append(
-                r.split('/')[-1].split('-')[2].split('_')[0] + '_' +
-                r.split('/')[-1].split('-')[3].split('_')[0])
+                r.split('/')[-1].split('-')[2].split('_')[0] + '_'
+                + r.split('/')[-1].split('-')[3].split('_')[0])
         data.sort()
         results.sort()
         ran = False
@@ -331,13 +331,13 @@ if function == 'run':
 
         regressors = pd.concat([mvreg, brainreg], axis=1)
         jsonreg = pd.DataFrame({'LR': [1, 2, 3]})  # just a fake json
-        regressors.to_csv(funcdir + 'sub-' + subid + '_task-' + taskname +
-                          '_acq-' + acqname + '_desc-confounds_timeseries.tsv',
+        regressors.to_csv(funcdir + 'sub-' + subid + '_task-' + taskname
+                          + '_acq-' + acqname + '_desc-confounds_timeseries.tsv',
                           index=False,
                           sep='\t')
-        regressors.to_json(funcdir + 'sub-' + subid + '_task-' + taskname +
-                           '_acq-' + acqname +
-                           '_desc-confounds_timeseries.json')
+        regressors.to_json(funcdir + 'sub-' + subid + '_task-' + taskname
+                           + '_acq-' + acqname
+                           + '_desc-confounds_timeseries.json')
 
         hcp_mask = f'/{hcp_dir}/{subid}//MNINonLinear/Results/{j}/{j}_SBRef.nii.gz'
         prep_mask = funcdir + '/sub-' + subid + '_task-' + taskname + \
@@ -374,14 +374,14 @@ if function == 'run':
         }
 
         with open(
-                funcdir + '/sub-' + subid + '_task-' + taskname + '_acq-' +
-                acqname + '_space-MNI152NLin6Asym_desc-preproc_bold.json',
+                funcdir + '/sub-' + subid + '_task-' + taskname + '_acq-'
+                + acqname + '_space-MNI152NLin6Asym_desc-preproc_bold.json',
                 'w') as outfile:
             json.dump(jsontis, outfile)
 
         with open(
-                funcdir + '/sub-' + subid + '_task-' + taskname + '_acq-' +
-                acqname + '_space-fsLR_den-91k_bold.dtseries.json',
+                funcdir + '/sub-' + subid + '_task-' + taskname + '_acq-'
+                + acqname + '_space-fsLR_den-91k_bold.dtseries.json',
                 'w') as outfile:
             json.dump(json2, outfile)
 

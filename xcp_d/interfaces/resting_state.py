@@ -55,10 +55,10 @@ class surfaceReho(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> surfaceRehowf = surfaceReho()
-    >>> surfaceRehowf.inputs.surf_bold= rhhemi.func.gii
-    >>> surfaceRehowf.inputs.surf_hemi = 'R'
-    >>> surfaceRehowf.run()
+    surfaceRehowf = surfaceReho()
+    surfaceRehowf.inputs.surf_bold= rhhemi.func.gii
+    surfaceRehowf.inputs.surf_hemi = 'R'
+    surfaceRehowf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
 
@@ -118,13 +118,13 @@ class computealff(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> computealffwf = computealff()
-    >>> computealffwf.inputs.in_file = datafile
-    >>> computealffwf.inputs.lowpass = 0.1
-    >>> computealffwf.inputs.highpass = 0.01
-    >>> computealffwf.inputs.TR = TR
-    >>> computealffwf.inputs.mask_file = mask
-    >>> computealffwf.run()
+    computealffwf = computealff()
+    computealffwf.inputs.in_file = datafile
+    computealffwf.inputs.lowpass = 0.1
+    computealffwf.inputs.highpass = 0.01
+    computealffwf.inputs.TR = TR
+    computealffwf.inputs.mask_file = mask
+    computealffwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
 
@@ -189,8 +189,8 @@ class brainplot(SimpleInterface):
 
         # create a nifti with z-scores
         z_score_nifti = zscore_nifti(img=self.inputs.in_file,
-                                 mask=self.inputs.mask_file,
-                                 outputname=z_score_nifti)
+                                     mask=self.inputs.mask_file,
+                                     outputname=z_score_nifti)
         #  get the right template
         temptlatehtml = pkgrf('xcp_d',
                               'data/transform/brainsprite_template.html')

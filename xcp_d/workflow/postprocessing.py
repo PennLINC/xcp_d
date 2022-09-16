@@ -16,7 +16,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import CensorScrub, FilteringData, RemoveTR, interpolate, regress
+from xcp_d.interfaces import FilteringData
 from xcp_d.utils.utils import stringforparams
 
 
@@ -168,22 +168,11 @@ frequency band {lower_bpf}-{upper_bpf} Hz.
 
     inputnode.inputs.bold_file = bold_file
     filtering_wf = pe.Node(FilteringData(TR=TR,
-                                     lowpass=upper_bpf,
-                                     highpass=lower_bpf,
-                                     filter_order=bpf_order),
-                       name="filter_the_data",
-                       mem_gb=0.25 * mem_gb)
-
-    regressy = pe.Node(regress(TR=TR),
-                       name="regress_the_data",
-                       mem_gb=0.25 * mem_gb)
-
-
-    # RF: rename to match
-    interpolatewf = pe.Node(interpolate(TR=TR),
-                            name="interpolation",
-                            mem_gb=0.25 * mem_gb)
-
+                                         lowpass=upper_bpf,
+                                         highpass=lower_bpf,
+                                         filter_order=bpf_order),
+                           name="filter_the_data",
+                           mem_gb=0.25 * mem_gb)
 
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
@@ -235,10 +224,10 @@ def fwhm2sigma(fwhm):
 
 
 def init_resd_smoothing(mem_gb,
-                         smoothing,
-                         omp_nthreads,
-                         cifti=False,
-                         name="smoothing"):
+                        smoothing,
+                        omp_nthreads,
+                        cifti=False,
+                        name="smoothing"):
 
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
@@ -246,7 +235,7 @@ def init_resd_smoothing(mem_gb,
     outputnode = pe.Node(niu.IdentityInterface(fields=['smoothed_bold']),
                          name='outputnode')
 
-    sigma_lx = fwhm2sigma(smoothing) # Turn specified FWHM (Full-Width at Half Maximum)
+    sigma_lx = fwhm2sigma(smoothing)  # Turn specified FWHM (Full-Width at Half Maximum)
     # to standard deviation.
     if cifti:  # For ciftis
         workflow.__desc__ = f""" \
@@ -259,7 +248,7 @@ size of {str(smoothing)} mm  (FWHM).
             sigma_surf=sigma_lx,  # the size of the surface kernel
             sigma_vol=sigma_lx,  # the volume of the surface kernel
             direction='COLUMN',  # which direction to smooth along@
-            right_surf=pkgrf( # pull out atlases for each hemisphere
+            right_surf=pkgrf(  # pull out atlases for each hemisphere
                 'xcp_d', 'data/ciftiatlas/'
                 'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
             ),
@@ -276,7 +265,7 @@ size of {str(smoothing)} mm  (FWHM).
                           (smooth_data, outputnode, [('out_file',
                                                       'smoothed_bold')])])
 
-    else:  #  for Nifti
+    else:  # for Nifti
         workflow.__desc__ = f""" \
 The processed BOLD was smoothed using  FSL with a gaussian kernel size of {str(smoothing)} mm
 (FWHM).
@@ -284,7 +273,7 @@ The processed BOLD was smoothed using  FSL with a gaussian kernel size of {str(s
         smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),  # FWHM = kernel size
                               name="nifti_smoothing",
                               mem_gb=mem_gb,
-                              n_procs=omp_nthreads)  #  Use fslmaths to smooth the image
+                              n_procs=omp_nthreads)  # Use fslmaths to smooth the image
 
         #  Connect to workflow
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),

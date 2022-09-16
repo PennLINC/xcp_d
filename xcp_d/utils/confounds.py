@@ -21,7 +21,7 @@ def get_confounds_tsv(datafile):
                                                 "_desc-confounds_timeseries.tsv")
     else:
         confounds_timeseries = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0]+"_desc-confounds_timeseries.tsv"
+            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.tsv"
 
     return confounds_timeseries
 

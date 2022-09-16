@@ -3,17 +3,12 @@ import os
 
 from nipype.interfaces.ants.base import ANTSCommand, ANTSCommandInputSpec
 from nipype.interfaces.base import (
-    BaseInterfaceInputSpec,
     CommandLine,
     CommandLineInputSpec,
     File,
-    InputMultiObject,
     InputMultiPath,
-    OutputMultiObject,
-    SimpleInterface,
     Str,
     TraitedSpec,
-    isdefined,
     traits,
 )
 
@@ -99,7 +94,8 @@ class CompositeInvTransformUtil(ANTSCommand):
     >>> tran.inputs.out_file = 'my.h5'
     >>> tran.inputs.in_file = ['AffineTransform.mat', 'DisplacementFieldTransform.nii.gz']
     >>> tran.cmdline
-    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat DisplacementFieldTransform.nii.gz '
+    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat
+     DisplacementFieldTransform.nii.gz '
     >>> tran.run()  # doctest: +SKIP
     """
 

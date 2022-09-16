@@ -2,8 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from os.path import exists
-
-import numpy as np
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
@@ -52,8 +50,9 @@ class _regressOutputSpec(TraitedSpec):
                     mandatory=True,
                     desc="Residual file after regression")
     confound_matrix = File(exists=True,
-                            mandatory=True,
-                            desc="Confounds matrix returned for testing purposes only")
+                           mandatory=True,
+                           desc="Confounds matrix returned for testing purposes only")
+
 
 class regress(SimpleInterface):
     r"""
@@ -147,7 +146,6 @@ def linear_regression(data, confound):
 
 
 def demean_detrend_data(data):
-
     '''
     data:
         numpy ndarray- vertices by timepoints for bold file

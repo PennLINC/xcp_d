@@ -28,7 +28,7 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
     masker = NiftiLabelsMasker(labels_img=atlas,
                                smoothing_fwhm=None,
                                standardize=False)
-    # Use nilearn for time_series                            
+    # Use nilearn for time_series
     time_series = masker.fit_transform(in_file)
     # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
@@ -64,7 +64,8 @@ def compute_2d_reho(datat, adjacency_matrix):
         for j in range(neidata.shape[0]):  # loop through each neighbour
             rankeddata[j, :] = rankdata(neidata[j, ])  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
-        # KC is the sum of the squared rankmean minus the timepoints into the mean of the rankmean squared
+        # KC is the sum of the squared rankmean minus the timepoints into
+        # the mean of the rankmean squared
         KC = np.sum(np.power(rankmean, 2)) - \
             timepoint * np.power(np.mean(rankmean), 2)
         # square number of neighbours, multiply by (cubed timepoint - timepoint)
@@ -119,7 +120,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
        repetition time in seconds
     """
     fs = 1 / TR  # sampling frequency
-    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of 
+    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of
     # number of voxels
     for ii in range(data_matrix.shape[0]):  # Loop through the voxels
         # get array of sample frequencies + power spectrum density

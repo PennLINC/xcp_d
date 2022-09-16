@@ -1,8 +1,5 @@
 """workbench command for wb_command -convert-affine -from-itk"""
 
-# from distutils.cmd import Command
-from signal import valid_signals
-
 from nipype import logging
 from nipype.interfaces.base import (
     CommandLineInputSpec,
@@ -12,7 +9,6 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.workbench.base import WBCommand
-from sqlalchemy import false
 
 from xcp_d.utils.filemanip import fname_presuffix
 

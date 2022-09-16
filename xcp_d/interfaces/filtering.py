@@ -55,18 +55,18 @@ class FilteringData(SimpleInterface):
     r"""filter the data.
     the filtering was setup with scipy signal
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+    from tempfile import TemporaryDirectory
+    tmpdir = TemporaryDirectory()
+    os.chdir(tmpdir.name)
     .. doctest::
-    >>> filt=FilteringData()
-    >>> filt.inputs.in_file = reg._results['res_file']
-    >>> filt.inputs.TR = 3
-    >>> filt.inputs.lowpass = 0.08
-    >>> filt.inputs.highpass = 0.01
-    >>> filt.run()
+    filt=FilteringData()
+    filt.inputs.in_file = reg._results['res_file']
+    filt.inputs.TR = 3
+    filt.inputs.lowpass = 0.08
+    filt.inputs.highpass = 0.01
+    filt.run()
     .. testcleanup::
-    >>> tmpdir.cleanup()
+    tmpdir.cleanup()
     """
 
     input_spec = _filterdataInputSpec
@@ -128,6 +128,6 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     # apply the filter, loop through columns of regressors
     for ii in range(filtered_data.shape[0]):
         filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
-                                        padlen=3*(max(len(b), len(a))-1))
+                                        padlen=3 * (max(len(b), len(a)) - 1))
 
     return filtered_data

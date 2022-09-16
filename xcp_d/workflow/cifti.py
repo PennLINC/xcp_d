@@ -27,7 +27,8 @@ from xcp_d.interfaces import (
     interpolate,
     regress,
 )
-from xcp_d.utils import bid_derivative, stringforparams
+from xcp_d.utils import bid_derivative
+from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -187,7 +188,7 @@ tasks and sessions), the following post-processing was performed:
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
         confounds_tsv = get_confounds_tsv(cifti_file)
-    except Exception as exc:
+    except Exception:
         raise Exception(f"Unable to find confounds file for {cifti_file}.")
 
     # TR = get_ciftiTR(cifti_file=cifti_file)
@@ -342,7 +343,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
-            mem_gb=0.1*mem_gbx['timeseries'])
+            mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),

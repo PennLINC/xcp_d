@@ -40,12 +40,9 @@ def check_deps(workflow):
 def get_parser():
     """Build parser object"""
 
-    from packaging.version import Version
-
     from xcp_d.__about__ import __version__
 
     verstr = f'xcp_d v{__version__}'
-    currentv = Version(__version__)
 
     parser = ArgumentParser(
         description='xcp_d postprocessing workflow of fMRI data',
@@ -485,7 +482,6 @@ def build_workflow(opts, retval):
         retval['return_code'] = 1
         return retval
     if str(opts.analysis_level) != 'participant':
-        print (opts.analysis_level)
         build_log.error(
             'Please select analysis level "participant"')
         retval['return_code'] = 1

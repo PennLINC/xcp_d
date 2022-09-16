@@ -81,14 +81,14 @@ class computeqcplot(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> computeqcwf = computeqcplot()
-    >>> computeqcwf.inputs.cleaned_file = datafile
-    >>> computeqcwf.inputs.bold_file = rawbold
-    >>> computeqcwf.inputs.TR = TR
-    >>> computeqcwf.inputs.tmask = temporalmask
-    >>> computeqcwf.inputs.mask_file = mask
-    >>> computeqcwf.inputs.dummytime = dummytime
-    >>> computeqcwf.run()
+    computeqcwf = computeqcplot()
+    computeqcwf.inputs.cleaned_file = datafile
+    computeqcwf.inputs.bold_file = rawbold
+    computeqcwf.inputs.TR = TR
+    computeqcwf.inputs.tmask = temporalmask
+    computeqcwf.inputs.mask_file = mask
+    computeqcwf.inputs.dummytime = dummytime
+   computeqcwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
 
@@ -152,8 +152,9 @@ class computeqcplot(SimpleInterface):
             suffix='_clean_qcplot.svg',
             newpath=runtime.cwd,
             use_ext=False)
-        raw_data_removed_TR = read_ndata(datafile=self.inputs.bold_file,
-                                         maskfile=self.inputs.mask_file)[:, initial_volumes_to_drop:]
+        raw_data_removed_TR = read_ndata(
+            datafile=self.inputs.bold_file,
+            maskfile=self.inputs.mask_file)[:, initial_volumes_to_drop:]
 
         # Get file names to write out & write data out
         if self.inputs.bold_file.endswith('nii.gz'):
