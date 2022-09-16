@@ -383,12 +383,11 @@ class LayoutBuilder(object):
         try:
             fd = open(filepath, 'w')
         except OSError as err:
-            print('Unable to open %s for write.\n' % filepath)
-            print('Error: {0}'.format(err))
+            print(f'Unable to open {filepath} for write.\n')
+            print(f'Error: {err}')
 
         fd.writelines(document)
-        print('\nExecutive summary can be found in path:\n\t%s/%s' %
-              (os.getcwd(), filename))
+        print(f'\nExecutive summary can be found in path:\n\t{os.getcwd()}/{filename}')
         fd.close()
 
     def run(self):
@@ -458,8 +457,8 @@ class LayoutBuilder(object):
         html_doc = head + body + scripts + HTML_END
         if self.session_id is None:
             self.write_html(html_doc,
-                            '%s_executive_summary.html' % (self.subject_id))
+                            f'{self.subject_id}_executive_summary.html')
         else:
             self.write_html(
-                html_doc, '%s_%s_executive_summary.html' %
-                (self.subject_id, self.session_id))
+                html_doc, f'{self.subject_id}_{self.session_id}_executive_summary.html'
+            )

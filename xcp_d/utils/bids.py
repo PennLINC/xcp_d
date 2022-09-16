@@ -64,14 +64,13 @@ DEFAULT_DTYPES = defaultdict(
 class BIDSError(ValueError):
     def __init__(self, message, bids_root):
         indent = 10
-        header = '{sep} BIDS root folder: "{bids_root}" {sep}'.format(
-            bids_root=bids_root, sep="".join(["-"] * indent)
+        header = (
+            f'{"".join(["-"] * indent)} BIDS root folder: "{bids_root}" '
+            f'{"".join(["-"] * indent)}'
         )
-        self.msg = "\n{header}\n{indent}{message}\n{footer}".format(
-            header=header,
-            indent="".join([" "] * (indent + 1)),
-            message=message,
-            footer="".join(["-"] * len(header)),
+        self.msg = (
+            f"\n{header}\n{''.join([' '] * (indent + 1))}{message}\n"
+            f"{''.join(['-'] * len(header))}"
         )
         super(BIDSError, self).__init__(self.msg)
         self.bids_root = bids_root
@@ -128,7 +127,7 @@ def collect_participants(
     found_label = sorted(set(participant_label) & all_participants)
     if not found_label:
         raise BIDSError(
-            "Could not find participants [{}]".format(", ".join(participant_label)),
+            f"Could not find participants [{', '.join(participant_label)}]",
             bids_dir,
         )
 
@@ -136,7 +135,7 @@ def collect_participants(
     notfound_label = sorted(set(participant_label) - all_participants)
     if notfound_label:
         exc = BIDSError(
-            "Some participants were not found: {}".format(", ".join(notfound_label)),
+            f"Some participants were not found: {', '.join(notfound_label)}",
             bids_dir,
         )
         if strict:

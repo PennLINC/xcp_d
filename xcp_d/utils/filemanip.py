@@ -87,7 +87,7 @@ def split_filename(fname):
 
     """
 
-    # TM 07152022 - edited to add cifti and workbench extensions 
+    # TM 07152022 - edited to add cifti and workbench extensions
     special_extensions = [
         ".nii.gz",
         ".tar.gz",
@@ -197,8 +197,8 @@ def check_forhash(filename):
     if isinstance(filename, list):
         filename = filename[0]
     path, name = op.split(filename)
-    if re.search("(_0x[a-z0-9]{32})", name):
-        hashvalue = re.findall("(_0x[a-z0-9]{32})", name)
+    if re.search(r"(_0x[a-z0-9]{32})", name):
+        hashvalue = re.findall(r"(_0x[a-z0-9]{32})", name)
         return True, hashvalue
     else:
         return False, None
@@ -224,7 +224,7 @@ def hash_infile(afile, chunk_len=8192, crypto=hashlib.md5, raise_notfound=False)
     """
     if not op.isfile(afile):
         if raise_notfound:
-            raise RuntimeError('File "%s" not found.' % afile)
+            raise RuntimeError(f'File "{afile}" not found.')
         return None
 
     crypto_obj = crypto()
@@ -373,13 +373,13 @@ def copyfile(
     if create_new:
         while op.exists(newfile):
             base, fname, ext = split_filename(newfile)
-            s = re.search("_c[0-9]{4,4}$", fname)
+            s = re.search(r"_c[0-9]{4,4}$", fname)
             i = 0
             if s:
                 i = int(s.group()[2:]) + 1
-                fname = fname[:-6] + "_c%04d" % i
+                fname = fname[:-6] + f"_c{i:04d}"
             else:
-                fname += "_c%04d" % i
+                fname += f"_c{i:04d}"
             newfile = base + os.sep + fname + ext
 
     if hashmethod is None:
@@ -636,13 +636,13 @@ def loadpkl(infile):
         if infile.exists():
             timed_out = False
             break
-        fmlogger.debug("'{}' missing; waiting 2s".format(infile))
+        fmlogger.debug(f"'{infile}' missing; waiting 2s")
         sleep(2)
     if timed_out:
         error_message = (
-            "Result file {0} expected, but "
-            "does not exist after ({1}) "
-            "seconds.".format(infile, timeout)
+            f"Result file {infile} expected, but "
+            f"does not exist after ({timeout}) "
+            "seconds."
         )
         raise IOError(error_message)
 
@@ -694,7 +694,7 @@ the same Nipype version from the generated pkl."""
         raise e
 
     if unpkl is None:
-        raise ValueError("Loading %s resulted in None." % infile)
+        raise ValueError(f"Loading {infile} resulted in None.")
 
     return unpkl
 
@@ -704,10 +704,10 @@ def crash2txt(filename, record):
     with open(filename, "w") as fp:
         if "node" in record:
             node = record["node"]
-            fp.write("Node: {}\n".format(node.fullname))
-            fp.write("Working directory: {}\n".format(node.output_dir()))
+            fp.write(f"Node: {node.fullname}\n")
+            fp.write(f"Working directory: {node.output_dir()}\n")
             fp.write("\n")
-            fp.write("Node inputs:\n{}\n".format(node.inputs))
+            fp.write(f"Node inputs:\n{node.inputs}\n")
         fp.write("".join(record["traceback"]))
 
 
@@ -767,14 +767,14 @@ def write_rst_header(header, level=0):
 def write_rst_list(items, prefix=""):
     out = []
     for item in ensure_list(items):
-        out.append("{} {}".format(prefix, str(item)))
+        out.append(f"{prefix} {str(item)}")
     return "\n".join(out) + "\n\n"
 
 
 def write_rst_dict(info, prefix=""):
     out = []
     for key, value in sorted(info.items()):
-        out.append("{}* {} : {}".format(prefix, key, str(value)))
+        out.append(f"{prefix}* {key} : {str(value)}")
     return "\n".join(out) + "\n\n"
 
 
@@ -811,7 +811,7 @@ def emptydirs(path, noexist_ok=False):
         return True
 
     if op.isfile(path):
-        raise OSError('path "%s" should be a directory' % path)
+        raise OSError(f'path "{path}" should be a directory')
 
     try:
         shutil.rmtree(path)
@@ -891,11 +891,11 @@ def get_dependencies(name, environ):
     """
     command = None
     if sys.platform == "darwin":
-        command = "otool -L `which %s`" % name
+        command = f"otool -L `which {name}`"
     elif "linux" in sys.platform:
-        command = "ldd `which %s`" % name
+        command = f"ldd `which {name}`"
     else:
-        return "Platform %s not supported" % sys.platform
+        return f"Platform {sys.platform} not supported"
 
     deps = None
     try:
@@ -962,7 +962,7 @@ def relpath(path, start=None):
             )
         else:
             raise ValueError(
-                "path is on drive %s, start on drive %s" % (path_list[0], start_list[0])
+                f"path is on drive {path_list[0]}, start on drive {start_list[0]}"
             )
     # Work out how much of the filepath is shared by start and path.
     for i in range(min(len(start_list), len(path_list))):

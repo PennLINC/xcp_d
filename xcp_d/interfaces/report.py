@@ -107,14 +107,15 @@ class FunctionalSummary(SummaryInterface):
         space = get_space(self.inputs.bold_file)
         TR = self.inputs.TR
         qcfile = pd.read_csv(self.inputs.qc_file)
-        meanFD = "{} ".format(round(qcfile['meanFD'][0], 4))
-        meanRMS = " {} ".format(round(qcfile['relMeansRMSMotion'][0], 4))
-        maxRMS = " {} ".format(round(qcfile['relMaxRMSMotion'][0], 4))
-        dvars = "  {},{} ".format(round(qcfile['meanDVInit'][0], 4),
-                                  round(qcfile['meanDVFinal'][0], 4))
-        fd_dvars_correlation = " {},  {} ".format(round(qcfile['motionDVCorrInit'][0], 4),
-                                                  round(qcfile['motionDVCorrFinal'][0], 4))
-        num_vols_censored = " {} ".format(round(qcfile['num_censored_volumes'][0], 4))
+        meanFD = f"{round(qcfile['meanFD'][0], 4)} "
+        meanRMS = f" {round(qcfile['relMeansRMSMotion'][0], 4)} "
+        maxRMS = f" {round(qcfile['relMaxRMSMotion'][0], 4)} "
+        dvars = f"  {round(qcfile['meanDVInit'][0], 4)},{round(qcfile['meanDVFinal'][0], 4)} "
+        fd_dvars_correlation = (
+            f" {round(qcfile['motionDVCorrInit'][0], 4)},  "
+            f"{round(qcfile['motionDVCorrFinal'][0], 4)} "
+        )
+        num_vols_censored = f" {round(qcfile['num_censored_volumes'][0], 4)} "
 
         return QC_TEMPLATE.format(space=space,
                                   TR=TR,

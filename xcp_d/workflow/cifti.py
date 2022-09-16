@@ -165,10 +165,10 @@ def init_ciftipostprocess_wf(cifti_file,
 
     """
     workflow = Workflow(name=name)
-    workflow.__desc__ = """
-For each of the {num_cifti} CIFTI runs found per subject (across all
+    workflow.__desc__ = f"""
+For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
-""".format(num_cifti=num2words(num_cifti))
+"""
 
     TR = get_ciftiTR(cifti_file)
     if TR is None:
@@ -179,36 +179,35 @@ tasks and sessions), the following post-processing was performed:
     try:
         confounds_tsv = get_confounds_tsv(cifti_file)
     except Exception as exc:
-        raise Exception("Unable to find confounds file for {}.".format(cifti_file))
+        raise Exception(f"Unable to find confounds file for {cifti_file}.")
 
     # TR = get_ciftiTR(cifti_file=cifti_file)
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data,  the first {nvol} were discarded.
+        workflow.__desc__ = workflow.__desc__ + f""" \
+before nuisance regression and filtering of the data,  the first
+{num2words(initial_volumes_to_drop)} were discarded.
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
 with framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
+"""
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = workflow.__desc__ + f""" \
 before nuissance regression and filtering,both the nuisance regressors and volumes were demeaned
 and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
 [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuissance
 regression.
-""".format(fd_thresh=fd_thresh)
+"""
 
-    workflow.__desc__ = workflow.__desc__ + """ \
-{regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
-regressed from the BOLD data using linear regression - as implemented in Scikit-Learn {sclver}
-[@scikit-learn]. Residual timeseries from this regression were then band-pass filtered to retain
-signals within the {highpass}-{lowpass} Hz frequency band.
- """.format(regressors=stringforparams(params=params),
-            sclver=sklearn.__version__,
-            lowpass=upper_bpf,
-            highpass=lower_bpf)
+    workflow.__desc__ = workflow.__desc__ + f""" \
+{stringforparams(params=params)} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].
+These nuisance regressors were regressed from the BOLD data using linear regression -
+as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
+Residual timeseries from this regression were then band-pass filtered to retain signals within the
+{lower_bpf}-{upper_bpf} Hz frequency band.
+"""
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),

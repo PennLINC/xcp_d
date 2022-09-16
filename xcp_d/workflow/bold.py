@@ -176,48 +176,47 @@ def init_boldpostprocess_wf(lower_bpf,
     if TR is None:
         TR = layout.get_tr(bold_file)
     if not isinstance(TR, float):
-        raise Exception("Unable to determine TR of {}".format(bold_file))
+        raise Exception(f"Unable to determine TR of {bold_file}")
 
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
         confounds_tsv = get_confounds_tsv(bold_file)
     except Exception as exc:
-        raise Exception("Unable to find confounds file for {}.".format(bold_file))
+        raise Exception(f"Unable to find confounds file for {bold_file}.")
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """
-For each of the {num_bold} BOLD series found per subject (across all
+    workflow.__desc__ = f"""
+For each of the {num2words(num_bold)} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
-""".format(num_bold=num2words(num_bold))
+"""
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data, the first {nvol} were discarded, then both
+        workflow.__desc__ = workflow.__desc__ + f""" \
+before nuisance regression and filtering of the data, the first
+{num2words(initial_volumes_to_drop)} were discarded, then both
 the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with
 framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
+"""
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = workflow.__desc__ + f""" \
 before nuisance regression and filtering of the data, both the nuisance regressors and
 volumes were demean and detrended. Volumes with framewise-displacement greater than
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
 and excluded from nuisance regression.
-""".format(fd_thresh=fd_thresh)
+"""
 
-    workflow.__desc__ = workflow.__desc__ + """ \
-{regressors} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
+    workflow.__desc__ = workflow.__desc__ + f""" \
+{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
 regressed from the BOLD data using linear regression - as implemented in Scikit-Learn
-{sclver} [@scikit-learn]. Residual timeseries from this regression were then band-pass
-filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
- """.format(regressors=stringforparams(params=params),
-            sclver=sklearn.__version__,
-            lowpass=upper_bpf,
-            highpass=lower_bpf)
+{sklearn.__version__} [@scikit-learn].
+Residual timeseries from this regression were then band-pass filtered to retain signals within the
+{lower_bpf}-{upper_bpf} Hz frequency band.
+ """
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)

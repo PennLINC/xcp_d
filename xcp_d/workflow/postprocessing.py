@@ -136,32 +136,29 @@ def init_post_process_wf(
 """
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-Before nuissance regression and filtering of the data, the first {nvol} were
+        workflow.__desc__ = workflow.__desc__ + f""" \
+Before nuissance regression and filtering of the data, the first {nvolx} were
 discarded. Furthermore, any volumes with framewise-displacement greater than
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were flagged
 as outliers and excluded from nuissance regression.
-""".format(nvol=nvolx, fd_thresh=fd_thresh)
+"""
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = workflow.__desc__ + f""" \
 Before nuissance regression and filtering any volumes with
 framewise-displacement greater than {fd_thresh}
 [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
 and excluded from further analyses.
-""".format(fd_thresh=fd_thresh)
+"""
 
-    workflow.__desc__ = workflow.__desc__ + """ \
-The following nuissance regressors {regressors}
+    workflow.__desc__ = workflow.__desc__ + f""" \
+The following nuissance regressors {stringforparams(params=params)}
 [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected from nuissance
 confound matrices of fMRIPrep output.  These nuissance regressors were regressed
 out from the bold data with *LinearRegression* as implemented in Scikit-Learn
-{sclver} [@scikit-learn].  The residual were then  band pass filtered within the
-frequency band {highpass}-{lowpass} Hz.
- """.format(regressors=stringforparams(params=params),
-            sclver=sklearn.__version__,
-            lowpass=upper_bpf,
-            highpass=lower_bpf)
+{sklearn.__version__} [@scikit-learn].  The residual were then  band pass filtered within the
+frequency band {lower_bpf}-{upper_bpf} Hz.
+ """
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold', 'bold_file', 'bold_mask', 'custom_confounds']),
@@ -192,9 +189,10 @@ frequency band {highpass}-{lowpass} Hz.
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
-            workflow.__desc__ = workflow.__desc__ + """
-The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm .
-""".format(kernelsize=str(smoothing))
+            workflow.__desc__ = workflow.__desc__ + f"""
+The processed bold  was smoothed with the workbench with kernel size (FWHM) of
+{str(smoothing)}  mm .
+"""
             smooth_data = pe.Node(CiftiSmooth(
                 sigma_surf=sigma_lx,
                 sigma_vol=sigma_lx,
@@ -217,9 +215,9 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
             ])
 
         else:
-            workflow.__desc__ = workflow.__desc__ + """
-The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm.
-""".format(kernelsize=str(smoothing))
+            workflow.__desc__ = workflow.__desc__ + f"""
+The processed bold was smoothed with FSL and kernel size (FWHM) of {str(smoothing)} mm.
+"""
             smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
                                          fwhm=smoothing),
                                   name="nifti_smoothing",
@@ -252,10 +250,10 @@ def init_resd_smoothing(mem_gb,
     sigma_lx = fwhm2sigma(smoothing) # Turn specified FWHM (Full-Width at Half Maximum)
     # to standard deviation.
     if cifti:  # For ciftis
-        workflow.__desc__ = """ \
+        workflow.__desc__ = f""" \
 The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
-size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(smoothing))
+size of {str(smoothing)} mm  (FWHM).
+"""
 
         smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
             #  hemisphere
@@ -280,9 +278,10 @@ size of {kernelsize} mm  (FWHM).
                                                       'smoothed_bold')])])
 
     else:  #  for Nifti
-        workflow.__desc__ = """ \
-The processed BOLD was smoothed using  FSL with a gaussian kernel size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(smoothing))
+        workflow.__desc__ = f""" \
+The processed BOLD was smoothed using  FSL with a gaussian kernel size of {str(smoothing)} mm
+(FWHM).
+"""
         smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),  # FWHM = kernel size
                               name="nifti_smoothing",
                               mem_gb=mem_gb,

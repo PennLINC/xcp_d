@@ -149,13 +149,13 @@ def confoundplot(time_series,
         else:
             time_series_axis.set_xlabel('time (s)')
             labels = TR * np.array(xticks)
-            time_series_axis.set_xticklabels(['%.02f' % t for t in labels.tolist()])
+            time_series_axis.set_xticklabels([f'{t:.02f}' for t in labels.tolist()])
     else:
         time_series_axis.set_xticklabels([])
 
     if name is not None:
         if units is not None:
-            name += ' [%s]' % units
+            name += f' [{units}]'
     #   Formatting
         time_series_axis.annotate(name,
                                   xy=(0.0, 0.7),
@@ -244,7 +244,7 @@ def confoundplot(time_series,
 
     # Annotate percentile 95
     time_series_axis.plot((0, ntsteps - 1), [p95] * 2, linewidth=.1, color='lightgray')
-    time_series_axis.annotate('%.2f' % p95,
+    time_series_axis.annotate(f'{p95:.2f}',
                               xy=(0, p95),
                               xytext=(-1, 0),
                               textcoords='offset points',
@@ -259,7 +259,7 @@ def confoundplot(time_series,
     for threshold in enumerate(cutoff):
         time_series_axis.plot((0, ntsteps - 1), [threshold] * 2, linewidth=.2, color='dimgray')
 
-        time_series_axis.annotate('%.2f' % threshold,
+        time_series_axis.annotate(f'{threshold:.2f}',
                                   xy=(0, threshold),
                                   xytext=(-1, 0),
                                   textcoords='offset points',
@@ -333,7 +333,7 @@ def confoundplotx(time_series,
     if ylabel:
         time_series_axis.set_ylabel(ylabel)
     if work_dir is not None:
-        time_series.to_csv('/{0}/{1}_tseries.npy'.format(work_dir, ylabel))
+        time_series.to_csv(f'/{work_dir}/{ylabel}_tseries.npy')
     columns = time_series.columns
     maximum_value = []
     minimum_value = []

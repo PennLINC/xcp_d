@@ -21,7 +21,7 @@ from natsort import natsorted
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     outdir = outputdir
     fmr = glob.glob(
-        str(outdir) + '/*' + (subjlist[0]) + '/*func/*_desc-residual*bold*nii*')[0]
+        f'{str(outdir)}/*{subjlist[0]}/*func/*_desc-residual*bold*nii*')[0]
     if fmr.endswith('nii.gz'):
         cifti = False
     else:
@@ -31,8 +31,7 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
         for s in subjlist:
             # get seission if there
             sed = glob.glob(
-                str(outdir) + '/' + _prefix(s) +
-                '/*/func/*_desc-residual*bold*.nii.gz')
+                f'{str(outdir)}/{_prefix(s)}/*/func/*_desc-residual*bold*.nii.gz')
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
@@ -50,8 +49,8 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     else:
         for s in subjlist:
             sed = glob.glob(
-                str(outdir) + '/' + _prefix(s) +
-                '/*/func/*_desc-residual*bold*.dtseries.nii')
+                f'{str(outdir)}/{_prefix(s)}/*/func/*_desc-residual*bold*.dtseries.nii'
+            )
             if sed:
                 ses = list(set([_getsesid(j) for j in sed]))
                 for kses in ses:
@@ -106,29 +105,29 @@ def make_DCAN_DF(fds_files, name):
     dcan = h5py.File(name, "w")
     for thresh in np.linspace(0, 1, 101):
         thresh = np.around(thresh, 2)
-        dcan.create_dataset("/dcan_motion/fd_{0}/skip".format(thresh),
+        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip",
                             data=0,
                             dtype='float')
-        dcan.create_dataset("/dcan_motion/fd_{0}/binary_mask".format(thresh),
+        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/binary_mask",
                             data=(fd > thresh).astype(int),
                             dtype='float')
-        dcan.create_dataset("/dcan_motion/fd_{0}/threshold".format(thresh),
+        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/threshold",
                             data=thresh,
                             dtype='float')
         dcan.create_dataset(
-            "/dcan_motion/fd_{0}/total_frame_count".format(thresh),
+            f"/dcan_motion/fd_{thresh}/total_frame_count",
             data=len(fd),
             dtype='float')
         dcan.create_dataset(
-            "/dcan_motion/fd_{0}/remaining_total_frame_count".format(thresh),
+            f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
             data=len(fd[fd <= thresh]),
             dtype='float')
         dcan.create_dataset(
-            "/dcan_motion/fd_{0}/remaining_seconds".format(thresh),
+            f"/dcan_motion/fd_{thresh}/remaining_seconds",
             data=len(fd[fd <= thresh]) * TR,
             dtype='float')
         dcan.create_dataset(
-            "/dcan_motion/fd_{0}/remaining_frame_mean_FD".format(thresh),
+            f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
             data=(fd[fd <= thresh]).mean(),
             dtype='float')
 
@@ -196,7 +195,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 if j.endswith('tsv'):
                     combine_fd(filex, outfile)
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
-                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_DCAN_DF(filex, name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
@@ -351,7 +350,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     filex = natsorted(
                         glob.glob(res.split('run-')[0] + '*run*' + j))
                     combine_fd(filex, outfile)
-                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_DCAN_DF(filex, name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
