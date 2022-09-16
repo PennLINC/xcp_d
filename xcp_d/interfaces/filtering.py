@@ -6,13 +6,18 @@ Handling filtering.
     # will comeback
 """
 import numpy as np
-from scipy.signal import butter, filtfilt
 from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from scipy.signal import butter, filtfilt
+
+from xcp_d.utils import read_ndata, write_ndata
 from xcp_d.utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-from xcp_d.utils import (read_ndata, write_ndata)
 
 LOGGER = logging.getLogger('nipype.interface')
 

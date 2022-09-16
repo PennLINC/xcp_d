@@ -1,10 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """confound matrix selection based on Ciric et al 2007."""
+import os
+
 import numpy as np
 import pandas as pd
-import os
-from scipy.signal import firwin, iirnotch, filtfilt
+from scipy.signal import filtfilt, firwin, iirnotch
 
 
 def get_confounds_tsv(datafile):

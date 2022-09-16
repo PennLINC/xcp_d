@@ -7,12 +7,13 @@ the DCAN-Labs fMRI pipelines.
 
 __version__ = "2.0.0"
 
+import glob as glob
 import os
 import re
-import glob as glob
 from pathlib import Path
+
 from xcp_d.interfaces.constants import *
-from xcp_d.interfaces.helpers import (find_one_file, find_and_copy_files)
+from xcp_d.interfaces.helpers import find_and_copy_files, find_one_file
 
 
 class ModalContainer(object):

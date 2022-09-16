@@ -7,27 +7,39 @@ post processing the bold
 
 """
 import os
-import numpy as np
+
 import nibabel as nb
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-from nipype import logging
+import numpy as np
 import sklearn
-from xcp_d.interfaces import computeqcplot
+from nipype import logging
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from xcp_d.utils import (bid_derivative, stringforparams, get_maskfiles,
-                         get_transformfilex, get_transformfile)
-from xcp_d.interfaces import FunctionalSummary
-from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
-from xcp_d.interfaces import (FilteringData, regress)
-from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.execsummary import init_execsummary_wf
 from num2words import num2words
-from xcp_d.workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces import (
+    CensorScrub,
+    FilteringData,
+    FunctionalSummary,
+    RemoveTR,
+    computeqcplot,
+    interpolate,
+    regress,
+)
+from xcp_d.utils import (
+    DespikePatch,
+    bid_derivative,
+    get_maskfiles,
+    get_transformfile,
+    get_transformfilex,
+    stringforparams,
+)
+from xcp_d.workflow import init_3d_reho_wf, init_compute_alff_wf, init_fcon_ts_wf
+from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
-from xcp_d.interfaces import (interpolate, RemoveTR, CensorScrub)
-from xcp_d.utils import DespikePatch
+from xcp_d.workflow.postprocessing import init_resd_smoothing
 
 LOGGER = logging.getLogger('nipype.workflow')
 

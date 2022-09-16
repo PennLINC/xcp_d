@@ -1,12 +1,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-import os
-import json
 import glob
+import json
+import os
 import re
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
 from nilearn.input_data import NiftiMasker
 
 
@@ -259,8 +260,8 @@ def copyfileobj_example(src, dst):
     must be file-like objects, i.e. any object with a read or
     write method, like for example StringIO.
     """
-    import shutil
     import filecmp
+    import shutil
     if not os.path.exists(dst) or not filecmp.cmp(src, dst):
         shutil.copyfile(src, dst)
 
@@ -284,10 +285,9 @@ def writejson(data, outfile):
 
 
 def bbregplot(fixed_image, moving_image, contour, out_file='report.svg'):
-    from nilearn.image import threshold_img, load_img, resample_img
-    from niworkflows.viz.utils import plot_registration
-    from niworkflows.viz.utils import cuts_from_bbox, compose_view
     import numpy as np
+    from nilearn.image import load_img, resample_img, threshold_img
+    from niworkflows.viz.utils import compose_view, cuts_from_bbox, plot_registration
 
     fixed_image_nii = load_img(fixed_image)
     moving_image_nii = load_img(moving_image)

@@ -3,14 +3,14 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """aggregate qc of all the subjects"""
 import os
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 
 def get_parser():
     """Build parser object"""
-    from argparse import ArgumentParser
-    from argparse import RawTextHelpFormatter
+    from argparse import ArgumentParser, RawTextHelpFormatter
 
     parser = ArgumentParser(description=__doc__,
                             formatter_class=RawTextHelpFormatter)

@@ -8,14 +8,19 @@ functional connectvity matrix
 .. autofunction:: init_cifti_conts_wf
 """
 
-from nipype.pipeline import engine as pe
 import nilearn as nl
-from xcp_d.interfaces.connectivity import (NiftiConnect, get_atlas_nifti,
-                                           get_atlas_cifti, ApplyTransformsx)
-from xcp_d.interfaces import connectplot
 from nipype.interfaces import utility as niu
-from xcp_d.utils import CiftiCorrelation, CiftiParcellate, get_transformfile
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+from xcp_d.interfaces import connectplot
+from xcp_d.interfaces.connectivity import (
+    ApplyTransformsx,
+    NiftiConnect,
+    get_atlas_cifti,
+    get_atlas_nifti,
+)
+from xcp_d.utils import CiftiCorrelation, CiftiParcellate, get_transformfile
 
 
 def init_fcon_ts_wf(

@@ -7,36 +7,37 @@ fectch anatomical files/resmapleing surfaces to fsl32k
 
 """
 
-import os
 import fnmatch
+import os
 import shutil
 from pathlib import Path
-from templateflow.api import get as get_template
-from xcp_d.utils import collect_data, CiftiSurfaceResample
-from nipype.interfaces.freesurfer import MRIsConvert
-from xcp_d.interfaces.connectivity import ApplyTransformsx
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from nipype.pipeline import engine as pe
+
 from nipype.interfaces import utility as niu
-from xcp_d.interfaces import BrainPlotx, RibbontoStatmap
-from xcp_d.utils import bid_derivative
-from nipype.interfaces.ants.resampling import (
-    ApplyTransforms as antsapplytransforms,
-)  # TM
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths  # TM
+from nipype.interfaces.ants.resampling import (
+    ApplyTransforms as antsapplytransforms,  # TM
+)
+from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.interfaces.fsl import Merge as fslmerge  # TM
-from xcp_d.interfaces.c3 import C3d  # TM
+from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths  # TM
+from nipype.pipeline import engine as pe
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
-from xcp_d.interfaces.workbench import (
-    ConvertAffine,
+from xcp_d.interfaces.c3 import C3d  # TM
+from xcp_d.interfaces.connectivity import ApplyTransformsx
+from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
-    SurfaceGenerateInflated,
+    ChangeXfmType,
+    ConvertAffine,
     SurfaceAverage,
+    SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
-    ChangeXfmType
-)  # MB,TM
+)
+from xcp_d.utils import CiftiSurfaceResample, bid_derivative, collect_data
 
 
 class DerivativesDataSink(bid_derivative):

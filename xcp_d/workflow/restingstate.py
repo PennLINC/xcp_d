@@ -6,14 +6,15 @@ post processing the bold/cifti
 .. autofunction:: init_post_process_wf
 
 """
-from nipype.pipeline import engine as pe
-from xcp_d.interfaces import computealff, surfaceReho, brainplot
 from nipype.interfaces import utility as niu
-from xcp_d.utils import CiftiSeparateMetric, fwhm2sigma
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
-from templateflow.api import get as get_template
+from nipype.interfaces.workbench import CiftiSmooth
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces import brainplot, computealff, surfaceReho
+from xcp_d.utils import CiftiSeparateMetric, fwhm2sigma
 
 
 def init_compute_alff_wf(mem_gb,

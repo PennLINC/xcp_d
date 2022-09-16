@@ -1,21 +1,22 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-import glob
 import fnmatch
-import tempfile
+import glob
+import os
 import shutil
-import numpy as np
-import nibabel as nb
+import tempfile
 from pathlib import Path
-from xcp_d.utils.plot import plot_svgx
-from xcp_d.utils import get_transformfile
-from xcp_d.utils import read_ndata
-from templateflow.api import get as get_template
-from nipype.interfaces.ants import ApplyTransforms
+
 import h5py
+import nibabel as nb
+import numpy as np
 from natsort import natsorted
+from nipype.interfaces.ants import ApplyTransforms
+from templateflow.api import get as get_template
+
+from xcp_d.utils import get_transformfile, read_ndata
+from xcp_d.utils.plot import plot_svgx
 
 
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):

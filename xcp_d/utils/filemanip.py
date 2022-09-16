@@ -3,25 +3,26 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Miscellaneous file manipulation functions
 """
-import sys
-import pickle
+import contextlib
 import errno
-import subprocess as sp
 import gzip
 import hashlib
 import locale
-from hashlib import md5
 import os
 import os.path as op
+import pickle
+import posixpath
 import re
 import shutil
-import contextlib
-import posixpath
+import subprocess as sp
+import sys
+from hashlib import md5
 from pathlib import Path
-import simplejson as json
 from time import sleep, time
 
-from nipype import logging, config, __version__ as version
+import simplejson as json
+from nipype import __version__ as version
+from nipype import config, logging
 from nipype.utils.misc import is_container
 
 fmlogger = logging.getLogger("nipype.utils")

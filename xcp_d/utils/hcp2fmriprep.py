@@ -1,13 +1,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-import os
-import json
-import glob
-import shutil
 import filecmp
+import glob
+import json
+import os
+import shutil
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
 from nilearn.input_data import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
 
