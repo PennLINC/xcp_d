@@ -14,8 +14,8 @@ import numpy as np
 from natsort import natsorted
 from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
-
-from xcp_d.utils import get_transformfile, read_ndata
+from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils import read_ndata
 from xcp_d.utils.plot import plot_svgx
 
 
