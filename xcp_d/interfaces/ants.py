@@ -1,20 +1,16 @@
 import logging
 import os
-from nipype.interfaces.base import (
-    TraitedSpec,
-    CommandLineInputSpec,
-    BaseInterfaceInputSpec,
-    CommandLine,
-    File,
-    traits,
-    Str,
-    InputMultiPath,
-    isdefined,
-    InputMultiObject,
-    OutputMultiObject,
-    SimpleInterface,
-)
+
 from nipype.interfaces.ants.base import ANTSCommand, ANTSCommandInputSpec
+from nipype.interfaces.base import (
+    CommandLine,
+    CommandLineInputSpec,
+    File,
+    InputMultiPath,
+    Str,
+    TraitedSpec,
+    traits,
+)
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -98,7 +94,8 @@ class CompositeInvTransformUtil(ANTSCommand):
     >>> tran.inputs.out_file = 'my.h5'
     >>> tran.inputs.in_file = ['AffineTransform.mat', 'DisplacementFieldTransform.nii.gz']
     >>> tran.cmdline
-    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat DisplacementFieldTransform.nii.gz '
+    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat
+     DisplacementFieldTransform.nii.gz '
     >>> tran.run()  # doctest: +SKIP
     """
 

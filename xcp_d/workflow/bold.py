@@ -7,27 +7,38 @@ post processing the bold
 
 """
 import os
-import numpy as np
+
 import nibabel as nb
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-from nipype import logging
+import numpy as np
 import sklearn
-from xcp_d.interfaces import computeqcplot
+from nipype import logging
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from xcp_d.utils import (bid_derivative, stringforparams, get_maskfiles,
-                         get_transformfilex, get_transformfile)
-from xcp_d.interfaces import FunctionalSummary
-from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
-from xcp_d.interfaces import (FilteringData, regress)
-from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.execsummary import init_execsummary_wf
 from num2words import num2words
-from xcp_d.workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces import (
+    CensorScrub,
+    FilteringData,
+    FunctionalSummary,
+    RemoveTR,
+    computeqcplot,
+    interpolate,
+    regress,
+)
+from xcp_d.utils.utils import (
+    get_maskfiles,
+    get_transformfile,
+    get_transformfilex,
+    stringforparams,
+)
+from xcp_d.utils import DespikePatch, bid_derivative
+from xcp_d.workflow import init_3d_reho_wf, init_compute_alff_wf, init_fcon_ts_wf
+from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
-from xcp_d.interfaces import (interpolate, RemoveTR, CensorScrub)
-from xcp_d.utils import DespikePatch
+from xcp_d.workflow.postprocessing import init_resd_smoothing
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -182,7 +193,7 @@ def init_boldpostprocess_wf(lower_bpf,
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
         confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception as exc:
+    except Exception:
         raise Exception(f"Unable to find confounds file for {bold_file}.")
 
     workflow = Workflow(name=name)
@@ -402,7 +413,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
                      custom_confounds=custom_confounds),
             name="remove_dummy_time",
-            mem_gb=0.1*mem_gbx['timeseries'])
+            mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
@@ -414,7 +425,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
                 ('custom_confounds_dropped', 'custom_confounds')
             ])])
-
 
     else:  # No need to remove TR
         # Censor Scrub:

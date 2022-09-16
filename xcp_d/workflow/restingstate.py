@@ -6,14 +6,16 @@ post processing the bold/cifti
 .. autofunction:: init_post_process_wf
 
 """
-from nipype.pipeline import engine as pe
-from xcp_d.interfaces import computealff, surfaceReho, brainplot
 from nipype.interfaces import utility as niu
-from xcp_d.utils import CiftiSeparateMetric, fwhm2sigma
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
-from templateflow.api import get as get_template
+from nipype.interfaces.workbench import CiftiSmooth
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces import brainplot, computealff, surfaceReho
+from xcp_d.utils import CiftiSeparateMetric
+from xcp_d.utils.utils import fwhm2sigma
 
 
 def init_compute_alff_wf(mem_gb,
@@ -109,7 +111,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                                                ('bold_mask', 'mask')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])])
 
-    if not cifti: # if Nifti, get the HTML
+    if not cifti:  # if Nifti, get the HTML
         workflow.connect([
             (alff_compt, brain_plot, [('alff_out', 'in_file')]),
             (inputnode, brain_plot, [('bold_mask', 'mask_file')]),
@@ -132,7 +134,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                 (smooth_data, outputnode, [('smoothed_file', 'smoothed_alff')])
             ])
 
-        else: # If cifti
+        else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
                 " The ALFF maps were smoothed with the Connectome Workbench using a gaussian "
                 f"kernel size of {str(smoothing)} mm (FWHM)."
@@ -161,6 +163,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             ])
 
     return workflow
+
 
 #  For cifti
 def init_surface_reho_wf(mem_gb,
@@ -244,6 +247,7 @@ vertices to yield ReHo.
     ])
 
     return workflow
+
 
 # For nifti
 def init_3d_reho_wf(

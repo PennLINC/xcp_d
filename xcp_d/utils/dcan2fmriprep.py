@@ -1,12 +1,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-import os
-import json
 import glob
+import json
+import os
 import re
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
 from nilearn.input_data import NiftiMasker
 
 
@@ -54,25 +55,25 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
         segm = anat_dirx + '/aparc+aseg.nii.gz'
 
         midR = glob.glob(
-            anat_dirx +
-            '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
+            anat_dirx
+            + '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
         midL = glob.glob(
-            anat_dirx +
-            '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
-        infR = glob.glob(anat_dirx +
-                         '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
-        infL = glob.glob(anat_dirx +
-                         '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
+            anat_dirx
+            + '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
+        infR = glob.glob(anat_dirx
+                         + '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
+        infL = glob.glob(anat_dirx
+                         + '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
 
-        pialR = glob.glob(anat_dirx +
-                          '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
-        pialL = glob.glob(anat_dirx +
-                          '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
+        pialR = glob.glob(anat_dirx
+                          + '_/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
+        pialL = glob.glob(anat_dirx
+                          + '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
 
-        whiteR = glob.glob(anat_dirx +
-                           '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
-        whiteL = glob.glob(anat_dirx +
-                           '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
+        whiteR = glob.glob(anat_dirx
+                           + '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
+        whiteL = glob.glob(anat_dirx
+                           + '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
 
         dcanimages = [
             tw1, segm, ribbon, brainmask, tw1, tw1, midL, midR, pialL, pialR,
@@ -83,10 +84,10 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
         t1seg = anatdir + sub_id + '_' + sess + '_dseg.nii.gz'
         t1ribbon = anatdir + sub_id + '_' + sess + '_desc-ribbon.nii.gz'
         t1brainm = anatdir + sub_id + '_' + sess + '_desc-brain_mask.nii.gz'
-        regfile1 = (anatdir + sub_id + '_' + sess +
-                    '_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5')
-        regfile2 = (anatdir + sub_id + '_' + sess +
-                    '_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')
+        regfile1 = (anatdir + sub_id + '_' + sess
+                    + '_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5')
+        regfile2 = (anatdir + sub_id + '_' + sess
+                    + '_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')
 
         lMid = anatdir + sub_id + '_' + sess + '_hemi-L_midthickness.surf.gii'
         rMid = anatdir + sub_id + '_' + sess + '_hemi-R_midthickness.surf.gii'
@@ -209,8 +210,8 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
 
             figdir = out_dir + '/' + sub_id + '/figures/'
             os.makedirs(figdir, exist_ok=True)
-            bbreg = (figdir + sub_id + '_' + ses_id + '_task-' + taskname +
-                     run_id + '_desc-bbregister_bold.svg')
+            bbreg = (figdir + sub_id + '_' + ses_id + '_task-' + taskname
+                     + run_id + '_desc-bbregister_bold.svg')
             bbreg = bbregplot(fixed_image=tw1,
                               moving_image=boldref,
                               out_file=bbreg,
@@ -259,8 +260,8 @@ def copyfileobj_example(src, dst):
     must be file-like objects, i.e. any object with a read or
     write method, like for example StringIO.
     """
-    import shutil
     import filecmp
+    import shutil
     if not os.path.exists(dst) or not filecmp.cmp(src, dst):
         shutil.copyfile(src, dst)
 
@@ -284,10 +285,9 @@ def writejson(data, outfile):
 
 
 def bbregplot(fixed_image, moving_image, contour, out_file='report.svg'):
-    from nilearn.image import threshold_img, load_img, resample_img
-    from niworkflows.viz.utils import plot_registration
-    from niworkflows.viz.utils import cuts_from_bbox, compose_view
     import numpy as np
+    from nilearn.image import load_img, resample_img, threshold_img
+    from niworkflows.viz.utils import compose_view, cuts_from_bbox, plot_registration
 
     fixed_image_nii = load_img(fixed_image)
     moving_image_nii = load_img(moving_image)

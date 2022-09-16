@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import numpy as np
 import glob as glob
-from templateflow.api import get as get_template
+import os
+
+import numpy as np
 from pkg_resources import resource_filename as pkgrf
+from templateflow.api import get as get_template
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     """
     Obtain the correct transform files in reverse order to transform
-    to MNI space/ T1W space. 
+    to MNI space/ T1W space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack, these are
     applied in the reverse order of which they are specified.
@@ -54,32 +55,32 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     elif 'space-PNC' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         pnc_to_t1w = mnisf + 'from-PNC*_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
+        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
+                               + '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(pnc_to_t1w), str(t1w_to_mni)]
         transformfileT1W = str(pnc_to_t1w)
 
     elif 'space-NKI' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         nki_to_t1w = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
+        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
+                               + '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(nki_to_t1w), str(t1w_to_mni)]
         transformfileT1W = str(nki_to_t1w)
 
     elif 'space-OASIS' in file_base:
         mnisf = mni_to_t1w.split('from')[0]
         oasis_to_t1w = mnisf + 'from-OASIS30ANTs_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
+        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
+                               + '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(oasis_to_t1w), str(t1w_to_mni)]
         transformfileT1W = [str(oasis_to_t1w)]
 
     elif 'space-MNI152NLin6Sym' in file_base:
         mnisf = mni_to_t1w.split('from-')[0]
         mni6c_to_t1w = mnisf + 'from-MNI152NLin6Sym_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
+        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
+                               + '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(mni6c_to_t1w), str(t1w_to_mni)]
         transformfileT1W = [str(mni6c_to_t1w)]
 
@@ -92,8 +93,8 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
         mnisf = mni_to_t1w.split('from-')[0]
         mni6c_to_t1w = glob.glob(
             mnisf + 'from-MNIPediatricAsym*_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
+        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
+                               + '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(mni6c_to_t1w), str(t1w_to_mni)]
         transformfileT1W = [str(mni6c_to_t1w)]
 
@@ -108,8 +109,8 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
         t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
         native_to_t1w = t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
         mnisf = mni_to_t1w.split('from')[0]
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template +
-                               '*_mode-image_xfm.h5')[0]
+        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
+                               + '*_mode-image_xfm.h5')[0]
         transformfileMNI = [str(t1w_to_mni), str(native_to_t1w)]
         transformfileT1W = [str(native_to_t1w)]
     else:

@@ -1,21 +1,22 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-import glob
 import fnmatch
-import tempfile
+import glob
+import os
 import shutil
-import numpy as np
-import nibabel as nb
+import tempfile
 from pathlib import Path
-from xcp_d.utils.plot import plot_svgx
-from xcp_d.utils import get_transformfile
-from xcp_d.utils import read_ndata
-from templateflow.api import get as get_template
-from nipype.interfaces.ants import ApplyTransforms
+
 import h5py
+import nibabel as nb
+import numpy as np
 from natsort import natsorted
+from nipype.interfaces.ants import ApplyTransforms
+from templateflow.api import get as get_template
+from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils import read_ndata
+from xcp_d.utils.plot import plot_svgx
 
 
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
@@ -189,8 +190,8 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
                 filex = natsorted(
                     glob.glob(
-                        res.split('run-')[0] + '*run*' +
-                        resid.partition('_desc')[0] + j))
+                        res.split('run-')[0] + '*run*'
+                        + resid.partition('_desc')[0] + j))
 
                 if j.endswith('tsv'):
                     combine_fd(filex, outfile)
@@ -200,9 +201,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     mask = natsorted(
-                        glob.glob(fmri_files + os.path.basename(res.split('run-')[0]) +
-                                  '*' + resid.partition('_desc')[0] +
-                                  '*_desc-brain_mask.nii.gz'))[0]
+                        glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
+                                  + '*' + resid.partition('_desc')[0]
+                                  + '*_desc-brain_mask.nii.gz'))[0]
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)
                     for b in filex:
                         dvar = compute_dvars(read_ndata(b, mask))
@@ -210,14 +211,14 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         regressed_dvars.append(dvar)
 
             filey = natsorted(
-                glob.glob(fmri_files + os.path.basename(res.split('run-')[0]) +
-                          '*' + resid.partition('_desc')[0] +
-                          '*_desc-preproc_bold.nii.gz'))
+                glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
+                          + '*' + resid.partition('_desc')[0]
+                          + '*_desc-preproc_bold.nii.gz'))
 
             mask = natsorted(
-                glob.glob(fmri_files + os.path.basename(res.split('run-')[0]) +
-                          '*' + resid.partition('_desc')[0] +
-                          '*_desc-brain_mask.nii.gz'))[0]
+                glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
+                          + '*' + resid.partition('_desc')[0]
+                          + '*_desc-brain_mask.nii.gz'))[0]
 
             segfile = get_segfile(filey[0])
             TR = nb.load(filey[0]).header.get_zooms()[-1]
@@ -232,7 +233,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 fileid) + '_desc-postcarpetplot_bold.svg'
             raw_dvars = []
             for f in filey:
-                dvar = compute_dvars(read_ndata(f,mask))
+                dvar = compute_dvars(read_ndata(f, mask))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
 
@@ -342,8 +343,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     filex = natsorted(
                         glob.glob(res.split('run-')[0] + '*run*' + j))
                     combinefile = " -cifti ".join(filex)
-                    os.system('wb_command -cifti-merge ' + outfile +
-                              ' -cifti ' + combinefile)
+                    os.system('wb_command -cifti-merge ' + outfile
+                              + ' -cifti ' + combinefile)
                 if j.endswith('framewisedisplacement_bold.tsv'):
                     fileid = fileid.split('_den-91k')[0]
                     outfile = fileid + j
@@ -355,24 +356,24 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(
-                            res.split('run-')[0] + '*run*' +
-                            resid.partition('_desc')[0] + j))
+                            res.split('run-')[0] + '*run*'
+                            + resid.partition('_desc')[0] + j))
                     combinefile = " -cifti ".join(filex)
-                    os.system('wb_command -cifti-merge ' + outfile +
-                              ' -cifti ' + combinefile)
+                    os.system('wb_command -cifti-merge ' + outfile
+                              + ' -cifti ' + combinefile)
                     if j.endswith('_desc-residual_bold.dtseries.nii'):
                         for b in natsorted(
                                 glob.glob(
-                                    res.split('run-')[0] + '*run*' +
-                                    resid.partition('_desc')[0] + j)):
+                                    res.split('run-')[0] + '*run*'
+                                    + resid.partition('_desc')[0] + j)):
                             dvar = compute_dvars(read_ndata(b))
                             dvar[0] = np.mean(dvar)
                             regressed_dvars.append(dvar)
 
             raw_dvars = []
             filey = natsorted(
-                glob.glob(fmri_files + os.path.basename(res.split('run-')[0]) +
-                          '*run*' + '*_den-91k_bold.dtseries.nii'))
+                glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
+                          + '*run*' + '*_den-91k_bold.dtseries.nii'))
             for f in filey:
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
@@ -380,8 +381,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             TR = get_ciftiTR(filey[0])
             rawdata = tempfile.mkdtemp() + '/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
-            os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' +
-                      combinefile)
+            os.system('wb_command -cifti-merge ' + rawdata + ' -cifti '
+                      + combinefile)
 
             precarpet = figure_files + os.path.basename(
                 fileid) + '_desc-precarpetplot_bold.svg'
@@ -392,12 +393,12 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             regressed_dvars = np.array(regressed_dvars).flatten()
             plot_svgx(
                 rawdata=rawdata,
-                regressed_data=res.split('run-')[0] + resid.partition('_desc')[0] +
-                '_desc-residual_bold.dtseries.nii',
-                residual_data=res.split('run-')[0] + resid.partition('_desc')[0] +
-                '_desc-residual_bold.dtseries.nii',
-                fd=res.split('run-')[0] + resid.partition('_den-91k')[0] +
-                '_desc-framewisedisplacement_bold.tsv',
+                regressed_data=res.split('run-')[0] + resid.partition('_desc')[0]
+                + '_desc-residual_bold.dtseries.nii',
+                residual_data=res.split('run-')[0] + resid.partition('_desc')[0]
+                + '_desc-residual_bold.dtseries.nii',
+                fd=res.split('run-')[0] + resid.partition('_den-91k')[0]
+                + '_desc-framewisedisplacement_bold.tsv',
                 raw_dvars=raw_dvars,
                 regressed_dvars=regressed_dvars,
                 filtered_dvars=regressed_dvars,

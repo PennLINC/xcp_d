@@ -7,17 +7,22 @@ post processing the bold/cifti
 
 """
 import os
+
 import numpy as np
-from xcp_d.utils.confounds import load_confound, load_motion
-from nipype import logging
-from xcp_d.utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-from xcp_d.utils import (read_ndata, write_ndata, compute_FD, compute_dvars)
 import pandas as pd
+from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils import compute_dvars, compute_FD, read_ndata, regisQ, write_ndata
+from xcp_d.utils.confounds import load_confound, load_motion
+from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plot import fMRIPlot
-from xcp_d.utils import regisQ
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -76,14 +81,14 @@ class computeqcplot(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> computeqcwf = computeqcplot()
-    >>> computeqcwf.inputs.cleaned_file = datafile
-    >>> computeqcwf.inputs.bold_file = rawbold
-    >>> computeqcwf.inputs.TR = TR
-    >>> computeqcwf.inputs.tmask = temporalmask
-    >>> computeqcwf.inputs.mask_file = mask
-    >>> computeqcwf.inputs.dummytime = dummytime
-    >>> computeqcwf.run()
+    computeqcwf = computeqcplot()
+    computeqcwf.inputs.cleaned_file = datafile
+    computeqcwf.inputs.bold_file = rawbold
+    computeqcwf.inputs.TR = TR
+    computeqcwf.inputs.tmask = temporalmask
+    computeqcwf.inputs.mask_file = mask
+    computeqcwf.inputs.dummytime = dummytime
+   computeqcwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
 
@@ -147,8 +152,9 @@ class computeqcplot(SimpleInterface):
             suffix='_clean_qcplot.svg',
             newpath=runtime.cwd,
             use_ext=False)
-        raw_data_removed_TR = read_ndata(datafile=self.inputs.bold_file,
-                                         maskfile=self.inputs.mask_file)[:, initial_volumes_to_drop:]
+        raw_data_removed_TR = read_ndata(
+            datafile=self.inputs.bold_file,
+            maskfile=self.inputs.mask_file)[:, initial_volumes_to_drop:]
 
         # Get file names to write out & write data out
         if self.inputs.bold_file.endswith('nii.gz'):

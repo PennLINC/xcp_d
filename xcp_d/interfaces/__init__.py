@@ -1,3 +1,7 @@
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Initialize interfaces."""
+
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.regression import regress, ciftidespike
 from xcp_d.interfaces.connectivity import (NiftiConnect, ApplyTransformsx, get_atlas_cifti,
@@ -13,7 +17,7 @@ from xcp_d.interfaces.surfplotting import (SurftoVolume, BrainPlotx, PlotSVGData
 from xcp_d.interfaces.layout_builder import LayoutBuilder
 
 __all__ = [
-    'regress','FilteringData', 'NiftiConnect',
+    'regress', 'FilteringData', 'NiftiConnect',
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'interpolate', 'CensorScrub', 'RemoveTR',
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',

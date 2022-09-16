@@ -1,13 +1,24 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from xcp_d.utils import (surf2vol, get_regplot, generate_brain_sprite, plot_svgx,
-                         plotimage, ribbon_to_statmap)
 from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils import (
+    generate_brain_sprite,
+    get_regplot,
+    plot_svgx,
+    plotimage,
+    ribbon_to_statmap,
+    surf2vol,
+)
 from xcp_d.utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
 
 LOGGER = logging.getLogger('nipype.interface')
 

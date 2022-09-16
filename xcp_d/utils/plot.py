@@ -441,8 +441,8 @@ def confoundplotx(time_series,
         time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_value)])
 
     for item in ([time_series_axis.title, time_series_axis.xaxis.label,
-                  time_series_axis.yaxis.label] +
-                 time_series_axis.get_xticklabels() + time_series_axis.get_yticklabels()):
+                  time_series_axis.yaxis.label]
+                 + time_series_axis.get_xticklabels() + time_series_axis.get_yticklabels()):
         item.set_fontsize(30)
 
     for axis in ['top', 'bottom', 'left', 'right']:
@@ -1060,10 +1060,10 @@ def _get_TR(img):
 
     Examples
     --------
-    >>> _get_TR(nb.load(Path(test_data) /
+    _get_TR(nb.load(Path(test_data) /
     ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
     2.2
-    >>> _get_TR(nb.load(Path(test_data) /
+     _get_TR(nb.load(Path(test_data) /
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """
