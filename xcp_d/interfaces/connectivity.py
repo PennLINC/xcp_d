@@ -118,8 +118,7 @@ def get_atlas_nifti(atlasname):
         else:
             atlasfile = pkgrf(
                 'xcp_d', 'data/niftiatlas/'
-                'Schaefer2018_{0}Parcels_17Networks_order_FSLMNI152_2mm.nii'.
-                format(atlasname[8:11]))
+                f'Schaefer2018_{atlasname[8:11]}Parcels_17Networks_order_FSLMNI152_2mm.nii')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf('xcp_d',
                           'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
@@ -160,8 +159,7 @@ def get_atlas_cifti(atlasname):
         else:
             atlasfile = pkgrf(
                 'xcp_d', 'data/ciftiatlas/'
-                'Schaefer2018_{0}Parcels_17Networks_order.dlabel.nii'.format(
-                    atlasname[8:11]))
+                f'Schaefer2018_{atlasname[8:11]}Parcels_17Networks_order.dlabel.nii')
     elif atlasname == 'glasser360':
         atlasfile = pkgrf(
             'xcp_d',

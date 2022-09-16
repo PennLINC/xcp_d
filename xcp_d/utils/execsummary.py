@@ -112,7 +112,7 @@ def plot_registrationx(
         display.close()
 
         # Find and replace the figure_1 id.
-        svg = svg.replace("figure_1", "%s-%s-%s" % (div_id, mode, uuid4()), 1)
+        svg = svg.replace("figure_1", f"{div_id}-{mode}-{uuid4()}", 1)
         out_files.append(fromstring(svg))
 
     return out_files

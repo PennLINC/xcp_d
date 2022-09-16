@@ -285,14 +285,13 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """
+    workflow.__desc__ = f"""
 ### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
-was used to post-process the outputs of fMRIPrep version {fvers} [@fmriprep1].
+was used to post-process the outputs of fMRIPrep version {getfmriprepv(fmri_dir=fmri_dir)}
+[@fmriprep1].
 XCP was built with *Nipype* {nipype_ver} [@nipype1].
-""".format(input_type=input_type,
-           nipype_ver=nipype_ver,
-           fvers=getfmriprepv(fmri_dir=fmri_dir))
+"""
 
     workflow.__postdesc__ = """
 

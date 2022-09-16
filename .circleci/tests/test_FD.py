@@ -50,7 +50,7 @@ def test_fd_interface_cifti(data_dir):  # Checking results
         assert len(censored_confounds_timeseries) == censored_image.get_fdata().shape[0]
     except Exception as exc:
         exc = len(censored_confounds_timeseries), censored_image.get_fdata().shape[0]
-        raise Exception("Sorry, the shapes are: {}.".format(exc))
+        raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
 def test_fd_interface_nifti(data_dir):  # Checking results
@@ -96,7 +96,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
         assert len(censored_confounds_timeseries) == censored_image.get_fdata().shape[3]
     except Exception as exc:
         exc = len(censored_confounds_timeseries), censored_image.get_fdata().shape[3]
-        raise Exception("Sorry, the shapes are: {}.".format(exc))
+        raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
 # Testing with CUSTOM CONFOUNDS
@@ -142,7 +142,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #         print(len(censored_confounds_timeseries))
 #     except Exception as exc:
 #         exc = len(censored_confounds_timeseries), censored_image.get_fdata().shape[0]
-#         raise Exception("Sorry, the shapes are: {}.".format(exc))
+#         raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
 
@@ -184,7 +184,7 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #         print(len(censored_confounds_timeseries))
 #     except Exception as exc:
 #         exc = len(censored_confounds_timeseries), censored_image.get_fdata().shape[3]
-#         raise Exception("Sorry, the shapes are: {}.".format(exc))
+#         raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
 
