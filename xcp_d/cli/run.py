@@ -41,7 +41,7 @@ def get_parser():
     """Build parser object"""
 
     from packaging.version import Version
-    from ..__about__ import __version__
+    from xcp_d.__about__ import __version__
 
     verstr = 'xcp_d v{}'.format(__version__)
     currentv = Version(__version__)
@@ -295,7 +295,7 @@ def main():
     sentry_sdk = None
     if not opts.notrack:
         import sentry_sdk
-        from ..utils.sentry import sentry_setup
+        from xcp_d.utils.sentry import sentry_setup
         sentry_setup(opts, exec_env)
 
     # Retrieve logging level
@@ -342,7 +342,7 @@ def main():
         xcpd_wf.run(**plugin_settings)
     except Exception as e:
         if not opts.notrack:
-            from ..utils.sentry import process_crashfile
+            from xcp_d.utils.sentry import process_crashfile
         crashfolders = [
             output_dir / 'xcp_d' / 'sub-{}'.format(s) / 'log' / run_uuid
             for s in subject_list
@@ -362,7 +362,7 @@ def main():
             sentry_sdk.capture_message('xcp_d finished without errors',
                                        level='info')
     finally:
-        from ..interfaces import generate_reports
+        from xcp_d.interfaces import generate_reports
         from subprocess import check_call, CalledProcessError, TimeoutExpired
         from pkg_resources import resource_filename as pkgrf
         from shutil import copyfile
@@ -446,10 +446,10 @@ def build_workflow(opts, retval):
 
     """
     from bids import BIDSLayout
-    from ..utils import collect_participants
+    from xcp_d.utils import collect_participants
     from nipype import logging as nlogging, config as ncfg
-    from ..__about__ import __version__
-    from ..workflow.base import init_xcpd_wf
+    from xcp_d.__about__ import __version__
+    from xcp_d.workflow.base import init_xcpd_wf
     build_log = nlogging.getLogger('nipype.workflow')
 
     INIT_MSG = """
@@ -496,8 +496,8 @@ def build_workflow(opts, retval):
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type == 'dcan':
         opts.cifti = True
-        from ..utils import dcan2fmriprep
-        from ..workflow.base import _prefix
+        from xcp_d.utils import dcan2fmriprep
+        from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
         print('checking the DCAN files')
         dcan_output_dir = str(work_dir) + '/dcanhcp'
@@ -515,8 +515,8 @@ def build_workflow(opts, retval):
 
     elif opts.input_type == 'hcp':
         opts.cifti = True
-        from ..utils import hcp2fmriprep
-        from ..workflow.base import _prefix
+        from xcp_d.utils import hcp2fmriprep
+        from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
         print('checking the HCP files')
         hcp_output_dir = str(work_dir) + '/hcphcp'

@@ -11,13 +11,13 @@ import nibabel as nb
 import numpy as np
 from brainsprite import viewer_substitute
 from pkg_resources import resource_filename as pkgrf
-from ..utils import (write_gii, read_gii, read_ndata, write_ndata)
-from ..utils import (compute_2d_reho, compute_alff, mesh_adjacency)
+from xcp_d.utils import (write_gii, read_gii, read_ndata, write_ndata)
+from xcp_d.utils import (compute_2d_reho, compute_alff, mesh_adjacency)
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -209,15 +209,15 @@ class brainplot(SimpleInterface):
 
 def zscore_nifti(img, outputname, mask=None):
     """
-    Turn image into z_score. 
+    Turn image into z_score.
     Image and mask must be in the same space.
 
     """
 
     img = nb.load(img)
 
-    if mask:  
-        # z-score the data 
+    if mask:
+        # z-score the data
         maskdata = nb.load(mask).get_fdata()
         imgdata = img.get_fdata()
         meandata = imgdata[maskdata > 0].mean()

@@ -8,16 +8,16 @@ post processing the bold/cifti
 """
 import os
 import numpy as np
-from ..utils.confounds import load_confound, load_motion
+from xcp_d.utils.confounds import load_confound, load_motion
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
-from ..utils import (read_ndata, write_ndata, compute_FD, compute_dvars)
+from xcp_d.utils import (read_ndata, write_ndata, compute_FD, compute_dvars)
 import pandas as pd
-from ..utils.plot import fMRIPlot
-from ..utils import regisQ
+from xcp_d.utils.plot import fMRIPlot
+from xcp_d.utils import regisQ
 
 LOGGER = logging.getLogger('nipype.interface')
 

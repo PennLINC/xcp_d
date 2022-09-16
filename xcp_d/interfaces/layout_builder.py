@@ -11,8 +11,8 @@ import os
 import re
 import glob as glob
 from pathlib import Path
-from .constants import *
-from .helpers import (find_one_file, find_and_copy_files)
+from xcp_d.interfaces.constants import *
+from xcp_d.interfaces.helpers import (find_one_file, find_and_copy_files)
 
 
 class ModalContainer(object):
@@ -315,7 +315,7 @@ class TasksSection(Section):
         self.section += TASKS_SECTION_END
 
 
-class layout_builder(object):
+class LayoutBuilder(object):
     def __init__(self, html_path, subject_id, session_id=None):
 
         self.working_dir = os.getcwd()

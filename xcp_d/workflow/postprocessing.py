@@ -10,10 +10,10 @@ import numpy as np
 import sklearn
 from nipype.pipeline import engine as pe
 from pkg_resources import resource_filename as pkgrf
-from ..utils.utils import stringforparams
+from xcp_d.utils.utils import stringforparams
 from templateflow.api import get as get_template
-from ..interfaces import (FilteringData, regress)
-from ..interfaces import (interpolate, RemoveTR, CensorScrub)
+from xcp_d.interfaces import (FilteringData, regress)
+from xcp_d.interfaces import (interpolate, RemoveTR, CensorScrub)
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
@@ -249,7 +249,7 @@ def init_resd_smoothing(mem_gb,
     outputnode = pe.Node(niu.IdentityInterface(fields=['smoothed_bold']),
                          name='outputnode')
 
-    sigma_lx = fwhm2sigma(smoothing) # Turn specified FWHM (Full-Width at Half Maximum) 
+    sigma_lx = fwhm2sigma(smoothing) # Turn specified FWHM (Full-Width at Half Maximum)
     # to standard deviation.
     if cifti:  # For ciftis
         workflow.__desc__ = """ \

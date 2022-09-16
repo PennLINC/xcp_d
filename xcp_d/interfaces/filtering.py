@@ -8,11 +8,11 @@ Handling filtering.
 import numpy as np
 from scipy.signal import butter, filtfilt
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)
-from ..utils import (read_ndata, write_ndata)
+from xcp_d.utils import (read_ndata, write_ndata)
 
 LOGGER = logging.getLogger('nipype.interface')
 

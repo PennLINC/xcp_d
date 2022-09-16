@@ -4,7 +4,7 @@ import numpy as np
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from ..utils import bid_derivative
+from xcp_d.utils import bid_derivative
 
 
 # RF: Not here
