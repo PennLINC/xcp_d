@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""Miscellaneous utility functions for xcp_d."""
 import os
 import numpy as np
 import glob as glob

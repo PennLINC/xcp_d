@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Functions for parcellating CIFTI file."""
+"""Functions for parcellating CIFTI files."""
 
 from nipype.interfaces.workbench.base import WBCommand
 from nipype.interfaces.base import TraitedSpec, File, traits, CommandLineInputSpec

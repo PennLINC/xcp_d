@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Stripped out routines for Sentry"""
+"""Stripped out routines for Sentry."""
 from pathlib import Path
 import re
 from niworkflows.utils.misc import read_crashfile

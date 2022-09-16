@@ -1,3 +1,4 @@
+"""ANTS interfaces."""
 import logging
 import os
 from nipype.interfaces.base import (

@@ -1,3 +1,4 @@
+"""Constants to be used by interfaces."""
 IMAGE_INFO = {
     't1w_brainplot': {
         'pattern': '*desc-brainplot_T1w.html',

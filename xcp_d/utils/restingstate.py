@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""Interfaces for working with resting-state fMRI data."""
 from nipype.interfaces.afni.utils import (ReHoInputSpec, ReHoOutputSpec,
                                           UnifizeOutputSpec, UnifizeInputSpec)
 from nipype.interfaces.afni.preprocess import DespikeInputSpec, AFNICommandOutputSpec

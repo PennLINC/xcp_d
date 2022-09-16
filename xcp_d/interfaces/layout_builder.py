@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+"""Classes for manipulating BIDS-format derivatives."""
 __doc__ = """
 Builds the layout for the Executive Summary of the bids-formatted output from
 the DCAN-Labs fMRI pipelines.

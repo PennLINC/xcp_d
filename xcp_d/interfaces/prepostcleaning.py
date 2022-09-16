@@ -1,3 +1,4 @@
+"""Interfaces for the post-processing workflows."""
 import os
 import numpy as np
 import pandas as pd

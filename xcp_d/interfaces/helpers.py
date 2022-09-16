@@ -1,3 +1,4 @@
+"""Helper functions for interfaces."""
 import os
 from os import path
 import glob

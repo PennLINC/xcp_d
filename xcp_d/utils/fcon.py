@@ -1,8 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-nifti functional connectivity
-"""
+"""Functions for calculating functional connectivity in NIFTI files."""
 from nilearn.input_data import NiftiLabelsMasker
 import numpy as np
 from scipy.stats import rankdata
