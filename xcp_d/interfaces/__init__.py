@@ -1,3 +1,7 @@
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Initialize interfaces."""
+
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.regression import regress, ciftidespike
 from xcp_d.interfaces.connectivity import (NiftiConnect, ApplyTransformsx, get_atlas_cifti,
