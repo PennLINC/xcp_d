@@ -570,8 +570,17 @@ def ensure_list(filename):
 
 
 def simplify_list(filelist):
-    """Returns a list if filelist is a list of length greater than 1,
-    otherwise returns the first element
+    """Return a list from a list of length greater than 1 or the first element if not.
+
+    Parameters
+    ----------
+    filelist : list
+        A list to simplify.
+
+    Returns
+    -------
+    list or str
+        A list of ``filelist`` is longer than 1. Otherwise the first element from the list.
     """
     if len(filelist) > 1:
         return filelist
@@ -584,7 +593,7 @@ list_to_filename = simplify_list
 
 
 def check_depends(targets, dependencies):
-    """Return true if all targets exist and are newer than all dependencies.
+    """Return True if all targets exist and are newer than all dependencies.
 
     An OSError will be raised if there are missing dependencies.
     """
@@ -596,7 +605,7 @@ def check_depends(targets, dependencies):
 
 
 def save_json(filename, data):
-    """Save data to a json file
+    """Save data to a json file.
 
     Parameters
     ----------
@@ -604,7 +613,6 @@ def save_json(filename, data):
         Filename to save data in.
     data : dict
         Dictionary to save in json file.
-
     """
     mode = "w"
     with open(filename, mode) as fp:
@@ -612,7 +620,7 @@ def save_json(filename, data):
 
 
 def load_json(filename):
-    """Load data from a json file
+    """Load data from a json file.
 
     Parameters
     ----------
@@ -622,15 +630,27 @@ def load_json(filename):
     Returns
     -------
     data : dict
-
+        The loaded data.
     """
-
     with open(filename, "r") as fp:
         data = json.load(fp)
     return data
 
 
 def loadcrash(infile, *args):
+    """Load pickled Nipype crashfile.
+
+    Parameters
+    ----------
+    infile : str
+        Path to the pickle file to load.
+    args : dict
+        These don't appear to be used.
+
+    Returns
+    -------
+
+    """
     if infile.endswith("pkl") or infile.endswith("pklz"):
         return loadpkl(infile)
     else:
@@ -714,7 +734,14 @@ the same Nipype version from the generated pkl."""
 
 
 def crash2txt(filename, record):
-    """Write out plain text crash file"""
+    """Write out plain text crash file.
+
+    Parameters
+    ----------
+    filename : str
+        Output filename.
+    record :
+    """
     with open(filename, "w") as fp:
         if "node" in record:
             node = record["node"]
@@ -954,7 +981,22 @@ def canonicalize_env(env):
 
 
 def relpath(path, start=None):
-    """Return a relative version of a path"""
+    """Return a relative version of a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to reformat.
+    start : None or str, optional
+        The starting location for the relative path.
+        If None, use the current working directory.
+        Default is None.
+
+    Returns
+    -------
+    str
+        Relative version of the path.
+    """
     try:
         return op.relpath(path, start)
     except AttributeError:
