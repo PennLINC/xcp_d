@@ -184,11 +184,11 @@ def run_shell(cmd, env=os.environ):
 
 
 def write_gii(datat, template, filename, hemi):
-    '''
+    """
     datatt : vector
     template: real file loaded with nibabel to get header and filemap
     filename ; name of the output
-    '''
+    """
     datax = np.array(datat, dtype='float32')
     template = str(
         get_template("fsLR", hemi=hemi, suffix='midthickness', density='32k', desc='vaavg'))

@@ -696,9 +696,9 @@ def _get_ref_mask(fname):
 
 
 def _t12native(fname):  # TODO: Update names and refactor
-    '''
+    """
     Takes in bold filename, finds transform from T1W to native space
-    '''
+    """
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]

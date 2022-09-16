@@ -141,9 +141,9 @@ def init_execsummary_wf(omp_nthreads,
 
 
 def t1_to_native(file_name):
-    '''
+    """
     Get t1 to native transform file
-    '''
+    """
     dir_name = os.path.dirname(file_name)
     filename = os.path.basename(file_name)
     file_name_prefix = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]

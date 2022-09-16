@@ -461,14 +461,14 @@ mean corr is 0.92
 
 
 def regression(data, confound):
-    '''
+    """
     data:
         numpy ndarray- vertices by timepoints
     confound:
         nuissance regressors reg by timepoints
     return:
         residual matrix
-    '''
+    """
     regr = LinearRegression()
     regr.fit(confound, data)
     y_pred = regr.predict(confound)

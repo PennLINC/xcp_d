@@ -17,9 +17,9 @@
 
 
 # def test_lp_notch():
-#     '''
+#     """
 #     Run LP/Notch on toy data, compare to results that have been verified
-#     '''
+#     """
 #     freqband = [12, 20]
 #     # Confirm the LP filter runs with reasonable parameters
 #     LP_data = motion_regression_filter(raw_data_df.to_numpy().T.copy(), TR=0.8, motion_filter_type='lp',
@@ -46,9 +46,9 @@
 
 
 # def test_butterworth():
-#     '''
+#     """
 #     Run Butterworth on toy data, compare to results that have been verified
-#     '''
+#     """
 #     # Confirm the butterworth filter runs with reasonable parameters
 #     butterworth_data = butter_bandpass(raw_data_df.to_numpy().T.copy(), fs=1/0.8, highpass=0.009,
 #                                        lowpass=0.080, order=2)
