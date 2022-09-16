@@ -7,9 +7,9 @@ post processing the bold/cifti
 
 """
 from nipype.pipeline import engine as pe
-from ..interfaces import computealff, surfaceReho, brainplot
+from xcp_d.interfaces import computealff, surfaceReho, brainplot
 from nipype.interfaces import utility as niu
-from ..utils import CiftiSeparateMetric, fwhm2sigma
+from xcp_d.utils import CiftiSeparateMetric, fwhm2sigma
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
 from templateflow.api import get as get_template
@@ -293,7 +293,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     outputnode = pe.Node(
         niu.IdentityInterface(fields=['reho_out', 'rehohtml']),
         name='outputnode')
-    from ..utils import ReHoNamePatch
+    from xcp_d.utils import ReHoNamePatch
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),

@@ -14,7 +14,7 @@ from nipype.interfaces.base import (
     CommandLine,
     isdefined,
 )
-from ..utils.filemanip import split_filename
+from xcp_d.utils.filemanip import split_filename
 import logging
 
 iflogger = logging.getLogger("interface")

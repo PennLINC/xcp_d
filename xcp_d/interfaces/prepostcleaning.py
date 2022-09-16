@@ -2,10 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 import nibabel as nb
-from ..utils import (read_ndata, write_ndata, compute_FD,
-                     generate_mask, interpolate_masked_data)
-from ..utils.filemanip import fname_presuffix
-from ..utils.confounds import (load_motion)
+from xcp_d.utils import (read_ndata, write_ndata, compute_FD,
+                         generate_mask, interpolate_masked_data)
+from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.confounds import (load_motion)
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)

@@ -2,10 +2,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Surface plotting interfaces."""
 
-from ..utils import (surf2vol, get_regplot, generate_brain_sprite, plot_svgx,
-                     plotimage, ribbon_to_statmap)
+from xcp_d.utils import (surf2vol, get_regplot, generate_brain_sprite, plot_svgx,
+                         plotimage, ribbon_to_statmap)
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix
 from nipype.interfaces.base import (traits, TraitedSpec,
                                     BaseInterfaceInputSpec, File,
                                     SimpleInterface)

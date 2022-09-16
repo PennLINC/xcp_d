@@ -10,11 +10,11 @@ functional connectvity matrix
 
 from nipype.pipeline import engine as pe
 import nilearn as nl
-from ..interfaces.connectivity import (NiftiConnect, get_atlas_nifti,
-                                       get_atlas_cifti, ApplyTransformsx)
-from ..interfaces import connectplot
+from xcp_d.interfaces.connectivity import (NiftiConnect, get_atlas_nifti,
+                                           get_atlas_cifti, ApplyTransformsx)
+from xcp_d.interfaces import connectplot
 from nipype.interfaces import utility as niu
-from ..utils import CiftiCorrelation, CiftiParcellate, get_transformfile
+from xcp_d.utils import CiftiCorrelation, CiftiParcellate, get_transformfile
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 

@@ -3,7 +3,7 @@
 """
 Base module variables
 """
-from ._version import get_versions
+from xcp_d._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 

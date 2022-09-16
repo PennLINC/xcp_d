@@ -13,21 +13,21 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import logging
 import sklearn
-from ..interfaces import computeqcplot
+from xcp_d.interfaces import computeqcplot
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from ..utils import (bid_derivative, stringforparams, get_maskfiles,
-                     get_transformfilex, get_transformfile)
-from ..interfaces import FunctionalSummary
+from xcp_d.utils import (bid_derivative, stringforparams, get_maskfiles,
+                         get_transformfilex, get_transformfile)
+from xcp_d.interfaces import FunctionalSummary
 from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
-from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_resd_smoothing
-from .execsummary import init_execsummary_wf
+from xcp_d.interfaces import (FilteringData, regress)
+from xcp_d.workflow.postprocessing import init_resd_smoothing
+from xcp_d.workflow.execsummary import init_execsummary_wf
 from num2words import num2words
-from ..workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
-from .outputs import init_writederivatives_wf
-from ..interfaces import (interpolate, RemoveTR, CensorScrub)
-from ..utils import DespikePatch
+from xcp_d.workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
+from xcp_d.workflow.outputs import init_writederivatives_wf
+from xcp_d.interfaces import (interpolate, RemoveTR, CensorScrub)
+from xcp_d.utils import DespikePatch
 
 LOGGER = logging.getLogger('nipype.workflow')
 
