@@ -1,21 +1,22 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
-
-"""Handling computation of reho and alff."""
-
+"""
+Handling computation of reho and alff.
+    .. testsetup::
+    # will comeback
+"""
 import os
 import tempita
 import nibabel as nb
 import numpy as np
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-from nipype import logging
 from brainsprite import viewer_substitute
 from pkg_resources import resource_filename as pkgrf
 from xcp_d.utils import (write_gii, read_gii, read_ndata, write_ndata)
 from xcp_d.utils import (compute_2d_reho, compute_alff, mesh_adjacency)
+from nipype.interfaces.base import (traits, TraitedSpec,
+                                    BaseInterfaceInputSpec, File,
+                                    SimpleInterface)
+from nipype import logging
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -33,23 +34,22 @@ class _surfaceRehoOutputSpec(TraitedSpec):
     surf_gii = File(exists=True, manadatory=True, desc=" lh hemisphere reho")
 
 
-class SurfaceReho(SimpleInterface):
-    """
-    surface reho computation.
-
+class surfaceReho(SimpleInterface):
+    r"""
+    surface reho computation
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    surfaceRehowf = SurfaceReho()
-    surfaceRehowf.inputs.surf_bold = rhhemi.func.gii
-    surfaceRehowf.inputs.surf_hemi = 'R'
-    surfaceRehowf.run()
+    >>> surfaceRehowf = surfaceReho()
+    >>> surfaceRehowf.inputs.surf_bold= rhhemi.func.gii
+    >>> surfaceRehowf.inputs.surf_hemi = 'R'
+    >>> surfaceRehowf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-    """
 
+    """
     input_spec = _surfaceRehoInputSpec
     output_spec = _surfaceRehoOutputSpec
 
@@ -97,27 +97,25 @@ class _alffOutputSpec(TraitedSpec):
     alff_out = File(exists=True, manadatory=True, desc=" alff")
 
 
-class ComputeAlff(SimpleInterface):
-    """
-    ALFF computation.
-
+class computealff(SimpleInterface):
+    r"""
+    ALFF computation
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computealffwf = ComputeAlff()
-    computealffwf.inputs.in_file = datafile
-    computealffwf.inputs.lowpass = 0.1
-    computealffwf.inputs.highpass = 0.01
-    computealffwf.inputs.TR = TR
-    computealffwf.inputs.mask_file = mask
-    computealffwf.run()
+    >>> computealffwf = computealff()
+    >>> computealffwf.inputs.in_file = datafile
+    >>> computealffwf.inputs.lowpass = 0.1
+    >>> computealffwf.inputs.highpass = 0.01
+    >>> computealffwf.inputs.TR = TR
+    >>> computealffwf.inputs.mask_file = mask
+    >>> computealffwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
 
     """
-
     input_spec = _alffInputSpec
     output_spec = _alffOutputSpec
 
@@ -162,9 +160,11 @@ class _brainplotOutputSpec(TraitedSpec):
     nifti_html = File(exists=True, manadatory=True, desc="zscore html")
 
 
-class BrainPlot(SimpleInterface):
-    """Convert to a z-score map."""
+class brainplot(SimpleInterface):
+    r"""
+    Convert to a z-score map
 
+    """
     input_spec = _brainplotInputSpec
     output_spec = _brainplotOutputSpec
 
@@ -176,8 +176,8 @@ class BrainPlot(SimpleInterface):
 
         # create a nifti with z-scores
         z_score_nifti = zscore_nifti(img=self.inputs.in_file,
-                                     mask=self.inputs.mask_file,
-                                     outputname=z_score_nifti)
+                                 mask=self.inputs.mask_file,
+                                 outputname=z_score_nifti)
         #  get the right template
         temptlatehtml = pkgrf('xcp_d',
                               'data/transform/brainsprite_template.html')
@@ -210,9 +210,10 @@ class BrainPlot(SimpleInterface):
 def zscore_nifti(img, outputname, mask=None):
     """
     Turn image into z_score.
-
     Image and mask must be in the same space.
+
     """
+
     img = nb.load(img)
 
     if mask:
