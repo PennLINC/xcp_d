@@ -1,7 +1,7 @@
-import os
-from os import path
 import glob
+import os
 import shutil
+from os import path
 
 
 def find_files(seek_dir, pattern):

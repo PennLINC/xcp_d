@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import numpy as np
 import glob as glob
-from templateflow.api import get as get_template
+import os
+
+import numpy as np
 from pkg_resources import resource_filename as pkgrf
+from templateflow.api import get as get_template
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):

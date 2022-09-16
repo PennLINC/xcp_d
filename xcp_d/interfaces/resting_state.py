@@ -6,17 +6,30 @@ Handling computation of reho and alff.
     # will comeback
 """
 import os
-import tempita
+
 import nibabel as nb
 import numpy as np
+import tempita
 from brainsprite import viewer_substitute
-from pkg_resources import resource_filename as pkgrf
-from xcp_d.utils import (write_gii, read_gii, read_ndata, write_ndata)
-from xcp_d.utils import (compute_2d_reho, compute_alff, mesh_adjacency)
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
 from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from pkg_resources import resource_filename as pkgrf
+
+from xcp_d.utils import (
+    compute_2d_reho,
+    compute_alff,
+    mesh_adjacency,
+    read_gii,
+    read_ndata,
+    write_gii,
+    write_ndata,
+)
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')

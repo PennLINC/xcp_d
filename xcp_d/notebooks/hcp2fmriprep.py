@@ -1,16 +1,17 @@
 #!~/anaconda3/bin/python
 import glob
+import json
 import os
+import subprocess
 import sys
-import pandas as pd
+from shutil import copyfile
+
+import h5py
 import nibabel as nb
 import numpy as np
-from shutil import copyfile
-import json
-import subprocess
-import h5py
-from sklearn.linear_model import LinearRegression
+import pandas as pd
 from scipy.stats import pearsonr
+from sklearn.linear_model import LinearRegression
 
 tmpdir = subprocess.run(['echo $SBIA_TMPDIR'],
                         stdout=subprocess.PIPE,

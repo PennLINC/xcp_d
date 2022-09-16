@@ -36,6 +36,7 @@ def generate_mask(
 def interpolate_masked_data(bold_data, tmask, TR=1):
     # import interpolate functionality
     from scipy.interpolate import interp1d
+
     # Confirm that interpolation can be correctly performed
     bold_data_interpolated = bold_data
     if np.mean(tmask) == 0:

@@ -2,39 +2,41 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Utilities for fmriprep bids derivatives and layout. most of the code copied from niworkflows, A PR will be submit to"""
 
-from pathlib import Path
-from collections import defaultdict
-import fnmatch, os
+import fnmatch
+import os
 import re
 import warnings
-from bids import BIDSLayout
+from collections import defaultdict
 from json import dumps, loads
+from pathlib import Path
 
-from nipype import logging
-from nipype.interfaces.base import (
-    traits,
-    isdefined,
-    Undefined,
-    BaseInterfaceInputSpec,
-    DynamicTraitedSpec,
-    File,
-    TraitedSpec,
-    InputMultiObject,
-    OutputMultiObject,
-    Str,
-    SimpleInterface,
-)
-from nipype.interfaces.io import add_traits
-from templateflow.api import templates as _get_template_list
-from niworkflows.utils.bids import relative_to_root
-from pkg_resources import resource_filename as _pkgres
-from niworkflows.utils.images import overwrite_header
-from niworkflows.utils.misc import splitext as _splitext, _copy_any
 import nibabel as nb
 import numpy as np
+from bids import BIDSLayout
 from bids.layout import parse_file_entities
 from bids.layout.writing import build_path
 from bids.utils import listify
+from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    DynamicTraitedSpec,
+    File,
+    InputMultiObject,
+    OutputMultiObject,
+    SimpleInterface,
+    Str,
+    TraitedSpec,
+    Undefined,
+    isdefined,
+    traits,
+)
+from nipype.interfaces.io import add_traits
+from niworkflows.utils.bids import relative_to_root
+from niworkflows.utils.images import overwrite_header
+from niworkflows.utils.misc import _copy_any
+from niworkflows.utils.misc import splitext as _splitext
+from pkg_resources import resource_filename as _pkgres
+from templateflow.api import templates as _get_template_list
 
 regz = re.compile(r"\.gz$")
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())

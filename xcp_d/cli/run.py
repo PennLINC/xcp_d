@@ -5,16 +5,16 @@ xcp_d preprocessing workflow
 =====
 """
 
-import os
-from pathlib import Path
-import logging
-import sys
 import gc
+import logging
+import os
+import sys
 import uuid
 import warnings
-from argparse import ArgumentParser
-from argparse import ArgumentDefaultsHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from pathlib import Path
 from time import strftime
+
 from niworkflows import NIWORKFLOWS_LOG
 
 warnings.filterwarnings("ignore")
@@ -41,6 +41,7 @@ def get_parser():
     """Build parser object"""
 
     from packaging.version import Version
+
     from xcp_d.__about__ import __version__
 
     verstr = f'xcp_d v{__version__}'
@@ -284,8 +285,9 @@ def get_parser():
 
 def main():
     """Entry point"""
+    from multiprocessing import Manager, Process, set_start_method
+
     from nipype import logging as nlogging
-    from multiprocessing import set_start_method, Process, Manager
     set_start_method('forkserver')
     warnings.showwarning = _warn_redirect
     opts = get_parser().parse_args()
@@ -295,6 +297,7 @@ def main():
     sentry_sdk = None
     if not opts.notrack:
         import sentry_sdk
+
         from xcp_d.utils.sentry import sentry_setup
         sentry_setup(opts, exec_env)
 
@@ -362,10 +365,12 @@ def main():
             sentry_sdk.capture_message('xcp_d finished without errors',
                                        level='info')
     finally:
-        from xcp_d.interfaces import generate_reports
-        from subprocess import check_call, CalledProcessError, TimeoutExpired
-        from pkg_resources import resource_filename as pkgrf
         from shutil import copyfile
+        from subprocess import CalledProcessError, TimeoutExpired, check_call
+
+        from pkg_resources import resource_filename as pkgrf
+
+        from xcp_d.interfaces import generate_reports
 
         citation_files = {
             ext: output_dir / 'xcp_d' / 'logs' / f'CITATION.{ext}'
@@ -446,9 +451,11 @@ def build_workflow(opts, retval):
 
     """
     from bids import BIDSLayout
-    from xcp_d.utils import collect_participants
-    from nipype import logging as nlogging, config as ncfg
+    from nipype import config as ncfg
+    from nipype import logging as nlogging
+
     from xcp_d.__about__ import __version__
+    from xcp_d.utils import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
     build_log = nlogging.getLogger('nipype.workflow')
 

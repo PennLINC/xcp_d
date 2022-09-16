@@ -3,11 +3,11 @@
 """
 nifti functional connectivity
 """
-from nilearn.input_data import NiftiLabelsMasker
-import numpy as np
-from scipy.stats import rankdata
-from scipy import signal
 import nibabel as nb
+import numpy as np
+from nilearn.input_data import NiftiLabelsMasker
+from scipy import signal
+from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 

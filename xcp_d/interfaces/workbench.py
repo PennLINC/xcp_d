@@ -2,17 +2,19 @@
 
 # from distutils.cmd import Command
 from signal import valid_signals
-from nipype.interfaces.workbench.base import WBCommand
-from nipype.interfaces.base import (
-    TraitedSpec,
-    File,
-    traits,
-    CommandLineInputSpec,
-    SimpleInterface,
-)
+
 from nipype import logging
-from xcp_d.utils.filemanip import fname_presuffix
+from nipype.interfaces.base import (
+    CommandLineInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from nipype.interfaces.workbench.base import WBCommand
 from sqlalchemy import false
+
+from xcp_d.utils.filemanip import fname_presuffix
 
 iflogger = logging.getLogger("nipype.interface")
 

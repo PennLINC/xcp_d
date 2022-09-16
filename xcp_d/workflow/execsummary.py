@@ -1,16 +1,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
 import fnmatch
 import glob
-from xcp_d.interfaces.connectivity import ApplyTransformsx
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from nipype.pipeline import engine as pe
+import os
+
 from nipype.interfaces import utility as niu
-from xcp_d.interfaces import PlotSVGData, PlotImage
-from xcp_d.utils import bid_derivative, get_transformfile
+from nipype.pipeline import engine as pe
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
+
+from xcp_d.interfaces import PlotImage, PlotSVGData
+from xcp_d.interfaces.connectivity import ApplyTransformsx
+from xcp_d.utils import bid_derivative, get_transformfile
 
 
 class DerivativesDataSink(bid_derivative):

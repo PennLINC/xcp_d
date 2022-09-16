@@ -1,20 +1,21 @@
 import logging
 import os
+
+from nipype.interfaces.ants.base import ANTSCommand, ANTSCommandInputSpec
 from nipype.interfaces.base import (
-    TraitedSpec,
-    CommandLineInputSpec,
     BaseInterfaceInputSpec,
     CommandLine,
+    CommandLineInputSpec,
     File,
-    traits,
-    Str,
-    InputMultiPath,
-    isdefined,
     InputMultiObject,
+    InputMultiPath,
     OutputMultiObject,
     SimpleInterface,
+    Str,
+    TraitedSpec,
+    isdefined,
+    traits,
 )
-from nipype.interfaces.ants.base import ANTSCommand, ANTSCommandInputSpec
 
 LOGGER = logging.getLogger("nipype.interface")
 

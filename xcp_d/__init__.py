@@ -7,14 +7,9 @@ This pipeline is developed by Ted lab
 (https://pennlinc.io/) for
 """
 
-from .__about__ import (  # noqa
-    __version__,
-    __copyright__,
-    __credits__,
-    __packagename__,
-)
-
 import warnings
+
+from .__about__ import __copyright__, __credits__, __packagename__, __version__  # noqa
 
 # cmp is not used by fmriprep, so ignore nipype-generated warnings
 warnings.filterwarnings('ignore', r'cmp not installed')

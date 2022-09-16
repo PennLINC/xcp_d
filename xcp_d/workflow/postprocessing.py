@@ -8,17 +8,16 @@ post processing the bold/cifti
 """
 import numpy as np
 import sklearn
-from nipype.pipeline import engine as pe
-from pkg_resources import resource_filename as pkgrf
-from xcp_d.utils.utils import stringforparams
-from templateflow.api import get as get_template
-from xcp_d.interfaces import (FilteringData, regress)
-from xcp_d.interfaces import (interpolate, RemoveTR, CensorScrub)
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
-
+from nipype.interfaces.workbench import CiftiSmooth
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from pkg_resources import resource_filename as pkgrf
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces import CensorScrub, FilteringData, RemoveTR, interpolate, regress
+from xcp_d.utils.utils import stringforparams
 
 
 def init_post_process_wf(
