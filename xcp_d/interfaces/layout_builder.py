@@ -451,8 +451,8 @@ class LayoutBuilder(object):
 
         # src1 = ' <div class="boiler-html"> ' + src11 + ' </div>'
         # src2 = ' <div class="boiler-html"> ' + src22 + ' </div>'
-        # t1_section = TxSection(tx='T1',brainplot=src1)
-        # t2_section = TxSection(tx='T2',brainplot=src2)
+        # t1_section = TxSection(tx='T1',BrainPlot=src1)
+        # t2_section = TxSection(tx='T2',BrainPlot=src2)
         # Assemble and write the document.
         html_doc = head + body + scripts + HTML_END
         if self.session_id is None:

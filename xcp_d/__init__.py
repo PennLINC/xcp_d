@@ -3,10 +3,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
-This pipeline is developed by Ted lab
-(https://pennlinc.io/) for
+This pipeline is developed by Ted lab (https://pennlinc.io/) for post-processing
+of fMRI data.
 """
 
+import warnings
 from .__about__ import (  # noqa
     __version__,
     __copyright__,
@@ -14,7 +15,6 @@ from .__about__ import (  # noqa
     __packagename__,
 )
 
-import warnings
 
 # cmp is not used by fmriprep, so ignore nipype-generated warnings
 warnings.filterwarnings('ignore', r'cmp not installed')

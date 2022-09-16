@@ -209,7 +209,7 @@ def init_anatomical_wf(
                 base_directory=output_dir,
                 check_hdr=False,
                 dismiss_entities=["desc"],
-                desc="brainplot",
+                desc="BrainPlot",
                 datatype="figures",
             ),
             name="brainspriteplot",
@@ -1283,7 +1283,7 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )
 
-            # brainplot
+            # BrainPlot
             brainspritex_wf = pe.Node(
                 BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
             )
@@ -1293,7 +1293,7 @@ def init_anatomical_wf(
                     base_directory=output_dir,
                     check_hdr=False,
                     dismiss_entities=["desc"],
-                    desc="brainplot",
+                    desc="BrainPlot",
                     datatype="figures",
                 ),
                 name="brainspriteplot",
@@ -1327,7 +1327,7 @@ def init_anatomical_wf(
                     dismiss_entities=[
                         "desc",
                     ],
-                    desc="brainplot",
+                    desc="BrainPlot",
                     datatype="figures",
                 ),
                 name="brainspriteplot",
