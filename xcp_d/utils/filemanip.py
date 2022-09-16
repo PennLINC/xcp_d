@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Miscellaneous file manipulation functions
-"""
+"""Miscellaneous file manipulation functions."""
 import sys
 import pickle
 import errno
@@ -30,7 +29,7 @@ related_filetype_sets = [(".hdr", ".img", ".mat"), (".nii", ".mat"), (".BRIK", "
 
 
 def _resolve_with_filenotfound(path, **kwargs):
-    """Raise FileNotFoundError instead of OSError"""
+    """Raise FileNotFoundError instead of OSError."""
     try:
         return path.resolve(**kwargs)
     except OSError as e:
@@ -40,6 +39,7 @@ def _resolve_with_filenotfound(path, **kwargs):
 
 
 def path_resolve(path, strict=False):
+    """Resolve a path."""
     try:
         return _resolve_with_filenotfound(path, strict=strict)
     except TypeError:  # PY35
@@ -84,9 +84,7 @@ def split_filename(fname):
 
     >>> ext
     '.nii.gz'
-
     """
-
     # TM 07152022 - edited to add cifti and workbench extensions
     special_extensions = [
         ".nii.gz",
@@ -134,7 +132,7 @@ def split_filename(fname):
 
 
 def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
-    """Manipulates path and name of input filename
+    """Manipulate path and name of input filename.
 
     Parameters
     ----------
@@ -152,8 +150,11 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
 
     Returns
     -------
-    Absolute path of the modified filename
+    str
+        Absolute path of the modified filename
 
+    Examples
+    --------
     >>> from nipype.utils.filemanip import fname_presuffix
     >>> fname = 'foo.nii.gz'
     >>> fname_presuffix(fname,'pre','post','/tmp')
@@ -163,7 +164,6 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
     >>> fname_presuffix(fname, 'pre', 'post', Undefined) == \
             fname_presuffix(fname, 'pre', 'post')
     True
-
     """
     pth, fname, ext = split_filename(fname)
     if not use_ext:
@@ -176,7 +176,7 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
 
 
 def fnames_presuffix(fnames, prefix="", suffix="", newpath=None, use_ext=True):
-    """Calls fname_presuffix for a list of files."""
+    """Call fname_presuffix for a list of files."""
     f2 = []
     for fname in fnames:
         f2.append(fname_presuffix(fname, prefix, suffix, newpath, use_ext))
@@ -184,8 +184,7 @@ def fnames_presuffix(fnames, prefix="", suffix="", newpath=None, use_ext=True):
 
 
 def hash_rename(filename, hashvalue):
-    """renames a file given original filename and hash
-    and sets path to output_directory
+    """Rename a file given original filename and hash, and set path to output_directory.
     """
     path, name, ext = split_filename(filename)
     newfilename = "".join((name, "_0x", hashvalue, ext))
@@ -193,7 +192,7 @@ def hash_rename(filename, hashvalue):
 
 
 def check_forhash(filename):
-    """checks if file has a hash in its filename"""
+    """Checks if file has a hash in its filename."""
     if isinstance(filename, list):
         filename = filename[0]
     path, name = op.split(filename)
@@ -205,9 +204,10 @@ def check_forhash(filename):
 
 
 def hash_infile(afile, chunk_len=8192, crypto=hashlib.md5, raise_notfound=False):
-    """
-    Computes hash of a file using 'crypto' module
+    """Compute hash of a file using 'crypto' module.
 
+    Examples
+    --------
     >>> hash_infile('smri_ants_registration_settings.json')
     'f225785dfb0db9032aa5a0e4f2c730ad'
 
@@ -219,8 +219,6 @@ def hash_infile(afile, chunk_len=8192, crypto=hashlib.md5, raise_notfound=False)
 
     >>> hash_infile('fsl_motion_outliers_fd.txt')
     'defd1812c22405b1ee4431aac5bbdd73'
-
-
     """
     if not op.isfile(afile):
         if raise_notfound:
@@ -238,7 +236,7 @@ def hash_infile(afile, chunk_len=8192, crypto=hashlib.md5, raise_notfound=False)
 
 
 def hash_timestamp(afile):
-    """Computes md5 hash of the timestamp of a file"""
+    """Compute md5 hash of the timestamp of a file."""
     md5hex = None
     if op.isfile(afile):
         md5obj = md5()
@@ -250,10 +248,9 @@ def hash_timestamp(afile):
 
 
 def _parse_mount_table(exit_code, output):
-    """Parses the output of ``mount`` to produce (path, fs_type) pairs
+    """Parse the output of ``mount`` to produce ``(path, fs_type)`` pairs.
 
-    Separated from _generate_cifs_table to enable testing logic with real
-    outputs
+    Separated from _generate_cifs_table to enable testing logic with real outputs.
     """
     # Not POSIX
     if exit_code != 0:
@@ -373,7 +370,8 @@ def copyfile(
 
     Returns
     -------
-    None
+    newfile : str
+        The full path to the new file.
     """
     newhash = None
     orighash = None
@@ -649,7 +647,7 @@ def loadcrash(infile, *args):
 
     Returns
     -------
-
+    Contents of the pickled crashfile.
     """
     if infile.endswith("pkl") or infile.endswith("pklz"):
         return loadpkl(infile)
@@ -740,7 +738,8 @@ def crash2txt(filename, record):
     ----------
     filename : str
         Output filename.
-    record :
+    record
+        The record to write to the file.
     """
     with open(filename, "w") as fp:
         if "node" in record:
@@ -753,14 +752,23 @@ def crash2txt(filename, record):
 
 
 def read_stream(stream, logger=None, encoding=None):
-    """
-    Robustly reads a stream, sending a warning to a logger
-    if some decoding error was raised.
+    """Robustly read a stream, sending a warning to a logger if some decoding error was raised.
 
+    Parameters
+    ----------
+    stream
+    logger
+    encoding
+
+    Returns
+    -------
+    list of str
+        The stream, split by line.
+
+    Examples
+    --------
     >>> read_stream(bytearray([65, 0xc7, 65, 10, 66]))  # doctest: +ELLIPSIS
     ['A...A', 'B']
-
-
     """
     default_encoding = encoding or locale.getdefaultlocale()[1] or "UTF-8"
     logger = logger or fmlogger
@@ -773,6 +781,18 @@ def read_stream(stream, logger=None, encoding=None):
 
 
 def savepkl(filename, record, versioning=False):
+    """Save a record to a pickle file.
+
+    Parameters
+    ----------
+    filename : str
+        The file in which to save the record.
+    record
+        The information to save to the file.
+    versioning : bool, optional
+        Whether to save the nipype version in the file as well or not.
+        Default is False.
+    """
     from io import BytesIO
 
     with BytesIO() as f:
@@ -802,10 +822,39 @@ rst_levels = ["=", "-", "~", "+"]
 
 
 def write_rst_header(header, level=0):
+    """Convert a string to a restructuredText header.
+
+    Parameters
+    ----------
+    header : str
+        String to reformat.
+    level : int, optional
+        The heading level.
+        Default is 0.
+
+    Returns
+    -------
+    str
+        A restructuredText-format header string.
+    """
     return "\n".join((header, "".join([rst_levels[level] for _ in header]))) + "\n\n"
 
 
 def write_rst_list(items, prefix=""):
+    """Convert a list to a restructuredText string.
+
+    Parameters
+    ----------
+    items : list
+        List to reformat.
+    prefix : str, optional
+        Default is "".
+
+    Returns
+    -------
+    str
+        A restructuredText-format string with the information from ``items``.
+    """
     out = []
     for item in ensure_list(items):
         out.append("{} {}".format(prefix, str(item)))
@@ -813,6 +862,20 @@ def write_rst_list(items, prefix=""):
 
 
 def write_rst_dict(info, prefix=""):
+    """Convert a dictionary to a restructuredText string.
+
+    Parameters
+    ----------
+    info : dict
+        Dictionary to reformat.
+    prefix : str, optional
+        Default is "".
+
+    Returns
+    -------
+    str
+        A restructuredText-format string with the information from ``info``.
+    """
     out = []
     for key, value in sorted(info.items()):
         out.append("{}* {} : {}".format(prefix, key, str(value)))
@@ -820,14 +883,21 @@ def write_rst_dict(info, prefix=""):
 
 
 def dist_is_editable(dist):
-    """Is distribution an editable install?
+    """Check if distribution is an editable install.
 
     Parameters
     ----------
-    dist : string
-        Package name
+    dist : str
+        Package name.
 
-    # Borrowed from `pip`'s' API
+    Returns
+    -------
+    bool
+        True if the distribution is an editable install, or False if not.
+
+    Notes
+    -----
+    Borrowed from `pip`'s' API.
     """
     for path_item in sys.path:
         egg_link = op.join(path_item, dist + ".egg-link")
@@ -837,14 +907,16 @@ def dist_is_editable(dist):
 
 
 def emptydirs(path, noexist_ok=False):
-    """
-    Empty an existing directory, without deleting it. Do not
-    raise error if the path does not exist and noexist_ok is True.
+    """Empty an existing directory, without deleting it.
+
+    Do not raise error if the path does not exist and noexist_ok is True.
 
     Parameters
     ----------
-    path : directory that should be empty
-
+    path : str
+        directory that should be empty
+    noexist_ok : bool, optional
+        Default is False.
     """
     fmlogger.debug("Removing contents of %s", path)
 
@@ -879,16 +951,19 @@ def emptydirs(path, noexist_ok=False):
 
 
 def silentrm(filename):
-    """
-    Equivalent to ``rm -f``, returns ``False`` if the file did not
-    exist.
+    """Delete a file without raising an exception if it fails.
+
+    Equivalent to ``rm -f``, returns ``False`` if the file did not exist.
 
     Parameters
     ----------
-
     filename : str
         file to be deleted
 
+    Returns
+    -------
+    bool
+        True if the file was successfully deleted, else False.
     """
     try:
         os.remove(filename)
@@ -900,15 +975,13 @@ def silentrm(filename):
 
 
 def which(cmd, env=None, pathext=None):
-    """
-    Return the path to an executable which would be run if the given
-    cmd was called. If no cmd would be called, return ``None``.
+    """Return the path to an executable which would be run if the given cmd was called.
+
+    If no cmd would be called, return ``None``.
 
     Code for Python < 3.3 is based on a code snippet from
     http://orip.org/2009/08/python-checking-if-executable-exists-in.html
-
     """
-
     if pathext is None:
         pathext = os.getenv("PATHEXT", "").split(os.pathsep)
         pathext.insert(0, "")
@@ -925,10 +998,9 @@ def which(cmd, env=None, pathext=None):
 
 
 def get_dependencies(name, environ):
-    """Return library dependencies of a dynamically linked executable
+    """Return library dependencies of a dynamically linked executable.
 
     Uses otool on darwin, ldd on linux. Currently doesn't support windows.
-
     """
     command = None
     if sys.platform == "darwin":
@@ -952,7 +1024,9 @@ def get_dependencies(name, environ):
 
 
 def canonicalize_env(env):
-    """Windows requires that environment be dicts with str as keys and values
+    """Convert any unicode entries for Windows only.
+
+    Windows requires that environment be dicts with str as keys and values
     This function converts any unicode entries for Windows only, returning the
     dictionary untouched in other environments.
 
