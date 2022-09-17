@@ -16,7 +16,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import FilteringData
+from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.utils.utils import stringforparams
 
 

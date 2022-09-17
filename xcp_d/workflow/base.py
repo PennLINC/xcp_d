@@ -21,14 +21,14 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
-from xcp_d.interfaces import AboutSummary, SubjectSummary
-from xcp_d.utils import (
-    bid_derivative,
+from xcp_d.interfaces.report import AboutSummary, SubjectSummary
+from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
     select_cifti_bold,
     select_registrationfile,
 )
+from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
 from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
@@ -475,7 +475,7 @@ def _pop(inlist):
 
 
 # RF: this shouldn't be in this file
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(bids_derivative):
     """
     defines the data sink for the workflow
     """

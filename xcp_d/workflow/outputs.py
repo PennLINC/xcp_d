@@ -5,11 +5,11 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.utils import bid_derivative
+from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
 
 
 # RF: Not here
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(bids_derivative):
     out_path_base = 'xcp_d'
 
 

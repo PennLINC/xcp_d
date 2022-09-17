@@ -17,17 +17,12 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
-from xcp_d.interfaces import (
-    CensorScrub,
-    FilteringData,
-    FunctionalSummary,
-    RemoveTR,
-    ciftidespike,
-    computeqcplot,
-    interpolate,
-    regress,
-)
-from xcp_d.utils import bid_derivative
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR, interpolate
+from xcp_d.interfaces.qc_plot import computeqcplot
+from xcp_d.interfaces.regression import ciftidespike, regress
+from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -572,7 +567,7 @@ def _create_mem_gb(bold_fname):
 
 
 # RF: shouldn't be here
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(bids_derivative):
     out_path_base = 'xcp_d'
 
 

@@ -25,10 +25,10 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
+from xcp_d.interfaces.surfplotting import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -38,10 +38,12 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils import CiftiSurfaceResample, bid_derivative, collect_data
+from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.bids import collect_data
+from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 
 
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(bids_derivative):
     out_path_base = "xcp_d"
 
 

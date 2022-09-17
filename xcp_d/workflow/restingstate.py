@@ -13,8 +13,8 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import brainplot, computealff, surfaceReho
-from xcp_d.utils import CiftiSeparateMetric
+from xcp_d.interfaces.resting_state import brainplot, computealff, surfaceReho
+from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
 
