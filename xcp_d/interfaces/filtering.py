@@ -6,13 +6,18 @@ Handling filtering.
     # will comeback
 """
 import numpy as np
-from scipy.signal import butter, filtfilt
 from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from scipy.signal import butter, filtfilt
+
+from xcp_d.utils import read_ndata, write_ndata
 from xcp_d.utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-from xcp_d.utils import (read_ndata, write_ndata)
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -50,18 +55,18 @@ class FilteringData(SimpleInterface):
     """Filter the data with scipy.signal.
 
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+    from tempfile import TemporaryDirectory
+    tmpdir = TemporaryDirectory()
+    os.chdir(tmpdir.name)
     .. doctest::
-    >>> filt=FilteringData()
-    >>> filt.inputs.in_file = reg._results['res_file']
-    >>> filt.inputs.TR = 3
-    >>> filt.inputs.lowpass = 0.08
-    >>> filt.inputs.highpass = 0.01
-    >>> filt.run()
+    filt=FilteringData()
+    filt.inputs.in_file = reg._results['res_file']
+    filt.inputs.TR = 3
+    filt.inputs.lowpass = 0.08
+    filt.inputs.highpass = 0.01
+    filt.run()
     .. testcleanup::
-    >>> tmpdir.cleanup()
+    tmpdir.cleanup()
     """
 
     input_spec = _filterdataInputSpec
@@ -137,6 +142,6 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     # apply the filter, loop through columns of regressors
     for ii in range(filtered_data.shape[0]):
         filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
-                                        padlen=3*(max(len(b), len(a))-1))
+                                        padlen=3 * (max(len(b), len(a)) - 1))
 
     return filtered_data

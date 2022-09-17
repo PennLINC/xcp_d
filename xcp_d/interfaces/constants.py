@@ -32,26 +32,32 @@ HTML_START = """
 <html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
-    integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet"
+href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
+    integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ"
+    crossorigin="anonymous">
 <style type="text/css">
     header, footer, section, article, nav, aside { display: block; }
-    h1, h2, h3, body, button, p, w3-btn { font-family: Verdana, Helvetica, Arial, Bookman, sans-serif; }
+    h1, h2, h3, body, button, p, w3-btn { font-family: Verdana, Helvetica,
+    Arial, Bookman, sans-serif; }
     h1 { text-align: center; font-size: 2.5em; }
     h2{ text-align: center; font-size: 2.00em; }
     h3{ text-align: left; font-size: 2.5em; }
     p{ font-size: 1.0em; }
     body{ font-size: 1.0em; }
     img{ width: 100%; padding: 2px; }
-    .label1, .label2, .label3, .label4{ font-family: Verdana, Helvetica, Arial, Bookman, sans-serif }
+    .label1, .label2, .label3, .label4{ font-family: Verdana, Helvetica,
+     Arial, Bookman, sans-serif }
     .label1 { font-size: 1.25em; text-align: center; }
     .label2 { font-size: 1.25em; text-align: right; }
     .label3 { font-size: 1.25em; text-align: left; }
     .label4 { font-size: 1.00em; text-align: center; }
     .grid-container { grid-gap: 2px; padding: 2px; }
     .T1pngs, .T2pngs, .Registrations, .Images { display: none; }
-    .modal { vertical-align: top; margin-top:0; border-top-style:none; padding-top:0; top:0; height: 100%; width: auto; }
+    .modal { vertical-align: top; margin-top:0; border-top-style:none;
+     padding-top:0; top:0; height: 100%; width: auto; }
     .Images{ height: 100%; width: auto; }
 </style>
 <body>
@@ -115,21 +121,24 @@ TX_SECTION_END = """
 LAYOUT_ROW = """
         <div  class="w3-row-padding">
             <div class="w3-col l1 label2">{row_label}</div>
-            <div class="w3-col l11"><img src="{row_img}" onclick="open_{row_modal}_to_index({row_idx})"></div>
+            <div class="w3-col l11"><img src="{row_img}"
+            onclick="open_{row_modal}_to_index({row_idx})"></div>
         </div>
         """
 
 LAYOUT_HALF_ROW = """
         <div  class="w3-row-padding">
             <div class="w3-col l2 label2">{row_label}</div>
-            <div class="w3-col l9"><img src="{row_img}" onclick="open_{row_modal}_to_index({row_idx})"></div>
+            <div class="w3-col l9"><img src="{row_img}"
+            onclick="open_{row_modal}_to_index({row_idx})"></div>
         </div>
         """
 
 LAYOUT_QUARTER_ROW = """
             <div class="w3-quarter">
                 <div class="w3-row w3-center label1">{row_label}</div>
-                <div class="w3-row"><img src="{row_img}" onclick="open_{row_modal}_to_index({row_idx})"></div>
+                <div class="w3-row"><img src="{row_img}" onclick="open
+                _{row_modal}_to_index({row_idx})"></div>
             </div>
             """
 
@@ -230,11 +239,13 @@ BOLD_GRAY_END = """
 # BOLD_GRAY_ROW2="""
 # <div class="w3-quarter">
 # <div class="w3-row w3-center label1">Pre-Regression</div>
-# <div class="w3-row"><img src="{task_pre_reg_gray}" onclick="open_{modal_id}_to_index({task_pre_reg_gray_idx})"></div>
+# <div class="w3-row"><img src="{task_pre_reg_gray}"
+# onclick="open_{modal_id}_to_index({task_pre_reg_gray_idx})"></div>
 # </div>
 # <div class="w3-quarter">
 # <div class="w3-row w3-center label1">Post-Regression</div>
-# <div class="w3-row"><img src="{task_post_reg_gray}" onclick="open_{modal_id}_to_index({task_post_reg_gray_idx})"></div>
+# <div class="w3-row"><img src="{task_post_reg_gray}"
+# onclick="open_{modal_id}_to_index({task_post_reg_gray_idx})"></div>
 # </div>
 # """
 
@@ -259,7 +270,8 @@ MODAL_START = """
 # Needs the following values:
 #    modal_id, btn_label
 DISPLAY_MODAL_BUTTON = """
-            <button class="w3-btn w3-teal" onclick="open_{modal_id}_to_index(1)">{btn_label}</button>
+            <button class="w3-btn w3-teal"
+            onclick="open_{modal_id}_to_index(1)">{btn_label}</button>
             """
 
 # Add the containers' buttons at the end, so that they don't
@@ -279,7 +291,8 @@ SLIDER_END = """
 #    modal_id
 MODAL_END = """
                 <button class="w3-btn w3-red w3-display-topright w3-large"
-                    onclick="document.getElementById('{modal_id}').style.display='none'"><i class="fa fa-close"></i></button>
+                    onclick="document.getElementById('{modal_id}').style.display='none'">
+                    <i class="fa fa-close"></i></button>
             </div>
         </div>
     </div>

@@ -4,12 +4,18 @@
 
 import os
 import time
-import pandas as pd
 
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    InputMultiObject, Str, isdefined,
-                                    SimpleInterface)
+import pandas as pd
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    InputMultiObject,
+    SimpleInterface,
+    Str,
+    TraitedSpec,
+    isdefined,
+    traits,
+)
 
 SUBJECT_TEMPLATE = """\
 \t<ul class="elem-desc">

@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 """Interfaces for working with resting-state fMRI data."""
-from nipype.interfaces.afni.utils import (ReHoInputSpec, ReHoOutputSpec,
-                                          UnifizeOutputSpec, UnifizeInputSpec)
-from nipype.interfaces.afni.preprocess import DespikeInputSpec, AFNICommandOutputSpec
-from nipype.interfaces.base import SimpleInterface
 import os
 import shutil
+
+from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
+from nipype.interfaces.afni.utils import (
+    ReHoInputSpec,
+    ReHoOutputSpec,
+    UnifizeInputSpec,
+    UnifizeOutputSpec,
+)
+from nipype.interfaces.base import SimpleInterface
 
 
 class ReHoNamePatch(SimpleInterface):

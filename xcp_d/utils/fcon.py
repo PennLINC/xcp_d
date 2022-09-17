@@ -1,11 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for calculating functional connectivity in NIFTI files."""
-from nilearn.input_data import NiftiLabelsMasker
-import numpy as np
-from scipy.stats import rankdata
-from scipy import signal
 import nibabel as nb
+import numpy as np
+from nilearn.input_data import NiftiLabelsMasker
+from scipy import signal
+from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 
@@ -77,7 +77,8 @@ def compute_2d_reho(datat, adjacency_matrix):
         for j in range(neidata.shape[0]):  # loop through each neighbour
             rankeddata[j, :] = rankdata(neidata[j, ])  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
-        # KC is the sum of the squared rankmean minus the timepoints into the mean of the rankmean squared
+        # KC is the sum of the squared rankmean minus the timepoints into
+        # the mean of the rankmean squared
         KC = np.sum(np.power(rankmean, 2)) - \
             timepoint * np.power(np.mean(rankmean), 2)
         # square number of neighbours, multiply by (cubed timepoint - timepoint)

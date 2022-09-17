@@ -1,17 +1,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for generating the executive summary."""
-import nilearn.image as nlimage
-import tempita
-from pkg_resources import resource_filename as pkgrf
-from brainsprite import viewer_substitute
-import numpy as np
-import nibabel as nb
 from uuid import uuid4
+
+import nibabel as nb
+import nilearn.image as nlimage
+import numpy as np
+import tempita
+from brainsprite import viewer_substitute
 from nilearn.plotting import plot_anat
-from niworkflows.viz.utils import extract_svg, robust_set_limits, compose_view
-from svgutils.transform import fromstring
+from niworkflows.viz.utils import compose_view, extract_svg, robust_set_limits
+from pkg_resources import resource_filename as pkgrf
 from skimage import measure
+from svgutils.transform import fromstring
 
 
 def surf2vol(template, left_surf, right_surf, filename, scale=1):

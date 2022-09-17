@@ -1,18 +1,16 @@
 """Custom wb_command interfaces."""
 
-# from distutils.cmd import Command
-from signal import valid_signals
-from nipype.interfaces.workbench.base import WBCommand
-from nipype.interfaces.base import (
-    TraitedSpec,
-    File,
-    traits,
-    CommandLineInputSpec,
-    SimpleInterface,
-)
 from nipype import logging
+from nipype.interfaces.base import (
+    CommandLineInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from nipype.interfaces.workbench.base import WBCommand
+
 from xcp_d.utils.filemanip import fname_presuffix
-from sqlalchemy import false
 
 iflogger = logging.getLogger("nipype.interface")
 

@@ -14,6 +14,6 @@ __all__ = [
     'init_fcon_ts_wf', 'init_cifti_conts_wf', 'init_post_process_wf',
     'init_compute_alff_wf', 'init_surface_reho_wf', 'init_3d_reho_wf',
     'init_boldpostprocess_wf', 'init_ciftipostprocess_wf', 'init_xcpd_wf',
-    'init_censoring_wf', 'init_resd_smoothing', 'get_transformfile',
+    'init_resd_smoothing', 'get_transformfile',
     'init_anatomical_wf', 'init_execsummary_wf'
 ]

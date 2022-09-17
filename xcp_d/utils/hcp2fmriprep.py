@@ -1,14 +1,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-format data to fMRIPrep format."""
-import os
-import json
-import glob
-import shutil
 import filecmp
+import glob
+import json
+import os
+import shutil
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
 from nilearn.input_data import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
 
@@ -46,24 +47,24 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
     ribbon = anat_dirx + '/ribbon.nii.gz'
     segm = anat_dirx + '/aparc+aseg.nii.gz'
 
-    midR = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
-    midL = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
-    infR = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
-    infL = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
+    midR = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
+    midL = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
+    infR = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
+    infL = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
 
-    pialR = glob.glob(anat_dirx +
-                      '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
-    pialL = glob.glob(anat_dirx +
-                      '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
+    pialR = glob.glob(anat_dirx
+                      + '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
+    pialL = glob.glob(anat_dirx
+                      + '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
 
-    whiteR = glob.glob(anat_dirx +
-                       '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
-    whiteL = glob.glob(anat_dirx +
-                       '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
+    whiteR = glob.glob(anat_dirx
+                       + '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
+    whiteL = glob.glob(anat_dirx
+                       + '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
 
     hcpfiles = [
         tw1, segm, ribbon, brainmask, tw1, tw1, midL, midR, pialL, pialR,
@@ -143,13 +144,13 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         # write out the json
         # jsonreg = pd.DataFrame({'LR': [1, 2, 3]})  # just a fake json
-        regressors.to_csv(funcdir + '/sub-' + subid + '_task-' + idx[1] +
-                          '_acq-' + idx[2] + '_desc-confounds_timeseries.tsv',
+        regressors.to_csv(funcdir + '/sub-' + subid + '_task-' + idx[1]
+                          + '_acq-' + idx[2] + '_desc-confounds_timeseries.tsv',
                           index=False,
                           sep='\t')
-        regressors.to_json(funcdir + '/sub-' + subid + '_task-' + idx[1] +
-                           '_acq-' + idx[2] +
-                           '_desc-confounds_timeseries.json')
+        regressors.to_json(funcdir + '/sub-' + subid + '_task-' + idx[1]
+                           + '_acq-' + idx[2]
+                           + '_desc-confounds_timeseries.json')
 
         # functional files
         hcp_ref = k + '/' + filenamex + '_SBRef.nii.gz'

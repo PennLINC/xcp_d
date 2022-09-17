@@ -1,10 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Stripped out routines for Sentry."""
-from pathlib import Path
 import re
-from niworkflows.utils.misc import read_crashfile
+from pathlib import Path
+
 import sentry_sdk
+from niworkflows.utils.misc import read_crashfile
 
 CHUNK_SIZE = 16384
 # Group common events with pre specified fingerprints
@@ -34,7 +35,9 @@ def start_ping(run_uuid, npart):
 
 def sentry_setup(opts, exec_env):
     from os import cpu_count
+
     import psutil
+
     from xcp_d.__about__ import __version__
 
     environment = "develop"

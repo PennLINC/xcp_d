@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 """Convert3D is a command-line tool for converting 3D images between common file formats."""
+import logging
 import os
 from glob import glob
 
 from nipype.interfaces.base import (
+    CommandLine,
     CommandLineInputSpec,
-    traits,
-    TraitedSpec,
     File,
-    SEMLikeCommandLine,
     InputMultiPath,
     OutputMultiPath,
-    CommandLine,
+    SEMLikeCommandLine,
+    TraitedSpec,
     isdefined,
+    traits,
 )
+
 from xcp_d.utils.filemanip import split_filename
-import logging
 
 iflogger = logging.getLogger("interface")
 

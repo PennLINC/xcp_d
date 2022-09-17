@@ -1,15 +1,26 @@
 """Interfaces for the post-processing workflows."""
 import os
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
-from xcp_d.utils import (read_ndata, write_ndata, compute_FD,
-                         generate_mask, interpolate_masked_data)
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils import (
+    compute_FD,
+    generate_mask,
+    interpolate_masked_data,
+    read_ndata,
+    write_ndata,
+)
+from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.confounds import (load_motion)
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):

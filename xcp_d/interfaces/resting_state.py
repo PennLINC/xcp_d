@@ -6,17 +6,30 @@
     # will comeback
 """
 import os
-import tempita
+
 import nibabel as nb
 import numpy as np
+import tempita
 from brainsprite import viewer_substitute
-from pkg_resources import resource_filename as pkgrf
-from xcp_d.utils import (write_gii, read_gii, read_ndata, write_ndata)
-from xcp_d.utils import (compute_2d_reho, compute_alff, mesh_adjacency)
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
 from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from pkg_resources import resource_filename as pkgrf
+
+from xcp_d.utils import (
+    compute_2d_reho,
+    compute_alff,
+    mesh_adjacency,
+    read_gii,
+    read_ndata,
+    write_gii,
+    write_ndata,
+)
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -109,13 +122,13 @@ class computealff(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> computealffwf = computealff()
-    >>> computealffwf.inputs.in_file = datafile
-    >>> computealffwf.inputs.lowpass = 0.1
-    >>> computealffwf.inputs.highpass = 0.01
-    >>> computealffwf.inputs.TR = TR
-    >>> computealffwf.inputs.mask_file = mask
-    >>> computealffwf.run()
+    computealffwf = computealff()
+    computealffwf.inputs.in_file = datafile
+    computealffwf.inputs.lowpass = 0.1
+    computealffwf.inputs.highpass = 0.01
+    computealffwf.inputs.TR = TR
+    computealffwf.inputs.mask_file = mask
+    computealffwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """
@@ -181,8 +194,8 @@ class brainplot(SimpleInterface):
 
         # create a nifti with z-scores
         z_score_nifti = zscore_nifti(img=self.inputs.in_file,
-                                 mask=self.inputs.mask_file,
-                                 outputname=z_score_nifti)
+                                     mask=self.inputs.mask_file,
+                                     outputname=z_score_nifti)
         #  get the right template
         temptlatehtml = pkgrf('xcp_d',
                               'data/transform/brainsprite_template.html')

@@ -9,23 +9,30 @@ post processing
 
 """
 
-import sys
 import glob
 import json
 import os
+import sys
 from copy import deepcopy
+
 from nipype import __version__ as nipype_ver
-from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
 from xcp_d.__about__ import __version__
-from xcp_d.utils import (collect_data, get_customfile, select_cifti_bold,
-                         select_registrationfile, extract_t1w_seg)
+from xcp_d.interfaces import AboutSummary, SubjectSummary
+from xcp_d.utils import (
+    bid_derivative,
+    collect_data,
+    extract_t1w_seg,
+    select_cifti_bold,
+    select_registrationfile,
+)
+from xcp_d.utils.utils import get_customfile
+from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
-from xcp_d.workflow.anatomical import init_anatomical_wf
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from xcp_d.interfaces import SubjectSummary, AboutSummary
-from xcp_d.utils import bid_derivative
 
 
 def init_xcpd_wf(layout,

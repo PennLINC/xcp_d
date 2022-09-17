@@ -1,7 +1,6 @@
 """Helper functions for interfaces."""
-import os
-from os import path
 import glob
+import os
 import shutil
 
 
@@ -113,7 +112,7 @@ def find_one_file(seek_dir, pattern):
     one_file = None
 
     # Try to find a file with the pattern given in the directory given.
-    glob_pattern = path.join(seek_dir, pattern)
+    glob_pattern = os.path.join(seek_dir, pattern)
     filelist = glob.glob(glob_pattern)
 
     # Make sure we got exactly one file.
