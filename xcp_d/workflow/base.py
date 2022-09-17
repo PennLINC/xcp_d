@@ -22,13 +22,13 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
+from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
 from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
 from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
@@ -61,9 +61,10 @@ def init_xcpd_wf(layout,
                  fd_thresh,
                  input_type='fmriprep',
                  name='xcpd_wf'):
-    """
-    This workflow builds and organizes  execution of  xcp_d  pipeline.
-    It is also connect the subworkflows under the xcp_d
+    """Build and organize execution of xcp_d pipeline.
+
+    It also connects the subworkflows under the xcp_d workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -146,9 +147,7 @@ def init_xcpd_wf(layout,
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-s
     """
-
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
 
@@ -194,7 +193,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
                     subject_id, cifti, despike, head_radius, params, dummytime,
                     fd_thresh, task_id, smoothing, custom_confounds, output_dir,
                     input_type, name):
-    """This workflow organizes the postprocessing pipeline for a single subject
+    """Organize the postprocessing pipeline for a single subject.
 
     # RF: this is the wrong function
     Workflow Graph
@@ -269,9 +268,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         path to custom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-
     """
-
     layout, subj_data = collect_data(bids_dir=fmri_dir,
                                      participant_label=subject_id,
                                      task=task_id,
@@ -457,18 +454,14 @@ It is released under the [CC0]\
 
 
 def _prefix(subid):
-    """
-    Prefix for subject id
-    """
+    """Infer prefix from subject ID."""
     if subid.startswith('sub-'):
         return subid
     return '-'.join(('sub', subid))
 
 
 def _pop(inlist):
-    """
-    make a list of lists into a list
-    """
+    """Make a list of lists into a list."""
     if isinstance(inlist, (list, tuple)):
         return inlist[0]
     return inlist
@@ -476,17 +469,13 @@ def _pop(inlist):
 
 # RF: this shouldn't be in this file
 class DerivativesDataSink(bids_derivative):
-    """
-    defines the data sink for the workflow
-    """
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'
 
 
 def getfmriprepv(fmri_dir):
-    """
-    get fmriprep/nibabies/dcan/hcp version
-    """
-
+    """Get fmriprep/nibabies/dcan/hcp version."""
     datax = glob.glob(fmri_dir + '/dataset_description.json')
 
     if datax:
@@ -502,9 +491,7 @@ def getfmriprepv(fmri_dir):
 
 
 def _getsesid(filename):
-    """
-    get session id from filename if available
-    """
+    """Get session ID from filename if available."""
     ses_id = None
     filex = os.path.basename(filename)
 

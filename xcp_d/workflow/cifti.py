@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing CIFTI-format BOLD data.
+
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_ciftipostprocess_wf
@@ -55,8 +56,8 @@ def init_ciftipostprocess_wf(cifti_file,
                              num_cifti,
                              layout=None,
                              name='cifti_process_wf'):
-    """
-    This workflow organizes cifti processing workflow.
+    """Organize the cifti processing workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -85,7 +86,6 @@ def init_ciftipostprocess_wf(cifti_file,
                 template='MNI152NLin2009cAsym',
                 layout=None,
                 name='cifti_postprocess_wf',)
-
 
     Parameters
     ----------
@@ -167,7 +167,6 @@ def init_ciftipostprocess_wf(cifti_file,
         gordon 333 func matrices
     qc_file
         quality control files
-
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
@@ -333,7 +332,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-# Remove TR first:
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
@@ -568,9 +567,12 @@ def _create_mem_gb(bold_fname):
 
 # RF: shouldn't be here
 class DerivativesDataSink(bids_derivative):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'
 
 
 def get_ciftiTR(cifti_file):
+    """Extract TR from CIFTI file."""
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step

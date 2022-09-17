@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for calculating resting state-specific metrics.
+
 post processing the bold/cifti
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_post_process_wf
@@ -26,8 +27,8 @@ def init_compute_alff_wf(mem_gb,
                          cifti,
                          omp_nthreads,
                          name="compute_alff_wf"):
-    """
-    This workflow compute alff for both nifti and cifti
+    """Compute alff for both nifti and cifti.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -42,9 +43,9 @@ def init_compute_alff_wf(mem_gb,
                 cifti,
                 name="compute_alff_wf",
              )
+
     Parameters
     ----------
-
     mem_gb: float
         memory size in gigabytes
     TR: float
@@ -78,7 +79,6 @@ def init_compute_alff_wf(mem_gb,
     html
         alff html for nifti
     """
-
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f""" \
@@ -165,13 +165,12 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     return workflow
 
 
-#  For cifti
 def init_surface_reho_wf(mem_gb,
                          omp_nthreads,
                          smoothing,
                          name="surface_reho_wf"):
-    """
-    This workflow compute surface reho
+    """Compute ReHo from surface (CIFTI) data.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -182,9 +181,9 @@ def init_surface_reho_wf(mem_gb,
                 smoothing,
                 name="surface_reho_wf",
              )
+
     Parameters
     ----------
-
     mem_gb: float
         memory size in gigabytes
     smoothing: float
@@ -202,7 +201,6 @@ def init_surface_reho_wf(mem_gb,
     rh_reho
         right hemisphere surface reho
     """
-
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 
@@ -249,14 +247,13 @@ vertices to yield ReHo.
     return workflow
 
 
-# For nifti
 def init_3d_reho_wf(
     mem_gb,
     omp_nthreads,
     name="afni_reho_wf",
 ):
-    """
-    This workflow compute surface reho
+    """Compute ReHo on volumetric (NIFTI) data.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -267,9 +264,9 @@ def init_3d_reho_wf(
                 smoothing,
                 name="afni_reho_wf",
              )
+
     Parameters
     ----------
-
     mem_gb: float
         memory size in gigabytes
     smoothing: float
@@ -287,7 +284,6 @@ def init_3d_reho_wf(
     reho_out
         reho output
     """
-
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI [@afni].

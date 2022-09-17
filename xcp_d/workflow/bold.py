@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing the BOLD data.
+
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_boldpostprocess_wf
@@ -65,8 +66,7 @@ def init_boldpostprocess_wf(lower_bpf,
                             brain_template='MNI152NLin2009cAsym',
                             layout=None,
                             name='bold_postprocess_wf'):
-    """
-    This workflow organizes bold processing workflow.
+    """Organize the bold processing workflow.
 
     Workflow Graph
         .. workflow::
@@ -179,7 +179,6 @@ def init_boldpostprocess_wf(lower_bpf,
     qc_file
         quality control files
     """
-
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
@@ -704,9 +703,7 @@ def _get_ref_mask(fname):
 
 
 def _t12native(fname):  # TODO: Update names and refactor
-    """
-    Takes in bold filename, finds transform from T1W to native space
-    """
+    """Take in bold filename and find transform from T1W to native space."""
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
@@ -717,4 +714,6 @@ def _t12native(fname):  # TODO: Update names and refactor
 
 
 class DerivativesDataSink(bids_derivative):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'

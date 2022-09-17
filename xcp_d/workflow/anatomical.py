@@ -5,9 +5,7 @@
 fectch anatomical files/resmapleing surfaces to fsl32k
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_structral_wf
-
 """
-
 import fnmatch
 import os
 import shutil
