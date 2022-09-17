@@ -19,7 +19,7 @@ from xcp_d.utils.write_save import read_ndata, scalex, write_ndata
 
 
 def _decimate_data(data, seg_data, size):
-    """Decimate timeseries data
+    """Decimate timeseries data.
 
     Parameters
     ----------
@@ -29,7 +29,6 @@ def _decimate_data(data, seg_data, size):
         1 element array of samples
     size : tuple
         2 element for P/T decimation
-
     """
     p_dec = 1 + data.shape[0] // size[0]
     if p_dec:
@@ -42,8 +41,10 @@ def _decimate_data(data, seg_data, size):
 
 
 def plotimage(img, out_file):
-    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
+    """Plot anatomical image and save to file."""
     from nilearn.plotting import plot_anat
+
+    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
     plot_anat(img, draw_cross=False, figure=fig)
     fig.savefig(out_file, bbox_inches="tight", pad_inches=None)
     return out_file
@@ -305,7 +306,6 @@ def confoundplotx(time_series,
                   ylabel=None,
                   FD=False,
                   work_dir=None):
-
     sns.set_style('whitegrid')
 
     # Define TR and number of frames

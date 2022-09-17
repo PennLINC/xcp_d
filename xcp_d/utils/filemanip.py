@@ -185,15 +185,14 @@ def fnames_presuffix(fnames, prefix="", suffix="", newpath=None, use_ext=True):
 
 
 def hash_rename(filename, hashvalue):
-    """Rename a file given original filename and hash, and set path to output_directory.
-    """
+    """Rename a file given original filename and hash, and set path to output_directory."""
     path, name, ext = split_filename(filename)
     newfilename = "".join((name, "_0x", hashvalue, ext))
     return op.join(path, newfilename)
 
 
 def check_forhash(filename):
-    """Checks if file has a hash in its filename."""
+    """Check if file has a hash in its filename."""
     if isinstance(filename, list):
         filename = filename[0]
     path, name = op.split(filename)
@@ -1109,6 +1108,7 @@ def relpath(path, start=None):
 
 @contextlib.contextmanager
 def indirectory(path):
+    """Change working directory to path."""
     cwd = os.getcwd()
     os.chdir(str(path))
     try:
