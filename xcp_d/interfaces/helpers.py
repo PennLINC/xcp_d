@@ -1,17 +1,23 @@
+"""Helper functions for interfaces."""
 import glob
 import os
 import shutil
-from os import path
 
 
 def find_files(seek_dir, pattern):
-    """
-    Finds all files within the directory specified that match
-    the glob-style pattern.
+    """Find all files within the directory specified that match the glob-style pattern.
 
-    :parameter: seek_dir: directory to be searched.
-    :parameter: pattern: Unix shell pattern for finding files.
-    :return: list of relative paths of copied files (may be empty).
+    Parameters
+    ----------
+    seek_dir : str
+        Directory to be searched.
+    pattern : str
+        Unix shell pattern for finding files.
+
+    Returns
+    -------
+    paths : list of str
+        List of relative paths of copied files (may be empty).
     """
     paths = []
     glob_pattern = os.path.join(seek_dir, pattern)
@@ -22,15 +28,23 @@ def find_files(seek_dir, pattern):
 
 
 def find_and_copy_files(seek_dir, pattern, output_dir):
-    """
-    Finds all files within the directory specified that match
-    the glob-style pattern. Copies each file to the output
-    directory.
+    """Find all files within the directory specified that match the glob-style pattern.
 
-    :parameter: seek_dir: directory to be searched.
-    :parameter: pattern: Unix shell pattern for finding files.
-    :parameter: output_dir: directory to which to copy files.
-    :return: list of relative paths of copied files (may be empty).
+    Copies each file to the output directory.
+
+    Parameters
+    ----------
+    seek_dir : str
+        Directory to be searched.
+    pattern : str
+        Unix shell pattern for finding files.
+    output_dir : str
+        Directory to which to copy files.
+
+    Returns
+    -------
+    rel_paths : list of str
+        List of relative paths of copied files (may be empty).
     """
     rel_paths = []
 
@@ -47,16 +61,24 @@ def find_and_copy_files(seek_dir, pattern, output_dir):
 
 
 def find_and_copy_file(seek_dir, pattern, output_dir):
-    """
-    Finds a single file within seek_dir, using the pattern.
+    """Find a single file within seek_dir, using the pattern.
+
     If found, copies the file to the output_dir.
 
-    :parameter: seek_dir: directory to be searched.
-    :parameter: pattern: Unix shell pattern for finding files.
-    :parameter: output_dir: directory to which to copy the file.
-    :return: relative path to copied file, or None.
-    """
+    Parameters
+    ----------
+    seek_dir : str
+        Directory to be searched.
+    pattern : str
+        Unix shell pattern for finding files.
+    output_dir : str
+        Directory to which to copy the file.
 
+    Returns
+    -------
+    rel_path : str
+        Relative path to copied file, or None.
+    """
     found_path = find_one_file(seek_dir, pattern)
 
     if found_path:
@@ -73,11 +95,24 @@ def find_and_copy_file(seek_dir, pattern, output_dir):
 
 
 def find_one_file(seek_dir, pattern):
+    """Find a single file within seek_dir, using the pattern.
 
+    Parameters
+    ----------
+    seek_dir : str
+        Directory to be searched.
+    pattern : str
+        Unix shell pattern for finding files.
+
+    Returns
+    -------
+    one_file : str
+        Path to the found file.
+    """
     one_file = None
 
     # Try to find a file with the pattern given in the directory given.
-    glob_pattern = path.join(seek_dir, pattern)
+    glob_pattern = os.path.join(seek_dir, pattern)
     filelist = glob.glob(glob_pattern)
 
     # Make sure we got exactly one file.

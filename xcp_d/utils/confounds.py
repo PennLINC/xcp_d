@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""confound matrix selection based on Ciric et al 2007."""
+"""Confound matrix selection based on Ciric et al. 2007."""
 import os
 
 import numpy as np
@@ -9,13 +9,18 @@ from scipy.signal import filtfilt, firwin, iirnotch
 
 
 def get_confounds_tsv(datafile):
-    """Find path to confounds.tsv """
-    '''
-    datafile:
-        real nifti or cifti file
-    confounds_timeseries:
-        confound tsv file
-    '''
+    """Find path to confounds TSV file.
+
+    Parameters
+    ----------
+    datafile : str
+        Real nifti or cifti file.
+
+    Returns
+    -------
+    confounds_timeseries : str
+        Associated confounds TSV file.
+    """
     if 'space' in os.path.basename(datafile):
         confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
                                                 "_desc-confounds_timeseries.tsv")
@@ -27,15 +32,20 @@ def get_confounds_tsv(datafile):
 
 
 def load_confound(datafile):
-    """`Load confound amd json."""
-    '''
-    datafile:
-        real nifti or cifti file
-    confoundpd:
-        confound data frame
-    confoundjs:
-        confound json file
-    '''
+    """Load confound amd json.
+
+    Parameters
+    ----------
+    datafile : str
+        Real nifti or cifti file.
+
+    Returns
+    -------
+    confoundpd : pandas.DataFrame
+        Loaded confounds TSV file.
+    confoundjs : dict
+        Metadata from associated confounds JSON file.
+    """
     if 'space' in os.path.basename(datafile):
         confounds_timeseries = datafile.replace(
             "_space-" + datafile.split("space-")[1],
@@ -59,6 +69,18 @@ def load_confound(datafile):
 
 
 def readjson(jsonfile):
+    """Load JSON file into a dictionary.
+
+    Parameters
+    ----------
+    jsonfile : str
+        JSON file to load.
+
+    Returns
+    -------
+    data : dict
+        Data loaded from the JSON file.
+    """
     import json
     with open(jsonfile) as f:
         data = json.load(f)
@@ -66,8 +88,34 @@ def readjson(jsonfile):
 
 
 def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=0.1, motion_filter_order=4):
-    """Load the 6 motion regressors."""
+    """Load the six basic motion regressors (three rotations, three translations).
 
+    Parameters
+    ----------
+    confounds_df : pandas.DataFrame
+        The confounds DataFrame from which to extract the six basic motion regressors.
+    TR : float
+        The repetition time of the associated scan.
+    motion_filter_type : {"lp", "notch", other}
+        The filter type to use.
+        If "lp" or "notch", that filtering will be done in this function.
+        Otherwise, no filtering will be applied.
+    freqband
+        This only has an impact is ``motion_filter_type`` is "lp" or "notch".
+    cutoff : float, optional
+        Frequency cutoff, in Hertz.
+        This only has an impact is ``motion_filter_type`` is "lp" or "notch".
+        Default is 0.1.
+    motion_filter_order : int, optional
+        This only has an impact is ``motion_filter_type`` is "lp" or "notch".
+        Default is 4.
+
+    Returns
+    -------
+    motion_confounds : pandas.DataFrame
+        The six motion regressors.
+        The three rotations are listed first, then the three translations.
+    """
     # Pull out rot and trans values and concatenate them
     rot_values = confounds_df[["rot_x", "rot_y", "rot_z"]]
     trans_values = confounds_df[["trans_x", "trans_y", "trans_z"]]
@@ -87,17 +135,56 @@ def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=0.1, moti
 
 
 def load_global_signal(confounds_df):
-    """select global signal."""
+    """Select global signal from confounds DataFrame.
+
+    Parameters
+    ----------
+    confounds_df : pandas.DataFrame
+        The confounds DataFrame from which to extract information.
+
+    Returns
+    -------
+    pandas.Series
+        The global signal from the confounds.
+    """
     return confounds_df["global_signal"]
 
 
 def load_WM_CSF(confounds_df):
-    """select white matter and CSF nuissance regressors."""
+    """Select white matter and CSF nuissance regressors from confounds DataFrame.
+
+    Parameters
+    ----------
+    confounds_df : pandas.DataFrame
+        The confounds DataFrame from which to extract information.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The CSF and WM signals from the confounds.
+    """
     return confounds_df[["csf", "white_matter"]]
 
 
 def load_cosine(confounds_df):
-    """select cosine values for compcor"""
+    """Select discrete cosine-basis regressors for CompCor.
+
+    Parameters
+    ----------
+    confounds_df : pandas.DataFrame
+        The confounds DataFrame from which to extract information.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The cosine-basis regressors from the confounds.
+
+    Notes
+    -----
+    fMRIPrep does high-pass filtering before running anatomical or temporal CompCor.
+    Therefore, when using CompCor regressors, the corresponding cosine_XX regressors
+    should also be included in the design matrix.
+    """
     cosine = []
     for key in confounds_df.keys():  # Any colums with cosine
         if 'cosine' in key:
@@ -106,8 +193,20 @@ def load_cosine(confounds_df):
 
 
 def load_acompcor(confounds_df, confoundjs):
-    """ select WM and GM acompcor separately."""
+    """Select WM and GM acompcor separately.
 
+    Parameters
+    ----------
+    confounds_df : pandas.DataFrame
+        The confounds DataFrame from which to select the aCompCor regressors.
+    confoundjs : dict
+        The metadata associated with the confounds file.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The confounds DataFrame, reduced to only include aCompCor regressors.
+    """
     WM = []
     CSF = []
     for key, value in confoundjs.items():  # Use the confounds json
@@ -137,12 +236,37 @@ def load_acompcor(confounds_df, confoundjs):
 
 
 def derivative(confound):
+    """Calculate derivative of a given array.
+
+    Parameters
+    ----------
+    confound : pandas.DataFrame
+        The confound to be modified.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Derivative of the array, with a zero at the beginning.
+        The column(s) will be untitled.
+    """
     data = confound.to_numpy()
     # Prepend 0 to the differences of the confound data
     return pd.DataFrame(np.diff(data, prepend=0))
 
 
 def square_confound(confound):
+    """Square an array.
+
+    Parameters
+    ----------
+    confound : array_like or int or float
+        An array or value to square.
+
+    Returns
+    -------
+    array_like or int or float
+        The squared input data.
+    """
     return confound**2  # Square the confound data
 
 
@@ -151,20 +275,27 @@ def load_confound_matrix(datafile,
                          custom_confounds=None,
                          confound_tsv=None,
                          params='36P'):
-    """ extract confound """
-    '''
-    original_file:
-       file used to find confounds json
-    datafile:
-        boldfile whose confounds we want
-    confound_tsv:
-        confounds tsv
-    custom_confounds:
-        custom confounds tsv if there is one
-    params:
-       default is 36p, most expansive option
-    '''
+    """Load a subset of the confounds associated with a given file.
 
+    Parameters
+    ----------
+    datafile : str
+        BOLD file whose confounds we want.
+    original_file :
+       File used to find confounds json.
+    custom_confounds : str or None, optional
+        Custom confounds TSV if there is one. Default is None.
+    confound_tsv : str or None, optional
+        The path to the confounds TSV file. Default is None.
+    params : {"36P", "24P", "27P", "acompcor", "aroma", "aroma_gsr", "custom"}, optional
+        Shorthand for the parameter set to extract from the confounds TSV.
+        Default is 36p, most expansive option.
+
+    Returns
+    -------
+    confound : pandas.DataFrame
+        The loaded and selected confounds.
+    """
     #  Get the confounds dat from the json and tsv
     confoundjson = load_confound(original_file)[1]
     confoundtsv = pd.read_table(confound_tsv)
@@ -243,7 +374,18 @@ def load_confound_matrix(datafile,
 
 
 def load_aroma(datafile):
-    """ extract aroma confounds"""
+    """Extract aroma confounds from a confounds TSV file.
+
+    Parameters
+    ----------
+    datafile : str
+        Path to the preprocessed BOLD file for which to extract AROMA confounds.
+
+    Returns
+    -------
+    aroma : pandas.DataFrame
+        The AROMA noise components.
+    """
     #  Pull out aroma and melodic_ts files
     if 'space' in os.path.basename(datafile):
         aroma_noise = datafile.replace("_space-" + datafile.split("space-")[1],
@@ -281,10 +423,29 @@ def motion_regression_filter(data,
                              freqband,
                              cutoff=.1,
                              motion_filter_order=4):
-    """
-    Apply motion filter to trans and rot values.
-    """
+    """Filter translation and rotation motion parameters.
 
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data to filter.
+    TR : float
+        Repetition time of the data.
+    motion_filter_type : {"lp", "notch", other}
+        The type of motion filter to apply.
+        Filtering will only be performed if set to "lp" or "notch".
+    freqband
+    cutoff : float, optional
+        The minimum frequency, in Hertz.
+        Default is 0.1.
+    motion_filter_order : int, optional
+        Default is 4.
+
+    Returns
+    -------
+    data : numpy.ndarray
+        Filtered data.
+    """
     LP_freq_min = cutoff  # set the variable again for casting reasons
     fc_RR_min, fc_RR_max = freqband  # get the frequency band
 

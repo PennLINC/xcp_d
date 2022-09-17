@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et
-
+"""Nipype workflows for xcp_d."""
 from xcp_d.workflow.connectivity import init_fcon_ts_wf, init_cifti_conts_wf, get_transformfile
 from xcp_d.workflow.postprocessing import init_post_process_wf, init_resd_smoothing
 from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_wf, init_3d_reho_wf

@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""workbench command for  cifti parcelation"""
+"""Functions for parcellating CIFTI files."""
 
 from nipype import logging
 from nipype.interfaces.base import CommandLineInputSpec, File, TraitedSpec, traits
@@ -105,10 +105,13 @@ class CiftiParcellateOutputSpec(TraitedSpec):
 
 
 class CiftiParcellate(WBCommand):
-    r"""
-    Extract timeseries from CIFTI file
+    """Extract timeseries from CIFTI file.
+
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .dtseries,
+    dimension, columns for .dtseries.
+
+    Examples
+    --------
     >>> ciftiparcel = CiftiParcellate()
     >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
     >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
@@ -119,6 +122,7 @@ class CiftiParcellate(WBCommand):
     schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \
     sub_01XX_task-rest.ptseries.nii
     """
+
     input_spec = CiftiParcellateInputSpec
     output_spec = CiftiParcellateOutputSpec
     _cmd = "wb_command -cifti-parcellate"

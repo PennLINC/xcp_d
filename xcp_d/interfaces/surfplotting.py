@@ -1,5 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Surface plotting interfaces."""
 
 from nipype import logging
 from nipype.interfaces.base import (
@@ -32,9 +33,7 @@ class _plotimgOutputSpec(TraitedSpec):
 
 
 class PlotImage(SimpleInterface):
-    """
-    Python class to plot x,y, and z  of image data
-    """
+    """Python class to plot x,y, and z of image data."""
     input_spec = _plotimgInputSpec
     output_spec = _plotimgOutputSpec
 
@@ -62,10 +61,7 @@ class _surf2volOutputSpec(TraitedSpec):
 
 
 class SurftoVolume(SimpleInterface):
-    r"""
-    this class converts the freesurfer/gifti surface to volume
-    using ras2vox transform
-    """
+    """This class converts the freesurfer/gifti surface to volume using ras2vox transform."""
     input_spec = _surf2volInputSpec
     output_spec = _surf2volOutputSpec
 
@@ -96,9 +92,7 @@ class _brainplotxOutputSpec(TraitedSpec):
 
 
 class BrainPlotx(SimpleInterface):
-    r"""
-    this class create brainsprite with overlay as stats image
-    """
+    """This class create brainsprite with overlay as stats image."""
     input_spec = _brainplotxInputSpec
     output_spec = _brainplotxOutputSpec
 
@@ -130,10 +124,13 @@ class _regplotOutputSpec(TraitedSpec):
 
 
 class RegPlot(SimpleInterface):
-    r"""
-    abandoned
+    """A registration plot.
 
+    Warning
+    -------
+    This class may have been abandoned.
     """
+
     input_spec = _regplotInputSpec
     output_spec = _regplotOutputSpec
 
@@ -176,14 +173,14 @@ class _plotsvgOutputSpec(TraitedSpec):
 
 
 class PlotSVGData(SimpleInterface):
-    r"""
-    This class plots fd, dvars, and carpet plots of the bold data
-    before and after regression/filtering. It takes in the data
-    that's regressed, the data that's filtered and regressed, as
-    well as the segmentation files, TR, FD, bold_mask and unprocessed data.
+    """Plot fd, dvars, and carpet plots of the bold data before and after regression/filtering.
+
+    It takes in the data that's regressed, the data that's filtered and regressed,
+    as well as the segmentation files, TR, FD, bold_mask and unprocessed data.
 
     It outputs the .SVG files before after processing has taken place.
     """
+
     input_spec = _plotsvgInputSpec
     output_spec = _plotsvgOutputSpec
 
@@ -226,11 +223,7 @@ class _ribbonstatmapOutputSpec(TraitedSpec):
 
 
 class RibbontoStatmap(SimpleInterface):
-    r"""
-    this class plots of fd, dvars, carpet plots of bold data
-    before and after regression/filtering
-
-    """
+    """Plot of fd, dvars, carpet plots of bold data before and after regression/filtering."""
     input_spec = _ribbonstatmapInputSpec
     output_spec = _ribbonstatmapOutputSpec
 

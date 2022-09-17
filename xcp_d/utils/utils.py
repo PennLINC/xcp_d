@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""Miscellaneous utility functions for xcp_d."""
 import glob as glob
 import os
 
@@ -10,14 +10,27 @@ from templateflow.api import get as get_template
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
-    """
-    Obtain the correct transform files in reverse order to transform
-    to MNI space/ T1W space.
+    """Obtain the correct transform files in reverse order to transform to MNI space/T1W space.
 
-    Since ANTSApplyTransforms takes in the transform files as a stack, these are
-    applied in the reverse order of which they are specified.
-    """
+    Since ANTSApplyTransforms takes in the transform files as a stack,
+    these are applied in the reverse order of which they are specified.
 
+    Parameters
+    ----------
+    bold_file : str
+        The preprocessed BOLD file.
+    mni_to_t1w : str
+        The MNI-to-T1w transform file.
+    t1w_to_native : str
+        The T1w-to-native space transform file.
+
+    Returns
+    -------
+    transformfileMNI : list of str
+        A list of paths to transform files for warping to MNI space.
+    transformfileT1W : list of str
+        A list of paths to transform files for warping to T1w space.
+    """
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
     MNI6 = str(
@@ -120,7 +133,22 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
 
 
 def get_maskfiles(bold_file, mni_to_t1w):
+    """Identify BOLD- and T1-resolution brain masks from files.
 
+    Parameters
+    ----------
+    bold_file : str
+        Path to the preprocessed BOLD file.
+    mni_to_t1w : str
+        Path to the MNI-to-T1w transform file.
+
+    Returns
+    -------
+    boldmask : str
+        The path to the BOLD-resolution mask.
+    t1mask : str
+        The path to the T1-resolution mask.
+    """
     boldmask = bold_file.split(
         'desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
     t1mask = mni_to_t1w.split('from-')[0] + 'desc-brain_mask.nii.gz'
@@ -128,15 +156,25 @@ def get_maskfiles(bold_file, mni_to_t1w):
 
 
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
-    """"
-    Obtain the correct transform files to transform
-    the atlases from MNI space to the same space as the bold file.
+    """"Obtain transforms to warp atlases from MNI space to the same space as the bold file.
 
-    Since ANTSApplyTransforms takes in the transform files as a stack, these are
-    applied in the reverse order of which they are specified.
+    Since ANTSApplyTransforms takes in the transform files as a stack,
+    these are applied in the reverse order of which they are specified.
 
+    Parameters
+    ----------
+    bold_file : str
+        The preprocessed BOLD file.
+    mni_to_t1w : str
+        The MNI-to-T1w transform file.
+    t1w_to_native : str
+        The T1w-to-native space transform file.
+
+    Returns
+    -------
+    transformfile : list of str
+        A list of paths to transform files.
     """
-
     file_base = os.path.basename(str(bold_file))  # file base is the bold_name
 
     # get the correct template via templateflow/ pkgrf
@@ -197,10 +235,34 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
 
 
 def fwhm2sigma(fwhm):
+    """Convert full width at half maximum to sigma.
+
+    Parameters
+    ----------
+    fwhm : float
+        Full width at half maximum.
+
+    Returns
+    -------
+    float
+        Sigma.
+    """
     return fwhm / np.sqrt(8 * np.log(2))
 
 
 def stringforparams(params):
+    """Infer nuisance regression description from parameter set.
+
+    Parameters
+    ----------
+    params : {"custom", "24P", "27P", "36P", "aroma", "acompcor", "aroma_gsr", "acompcor_gsr"}
+        String indicating parameter set.
+
+    Returns
+    -------
+    bsignal : str
+        String describing the parameters used for nuisance regression.
+    """
     if params == 'custom':
         bsignal = "A custom set of regressors was used, with no other regressors from XCP-D"
     if params == '24P':
@@ -252,6 +314,21 @@ def stringforparams(params):
 
 
 def get_customfile(custom_confounds, bold_file):
+    """Identify a custom confounds file.
+
+    Parameters
+    ----------
+    custom_confounds : str
+        The path to the custom confounds file.
+        This shouldn't include the actual filename.
+    bold_file : str
+        Path to the associated preprocessed BOLD file.
+
+    Returns
+    -------
+    custom_file : str
+        The custom confounds file associated with the BOLD file.
+    """
     if custom_confounds is not None:
         confounds_timeseries = bold_file.replace(
             "_space-" + bold_file.split("space-")[1],

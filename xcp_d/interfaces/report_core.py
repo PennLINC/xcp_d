@@ -1,5 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Tools for generating Reports."""
 import glob as glob
 from pathlib import Path
 
@@ -9,6 +10,8 @@ from niworkflows.reports.core import Report as _Report
 
 
 class Report(_Report):
+    """A modified form of niworkflows' core Report object."""
+
     def _load_config(self, config):
         from yaml import safe_load as load
 
@@ -40,9 +43,27 @@ def run_reports(
     reportlets_dir=None,
     packagename=None,
 ):
-    """
-    Run the reports.
+    """Run the reports.
 
+    Parameters
+    ----------
+    out_dir : str
+        The output directory.
+    subject_label : str
+        The subject ID.
+    run_uuid : str
+        The UUID of the run for which the report will be generated.
+    config : None or str, optional
+        Configuration file.
+    reportlets_dir : None or str, optional
+        Path to the reportlets directory.
+    packagename : None or str, optional
+        The name of the package.
+
+    Returns
+    -------
+    str
+        An HTML file generated from a Report object.
     """
     return Report(
         out_dir,
@@ -63,7 +84,27 @@ def generate_reports(subject_list,
                      packagename=None,
                      combineruns=False,
                      input_type='fmriprep'):
-    """Execute run_reports on a list of subjects."""
+    """Execute run_reports on a list of subjects.
+
+    subject_list : list of str
+        List of subject IDs.
+    fmri_dir : str
+        The path to the fMRI directory.
+    work_dir : str
+        The path to the working directory.
+    output_dir : str
+        The path to the output directory.
+    run_uuid : str
+        The UUID of the run for which the report will be generated.
+    config : None or str, optional
+        Configuration file.
+    packagename : None or str, optional
+        The name of the package.
+    combineruns : bool, optional
+        Whether to concatenate runs or not. Default is False.
+    input_type : {'fmriprep', 'dcan', 'hcp'}, optional
+        Default is 'fmriprep'.
+    """
     # reportlets_dir = None
     if work_dir is not None:
         work_dir = work_dir
@@ -124,6 +165,7 @@ def generate_reports(subject_list,
 
 
 def _getsesid(filename):
+    """Get session ID from filename."""
     import os
     ses_id = None
     filex = os.path.basename(filename)

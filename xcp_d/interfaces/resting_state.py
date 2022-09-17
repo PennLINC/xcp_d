@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Handling computation of reho and alff.
+"""Handling computation of reho and alff.
+
     .. testsetup::
     # will comeback
 """
@@ -48,21 +48,23 @@ class _surfaceRehoOutputSpec(TraitedSpec):
 
 
 class surfaceReho(SimpleInterface):
-    r"""
-    surface reho computation
+    """Calculate regional homogeneity (ReHo) on a surface file.
+
+    Examples
+    --------
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    surfaceRehowf = surfaceReho()
-    surfaceRehowf.inputs.surf_bold= rhhemi.func.gii
-    surfaceRehowf.inputs.surf_hemi = 'R'
-    surfaceRehowf.run()
+    >>> surfaceRehowf = surfaceReho()
+    >>> surfaceRehowf.inputs.surf_bold = 'rhhemi.func.gii'
+    >>> surfaceRehowf.inputs.surf_hemi = 'R'
+    >>> surfaceRehowf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-
     """
+
     input_spec = _surfaceRehoInputSpec
     output_spec = _surfaceRehoOutputSpec
 
@@ -111,8 +113,10 @@ class _alffOutputSpec(TraitedSpec):
 
 
 class computealff(SimpleInterface):
-    r"""
-    ALFF computation
+    """Compute ALFF.
+
+    Examples
+    --------
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
@@ -127,8 +131,8 @@ class computealff(SimpleInterface):
     computealffwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-
     """
+
     input_spec = _alffInputSpec
     output_spec = _alffOutputSpec
 
@@ -174,10 +178,11 @@ class _brainplotOutputSpec(TraitedSpec):
 
 
 class brainplot(SimpleInterface):
-    r"""
-    Convert to a z-score map
+    """Create a brainsprite figure from a NIFTI file.
 
+    The image will first be normalized (z-scored) before the figure is generated.
     """
+
     input_spec = _brainplotInputSpec
     output_spec = _brainplotOutputSpec
 
@@ -221,12 +226,25 @@ class brainplot(SimpleInterface):
 
 
 def zscore_nifti(img, outputname, mask=None):
-    """
-    Turn image into z_score.
+    """Normalize (z-score) a NIFTI image.
+
     Image and mask must be in the same space.
+    TODO: Use Nilearn for masking.
 
+    Parameters
+    ----------
+    img : str
+        Path to the NIFTI image to z-score.
+    outputname : str
+        Output filename.
+    mask : str or None, optional
+        Path to binary mask file. Default is None.
+
+    Returns
+    -------
+    outputname : str
+        Output filename. Same as the ``outputname`` parameter.
     """
-
     img = nb.load(img)
 
     if mask:

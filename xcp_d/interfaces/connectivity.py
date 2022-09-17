@@ -43,10 +43,7 @@ class _NiftiConnectOutputSpec(TraitedSpec):
 
 
 class NiftiConnect(SimpleInterface):
-    r"""
-    extract timeseries and compute connectivity matrices.
-
-    """
+    """Extract timeseries and compute connectivity matrices."""
     input_spec = _NiftiConnectInputSpec
     output_spec = _NiftiConnectOutputSpec
 
@@ -84,8 +81,10 @@ class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
 
 
 class ApplyTransformsx(ApplyTransforms):
-    """
-    ApplyTransforms from nipype as workflow
+    """ApplyTransforms from nipype as workflow.
+
+    This is a modification of the ApplyTransforms interface,
+    with an updated set of inputs and a different default output image name.
     """
 
     input_spec = _ApplyTransformsInputSpec
@@ -101,25 +100,22 @@ class ApplyTransformsx(ApplyTransforms):
 
 
 def get_atlas_nifti(atlasname):
-    r"""
-    select atlas by name from xcp_d/data
-    using pkgrf
-    all atlases are in MNI dimension
-    atlas list:
-      schaefer100x17
-      schaefer200x17
-      schaefer300x17
-      schaefer400x17
-      schaefer500x17
-      schaefer600x17
-      schaefer700x17
-      schaefer800x17
-      schaefer900x17
-      schaefer1000x17
-      glasser360
-      gordon360
-    """
+    """Select atlas by name from xcp_d/data using pkgrf.
 
+    All atlases are in MNI dimension.
+
+    Parameters
+    ----------
+    atlasname : {"schaefer100x17", "schaefer200x17", "schaefer300x17", "schaefer400x17", \
+                 "schaefer500x17", "schaefer600x17", "schaefer700x17", "schaefer800x17", \
+                 "schaefer900x17", "schaefer1000x17", "glasser360", "gordon360"}
+        The name of the NIFTI atlas to fetch.
+
+    Returns
+    -------
+    atlasfile : str
+        Path to the atlas file.
+    """
     if atlasname[:8] == 'schaefer':
         if atlasname[8:12] == '1000':
             atlasfile = pkgrf(
@@ -145,22 +141,21 @@ def get_atlas_nifti(atlasname):
 
 
 def get_atlas_cifti(atlasname):
-    r"""
-    select atlas by name from xcp_d/data
-    all atlases are in 91K dimension
-    atlas list:
-      schaefer100x17
-      schaefer200x17
-      schaefer300x17
-      schaefer400x17
-      schaefer500x17
-      schaefer600x17
-      schaefer700x17
-      schaefer800x17
-      schaefer900x17
-      schaefer1000x17
-      glasser360
-      gordon360
+    """Select atlas by name from xcp_d/data.
+
+    All atlases are in 91K dimension.
+
+    Parameters
+    ----------
+    atlasname : {"schaefer100x17", "schaefer200x17", "schaefer300x17", "schaefer400x17", \
+                 "schaefer500x17", "schaefer600x17", "schaefer700x17", "schaefer800x17", \
+                 "schaefer900x17", "schaefer1000x17", "glasser360", "gordon360"}
+        The name of the CIFTI atlas to fetch.
+
+    Returns
+    -------
+    atlasfile : str
+        Path to the atlas file.
     """
     if atlasname[:8] == 'schaefer':
         if atlasname[8:12] == '1000':
@@ -203,9 +198,7 @@ class _connectplotOutputSpec(TraitedSpec):
 
 
 class connectplot(SimpleInterface):
-    r"""
-    extract timeseries and compute connectivity matrices.
-    """
+    """Extract timeseries and compute connectivity matrices."""
     input_spec = _connectplotInputSpec
     output_spec = _connectplotOutputSpec
 

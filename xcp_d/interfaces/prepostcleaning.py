@@ -1,3 +1,4 @@
+"""Interfaces for the post-processing workflows."""
 import os
 
 import nibabel as nb
@@ -68,9 +69,10 @@ class RemoveTR(SimpleInterface):
     If the dummy time is less than the repetition time, it will
     be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
 
-    The  number of volumes to be removed has been calculated in a previous
+    The number of volumes to be removed has been calculated in a previous
     workflow.
     """
+
     input_spec = _RemoveTRInputSpec
     output_spec = _RemoveTROutputSpec
 
@@ -211,14 +213,17 @@ class _CensorScrubOutputSpec(TraitedSpec):
 
 
 class CensorScrub(SimpleInterface):
-    r"""
-    Takes in confound files, bold file to be censored, and information about filtering
-    - including band stop values and motion filter type. Then proceeds to create a
-    motion-filtered confounds matrix and recalculates FDfrom filtered motion parameters.
-    Finally generates temporal mask with volumes above fd threshold set to 1, then dropped
-    from both confounds file and bolds file. Outputs temporal mask, framewise displacement
-    timeseries and censored bold files.
+    """Generate a temporal mask based on recalculated FD.
+
+    Takes in confound files, bold file to be censored, and information about filtering-
+    including band stop values and motion filter type.
+    Then proceeds to create a motion-filtered confounds matrix and recalculates FD from
+    filtered motion parameters.
+    Finally generates temporal mask with volumes above FD threshold set to 1,
+    then dropped from both confounds file and bolds file.
+    Outputs temporal mask, framewise displacement timeseries and censored bold files.
     """
+
     input_spec = _CensorScrubInputSpec
     output_spec = _CensorScrubOutputSpec
 
@@ -355,12 +360,14 @@ class _interpolateOutputSpec(TraitedSpec):
 
 
 class interpolate(SimpleInterface):
-    """
+    """Interpolates scrubbed/regressed BOLD data based on temporal mask.
+
     Interpolation takes in the scrubbed/regressed bold file and temporal mask,
     subs in the scrubbed values with 0, and then uses scipy's
     interpolate functionality to interpolate values into these 0s.
     It outputs the interpolated file.
     """
+
     input_spec = _interpolateInputSpec
     output_spec = _interpolateOutputSpec
 

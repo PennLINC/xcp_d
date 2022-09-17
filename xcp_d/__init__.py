@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-This pipeline is developed by Ted lab
-(https://pennlinc.io/) for
+"""XCP-D : A Robust Postprocessing Pipeline of fMRI data.
+
+This pipeline is developed by Ted Satterthwaite's lab (https://pennlinc.io/).
 """
 
 import warnings

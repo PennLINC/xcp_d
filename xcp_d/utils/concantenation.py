@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
+"""Functions for concatenating scans across runs."""
 import fnmatch
 import glob
 import os
@@ -20,6 +20,21 @@ from xcp_d.utils.plot import plot_svgx
 
 
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
+    """Concatenate BOLD files along time dimension.
+
+    This function does not return anything, but it writes out the concatenated file.
+
+    Parameters
+    ----------
+    subjlist : list of str
+        List of subject identifiers.
+    fmridir : str
+        Path to the input directory (e.g., fMRIPrep derivatives dataset).
+    outputdir : str
+        Path to the output directory (i.e., xcp_d derivatives dataset).
+    work_dir : str
+        The working directory.
+    """
     outdir = outputdir
     fmr = glob.glob(
         f'{str(outdir)}/*{subjlist[0]}/*func/*_desc-residual*bold*nii*')[0]
@@ -68,7 +83,17 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
 
 
 def make_DCAN_DF(fds_files, name):
-    """
+    """Create an HDF5-format file containing a DCAN-format dataset.
+
+    Parameters
+    ----------
+    fds_files : list of str
+        List of files from which to extract information.
+    name : str
+        Name of the HDF5-format file to be created.
+
+    Notes
+    -----
     FD_threshold: a number >= 0 that represents the FD threshold used to calculate
     the metrics in this list.
     frame_removal: a binary vector/array the same length as the number of frames
@@ -85,7 +110,6 @@ def make_DCAN_DF(fds_files, name):
     remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
     remaining frames
     """
-
     print('making dcan')
     try:
         cifti = fds_files[0].split('space')[0] + \
@@ -103,6 +127,8 @@ def make_DCAN_DF(fds_files, name):
     for j in range(1, len(fds_files)):
         dx = np.loadtxt(fds_files[j], delimiter=',')
         fd = np.hstack([fd, dx.T])
+
+    # NOTE: TS- Maybe close the file object or nest in a with statement?
     dcan = h5py.File(name, "w")
     for thresh in np.linspace(0, 1, 101):
         thresh = np.around(thresh, 2)
@@ -134,7 +160,23 @@ def make_DCAN_DF(fds_files, name):
 
 
 def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
+    """Concatenate NIFTI files along the time dimension.
 
+    This function doesn't return anything, but it writes out the concatenated file.
+
+    Parameters
+    ----------
+    subid : str
+        Subject identifier.
+    fmridir : str
+        Path to the input directory (e.g., fMRIPrep derivatives dataset).
+    outputdir : str
+        Path to the output directory (i.e., xcp_d derivatives dataset).
+    ses : str or None, optional
+        Session identifier, if applicable. Default is None.
+    work_dir : str or None, optional
+        Working directory, if available. Default is None.
+    """
     # filex to be concatenated
 
     datafile = [
@@ -269,12 +311,20 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
 
 def compute_dvars(datat):
-    '''
-    compute standard dvars
+    """Compute standard DVARS.
 
-    datat : numpy darrays
-        data matrix vertices by timepoints
-    '''
+    Parameters
+    ----------
+    datat : numpy.ndarray
+        The data matrix fromw hich to calculate DVARS.
+        Ordered as vertices by timepoints.
+
+    Returns
+    -------
+    numpy.ndarray
+        The calculated DVARS array.
+        A (timepoints,) array.
+    """
     firstcolumn = np.zeros((datat.shape[0]))[..., None]
     datax = np.hstack((firstcolumn, np.diff(datat)))
     datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
@@ -282,7 +332,23 @@ def compute_dvars(datat):
 
 
 def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
+    """Concatenate CIFTI files along the time dimension.
 
+    This function doesn't return anything, but it writes out the concatenated file.
+
+    Parameters
+    ----------
+    subid : str
+        Subject identifier.
+    fmridir : str
+        Path to the input directory (e.g., fMRIPrep derivatives dataset).
+    outputdir : str
+        Path to the output directory (i.e., xcp_d derivatives dataset).
+    ses : str or None, optional
+        Session identifier, if applicable. Default is None.
+    work_dir : str or None, optional
+        Working directory, if available. Default is None.
+    """
     datafile = [
         '_desc-residual_bold.dtseries.nii',
         '_desc-residual_smooth_bold.dtseries.nii',
@@ -424,7 +490,22 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
 
 def get_segfile(bold_file):
+    """Select the segmentation file associated with a given BOLD file.
 
+    This function identifies the appropriate MNI-space discrete segmentation file for carpet
+    plots, then applies the necessary transforms to warp the file into BOLD reference space.
+    The warped segmentation file will be written to a temporary file and its path returned.
+
+    Parameters
+    ----------
+    bold_file : str
+        Path to the BOLD file.
+
+    Returns
+    -------
+    segfile : str
+        The associated segmentation file.
+    """
     # get transform files
     dd = Path(os.path.dirname(bold_file))
     anatdir = str(dd.parent) + '/anat'
@@ -465,6 +546,18 @@ def get_segfile(bold_file):
 
 
 def _t12native(fname):
+    """Select T1w-to-scanner transform associated with a given BOLD file.
+
+    Parameters
+    ----------
+    fname : str
+        The BOLD file from which to identify the transform.
+
+    Returns
+    -------
+    t12ref : str
+        Path to the T1w-to-scanner transform.
+    """
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
@@ -473,6 +566,18 @@ def _t12native(fname):
 
 
 def combine_fd(fds_file, fileout):
+    """Concatenate framewise displacement time series across files.
+
+    This function doesn't return anything, but it writes out the ``fileout`` file.
+
+    Parameters
+    ----------
+    fds_file : list of str
+        Paths to framewise displacement files to concatenate.
+        The files must be comma-delimited.
+    fileout : str
+        Path to the file that will be written out.
+    """
     df = np.loadtxt(fds_file[0], delimiter=',').T
     fds = fds_file
     for j in range(1, len(fds)):
@@ -482,14 +587,37 @@ def combine_fd(fds_file, fileout):
 
 
 def get_ciftiTR(cifti_file):
+    """Extract repetition time from a CIFTI file.
+
+    Parameters
+    ----------
+    cifti_file : str
+        The CIFTI file from which to extract TR.
+
+    Returns
+    -------
+    float
+        The TR of the CIFTI file.
+    """
     import nibabel as nb
+
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step
 
 
 def _getsesid(filename):
-    """
-    get session id from filename if available
+    """Get session id from filename if available.
+
+    Parameters
+    ----------
+    filename : str
+        The BIDS filename from which to extract the session ID.
+
+    Returns
+    -------
+    ses_id : str or None
+        The session ID in the filename.
+        If the file does not have a session entity, ``None`` will be returned.
     """
     ses_id = None
     filex = os.path.basename(filename)
@@ -504,8 +632,17 @@ def _getsesid(filename):
 
 
 def _prefix(subid):
-    """
-    Prefix for subject id
+    """Extract or compile subject entity from subject ID.
+
+    Parameters
+    ----------
+    subid : str
+        A subject ID (e.g., 'sub-XX' or just 'XX').
+
+    Returns
+    -------
+    str
+        Subject entity (e.g., 'sub-XX').
     """
     if subid.startswith('sub-'):
         return subid

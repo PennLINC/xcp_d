@@ -1,9 +1,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Utilities for fmriprep bids derivatives and layout.
-Most of the code copied from niworkflows,
-A PR will be submit to"""
 
+Most of the code is copied from niworkflows.
+A PR will be submitted to niworkflows at some point.
+"""
 import fnmatch
 import os
 import re
@@ -65,6 +66,16 @@ DEFAULT_DTYPES = defaultdict(
 
 
 class BIDSError(ValueError):
+    """A generic error related to BIDS datasets.
+
+    Parameters
+    ----------
+    message : str
+        The error message.
+    bids_root : str
+        The path to the BIDS dataset.
+    """
+
     def __init__(self, message, bids_root):
         indent = 10
         header = (
@@ -80,13 +91,29 @@ class BIDSError(ValueError):
 
 
 class BIDSWarning(RuntimeWarning):
+    """A generic warning related to BIDS datasets."""
+
     pass
 
 
 def collect_participants(
     bids_dir, participant_label=None, strict=False, bids_validate=False
 ):
-    """
+    """Collect a list of participants from a BIDS dataset.
+
+    Parameters
+    ----------
+    bids_dir : str or pybids.layout.BIDSLayout
+    participant_label : None or str, optional
+    strict : bool, optional
+    bids_validate : bool, optional
+
+    Returns
+    -------
+    found_label
+
+    Examples
+    --------
     Requesting all subjects in a BIDS directory root:
     #>>> collect_participants(str(datadir / 'ds114'), bids_validate=False)
     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
@@ -155,7 +182,21 @@ def collect_data(
     bids_validate=False,
     bids_filters=None,
 ):
+    """Collect data from a BIDS dataset.
 
+    Parameters
+    ----------
+    bids_dir
+    participant_label
+    task
+    bids_validate
+    bids_filters
+
+    Returns
+    -------
+    layout : pybids.layout.BIDSLayout
+    subj_data : dict
+    """
     layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
 
     queries = {
@@ -197,7 +238,20 @@ def collect_data(
 
 
 def select_registrationfile(subj_data):
+    """Select a registration file from a derivatives dataset.
 
+    Parameters
+    ----------
+    subj_data : dict
+        Dictionary where keys are filetypes and values are filenames.
+
+    Returns
+    -------
+    mni_to_t1w : str
+        Path to the MNI-to-T1w transform file.
+    t1w_to_mni : str
+        Path to the T1w-to-MNI transform file.
+    """
     regfile = subj_data["regfile"]
 
     # get the file with the template name
@@ -229,7 +283,19 @@ def select_registrationfile(subj_data):
 
 
 def select_cifti_bold(subj_data):
+    """Select preprocessed BOLD NIFTI and CIFTI files.
 
+    Parameters
+    ----------
+    subj_data
+
+    Returns
+    -------
+    bold_file : list of str
+        List of paths to preprocessed BOLD files.
+    cifti_file : list of str
+        List of paths to preprocessed BOLD CIFTI files.
+    """
     boldfile = subj_data["boldfile"]
     bold_file = []
     cifti_file = []
@@ -243,6 +309,19 @@ def select_cifti_bold(subj_data):
 
 
 def extract_t1w_seg(subj_data):
+    """Select preprocessed T1w and segmentation files.
+
+    Parameters
+    ----------
+    subj_data
+
+    Returns
+    -------
+    t1w : str
+        Preprocessed T1-weighted file.
+    t1seg : str
+        Segmentation file.
+    """
     all_t1w = subj_data["t1w"]
     for i in all_t1w:
         ii = os.path.basename(i)
@@ -301,14 +380,10 @@ class _DerivativesDataSinkOutputSpec(TraitedSpec):
 
 
 class DerivativesDataSink(SimpleInterface):
-    """
-    Store derivative files.
+    """Store derivative files.
 
     Saves the ``in_file`` into a BIDS-Derivatives folder provided
     by ``base_directory``, given the input reference ``source_file``.
-
-
-
     """
 
     input_spec = _DerivativesDataSinkInputSpec

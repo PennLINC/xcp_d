@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
+"""A range of utility functions for xcp_d interfaces and workflows."""
 from xcp_d.utils.write_save import (read_ndata, write_ndata, read_gii, write_gii,
                                     despikedatacifti)
 from xcp_d.utils.plot import (plot_svg, compute_dvars, plotimage)

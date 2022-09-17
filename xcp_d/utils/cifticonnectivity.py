@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""workbench command for  cifti correlation"""
+"""Functions for calculating connectivity measures between/within CIFTI files."""
 
 from nipype import logging
 from nipype.interfaces.base import CommandLineInputSpec, File, TraitedSpec, traits
@@ -95,10 +95,13 @@ class CiftiCorrelationOutputSpec(TraitedSpec):
 
 
 class CiftiCorrelation(WBCommand):
-    r"""
-    Compute correlation from CIFTI file
+    """Compute correlation from CIFTI file.
+
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .ptseries or .dtseries,
+    dimension, columns for .ptseries or .dtseries.
+
+    Examples
+    --------
     >>> cifticorr = CiftiCorrelation()
     >>> cifticorr.inputs.in_file = 'sub-01XX_task-rest.ptseries.nii'
     >>> cifticorr.inputs.out_file = 'sub_01XX_task-rest.pconn.nii'

@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""workbench command for  cifti metric separation"""
+"""Functions for resampling CIFTI files."""
 
 from nipype import logging
 from nipype.interfaces.base import CommandLineInputSpec, File, TraitedSpec, traits
@@ -52,10 +52,11 @@ class CiftiSurfaceResampleOutputSpec(TraitedSpec):
 
 
 class CiftiSurfaceResample(WBCommand):
-    r"""
-    Resample a surface from one sphere to another.
-    will comeback for documentation  @Azeez Adebimpe
+    """Resample a surface from one sphere to another.
+
+    TODO: Improve documentation.
     """
+
     input_spec = CiftiSurfaceResampleInputSpec
     output_spec = CiftiSurfaceResampleOutputSpec
     _cmd = "wb_command  -surface-resample"

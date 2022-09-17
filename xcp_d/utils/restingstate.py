@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""Interfaces for working with resting-state fMRI data."""
 import os
 import shutil
 

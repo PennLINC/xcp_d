@@ -51,20 +51,21 @@ def plotimage(img, out_file):
 
 
 def plot_svg(fdata, fd, dvars, filename, TR=1):
-    '''
-    plot carpetplot with fd and dvars
-    ------------
-    fdata:
-      4D ndarray
-    fd:
-      framewise displacement
-    dvars: x
-      dvars
-    filename
-      filename
-    TR:
-    repetion time
-    '''
+    """Plot carpetplot with FD and DVARS, and save to file.
+
+    Parameters
+    ----------
+    fdata : str
+        The functional data file to plot.
+    fd : numpy.ndarray
+        Framewise displacement
+    dvars : numpy.ndarray
+        DVARS
+    filename : str
+        The SVG file to save the figure to.
+    TR : float, optional
+        Repetion time in seconds. Default is 1.
+    """
     sns.set_style('whitegrid')
     fig = plt.figure(constrained_layout=False, figsize=(30, 15))
     grid = mgs.GridSpec(3,
@@ -83,12 +84,18 @@ def plot_svg(fdata, fd, dvars, filename, TR=1):
 
 
 def compute_dvars(datat):
-    '''
-    compute standard dvars
+    """Compute standard DVARS.
 
-    datat : numpy darrays
-        data matrix vertices by timepoints
-    '''
+    Parameters
+    ----------
+    datat : numpy.ndarray
+        Data matrix with shape vertices by timepoints.
+
+    Returns
+    -------
+    numpy.ndarray
+        1D array (T) of DVARS values.
+    """
     firstcolumn = np.zeros((datat.shape[0]))[..., None]
     datax = np.hstack((firstcolumn, np.diff(datat)))
     datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
@@ -105,19 +112,28 @@ def confoundplot(time_series,
                  color='b',
                  cutoff=None,
                  ylims=None):
-    '''
-    adapted from niworkflows
-    time_series:
-       numpy array
-    grid_spec_ts:
-       GridSpec
-    name:
+    """Create a time series plot for confounds.
+
+    Adapted from niworkflows.
+
+    Parameters
+    ----------
+    time_series : numpy.ndarray
+       Time series to plot in the figure.
+    grid_spec_ts : GridSpec
+       The GridSpec object in which the time series plot will be stored.
+    name :
       file name
-    units:
+    units :
       time_series unit
-    TR:
-      repetition time
-    '''
+    TR : float or None, optional
+      Repetition time for the time series. Default is None.
+
+    Returns
+    -------
+    time_series_axis
+    grid_specification
+    """
     sns.set_style('whitegrid')
     # Define TR and number of frames
     no_repetition_time = False
@@ -464,7 +480,7 @@ def plot_svgx(rawdata,
               regressed_dvars=None,
               filtered_dvars=None,
               work_dir=None):
-    '''
+    """
     generate carpet plot with dvars, fd, and WB
     ------------
     rawdata:
@@ -485,7 +501,7 @@ def plot_svgx(rawdata,
       output file svg before processing
     processed_filename:
       output file svg after processing
-    '''
+    """
 
     # Compute dvars correctly if not already done
     if type(raw_dvars) != np.ndarray:
