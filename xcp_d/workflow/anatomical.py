@@ -44,6 +44,8 @@ from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 
 
 class DerivativesDataSink(bids_derivative):
+    """An updated data-sink for xcp_d derivatives."""
+
     out_path_base = "xcp_d"
 
 
@@ -57,9 +59,7 @@ def init_anatomical_wf(
     mem_gb,
     name="anatomical_wf",
 ):
-    """
-    This workflow is convert surfaces (gifti) from fMRI to standard space-fslr-32k
-    It also resamples the t1w segmnetation to standard space, MNI
+    """Convert surfaces from native to standard fslr-32k space and resample T1w seg to MNI.
 
     Workflow Graph
         .. workflow::
