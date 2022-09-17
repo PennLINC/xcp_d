@@ -33,12 +33,11 @@ from xcp_d.utils.utils import (
     get_transformfilex,
     stringforparams,
 )
-from xcp_d.workflow.bold import init_3d_reho_wf
 from xcp_d.workflow.connectivity import init_fcon_ts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.restingstate import init_compute_alff_wf
+from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
