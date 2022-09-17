@@ -23,6 +23,7 @@ iflogger = logging.getLogger("interface")
 
 class C3dAffineToolInputSpec(CommandLineInputSpec):
     """Input specification for C3dAffineTool."""
+
     reference_file = File(exists=True, argstr="-ref %s", position=1)
     source_file = File(exists=True, argstr="-src %s", position=2)
     transform_file = File(exists=True, argstr="%s", position=3)
@@ -39,6 +40,7 @@ class C3dAffineToolInputSpec(CommandLineInputSpec):
 
 class C3dAffineToolOutputSpec(TraitedSpec):
     """Output specification for C3dAffineTool."""
+
     itk_transform = File(exists=True)
 
 
@@ -65,6 +67,7 @@ class C3dAffineTool(SEMLikeCommandLine):
 
 class C3dInputSpec(CommandLineInputSpec):
     """Input specification for C3d."""
+
     in_file = InputMultiPath(
         File(),
         position=1,
@@ -165,6 +168,7 @@ class C3dInputSpec(CommandLineInputSpec):
 
 class C3dOutputSpec(TraitedSpec):
     """Output specification for C3d."""
+
     out_files = OutputMultiPath(File(exists=False))
 
 
