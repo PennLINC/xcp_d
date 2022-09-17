@@ -10,6 +10,8 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class CiftiCorrelationInputSpec(CommandLineInputSpec):
+    """Input specification for CiftiCorrelation."""
+
     in_file = File(
         exists=True,
         mandatory=True,
@@ -91,6 +93,8 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
 
 
 class CiftiCorrelationOutputSpec(TraitedSpec):
+    """Output specification for CiftiCorrelation."""
+
     out_file = File(exists=True, desc="output CIFTI file")
 
 
