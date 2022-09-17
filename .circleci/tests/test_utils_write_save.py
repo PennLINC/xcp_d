@@ -2,6 +2,7 @@
 import os
 
 import pytest
+
 from xcp_d.utils import write_save
 
 

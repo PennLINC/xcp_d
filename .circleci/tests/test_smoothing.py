@@ -1,14 +1,14 @@
-from nipype.pipeline import engine as pe
-# from pkg_resources import resource_filename as pkgrf
-# from nipype.interfaces.workbench import CiftiSmooth
-from nipype.interfaces.fsl import Smooth
-from nipype.interfaces import afni
-import tempfile
+"""Tests for smoothing methods."""
 import os
+import tempfile
+
 import numpy as np
+from nipype.interfaces.fsl import Smooth
+from nipype.pipeline import engine as pe
 
 
 def test_smoothing_Nifti(data_dir):
+    """Test NIFTI smoothing."""
     #  Specify inputs
     in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -19,8 +19,12 @@ def test_smoothing_Nifti(data_dir):
     os.chdir(tmpdir)
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
-    os.system('3dFWHMx -ShowMeClassicFWHM -acf -detrend -input ' + in_file + ' -mask ' + mask +
-              ' -detprefix detrend.nii.gz -out test_file.out > test_fwhm.out')
+    os.system(
+        (
+            f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {in_file} -mask {mask} '
+            '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
+        )
+    )
 
     # Read the FWHM values from the .out file into an array
     with open("test_fwhm.out", "r") as file:
@@ -44,8 +48,12 @@ def test_smoothing_Nifti(data_dir):
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
     # i.e : the "ShowMeClassicFWHM" option
-    os.system('3dFWHMx -ShowMeClassicFWHM -acf -detrend -input ' + out_file + ' -mask ' + mask +
-              ' -detprefix detrend.nii.gz -out test_file.out > test_fwhm.out')
+    os.system(
+        (
+            f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {out_file} -mask {mask} '
+            '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
+        )
+    )
 
     # Read the FWHM values from the .out file into an array
     with open("test_fwhm.out", "r") as file:

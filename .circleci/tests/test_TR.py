@@ -1,22 +1,20 @@
-#!/usr/bin/env python
+"""Tests for removing volumes from files.
 
-"""
 This file is an example of running pytests either locally or on circleci.
 
 Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
-
-
-
 """
 import os.path as op
+
 import nibabel as nb
+import pandas as pd
+
 from xcp_d.interfaces.prepostcleaning import RemoveTR
 
 
 def test_data_availability(data_dir, working_dir, output_dir):
-    """Makes sure that we have access to all the testing data
-    """
+    """Make sure that we have access to all the testing data."""
     assert op.exists(output_dir)
     assert op.exists(working_dir)
     assert op.exists(data_dir)
@@ -26,10 +24,7 @@ def test_data_availability(data_dir, working_dir, output_dir):
 
 
 def test_RemoveTR_nifti(data_dir):
-    # Test RemoveTR() for NIFTI input data
-    from xcp_d.interfaces.prepostcleaning import RemoveTR
-    import pandas as pd
-
+    """Test RemoveTR() for NIFTI input data."""
     # Define inputs
     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -80,9 +75,7 @@ def test_RemoveTR_nifti(data_dir):
 
 
 def test_RemoveTR_cifti(data_dir):
-    # Test RemoveTR() for CIFTI input data
-    from xcp_d.interfaces.prepostcleaning import RemoveTR
-    import pandas as pd
+    """Test RemoveTR() for CIFTI input data."""
     # Define inputs
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
@@ -133,12 +126,8 @@ def test_RemoveTR_cifti(data_dir):
             raise Exception(f"Number of volumes in dropped cifti is {exc}.")
 
 # Testing with CUSTOM CONFOUNDS
-
-
 # Note: I had to test this locally as I don't have the permissions to share the
 # data I used here at the moment.
-
-
 # def test_fd_interface_cifti_custom(data_dir):  # Checking results
 #     boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
 #         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
