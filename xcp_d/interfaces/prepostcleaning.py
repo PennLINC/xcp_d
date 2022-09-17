@@ -338,9 +338,6 @@ class CensorScrub(SimpleInterface):
         return runtime
 
 
-# interpolation
-
-
 class _interpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
     bold_file = File(exists=True,

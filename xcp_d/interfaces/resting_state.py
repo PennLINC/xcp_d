@@ -2,8 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Handling computation of reho and alff.
 
-    .. testsetup::
-    # will comeback
+.. testsetup::
+# will comeback
 """
 import os
 

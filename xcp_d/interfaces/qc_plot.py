@@ -88,7 +88,7 @@ class computeqcplot(SimpleInterface):
     computeqcwf.inputs.tmask = temporalmask
     computeqcwf.inputs.mask_file = mask
     computeqcwf.inputs.dummytime = dummytime
-   computeqcwf.run()
+    computeqcwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """

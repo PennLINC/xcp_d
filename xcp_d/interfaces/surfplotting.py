@@ -34,6 +34,7 @@ class _plotimgOutputSpec(TraitedSpec):
 
 class PlotImage(SimpleInterface):
     """Python class to plot x,y, and z of image data."""
+
     input_spec = _plotimgInputSpec
     output_spec = _plotimgOutputSpec
 
@@ -62,6 +63,7 @@ class _surf2volOutputSpec(TraitedSpec):
 
 class SurftoVolume(SimpleInterface):
     """This class converts the freesurfer/gifti surface to volume using ras2vox transform."""
+
     input_spec = _surf2volInputSpec
     output_spec = _surf2volOutputSpec
 
@@ -93,6 +95,7 @@ class _brainplotxOutputSpec(TraitedSpec):
 
 class BrainPlotx(SimpleInterface):
     """This class create brainsprite with overlay as stats image."""
+
     input_spec = _brainplotxInputSpec
     output_spec = _brainplotxOutputSpec
 
@@ -224,6 +227,7 @@ class _ribbonstatmapOutputSpec(TraitedSpec):
 
 class RibbontoStatmap(SimpleInterface):
     """Plot of fd, dvars, carpet plots of bold data before and after regression/filtering."""
+
     input_spec = _ribbonstatmapInputSpec
     output_spec = _ribbonstatmapOutputSpec
 
