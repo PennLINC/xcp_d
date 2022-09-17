@@ -16,8 +16,8 @@ from nipype.interfaces.base import (
 )
 from scipy.signal import butter, filtfilt
 
-from xcp_d.utils import read_ndata, write_ndata
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 

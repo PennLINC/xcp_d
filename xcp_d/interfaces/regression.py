@@ -15,8 +15,9 @@ from nipype.interfaces.base import (
 from scipy import signal
 from sklearn.linear_model import LinearRegression
 
-from xcp_d.utils import despikedatacifti, load_confound_matrix, read_ndata, write_ndata
+from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 

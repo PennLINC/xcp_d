@@ -21,7 +21,7 @@ from nipype.interfaces.base import (
 )
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils import extract_timeseries_funct
+from xcp_d.utils.fcon import extract_timeseries_funct
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')

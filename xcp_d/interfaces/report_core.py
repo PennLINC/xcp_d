@@ -1,12 +1,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Tools for generating Reports."""
+"""Tools for generating Reports.
+
+This is from niworkflows, a patch will be submitted.
+"""
 import glob as glob
 from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
-
-# this is from niworklfows, a patched will be submitted
 
 
 class Report(_Report):

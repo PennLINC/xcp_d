@@ -11,15 +11,14 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils import (
+from xcp_d.utils.execsummary import (
     generate_brain_sprite,
     get_regplot,
-    plot_svgx,
-    plotimage,
     ribbon_to_statmap,
     surf2vol,
 )
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.plot import plot_svgx, plotimage
 
 LOGGER = logging.getLogger('nipype.interface')
 
