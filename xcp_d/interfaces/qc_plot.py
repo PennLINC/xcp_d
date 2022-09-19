@@ -20,7 +20,7 @@ from nipype.interfaces.base import (
 from xcp_d.utils.concantenation import compute_dvars
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_FD
+from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plot import fMRIPlot
 from xcp_d.utils.qcmetrics import regisQ
 from xcp_d.utils.write_save import read_ndata, write_ndata
@@ -115,7 +115,7 @@ class computeqcplot(SimpleInterface):
                                      "trans_y", "trans_z"
                                  ])
         # Compute fd_timeseries from motion_confounds df
-        fd_timeseries = compute_FD(confound=motion_df,
+        fd_timeseries = compute_fd(confound=motion_df,
                                    head_radius=self.inputs.head_radius)
 
         # Get rmsd

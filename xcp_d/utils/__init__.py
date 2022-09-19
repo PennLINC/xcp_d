@@ -30,7 +30,7 @@ from xcp_d.utils.fcon import (
     mesh_adjacency,
 )
 from xcp_d.utils.hcp2fmriprep import hcp2fmriprep
-from xcp_d.utils.modified_data import compute_FD, generate_mask, interpolate_masked_data
+from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
 from xcp_d.utils.plot import (
     compute_dvars,
     confoundplot,
@@ -77,7 +77,7 @@ __all__ = [
     'mesh_adjacency',
     'interpolate_masked_data',
     'generate_mask',
-    'compute_FD',
+    'compute_fd',
     'bid_derivative',
     'sentry_setup',
     'despikedatacifti',
