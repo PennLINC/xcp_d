@@ -1,9 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Handling filtering.
-    .. testsetup::
-    # will comeback
+"""Handling filtering.
+
+.. testsetup::
+# will comeback
 """
 import numpy as np
 from nipype import logging
@@ -16,8 +16,8 @@ from nipype.interfaces.base import (
 )
 from scipy.signal import butter, filtfilt
 
-from xcp_d.utils import read_ndata, write_ndata
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 

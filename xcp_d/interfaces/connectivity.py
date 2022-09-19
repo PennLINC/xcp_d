@@ -1,9 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Handling functional connectvity.
-    .. testsetup::
-    # will comeback
+"""Handling functional connectvity.
+
+.. testsetup::
+# will comeback
 """
 import matplotlib.pyplot as plt
 import nibabel as nb
@@ -21,7 +21,7 @@ from nipype.interfaces.base import (
 )
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils import extract_timeseries_funct
+from xcp_d.utils.fcon import extract_timeseries_funct
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -44,6 +44,7 @@ class _NiftiConnectOutputSpec(TraitedSpec):
 
 class NiftiConnect(SimpleInterface):
     """Extract timeseries and compute connectivity matrices."""
+
     input_spec = _NiftiConnectInputSpec
     output_spec = _NiftiConnectOutputSpec
 
@@ -199,6 +200,7 @@ class _connectplotOutputSpec(TraitedSpec):
 
 class connectplot(SimpleInterface):
     """Extract timeseries and compute connectivity matrices."""
+
     input_spec = _connectplotInputSpec
     output_spec = _connectplotOutputSpec
 
