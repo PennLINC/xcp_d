@@ -9,7 +9,6 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
 from xcp_d.utils.concantenation import concatenatebold
 from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.dcan2fmriprep import dcan2fmriprep
@@ -63,7 +62,6 @@ __all__ = [
     'plot_svg',
     'compute_dvars',
     'load_confound_matrix',
-    'CiftiSeparateMetric',
     'collect_participants',
     'collect_data',
     'compute_2d_reho',
