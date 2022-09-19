@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 from xcp_d.interfaces import constants
-from xcp_d.interfaces.helpers import find_and_copy_files, find_one_file
+from xcp_d.utils.filemanip import find_and_copy_files, find_one_file
 
 
 class ModalContainer(object):
