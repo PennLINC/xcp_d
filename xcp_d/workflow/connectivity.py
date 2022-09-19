@@ -14,8 +14,8 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import ApplyTransformsx, NiftiConnect, connectplot
+from xcp_d.interfaces.workbench import CiftiCorrelation
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
-from xcp_d.utils.cifticonnectivity import CiftiCorrelation
 from xcp_d.utils.ciftiparcellation import CiftiParcellate
 from xcp_d.utils.utils import get_transformfile
 
