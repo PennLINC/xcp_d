@@ -161,23 +161,23 @@ class computealff(SimpleInterface):
         return runtime
 
 
-class _brainplotInputSpec(BaseInterfaceInputSpec):
+class _BrainPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="alff or reho")
     mask_file = File(exists=True, mandatory=True, desc="mask file ")
 
 
-class _brainplotOutputSpec(TraitedSpec):
+class _BrainPlotOutputSpec(TraitedSpec):
     nifti_html = File(exists=True, manadatory=True, desc="zscore html")
 
 
-class brainplot(SimpleInterface):
+class BrainPlot(SimpleInterface):
     """Create a brainsprite figure from a NIFTI file.
 
     The image will first be normalized (z-scored) before the figure is generated.
     """
 
-    input_spec = _brainplotInputSpec
-    output_spec = _brainplotOutputSpec
+    input_spec = _BrainPlotInputSpec
+    output_spec = _BrainPlotOutputSpec
 
     def _run_interface(self, runtime):
 

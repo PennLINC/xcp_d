@@ -13,7 +13,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import brainplot, computealff, surfaceReho
+from xcp_d.interfaces import BrainPlot, computealff, surfaceReho
 from xcp_d.utils import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
@@ -102,7 +102,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          name='alff_compt',
                          n_procs=omp_nthreads)
     # create a node for the Nifti HTML
-    brain_plot = pe.Node(brainplot(),
+    brain_plot = pe.Node(BrainPlot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)
@@ -307,7 +307,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
     # Get the HTML
-    brain_plot = pe.Node(brainplot(),
+    brain_plot = pe.Node(BrainPlot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)
