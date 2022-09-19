@@ -69,8 +69,8 @@ class FilteringData(SimpleInterface):
     tmpdir.cleanup()
     """
 
-    input_spec = _filterdataInputSpec
-    output_spec = _filterdataOutputSpec
+    input_spec = _FilteringDataInputSpec
+    output_spec = _FilteringDataOutputSpec
 
     def _run_interface(self, runtime):
 
