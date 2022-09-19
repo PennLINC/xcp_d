@@ -4,6 +4,28 @@ import numpy as np
 
 
 def regisQ(bold2t1w_mask, t1w_mask, bold2template_mask, template_mask):
+    """Compute quality of registration metrics.
+
+    This function will calculate a series of metrics, including Dice's similarity index,
+    Jaccard's coefficient, cross-correlation, and coverage, between the BOLD-to-T1w brain mask
+    and the T1w mask, as well as between the BOLD-to-template brain mask and the template mask.
+
+    Parameters
+    ----------
+    bold2t1w_mask : str
+        Path to the BOLD mask in T1w space.
+    t1w_mask : str
+        Path to the T1w mask.
+    bold2template_mask : str
+        Path to the BOLD mask in template space.
+    template_mask : str
+        Path to the template mask.
+
+    Returns
+    -------
+    reg_qc : dict
+        Quality control measures between different inputs.
+    """
     reg_qc = {
         'coregDice': [dc(bold2t1w_mask, t1w_mask)],
         'coregJaccard': [jc(bold2t1w_mask, t1w_mask)],
@@ -18,27 +40,30 @@ def regisQ(bold2t1w_mask, t1w_mask, bold2template_mask, template_mask):
 
 
 def dc(input1, input2):
-    r"""
-    Dice coefficient
+    r"""Calculate Dice coefficient between two images.
+
     Computes the Dice coefficient (also known as Sorensen index) between the binary
     objects in twom j images.
+
     The metric is defined as
     .. math::
         DC=\frac{2|A\cap B|}{|A|+|B|}
+
     , where :math:`A` is the first and :math:`B` the second set of samples (here: binary objects).
+
     Parameters
     ----------
-    input1 : array_like
-        Input data containing objects. Can be any type but will be converted
-        into binary: background where 0, object everywhere else.
-    input2 : array_like
-        Input data containing objects. Can be any type but will be converted
-        into binary: background where 0, object everywhere else.
+    input1/input2 : str
+        Path to a NIFTI image.
+        Can be any type but will be converted into binary:
+        False where 0, True everywhere else.
+
     Returns
     -------
     dc : float
         The Dice coefficient between the object(s) in ```input1``` and the
         object(s) in ```input2```. It ranges from 0 (no overlap) to 1 (perfect overlap).
+
     Notes
     -----
     This is a real metric.
@@ -62,22 +87,24 @@ def dc(input1, input2):
 
 
 def jc(input1, input2):
-    r"""
-    Jaccard coefficient
+    r"""Calculate Jaccard coefficient between two images.
+
     Computes the Jaccard coefficient between the binary objects in two images.
+
     Parameters
     ----------
-    input1: array_like
-            Input data containing objects. Can be any type but will be converted
-            into binary: background where 0, object everywhere else.
-    input2: array_like
-            Input data containing objects. Can be any type but will be converted
-            into binary: background where 0, object everywhere else.
+    input1/input2 : str
+        Path to a NIFTI image.
+        Can be any type but will be converted into binary:
+        False where 0, True everywhere else.
+
     Returns
     -------
-    jc: float
-        The Jaccard coefficient between the object(s) in `input1` and the
-        object(s) in `input2`. It ranges from 0 (no overlap) to 1 (perfect overlap).
+    jc : float
+        The Jaccard coefficient between the object(s) in ``input1`` and the
+        object(s) in ``input2``.
+        It ranges from 0 (no overlap) to 1 (perfect overlap).
+
     Notes
     -----
     This is a real metric.
@@ -96,9 +123,21 @@ def jc(input1, input2):
 
 
 def crosscorr(input1, input2):
-    r"""
-    cross correlation
-    computer compute cross correction bewteen input mask
+    """Calculate cross correlation between two images.
+
+    NOTE: TS- This appears to be Pearson's correlation, not cross-correlation.
+
+    Parameters
+    ----------
+    input1/input2 : str
+        Path to a NIFTI image.
+        Can be any type but will be converted into binary:
+        False where 0, True everywhere else.
+
+    Returns
+    -------
+    cc : float
+        Correlation between the two images.
     """
     input1 = nb.load(input1).get_fdata()
     input2 = nb.load(input2).get_fdata()
@@ -109,8 +148,19 @@ def crosscorr(input1, input2):
 
 
 def coverage(input1, input2):
-    """
-    estimate the coverage between  two mask
+    """Estimate the coverage between two masks.
+
+    Parameters
+    ----------
+    input1/input2 : str
+        Path to a NIFTI image.
+        Can be any type but will be converted into binary:
+        False where 0, True everywhere else.
+
+    Returns
+    -------
+    cov : float
+        Coverage between two images.
     """
     input1 = nb.load(input1).get_fdata()
     input2 = nb.load(input2).get_fdata()

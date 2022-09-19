@@ -10,6 +10,8 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSurfaceResample command."""
+
     in_file = File(
         exists=True,
         mandatory=True,
@@ -32,10 +34,12 @@ class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
     )
 
-    metric = traits.Str(argstr=" %s ",
-                        position=3,
-                        desc=" fixed for anatomic",
-                        default="  BARYCENTRIC  ")
+    metric = traits.Str(
+        argstr=" %s ",
+        position=3,
+        desc=" fixed for anatomic",
+        default="  BARYCENTRIC  ",
+    )
 
     out_file = File(
         name_source=["in_file"],
@@ -48,6 +52,8 @@ class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
 
 
 class _CiftiSurfaceResampleOutputSpec(TraitedSpec):
+    """Input specification for the CiftiSurfaceResample command."""
+
     out_file = File(exists=True, desc="output gifti file")
 
 

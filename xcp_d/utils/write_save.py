@@ -142,14 +142,21 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
 
 
 def edit_ciftinifti(in_file, out_file, datax):
-    """
-    this function create a fake nifti file from cifti
-    in_file:
-       cifti file. .dstreries etc
-    out_file:
-       output fake nifti file
-    datax: numpy darray
-      data matrix with vertices by timepoints dimension
+    """Create a fake nifti file from cifti.
+
+    Parameters
+    ----------
+    in_file : str
+        cifti file. .dstreries etc
+    out_file : str
+        output fake nifti file
+    datax : numpy.ndarray
+        data matrix with vertices by timepoints dimension
+
+    Returns
+    -------
+    out_file : str
+        The output filename.
     """
     thdata = nb.load(in_file)
     dataxx = thdata.get_fdata()
@@ -162,10 +169,19 @@ def edit_ciftinifti(in_file, out_file, datax):
 
 
 def run_shell(cmd, env=os.environ):
-    """
-    utilities to run shell in python
-    cmd:
-     shell command that wanted to be run
+    """Run shell in python.
+
+    Parameters
+    ----------
+    cmd : str
+        shell command that wanted to be run
+    env
+        Environment variables.
+
+    Returns
+    -------
+    output
+    error
     """
     if type(cmd) is list:
         cmd = ' '.join(cmd)
@@ -184,10 +200,20 @@ def run_shell(cmd, env=os.environ):
 
 
 def write_gii(datat, template, filename, hemi):
-    """
-    datatt : vector
-    template: real file loaded with nibabel to get header and filemap
-    filename ; name of the output
+    """Use nibabel to write surface file.
+
+    Parameters
+    ----------
+    datatt : numpy.ndarray
+        vector
+    template : str
+        real file loaded with nibabel to get header and filemap
+    filename : str
+        name of the output
+
+    Returns
+    -------
+    filename
     """
     datax = np.array(datat, dtype='float32')
     template = str(
@@ -208,9 +234,7 @@ def write_gii(datat, template, filename, hemi):
 
 
 def read_gii(surf_gii):
-    """
-    Using nibabel to read surface file
-    """
+    """Use nibabel to read surface file."""
     bold_data = nb.load(surf_gii)  # load the gifti
     gifti_data = bold_data.agg_data()  # aggregate the data
     if not hasattr(gifti_data, '__shape__'):  # if it doesn't have 'shape', reshape
@@ -221,7 +245,7 @@ def read_gii(surf_gii):
 
 
 def despikedatacifti(cifti, TR, basedir):
-    """ despiking cifti """
+    """Despike CIFTI file."""
     fake_cifti1 = str(basedir + '/fake_niftix.nii.gz')
     fake_cifti1_depike = str(basedir + '/fake_niftix_depike.nii.gz')
     cifti_despike = str(basedir + '/despike_nifti2cifti.dtseries.nii')
