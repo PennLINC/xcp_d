@@ -22,7 +22,7 @@ from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _regressInputSpec(BaseInterfaceInputSpec):
+class _RegressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="The bold file to be regressed")
@@ -42,7 +42,7 @@ class _regressInputSpec(BaseInterfaceInputSpec):
                                      mandatory=False)
 
 
-class _regressOutputSpec(TraitedSpec):
+class _RegressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
@@ -51,7 +51,7 @@ class _regressOutputSpec(TraitedSpec):
                            desc="Confounds matrix returned for testing purposes only")
 
 
-class regress(SimpleInterface):
+class Regress(SimpleInterface):
     """Takes in the confound tsv, turns it to a matrix and expands it.
 
     Custom confounds are added in during this step if present.
@@ -62,8 +62,8 @@ class regress(SimpleInterface):
     the bold files and returns the residual image, as well as the confounds for testing.
     """
 
-    input_spec = _regressInputSpec
-    output_spec = _regressOutputSpec
+    input_spec = _RegressInputSpec
+    output_spec = _RegressOutputSpec
 
     def _run_interface(self, runtime):
 

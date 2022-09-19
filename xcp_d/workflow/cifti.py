@@ -25,7 +25,7 @@ from xcp_d.interfaces import (
     CiftiDespike,
     QCPlot,
     Interpolate,
-    regress,
+    Regress,
 )
 from xcp_d.utils import bid_derivative
 from xcp_d.utils.utils import stringforparams
@@ -305,7 +305,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=cifti_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],

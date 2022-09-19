@@ -26,7 +26,7 @@ from xcp_d.interfaces import (
     RemoveTR,
     QCPlot,
     Interpolate,
-    regress,
+    Regress,
 )
 from xcp_d.utils.utils import (
     get_maskfiles,
@@ -319,7 +319,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],

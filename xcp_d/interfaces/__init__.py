@@ -12,7 +12,7 @@ from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.layout_builder import LayoutBuilder
 from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR, Interpolate
 from xcp_d.interfaces.qc_plot import QCPlot
-from xcp_d.interfaces.regression import CiftiDespike, regress
+from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import AboutSummary, FunctionalSummary, SubjectSummary
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.interfaces.resting_state import brainplot, computealff, surfaceReho
@@ -26,7 +26,7 @@ from xcp_d.interfaces.surfplotting import (
 )
 
 __all__ = [
-    'regress', 'FilteringData', 'NiftiConnect',
+    'Regress', 'FilteringData', 'NiftiConnect',
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'Interpolate', 'CensorScrub', 'RemoveTR',
     'QCPlot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
