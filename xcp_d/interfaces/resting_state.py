@@ -7,8 +7,6 @@
 """
 import os
 
-import nibabel as nb
-import numpy as np
 import tempita
 from brainsprite import viewer_substitute
 from nipype import logging
@@ -21,6 +19,7 @@ from nipype.interfaces.base import (
 )
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.utils.utils import zscore_nifti
 from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
@@ -216,49 +215,3 @@ class brainplot(SimpleInterface):
 
         viewer.save_as_html(self._results['nifti_html'])
         return runtime
-
-
-def zscore_nifti(img, outputname, mask=None):
-    """Normalize (z-score) a NIFTI image.
-
-    Image and mask must be in the same space.
-    TODO: Use Nilearn for masking.
-
-    Parameters
-    ----------
-    img : str
-        Path to the NIFTI image to z-score.
-    outputname : str
-        Output filename.
-    mask : str or None, optional
-        Path to binary mask file. Default is None.
-
-    Returns
-    -------
-    outputname : str
-        Output filename. Same as the ``outputname`` parameter.
-    """
-    img = nb.load(img)
-
-    if mask:
-        # z-score the data
-        maskdata = nb.load(mask).get_fdata()
-        imgdata = img.get_fdata()
-        meandata = imgdata[maskdata > 0].mean()
-        stddata = imgdata[maskdata > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-        # values where the mask is less than 1 are set to 0
-        zscore_fdata[maskdata < 1] = 0
-    else:
-        # z-score the data
-        imgdata = img.get_fdata()
-        meandata = imgdata[np.abs(imgdata) > 0].mean()
-        stddata = imgdata[np.abs(imgdata) > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-
-    # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata,
-                             affine=img.affine,
-                             header=img.header)
-    dataout.to_filename(outputname)
-    return outputname
