@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing the BOLD data.
+
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_boldpostprocess_wf
@@ -19,26 +20,24 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from num2words import num2words
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import (
-    CensorScrub,
-    FilteringData,
-    FunctionalSummary,
-    RemoveTR,
-    computeqcplot,
-    interpolate,
-    regress,
-)
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR, interpolate
+from xcp_d.interfaces.qc_plot import computeqcplot
+from xcp_d.interfaces.regression import regress
+from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.restingstate import DespikePatch
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
     stringforparams,
 )
-from xcp_d.utils import DespikePatch, bid_derivative
-from xcp_d.workflow import init_3d_reho_wf, init_compute_alff_wf, init_fcon_ts_wf
+from xcp_d.workflow.connectivity import init_fcon_ts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
+from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -66,8 +65,7 @@ def init_boldpostprocess_wf(lower_bpf,
                             brain_template='MNI152NLin2009cAsym',
                             layout=None,
                             name='bold_postprocess_wf'):
-    """
-    This workflow organizes bold processing workflow.
+    """Organize the bold processing workflow.
 
     Workflow Graph
         .. workflow::
@@ -180,7 +178,6 @@ def init_boldpostprocess_wf(lower_bpf,
     qc_file
         quality control files
     """
-
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
@@ -705,9 +702,7 @@ def _get_ref_mask(fname):
 
 
 def _t12native(fname):  # TODO: Update names and refactor
-    """
-    Takes in bold filename, finds transform from T1W to native space
-    """
+    """Take in bold filename and find transform from T1W to native space."""
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
@@ -717,5 +712,7 @@ def _t12native(fname):  # TODO: Update names and refactor
     return t12ref
 
 
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(bids_derivative):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'

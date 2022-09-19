@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Time series extractions
+"""Workflows for extracting time series and computing functional connectivity.
+
 functional connectvity matrix
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_fcon_ts_wf
@@ -13,14 +13,15 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces import connectplot
 from xcp_d.interfaces.connectivity import (
     ApplyTransformsx,
     NiftiConnect,
+    connectplot,
     get_atlas_cifti,
     get_atlas_nifti,
 )
-from xcp_d.utils import CiftiCorrelation, CiftiParcellate
+from xcp_d.utils.cifticonnectivity import CiftiCorrelation
+from xcp_d.utils.ciftiparcellation import CiftiParcellate
 from xcp_d.utils.utils import get_transformfile
 
 
@@ -33,8 +34,8 @@ def init_fcon_ts_wf(
     bold_file,
     name="fcons_ts_wf",
 ):
-    """
-    This workflow is for bold timeseries extraction.
+    """Extract BOLD time series and compute functional connectivity.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -385,8 +386,8 @@ def init_cifti_conts_wf(
     omp_nthreads,
     name="cifti_ts_con_wf",
 ):
-    """
-    This workflow is for cifti timeseries extraction.
+    """Extract CIFTI time series.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -399,15 +400,17 @@ def init_cifti_conts_wf(
                 template='MNI152NLin2009cAsym',
                 name="fcons_ts_wf",
              )
+
     Parameters
     ----------
-
     mem_gb: float
         memory size in gigabytes
+
     Inputs
     ------
     clean_cifti
         clean cifti after filtered out nuisscance and filtering
+
     Outputs
     -------
     schaefer time series and func matrices, 100-1000 nodes
@@ -422,7 +425,6 @@ def init_cifti_conts_wf(
         gordon 333 func matrices
     qc_file
         quality control files
-
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
