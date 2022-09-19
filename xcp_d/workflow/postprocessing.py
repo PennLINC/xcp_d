@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing BOLD data.
+
 post processing the bold/cifti
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_post_process_wf
@@ -16,7 +17,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import FilteringData
+from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.utils.utils import stringforparams
 
 
@@ -39,9 +40,8 @@ def init_post_process_wf(
         dummytime=0,
         fd_thresh=0.2,
         name="post_process_wf"):
-    """
-    This workflow is organizing workflows including
-    selectign confound matrix, regression and filtering
+    """Organize workflows including selecting confound matrix, regression, and filtering.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -66,6 +66,7 @@ def init_post_process_wf(
                 fd_thresh,
                 name="post_process_wf",
                 )
+
     Parameters
     ----------
     TR: float
@@ -109,7 +110,6 @@ def init_post_process_wf(
     initial_volumes_to_drop: int
         the first volumes to be removed before postprocessing
 
-
     Inputs
     ------
     bold
@@ -128,7 +128,6 @@ def init_post_process_wf(
     tmask
         temporal mask
     """
-
     workflow = Workflow(name=name)
     workflow.__desc__ = """ \
 
@@ -220,6 +219,10 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {str(smoothin
 
 
 def fwhm2sigma(fwhm):
+    """Convert FWHM to sigma.
+
+    NOTE: Duplicate of function in utils.
+    """
     return fwhm / np.sqrt(8 * np.log(2))
 
 
@@ -228,7 +231,7 @@ def init_resd_smoothing(mem_gb,
                         omp_nthreads,
                         cifti=False,
                         name="smoothing"):
-
+    """Smooth BOLD residuals."""
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
                         name='inputnode')
