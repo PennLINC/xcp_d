@@ -9,7 +9,6 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.ciftiparcellation import CiftiParcellate
 from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
 from xcp_d.utils.concantenation import concatenatebold
@@ -65,7 +64,6 @@ __all__ = [
     'plot_svg',
     'compute_dvars',
     'load_confound_matrix',
-    'CiftiParcellate',
     'CiftiSeparateMetric',
     'collect_participants',
     'collect_data',
