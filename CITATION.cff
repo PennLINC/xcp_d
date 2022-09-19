@@ -49,6 +49,14 @@ authors:
     family-names: Covitz
     affiliation: University of Pennsylvania
     orcid: 'https://orcid.org/0000-0002-7430-4125'
+  - given-names: Damien
+    family-names: Fair
+    affiliation: University of Minnesota
+    orcid: 'https://orcid.org/0000-0001-8602-393X'
+  - given-names: Theodore
+    family-names: Satterthwaite
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-7072-9399'
 identifiers:
   - type: doi
     value: 10.5281/zenodo.5139942
