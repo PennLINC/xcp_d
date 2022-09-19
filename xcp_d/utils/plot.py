@@ -306,6 +306,7 @@ def confoundplotx(time_series,
                   ylabel=None,
                   FD=False,
                   work_dir=None):
+    """Create confounds plot."""
     sns.set_style('whitegrid')
 
     # Define TR and number of frames
@@ -1073,7 +1074,6 @@ def _get_TR(img):
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """
-
     try:
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
