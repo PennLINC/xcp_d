@@ -10,6 +10,8 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSeparateMetric command."""
+
     in_file = File(
         exists=True,
         mandatory=True,
@@ -43,6 +45,8 @@ class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
 
 
 class CiftiSeparateMetricOutputSpec(TraitedSpec):
+    """Input specification for the CiftiSeparateMetric command."""
+
     out_file = File(exists=True, desc="output CIFTI file")
 
 
