@@ -85,7 +85,7 @@ class surfaceReho(SimpleInterface):
         return runtime
 
 
-class _computealffInputSpec(BaseInterfaceInputSpec):
+class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
     TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
     lowpass = traits.Float(exists=True,
@@ -101,11 +101,11 @@ class _computealffInputSpec(BaseInterfaceInputSpec):
                 desc=" brain mask for nifti file")
 
 
-class _computealffOutputSpec(TraitedSpec):
+class _ComputeALFFOutputSpec(TraitedSpec):
     alff_out = File(exists=True, manadatory=True, desc=" alff")
 
 
-class computealff(SimpleInterface):
+class ComputeALFF(SimpleInterface):
     """Compute ALFF.
 
     Examples
@@ -115,7 +115,7 @@ class computealff(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computealffwf = computealff()
+    computealffwf = ComputeALFF()
     computealffwf.inputs.in_file = datafile
     computealffwf.inputs.lowpass = 0.1
     computealffwf.inputs.highpass = 0.01
@@ -126,8 +126,8 @@ class computealff(SimpleInterface):
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _computealffInputSpec
-    output_spec = _computealffOutputSpec
+    input_spec = _ComputeALFFInputSpec
+    output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
 
