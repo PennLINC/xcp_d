@@ -256,7 +256,7 @@ class TasksSection(Section):
 
         self.run(tasks)
 
-    def write_T1_reg_rows(self, task_name, task_num):
+    def write_t1_reg_rows(self, task_name, task_num):
         """Write T1w rows."""
         # Write the header for the next few rows.
         self.section += constants.TASK_LABEL_ROW.format(task_name=task_name,
@@ -361,7 +361,7 @@ class TasksSection(Section):
             else:
                 task_num = 'ALL'
 
-            self.write_T1_reg_rows(task_name, task_num)
+            self.write_t1_reg_rows(task_name, task_num)
             self.write_bold_gray_row(task_name, task_num)
 
         # Add the end of the tasks section.
