@@ -39,7 +39,7 @@ from xcp_d.utils.plot import (
     plot_svgx,
     plotimage,
 )
-from xcp_d.utils.qcmetrics import regisQ
+from xcp_d.utils.qcmetrics import compute_registration_qc
 from xcp_d.utils.restingstate import ContrastEnhancement, DespikePatch, ReHoNamePatch
 from xcp_d.utils.sentry import sentry_setup
 from xcp_d.utils.utils import (
@@ -81,7 +81,7 @@ __all__ = [
     'bid_derivative',
     'sentry_setup',
     'despikedatacifti',
-    'regisQ',
+    'compute_registration_qc',
     'get_maskfiles',
     'get_transformfile',
     'get_transformfilex',

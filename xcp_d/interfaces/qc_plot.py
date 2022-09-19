@@ -22,7 +22,7 @@ from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plot import fMRIPlot
-from xcp_d.utils.qcmetrics import regisQ
+from xcp_d.utils.qcmetrics import compute_registration_qc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -265,7 +265,7 @@ class computeqcplot(SimpleInterface):
         qc_dictionary.update(qc_values)
         if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
             # Compute quality of registration
-            registration_qc = regisQ(bold2t1w_mask=self.inputs.bold2T1w_mask,
+            registration_qc = compute_registration_qc(bold2t1w_mask=self.inputs.bold2T1w_mask,
                                      t1w_mask=self.inputs.t1w_mask,
                                      bold2template_mask=self.inputs.bold2temp_mask,
                                      template_mask=self.inputs.template_mask)
