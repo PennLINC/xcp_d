@@ -25,7 +25,7 @@ from xcp_d.interfaces import (
     FunctionalSummary,
     RemoveTR,
     computeqcplot,
-    interpolate,
+    Interpolate,
     regress,
 )
 from xcp_d.utils.utils import (
@@ -326,7 +326,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
