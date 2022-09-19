@@ -23,7 +23,7 @@ from xcp_d.interfaces import (
     FunctionalSummary,
     RemoveTR,
     ciftidespike,
-    computeqcplot,
+    QCPlot,
     Interpolate,
     regress,
 )
@@ -318,7 +318,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     qcreport = pe.Node(
-        computeqcplot(
+        QCPlot(
             TR=TR,
             bold_file=cifti_file,
             dummytime=dummytime,

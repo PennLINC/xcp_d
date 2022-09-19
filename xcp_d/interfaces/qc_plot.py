@@ -28,7 +28,7 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _computeqcplotInputSpec(BaseInterfaceInputSpec):
+class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
                      desc="Raw bold file from fMRIPrep")
@@ -64,7 +64,7 @@ class _computeqcplotInputSpec(BaseInterfaceInputSpec):
         desc='High frequency for Notch filter in BPM')
 
 
-class _computeqcplotOutputSpec(TraitedSpec):
+class _QCPlotOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True,
                       manadatory=True,
@@ -74,7 +74,7 @@ class _computeqcplotOutputSpec(TraitedSpec):
                         desc="qc plot after regression")
 
 
-class computeqcplot(SimpleInterface):
+class QCPlot(SimpleInterface):
     """Generate a quality control (QC) figure.
 
     Examples
@@ -84,7 +84,7 @@ class computeqcplot(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computeqcwf = computeqcplot()
+    computeqcwf = QCPlot()
     computeqcwf.inputs.cleaned_file = datafile
     computeqcwf.inputs.bold_file = rawbold
     computeqcwf.inputs.TR = TR
@@ -96,8 +96,8 @@ class computeqcplot(SimpleInterface):
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _computeqcplotInputSpec
-    output_spec = _computeqcplotOutputSpec
+    input_spec = _QCPlotInputSpec
+    output_spec = _QCPlotOutputSpec
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering

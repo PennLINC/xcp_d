@@ -24,7 +24,7 @@ from xcp_d.interfaces import (
     FilteringData,
     FunctionalSummary,
     RemoveTR,
-    computeqcplot,
+    QCPlot,
     Interpolate,
     regress,
 )
@@ -389,23 +389,28 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,
-                                     bold_file=bold_file,
-                                     dummytime=dummytime,
-                                     t1w_mask=t1w_mask,
-                                     template_mask=str(
-                                         get_template(
-                                             'MNI152NLin2009cAsym',
-                                             resolution=2,
-                                             desc='brain',
-                                             suffix='mask',
-                                             extension=['.nii', '.nii.gz'])),
-                                     head_radius=head_radius,
-                                     low_freq=band_stop_max,
-                                     high_freq=band_stop_min),
-                       name="qc_report",
-                       mem_gb=mem_gbx['timeseries'],
-                       n_procs=omp_nthreads)
+    qcreport = pe.Node(
+        QCPlot(
+            TR=TR,
+            bold_file=bold_file,
+            dummytime=dummytime,
+            t1w_mask=t1w_mask,
+            template_mask=str(
+                get_template(
+                    'MNI152NLin2009cAsym',
+                    resolution=2,
+                    desc='brain',
+                    suffix='mask',
+                    extension=['.nii', '.nii.gz']
+                )
+            ),
+            head_radius=head_radius,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min),
+        name="qc_report",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads,
+    )
 
 # Remove TR first:
     if dummytime > 0:
