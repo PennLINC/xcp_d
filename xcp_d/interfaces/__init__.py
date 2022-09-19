@@ -4,7 +4,7 @@
 from xcp_d.interfaces.connectivity import (
     ApplyTransformsx,
     NiftiConnect,
-    connectplot,
+    ConnectPlot,
     get_atlas_cifti,
     get_atlas_nifti,
 )
@@ -30,7 +30,7 @@ __all__ = [
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'interpolate', 'CensorScrub', 'RemoveTR',
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
-    'generate_reports', 'ciftidespike', 'connectplot', 'brainplot',
+    'generate_reports', 'ciftidespike', 'ConnectPlot', 'brainplot',
     'SurftoVolume', 'BrainPlotx', 'PlotSVGData', 'RegPlot', 'PlotImage',
     'LayoutBuilder', 'RibbontoStatmap'
 ]
