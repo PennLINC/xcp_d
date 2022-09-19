@@ -5,8 +5,6 @@ from xcp_d.interfaces.connectivity import (
     ApplyTransformsx,
     NiftiConnect,
     connectplot,
-    get_atlas_cifti,
-    get_atlas_nifti,
 )
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.layout_builder import LayoutBuilder
@@ -27,7 +25,7 @@ from xcp_d.interfaces.surfplotting import (
 
 __all__ = [
     'regress', 'FilteringData', 'NiftiConnect',
-    'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
+    'computealff', 'surfaceReho',
     'ApplyTransformsx', 'interpolate', 'CensorScrub', 'RemoveTR',
     'computeqcplot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
     'generate_reports', 'ciftidespike', 'connectplot', 'brainplot',
