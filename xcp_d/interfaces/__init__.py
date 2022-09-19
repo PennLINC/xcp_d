@@ -12,7 +12,7 @@ from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.layout_builder import LayoutBuilder
 from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR, Interpolate
 from xcp_d.interfaces.qc_plot import QCPlot
-from xcp_d.interfaces.regression import ciftidespike, regress
+from xcp_d.interfaces.regression import CiftiDespike, regress
 from xcp_d.interfaces.report import AboutSummary, FunctionalSummary, SubjectSummary
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.interfaces.resting_state import brainplot, computealff, surfaceReho
@@ -30,7 +30,7 @@ __all__ = [
     'computealff', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'Interpolate', 'CensorScrub', 'RemoveTR',
     'QCPlot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
-    'generate_reports', 'ciftidespike', 'ConnectPlot', 'brainplot',
+    'generate_reports', 'CiftiDespike', 'ConnectPlot', 'brainplot',
     'SurftoVolume', 'BrainPlotx', 'PlotSVGData', 'RegPlot', 'PlotImage',
     'LayoutBuilder', 'RibbontoStatmap'
 ]

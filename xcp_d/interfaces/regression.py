@@ -170,20 +170,20 @@ def demean_detrend_data(data):
     return detrended  # Subtract these predicted values from the demeaned data
 
 
-class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
+class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
     TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
 
 
-class _ciftidespikeOutputSpec(TraitedSpec):
+class _CiftiDespikeOutputSpec(TraitedSpec):
     des_file = File(exists=True, manadatory=True, desc=" despike cifti")
 
 
-class ciftidespike(SimpleInterface):
+class CiftiDespike(SimpleInterface):
     """Despike a CIFTI file."""
 
-    input_spec = _ciftidespikeInputSpec
-    output_spec = _ciftidespikeOutputSpec
+    input_spec = _CiftiDespikeInputSpec
+    output_spec = _CiftiDespikeOutputSpec
 
     def _run_interface(self, runtime):
 

@@ -22,7 +22,7 @@ from xcp_d.interfaces import (
     FilteringData,
     FunctionalSummary,
     RemoveTR,
-    ciftidespike,
+    CiftiDespike,
     QCPlot,
     Interpolate,
     regress,
@@ -364,7 +364,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             ])])
 
     if despike:  # If we despike
-        despike3d = pe.Node(ciftidespike(TR=TR),
+        despike3d = pe.Node(CiftiDespike(TR=TR),
                             name="cifti_despike",
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
