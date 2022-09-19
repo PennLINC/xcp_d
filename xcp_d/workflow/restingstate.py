@@ -13,7 +13,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import BrainPlot, ComputeALFF, surfaceReho
+from xcp_d.interfaces import BrainPlot, ComputeALFF, SurfaceReHo
 from xcp_d.utils import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
@@ -228,11 +228,11 @@ vertices to yield ReHo.
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
     # Calculate the reho by hemipshere
-    lh_reho = pe.Node(surfaceReho(surf_hemi='L'),
+    lh_reho = pe.Node(SurfaceReHo(surf_hemi='L'),
                       name="reho_lh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-    rh_reho = pe.Node(surfaceReho(surf_hemi='R'),
+    rh_reho = pe.Node(SurfaceReHo(surf_hemi='R'),
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)

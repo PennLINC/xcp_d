@@ -15,7 +15,7 @@ from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import AboutSummary, FunctionalSummary, SubjectSummary
 from xcp_d.interfaces.report_core import generate_reports
-from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, surfaceReho
+from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.surfplotting import (
     BrainPlotx,
     PlotImage,
@@ -27,7 +27,7 @@ from xcp_d.interfaces.surfplotting import (
 
 __all__ = [
     'Regress', 'FilteringData', 'NiftiConnect',
-    'ComputeALFF', 'surfaceReho', 'get_atlas_cifti', 'get_atlas_nifti',
+    'ComputeALFF', 'SurfaceReHo', 'get_atlas_cifti', 'get_atlas_nifti',
     'ApplyTransformsx', 'Interpolate', 'CensorScrub', 'RemoveTR',
     'QCPlot', 'SubjectSummary', 'AboutSummary', 'FunctionalSummary',
     'generate_reports', 'CiftiDespike', 'ConnectPlot', 'BrainPlot',

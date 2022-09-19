@@ -29,18 +29,18 @@ LOGGER = logging.getLogger('nipype.interface')
 
 
 # compute 2D reho
-class _surfaceRehoInputSpec(BaseInterfaceInputSpec):
+class _SurfaceReHoInputSpec(BaseInterfaceInputSpec):
     surf_bold = File(exists=True,
                      mandatory=True,
                      desc="left or right hemisphere gii ")
     surf_hemi = traits.Str(exists=True, mandatory=True, desc="L or R ")
 
 
-class _surfaceRehoOutputSpec(TraitedSpec):
+class _SurfaceReHoOutputSpec(TraitedSpec):
     surf_gii = File(exists=True, manadatory=True, desc=" lh hemisphere reho")
 
 
-class surfaceReho(SimpleInterface):
+class SurfaceReHo(SimpleInterface):
     """Calculate regional homogeneity (ReHo) on a surface file.
 
     Examples
@@ -50,16 +50,16 @@ class surfaceReho(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> surfaceRehowf = surfaceReho()
-    >>> surfaceRehowf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfaceRehowf.inputs.surf_hemi = 'R'
-    >>> surfaceRehowf.run()
+    >>> surfacereho_wf = SurfaceReHo()
+    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+    >>> surfacereho_wf.inputs.surf_hemi = 'R'
+    >>> surfacereho_wf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _surfaceRehoInputSpec
-    output_spec = _surfaceRehoOutputSpec
+    input_spec = _SurfaceReHoInputSpec
+    output_spec = _SurfaceReHoOutputSpec
 
     def _run_interface(self, runtime):
 
