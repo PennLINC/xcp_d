@@ -7,6 +7,7 @@ import os
 import nibabel as nb
 import numpy as np
 from pkg_resources import resource_filename as pkgrf
+from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
 
 
@@ -387,3 +388,42 @@ def zscore_nifti(img, outputname, mask=None):
                              header=img.header)
     dataout.to_filename(outputname)
     return outputname
+
+
+def butter_bandpass(data, fs, lowpass, highpass, order=2):
+    """Apply a Butterworth bandpass filter to data.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Voxels/vertices by timepoints dimension.
+    fs : float
+        Sampling frequency. 1/TR(s).
+    lowpass : float
+        frequency
+    highpass : float
+        frequency
+    order : int
+        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+
+    Returns
+    -------
+    filtered_data : numpy.ndarray
+        The filtered data.
+    """
+    nyq = 0.5 * fs  # nyquist frequency
+
+    # normalize the cutoffs
+    lowcut = np.float(highpass) / nyq
+    highcut = np.float(lowpass) / nyq
+
+    b, a = butter(order / 2, [lowcut, highcut], btype='band')  # get filter coeff
+
+    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
+
+    # apply the filter, loop through columns of regressors
+    for ii in range(filtered_data.shape[0]):
+        filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
+                                        padlen=3 * (max(len(b), len(a)) - 1))
+
+    return filtered_data
