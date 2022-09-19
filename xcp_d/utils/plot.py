@@ -15,12 +15,11 @@ from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
-from xcp_d.utils import read_ndata, write_ndata
-from xcp_d.utils.write_save import scalex
+from xcp_d.utils.write_save import read_ndata, scalex, write_ndata
 
 
 def _decimate_data(data, seg_data, size):
-    """Decimate timeseries data
+    """Decimate timeseries data.
 
     Parameters
     ----------
@@ -30,7 +29,6 @@ def _decimate_data(data, seg_data, size):
         1 element array of samples
     size : tuple
         2 element for P/T decimation
-
     """
     p_dec = 1 + data.shape[0] // size[0]
     if p_dec:
@@ -43,8 +41,10 @@ def _decimate_data(data, seg_data, size):
 
 
 def plotimage(img, out_file):
-    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
+    """Plot anatomical image and save to file."""
     from nilearn.plotting import plot_anat
+
+    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
     plot_anat(img, draw_cross=False, figure=fig)
     fig.savefig(out_file, bbox_inches="tight", pad_inches=None)
     return out_file
@@ -306,7 +306,7 @@ def confoundplotx(time_series,
                   ylabel=None,
                   FD=False,
                   work_dir=None):
-
+    """Create confounds plot."""
     sns.set_style('whitegrid')
 
     # Define TR and number of frames
@@ -480,29 +480,29 @@ def plot_svgx(rawdata,
               regressed_dvars=None,
               filtered_dvars=None,
               work_dir=None):
-    """
-    generate carpet plot with dvars, fd, and WB
-    ------------
-    rawdata:
-       nifti or cifti before processing
-    regressed_data:
-      nifti or cifti after nuissance regression
-    residual_data:
-      nifti or cifti after regression and filtering
-    mask:
-         mask for nifti if available
-    seg_data:
-        3 tissues seg_data files
-    TR:
-        repetition times
-    fd:
-      framewise displacement
-    unprocessed_filename:
-      output file svg before processing
-    processed_filename:
-      output file svg after processing
-    """
+    """Generate carpet plot with DVARS, FD, and WB.
 
+    Parameters
+    ----------
+    rawdata :
+        nifti or cifti before processing
+    regressed_data :
+        nifti or cifti after nuissance regression
+    residual_data :
+        nifti or cifti after regression and filtering
+    mask :
+        mask for nifti if available
+    seg_data :
+        3 tissues seg_data files
+    TR : float, optional
+        repetition times
+    fd :
+        framewise displacement
+    unprocessed_filename :
+        output file svg before processing
+    processed_filename :
+        output file svg after processing
+    """
     # Compute dvars correctly if not already done
     if type(raw_dvars) != np.ndarray:
         raw_dvars = compute_dvars(read_ndata(datafile=rawdata, maskfile=mask))
@@ -711,10 +711,8 @@ class fMRIPlot:
                 self.spikes.append((np.loadtxt(sp_file), None, False))
 
     def plot(self, labelsize, figure=None):
-        """Main plotter"""
-
+        """Perform main plotting step."""
         # Layout settings
-
         sns.set_style("whitegrid")
         sns.set_context("paper", font_scale=1)
 
@@ -781,40 +779,38 @@ def plot_carpet(
     TR=None,
     lut=None,
 ):
-    """
-    Plot an image representation of voxel intensities across time also know
-    as the "carpet plot" or "Power plot". See Jonathan Power Neuroimage
-    2017 Jul 1; 154:150-158.
+    """Plot an image representation of voxel intensities across time.
+
+    This is also know. as the "carpet plot" or "Power plot".
+    See Jonathan Power Neuroimage 2017 Jul 1; 154:150-158.
 
     Parameters
     ----------
-
-        func : string
-            Path to NIfTI or CIFTI BOLD image
-        atlaslabels: ndarray, optional
-            A 3D array of integer labels from an atlas, resampled into ``img`` space.
-            Required if ``func`` is a NIfTI image.
-        detrend : boolean, optional
-            Detrend and standardize the data prior to plotting.
-        size : tuple, optional
-            Size of figure.
-        subplot : matplotlib Subplot, optional
-            Subplot to plot figure on.
-        title : string, optional
-            The title displayed on the figure.
-        output_file : string, or None, optional
-            The name of an image file to export the plot to. Valid extensions
-            are .png, .pdf, .svg. If output_file is not None, the plot
-            is saved to a file, and the display is closed.
-        legend : bool
-            Whether to render the average functional series with ``atlaslabels`` as
-            overlay.
-        TR : float , optional
-            Specify the TR, if specified it uses this value. If left as None,
-            # of frames is plotted instead of time.
-        lut : ndarray, optional
-            Look up table for segmentations
-
+    func : str
+        Path to NIfTI or CIFTI BOLD image
+    atlaslabels : numpy.ndarray, optional
+        A 3D array of integer labels from an atlas, resampled into ``img`` space.
+        Required if ``func`` is a NIfTI image.
+    detrend : bool, optional
+        Detrend and standardize the data prior to plotting.
+    size : tuple, optional
+        Size of figure.
+    subplot : matplotlib Subplot, optional
+        Subplot to plot figure on.
+    title : str, optional
+        The title displayed on the figure.
+    output_file : str or None, optional
+        The name of an image file to export the plot to. Valid extensions
+        are .png, .pdf, .svg. If output_file is not None, the plot
+        is saved to a file, and the display is closed.
+    legend : bool
+        Whether to render the average functional series with ``atlaslabels`` as
+        overlay.
+    TR : float, optional
+        Specify the TR, if specified it uses this value. If left as None,
+        # of frames is plotted instead of time.
+    lut : numpy.ndarray, optional
+        Look up table for segmentations
     """
     epinii = None
     segnii = None
@@ -928,7 +924,7 @@ def _carpet(func,
             epinii=None,
             segnii=None,
             nslices=None):
-    """Common carpetplot building code for volumetric / CIFTI plots"""
+    """Build carpetplot for volumetric / CIFTI plots."""
     if TR is None:
         TR = 1.0  # Default TR
     sns.set_style("whitegrid")
@@ -1026,9 +1022,7 @@ def _carpet(func,
 
 
 def plot_text(imgdata, grid_spec_ts):
-    """
-    Get the correct text for each plot
-    """
+    """Get the correct text for each plot."""
     grid_specification = mgs.GridSpecFromSubplotSpec(1,
                                                      2,
                                                      subplot_spec=grid_spec_ts,
@@ -1049,9 +1043,7 @@ def plot_text(imgdata, grid_spec_ts):
 
 
 def display_cb(grid_spec_ts):
-    """
-    Settings for colorbar display
-    """
+    """Set settings for colorbar display."""
     grid_specification = mgs.GridSpecFromSubplotSpec(1,
                                                      2,
                                                      subplot_spec=grid_spec_ts,
@@ -1071,8 +1063,7 @@ def display_cb(grid_spec_ts):
 
 
 def _get_TR(img):
-    """
-    Attempt to extract repetition time from NIfTI/CIFTI header
+    """Attempt to extract repetition time from NIfTI/CIFTI header.
 
     Examples
     --------
@@ -1083,7 +1074,6 @@ def _get_TR(img):
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """
-
     try:
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti

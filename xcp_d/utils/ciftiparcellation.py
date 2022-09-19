@@ -10,6 +10,8 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class CiftiParcellateInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiParcellate command."""
+
     in_file = File(
         exists=True,
         mandatory=True,
@@ -94,13 +96,15 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
     )
     cor_method = traits.Str(
         position=12,
-        default='MEAN ',
+        default="MEAN ",
         argstr="-method %s",
         desc=" correlation method, option inlcude MODE",
     )
 
 
 class CiftiParcellateOutputSpec(TraitedSpec):
+    """Output specification for the CiftiParcellate command."""
+
     out_file = File(exists=True, desc="output CIFTI file")
 
 

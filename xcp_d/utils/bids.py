@@ -124,7 +124,6 @@ def collect_participants(
     ['02', '04']
     ...
     """
-
     if isinstance(bids_dir, BIDSLayout):
         layout = bids_dir
     else:

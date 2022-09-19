@@ -14,10 +14,11 @@ from nipype.interfaces.base import SimpleInterface
 
 
 class ReHoNamePatch(SimpleInterface):
-    """Compute regional homogenity for a given neighbourhood.l,
-    based on a local neighborhood of that voxel.
+    """Compute ReHo for a given neighbourhood, based on a local neighborhood of that voxel.
+
     For complete details, see the `3dReHo Documentation.
     <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dReHo.html>`_
+
     Examples
     --------
     >>> from nipype.interfaces import afni
@@ -45,7 +46,7 @@ class ReHoNamePatch(SimpleInterface):
 
 
 class DespikePatch(SimpleInterface):
-    """Removes 'spikes' from the 3D+time input dataset
+    """Remove 'spikes' from the 3D+time input dataset.
 
     For complete details, see the `3dDespike Documentation.
     <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html>`_
@@ -58,7 +59,6 @@ class DespikePatch(SimpleInterface):
     >>> despike.cmdline
     '3dDespike -prefix functional_despike functional.nii'
     >>> res = despike.run()  # doctest: +SKIP
-
     """
 
     _cmd = "3dDespike"
@@ -73,7 +73,8 @@ class DespikePatch(SimpleInterface):
 
 
 class ContrastEnhancement(SimpleInterface):
-    """contrast enhancement with afni
+    """Perform contrast enhancement with AFNI.
+
     3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
     """
 
