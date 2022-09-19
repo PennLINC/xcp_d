@@ -1,12 +1,15 @@
+"""Tests for framewise displacement calculation."""
+import os
+import tempfile
+
+import nibabel as nb
+import pandas as pd
 
 from xcp_d.interfaces.prepostcleaning import CensorScrub
-import os
-import pandas as pd
-import tempfile
-import nibabel as nb
 
 
-def test_fd_interface_cifti(data_dir):  # Checking results
+def test_fd_interface_cifti(data_dir):
+    """Check results."""
     boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
     confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
@@ -53,7 +56,8 @@ def test_fd_interface_cifti(data_dir):  # Checking results
         raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
-def test_fd_interface_nifti(data_dir):  # Checking results
+def test_fd_interface_nifti(data_dir):
+    """Check results."""
     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
@@ -145,7 +149,6 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #         raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
-
 # def test_fd_interface_nifti_custom(data_dir):  # Checking results
 #     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
 #         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -185,6 +188,3 @@ def test_fd_interface_nifti(data_dir):  # Checking results
 #     except Exception as exc:
 #         exc = len(censored_confounds_timeseries), censored_image.get_fdata().shape[3]
 #         raise Exception(f"Sorry, the shapes are: {exc}.")
-
-
-

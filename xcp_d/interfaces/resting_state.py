@@ -2,8 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Handling computation of reho and alff.
 
-    .. testsetup::
-    # will comeback
+.. testsetup::
+# will comeback
 """
 import os
 
@@ -21,16 +21,9 @@ from nipype.interfaces.base import (
 )
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils import (
-    compute_2d_reho,
-    compute_alff,
-    mesh_adjacency,
-    read_gii,
-    read_ndata,
-    write_gii,
-    write_ndata,
-)
+from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
