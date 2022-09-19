@@ -16,6 +16,7 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class ConvertWarpfieldInputSpec(CommandLineInputSpec):
+    """Input specification for ConvertWarpfield."""
 
     fromwhat = traits.Str(
         mandatory=True,
@@ -55,6 +56,8 @@ class ConvertWarpfieldInputSpec(CommandLineInputSpec):
 
 
 class ConvertWarpfieldOutputSpec(TraitedSpec):
+    """Output specification for ConvertWarpfield."""
+
     out_file = File(exists=True, desc="output file")
 
 
@@ -67,6 +70,7 @@ class ConvertWarpfield(WBCommand):
 
 
 class ConvertAffineInputSpec(CommandLineInputSpec):
+    """Input specification for ConvertAffine."""
 
     fromwhat = traits.Str(
         mandatory=True,
@@ -99,6 +103,8 @@ class ConvertAffineInputSpec(CommandLineInputSpec):
 
 
 class ConvertAffineOutputSpec(TraitedSpec):
+    """Output specification for ConvertAffine."""
+
     out_file = File(exists=True, desc="output file")
 
 
@@ -111,6 +117,7 @@ class ConvertAffine(WBCommand):
 
 
 class ApplyAffineInputSpec(CommandLineInputSpec):
+    """Input specification for ApplyAffine."""
 
     in_file = File(
         exists=True,
@@ -138,6 +145,8 @@ class ApplyAffineInputSpec(CommandLineInputSpec):
 
 
 class ApplyAffineOutputSpec(TraitedSpec):
+    """Output specification for ApplyAffine."""
+
     out_file = File(exists=True, desc="output file")
 
 
@@ -166,6 +175,7 @@ class ApplyAffine(WBCommand):
 
 
 class ApplyWarpfieldInputSpec(CommandLineInputSpec):
+    """Input specification for ApplyWarpfield."""
 
     in_file = File(
         exists=True,
@@ -199,6 +209,8 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
 
 
 class ApplyWarpfieldOutputSpec(TraitedSpec):
+    """Output specification for ApplyWarpfield."""
+
     out_file = File(exists=True, desc="output file")
 
 
@@ -228,6 +240,7 @@ class ApplyWarpfield(WBCommand):
 
 
 class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
+    """Input specification for SurfaceSphereProjectUnproject."""
 
     in_file = File(
         exists=True,
@@ -264,6 +277,8 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
 
 
 class SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
+    """Input specification for SurfaceSphereProjectUnproject."""
+
     out_file = File(exists=True, desc="output file")
 
 
@@ -315,6 +330,7 @@ class ChangeXfmType(SimpleInterface):
 
 
 class SurfaceAverageInputSpec(CommandLineInputSpec):
+    """Input specification for SurfaceAverage."""
 
     surface_in1 = File(
         exists=True,
@@ -343,6 +359,8 @@ class SurfaceAverageInputSpec(CommandLineInputSpec):
 
 
 class SurfaceAverageOutputSpec(TraitedSpec):
+    """Output specification for SurfaceAverage."""
+
     out_file = File(exists=True, desc="output file")
 
 
@@ -377,6 +395,8 @@ class SurfaceAverage(WBCommand):
 
 
 class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
+    """Input specification for SurfaceGenerateInflated."""
+
     anatomical_surface_in = File(
         exists=True,
         mandatory=True,
@@ -412,6 +432,8 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
 
 
 class SurfaceGenerateInflatedOutputSpec(TraitedSpec):
+    """Output specification for SurfaceGenerateInflated."""
+
     inflated_out_file = File(exists=True, desc="inflated output file")
     very_inflated_out_file = File(exists=True, desc="very inflated output file")
 

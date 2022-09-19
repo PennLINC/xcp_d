@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 """Classes for manipulating BIDS-format derivatives."""
+
 __doc__ = """
 Builds the layout for the Executive Summary of the bids-formatted output from
 the DCAN-Labs fMRI pipelines.
@@ -54,20 +55,24 @@ class ModalContainer(object):
         self.state = 'open'
 
     def get_modal_id(self):
+        """Get modal ID."""
         return self.modal_id
 
     def get_image_class(self):
+        """Get image class."""
         return self.image_class
 
     def get_button(self, btn_label):
-        # Return HTML to creates a button that displays the modal container.
+        """Return HTML to create a button that displays the modal container."""
         self.button += constants.DISPLAY_MODAL_BUTTON.format(modal_id=self.modal_id,
                                                              btn_label=btn_label)
         return self.button
 
     def get_container(self):
-        # Add the close button after all images have been added (so
-        # the button does not get covered by the image).
+        """Add the close button after all images have been added.
+
+        This ensures the button does not get covered by the image.
+        """
         self.state = 'closed'
 
         # Close up the elements.
@@ -77,8 +82,10 @@ class ModalContainer(object):
         return self.modal_container
 
     def get_scripts(self):
-        # The containter needs the scripts to show the correct
-        # image when the container is opened.
+        """Get modal scripts.
+
+        The container needs the scripts to show the correct image when the container is opened.
+        """
         self.scripts += constants.MODAL_SCRIPTS % {
             'modal_id': self.modal_id,
             'image_class': self.image_class
@@ -87,7 +94,7 @@ class ModalContainer(object):
         return self.scripts
 
     def add_images(self, image_list):
-        # Add each image in the list to the slider.
+        """Add each image in the list to the slider."""
         for image_file in image_list:
             self.add_image(image_file)
 
@@ -95,7 +102,7 @@ class ModalContainer(object):
         return self.image_class_idx
 
     def add_image(self, image_file):
-
+        """Add image to container."""
         if self.state != 'open':
             print('ERROR: Cannot add images after the HTML has been written.')
             return 0
@@ -131,10 +138,12 @@ class ModalSlider(ModalContainer):
     modal_id
     image_class
     """
+
     def __init__(self, modal_id, image_class):
         ModalContainer.__init__(self, modal_id, image_class)
 
     def get_container(self):
+        """Get container."""
         # Must add buttons after all images have been added.
         self.state = 'closed'
 
@@ -145,6 +154,7 @@ class ModalSlider(ModalContainer):
         return self.modal_container
 
     def get_scripts(self):
+        """Ger scripts."""
         # The slider needs the scripts to go along with the
         # right and left buttons.
         self.scripts += constants.SLIDER_SCRIPTS % {
@@ -164,6 +174,7 @@ class Section(object):
     img_modal : None or str, optional
     kwargs : dict, optional
     """
+
     def __init__(self,
                  img_path='./',
                  regs_slider=None,
@@ -176,9 +187,11 @@ class Section(object):
         self.img_modal = img_modal
 
     def get_section(self):
+        """Get section."""
         return self.section
 
     def get_scripts(self):
+        """Get scripts."""
         return self.scripts
 
 
@@ -191,6 +204,7 @@ class TxSection(Section):
     img_path : str, optional
     kwargs : dict, optional
     """
+
     def __init__(self, tx='', img_path='', **kwargs):
         Section.__init__(self, **kwargs)
 
@@ -200,6 +214,7 @@ class TxSection(Section):
         self.run()
 
     def run(self):
+        """Run the object."""
         values = constants.IMAGE_INFO['t1w_brainplot']
         tx_file = Path(find_one_file(self.img_path, values['pattern']))
         t1wbrainplot = re.compile("<body>(.*?)</body>",
@@ -233,6 +248,7 @@ class TasksSection(Section):
     img_path : str, optional
     kwargs : dict, optional
     """
+
     def __init__(self, tasks=[], img_path='./figures', **kwargs):
         Section.__init__(self, **kwargs)
 
@@ -241,7 +257,7 @@ class TasksSection(Section):
         self.run(tasks)
 
     def write_T1_reg_rows(self, task_name, task_num):
-
+        """Write T1w rows."""
         # Write the header for the next few rows.
         self.section += constants.TASK_LABEL_ROW.format(task_name=task_name,
                                                         task_num=task_num)
@@ -272,6 +288,7 @@ class TasksSection(Section):
                     row_label=values['title'])
 
     def write_bold_gray_row(self, task_name, task_num):
+        """Write BOLD row."""
         bold_data = {}
         bold_data['row_modal'] = self.img_modal.get_modal_id()
 
@@ -328,6 +345,7 @@ class TasksSection(Section):
         self.section += constants.BOLD_GRAY_END
 
     def run(self, tasks):
+        """Run the section."""
         if len(tasks) == 0:
             print('No tasks were found.')
             return
@@ -440,7 +458,7 @@ class LayoutBuilder(object):
         fd.close()
 
     def run(self):
-
+        """Run the LayoutBuilder."""
         # Copy gray plot pngs, generated by DCAN-BOLD processing, to the
         # directory of images used by the HTML.
         find_and_copy_files(self.summary_path, '*DVARS_and_FD*.png',

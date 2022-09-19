@@ -12,15 +12,10 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils import (
-    compute_FD,
-    generate_mask,
-    interpolate_masked_data,
-    read_ndata,
-    write_ndata,
-)
 from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.modified_data import compute_FD, generate_mask, interpolate_masked_data
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
@@ -336,9 +331,6 @@ class CensorScrub(SimpleInterface):
                                                  header=False,
                                                  sep="\t")  # Assuming input is tab separated!
         return runtime
-
-
-# interpolation
 
 
 class _interpolateInputSpec(BaseInterfaceInputSpec):

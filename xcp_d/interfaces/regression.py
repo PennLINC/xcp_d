@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Regression interfaces."""
 from os.path import exists
+
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
@@ -14,13 +15,9 @@ from nipype.interfaces.base import (
 from scipy import signal
 from sklearn.linear_model import LinearRegression
 
-from xcp_d.utils import (
-    despikedatacifti,
-    load_confound_matrix,
-    read_ndata,
-    write_ndata,
-)
+from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -52,7 +49,6 @@ class _regressOutputSpec(TraitedSpec):
     confound_matrix = File(exists=True,
                            mandatory=True,
                            desc="Confounds matrix returned for testing purposes only")
-
 
 
 class regress(SimpleInterface):

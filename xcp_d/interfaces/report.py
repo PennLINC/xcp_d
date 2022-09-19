@@ -47,6 +47,8 @@ ABOUT_TEMPLATE = """\t<ul>
 
 
 class SummaryOutputSpec(TraitedSpec):
+    """Output specification for SummaryInterface."""
+
     out_report = File(exists=True, desc='HTML segment containing summary')
 
 
@@ -72,6 +74,8 @@ class SummaryInterface(SimpleInterface):
 
 
 class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
+    """Input specification for SubjectSummaryInterface."""
+
     subject_id = Str(desc='Subject ID')
     bold = InputMultiObject(traits.Either(File(exists=True),
                                           traits.List(File(exists=True))),
@@ -79,6 +83,8 @@ class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
 
 
 class SubjectSummaryOutputSpec(SummaryOutputSpec):
+    """Output specification for SubjectSummaryInterface."""
+
     # This exists to ensure that the summary is run prior to the first ReconAll
     # call, allowing a determination whether there is a pre-existing directory
     subject_id = Str(desc='Subject ID')
@@ -104,6 +110,8 @@ class SubjectSummary(SummaryInterface):
 
 
 class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
+    """Input specification for FunctionalSummary."""
+
     bold_file = traits.File(True, True, desc='cifti or bold File')
     qc_file = traits.File(exists=True, desc='qc file')
     TR = traits.Float(
@@ -143,6 +151,8 @@ class FunctionalSummary(SummaryInterface):
 
 
 class AboutSummaryInputSpec(BaseInterfaceInputSpec):
+    """Input specification for AboutSummary."""
+
     version = Str(desc='xcp_d version')
     command = Str(desc='xcp_d command')
     # Date not included - update timestamp only if version or command changes
