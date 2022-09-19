@@ -9,7 +9,7 @@ from nipype.interfaces.workbench.base import WBCommand
 iflogger = logging.getLogger("nipype.interface")
 
 
-class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
+class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -42,7 +42,7 @@ class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiSeparateMetricOutputSpec(TraitedSpec):
+class _CiftiSeparateMetricOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output CIFTI file")
 
 
@@ -65,6 +65,6 @@ class CiftiSeparateMetric(WBCommand):
       -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
     """
 
-    input_spec = CiftiSeparateMetricInputSpec
-    output_spec = CiftiSeparateMetricOutputSpec
+    input_spec = _CiftiSeparateMetricInputSpec
+    output_spec = _CiftiSeparateMetricOutputSpec
     _cmd = "wb_command  -cifti-separate "

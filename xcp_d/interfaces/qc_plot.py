@@ -28,7 +28,7 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _qcInputSpec(BaseInterfaceInputSpec):
+class _computeqcplotInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
                      desc="Raw bold file from fMRIPrep")
@@ -64,7 +64,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
         desc='High frequency for Notch filter in BPM')
 
 
-class _qcOutputSpec(TraitedSpec):
+class _computeqcplotOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True,
                       manadatory=True,
@@ -96,8 +96,8 @@ class computeqcplot(SimpleInterface):
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _qcInputSpec
-    output_spec = _qcOutputSpec
+    input_spec = _computeqcplotInputSpec
+    output_spec = _computeqcplotOutputSpec
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering

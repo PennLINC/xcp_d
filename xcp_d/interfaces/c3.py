@@ -21,7 +21,7 @@ from xcp_d.utils.filemanip import split_filename
 iflogger = logging.getLogger("interface")
 
 
-class C3dAffineToolInputSpec(CommandLineInputSpec):
+class _C3dAffineToolInputSpec(CommandLineInputSpec):
     """Input specification for C3dAffineTool."""
 
     reference_file = File(exists=True, argstr="-ref %s", position=1)
@@ -38,7 +38,7 @@ class C3dAffineToolInputSpec(CommandLineInputSpec):
     fsl2ras = traits.Bool(argstr="-fsl2ras", position=4)
 
 
-class C3dAffineToolOutputSpec(TraitedSpec):
+class _C3dAffineToolOutputSpec(TraitedSpec):
     """Output specification for C3dAffineTool."""
 
     itk_transform = File(exists=True)
@@ -58,14 +58,14 @@ class C3dAffineTool(SEMLikeCommandLine):
     'c3d_affine_tool -src cmatrix.mat -fsl2ras -oitk affine.txt'
     """
 
-    input_spec = C3dAffineToolInputSpec
-    output_spec = C3dAffineToolOutputSpec
+    input_spec = _C3dAffineToolInputSpec
+    output_spec = _C3dAffineToolOutputSpec
 
     _cmd = "c3d_affine_tool"
     _outputs_filenames = {"itk_transform": "affine.txt"}
 
 
-class C3dInputSpec(CommandLineInputSpec):
+class _C3dInputSpec(CommandLineInputSpec):
     """Input specification for C3d."""
 
     in_file = InputMultiPath(
@@ -166,7 +166,7 @@ class C3dInputSpec(CommandLineInputSpec):
     )
 
 
-class C3dOutputSpec(TraitedSpec):
+class _C3dOutputSpec(TraitedSpec):
     """Output specification for C3d."""
 
     out_files = OutputMultiPath(File(exists=False))
@@ -198,8 +198,8 @@ class C3d(CommandLine):
     'c4d epi.nii -type short -o epi.img'
     """
 
-    input_spec = C3dInputSpec
-    output_spec = C3dOutputSpec
+    input_spec = _C3dInputSpec
+    output_spec = _C3dOutputSpec
 
     _cmd = "c3d"
 

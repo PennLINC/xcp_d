@@ -9,7 +9,7 @@ from nipype.interfaces.workbench.base import WBCommand
 iflogger = logging.getLogger("nipype.interface")
 
 
-class CiftiParcellateInputSpec(CommandLineInputSpec):
+class _CiftiParcellateInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -100,7 +100,7 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiParcellateOutputSpec(TraitedSpec):
+class _CiftiParcellateOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output CIFTI file")
 
 
@@ -123,6 +123,6 @@ class CiftiParcellate(WBCommand):
     sub_01XX_task-rest.ptseries.nii
     """
 
-    input_spec = CiftiParcellateInputSpec
-    output_spec = CiftiParcellateOutputSpec
+    input_spec = _CiftiParcellateInputSpec
+    output_spec = _CiftiParcellateOutputSpec
     _cmd = "wb_command -cifti-parcellate"

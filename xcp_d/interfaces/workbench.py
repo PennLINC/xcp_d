@@ -15,7 +15,7 @@ from xcp_d.utils.filemanip import fname_presuffix
 iflogger = logging.getLogger("nipype.interface")
 
 
-class ConvertWarpfieldInputSpec(CommandLineInputSpec):
+class _ConvertWarpfieldInputSpec(CommandLineInputSpec):
     """Input specification for ConvertWarpfield."""
 
     fromwhat = traits.Str(
@@ -55,7 +55,7 @@ class ConvertWarpfieldInputSpec(CommandLineInputSpec):
     )
 
 
-class ConvertWarpfieldOutputSpec(TraitedSpec):
+class _ConvertWarpfieldOutputSpec(TraitedSpec):
     """Output specification for ConvertWarpfield."""
 
     out_file = File(exists=True, desc="output file")
@@ -64,12 +64,12 @@ class ConvertWarpfieldOutputSpec(TraitedSpec):
 class ConvertWarpfield(WBCommand):
     """Interface for wb_command's -convert-warpfield command."""
 
-    input_spec = ConvertWarpfieldInputSpec
-    output_spec = ConvertWarpfieldOutputSpec
+    input_spec = _ConvertWarpfieldInputSpec
+    output_spec = _ConvertWarpfieldOutputSpec
     _cmd = "wb_command -convert-warpfield "
 
 
-class ConvertAffineInputSpec(CommandLineInputSpec):
+class _ConvertAffineInputSpec(CommandLineInputSpec):
     """Input specification for ConvertAffine."""
 
     fromwhat = traits.Str(
@@ -102,7 +102,7 @@ class ConvertAffineInputSpec(CommandLineInputSpec):
     )
 
 
-class ConvertAffineOutputSpec(TraitedSpec):
+class _ConvertAffineOutputSpec(TraitedSpec):
     """Output specification for ConvertAffine."""
 
     out_file = File(exists=True, desc="output file")
@@ -111,12 +111,12 @@ class ConvertAffineOutputSpec(TraitedSpec):
 class ConvertAffine(WBCommand):
     """Interface for wb_command's -convert-affine command."""
 
-    input_spec = ConvertAffineInputSpec
-    output_spec = ConvertAffineOutputSpec
+    input_spec = _ConvertAffineInputSpec
+    output_spec = _ConvertAffineOutputSpec
     _cmd = "wb_command -convert-affine "
 
 
-class ApplyAffineInputSpec(CommandLineInputSpec):
+class _ApplyAffineInputSpec(CommandLineInputSpec):
     """Input specification for ApplyAffine."""
 
     in_file = File(
@@ -144,7 +144,7 @@ class ApplyAffineInputSpec(CommandLineInputSpec):
     )
 
 
-class ApplyAffineOutputSpec(TraitedSpec):
+class _ApplyAffineOutputSpec(TraitedSpec):
     """Output specification for ApplyAffine."""
 
     out_file = File(exists=True, desc="output file")
@@ -169,12 +169,12 @@ class ApplyAffine(WBCommand):
     command, or aff_conv from the 4dfp suite.
     """
 
-    input_spec = ApplyAffineInputSpec
-    output_spec = ApplyAffineOutputSpec
+    input_spec = _ApplyAffineInputSpec
+    output_spec = _ApplyAffineOutputSpec
     _cmd = "wb_command -surface-apply-affine "
 
 
-class ApplyWarpfieldInputSpec(CommandLineInputSpec):
+class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     """Input specification for ApplyWarpfield."""
 
     in_file = File(
@@ -208,7 +208,7 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
     )
 
 
-class ApplyWarpfieldOutputSpec(TraitedSpec):
+class _ApplyWarpfieldOutputSpec(TraitedSpec):
     """Output specification for ApplyWarpfield."""
 
     out_file = File(exists=True, desc="output file")
@@ -234,12 +234,12 @@ class ApplyWarpfield(WBCommand):
     which can be obtained with the -convert-warpfield command.
     """
 
-    input_spec = ApplyWarpfieldInputSpec
-    output_spec = ApplyWarpfieldOutputSpec
+    input_spec = _ApplyWarpfieldInputSpec
+    output_spec = _ApplyWarpfieldOutputSpec
     _cmd = "wb_command -surface-apply-warpfield "
 
 
-class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
+class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     """Input specification for SurfaceSphereProjectUnproject."""
 
     in_file = File(
@@ -276,7 +276,7 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     )
 
 
-class SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
+class _SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
     """Input specification for SurfaceSphereProjectUnproject."""
 
     out_file = File(exists=True, desc="output file")
@@ -292,8 +292,8 @@ class SurfaceSphereProjectUnproject(WBCommand):
     <sphere-out> - output - the output sphere
     """
 
-    input_spec = SurfaceSphereProjectUnprojectInputSpec
-    output_spec = SurfaceSphereProjectUnprojectOutputSpec
+    input_spec = _SurfaceSphereProjectUnprojectInputSpec
+    output_spec = _SurfaceSphereProjectUnprojectOutputSpec
     _cmd = "wb_command -surface-sphere-project-unproject "
 
 
@@ -329,7 +329,7 @@ class ChangeXfmType(SimpleInterface):
         return runtime
 
 
-class SurfaceAverageInputSpec(CommandLineInputSpec):
+class _SurfaceAverageInputSpec(CommandLineInputSpec):
     """Input specification for SurfaceAverage."""
 
     surface_in1 = File(
@@ -358,7 +358,7 @@ class SurfaceAverageInputSpec(CommandLineInputSpec):
     )
 
 
-class SurfaceAverageOutputSpec(TraitedSpec):
+class _SurfaceAverageOutputSpec(TraitedSpec):
     """Output specification for SurfaceAverage."""
 
     out_file = File(exists=True, desc="output file")
@@ -389,12 +389,12 @@ class SurfaceAverage(WBCommand):
     reliability weights.
     """
 
-    input_spec = SurfaceAverageInputSpec
-    output_spec = SurfaceAverageOutputSpec
+    input_spec = _SurfaceAverageInputSpec
+    output_spec = _SurfaceAverageOutputSpec
     _cmd = "wb_command -surface-average "
 
 
-class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
+class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     """Input specification for SurfaceGenerateInflated."""
 
     anatomical_surface_in = File(
@@ -431,7 +431,7 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     )
 
 
-class SurfaceGenerateInflatedOutputSpec(TraitedSpec):
+class _SurfaceGenerateInflatedOutputSpec(TraitedSpec):
     """Output specification for SurfaceGenerateInflated."""
 
     inflated_out_file = File(exists=True, desc="inflated output file")
@@ -456,6 +456,6 @@ class SurfaceGenerateInflated(WBCommand):
        iterations-scale of 2.5.
     """
 
-    input_spec = SurfaceGenerateInflatedInputSpec
-    output_spec = SurfaceGenerateInflatedOutputSpec
+    input_spec = _SurfaceGenerateInflatedInputSpec
+    output_spec = _SurfaceGenerateInflatedOutputSpec
     _cmd = "wb_command -surface-generate-inflated "

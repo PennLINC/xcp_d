@@ -9,7 +9,7 @@ from nipype.interfaces.workbench.base import WBCommand
 iflogger = logging.getLogger("nipype.interface")
 
 
-class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
+class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -47,7 +47,7 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiSurfaceResampleOutputSpec(TraitedSpec):
+class _CiftiSurfaceResampleOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output gifti file")
 
 
@@ -57,6 +57,6 @@ class CiftiSurfaceResample(WBCommand):
     TODO: Improve documentation.
     """
 
-    input_spec = CiftiSurfaceResampleInputSpec
-    output_spec = CiftiSurfaceResampleOutputSpec
+    input_spec = _CiftiSurfaceResampleInputSpec
+    output_spec = _CiftiSurfaceResampleOutputSpec
     _cmd = "wb_command  -surface-resample"
