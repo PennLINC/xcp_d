@@ -156,7 +156,7 @@ def get_maskfiles(bold_file, mni_to_t1w):
 
 
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
-    """"Obtain transforms to warp atlases from MNI space to the same space as the bold file.
+    """Obtain transforms to warp atlases from MNI space to the same space as the bold file.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
