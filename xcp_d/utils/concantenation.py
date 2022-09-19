@@ -445,7 +445,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
-            TR = get_ciftiTR(filey[0])
+            TR = get_cifti_tr(filey[0])
             rawdata = tempfile.mkdtemp() + '/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti '
@@ -587,7 +587,7 @@ def combine_fd(fds_file, fileout):
     np.savetxt(fileout, df, fmt='%.5f', delimiter=',')
 
 
-def get_ciftiTR(cifti_file):
+def get_cifti_tr(cifti_file):
     """Extract repetition time from a CIFTI file.
 
     Parameters
