@@ -15,8 +15,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import (
     ApplyTransformsx,
-    NiftiConnect,
     ConnectPlot,
+    NiftiConnect,
     get_atlas_cifti,
     get_atlas_nifti,
 )
