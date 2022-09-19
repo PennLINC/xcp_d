@@ -31,6 +31,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
     ChangeXfmType,
+    CiftiSurfaceResample,
     ConvertAffine,
     SurfaceAverage,
     SurfaceGenerateInflated,
@@ -38,7 +39,6 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 )
 from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
 from xcp_d.utils.bids import collect_data
-from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 
 
 class DerivativesDataSink(bids_derivative):

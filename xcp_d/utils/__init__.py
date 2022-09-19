@@ -9,7 +9,6 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
 from xcp_d.utils.concantenation import concatenatebold
 from xcp_d.utils.confounds import load_confound_matrix
@@ -86,7 +85,6 @@ __all__ = [
     'get_customfile',
     'select_registrationfile',
     'select_cifti_bold',
-    'CiftiSurfaceResample',
     'plot_svgx',
     'plot_carpet',
     'confoundplot',
