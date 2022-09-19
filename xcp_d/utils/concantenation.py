@@ -83,7 +83,7 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
                                   work_dir=work_dir)
 
 
-def make_DCAN_DF(fds_files, name):
+def make_dcan_df(fds_files, name):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
@@ -240,7 +240,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combine_fd(filex, outfile)
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
-                    make_DCAN_DF(filex, name)
+                    make_dcan_df(filex, name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     mask = natsorted(
@@ -419,7 +419,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         glob.glob(res.split('run-')[0] + '*run*' + j))
                     combine_fd(filex, outfile)
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
-                    make_DCAN_DF(filex, name)
+                    make_dcan_df(filex, name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(
