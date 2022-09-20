@@ -21,7 +21,7 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _filterdataInputSpec(BaseInterfaceInputSpec):
+class _FilteringDataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="Bold file")
@@ -46,7 +46,7 @@ class _filterdataInputSpec(BaseInterfaceInputSpec):
                                   desc="To apply bandpass or not")
 
 
-class _filterdataOutputSpec(TraitedSpec):
+class _FilteringDataOutputSpec(TraitedSpec):
     filtered_file = File(exists=True, manadatory=True, desc="Filtered file")
 
 
@@ -68,8 +68,8 @@ class FilteringData(SimpleInterface):
     tmpdir.cleanup()
     """
 
-    input_spec = _filterdataInputSpec
-    output_spec = _filterdataOutputSpec
+    input_spec = _FilteringDataInputSpec
+    output_spec = _FilteringDataOutputSpec
 
     def _run_interface(self, runtime):
 

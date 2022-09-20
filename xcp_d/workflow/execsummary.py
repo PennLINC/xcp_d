@@ -12,11 +12,11 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData
-from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.utils import get_transformfile
 
 
-class DerivativesDataSink(bids_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
     """Defines the data sink for the workflow."""
 
     out_path_base = 'xcp_d'

@@ -19,11 +19,11 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
 from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR, interpolate
-from xcp_d.interfaces.qc_plot import computeqcplot
-from xcp_d.interfaces.regression import ciftidespike, regress
+from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -299,20 +299,20 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=cifti_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     qcreport = pe.Node(
-        computeqcplot(
+        QCPlot(
             TR=TR,
             bold_file=cifti_file,
             dummytime=dummytime,
@@ -358,7 +358,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             ])])
 
     if despike:  # If we despike
-        despike3d = pe.Node(ciftidespike(TR=TR),
+        despike3d = pe.Node(CiftiDespike(TR=TR),
                             name="cifti_despike",
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
@@ -566,7 +566,7 @@ def _create_mem_gb(bold_fname):
 
 
 # RF: shouldn't be here
-class DerivativesDataSink(bids_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
     """Defines the data sink for the workflow."""
 
     out_path_base = 'xcp_d'

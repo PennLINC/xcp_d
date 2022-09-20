@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy
 
-from xcp_d.interfaces import regress
+from xcp_d.interfaces import Regress
 from xcp_d.utils import read_ndata
 
 
@@ -18,7 +18,7 @@ def test_Reg_Nifti(data_dir):
     mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
     # Run regression
-    test_nifti = regress(mask=mask, in_file=in_file,
+    test_nifti = Regress(mask=mask, in_file=in_file,
                          original_file=in_file, confounds=confounds, TR=TR)
     results = test_nifti.run()
 
@@ -58,7 +58,7 @@ def test_Reg_Cifti(data_dir):
     mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
     # Run regression
-    test_cifti = regress(mask=mask, in_file=in_file,
+    test_cifti = Regress(mask=mask, in_file=in_file,
                          original_file=in_file, confounds=confounds, TR=TR)
     results = test_cifti.run()
 

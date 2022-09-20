@@ -21,7 +21,7 @@ from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _regressInputSpec(BaseInterfaceInputSpec):
+class _RegressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="The bold file to be regressed")
@@ -41,7 +41,7 @@ class _regressInputSpec(BaseInterfaceInputSpec):
                                      mandatory=False)
 
 
-class _regressOutputSpec(TraitedSpec):
+class _RegressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
@@ -50,7 +50,7 @@ class _regressOutputSpec(TraitedSpec):
                            desc="Confounds matrix returned for testing purposes only")
 
 
-class regress(SimpleInterface):
+class Regress(SimpleInterface):
     """Takes in the confound tsv, turns it to a matrix and expands it.
 
     Custom confounds are added in during this step if present.
@@ -61,8 +61,8 @@ class regress(SimpleInterface):
     the bold files and returns the residual image, as well as the confounds for testing.
     """
 
-    input_spec = _regressInputSpec
-    output_spec = _regressOutputSpec
+    input_spec = _RegressInputSpec
+    output_spec = _RegressOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -125,20 +125,20 @@ class regress(SimpleInterface):
         return runtime
 
 
-class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
+class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
     TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
 
 
-class _ciftidespikeOutputSpec(TraitedSpec):
+class _CiftiDespikeOutputSpec(TraitedSpec):
     des_file = File(exists=True, manadatory=True, desc=" despike cifti")
 
 
-class ciftidespike(SimpleInterface):
+class CiftiDespike(SimpleInterface):
     """Despike a CIFTI file."""
 
-    input_spec = _ciftidespikeInputSpec
-    output_spec = _ciftidespikeOutputSpec
+    input_spec = _CiftiDespikeInputSpec
+    output_spec = _CiftiDespikeOutputSpec
 
     def _run_interface(self, runtime):
 

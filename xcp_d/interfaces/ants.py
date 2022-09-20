@@ -47,7 +47,7 @@ class ConvertTransformFile(CommandLine):
     output_spec = _ConvertTransformFileOutputSpec
 
 
-class CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
+class _CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
     """Input specification for CompositeInvTransformUtil."""
 
     process = traits.Enum(
@@ -80,7 +80,7 @@ class CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
     )
 
 
-class CompositeInvTransformUtilOutputSpec(TraitedSpec):
+class _CompositeInvTransformUtilOutputSpec(TraitedSpec):
     """Output specification for CompositeInvTransformUtil."""
 
     affine_transform = File(desc="Affine transform component")
@@ -116,8 +116,8 @@ class CompositeInvTransformUtil(ANTSCommand):
     """
 
     _cmd = "CompositeTransformUtil"
-    input_spec = CompositeInvTransformUtilInputSpec
-    output_spec = CompositeInvTransformUtilOutputSpec
+    input_spec = _CompositeInvTransformUtilInputSpec
+    output_spec = _CompositeInvTransformUtilOutputSpec
 
     def _num_threads_update(self):
         """Do not update the number of threads environment variable.

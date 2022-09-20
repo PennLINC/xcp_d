@@ -46,7 +46,7 @@ ABOUT_TEMPLATE = """\t<ul>
 """
 
 
-class SummaryOutputSpec(TraitedSpec):
+class _SummaryInterfaceOutputSpec(TraitedSpec):
     """Output specification for SummaryInterface."""
 
     out_report = File(exists=True, desc='HTML segment containing summary')
@@ -58,7 +58,7 @@ class SummaryInterface(SimpleInterface):
     This is used as a base class for other summary interfaces.
     """
 
-    output_spec = SummaryOutputSpec
+    output_spec = _SummaryInterfaceOutputSpec
 
     def _run_interface(self, runtime):
         # Open a file to write information to
@@ -73,7 +73,7 @@ class SummaryInterface(SimpleInterface):
         raise NotImplementedError
 
 
-class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
+class _SubjectSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for SubjectSummaryInterface."""
 
     subject_id = Str(desc='Subject ID')
@@ -82,7 +82,7 @@ class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
                             desc='BOLD or CIFTI functional series')
 
 
-class SubjectSummaryOutputSpec(SummaryOutputSpec):
+class _SubjectSummaryOutputSpec(_SummaryInterfaceOutputSpec):
     """Output specification for SubjectSummaryInterface."""
 
     # This exists to ensure that the summary is run prior to the first ReconAll
@@ -93,8 +93,8 @@ class SubjectSummaryOutputSpec(SummaryOutputSpec):
 class SubjectSummary(SummaryInterface):
     """A subject-level summary interface."""
 
-    input_spec = SubjectSummaryInputSpec
-    output_spec = SubjectSummaryOutputSpec
+    input_spec = _SubjectSummaryInputSpec
+    output_spec = _SubjectSummaryOutputSpec
 
     def _run_interface(self, runtime):
         if isdefined(self.inputs.subject_id):
@@ -109,7 +109,7 @@ class SubjectSummary(SummaryInterface):
                                        num_bold_files=num_bold_files)
 
 
-class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
+class _FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for FunctionalSummary."""
 
     bold_file = traits.File(True, True, desc='cifti or bold File')
@@ -123,7 +123,7 @@ class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
 class FunctionalSummary(SummaryInterface):
     """A functional MRI summary interface."""
 
-    input_spec = FunctionalSummaryInputSpec
+    input_spec = _FunctionalSummaryInputSpec
     #   Get information from the QC file and return it
 
     def _generate_segment(self):
@@ -150,7 +150,7 @@ class FunctionalSummary(SummaryInterface):
                                   volcensored=num_vols_censored)
 
 
-class AboutSummaryInputSpec(BaseInterfaceInputSpec):
+class _AboutSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for AboutSummary."""
 
     version = Str(desc='xcp_d version')
@@ -161,7 +161,7 @@ class AboutSummaryInputSpec(BaseInterfaceInputSpec):
 class AboutSummary(SummaryInterface):
     """A summary of the xcp_d software used."""
 
-    input_spec = AboutSummaryInputSpec
+    input_spec = _AboutSummaryInputSpec
 
     def _generate_segment(self):
         return ABOUT_TEMPLATE.format(

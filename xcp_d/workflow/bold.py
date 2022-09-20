@@ -21,11 +21,11 @@ from num2words import num2words
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR, interpolate
-from xcp_d.interfaces.qc_plot import computeqcplot
-from xcp_d.interfaces.regression import regress
+from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.restingstate import DespikePatch
 from xcp_d.utils.utils import (
     get_maskfiles,
@@ -316,14 +316,14 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -386,23 +386,28 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,
-                                     bold_file=bold_file,
-                                     dummytime=dummytime,
-                                     t1w_mask=t1w_mask,
-                                     template_mask=str(
-                                         get_template(
-                                             'MNI152NLin2009cAsym',
-                                             resolution=2,
-                                             desc='brain',
-                                             suffix='mask',
-                                             extension=['.nii', '.nii.gz'])),
-                                     head_radius=head_radius,
-                                     low_freq=band_stop_max,
-                                     high_freq=band_stop_min),
-                       name="qc_report",
-                       mem_gb=mem_gbx['timeseries'],
-                       n_procs=omp_nthreads)
+    qcreport = pe.Node(
+        QCPlot(
+            TR=TR,
+            bold_file=bold_file,
+            dummytime=dummytime,
+            t1w_mask=t1w_mask,
+            template_mask=str(
+                get_template(
+                    'MNI152NLin2009cAsym',
+                    resolution=2,
+                    desc='brain',
+                    suffix='mask',
+                    extension=['.nii', '.nii.gz']
+                )
+            ),
+            head_radius=head_radius,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min),
+        name="qc_report",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads,
+    )
 
 # Remove TR first:
     if dummytime > 0:
@@ -712,7 +717,7 @@ def _t12native(fname):  # TODO: Update names and refactor
     return t12ref
 
 
-class DerivativesDataSink(bids_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
     """Defines the data sink for the workflow."""
 
     out_path_base = 'xcp_d'
