@@ -71,9 +71,10 @@ def is_flagged():
     """Check whether current version is flagged."""
     flagged = tuple()
     try:
-        response = requests.get(url="""\
-https://raw.githubusercontent.com/xcp_d/xcp_d/master/.versions.json""",
-                                timeout=1.0)
+        response = requests.get(
+            url="https://raw.githubusercontent.com/xcp_d/xcp_d/master/.versions.json",
+            timeout=1.0,
+        )
     except Exception:
         response = None
 
