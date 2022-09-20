@@ -265,10 +265,12 @@ class QCPlot(SimpleInterface):
         qc_dictionary.update(qc_values)
         if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
             # Compute quality of registration
-            registration_qc = compute_registration_qc(bold2t1w_mask=self.inputs.bold2T1w_mask,
-                                     t1w_mask=self.inputs.t1w_mask,
-                                     bold2template_mask=self.inputs.bold2temp_mask,
-                                     template_mask=self.inputs.template_mask)
+            registration_qc = compute_registration_qc(
+                bold2t1w_mask=self.inputs.bold2T1w_mask,
+                t1w_mask=self.inputs.t1w_mask,
+                bold2template_mask=self.inputs.bold2temp_mask,
+                template_mask=self.inputs.template_mask,
+            )
             qc_dictionary.update(registration_qc)  # Add values to dictionary
 
         # Convert dictionary to df and write out the qc file
