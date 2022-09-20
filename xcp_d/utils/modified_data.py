@@ -4,7 +4,7 @@
 import numpy as np
 
 
-def compute_FD(confound, head_radius=50):
+def compute_fd(confound, head_radius=50):
     """Compute framewise displacement.
 
     NOTE: TS- Which kind of FD? Power?

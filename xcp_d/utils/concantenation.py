@@ -83,7 +83,7 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
                                   work_dir=work_dir)
 
 
-def make_DCAN_DF(fds_files, name):
+def make_dcan_df(fds_files, name):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
@@ -240,7 +240,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combine_fd(filex, outfile)
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
-                    make_DCAN_DF(filex, name)
+                    make_dcan_df(filex, name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     mask = natsorted(
@@ -419,7 +419,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         glob.glob(res.split('run-')[0] + '*run*' + j))
                     combine_fd(filex, outfile)
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
-                    make_DCAN_DF(filex, name)
+                    make_dcan_df(filex, name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(
@@ -445,7 +445,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
-            TR = get_ciftiTR(filey[0])
+            TR = get_cifti_tr(filey[0])
             rawdata = tempfile.mkdtemp() + '/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti '
@@ -587,7 +587,7 @@ def combine_fd(fds_file, fileout):
     np.savetxt(fileout, df, fmt='%.5f', delimiter=',')
 
 
-def get_ciftiTR(cifti_file):
+def get_cifti_tr(cifti_file):
     """Extract repetition time from a CIFTI file.
 
     Parameters

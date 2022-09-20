@@ -672,7 +672,7 @@ class fMRIPlot:
         #  Load in the necessary information
         func_img = nb.load(func_file)
         self.func_file = func_file
-        self.TR = TR or _get_TR(func_img)
+        self.TR = TR or _get_tr(func_img)
         self.mask_data = None
         self.seg_data = None
         sns.set_style("whitegrid")
@@ -1062,15 +1062,15 @@ def display_cb(grid_spec_ts):
     return ax2, grid_specification
 
 
-def _get_TR(img):
+def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
     Examples
     --------
-    _get_TR(nb.load(Path(test_data) /
+    _get_tr(nb.load(Path(test_data) /
     ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
     2.2
-     _get_TR(nb.load(Path(test_data) /
+     _get_tr(nb.load(Path(test_data) /
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """

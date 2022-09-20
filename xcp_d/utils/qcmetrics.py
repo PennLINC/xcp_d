@@ -3,7 +3,7 @@ import nibabel as nb
 import numpy as np
 
 
-def regisQ(bold2t1w_mask, t1w_mask, bold2template_mask, template_mask):
+def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, template_mask):
     """Compute quality of registration metrics.
 
     This function will calculate a series of metrics, including Dice's similarity index,
