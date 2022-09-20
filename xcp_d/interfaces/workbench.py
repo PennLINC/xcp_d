@@ -461,7 +461,7 @@ class SurfaceGenerateInflated(WBCommand):
     _cmd = "wb_command -surface-generate-inflated "
 
 
-class CiftiCorrelationInputSpec(CommandLineInputSpec):
+class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     """Input specification for CiftiCorrelation."""
 
     in_file = File(
@@ -544,7 +544,7 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiCorrelationOutputSpec(TraitedSpec):
+class _CiftiCorrelationOutputSpec(TraitedSpec):
     """Output specification for CiftiCorrelation."""
 
     out_file = File(exists=True, desc="output CIFTI file")
@@ -566,12 +566,12 @@ class CiftiCorrelation(WBCommand):
         'sub_01XX_task-rest.pconn.nii'
     """
 
-    input_spec = CiftiCorrelationInputSpec
-    output_spec = CiftiCorrelationOutputSpec
+    input_spec = _CiftiCorrelationInputSpec
+    output_spec = _CiftiCorrelationOutputSpec
     _cmd = "wb_command  -cifti-correlation"
 
 
-class CiftiParcellateInputSpec(CommandLineInputSpec):
+class _CiftiParcellateInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiParcellate command."""
 
     in_file = File(
@@ -664,7 +664,7 @@ class CiftiParcellateInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiParcellateOutputSpec(TraitedSpec):
+class _CiftiParcellateOutputSpec(TraitedSpec):
     """Output specification for the CiftiParcellate command."""
 
     out_file = File(exists=True, desc="output CIFTI file")
@@ -689,12 +689,12 @@ class CiftiParcellate(WBCommand):
     sub_01XX_task-rest.ptseries.nii
     """
 
-    input_spec = CiftiParcellateInputSpec
-    output_spec = CiftiParcellateOutputSpec
+    input_spec = _CiftiParcellateInputSpec
+    output_spec = _CiftiParcellateOutputSpec
     _cmd = "wb_command -cifti-parcellate"
 
 
-class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
+class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSurfaceResample command."""
 
     in_file = File(
@@ -736,7 +736,7 @@ class CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiSurfaceResampleOutputSpec(TraitedSpec):
+class _CiftiSurfaceResampleOutputSpec(TraitedSpec):
     """Output specification for the CiftiSurfaceResample command."""
 
     out_file = File(exists=True, desc="output gifti file")
@@ -748,12 +748,12 @@ class CiftiSurfaceResample(WBCommand):
     TODO: Improve documentation.
     """
 
-    input_spec = CiftiSurfaceResampleInputSpec
-    output_spec = CiftiSurfaceResampleOutputSpec
+    input_spec = _CiftiSurfaceResampleInputSpec
+    output_spec = _CiftiSurfaceResampleOutputSpec
     _cmd = "wb_command  -surface-resample"
 
 
-class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
+class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSeparateMetric command."""
 
     in_file = File(
@@ -788,7 +788,7 @@ class CiftiSeparateMetricInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiSeparateMetricOutputSpec(TraitedSpec):
+class _CiftiSeparateMetricOutputSpec(TraitedSpec):
     """Output specification for the CiftiSeparateMetric command."""
 
     out_file = File(exists=True, desc="output CIFTI file")
@@ -813,6 +813,6 @@ class CiftiSeparateMetric(WBCommand):
       -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
     """
 
-    input_spec = CiftiSeparateMetricInputSpec
-    output_spec = CiftiSeparateMetricOutputSpec
+    input_spec = _CiftiSeparateMetricInputSpec
+    output_spec = _CiftiSeparateMetricOutputSpec
     _cmd = "wb_command  -cifti-separate "
