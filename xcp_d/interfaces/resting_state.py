@@ -29,18 +29,18 @@ LOGGER = logging.getLogger('nipype.interface')
 
 
 # compute 2D reho
-class _surfaceRehoInputSpec(BaseInterfaceInputSpec):
+class _SurfaceReHoInputSpec(BaseInterfaceInputSpec):
     surf_bold = File(exists=True,
                      mandatory=True,
                      desc="left or right hemisphere gii ")
     surf_hemi = traits.Str(exists=True, mandatory=True, desc="L or R ")
 
 
-class _surfaceRehoOutputSpec(TraitedSpec):
+class _SurfaceReHoOutputSpec(TraitedSpec):
     surf_gii = File(exists=True, manadatory=True, desc=" lh hemisphere reho")
 
 
-class surfaceReho(SimpleInterface):
+class SurfaceReHo(SimpleInterface):
     """Calculate regional homogeneity (ReHo) on a surface file.
 
     Examples
@@ -50,16 +50,16 @@ class surfaceReho(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> surfaceRehowf = surfaceReho()
-    >>> surfaceRehowf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfaceRehowf.inputs.surf_hemi = 'R'
-    >>> surfaceRehowf.run()
+    >>> surfacereho_wf = SurfaceReHo()
+    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+    >>> surfacereho_wf.inputs.surf_hemi = 'R'
+    >>> surfacereho_wf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _surfaceRehoInputSpec
-    output_spec = _surfaceRehoOutputSpec
+    input_spec = _SurfaceReHoInputSpec
+    output_spec = _SurfaceReHoOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -85,7 +85,7 @@ class surfaceReho(SimpleInterface):
         return runtime
 
 
-class _alffInputSpec(BaseInterfaceInputSpec):
+class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
     TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
     lowpass = traits.Float(exists=True,
@@ -101,11 +101,11 @@ class _alffInputSpec(BaseInterfaceInputSpec):
                 desc=" brain mask for nifti file")
 
 
-class _alffOutputSpec(TraitedSpec):
+class _ComputeALFFOutputSpec(TraitedSpec):
     alff_out = File(exists=True, manadatory=True, desc=" alff")
 
 
-class computealff(SimpleInterface):
+class ComputeALFF(SimpleInterface):
     """Compute ALFF.
 
     Examples
@@ -115,7 +115,7 @@ class computealff(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computealffwf = computealff()
+    computealffwf = ComputeALFF()
     computealffwf.inputs.in_file = datafile
     computealffwf.inputs.lowpass = 0.1
     computealffwf.inputs.highpass = 0.01
@@ -126,8 +126,8 @@ class computealff(SimpleInterface):
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _alffInputSpec
-    output_spec = _alffOutputSpec
+    input_spec = _ComputeALFFInputSpec
+    output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -161,23 +161,23 @@ class computealff(SimpleInterface):
         return runtime
 
 
-class _brainplotInputSpec(BaseInterfaceInputSpec):
+class _BrainPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="alff or reho")
     mask_file = File(exists=True, mandatory=True, desc="mask file ")
 
 
-class _brainplotOutputSpec(TraitedSpec):
+class _BrainPlotOutputSpec(TraitedSpec):
     nifti_html = File(exists=True, manadatory=True, desc="zscore html")
 
 
-class brainplot(SimpleInterface):
+class BrainPlot(SimpleInterface):
     """Create a brainsprite figure from a NIFTI file.
 
     The image will first be normalized (z-scored) before the figure is generated.
     """
 
-    input_spec = _brainplotInputSpec
-    output_spec = _brainplotOutputSpec
+    input_spec = _BrainPlotInputSpec
+    output_spec = _BrainPlotOutputSpec
 
     def _run_interface(self, runtime):
 

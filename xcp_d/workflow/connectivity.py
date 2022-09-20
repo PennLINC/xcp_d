@@ -15,8 +15,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import (
     ApplyTransformsx,
+    ConnectPlot,
     NiftiConnect,
-    connectplot,
     get_atlas_cifti,
     get_atlas_nifti,
 )
@@ -247,7 +247,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                              n_procs=omp_nthreads)
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(connectplot(in_file=bold_file),
+    matrix_plot = pe.Node(ConnectPlot(in_file=bold_file),
                           name="matrix_plot_wf",
                           mem_gb=mem_gb)
 
@@ -530,7 +530,7 @@ timeseries with the Connectome Workbench.
                          n_procs=omp_nthreads)
 
     # Create a node for plotting the matrixes
-    matrix_plot = pe.Node(connectplot(), name="matrix_plot_wf", mem_gb=mem_gb)
+    matrix_plot = pe.Node(ConnectPlot(), name="matrix_plot_wf", mem_gb=mem_gb)
 
     # Compute correlation matrixes via Connectome Workbench
     sc117corr = pe.Node(CiftiCorrelation(),

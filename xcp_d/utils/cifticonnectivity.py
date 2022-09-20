@@ -9,7 +9,7 @@ from nipype.interfaces.workbench.base import WBCommand
 iflogger = logging.getLogger("nipype.interface")
 
 
-class CiftiCorrelationInputSpec(CommandLineInputSpec):
+class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     """Input specification for CiftiCorrelation."""
 
     in_file = File(
@@ -92,7 +92,7 @@ class CiftiCorrelationInputSpec(CommandLineInputSpec):
     )
 
 
-class CiftiCorrelationOutputSpec(TraitedSpec):
+class _CiftiCorrelationOutputSpec(TraitedSpec):
     """Output specification for CiftiCorrelation."""
 
     out_file = File(exists=True, desc="output CIFTI file")
@@ -114,6 +114,6 @@ class CiftiCorrelation(WBCommand):
         'sub_01XX_task-rest.pconn.nii'
     """
 
-    input_spec = CiftiCorrelationInputSpec
-    output_spec = CiftiCorrelationOutputSpec
+    input_spec = _CiftiCorrelationInputSpec
+    output_spec = _CiftiCorrelationOutputSpec
     _cmd = "wb_command  -cifti-correlation"

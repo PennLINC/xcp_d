@@ -183,7 +183,7 @@ def get_atlas_cifti(atlasname):
     return atlasfile
 
 
-class _connectplotInputSpec(BaseInterfaceInputSpec):
+class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="bold file")
     sc217_timeseries = File(exists=True, mandatory=True, desc="sc217 atlas")
     sc417_timeseries = File(exists=True, mandatory=True, desc="sc417 atlas")
@@ -191,18 +191,18 @@ class _connectplotInputSpec(BaseInterfaceInputSpec):
     gs360_timeseries = File(exists=True, mandatory=True, desc="glasser atlas")
 
 
-class _connectplotOutputSpec(TraitedSpec):
+class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
         exists=True,
         manadatory=True,
     )
 
 
-class connectplot(SimpleInterface):
+class ConnectPlot(SimpleInterface):
     """Extract timeseries and compute connectivity matrices."""
 
-    input_spec = _connectplotInputSpec
-    output_spec = _connectplotOutputSpec
+    input_spec = _ConnectPlotInputSpec
+    output_spec = _ConnectPlotOutputSpec
 
     def _run_interface(self, runtime):
 

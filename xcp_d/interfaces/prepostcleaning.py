@@ -333,7 +333,7 @@ class CensorScrub(SimpleInterface):
         return runtime
 
 
-class _interpolateInputSpec(BaseInterfaceInputSpec):
+class _InterpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
     bold_file = File(exists=True,
                      mandatory=True,
@@ -345,13 +345,13 @@ class _interpolateInputSpec(BaseInterfaceInputSpec):
                       desc="repetition time in TR")
 
 
-class _interpolateOutputSpec(TraitedSpec):
+class _InterpolateOutputSpec(TraitedSpec):
     bold_interpolated = File(exists=True,
                              manadatory=True,
                              desc=" fmriprep censored")
 
 
-class interpolate(SimpleInterface):
+class Interpolate(SimpleInterface):
     """Interpolates scrubbed/regressed BOLD data based on temporal mask.
 
     Interpolation takes in the scrubbed/regressed bold file and temporal mask,
@@ -360,8 +360,8 @@ class interpolate(SimpleInterface):
     It outputs the interpolated file.
     """
 
-    input_spec = _interpolateInputSpec
-    output_spec = _interpolateOutputSpec
+    input_spec = _InterpolateInputSpec
+    output_spec = _InterpolateOutputSpec
 
     def _run_interface(self, runtime):
         # Read in regressed bold data and temporal mask

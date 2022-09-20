@@ -14,7 +14,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces.resting_state import brainplot, computealff, surfaceReho
+from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
 from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
@@ -96,13 +96,13 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         name='outputnode')
 
     # compute alff
-    alff_compt = pe.Node(computealff(TR=TR, lowpass=lowpass,
+    alff_compt = pe.Node(ComputeALFF(TR=TR, lowpass=lowpass,
                                      highpass=highpass),
                          mem_gb=mem_gb,
                          name='alff_compt',
                          n_procs=omp_nthreads)
     # create a node for the Nifti HTML
-    brain_plot = pe.Node(brainplot(),
+    brain_plot = pe.Node(BrainPlot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)
@@ -226,11 +226,11 @@ vertices to yield ReHo.
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
     # Calculate the reho by hemipshere
-    lh_reho = pe.Node(surfaceReho(surf_hemi='L'),
+    lh_reho = pe.Node(SurfaceReHo(surf_hemi='L'),
                       name="reho_lh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-    rh_reho = pe.Node(surfaceReho(surf_hemi='R'),
+    rh_reho = pe.Node(SurfaceReHo(surf_hemi='R'),
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
@@ -303,7 +303,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
     # Get the HTML
-    brain_plot = pe.Node(brainplot(),
+    brain_plot = pe.Node(BrainPlot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)

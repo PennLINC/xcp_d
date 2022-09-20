@@ -8,7 +8,7 @@ import tempfile
 import numpy as np
 from scipy.fftpack import fft
 
-from xcp_d.interfaces.prepostcleaning import interpolate
+from xcp_d.interfaces.prepostcleaning import Interpolate
 from xcp_d.utils import read_ndata, write_ndata
 
 
@@ -88,7 +88,7 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
     tmask[100] = 1
     np.savetxt(tmask_file, tmask)
 
-    interpolation = interpolate()
+    interpolation = Interpolate()
     interpolation.inputs.tmask = tmask_file
     interpolation.inputs.in_file = noise_file
     interpolation.inputs.bold_file = boldfile
@@ -195,7 +195,7 @@ def test_interpolate_nifti(data_dir):
     tmask[8] = 1
     np.savetxt("tmask.tsv", tmask)
 
-    interpolation = interpolate()
+    interpolation = Interpolate()
     interpolation.inputs.tmask = "tmask.tsv"
     interpolation.inputs.in_file = "noisy_file.nii.gz"
     interpolation.inputs.bold_file = boldfile

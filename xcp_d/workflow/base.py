@@ -22,7 +22,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
-from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
@@ -468,7 +468,7 @@ def _pop(inlist):
 
 
 # RF: this shouldn't be in this file
-class DerivativesDataSink(bids_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
     """Defines the data sink for the workflow."""
 
     out_path_base = 'xcp_d'
