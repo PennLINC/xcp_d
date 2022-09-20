@@ -99,7 +99,7 @@ class ApplyTransformsx(ApplyTransforms):
         return runtime
 
 
-class _ConnectplotInputSpec(BaseInterfaceInputSpec):
+class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="bold file")
     sc217_timeseries = File(exists=True, mandatory=True, desc="sc217 atlas")
     sc417_timeseries = File(exists=True, mandatory=True, desc="sc417 atlas")
