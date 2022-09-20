@@ -30,7 +30,7 @@ from xcp_d.utils.fcon import (
     mesh_adjacency,
 )
 from xcp_d.utils.hcp2fmriprep import hcp2fmriprep
-from xcp_d.utils.modified_data import compute_FD, generate_mask, interpolate_masked_data
+from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
 from xcp_d.utils.plot import (
     compute_dvars,
     confoundplot,
@@ -39,7 +39,7 @@ from xcp_d.utils.plot import (
     plot_svgx,
     plotimage,
 )
-from xcp_d.utils.qcmetrics import regisQ
+from xcp_d.utils.qcmetrics import compute_registration_qc
 from xcp_d.utils.restingstate import ContrastEnhancement, DespikePatch, ReHoNamePatch
 from xcp_d.utils.sentry import sentry_setup
 from xcp_d.utils.utils import (
@@ -77,11 +77,11 @@ __all__ = [
     'mesh_adjacency',
     'interpolate_masked_data',
     'generate_mask',
-    'compute_FD',
+    'compute_fd',
     'bid_derivative',
     'sentry_setup',
     'despikedatacifti',
-    'regisQ',
+    'compute_registration_qc',
     'get_maskfiles',
     'get_transformfile',
     'get_transformfilex',

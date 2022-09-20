@@ -174,7 +174,7 @@ For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
 
-    TR = get_ciftiTR(cifti_file)
+    TR = get_cifti_tr(cifti_file)
     if TR is None:
         metadata = layout.get_metadata(cifti_file)
         TR = metadata['RepetitionTime']
@@ -185,7 +185,7 @@ tasks and sessions), the following post-processing was performed:
     except Exception:
         raise Exception(f"Unable to find confounds file for {cifti_file}.")
 
-    # TR = get_ciftiTR(cifti_file=cifti_file)
+    # TR = get_cifti_tr(cifti_file=cifti_file)
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.floor(dummytime / TR))
@@ -572,7 +572,7 @@ class DerivativesDataSink(bids_derivative):
     out_path_base = 'xcp_d'
 
 
-def get_ciftiTR(cifti_file):
+def get_cifti_tr(cifti_file):
     """Extract TR from CIFTI file."""
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step

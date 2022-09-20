@@ -150,7 +150,7 @@ def load_global_signal(confounds_df):
     return confounds_df["global_signal"]
 
 
-def load_WM_CSF(confounds_df):
+def load_wm_csf(confounds_df):
     """Select white matter and CSF nuissance regressors from confounds DataFrame.
 
     Parameters
@@ -312,7 +312,7 @@ def load_confound_matrix(datafile,
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
         motion = pd.concat([rot_values, trans_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        whitematter_csf = load_WM_CSF(confoundtsv)
+        whitematter_csf = load_wm_csf(confoundtsv)
         global_signal = load_global_signal(confoundtsv)
         confound = pd.concat([derivative_rot_trans, square_confound(
             derivative_rot_trans), whitematter_csf, global_signal], axis=1)
@@ -326,7 +326,7 @@ def load_confound_matrix(datafile,
         square_confounds = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
         global_signal_whitematter_csf = pd.concat(
-            [load_WM_CSF(confoundtsv),
+            [load_wm_csf(confoundtsv),
              load_global_signal(confoundtsv)], axis=1)
         global_signal_whitematter_csf_derivative = pd.concat(
             [global_signal_whitematter_csf, derivative(global_signal_whitematter_csf)], axis=1)
@@ -343,11 +343,11 @@ def load_confound_matrix(datafile,
         cosine = load_cosine(confoundtsv)
         confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
     elif params == 'aroma':  # Get the WM, CSF, and aroma values
-        whitematter_csf = load_WM_CSF(confoundtsv)
+        whitematter_csf = load_wm_csf(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
     elif params == 'aroma_gsr':  # Get the WM, CSF, and aroma values, as well as global signal
-        whitematter_csf = load_WM_CSF(confoundtsv)
+        whitematter_csf = load_wm_csf(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         global_signal = load_global_signal(confoundtsv)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
