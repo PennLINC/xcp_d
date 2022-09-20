@@ -35,7 +35,6 @@ def get_parser():
 
 def main():
     """Run the combineqc workflow."""
-
     opts = get_parser().parse_args()
 
     allsubj_dir = os.path.abspath(opts.xcpd_dir)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
+"""The xcp_d preprocessing worklow.
+
 xcp_d preprocessing workflow
 ============================
 """
@@ -40,7 +41,6 @@ def check_deps(workflow):
 
 def get_parser():
     """Build parser object."""
-
     from xcp_d.__about__ import __version__
 
     verstr = f'xcp_d v{__version__}'
