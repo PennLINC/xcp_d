@@ -19,9 +19,9 @@ from nipype.interfaces.base import (
 )
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.utils import zscore_nifti
 from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import zscore_nifti
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
