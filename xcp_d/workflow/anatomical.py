@@ -13,12 +13,10 @@ from pathlib import Path
 
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.ants.resampling import (
-    ApplyTransforms as antsapplytransforms,  # TM
-)
+from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
 from nipype.interfaces.freesurfer import MRIsConvert
-from nipype.interfaces.fsl import Merge as fslmerge  # TM
-from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths  # TM
+from nipype.interfaces.fsl import Merge as FSLMerge  # TM
+from nipype.interfaces.fsl.maths import BinaryMaths  # TM
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
@@ -447,7 +445,7 @@ def init_anatomical_wf(
             #
 
             combine_xfms = pe.Node(
-                antsapplytransforms(
+                ApplyTransforms(
                     reference_image=mnitemplate,
                     interpolation="LanczosWindowedSinc",
                     print_out_composite_warp_file=True,
@@ -458,7 +456,7 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )
             combine_inv_xfms = pe.Node(
-                antsapplytransforms(
+                ApplyTransforms(
                     reference_image=mnitemplate,
                     interpolation="LanczosWindowedSinc",
                     print_out_composite_warp_file=True,
@@ -542,13 +540,13 @@ def init_anatomical_wf(
             # for use with wb_command -surface-apply-warpfield)
 
             reverse_y_component = pe.Node(
-                fslbinarymaths(operation="mul", operand_value=-1.0),
+                BinaryMaths(operation="mul", operand_value=-1.0),
                 name="reverse_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             reverse_inv_y_component = pe.Node(
-                fslbinarymaths(operation="mul", operand_value=-1.0),
+                BinaryMaths(operation="mul", operand_value=-1.0),
                 name="reverse_inv_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -570,13 +568,13 @@ def init_anatomical_wf(
 
             # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
             remerge_warpfield = pe.Node(
-                fslmerge(dimension="t"),
+                FSLMerge(dimension="t"),
                 name="remerge_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             remerge_inv_warpfield = pe.Node(
-                fslmerge(dimension="t"),
+                FSLMerge(dimension="t"),
                 name="remerge_inv_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,

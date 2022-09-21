@@ -635,15 +635,13 @@ def load_json(filename):
     return data
 
 
-def loadcrash(infile, *args):
+def loadcrash(infile):
     """Load pickled Nipype crashfile.
 
     Parameters
     ----------
     infile : str
         Path to the pickle file to load.
-    args : dict
-        These don't appear to be used.
 
     Returns
     -------
