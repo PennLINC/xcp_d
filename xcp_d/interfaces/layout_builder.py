@@ -284,7 +284,7 @@ class TasksSection(Section):
                 self.section += constants.PLACEHOLDER_ROW.format(
                     row_label=values['title'])
 
-    def write_bold_gray_row(self, task_name,task_num):
+    def write_bold_gray_row(self, task_name):
         """Write BOLD row."""
         bold_data = {}
         bold_data['row_modal'] = self.img_modal.get_modal_id()
