@@ -15,7 +15,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
-from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
+from xcp_d.interfaces.workbench import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
 
@@ -291,7 +291,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     outputnode = pe.Node(
         niu.IdentityInterface(fields=['reho_out', 'rehohtml']),
         name='outputnode')
-    from xcp_d.utils import ReHoNamePatch
+    from xcp_d.interfaces.resting_state import ReHoNamePatch
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),

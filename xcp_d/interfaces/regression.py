@@ -12,11 +12,10 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
-from scipy import signal
-from sklearn.linear_model import LinearRegression
 
 from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import demean_detrend_data, linear_regression
 from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -124,50 +123,6 @@ class Regress(SimpleInterface):
             filename=self._results['res_file'],
             mask=self.inputs.mask)
         return runtime
-
-
-def linear_regression(data, confound):
-    """Perform linear regression with sklearn's LinearRegression.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-    confound : numpy.ndarray
-       nuisance regressors - vertices by timepoints for confounds matrix
-
-    Returns
-    -------
-    numpy.ndarray
-        residual matrix after regression
-    """
-    regression = LinearRegression(n_jobs=1)
-    regression.fit(confound.T, data.T)
-    y_predicted = regression.predict(confound.T)
-
-    return data - y_predicted.T
-
-
-def demean_detrend_data(data):
-    """Mean-center and remove linear trends over time from data.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-
-    Returns
-    -------
-    detrended : numpy.ndarray
-        demeaned and detrended data
-    """
-    demeaned = signal.detrend(data, axis=- 1, type='constant', bp=0,
-                              overwrite_data=False)  # Demean data using "constant" detrend,
-    # which subtracts mean
-    detrended = signal.detrend(demeaned, axis=- 1, type='linear', bp=0,
-                               overwrite_data=False)  # Detrend data using linear method
-
-    return detrended  # Subtract these predicted values from the demeaned data
 
 
 class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):

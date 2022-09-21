@@ -6,7 +6,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 
 
 # RF: Not here

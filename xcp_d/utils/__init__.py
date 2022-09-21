@@ -8,10 +8,6 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.cifticonnectivity import CiftiCorrelation
-from xcp_d.utils.ciftiparcellation import CiftiParcellate
-from xcp_d.utils.ciftiresample import CiftiSurfaceResample
-from xcp_d.utils.ciftiseparatemetric import CiftiSeparateMetric
 from xcp_d.utils.concantenation import concatenatebold
 from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.dcan2fmriprep import dcan2fmriprep
@@ -39,7 +35,6 @@ from xcp_d.utils.plot import (
     plotimage,
 )
 from xcp_d.utils.qcmetrics import compute_registration_qc
-from xcp_d.utils.restingstate import ContrastEnhancement, DespikePatch, ReHoNamePatch
 from xcp_d.utils.sentry import sentry_setup
 from xcp_d.utils.utils import (
     fwhm2sigma,
@@ -65,9 +60,6 @@ __all__ = [
     'plot_svg',
     'compute_dvars',
     'load_confound_matrix',
-    'CiftiCorrelation',
-    'CiftiParcellate',
-    'CiftiSeparateMetric',
     'collect_participants',
     'collect_data',
     'compute_2d_reho',
@@ -89,7 +81,6 @@ __all__ = [
     'get_customfile',
     'select_registrationfile',
     'select_cifti_bold',
-    'CiftiSurfaceResample',
     'plot_svgx',
     'plot_carpet',
     'confoundplot',
@@ -102,8 +93,5 @@ __all__ = [
     'ribbon_to_statmap',
     'dcan2fmriprep',
     'hcp2fmriprep',
-    'ReHoNamePatch',
-    'DespikePatch',
     'concatenatebold',
-    'ContrastEnhancement',
 ]

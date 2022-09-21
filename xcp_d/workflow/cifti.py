@@ -18,12 +18,12 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
