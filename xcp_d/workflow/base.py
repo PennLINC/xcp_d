@@ -150,7 +150,7 @@ def init_xcpd_wf(layout,
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-
+    print ("Begin the " + name + " workflow")
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -412,7 +412,6 @@ It is released under the [CC0]\
                 params=params,
                 head_radius=head_radius,
                 omp_nthreads=omp_nthreads,
-                brain_template='MNI152NLin2009cAsym',
                 num_bold=len(subject_data[0]),
                 custom_confounds=custom_confoundsx,
                 layout=layout,
