@@ -29,7 +29,6 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
