@@ -16,11 +16,6 @@ import os
 import sys
 from datetime import datetime
 
-from packaging import (
-    version as pver,
-)  # Avoid distutils.LooseVersion which is deprecated
-from sphinx import __version__ as sphinxversion
-
 import xcp_d
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -378,7 +373,7 @@ linkcode_resolve = make_linkcode_resolve(
 # -----------------------------------------------------------------------------
 # intersphinx
 # -----------------------------------------------------------------------------
-_python_version_str = "{0.major}.{0.minor}".format(sys.version_info)
+_python_version_str = f"{sys.version_info.major}.{sys.version_info.minor}"
 _python_doc_base = f"https://docs.python.org/{_python_version_str}"
 intersphinx_mapping = {
     "python": (_python_doc_base, None),
