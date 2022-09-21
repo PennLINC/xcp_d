@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Initialize interfaces."""
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.layout_builder import LayoutBuilder
@@ -27,6 +28,7 @@ from xcp_d.interfaces.surfplotting import (
 )
 
 __all__ = [
+    'DerivativesDataSink',
     'Regress', 'FilteringData', 'NiftiConnect',
     'ComputeALFF', 'SurfaceReHo',
     'ReHoNamePatch', 'DespikePatch', 'ContrastEnhancement',

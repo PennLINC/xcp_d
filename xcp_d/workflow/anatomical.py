@@ -24,6 +24,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.surfplotting import BrainPlotx, RibbontoStatmap
@@ -37,7 +38,6 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.bids import collect_data
 
 
