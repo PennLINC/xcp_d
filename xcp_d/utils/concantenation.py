@@ -602,8 +602,6 @@ def get_cifti_tr(cifti_file):
     float
         The TR of the CIFTI file.
     """
-    import nibabel as nb
-
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step
 
