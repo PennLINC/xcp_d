@@ -173,3 +173,24 @@ def coverage(input1, input2):
         smallv = np.sum(input1)
     cov = float(intsec) / float(smallv)
     return cov
+
+
+def compute_dvars(datat):
+    """Compute standard DVARS.
+
+    Parameters
+    ----------
+    datat : numpy.ndarray
+        The data matrix fromw hich to calculate DVARS.
+        Ordered as vertices by timepoints.
+
+    Returns
+    -------
+    numpy.ndarray
+        The calculated DVARS array.
+        A (timepoints,) array.
+    """
+    firstcolumn = np.zeros((datat.shape[0]))[..., None]
+    datax = np.hstack((firstcolumn, np.diff(datat)))
+    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
+    return np.sqrt(datax_ss)

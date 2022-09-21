@@ -16,6 +16,7 @@ from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
 
 from xcp_d.utils.plot import plot_svgx
+from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_transformfile
 from xcp_d.utils.write_save import read_ndata
 
@@ -309,27 +310,6 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             shutil.copy(bb1reg, gboldbbreg)
             shutil.copy(bb1ref, bboldref)
-
-
-def compute_dvars(datat):
-    """Compute standard DVARS.
-
-    Parameters
-    ----------
-    datat : numpy.ndarray
-        The data matrix fromw hich to calculate DVARS.
-        Ordered as vertices by timepoints.
-
-    Returns
-    -------
-    numpy.ndarray
-        The calculated DVARS array.
-        A (timepoints,) array.
-    """
-    firstcolumn = np.zeros((datat.shape[0]))[..., None]
-    datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
-    return np.sqrt(datax_ss)
 
 
 def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
