@@ -59,7 +59,8 @@ def init_xcpd_wf(layout,
                  work_dir,
                  dummytime,
                  fd_thresh,
-                 input_type='fmriprep'):
+                 input_type='fmriprep',
+                 name='xcpd_wf'):
     """Build and organize execution of xcp_d pipeline.
 
     It also connects the subworkflows under the xcp_d workflow.
