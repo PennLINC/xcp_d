@@ -454,13 +454,6 @@ It is released under the [CC0]\
     return workflow
 
 
-def _prefix(subid):
-    """Infer prefix from subject ID."""
-    if subid.startswith('sub-'):
-        return subid
-    return '-'.join(('sub', subid))
-
-
 def _pop(inlist):
     """Make a list of lists into a list."""
     if isinstance(inlist, (list, tuple)):
