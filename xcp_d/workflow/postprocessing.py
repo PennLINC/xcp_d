@@ -40,7 +40,7 @@ def init_post_process_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_post_process_wf
+            from xcp_d.workflows.postprocessing import init_post_process_wf
             wf = init_post_process_wf(
                 mem_gb,
                 TR,

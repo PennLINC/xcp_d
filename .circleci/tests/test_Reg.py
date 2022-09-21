@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import scipy
 
-from xcp_d.interfaces import Regress
-from xcp_d.utils import read_ndata
+from xcp_d.interfaces.regression import Regress
+from xcp_d.utils.write_save import read_ndata
 
 
 def test_Reg_Nifti(data_dir):
