@@ -29,6 +29,7 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
+from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
@@ -488,17 +489,3 @@ def getfmriprepv(fmri_dir):
         fvers = str('Unknown vers')
 
     return fvers
-
-
-def _getsesid(filename):
-    """Get session ID from filename if available."""
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split('_')
-    for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
-            break
-
-    return ses_id
