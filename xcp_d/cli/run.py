@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
+"""The xcp_d preprocessing worklow.
+
 xcp_d preprocessing workflow
-=====
+============================
 """
 
 import gc
@@ -25,11 +26,12 @@ logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
 logger = logging.getLogger('cli')
 
 
-def _warn_redirect(message, category, filename, lineno, file=None, line=None):
+def _warn_redirect(message, category):
     logger.warning('Captured warning (%s): %s', category, message)
 
 
 def check_deps(workflow):
+    """Check the dependencies for the workflow."""
     from nipype.utils.filemanip import which
     return sorted((node.interface.__class__.__name__, node.interface._cmd)
                   for node in workflow._get_all_nodes()
@@ -38,8 +40,7 @@ def check_deps(workflow):
 
 
 def get_parser():
-    """Build parser object"""
-
+    """Build parser object."""
     from xcp_d.__about__ import __version__
 
     verstr = f'xcp_d v{__version__}'
@@ -281,7 +282,7 @@ def get_parser():
 
 
 def main():
-    """Entry point"""
+    """Run the main workflow."""
     from multiprocessing import Manager, Process, set_start_method
 
     from nipype import logging as nlogging
@@ -436,16 +437,13 @@ def main():
 
 
 def build_workflow(opts, retval):
-    """
-    Create the Nipype Workflow that supports the whole execution
-    graph, given the inputs.
+    """Create the Nipype workflow that supports the whole execution graph, given the inputs.
 
     All the checks and the construction of the workflow are done
     inside this function that has pickleable inputs and output
     dictionary (``retval``) to allow isolation using a
     ``multiprocessing.Process`` that allows fmriprep to enforce
     a hard-limited memory-scope.
-
     """
     from bids import BIDSLayout
     from nipype import config as ncfg

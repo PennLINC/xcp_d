@@ -150,7 +150,7 @@ def init_xcpd_wf(layout,
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-
+    print("Begin the " + name + " workflow")
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -182,6 +182,7 @@ def init_xcpd_wf(layout,
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
+        print("Analyzing data at the " + str(analysis_level) + " level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
@@ -411,7 +412,6 @@ It is released under the [CC0]\
                 params=params,
                 head_radius=head_radius,
                 omp_nthreads=omp_nthreads,
-                brain_template='MNI152NLin2009cAsym',
                 num_bold=len(subject_data[0]),
                 custom_confounds=custom_confoundsx,
                 layout=layout,

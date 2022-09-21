@@ -250,7 +250,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     reho_compute_wf = init_surface_reho_wf(
         mem_gb=mem_gbx['timeseries'],
-        smoothing=smoothing,
         name="surface_reho_wf",
         omp_nthreads=omp_nthreads)
 
@@ -264,7 +263,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         lowpass=upper_bpf,
         highpass=lower_bpf,
         TR=TR,
-        omp_nthreads=omp_nthreads,
         name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(
