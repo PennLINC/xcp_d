@@ -30,7 +30,6 @@ def init_fcon_ts_wf(
     t1w_to_native,
     mni_to_t1w,
     omp_nthreads,
-    brain_template,
     bold_file,
     name="fcons_ts_wf",
 ):
@@ -45,7 +44,6 @@ def init_fcon_ts_wf(
                 mem_gb,
                 bold_file,
                 tw1_to_native,
-                template='MNI152NLin2009cAsym',
                 name="fcons_ts_wf",
              )
     Parameters
@@ -54,8 +52,6 @@ def init_fcon_ts_wf(
         bold file for post processing
     mem_gb: float
         memory size in gigabytes
-    template: str
-        template of bold
     tw1_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
     Inputs
@@ -397,7 +393,6 @@ def init_cifti_conts_wf(
                 mem_gb,
                 bold_file,
                 tw1_to_native,
-                template='MNI152NLin2009cAsym',
                 name="fcons_ts_wf",
              )
 

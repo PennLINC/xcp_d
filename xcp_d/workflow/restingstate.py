@@ -167,7 +167,6 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 def init_surface_reho_wf(mem_gb,
                          omp_nthreads,
-                         smoothing,
                          name="surface_reho_wf"):
     """Compute ReHo from surface (CIFTI) data.
 
@@ -178,7 +177,6 @@ def init_surface_reho_wf(mem_gb,
             from xcp_d.workflows import init_surface_reho_wf
             wf = init_surface_reho_wf(
                 mem_gb,
-                smoothing,
                 name="surface_reho_wf",
              )
 

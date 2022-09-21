@@ -178,8 +178,7 @@ class Section(object):
     def __init__(self,
                  img_path='./',
                  regs_slider=None,
-                 img_modal=None,
-                 **kwargs):
+                 img_modal=None):
         self.section = ''
         self.scripts = ''
         self.img_path = img_path
@@ -256,11 +255,10 @@ class TasksSection(Section):
 
         self.run(tasks)
 
-    def write_t1_reg_rows(self, task_name, task_num):
+    def write_t1_reg_rows(self, task_name):
         """Write T1w rows."""
         # Write the header for the next few rows.
-        self.section += constants.TASK_LABEL_ROW.format(task_name=task_name,
-                                                        task_num=task_num)
+        self.section += constants.TASK_LABEL_ROW.format(task_name=task_name)
 
         row_data = {}
         row_data['row_modal'] = self.regs_slider.get_modal_id()
@@ -287,7 +285,7 @@ class TasksSection(Section):
                 self.section += constants.PLACEHOLDER_ROW.format(
                     row_label=values['title'])
 
-    def write_bold_gray_row(self, task_name, task_num):
+    def write_bold_gray_row(self, task_name):
         """Write BOLD row."""
         bold_data = {}
         bold_data['row_modal'] = self.img_modal.get_modal_id()
@@ -356,13 +354,8 @@ class TasksSection(Section):
         # Each entry in task_entries is a tuple of the task-name (without
         # task-) and run number (without run-).
         for task_name in tasks:
-            if 'run-' in task_name:
-                task_num = task_name.split('_run-')[1].split('_')[0]
-            else:
-                task_num = 'ALL'
-
-            self.write_t1_reg_rows(task_name, task_num)
-            self.write_bold_gray_row(task_name, task_num)
+            self.write_t1_reg_rows(task_name)
+            self.write_bold_gray_row(task_name)
 
         # Add the end of the tasks section.
         self.section += constants.TASKS_SECTION_END

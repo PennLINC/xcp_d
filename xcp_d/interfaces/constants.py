@@ -216,7 +216,7 @@ TASKS_SECTION_START = """
 # Add the task name for the next few rows.
 TASK_LABEL_ROW = """
         <div  class="w3-row">
-            <div class="w3-left label2">task-{task_name} run-{task_num}:</div>
+            <div class="w3-left label2">task-{task_name}:</div>
         <div  class="w3-row">
         """
 

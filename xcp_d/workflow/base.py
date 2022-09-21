@@ -59,8 +59,7 @@ def init_xcpd_wf(layout,
                  work_dir,
                  dummytime,
                  fd_thresh,
-                 input_type='fmriprep',
-                 name='xcpd_wf'):
+                 input_type='fmriprep'):
     """Build and organize execution of xcp_d pipeline.
 
     It also connects the subworkflows under the xcp_d workflow.
@@ -182,6 +181,7 @@ def init_xcpd_wf(layout,
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
+        print("Analyzing data at the " + str(analysis_level) + " level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf

@@ -62,7 +62,6 @@ def init_boldpostprocess_wf(lower_bpf,
                             num_bold,
                             mni_to_t1w,
                             despike,
-                            brain_template='MNI152NLin2009cAsym',
                             layout=None,
                             name='bold_postprocess_wf'):
     """Organize the bold processing workflow.
@@ -255,7 +254,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                  mni_to_t1w=mni_to_t1w,
                                  t1w_to_native=_t12native(bold_file),
                                  bold_file=bold_file,
-                                 brain_template=brain_template,
                                  name="fcons_ts_wf",
                                  omp_nthreads=omp_nthreads)
 
@@ -281,7 +279,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                                    lowpass=upper_bpf,
                                                    highpass=lower_bpf,
                                                    TR=TR,
-                                                   omp_nthreads=omp_nthreads,
                                                    name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(

@@ -159,7 +159,7 @@ def process_crashfile(crashfile):
         sentry_sdk.capture_message(message, 'fatal')
 
 
-def before_send(event, hints):
+def before_send(event):
     # Filtering log messages about crashed nodes
     if 'logentry' in event and 'message' in event['logentry']:
         msg = event['logentry']['message']

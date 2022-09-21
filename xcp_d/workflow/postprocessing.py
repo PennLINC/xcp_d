@@ -24,18 +24,12 @@ from xcp_d.utils.utils import stringforparams
 def init_post_process_wf(
         mem_gb,
         TR,
-        head_radius,
         lower_bpf,
         upper_bpf,
         bpf_order,
         smoothing,
         bold_file,
         params,
-        motion_filter_type,
-        motion_filter_order,
-        band_stop_max,
-        band_stop_min,
-        initial_volumes_to_drop,
         cifti=False,
         dummytime=0,
         fd_thresh=0.2,
@@ -47,7 +41,7 @@ def init_post_process_wf(
             :graph2use: orig
             :simple_form: yes
             from xcp_d.workflows import init_post_process_wf
-            wf = init_init_post_process_wf_wf(
+            wf = init_post_process_wf_wf(
                 mem_gb,
                 TR,
                 head_radius,

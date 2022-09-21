@@ -22,7 +22,6 @@ def init_writederivatives_wf(
     highpass,
     smoothing,
     params,
-    omp_nthreads,
     cifti,
     dummytime,
     output_dir,
@@ -43,7 +42,6 @@ def init_writederivatives_wf(
                 highpass,
                 smoothing,
                 params,
-                omp_nthreads,
                 scrub,
                 cifti,
                 dummytime,
@@ -66,8 +64,6 @@ def init_writederivatives_wf(
         smooth kernel size in fwhm
     params: str
         parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
     scrub: bool
         scrubbing
     cifti: bool
