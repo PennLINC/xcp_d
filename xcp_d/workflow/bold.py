@@ -448,10 +448,10 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (bolddatanode, censor_scrub, [
-                ('bold_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-            ])])
+            (inputnode, censor_scrub,
+                [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (bolddatanode, censor_scrub, [('bold_file', 'in_file')]),
+        ])
 
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series
