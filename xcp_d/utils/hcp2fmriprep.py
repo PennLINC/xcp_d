@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-format data to fMRIPrep format."""
 import glob
-import json
 import os
 
 import nibabel as nb
@@ -10,7 +9,7 @@ import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg
+from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
@@ -190,10 +189,3 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         for kk, jj in zip(rawfiles, newfiles):
             copyfileobj_example(kk, jj)
-
-
-def writejson(data, outfile):
-    """Write dictionary to JSON file."""
-    with open(outfile, 'w') as f:
-        json.dump(data, f)
-    return outfile
