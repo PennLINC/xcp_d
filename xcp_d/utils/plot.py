@@ -650,7 +650,7 @@ def plot_svgx(rawdata,
     return unprocessed_filename, processed_filename
 
 
-class fMRIPlot:
+class FMRIPlot:
     """Generates the fMRI Summary Plot."""
 
     __slots__ = ("func_file", "mask_data", "TR", "seg_data", "confounds",
