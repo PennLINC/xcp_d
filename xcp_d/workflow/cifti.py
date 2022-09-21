@@ -340,26 +340,34 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
+    # if presmoothing is enabled, use the presmoothed bold file as input to 
+    # further preprocessing
+    # else, use the bold (cifti) file from inputnode
+    bolddatanode = pe.Node(niu.IdentityInterface(
+        fields=['bold_file']),
+        name='bolddatanode')
+
     if presmoothing > 0:
         workflow.connect([
             (inputnode, presmoothing_wf, [('cifti_file', 'inputnode.bold_file')]),
+            (presmoothing_wf, bolddatanode, [('outputnode.presmoothed_bold', 'bold_file')]),
             ])
-# Remove TR first:
+    else:
+        workflow.connect([
+            (inputnode, bolddatanode, [('cifti_file', 'bold_file')]),
+        ])
+
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1*mem_gbx['timeseries'])
-        if presmoothing > 0:
-            workflow.connect([
-                (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-                (presmoothing_wf, rm_dummytime, [('outputnode.presmoothed_bold', 'bold_file')]),
-                (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
-        else:
-            workflow.connect([
-                (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-                (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
-                (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
+
+        workflow.connect([
+            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (bolddatanode, rm_dummytime, [('bold_file', 'bold_file')]),
+            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
             (rm_dummytime, censor_scrub, [
@@ -369,19 +377,11 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     else:  # No need to remove TR
         # Censor Scrub:
-        if presmoothing > 0:
-            workflow.connect([
-                (inputnode, censor_scrub,
-                    [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-                (presmoothing_wf, censor_scrub, [('outputnode.presmoothed_bold', 'in_file')]),
-            ])
-
-        else:
-            workflow.connect([
-                (inputnode, censor_scrub, [
-                    ('cifti_file', 'in_file'),
-                    ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-                ])])
+        workflow.connect([
+            (inputnode, censor_scrub,
+                [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (bolddatanode, censor_scrub, [('bold_file', 'in_file')]),
+        ])
 
     if despike:  # If we despike
         despike3d = pe.Node(ciftidespike(TR=TR),
@@ -406,19 +406,11 @@ signals within the {highpass}-{lowpass} Hz frequency band.
                           ('custom_confounds_censored', 'custom_confounds')])])
 
     # interpolation workflow
-    if presmoothing > 0:
-        workflow.connect([
-            (presmoothing_wf, interpolate_wf, [('outputnode.presmoothed_bold', 'bold_file')]),
-            (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
-            (regression_wf, interpolate_wf, [('res_file', 'in_file')])
-        ])
-
-    else:
-        workflow.connect([
-            (inputnode, interpolate_wf, [('cifti_file', 'bold_file')]),
-            (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
-            (regression_wf, interpolate_wf, [('res_file', 'in_file')])
-        ])
+    workflow.connect([
+        (bolddatanode, interpolate_wf, [('bold_file', 'bold_file')]),
+        (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
+        (regression_wf, interpolate_wf, [('res_file', 'in_file')])
+    ])
 
     # add filtering workflow
     workflow.connect([(interpolate_wf, filtering_wf, [('bold_interpolated',

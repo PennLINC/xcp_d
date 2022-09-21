@@ -15,7 +15,7 @@ Processesing Steps
 
 0. Data is read in. See :ref:`Running XCP-D:Inputs` for information on input dataset structures.
 
-1. BOLD pre-smoothing [Optional]: Using the option ``--presmoothing``, a Gaussian spatial smoothing kernel of user-specified width (mm FWHM) may be applied to the input BOLD timeseries data before further postprocessing. 
+1. BOLD pre-smoothing [Optional]: Using the option ``--presmoothing``, a Gaussian spatial smoothing kernel of user-specified width (mm FWHM) may be applied to the input BOLD timeseries data before further postprocessing. If enabled, ``desc-residual_bold`` outputs will have the specified presmoothing applied, and ``desc-residual_smooth_bold`` outputs will have the specified presmoothing, plus smoothing of the postprocessed residuals specified by ``--smoothing`` (default 6 mm FWHM).  
 
 
 2. Remove dummy time [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing. These volumes are usually refered to as dummy time. It can be added to the command line with ``-d X`` where X is in seconds. The number of volumes to be dropped is equal to X divided by the TR (rounded down). For example, if your TR is .72, and you want to remove the first 2 volumes, you should enter: ``-d 1.44``. Most default scanning sequences include dummy volumes that are not reconstructed. However, some users still prefer to remove the first reconstructed few volumes.
