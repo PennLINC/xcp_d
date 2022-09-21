@@ -359,7 +359,7 @@ class TasksSection(Section):
                 task_num = 'ALL'
 
             self.write_t1_reg_rows(task_name, task_num)
-            self.write_bold_gray_row(task_name, task_num)
+            self.write_bold_gray_row(task_name)
 
         # Add the end of the tasks section.
         self.section += constants.TASKS_SECTION_END
