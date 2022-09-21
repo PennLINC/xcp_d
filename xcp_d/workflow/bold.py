@@ -25,8 +25,8 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
-from xcp_d.utils.restingstate import DespikePatch
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
