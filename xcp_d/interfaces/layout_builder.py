@@ -172,7 +172,6 @@ class Section(object):
     img_path : str, optional
     regs_slider : None or str, optional
     img_modal : None or str, optional
-    kwargs : dict, optional
     """
 
     def __init__(self,

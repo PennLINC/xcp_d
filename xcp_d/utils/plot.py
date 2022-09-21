@@ -731,7 +731,7 @@ class fMRIPlot:
                             height_ratios=[1] * (n_rows - 1) + [5])
 
         grid_id = 0
-        for name in self.spikes:
+        for _, name, _ in self.spikes:
             # RF: What is this?
             # spikesplot(tsz,
             #            title=name,

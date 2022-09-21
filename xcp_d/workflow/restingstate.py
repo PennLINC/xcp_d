@@ -184,8 +184,6 @@ def init_surface_reho_wf(mem_gb,
     ----------
     mem_gb: float
         memory size in gigabytes
-    smoothing: float
-        smooth kernel size in fwhm
 
     Inputs
     ------
