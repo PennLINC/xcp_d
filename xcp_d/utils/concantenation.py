@@ -549,6 +549,8 @@ def get_segfile(bold_file):
 def _t12native(fname):
     """Select T1w-to-scanner transform associated with a given BOLD file.
 
+    TODO: Update names and refactor
+
     Parameters
     ----------
     fname : str
