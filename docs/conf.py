@@ -16,77 +16,82 @@ import os
 import sys
 from datetime import datetime
 
-import xcp_d
 from packaging import (
-    version as pver,  # Avoid distutils.LooseVersion which is deprecated
-)
+    version as pver,
+)  # Avoid distutils.LooseVersion which is deprecated
 from sphinx import __version__ as sphinxversion
+
+import xcp_d
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.append(os.path.abspath('sphinxext'))
-sys.path.insert(0, os.path.abspath('../xcp_d'))
+sys.path.append(os.path.abspath("sphinxext"))
+sys.path.insert(0, os.path.abspath("../xcp_d"))
 
 from github_link import make_linkcode_resolve
 
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '4.2.0'
+needs_sphinx = "4.2.0"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'nbsphinx',
-    'nipype.sphinxext.plot_workflow',
-    'recommonmark',  # markdown parser
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosectionlabel',
-    'sphinx.ext.coverage',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',  # links code to other packages
-    'sphinx.ext.linkcode',  # links to code from api
-    'sphinx.ext.mathjax',
-    'sphinx_markdown_tables',
-    'sphinxarg.ext',  # argparse extension
-    'sphinxcontrib.napoleon',  # alternative to numpydoc
+    # "matplotlib.sphinxext.plot_directive",
+    "nbsphinx",
+    "nipype.sphinxext.apidoc",
+    # "nipype.sphinxext.documenter",
+    "nipype.sphinxext.plot_workflow",
+    "recommonmark",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
+    # "sphinx.ext.autosummary",  # standard
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    # "sphinx.ext.graphviz",
+    # "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.linkcode",
+    "sphinx.ext.mathjax",
+    # "sphinx.ext.todo",
+    "sphinx_markdown_tables",
+    "sphinxarg.ext",  # argparse extension
+    "sphinxcontrib.apidoc",
 ]
-
-autosectionlabel_prefix_document = True
 
 # Mock modules in autodoc:
 autodoc_mock_imports = [
-    'numpy',
-    'matplotlib',
+    "numpy",
+    "matplotlib",
+    "pandas",
+    "nilearn",
+    "seaborn",
 ]
 
-if pver.parse(sphinxversion) >= pver.parse('1.7.0'):
-    autodoc_mock_imports += [
-        'pandas',
-        'nilearn',
-        'seaborn',
-    ]
+# NOTE: Not in qsiprep
+# autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = ['.rst', '.md']
+source_suffix = [".rst", ".md"]
 # source_suffix = '.rst'
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'xcp_d'
-author = 'xcp_d team'
-copyright = f'2021-{datetime.now().year}, {author}'
+project = "xcp_d"
+author = "xcp_d team"
+copyright = f"2021-{datetime.now().year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -113,7 +118,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -131,7 +136,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'default'
+pygments_style = "default"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -147,7 +152,6 @@ todo_include_todos = False
 # -----------------------------------------------------------------------------
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
-napoleon_custom_sections = ["License"]
 napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
@@ -169,13 +173,24 @@ napoleon_use_param = False
 napoleon_custom_sections = [
     ("Inputs", "Parameters"),
     ("Outputs", "Parameters"),
+    ("Attributes", "Parameters"),
+    ("Mandatory Inputs", "Parameters"),
+    ("Optional Inputs", "Parameters"),
+    ("License", "License"),
 ]
+
+# -- Extension configuration -------------------------------------------------
+apidoc_module_dir = "../xcp_d"
+apidoc_output_dir = "api"
+apidoc_excluded_paths = ["conftest.py", "*/tests/*", "tests/*", "data/*"]
+apidoc_separate_modules = True
+apidoc_extra_args = ["--module-first", "-d 1", "-T"]
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -204,7 +219,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -269,20 +284,17 @@ html_static_path = ['_static']
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'xcp_d_doc'
+htmlhelp_basename = "xcp_d_doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     # 'preamble': '',
-
     # Latex figure (float) alignment
     # 'figure_align': 'htbp',
 }
@@ -291,9 +303,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'xcp_d.tex', u'xcp_d Documentation',
-     author,
-     'manual'),
+    (master_doc, "xcp_d.tex", "xcp_d Documentation", author, "manual"),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -321,10 +331,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'xcp_d', u'xcp_d Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, "xcp_d", "xcp_d Documentation", [author], 1)]
 
 # If true, show URL addresses after external links.
 # man_show_urls = False
@@ -336,9 +343,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'xcp_d', u'xcp_d Documentation',
-     author, 'Azeez Adebimpe and Team', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "xcp_d",
+        "xcp_d Documentation",
+        author,
+        "Azeez Adebimpe and Team",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -355,10 +368,10 @@ texinfo_documents = [
 
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(
-    'xcp_d',
+    "xcp_d",
     (
-        u'https://github.com/pennlinc/xcp_d/blob/'
-        '{revision}/{package}/{path}#L{lineno}'  # noqa: FS003
+        "https://github.com/pennlinc/xcp_d/blob/"
+        "{revision}/{package}/{path}#L{lineno}"  # noqa: FS003
     ),
 )
 
@@ -369,15 +382,22 @@ _python_version_str = "{0.major}.{0.minor}".format(sys.version_info)
 _python_doc_base = f"https://docs.python.org/{_python_version_str}"
 intersphinx_mapping = {
     "python": (_python_doc_base, None),
-    "numpy": ("https://numpy.org/doc/stable/", (None, "./_intersphinx/numpy-objects.inv")),
+    "numpy": (
+        "https://numpy.org/doc/stable/",
+        (None, "./_intersphinx/numpy-objects.inv"),
+    ),
     "scipy": (
         "https://docs.scipy.org/doc/scipy/reference",
         (None, "./_intersphinx/scipy-objects.inv"),
     ),
-    "matplotlib": ("https://matplotlib.org/", (None, "https://matplotlib.org/objects.inv")),
+    "matplotlib": (
+        "https://matplotlib.org/stable/",
+        (None, "https://matplotlib.org/stable/objects.inv"),
+    ),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "nibabel": ("https://nipy.org/nibabel/", None),
     "nilearn": ("http://nilearn.github.io/stable/", None),
+    "nipype": ("https://nipype.readthedocs.io/en/latest/", None),
 }
 suppress_warnings = ["image.nonlocal_uri"]
 
