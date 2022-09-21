@@ -1,10 +1,15 @@
+# documentation
+docs/_build
+docs/*.dot
+docs/etc/
+docs/args.txt
 
+# other stuff
 xcp_surface/.DS_Store
 .DS_Store
 *.pyc
 *.tsv
 *.pyc
-docs/_build
 .eggs
 .Rhistory
 *.egg-info
