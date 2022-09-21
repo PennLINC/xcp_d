@@ -1,4 +1,5 @@
 # documentation
+docs/api/
 docs/_build
 docs/*.dot
 docs/etc/
