@@ -8,10 +8,9 @@ import os
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.dcan2fmriprep import copyfileobj_example
+from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
@@ -191,13 +190,6 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         for kk, jj in zip(rawfiles, newfiles):
             copyfileobj_example(kk, jj)
-
-
-def extractreg(mask, nifti):
-    """Extract mean signal within mask from NIFTI."""
-    masker = NiftiMasker(mask_img=mask)
-    signals = masker.fit_transform(nifti)
-    return np.mean(signals, axis=1)
 
 
 def writejson(data, outfile):
