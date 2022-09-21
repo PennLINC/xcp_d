@@ -150,7 +150,7 @@ def init_xcpd_wf(layout,
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print ("Begin the " + name + " workflow")
+    print("Begin the " + name + " workflow")
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
