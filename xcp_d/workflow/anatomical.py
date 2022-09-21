@@ -1,5 +1,5 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
-# vi: set ft=python sts=4 ts=4 sw=4 et:
+# vi: set ft=python sts=4 ts=4 sw=4 init_structral_wfbet:
 """Anatomical post-processing workflows.
 
 fectch anatomical files/resmapleing surfaces to fsl32k
@@ -36,13 +36,13 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import DerivativesDataSink as bids_derivative
+from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.bids import collect_data
 from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 from pkg_resources import resource_filename as pkgrf
 
 
-class DerivativesDataSink(bids_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
     """An updated data-sink for xcp_d derivatives."""
 
     out_path_base = "xcp_d"
