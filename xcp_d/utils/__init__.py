@@ -35,7 +35,6 @@ from xcp_d.utils.plot import (
     plotimage,
 )
 from xcp_d.utils.qcmetrics import compute_registration_qc
-from xcp_d.utils.restingstate import ContrastEnhancement, DespikePatch, ReHoNamePatch
 from xcp_d.utils.sentry import sentry_setup
 from xcp_d.utils.utils import (
     fwhm2sigma,
@@ -94,8 +93,5 @@ __all__ = [
     'ribbon_to_statmap',
     'dcan2fmriprep',
     'hcp2fmriprep',
-    'ReHoNamePatch',
-    'DespikePatch',
     'concatenatebold',
-    'ContrastEnhancement',
 ]
