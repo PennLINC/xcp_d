@@ -1,16 +1,14 @@
 .. include:: links.rst
 
 
-========================
+=============
 BOLD Workflow
-========================
-
-
+=============
 
 .. workflow::
     :graph2use: orig
-    :simple_form: yes 
-    
+    :simple_form: yes
+
     import os
     from pkg_resources import resource_filename as pkgrf
     from xcp_d.utils import collect_data,select_registrationfile,extract_t1w_seg
@@ -50,4 +48,3 @@ BOLD Workflow
                 name='bold_postprocess_wf')
     wf.inputs.inputnode.t1w = t1w
     wf.inputs.inputnode.t1seg = tseg
-    
