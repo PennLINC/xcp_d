@@ -731,7 +731,7 @@ class fMRIPlot:
                             height_ratios=[1] * (n_rows - 1) + [5])
 
         grid_id = 0
-        for tsz, name, iszs in self.spikes:
+        for _, name, _ in self.spikes:
             # RF: What is this?
             # spikesplot(tsz,
             #            title=name,
@@ -769,11 +769,9 @@ class fMRIPlot:
 def plot_carpet(
     func,
     atlaslabels=None,
-    detrend=True,
     size=(950, 800),
     labelsize=30,
     subplot=None,
-    title=None,
     output_file=None,
     legend=True,
     TR=None,
@@ -814,7 +812,6 @@ def plot_carpet(
     """
     epinii = None
     segnii = None
-    nslices = None
     img = nb.load(func)
     sns.set_style("whitegrid")
     if isinstance(img, nb.Cifti2Image):  # Cifti
@@ -890,7 +887,6 @@ def plot_carpet(
             segnii = nb.Nifti1Image(lut[atlaslabels.astype(int)],
                                     epinii.affine, epinii.header)
             segnii.set_data_dtype("uint8")
-            nslices = epiavg.shape[-1]
 
     return _carpet(
         func,
@@ -899,12 +895,8 @@ def plot_carpet(
         order,
         cmap,
         labelsize,
-        epinii=epinii,
-        segnii=segnii,
-        nslices=nslices,
         TR=TR,
         subplot=subplot,
-        title=title,
         output_file=output_file,
     )
 
@@ -919,11 +911,7 @@ def _carpet(func,
             detrend=True,
             subplot=None,
             legend=False,
-            title=None,
-            output_file=None,
-            epinii=None,
-            segnii=None,
-            nslices=None):
+            output_file=None):
     """Build carpetplot for volumetric / CIFTI plots."""
     if TR is None:
         TR = 1.0  # Default TR

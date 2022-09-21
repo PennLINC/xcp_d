@@ -25,7 +25,7 @@ logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
 logger = logging.getLogger('cli')
 
 
-def _warn_redirect(message, category, filename, lineno, file=None, line=None):
+def _warn_redirect(message, category):
     logger.warning('Captured warning (%s): %s', category, message)
 
 
