@@ -17,3 +17,4 @@ Contents
    generalworkflow
    output
    api
+   workflows
