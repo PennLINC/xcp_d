@@ -413,9 +413,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # if presmoothing is enabled, use the presmoothed bold file as input to
     # further preprocessing
     # else, use the bold file from inputnode
-    bolddatanode = pe.Node(niu.IdentityInterface(
+    bold_data_node = pe.Node(niu.IdentityInterface(
         fields=['bold_file']),
-        name='bolddatanode')
+        name='bold_data_node')
 
     if presmoothing > 0:
         presmoothing_wf = init_pre_smoothing(
@@ -426,11 +426,11 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             omp_nthreads=omp_nthreads)
         workflow.connect([
             (inputnode, presmoothing_wf, [('bold_file', 'inputnode.bold_file')]),
-            (presmoothing_wf, bolddatanode, [('outputnode.presmoothed_bold', 'bold_file')]),
+            (presmoothing_wf, bold_data_node, [('outputnode.presmoothed_bold', 'bold_file')]),
         ])
     else:
         workflow.connect([
-            (inputnode, bolddatanode, [('bold_file', 'bold_file')]),
+            (inputnode, bold_data_node, [('bold_file', 'bold_file')]),
         ])
 
 # Remove TR first:
@@ -442,7 +442,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (bolddatanode, rm_dummytime, [('bold_file', 'bold_file')]),
+            (bold_data_node, rm_dummytime, [('bold_file', 'bold_file')]),
             (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
@@ -457,7 +457,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         workflow.connect([
             (inputnode, censor_scrub,
                 [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (bolddatanode, censor_scrub, [('bold_file', 'in_file')]),
+            (bold_data_node, censor_scrub, [('bold_file', 'in_file')]),
         ])
 
     if despike:  # If we despike
@@ -497,7 +497,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # interpolation workflow
     workflow.connect([
         (inputnode, interpolate_wf, [('bold_mask', 'mask_file')]),
-        (bolddatanode, interpolate_wf, [('bold_file', 'bold_file')]),
+        (bold_data_node, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
