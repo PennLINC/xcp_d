@@ -137,7 +137,7 @@ def get_parser():
         help='fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
 
     g_param = parser.add_argument_group('Parameters for postprocessing')
-    
+
     g_param.add_argument('--presmoothing',
                          default=0,
                          action='store',

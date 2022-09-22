@@ -221,6 +221,7 @@ def init_pre_smoothing(mem_gb,
                        omp_nthreads,
                        cifti=False,
                        name="presmoothing"):
+    """Smooth input BOLD before postprocessing"""
 
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
@@ -228,13 +229,13 @@ def init_pre_smoothing(mem_gb,
     outputnode = pe.Node(niu.IdentityInterface(fields=['presmoothed_bold']),
                          name='outputnode')
 
-    sigma_lx = fwhm2sigma(presmoothing)  # Turn specified FWHM (Full-Width at Half Maximum) 
+    sigma_lx = fwhm2sigma(presmoothing)  # Turn specified FWHM (Full-Width at Half Maximum)
     # to standard deviation.
     if cifti:  # For ciftis
-        workflow.__desc__ = """ \
+        workflow.__desc__ = f""" \
 The preprocessed BOLD input was pre-smoothed using Connectome Workbench with a
-gaussian kernel size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(presmoothing))
+gaussian kernel size of {str(presmoothing)} mm (FWHM).
+"""
 
         presmooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
             #  hemisphere
@@ -258,15 +259,15 @@ gaussian kernel size of {kernelsize} mm  (FWHM).
                           (presmooth_data, outputnode, [('out_file',
                                                          'presmoothed_bold')])])
 
-    else:  #  for Nifti
-        workflow.__desc__ = """ \
+    else:  # for Nifti
+        workflow.__desc__ = f""" \
 The preprocessed BOLD input was pre-smoothed using FSL with a
-gaussian kernel size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(presmoothing))
+gaussian kernel size of {str(presmoothing)} mm  (FWHM).
+"""
         presmooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=presmoothing),
                                  name="nifti_presmoothing",
                                  mem_gb=mem_gb,
-                                 n_procs=omp_nthreads)  #  Use fslmaths to smooth the image
+                                 n_procs=omp_nthreads)  # Use fslmaths to smooth the image
 
         #  Connect to workflow
         workflow.connect([(inputnode, presmooth_data, [('bold_file', 'in_file')]),
@@ -291,8 +292,8 @@ def init_resd_smoothing(mem_gb,
     # to standard deviation.
     if cifti:  # For ciftis
         workflow.__desc__ = f""" \
-The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
-size of {str(smoothing)} mm  (FWHM).
+The processed BOLD was smoothed using Connectome Workbench with a gaussian kernel
+size of {str(smoothing)} mm (FWHM).
 """
 
         smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each

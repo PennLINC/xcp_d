@@ -417,7 +417,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
     )
 
-    # if presmoothing is enabled, use the presmoothed bold file as input to 
+    # if presmoothing is enabled, use the presmoothed bold file as input to
     # further preprocessing
     # else, use the bold file from inputnode
     bolddatanode = pe.Node(niu.IdentityInterface(
@@ -428,7 +428,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         workflow.connect([
             (inputnode, presmoothing_wf, [('bold_file', 'inputnode.bold_file')]),
             (presmoothing_wf, bolddatanode, [('outputnode.presmoothed_bold', 'bold_file')]),
-            ])
+        ])
     else:
         workflow.connect([
             (inputnode, bolddatanode, [('bold_file', 'bold_file')]),
