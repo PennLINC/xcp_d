@@ -101,6 +101,7 @@ def init_xcpd_wf(
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
         BIDS dataset layout
+    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     despike: bool
@@ -252,6 +253,7 @@ def init_subject_wf(
     ----------
     layout : BIDSLayout object
         BIDS dataset layout
+    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     despike: bool

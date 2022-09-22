@@ -90,6 +90,7 @@ def init_ciftipostprocess_wf(
     Parameters
     ----------
     cifti_file
+    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     %(bpf_order)s
@@ -97,7 +98,6 @@ def init_ciftipostprocess_wf(
         respiratory motion filter type: lp or notch
     motion_filter_order: int
         order for motion filter
-    bandpass_filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float

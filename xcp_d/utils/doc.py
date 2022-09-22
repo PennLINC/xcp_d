@@ -70,10 +70,18 @@ input_type : {"fmriprep", "dcan", "hcp"}
     The format of the BIDS derivatives.
 """
 
+docdict["bandpass_filter"] = """
+bandpass_filter : :obj:`bool`
+    If True, a Butterworth bandpass filter will be applied to the fMRI data after interpolation,
+    but before regression.
+    If False, bandpass filtering will not be performed.
+"""
+
 docdict["lower_bpf"] = """
 lower_bpf : :obj:`float`
     Lower cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
+    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
 """
 
@@ -81,12 +89,14 @@ docdict["upper_bpf"] = """
 upper_bpf : :obj:`float`
     Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
+    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
 """
 
 docdict["bpf_order"] = """
 bpf_order : :obj:`int`
     Number of filter coefficients for Butterworth bandpass filter.
+    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
 """
 
