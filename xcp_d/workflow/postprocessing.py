@@ -43,18 +43,17 @@ def init_post_process_wf(
 
             from xcp_d.workflow.postprocessing import init_post_process_wf
             wf = init_post_process_wf(
-                mem_gb,
-                TR,
-                head_radius,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                smoothing,
-                bold_file,
-                params,
+                mem_gb=0.1,
+                TR=2.,
+                lower_bpf=6.,
+                upper_bpf=60.,
+                bpf_order=1,
+                smoothing=6,
+                bold_file="/path/to/file.nii.gz",
+                params="36P",
                 cifti=False,
-                dummytime,
-                fd_thresh,
+                dummytime=0,
+                fd_thresh=0.2,
                 name="post_process_wf",
             )
 

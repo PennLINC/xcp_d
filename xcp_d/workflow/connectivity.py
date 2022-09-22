@@ -35,9 +35,11 @@ def init_fcon_ts_wf(
 
             from xcp_d.workflow.connectivity import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
-                mem_gb,
-                bold_file,
-                tw1_to_native,
+                mem_gb=0.1,
+                t1w_to_native="identity",
+                mni_to_t1w="identity",
+                omp_nthreads=1,
+                bold_file="/path/to/file.nii.gz",
                 name="fcons_ts_wf",
             )
 
@@ -385,12 +387,11 @@ def init_cifti_conts_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.connectivity import init_fcon_ts_wf
+            from xcp_d.workflow.connectivity import init_cifti_conts_wf
             wf = init_fcon_ts_wf(
-                mem_gb,
-                bold_file,
-                tw1_to_native,
-                name="fcons_ts_wf",
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="cifti_ts_con_wf",
             )
 
     Parameters

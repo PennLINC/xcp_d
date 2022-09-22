@@ -37,33 +37,34 @@ def init_compute_alff_wf(
 
             from xcp_d.workflow.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
-                mem_gb,
-                TR,
-                lowpass,
-                highpass,
-                smoothing,
-                cifti,
+                mem_gb=0.1,
+                TR=2.,
+                lowpass=6.,
+                highpass=60.,
+                smoothing=6,
+                cifti=False,
+                omp_nthreads=1,
                 name="compute_alff_wf",
             )
 
     Parameters
     ----------
-    mem_gb: float
+    mem_gb : float
         memory size in gigabytes
-    TR: float
+    TR : float
         repetition time
-    lowpass: float
+    lowpass : float
         low pass filter
-    highpass: float
+    highpass : float
         high pass filter
-    smoothing: float
+    smoothing : float
         smooth kernel size in fwhm
-    params: str
-        parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
-    cifti: bool
+    cifti : bool
         if cifti or bold
+    omp_nthreads : int
+        number of threads
+    name : str, optional
+        Name of the workflow.
 
     Inputs
     ------
@@ -181,14 +182,17 @@ def init_surface_reho_wf(
 
             from xcp_d.workflow.restingstate import init_surface_reho_wf
             wf = init_surface_reho_wf(
-                mem_gb,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="surface_reho_wf",
             )
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
+    mem_gb : float
+        Memory size in gigabytes.
+    omp_nthreads : int
+        Maximum number of threads an individual process may use.
 
     Inputs
     ------
@@ -262,17 +266,17 @@ def init_3d_reho_wf(
 
             from xcp_d.workflow.restingstate import init_3d_reho_wf
             wf = init_3d_reho_wf(
-                mem_gb,
-                smoothing,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="afni_reho_wf",
             )
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
-    smoothing: float
-        smooth kernel size in fwhm
+    mem_gb : float
+        Memory size in gigabytes.
+    omp_nthreads : int
+        Maximum number of threads an individual process may use.
 
     Inputs
     ------

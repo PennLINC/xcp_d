@@ -64,11 +64,13 @@ def init_anatomical_wf(
 
             from xcp_d.workflow.anatomical import init_anatomical_wf
             wf = init_anatomical_wf(
-                omp_nthreads,
-                fmri_dir,
-                subject_id,
-                output_dir,
-                t1w_to_mni,
+                omp_nthreads=1,
+                fmri_dir=".",
+                subject_id="sub-01",
+                output_dir=".",
+                t1w_to_mni="identity",
+                input_type="fmriprep",
+                mem_gb=0.1,
                 name="anatomical_wf",
             )
 

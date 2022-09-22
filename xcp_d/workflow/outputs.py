@@ -37,43 +37,37 @@ def init_writederivatives_wf(
 
             from xcp_d.workflow.outputs import init_writederivatives_wf
             wf = init_writederivatives_wf(
-                mem_gb,
-                bold_file,
-                lowpass,
-                highpass,
-                smoothing,
-                params,
-                scrub,
-                cifti,
-                dummytime,
-                output_dir,
-                TR,
+                bold_file="/path/to/file.nii.gz",
+                lowpass=6.,
+                highpass=60.,
+                smoothing=6,
+                params="36P",
+                cifti=False,
+                dummytime=4,
+                output_dir=".",
+                TR=2.,
                 name="fcons_ts_wf",
             )
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
-    bold_file: str
+    bold_file : str
         bold or cifti files
-    lowpass: float
+    lowpass : float
         low pass filter
-    highpass: float
+    highpass : float
         high pass filter
-    smoothing: float
+    smoothing : float
         smooth kernel size in fwhm
-    params: str
+    params : str
         parameter regressed out from bold
-    scrub: bool
-        scrubbing
-    cifti: bool
+    cifti : bool
         if cifti or bold
-    dummytime: float
+    dummytime : float
         volume(s) removed before postprocessing in seconds
-    output_dir: str
+    output_dir : str
         output directory
-    TR: float
+    TR : float
         repetition time in seconds
 
     Inputs
