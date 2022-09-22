@@ -40,9 +40,9 @@ def init_post_process_wf(
             wf = init_post_process_wf(
                 mem_gb=0.1,
                 TR=2.,
-                lower_bpf=6.,
-                upper_bpf=60.,
-                bpf_order=1,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
                 smoothing=6,
                 bold_file="/path/to/file.nii.gz",
                 params="36P",

@@ -43,7 +43,7 @@ def init_writederivatives_wf(
                 smoothing=6,
                 params="36P",
                 cifti=False,
-                dummytime=4,
+                dummytime=0,
                 output_dir=".",
                 TR=2.,
                 name="fcons_ts_wf",
