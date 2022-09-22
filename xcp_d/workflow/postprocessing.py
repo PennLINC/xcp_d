@@ -54,46 +54,27 @@ def init_post_process_wf(
 
     Parameters
     ----------
+    mem_gb : float
     TR: float
-         Repetition time in second
-    bold_file: str
-        bold file for post processing
+        Repetition time in second
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        afni depsike
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max, : float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    bpf_order : int
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_confounds: str
-        path to custom nuissance regressors
+    bold_file: str
+        bold file for post processing
+    params: str
+        nuissance regressors to be selected from fmriprep regressors
+    cifti : bool
     dummytime: float
         the first few seconds to be removed before postprocessing
-    initial_volumes_to_drop: int
-        the first volumes to be removed before postprocessing
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    name : str
+        Default is "post_process_wf".
 
     Inputs
     ------

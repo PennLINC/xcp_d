@@ -87,44 +87,45 @@ def init_ciftipostprocess_wf(
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
+    cifti_file
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        afni depsike
+    bpf_order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int
         order for motion filter
+    bandpass_filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
         respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
     head_radius : float
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    output_dir : str
+        Directory in which to save xcp_d output
     custom_confounds: str
         path to cusrtom nuissance regressors
-    scrub: bool
-        remove the censored volumes
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
     dummytime: float
         the first few seconds to be removed before postprocessing
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    mni_to_t1w,
+    despike: bool
+        afni depsike
+    num_cifti,
+    layout : BIDSLayout object
+        BIDS dataset layout
+    name : str
+        Default is 'cifti_postprocess_wf'.
 
     Inputs
     ------

@@ -40,17 +40,18 @@ def init_fcon_ts_wf(
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
     mem_gb: float
         memory size in gigabytes
-    tw1_to_native: str
+    t1w_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
+    mni_to_t1w
+    omp_nthreads
+    bold_file: str
+        bold file for post processing
+    name
 
     Inputs
     ------
-    bold_file
-        bold file from frmiprep
     clean_bold
         clean bold after filtered out nuisscance and filtering
     ref_file

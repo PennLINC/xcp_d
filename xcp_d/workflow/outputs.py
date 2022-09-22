@@ -69,6 +69,7 @@ def init_writederivatives_wf(
         output directory
     TR : float
         repetition time in seconds
+    name : str
 
     Inputs
     ------

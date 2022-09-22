@@ -188,6 +188,7 @@ def init_surface_reho_wf(
         Memory size in gigabytes.
     omp_nthreads : int
         Maximum number of threads an individual process may use.
+    name : str
 
     Inputs
     ------
@@ -272,6 +273,7 @@ def init_3d_reho_wf(
         Memory size in gigabytes.
     omp_nthreads : int
         Maximum number of threads an individual process may use.
+    name : str
 
     Inputs
     ------

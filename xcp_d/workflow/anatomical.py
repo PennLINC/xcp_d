@@ -72,24 +72,28 @@ def init_anatomical_wf(
     Parameters
     ----------
     omp_nthreads : int
-        number of threads
+        Number of threads.
     fmri_dir : str
-        fmri output directory
+        Path to the BIDS derivatives directory.
     subject_id : str
         subject id
     output_dir : str
-        output directory
+        Output directory for xcp_d derivatives.
     t1w_to_mni : str
-        t1w to MNI transform
-    name : str
-        workflow name
+        Path to the T1w to MNI transform file.
+    input_type : {"fmriprep", "dcan", "hcp"}
+        The format of the BIDS derivatives.
+    mem_gb : float
+        The memory limit, in gigabytes.
+    name : str, optional
+        Workflow name. Default is "anatomical_wf".
 
     Inputs
     ------
-    t1w: str
-        t1w file
-    t1w_seg: str
-        t1w segmentation file
+    t1w : str
+        Path to the T1w file.
+    t1w_seg : str
+        Path to the T1w segmentation file.
     """
     workflow = Workflow(name=name)
 
