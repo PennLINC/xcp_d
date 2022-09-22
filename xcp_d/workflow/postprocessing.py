@@ -221,8 +221,7 @@ def init_pre_smoothing(mem_gb,
                        omp_nthreads,
                        cifti=False,
                        name="presmoothing"):
-    """Smooth input BOLD before postprocessing"""
-
+    """Smooth input BOLD before postprocessing."""
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
                         name='inputnode')
