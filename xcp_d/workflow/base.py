@@ -101,13 +101,12 @@ def init_xcpd_wf(
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
         BIDS dataset layout
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
+    %(lower_bpf)s
+    %(upper_bpf)s
     despike: bool
         afni depsike
-    analysis_level: str
+    %(bpf_order)s
+    %(analysis_level)s
         only option is 'participant'
     motion_filter_type: str
         respiratory motion filter type: lp or notch
@@ -143,6 +142,8 @@ def init_xcpd_wf(
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(input_type)s
+    name
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
@@ -249,14 +250,13 @@ def init_subject_wf(
 
     Parameters
     ----------
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
+    %(lower_bpf)s
+    %(upper_bpf)s
     despike: bool
         afni depsike
+    %(bpf_order)s
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int
@@ -288,6 +288,8 @@ def init_subject_wf(
         path to custom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(input_type)s
+    name
     """
     layout, subj_data = collect_data(bids_dir=fmri_dir,
                                      participant_label=subject_id,

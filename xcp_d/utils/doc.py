@@ -41,6 +41,11 @@ work_dir : :obj:`str`
     Directory in which to store workflow execution state and temporary files.
 """
 
+docdict["analysis_level"] = """
+analysis_level : {"participant"}
+    The analysis level for ``xcp_d``. Must be specified as "participant".
+"""
+
 docdict["t1w_to_mni"] = """
 t1w_to_mni : :obj:`str`
     Path to the T1w-to-MNI transform file.
@@ -58,6 +63,31 @@ params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \
           "aroma", "aroma_gsr", "custom"}, optional
     Shorthand for the parameter set to extract from the confounds TSV.
     Default is "36P", most expansive option.
+"""
+
+docdict["input_type"] = """
+input_type : {"fmriprep", "dcan", "hcp"}
+    The format of the BIDS derivatives.
+"""
+
+docdict["lower_bpf"] = """
+lower_bpf : :obj:`float`
+    Lower cut-off frequency for the Butterworth bandpass filter, in Hertz.
+    The bandpass filter is applied to the fMRI data after post-processing and denoising.
+    This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
+"""
+
+docdict["upper_bpf"] = """
+upper_bpf : :obj:`float`
+    Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
+    The bandpass filter is applied to the fMRI data after post-processing and denoising.
+    This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
+"""
+
+docdict["bpf_order"] = """
+bpf_order : :obj:`int`
+    Number of filter coefficients for Butterworth bandpass filter.
+    This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
 """
 
 docdict_indented = {}

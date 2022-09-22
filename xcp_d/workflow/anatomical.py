@@ -79,10 +79,8 @@ def init_anatomical_wf(
         subject id
     %(output_dir)s
     %(t1w_to_mni)s
-    input_type : {"fmriprep", "dcan", "hcp"}
-        The format of the BIDS derivatives.
-    mem_gb : float
-        The memory limit, in gigabytes.
+    %(input_type)s
+    %(mem_gb)s
     name : str, optional
         Workflow name. Default is "anatomical_wf".
 

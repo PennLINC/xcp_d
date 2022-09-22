@@ -97,11 +97,9 @@ def init_boldpostprocess_wf(
 
     Parameters
     ----------
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    bpf_order
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int

@@ -59,11 +59,9 @@ def init_post_process_wf(
     %(mem_gb)s
     TR: float
         Repetition time in second
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    bpf_order : int
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     bold_file: str
