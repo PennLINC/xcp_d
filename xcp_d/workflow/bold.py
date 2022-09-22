@@ -4,7 +4,6 @@
 
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_boldpostprocess_wf
 
 """
 import os
@@ -42,28 +41,30 @@ from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_boldpostprocess_wf(lower_bpf,
-                            upper_bpf,
-                            bpf_order,
-                            motion_filter_type,
-                            motion_filter_order,
-                            bandpass_filter,
-                            band_stop_min,
-                            band_stop_max,
-                            smoothing,
-                            bold_file,
-                            head_radius,
-                            params,
-                            custom_confounds,
-                            omp_nthreads,
-                            dummytime,
-                            output_dir,
-                            fd_thresh,
-                            num_bold,
-                            mni_to_t1w,
-                            despike,
-                            layout=None,
-                            name='bold_postprocess_wf'):
+def init_boldpostprocess_wf(
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    bold_file,
+    head_radius,
+    params,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    output_dir,
+    fd_thresh,
+    num_bold,
+    mni_to_t1w,
+    despike,
+    layout=None,
+    name='bold_postprocess_wf',
+):
     """Organize the bold processing workflow.
 
     Workflow Graph
@@ -92,7 +93,8 @@ def init_boldpostprocess_wf(lower_bpf,
                 num_bold,
                 template='MNI152NLin2009cAsym',
                 layout=None,
-                name='bold_postprocess_wf')
+                name='bold_postprocess_wf',
+            )
 
     Parameters
     ----------
@@ -406,7 +408,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
     )
 
-# Remove TR first:
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,

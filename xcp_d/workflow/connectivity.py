@@ -2,10 +2,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for extracting time series and computing functional connectivity.
 
-functional connectvity matrix
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_fcon_ts_wf
-.. autofunction:: init_cifti_conts_wf
+functional connectivity matrix
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 """
 
 import nilearn as nl
@@ -33,13 +32,15 @@ def init_fcon_ts_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
                 mem_gb,
                 bold_file,
                 tw1_to_native,
                 name="fcons_ts_wf",
-             )
+            )
+
     Parameters
     ----------
     bold_file: str
@@ -48,6 +49,7 @@ def init_fcon_ts_wf(
         memory size in gigabytes
     tw1_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
+
     Inputs
     ------
     bold_file
@@ -382,13 +384,14 @@ def init_cifti_conts_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
                 mem_gb,
                 bold_file,
                 tw1_to_native,
                 name="fcons_ts_wf",
-             )
+            )
 
     Parameters
     ----------

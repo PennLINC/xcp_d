@@ -3,8 +3,7 @@
 """Workflows for post-processing BOLD data.
 
 post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_post_process_wf
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 """
 import numpy as np
@@ -22,24 +21,26 @@ from xcp_d.utils.utils import stringforparams
 
 
 def init_post_process_wf(
-        mem_gb,
-        TR,
-        lower_bpf,
-        upper_bpf,
-        bpf_order,
-        smoothing,
-        bold_file,
-        params,
-        cifti=False,
-        dummytime=0,
-        fd_thresh=0.2,
-        name="post_process_wf"):
+    mem_gb,
+    TR,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    smoothing,
+    bold_file,
+    params,
+    cifti=False,
+    dummytime=0,
+    fd_thresh=0.2,
+    name="post_process_wf",
+):
     """Organize workflows including selecting confound matrix, regression, and filtering.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows import init_post_process_wf
             wf = init_post_process_wf(
                 mem_gb,
@@ -55,7 +56,7 @@ def init_post_process_wf(
                 dummytime,
                 fd_thresh,
                 name="post_process_wf",
-                )
+            )
 
     Parameters
     ----------
@@ -216,11 +217,13 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def init_resd_smoothing(mem_gb,
-                        smoothing,
-                        omp_nthreads,
-                        cifti=False,
-                        name="smoothing"):
+def init_resd_smoothing(
+    mem_gb,
+    smoothing,
+    omp_nthreads,
+    cifti=False,
+    name="smoothing",
+):
     """Smooth BOLD residuals."""
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),

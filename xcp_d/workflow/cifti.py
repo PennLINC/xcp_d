@@ -3,8 +3,7 @@
 """Workflows for post-processing CIFTI-format BOLD data.
 
 post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_ciftipostprocess_wf
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 """
 import os
@@ -34,28 +33,30 @@ from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_ciftipostprocess_wf(cifti_file,
-                             lower_bpf,
-                             upper_bpf,
-                             bpf_order,
-                             motion_filter_type,
-                             motion_filter_order,
-                             bandpass_filter,
-                             band_stop_min,
-                             band_stop_max,
-                             smoothing,
-                             head_radius,
-                             params,
-                             output_dir,
-                             custom_confounds,
-                             omp_nthreads,
-                             dummytime,
-                             fd_thresh,
-                             mni_to_t1w,
-                             despike,
-                             num_cifti,
-                             layout=None,
-                             name='cifti_process_wf'):
+def init_ciftipostprocess_wf(
+    cifti_file,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    head_radius,
+    params,
+    output_dir,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    fd_thresh,
+    mni_to_t1w,
+    despike,
+    num_cifti,
+    layout=None,
+    name='cifti_process_wf',
+):
     """Organize the cifti processing workflow.
 
     Workflow Graph
@@ -85,7 +86,8 @@ def init_ciftipostprocess_wf(cifti_file,
                 num_cifti,
                 template='MNI152NLin2009cAsym',
                 layout=None,
-                name='cifti_postprocess_wf',)
+                name='cifti_postprocess_wf',
+            )
 
     Parameters
     ----------

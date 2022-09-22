@@ -5,8 +5,6 @@
 post processing
 ^^^^^^^^^^^^^^^
 
-.. autofunction:: init_xcpd_wf
-
 """
 
 import glob
@@ -35,32 +33,34 @@ from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
 
-def init_xcpd_wf(layout,
-                 lower_bpf,
-                 upper_bpf,
-                 despike,
-                 bpf_order,
-                 motion_filter_type,
-                 motion_filter_order,
-                 band_stop_min,
-                 band_stop_max,
-                 bandpass_filter,
-                 fmri_dir,
-                 omp_nthreads,
-                 cifti,
-                 task_id,
-                 head_radius,
-                 params,
-                 subject_list,
-                 analysis_level,
-                 smoothing,
-                 custom_confounds,
-                 output_dir,
-                 work_dir,
-                 dummytime,
-                 fd_thresh,
-                 input_type='fmriprep',
-                 name='xcpd_wf'):
+def init_xcpd_wf(
+    layout,
+    lower_bpf,
+    upper_bpf,
+    despike,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    bandpass_filter,
+    fmri_dir,
+    omp_nthreads,
+    cifti,
+    task_id,
+    head_radius,
+    params,
+    subject_list,
+    analysis_level,
+    smoothing,
+    custom_confounds,
+    output_dir,
+    work_dir,
+    dummytime,
+    fd_thresh,
+    input_type='fmriprep',
+    name='xcpd_wf',
+):
     """Build and organize execution of xcp_d pipeline.
 
     It also connects the subworkflows under the xcp_d workflow.
@@ -69,6 +69,7 @@ def init_xcpd_wf(layout,
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflow.base import init_xcpd_wf
             wf = init_xcpd_wf(
                 layout,
@@ -201,6 +202,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows.base import init_single_bold_wf
             wf = init_single_bold_wf(
                 layout,
@@ -225,8 +227,9 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
                 smoothing,
                 custom_confounds,
                 bids_filters,
-                output_dir
-             )
+                output_dir,
+            )
+
     Parameters
     ----------
     lower_bpf : float

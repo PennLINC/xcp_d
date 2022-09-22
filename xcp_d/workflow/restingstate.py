@@ -3,8 +3,7 @@
 """Workflows for calculating resting state-specific metrics.
 
 post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_post_process_wf
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 """
 from nipype.interfaces import utility as niu
@@ -19,20 +18,23 @@ from xcp_d.interfaces.workbench import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
 
-def init_compute_alff_wf(mem_gb,
-                         TR,
-                         lowpass,
-                         highpass,
-                         smoothing,
-                         cifti,
-                         omp_nthreads,
-                         name="compute_alff_wf"):
+def init_compute_alff_wf(
+    mem_gb,
+    TR,
+    lowpass,
+    highpass,
+    smoothing,
+    cifti,
+    omp_nthreads,
+    name="compute_alff_wf",
+):
     """Compute alff for both nifti and cifti.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows import init_compute_alff_wf
             wf = init_compute_alff_wf(
                 mem_gb,
@@ -42,7 +44,7 @@ def init_compute_alff_wf(mem_gb,
                 smoothing,
                 cifti,
                 name="compute_alff_wf",
-             )
+            )
 
     Parameters
     ----------
@@ -165,20 +167,23 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     return workflow
 
 
-def init_surface_reho_wf(mem_gb,
-                         omp_nthreads,
-                         name="surface_reho_wf"):
+def init_surface_reho_wf(
+    mem_gb,
+    omp_nthreads,
+    name="surface_reho_wf",
+):
     """Compute ReHo from surface (CIFTI) data.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows import init_surface_reho_wf
             wf = init_surface_reho_wf(
                 mem_gb,
                 name="surface_reho_wf",
-             )
+            )
 
     Parameters
     ----------
@@ -254,12 +259,13 @@ def init_3d_reho_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflows import init_3d_reho_wf
             wf = init_3d_reho_wf(
                 mem_gb,
                 smoothing,
                 name="afni_reho_wf",
-             )
+            )
 
     Parameters
     ----------
