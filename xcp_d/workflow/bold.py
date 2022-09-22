@@ -132,7 +132,7 @@ def init_boldpostprocess_wf(
         If True, run 3dDespike from AFNI
     layout : BIDSLayout object
         BIDS dataset layout
-    name : str
+    %(name)s
 
     Inputs
     ------

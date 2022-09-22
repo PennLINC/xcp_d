@@ -143,7 +143,7 @@ def init_xcpd_wf(
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(input_type)s
-    name
+    %(name)s
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
@@ -289,7 +289,7 @@ def init_subject_wf(
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(input_type)s
-    name
+    %(name)s
     """
     layout, subj_data = collect_data(bids_dir=fmri_dir,
                                      participant_label=subject_id,

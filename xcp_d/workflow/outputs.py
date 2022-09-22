@@ -70,7 +70,8 @@ def init_writederivatives_wf(
         output directory
     TR : float
         repetition time in seconds
-    name : str
+    %(name)s
+        Default is "fcons_ts_wf".
 
     Inputs
     ------

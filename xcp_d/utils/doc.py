@@ -90,6 +90,11 @@ bpf_order : :obj:`int`
     This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
 """
 
+docdict["name"] = """
+name : :obj:`str`, optional
+    Name of the workflow. This is used for working directories and workflow graphs.
+"""
+
 docdict_indented = {}
 
 

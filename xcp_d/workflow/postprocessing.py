@@ -72,7 +72,7 @@ def init_post_process_wf(
         the first few seconds to be removed before postprocessing
     fd_thresh
         Criterion for flagging framewise displacement outliers
-    name : str
+    %(name)s
         Default is "post_process_wf".
 
     Inputs

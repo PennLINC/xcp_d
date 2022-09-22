@@ -59,8 +59,8 @@ def init_compute_alff_wf(
         if cifti or bold
     omp_nthreads : int
         number of threads
-    name : str, optional
-        Name of the workflow.
+    %(name)s
+        Default is "compute_alff_wf".
 
     Inputs
     ------
@@ -188,7 +188,8 @@ def init_surface_reho_wf(
     ----------
     %(mem_gb)s
     %(omp_nthreads)s
-    name : str
+    %(name)s
+        Default is "surface_reho_wf".
 
     Inputs
     ------
@@ -272,8 +273,8 @@ def init_3d_reho_wf(
     ----------
     %(mem_gb)s
     %(omp_nthreads)s
-    name : str, optional
-        Name of the workflow. Default is "afni_reho_wf".
+    %(name)s
+        Default is "afni_reho_wf".
 
     Inputs
     ------

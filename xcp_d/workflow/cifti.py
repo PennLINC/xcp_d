@@ -121,7 +121,7 @@ def init_ciftipostprocess_wf(
     num_cifti,
     layout : BIDSLayout object
         BIDS dataset layout
-    name : str
+    %(name)s
         Default is 'cifti_postprocess_wf'.
 
     Inputs

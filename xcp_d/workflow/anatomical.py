@@ -81,8 +81,8 @@ def init_anatomical_wf(
     %(t1w_to_mni)s
     %(input_type)s
     %(mem_gb)s
-    name : str, optional
-        Workflow name. Default is "anatomical_wf".
+    %(name)s
+        Default is "anatomical_wf".
 
     Inputs
     ------
