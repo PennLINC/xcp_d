@@ -35,7 +35,7 @@ def init_writederivatives_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows import init_writederivatives_wf
+            from xcp_d.workflow.outputs import init_writederivatives_wf
             wf = init_writederivatives_wf(
                 mem_gb,
                 bold_file,

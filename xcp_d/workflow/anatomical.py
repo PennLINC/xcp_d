@@ -62,7 +62,7 @@ def init_anatomical_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows import init_anatomical_wf
+            from xcp_d.workflow.anatomical import init_anatomical_wf
             wf = init_anatomical_wf(
                 omp_nthreads,
                 fmri_dir,

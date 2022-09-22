@@ -203,7 +203,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.base import init_single_bold_wf
+            from xcp_d.workflow.base import init_single_bold_wf
             wf = init_single_bold_wf(
                 layout,
                 lower_bpf,

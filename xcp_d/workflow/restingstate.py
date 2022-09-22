@@ -35,7 +35,7 @@ def init_compute_alff_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows import init_compute_alff_wf
+            from xcp_d.workflow.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
                 mem_gb,
                 TR,
@@ -179,7 +179,7 @@ def init_surface_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows import init_surface_reho_wf
+            from xcp_d.workflow.restingstate import init_surface_reho_wf
             wf = init_surface_reho_wf(
                 mem_gb,
                 name="surface_reho_wf",
@@ -260,7 +260,7 @@ def init_3d_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows import init_3d_reho_wf
+            from xcp_d.workflow.restingstate import init_3d_reho_wf
             wf = init_3d_reho_wf(
                 mem_gb,
                 smoothing,
