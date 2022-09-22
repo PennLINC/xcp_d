@@ -107,6 +107,8 @@ def init_writederivatives_wf(
         reho left hemisphere
     reho_rh
         reho right hemisphere
+    tmask
+        binary mask of frames with FD below specified threshold
     """
     workflow = Workflow(name=name)
 
@@ -117,7 +119,7 @@ def init_writederivatives_wf(
         'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts', 'sc917_fc',
         'sc1017_ts', 'sc1017_fc', 'reho_lh', 'reho_rh', 'reho_out', 'gs360_ts',
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
-        'fd'
+        'fd', 'tmask'
     ]),
         name='inputnode')
 
@@ -416,6 +418,15 @@ def init_writederivatives_wf(
                                          run_without_submitting=True,
                                          mem_gb=1)
 
+        write_derivative_tmask_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                                dismiss_entities=['desc'],
+                                                                desc='tmask',
+                                                                extension='.tsv',
+                                                                source_file=bold_file),
+                                            name='dv_tmask_wf',
+                                            run_without_submitting=True,
+                                            mem_gb=1)
+
         workflow.connect([
             (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
             (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
@@ -448,6 +459,9 @@ def init_writederivatives_wf(
             (inputnode, write_derivative_gd333fc_wf, [('gd333_fc', 'in_file')]),
             (inputnode, write_derivative_ts50fc_wf, [('ts50_fc', 'in_file')]),
             (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
+            (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')])
+
+
         ])
         if smoothing:  # if smoothed
             # Write out detivatives via DerivativesDataSink
@@ -864,6 +878,16 @@ def init_writederivatives_wf(
             name='write_derivative_fd_wf',
             run_without_submitting=True,
             mem_gb=1)
+        
+        write_derivative_tmask_wf = pe.Node(DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=['desc'],
+            desc='tmask',
+            extension='.tsv',
+            source_file=bold_file),
+            name='dv_tmask_wf',
+            run_without_submitting=True,
+            mem_gb=1)
 
         workflow.connect([
             (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
@@ -898,6 +922,7 @@ def init_writederivatives_wf(
             (inputnode, write_derivative_reholh_wf, [('reho_lh', 'in_file')]),
             (inputnode, write_derivative_rehorh_wf, [('reho_rh', 'in_file')]),
             (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
+            (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')])
         ])
 
         if smoothing:  # If smoothed
