@@ -6,9 +6,7 @@ docdict contains the standard documentation entries used across xcp_d.
 source: Eric Larson and MNE-python team.
 https://github.com/mne-tools/mne-python/blob/main/mne/utils/docs.py
 """
-
 import sys
-
 
 ###################################
 # Standard documentation entries
