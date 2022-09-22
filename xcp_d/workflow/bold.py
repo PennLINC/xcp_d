@@ -14,7 +14,7 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from num2words import num2words
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
@@ -714,9 +714,3 @@ def _t12native(fname):  # TODO: Update names and refactor
     t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
 
     return t12ref
-
-
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'
