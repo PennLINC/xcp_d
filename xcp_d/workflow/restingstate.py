@@ -57,8 +57,7 @@ def init_compute_alff_wf(
         smooth kernel size in fwhm
     cifti : bool
         if cifti or bold
-    omp_nthreads : int
-        number of threads
+    %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".
 

@@ -260,8 +260,7 @@ def init_subject_wf(
     %(band_stop_max)s
     fmriprep_dir : Path
         fmriprep output directory
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
+    %(omp_nthreads)s
     cifti : bool
         To postprocessed cifti files instead of nifti
     task_id : str or None

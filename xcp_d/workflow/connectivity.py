@@ -46,7 +46,7 @@ def init_fcon_ts_wf(
     t1w_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
     mni_to_t1w
-    omp_nthreads
+    %(omp_nthreads)s
     bold_file: str
         bold file for post processing
     name
@@ -395,6 +395,7 @@ def init_cifti_conts_wf(
     Parameters
     ----------
     %(mem_gb)s
+    %(omp_nthreads)s
 
     Inputs
     ------

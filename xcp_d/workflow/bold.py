@@ -114,8 +114,7 @@ def init_boldpostprocess_wf(
     %(params)s
     custom_confounds: str
         path to cusrtom nuissance regressors
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
+    %(omp_nthreads)s
     dummytime: float
         the time in seconds to be removed before postprocessing
     output_dir : str
