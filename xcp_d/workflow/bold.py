@@ -1,33 +1,43 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing the BOLD data.
+
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_boldpostprocess_wf
 
 """
 import os
-import numpy as np
+
 import nibabel as nb
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-from nipype import logging
+import numpy as np
 import sklearn
-from ..interfaces import computeqcplot
+from nipype import logging
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from ..utils import (bid_derivative, stringforparams, get_maskfiles,
-                     get_transformfilex, get_transformfile)
-from ..interfaces import FunctionalSummary
-from templateflow.api import get as get_template
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
-from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_pre_smoothing, init_resd_smoothing
-from .execsummary import init_execsummary_wf
 from num2words import num2words
-from ..workflow import (init_fcon_ts_wf, init_compute_alff_wf, init_3d_reho_wf)
-from .outputs import init_writederivatives_wf
-from ..interfaces import (interpolate, RemoveTR, CensorScrub)
-from ..utils import DespikePatch
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.regression import Regress
+from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.utils.utils import (
+    get_maskfiles,
+    get_transformfile,
+    get_transformfilex,
+    stringforparams,
+)
+from xcp_d.workflow.connectivity import init_fcon_ts_wf
+from xcp_d.workflow.execsummary import init_execsummary_wf
+from xcp_d.workflow.outputs import init_writederivatives_wf
+from xcp_d.workflow.postprocessing import init_pre_smoothing, init_resd_smoothing
+from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -53,11 +63,9 @@ def init_boldpostprocess_wf(lower_bpf,
                             num_bold,
                             mni_to_t1w,
                             despike,
-                            brain_template='MNI152NLin2009cAsym',
                             layout=None,
                             name='bold_postprocess_wf'):
-    """
-    This workflow organizes bold processing workflow.
+    """Organize the bold processing workflow.
 
     Workflow Graph
         .. workflow::
@@ -173,55 +181,53 @@ def init_boldpostprocess_wf(lower_bpf,
     qc_file
         quality control files
     """
-
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
     if TR is None:
         TR = layout.get_tr(bold_file)
     if not isinstance(TR, float):
-        raise Exception("Unable to determine TR of {}".format(bold_file))
+        raise Exception(f"Unable to determine TR of {bold_file}")
 
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
         confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception as exc:
-        raise Exception("Unable to find confounds file for {}.".format(bold_file))
+    except Exception:
+        raise Exception(f"Unable to find confounds file for {bold_file}.")
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """
-For each of the {num_bold} BOLD series found per subject (across all
+    workflow.__desc__ = f"""
+For each of the {num2words(num_bold)} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
-""".format(num_bold=num2words(num_bold))
+"""
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data, the first {nvol} were discarded, then both
+        workflow.__desc__ = workflow.__desc__ + f""" \
+before nuisance regression and filtering of the data, the first
+{num2words(initial_volumes_to_drop)} were discarded, then both
 the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with
 framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
+"""
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = workflow.__desc__ + f""" \
 before nuisance regression and filtering of the data, both the nuisance regressors and
 volumes were demean and detrended. Volumes with framewise-displacement greater than
 {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
 and excluded from nuisance regression.
-""".format(fd_thresh=fd_thresh)
+"""
 
-    workflow.__desc__ = workflow.__desc__ + """ \
-{regressors} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
+    workflow.__desc__ = workflow.__desc__ + f""" \
+{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
 regressed from the BOLD data using linear regression - as implemented in Scikit-Learn
-{sclver} [@scikit-learn]. Residual timeseries from this regression were then band-pass
-filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
- """.format(regressors=stringforparams(params=params),
-            sclver=sklearn.__version__,
-            lowpass=upper_bpf,
-            highpass=lower_bpf)
+{sklearn.__version__} [@scikit-learn].
+Residual timeseries from this regression were then band-pass filtered to retain signals within the
+{lower_bpf}-{upper_bpf} Hz frequency band.
+ """
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
@@ -252,7 +258,6 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                  mni_to_t1w=mni_to_t1w,
                                  t1w_to_native=_t12native(bold_file),
                                  bold_file=bold_file,
-                                 brain_template=brain_template,
                                  name="fcons_ts_wf",
                                  omp_nthreads=omp_nthreads)
 
@@ -278,7 +283,6 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
                                                    lowpass=upper_bpf,
                                                    highpass=lower_bpf,
                                                    TR=TR,
-                                                   omp_nthreads=omp_nthreads,
                                                    name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(
@@ -320,14 +324,14 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -390,23 +394,28 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,
-                                     bold_file=bold_file,
-                                     dummytime=dummytime,
-                                     t1w_mask=t1w_mask,
-                                     template_mask=str(
-                                         get_template(
-                                             'MNI152NLin2009cAsym',
-                                             resolution=2,
-                                             desc='brain',
-                                             suffix='mask',
-                                             extension=['.nii', '.nii.gz'])),
-                                     head_radius=head_radius,
-                                     low_freq=band_stop_max,
-                                     high_freq=band_stop_min),
-                       name="qc_report",
-                       mem_gb=mem_gbx['timeseries'],
-                       n_procs=omp_nthreads)
+    qcreport = pe.Node(
+        QCPlot(
+            TR=TR,
+            bold_file=bold_file,
+            dummytime=dummytime,
+            t1w_mask=t1w_mask,
+            template_mask=str(
+                get_template(
+                    'MNI152NLin2009cAsym',
+                    resolution=2,
+                    desc='brain',
+                    suffix='mask',
+                    extension=['.nii', '.nii.gz']
+                )
+            ),
+            head_radius=head_radius,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min),
+        name="qc_report",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads,
+    )
 
     # if presmoothing is enabled, use the presmoothed bold file as input to 
     # further preprocessing
@@ -431,8 +440,7 @@ filtered to retain signals within the  {highpass}-{lowpass} Hz frequency band.
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
                      custom_confounds=custom_confounds),
             name="remove_dummy_time",
-            mem_gb=0.1*mem_gbx['timeseries'])
-
+            mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (bolddatanode, rm_dummytime, [('bold_file', 'bold_file')]),
@@ -724,9 +732,7 @@ def _get_ref_mask(fname):
 
 
 def _t12native(fname):  # TODO: Update names and refactor
-    '''
-    Takes in bold filename, finds transform from T1W to native space
-    '''
+    """Take in bold filename and find transform from T1W to native space."""
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
     fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
@@ -736,5 +742,7 @@ def _t12native(fname):  # TODO: Update names and refactor
     return t12ref
 
 
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'

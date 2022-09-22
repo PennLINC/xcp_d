@@ -1,20 +1,17 @@
+"""ANTS interfaces."""
 import logging
 import os
-from nipype.interfaces.base import (
-    TraitedSpec,
-    CommandLineInputSpec,
-    BaseInterfaceInputSpec,
-    CommandLine,
-    File,
-    traits,
-    Str,
-    InputMultiPath,
-    isdefined,
-    InputMultiObject,
-    OutputMultiObject,
-    SimpleInterface,
-)
+
 from nipype.interfaces.ants.base import ANTSCommand, ANTSCommandInputSpec
+from nipype.interfaces.base import (
+    CommandLine,
+    CommandLineInputSpec,
+    File,
+    InputMultiPath,
+    Str,
+    TraitedSpec,
+    traits,
+)
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -36,12 +33,23 @@ class _ConvertTransformFileOutputSpec(TraitedSpec):
 
 
 class ConvertTransformFile(CommandLine):
+    """Wrapper for the ANTS ConvertTransformFile command.
+
+    Utility to read in a transform file (presumed to be in binary format) and output it in various
+    formats.
+    Default output is legacy human-readable text format.
+    Without any options, the output filename extension must be .txt or .tfm to signify a
+    text-formatted transform file.
+    """
+
     _cmd = "ConvertTransformFile"
     input_spec = _ConvertTransformFileInputSpec
     output_spec = _ConvertTransformFileOutputSpec
 
 
-class CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
+class _CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
+    """Input specification for CompositeInvTransformUtil."""
+
     process = traits.Enum(
         "assemble",
         "disassemble",
@@ -72,16 +80,20 @@ class CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
     )
 
 
-class CompositeInvTransformUtilOutputSpec(TraitedSpec):
+class _CompositeInvTransformUtilOutputSpec(TraitedSpec):
+    """Output specification for CompositeInvTransformUtil."""
+
     affine_transform = File(desc="Affine transform component")
     displacement_field = File(desc="Displacement field component")
     out_file = File(desc="Compound transformation file")
 
 
 class CompositeInvTransformUtil(ANTSCommand):
-    """
+    """Wrapper for the ANTS CompositeTransformUtil command.
+
     ANTs utility which can combine or break apart transform files into their individual
     constituent components.
+
     Examples
     --------
     >>> from nipype.interfaces.ants import CompositeInvTransformUtil
@@ -98,18 +110,20 @@ class CompositeInvTransformUtil(ANTSCommand):
     >>> tran.inputs.out_file = 'my.h5'
     >>> tran.inputs.in_file = ['AffineTransform.mat', 'DisplacementFieldTransform.nii.gz']
     >>> tran.cmdline
-    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat DisplacementFieldTransform.nii.gz '
+    'CompositeTransformUtil --assemble my.h5 AffineTransform.mat
+     DisplacementFieldTransform.nii.gz '
     >>> tran.run()  # doctest: +SKIP
     """
 
     _cmd = "CompositeTransformUtil"
-    input_spec = CompositeInvTransformUtilInputSpec
-    output_spec = CompositeInvTransformUtilOutputSpec
+    input_spec = _CompositeInvTransformUtilInputSpec
+    output_spec = _CompositeInvTransformUtilOutputSpec
 
     def _num_threads_update(self):
-        """
+        """Do not update the number of threads environment variable.
+
         CompositeInvTransformUtil ignores environment variables,
-        so override environment update from ANTSCommand class
+        so override environment update from ANTSCommand class.
         """
         pass
 
@@ -124,12 +138,10 @@ class CompositeInvTransformUtil(ANTSCommand):
         outputs = self.output_spec().get()
         if self.inputs.process == "disassemble":
             outputs["affine_transform"] = os.path.abspath(
-                "01_{}_AffineTransform.mat".format(self.inputs.output_prefix)
+                f"01_{self.inputs.output_prefix}_AffineTransform.mat"
             )
             outputs["displacement_field"] = os.path.abspath(
-                "00_{}_DisplacementFieldTransform.nii.gz".format(
-                    self.inputs.output_prefix
-                )
+                f"00_{self.inputs.output_prefix}_DisplacementFieldTransform.nii.gz"
             )
         if self.inputs.process == "assemble":
             outputs["out_file"] = os.path.abspath(self.inputs.out_file)

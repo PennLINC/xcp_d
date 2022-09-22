@@ -1,31 +1,41 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Surface plotting interfaces."""
 
-from ..utils import (surf2vol, get_regplot, generate_brain_sprite, plot_svgx,
-                     plotimage, ribbon_to_statmap)
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils.execsummary import (
+    generate_brain_sprite,
+    get_regplot,
+    ribbon_to_statmap,
+    surf2vol,
+)
+from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.plot import plot_svgx, plotimage
 
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _plotimgInputSpec(BaseInterfaceInputSpec):
+class _PlotImageInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc='plot image')
 
 
-class _plotimgOutputSpec(TraitedSpec):
+class _PlotImageOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc='out image')
 
 
 class PlotImage(SimpleInterface):
-    """
-    Python class to plot x,y, and z  of image data
-    """
-    input_spec = _plotimgInputSpec
-    output_spec = _plotimgOutputSpec
+    """Python class to plot x,y, and z of image data."""
+
+    input_spec = _PlotImageInputSpec
+    output_spec = _PlotImageOutputSpec
 
     def _run_interface(self, runtime):
         self._results['out_file'] = fname_presuffix(self.inputs.in_file,
@@ -39,24 +49,22 @@ class PlotImage(SimpleInterface):
         return runtime
 
 
-class _surf2volInputSpec(BaseInterfaceInputSpec):
+class _SurftoVolumeInputSpec(BaseInterfaceInputSpec):
     template = File(exists=True, mandatory=True, desc="t1 image")
     left_surf = File(exists=True, mandatory=True, desc="left hemipshere")
     right_surf = File(exists=True, mandatory=True, desc="right hemipshere")
     scale = traits.Int(default_value=1, desc="scale factor for the surface")
 
 
-class _surf2volOutputSpec(TraitedSpec):
+class _SurftoVolumeOutputSpec(TraitedSpec):
     out_file = File(exists=True, manadatory=True, desc=" t1image")
 
 
 class SurftoVolume(SimpleInterface):
-    r"""
-    this class converts the freesurfer/gifti surface to volume
-    using ras2vox transform
-    """
-    input_spec = _surf2volInputSpec
-    output_spec = _surf2volOutputSpec
+    """This class converts the freesurfer/gifti surface to volume using ras2vox transform."""
+
+    input_spec = _SurftoVolumeInputSpec
+    output_spec = _SurftoVolumeOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -75,21 +83,20 @@ class SurftoVolume(SimpleInterface):
         return runtime
 
 
-class _brainplotxInputSpec(BaseInterfaceInputSpec):
+class _BrainPlotxInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="stats file")
     template = File(exists=True, mandatory=True, desc="mask file ")
 
 
-class _brainplotxOutputSpec(TraitedSpec):
+class _BrainPlotxOutputSpec(TraitedSpec):
     out_html = File(exists=True, manadatory=True, desc="zscore html")
 
 
 class BrainPlotx(SimpleInterface):
-    r"""
-    this class create brainsprite with overlay as stats image
-    """
-    input_spec = _brainplotxInputSpec
-    output_spec = _brainplotxOutputSpec
+    """This class create brainsprite with overlay as stats image."""
+
+    input_spec = _BrainPlotxInputSpec
+    output_spec = _BrainPlotxOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -108,23 +115,26 @@ class BrainPlotx(SimpleInterface):
         return runtime
 
 
-class _regplotInputSpec(BaseInterfaceInputSpec):
+class _RegPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="brain file")
     overlay = File(exists=True, mandatory=True, desc="overlay ")
     n_cuts = traits.Int(default_value=3, desc="number of cuts")
 
 
-class _regplotOutputSpec(TraitedSpec):
+class _RegPlotOutputSpec(TraitedSpec):
     out_file = File(exists=True, manadatory=True, desc="svg file")
 
 
 class RegPlot(SimpleInterface):
-    r"""
-    abandoned
+    """A registration plot.
 
+    Warning
+    -------
+    This class may have been abandoned.
     """
-    input_spec = _regplotInputSpec
-    output_spec = _regplotOutputSpec
+
+    input_spec = _RegPlotInputSpec
+    output_spec = _RegPlotOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -143,7 +153,7 @@ class RegPlot(SimpleInterface):
         return runtime
 
 
-class _plotsvgInputSpec(BaseInterfaceInputSpec):
+class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True, mandatory=True, desc="Raw data")
     regressed_data = File(exists=True,
                           mandatory=True,
@@ -155,7 +165,7 @@ class _plotsvgInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(default_value=1, desc="Repetition time")
 
 
-class _plotsvgOutputSpec(TraitedSpec):
+class _PlotSVGDataOutputSpec(TraitedSpec):
     before_process = File(exists=True,
                           manadatory=True,
                           desc=".SVG file before processing")
@@ -165,16 +175,16 @@ class _plotsvgOutputSpec(TraitedSpec):
 
 
 class PlotSVGData(SimpleInterface):
-    r"""
-    This class plots fd, dvars, and carpet plots of the bold data
-    before and after regression/filtering. It takes in the data
-    that's regressed, the data that's filtered and regressed, as
-    well as the segmentation files, TR, FD, bold_mask and unprocessed data.
+    """Plot fd, dvars, and carpet plots of the bold data before and after regression/filtering.
+
+    It takes in the data that's regressed, the data that's filtered and regressed,
+    as well as the segmentation files, TR, FD, bold_mask and unprocessed data.
 
     It outputs the .SVG files before after processing has taken place.
     """
-    input_spec = _plotsvgInputSpec
-    output_spec = _plotsvgOutputSpec
+
+    input_spec = _PlotSVGDataInputSpec
+    output_spec = _PlotSVGDataOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -203,25 +213,22 @@ class PlotSVGData(SimpleInterface):
         return runtime
 
 
-class _ribbonstatmapInputSpec(BaseInterfaceInputSpec):
+class _RibbontoStatmapInputSpec(BaseInterfaceInputSpec):
     ribbon = File(exists=True, mandatory=True, desc="ribbon ")
     # other settings or files will be added later from T2 ##
 
 
-class _ribbonstatmapOutputSpec(TraitedSpec):
+class _RibbontoStatmapOutputSpec(TraitedSpec):
     out_file = File(exists=True,
                     manadatory=True,
                     desc="ribbon > pial and white")
 
 
 class RibbontoStatmap(SimpleInterface):
-    r"""
-    this class plots of fd, dvars, carpet plots of bold data
-    before and after regression/filtering
+    """Plot of fd, dvars, carpet plots of bold data before and after regression/filtering."""
 
-    """
-    input_spec = _ribbonstatmapInputSpec
-    output_spec = _ribbonstatmapOutputSpec
+    input_spec = _RibbontoStatmapInputSpec
+    output_spec = _RibbontoStatmapOutputSpec
 
     def _run_interface(self, runtime):
 

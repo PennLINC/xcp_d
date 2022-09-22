@@ -1,34 +1,39 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-nifti functional connectivity
-"""
-from nilearn.input_data import NiftiLabelsMasker
-import numpy as np
-from scipy.stats import rankdata
-from scipy import signal
+"""Functions for calculating functional connectivity in NIFTI files."""
 import nibabel as nb
+import numpy as np
+from nilearn.input_data import NiftiLabelsMasker
+from scipy import signal
+from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 
 def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
-    """
-     This function used Nilearn *NiftiLabelsMasker*
-     to extact timeseries
-    in_file
-       bold file timeseries
-    atlas
-       atlas in the same space with bold
-    timeseries
-      extracted timesries filename
-    fconmatrix
-      functional connectivity matrix filename
+    """Use Nilearn NiftiLabelsMasker to extract timeseries.
 
+    Parameters
+    ----------
+    in_file : str
+        bold file timeseries
+    atlas : str
+        atlas in the same space with bold
+    timeseries : str
+        extracted timeseries filename
+    fconmatrix : str
+        functional connectivity matrix filename
+
+    Returns
+    -------
+    timeseries : str
+        extracted timeseries filename
+    fconmatrix : str
+        functional connectivity matrix filename
     """
     masker = NiftiLabelsMasker(labels_img=atlas,
                                smoothing_fwhm=None,
                                standardize=False)
-    # Use nilearn for time_series                            
+    # Use nilearn for time_series
     time_series = masker.fit_transform(in_file)
     # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
@@ -40,15 +45,23 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
 
 
 def compute_2d_reho(datat, adjacency_matrix):
-    """
-    https://www.sciencedirect.com/science/article/pii/S0165178119305384#bib0045
-    this function compute 2d reho
+    """Calculate ReHo on 2D data.
 
-    datat: numpy darray
-       data matrix in vertices by timepoints
-    adjacency_matrix : numpy matrix
-       surface adjacency matrix
+    Parameters
+    ----------
+    datat : numpy.ndarray of shape (V, T)
+        data matrix in vertices by timepoints
+    adjacency_matrix : numpy.ndarray of shape (V, V)
+        surface adjacency matrix
 
+    Returns
+    -------
+    KCC : numpy.ndarray of shape (V,)
+        ReHo values.
+
+    Notes
+    -----
+    From https://www.sciencedirect.com/science/article/pii/S0165178119305384#bib0045.
     """
     KCC = np.zeros(datat.shape[0])  # a zero for each voxel
 
@@ -64,7 +77,8 @@ def compute_2d_reho(datat, adjacency_matrix):
         for j in range(neidata.shape[0]):  # loop through each neighbour
             rankeddata[j, :] = rankdata(neidata[j, ])  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
-        # KC is the sum of the squared rankmean minus the timepoints into the mean of the rankmean squared
+        # KC is the sum of the squared rankmean minus the timepoints into
+        # the mean of the rankmean squared
         KC = np.sum(np.power(rankmean, 2)) - \
             timepoint * np.power(np.mean(rankmean), 2)
         # square number of neighbours, multiply by (cubed timepoint - timepoint)
@@ -76,9 +90,19 @@ def compute_2d_reho(datat, adjacency_matrix):
 
 
 def mesh_adjacency(hemi):
-    # surface sphere to be load from templateflow
-    # either left or right hemisphere
+    """Calculate adjacency matrix from mesh timeseries.
 
+    Parameters
+    ----------
+    hemi : {"L", "R"}
+        Surface sphere to be load from templateflow
+        Either left or right hemisphere
+
+    Returns
+    -------
+    numpy.ndarray
+        Adjacency matrix.
+    """
     surf = str(
         get_template("fsLR",
                      space='fsaverage',
@@ -105,21 +129,30 @@ def mesh_adjacency(hemi):
 
 
 def compute_alff(data_matrix, low_pass, high_pass, TR):
-    """
-     https://pubmed.ncbi.nlm.nih.gov/16919409/
+    """Compute amplitude of low-frequency fluctuation (ALFF).
 
-     compute ALFF
-    data_matrix: numpy darray
+    Parameters
+    ----------
+    data_matrix : numpy.ndarray
         data matrix points by timepoints
-    lowpass: numpy float
+    lowpass : float
         low pass frequency in Hz
-    highpass : numpy float
+    highpass : float
         high pass frequency in Hz
-    TR: numpy float
-       repetition time in seconds
+    TR : float
+        repetition time in seconds
+
+    Returns
+    -------
+    alff : numpy.ndarray
+        ALFF values.
+
+    Notes
+    -----
+    Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/.
     """
     fs = 1 / TR  # sampling frequency
-    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of 
+    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of
     # number of voxels
     for ii in range(data_matrix.shape[0]):  # Loop through the voxels
         # get array of sample frequencies + power spectrum density

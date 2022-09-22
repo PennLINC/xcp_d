@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
+"""The xcp_d preprocessing worklow.
+
 xcp_d preprocessing workflow
-=====
+============================
 """
 
-import os
-from pathlib import Path
-import logging
-import sys
 import gc
+import logging
+import os
+import sys
 import uuid
 import warnings
-from argparse import ArgumentParser
-from argparse import ArgumentDefaultsHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from pathlib import Path
 from time import strftime
+
 from niworkflows import NIWORKFLOWS_LOG
 
 warnings.filterwarnings("ignore")
@@ -25,11 +26,12 @@ logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
 logger = logging.getLogger('cli')
 
 
-def _warn_redirect(message, category, filename, lineno, file=None, line=None):
+def _warn_redirect(message, category):
     logger.warning('Captured warning (%s): %s', category, message)
 
 
 def check_deps(workflow):
+    """Check the dependencies for the workflow."""
     from nipype.utils.filemanip import which
     return sorted((node.interface.__class__.__name__, node.interface._cmd)
                   for node in workflow._get_all_nodes()
@@ -38,13 +40,10 @@ def check_deps(workflow):
 
 
 def get_parser():
-    """Build parser object"""
+    """Build parser object."""
+    from xcp_d.__about__ import __version__
 
-    from packaging.version import Version
-    from ..__about__ import __version__
-
-    verstr = 'xcp_d v{}'.format(__version__)
-    currentv = Version(__version__)
+    verstr = f'xcp_d v{__version__}'
 
     parser = ArgumentParser(
         description='xcp_d postprocessing workflow of fMRI data',
@@ -289,9 +288,10 @@ def get_parser():
 
 
 def main():
-    """Entry point"""
+    """Run the main workflow."""
+    from multiprocessing import Manager, Process, set_start_method
+
     from nipype import logging as nlogging
-    from multiprocessing import set_start_method, Process, Manager
     set_start_method('forkserver')
     warnings.showwarning = _warn_redirect
     opts = get_parser().parse_args()
@@ -301,7 +301,8 @@ def main():
     sentry_sdk = None
     if not opts.notrack:
         import sentry_sdk
-        from ..utils.sentry import sentry_setup
+
+        from xcp_d.utils.sentry import sentry_setup
         sentry_setup(opts, exec_env)
 
     # Retrieve logging level
@@ -338,7 +339,7 @@ def main():
     if missing:
         print("Cannot run xcp_d. Missing dependencies:", file=sys.stderr)
         for iface, cmd in missing:
-            print("\t{} (Interface: {})".format(cmd, iface))
+            print(f"\t{cmd} (Interface: {iface})")
         sys.exit(2)
     # Clean up master process before running workflow, which may create forks
     gc.collect()
@@ -348,9 +349,9 @@ def main():
         xcpd_wf.run(**plugin_settings)
     except Exception as e:
         if not opts.notrack:
-            from ..utils.sentry import process_crashfile
+            from xcp_d.utils.sentry import process_crashfile
         crashfolders = [
-            output_dir / 'xcp_d' / 'sub-{}'.format(s) / 'log' / run_uuid
+            output_dir / 'xcp_d' / f'sub-{s}' / 'log' / run_uuid
             for s in subject_list
         ]
         for crashfolder in crashfolders:
@@ -368,13 +369,15 @@ def main():
             sentry_sdk.capture_message('xcp_d finished without errors',
                                        level='info')
     finally:
-        from ..interfaces import generate_reports
-        from subprocess import check_call, CalledProcessError, TimeoutExpired
-        from pkg_resources import resource_filename as pkgrf
         from shutil import copyfile
+        from subprocess import CalledProcessError, TimeoutExpired, check_call
+
+        from pkg_resources import resource_filename as pkgrf
+
+        from xcp_d.interfaces import generate_reports
 
         citation_files = {
-            ext: output_dir / 'xcp_d' / 'logs' / ('CITATION.%s' % ext)
+            ext: output_dir / 'xcp_d' / 'logs' / f'CITATION.{ext}'
             for ext in ('bib', 'tex', 'md', 'html')
         }
 
@@ -434,37 +437,28 @@ def main():
 
         if failed_reports and not opts.notrack:
             sentry_sdk.capture_message(
-                'Report generation failed for %d subjects' % failed_reports,
+                f'Report generation failed for {failed_reports} subjects',
                 level='error')
         sys.exit(int((errno + failed_reports) > 0))
 
 
 def build_workflow(opts, retval):
-    """
-    Create the Nipype Workflow that supports the whole execution
-    graph, given the inputs.
+    """Create the Nipype workflow that supports the whole execution graph, given the inputs.
 
     All the checks and the construction of the workflow are done
     inside this function that has pickleable inputs and output
     dictionary (``retval``) to allow isolation using a
     ``multiprocessing.Process`` that allows fmriprep to enforce
     a hard-limited memory-scope.
-
     """
     from bids import BIDSLayout
-    from ..utils import collect_participants
-    from nipype import logging as nlogging, config as ncfg
-    from ..__about__ import __version__
-    from ..workflow.base import init_xcpd_wf
+    from nipype import config as ncfg
+    from nipype import logging as nlogging
+
+    from xcp_d.__about__ import __version__
+    from xcp_d.utils import collect_participants
+    from xcp_d.workflow.base import init_xcpd_wf
     build_log = nlogging.getLogger('nipype.workflow')
-
-    INIT_MSG = """
-    Running xcp_d version {version}:
-      * fMRI directory path: {fmri_dir}.
-      * Participant list: {subject_list}.
-      * Run identifier: {uuid}.
-
-    """.format
 
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
@@ -472,12 +466,10 @@ def build_workflow(opts, retval):
 
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
-        build_log.info("Clearing previous xcp_d working directory: %s" %
-                       work_dir)
+        build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
         if not clean_directory(work_dir):
             build_log.warning(
-                "Could not clear all contents of working directory: %s" %
-                work_dir)
+                f"Could not clear all contents of working directory: {work_dir}")
 
     retval['return_code'] = 1
     retval['workflow'] = None
@@ -486,14 +478,14 @@ def build_workflow(opts, retval):
     retval['work_dir'] = str(work_dir)
 
     if output_dir == fmri_dir:
+        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
         build_log.error(
             'The selected output folder is the same as the input fmri input. '
-            'Please modify the output path (suggestion: %s).', fmri_dir /
-            'derivatives' / ('xcp_d-%s' % __version__.split('+')[0]))
+            'Please modify the output path '
+            f'(suggestion: {rec_path}).')
         retval['return_code'] = 1
         return retval
     if str(opts.analysis_level) != 'participant':
-        print (opts.analysis_level)
         build_log.error(
             'Please select analysis level "participant"')
         retval['return_code'] = 1
@@ -502,8 +494,8 @@ def build_workflow(opts, retval):
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type == 'dcan':
         opts.cifti = True
-        from ..utils import dcan2fmriprep
-        from ..workflow.base import _prefix
+        from xcp_d.utils import dcan2fmriprep
+        from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
         print('checking the DCAN files')
         dcan_output_dir = str(work_dir) + '/dcanhcp'
@@ -521,8 +513,8 @@ def build_workflow(opts, retval):
 
     elif opts.input_type == 'hcp':
         opts.cifti = True
-        from ..utils import hcp2fmriprep
-        from ..workflow.base import _prefix
+        from xcp_d.utils import hcp2fmriprep
+        from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
         print('checking the HCP files')
         hcp_output_dir = str(work_dir) + '/hcphcp'
@@ -535,7 +527,7 @@ def build_workflow(opts, retval):
         fmri_dir = hcp_output_dir
 
     # Set up some instrumental utilities
-    run_uuid = '%s_%s' % (strftime('%Y%m%d-%H%M%S'), uuid.uuid4())
+    run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval['run_uuid'] = run_uuid
 
     layout = BIDSLayout(str(fmri_dir), validate=False, derivatives=True)
@@ -615,10 +607,13 @@ def build_workflow(opts, retval):
     # Build main workflow
     build_log.log(
         25,
-        INIT_MSG(version=__version__,
-                 fmri_dir=fmri_dir,
-                 subject_list=subject_list,
-                 uuid=run_uuid))
+        f"""
+    Running xcp_d version {__version__}:
+      * fMRI directory path: {fmri_dir}.
+      * Participant list: {subject_list}.
+      * Run identifier: {run_uuid}.
+
+    """)
 
     retval['workflow'] = init_xcpd_wf(
         layout=layout,
@@ -655,7 +650,7 @@ def build_workflow(opts, retval):
 
     if boilerplate:
         citation_files = {
-            ext: logs_path / ('CITATION.%s' % ext)
+            ext: logs_path / f'CITATION.{ext}'
             for ext in ('bib', 'tex', 'md', 'html')
         }
         # To please git-annex users and also to guarantee consistency

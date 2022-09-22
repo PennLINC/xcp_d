@@ -1,23 +1,27 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Handling filtering.
+
+.. testsetup::
+# will comeback
 """
-Handling filtering.
-    .. testsetup::
-    # will comeback
-"""
-import numpy as np
-from scipy.signal import butter, filtfilt
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-from ..utils import (read_ndata, write_ndata)
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import butter_bandpass
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _filterdataInputSpec(BaseInterfaceInputSpec):
+class _FilteringDataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="Bold file")
@@ -42,30 +46,30 @@ class _filterdataInputSpec(BaseInterfaceInputSpec):
                                   desc="To apply bandpass or not")
 
 
-class _filterdataOutputSpec(TraitedSpec):
+class _FilteringDataOutputSpec(TraitedSpec):
     filtered_file = File(exists=True, manadatory=True, desc="Filtered file")
 
 
 class FilteringData(SimpleInterface):
-    r"""filter the data.
-    the filtering was setup with scipy signal
+    """Filter the data with scipy.signal.
+
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+    from tempfile import TemporaryDirectory
+    tmpdir = TemporaryDirectory()
+    os.chdir(tmpdir.name)
     .. doctest::
-    >>> filt=FilteringData()
-    >>> filt.inputs.in_file = reg._results['res_file']
-    >>> filt.inputs.TR = 3
-    >>> filt.inputs.lowpass = 0.08
-    >>> filt.inputs.highpass = 0.01
-    >>> filt.run()
+    filt=FilteringData()
+    filt.inputs.in_file = reg._results['res_file']
+    filt.inputs.TR = 3
+    filt.inputs.lowpass = 0.08
+    filt.inputs.highpass = 0.01
+    filt.run()
     .. testcleanup::
-    >>> tmpdir.cleanup()
+    tmpdir.cleanup()
     """
 
-    input_spec = _filterdataInputSpec
-    output_spec = _filterdataOutputSpec
+    input_spec = _FilteringDataInputSpec
+    output_spec = _FilteringDataOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -101,28 +105,3 @@ class FilteringData(SimpleInterface):
             filename=self._results['filtered_file'],
             mask=self.inputs.mask)
         return runtime
-
-
-def butter_bandpass(data, fs, lowpass, highpass, order=2):
-    '''
-    data : voxels/vertices by timepoints dimension
-    fs : sampling frequency,=1/TR(s)
-    lowpass frequency
-    highpass frequency
-    '''
-    nyq = 0.5 * fs  # nyquist frequency
-
-    # normalize the cutoffs
-    lowcut = np.float(highpass) / nyq
-    highcut = np.float(lowpass) / nyq
-
-    b, a = butter(order / 2, [lowcut, highcut], btype='band')  # get filter coeff
-
-    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
-
-    # apply the filter, loop through columns of regressors
-    for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
-                                        padlen=3*(max(len(b), len(a))-1))
-
-    return filtered_data

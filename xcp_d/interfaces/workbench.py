@@ -1,23 +1,22 @@
-"""workbench command for wb_command -convert-affine -from-itk"""
+"""Custom wb_command interfaces."""
 
-# from distutils.cmd import Command
-from signal import valid_signals
-from nipype.interfaces.workbench.base import WBCommand
-from nipype.interfaces.base import (
-    TraitedSpec,
-    File,
-    traits,
-    CommandLineInputSpec,
-    SimpleInterface,
-)
 from nipype import logging
-from ..utils.filemanip import fname_presuffix
-from sqlalchemy import false
+from nipype.interfaces.base import (
+    CommandLineInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+from nipype.interfaces.workbench.base import WBCommand
+
+from xcp_d.utils.filemanip import fname_presuffix
 
 iflogger = logging.getLogger("nipype.interface")
 
 
-class ConvertWarpfieldInputSpec(CommandLineInputSpec):
+class _ConvertWarpfieldInputSpec(CommandLineInputSpec):
+    """Input specification for ConvertWarpfield."""
 
     fromwhat = traits.Str(
         mandatory=True,
@@ -56,17 +55,22 @@ class ConvertWarpfieldInputSpec(CommandLineInputSpec):
     )
 
 
-class ConvertWarpfieldOutputSpec(TraitedSpec):
+class _ConvertWarpfieldOutputSpec(TraitedSpec):
+    """Output specification for ConvertWarpfield."""
+
     out_file = File(exists=True, desc="output file")
 
 
 class ConvertWarpfield(WBCommand):
-    input_spec = ConvertWarpfieldInputSpec
-    output_spec = ConvertWarpfieldOutputSpec
+    """Interface for wb_command's -convert-warpfield command."""
+
+    input_spec = _ConvertWarpfieldInputSpec
+    output_spec = _ConvertWarpfieldOutputSpec
     _cmd = "wb_command -convert-warpfield "
 
 
-class ConvertAffineInputSpec(CommandLineInputSpec):
+class _ConvertAffineInputSpec(CommandLineInputSpec):
+    """Input specification for ConvertAffine."""
 
     fromwhat = traits.Str(
         mandatory=True,
@@ -98,17 +102,22 @@ class ConvertAffineInputSpec(CommandLineInputSpec):
     )
 
 
-class ConvertAffineOutputSpec(TraitedSpec):
+class _ConvertAffineOutputSpec(TraitedSpec):
+    """Output specification for ConvertAffine."""
+
     out_file = File(exists=True, desc="output file")
 
 
 class ConvertAffine(WBCommand):
-    input_spec = ConvertAffineInputSpec
-    output_spec = ConvertAffineOutputSpec
+    """Interface for wb_command's -convert-affine command."""
+
+    input_spec = _ConvertAffineInputSpec
+    output_spec = _ConvertAffineOutputSpec
     _cmd = "wb_command -convert-affine "
 
 
-class ApplyAffineInputSpec(CommandLineInputSpec):
+class _ApplyAffineInputSpec(CommandLineInputSpec):
+    """Input specification for ApplyAffine."""
 
     in_file = File(
         exists=True,
@@ -135,31 +144,38 @@ class ApplyAffineInputSpec(CommandLineInputSpec):
     )
 
 
-class ApplyAffineOutputSpec(TraitedSpec):
+class _ApplyAffineOutputSpec(TraitedSpec):
+    """Output specification for ApplyAffine."""
+
     out_file = File(exists=True, desc="output file")
 
 
 class ApplyAffine(WBCommand):
-    #    wb_command -surface-apply-affine
-    #       <in-surf> - the surface to transform
-    #       <affine> - the affine file
-    #       <out-surf> - output - the output transformed surface
+    """Interface for wb_command's -surface-apply-affine command.
 
-    #       [-flirt] - MUST be used if affine is a flirt affine
-    #          <source-volume> - the source volume used when generating the affine
-    #          <target-volume> - the target volume used when generating the affine
+    wb_command -surface-apply-affine
+       <in-surf> - the surface to transform
+       <affine> - the affine file
+       <out-surf> - output - the output transformed surface
 
-    #       For flirt matrices, you must use the -flirt option, because flirt
-    #       matrices are not a complete description of the coordinate transform they
-    #       represent.  If the -flirt option is not present, the affine must be a
-    #       nifti 'world' affine, which can be obtained with the -convert-affine
-    #       command, or aff_conv from the 4dfp suite.
-    input_spec = ApplyAffineInputSpec
-    output_spec = ApplyAffineOutputSpec
+       [-flirt] - MUST be used if affine is a flirt affine
+          <source-volume> - the source volume used when generating the affine
+          <target-volume> - the target volume used when generating the affine
+
+    For flirt matrices, you must use the -flirt option, because flirt
+    matrices are not a complete description of the coordinate transform they
+    represent.  If the -flirt option is not present, the affine must be a
+    nifti 'world' affine, which can be obtained with the -convert-affine
+    command, or aff_conv from the 4dfp suite.
+    """
+
+    input_spec = _ApplyAffineInputSpec
+    output_spec = _ApplyAffineOutputSpec
     _cmd = "wb_command -surface-apply-affine "
 
 
-class ApplyWarpfieldInputSpec(CommandLineInputSpec):
+class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
+    """Input specification for ApplyWarpfield."""
 
     in_file = File(
         exists=True,
@@ -192,35 +208,39 @@ class ApplyWarpfieldInputSpec(CommandLineInputSpec):
     )
 
 
-class ApplyWarpfieldOutputSpec(TraitedSpec):
+class _ApplyWarpfieldOutputSpec(TraitedSpec):
+    """Output specification for ApplyWarpfield."""
+
     out_file = File(exists=True, desc="output file")
 
 
 class ApplyWarpfield(WBCommand):
-    # APPLY WARPFIELD TO SURFACE FILE
-    # wb_command -surface-apply-warpfield
-    # <in-surf> - the surface to transform
-    # <warpfield> - the INVERSE warpfield
-    # <out-surf> - output - the output transformed surface
+    """Apply warpfield to surface file.
 
-    # [-fnirt] - MUST be used if using a fnirt warpfield
-    #     <forward-warp> - the forward warpfield
+    wb_command -surface-apply-warpfield
+        <in-surf> - the surface to transform
+        <warpfield> - the INVERSE warpfield
+        <out-surf> - output - the output transformed surface
 
-    # warping a surface requires the INVERSE of the warpfield used to
-    # warp the volume it lines up with.  The header of the forward warp is
-    # needed by the -fnirt option in order to correctly interpret the
-    # displacements in the fnirt warpfield.
+        [-fnirt] - MUST be used if using a fnirt warpfield
+            <forward-warp> - the forward warpfield
 
-    # If the -fnirt option is not present, the warpfield must be a nifti
-    # 'world' warpfield, which can be obtained with the -convert-warpfield
-    # command.
+    Warping a surface requires the INVERSE of the warpfield used to warp the volume it lines up
+    with.
+    The header of the forward warp is needed by the -fnirt option in order to correctly
+    interpret the displacements in the fnirt warpfield.
 
-    input_spec = ApplyWarpfieldInputSpec
-    output_spec = ApplyWarpfieldOutputSpec
+    If the -fnirt option is not present, the warpfield must be a nifti 'world' warpfield,
+    which can be obtained with the -convert-warpfield command.
+    """
+
+    input_spec = _ApplyWarpfieldInputSpec
+    output_spec = _ApplyWarpfieldOutputSpec
     _cmd = "wb_command -surface-apply-warpfield "
 
 
-class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
+class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
+    """Input specification for SurfaceSphereProjectUnproject."""
 
     in_file = File(
         exists=True,
@@ -256,20 +276,24 @@ class SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     )
 
 
-class SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
+class _SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
+    """Input specification for SurfaceSphereProjectUnproject."""
+
     out_file = File(exists=True, desc="output file")
 
 
 class SurfaceSphereProjectUnproject(WBCommand):
-    # COPY REGISTRATION DEFORMATIONS TO DIFFERENT SPHERE
-    # wb_command -surface-sphere-project-unproject
-    # <sphere-in> - a sphere with the desired output mesh
-    # <sphere-project-to> - a sphere that aligns with sphere-in
-    # <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
-    # <sphere-out> - output - the output sphere
+    """Copy registration deformations to different sphere.
 
-    input_spec = SurfaceSphereProjectUnprojectInputSpec
-    output_spec = SurfaceSphereProjectUnprojectOutputSpec
+    wb_command -surface-sphere-project-unproject
+    <sphere-in> - a sphere with the desired output mesh
+    <sphere-project-to> - a sphere that aligns with sphere-in
+    <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
+    <sphere-out> - output - the output sphere
+    """
+
+    input_spec = _SurfaceSphereProjectUnprojectInputSpec
+    output_spec = _SurfaceSphereProjectUnprojectOutputSpec
     _cmd = "wb_command -surface-sphere-project-unproject "
 
 
@@ -282,6 +306,8 @@ class _ChangeXfmTypeOutputSpec(TraitedSpec):
 
 
 class ChangeXfmType(SimpleInterface):
+    """Change transform type."""
+
     input_spec = _ChangeXfmTypeInputSpec
     output_spec = _ChangeXfmTypeOutputSpec
 
@@ -303,7 +329,8 @@ class ChangeXfmType(SimpleInterface):
         return runtime
 
 
-class SurfaceAverageInputSpec(CommandLineInputSpec):
+class _SurfaceAverageInputSpec(CommandLineInputSpec):
+    """Input specification for SurfaceAverage."""
 
     surface_in1 = File(
         exists=True,
@@ -331,38 +358,45 @@ class SurfaceAverageInputSpec(CommandLineInputSpec):
     )
 
 
-class SurfaceAverageOutputSpec(TraitedSpec):
+class _SurfaceAverageOutputSpec(TraitedSpec):
+    """Output specification for SurfaceAverage."""
+
     out_file = File(exists=True, desc="output file")
 
 
 class SurfaceAverage(WBCommand):
-    #     AVERAGE SURFACE FILES TOGETHER
-    #    wb_command -surface-average
-    #       <surface-out> - output - the output averaged surface
-    #       [-stddev] - compute 3D sample standard deviation
-    #          <stddev-metric-out> - output - the output metric for 3D sample
-    #             standard deviation
-    #       [-uncertainty] - compute caret5 'uncertainty'
-    #          <uncert-metric-out> - output - the output metric for uncertainty
-    #       [-surf] - repeatable - specify a surface to include in the average
-    #          <surface> - a surface file to average
-    #          [-weight] - specify a weighted average
-    #             <weight> - the weight to use (default 1)
-    #
-    #       The 3D sample standard deviation is computed as
-    #       'sqrt(sum(squaredlength(xyz - mean(xyz)))/(n - 1))'.
-    #
-    #       Uncertainty is a legacy measure used in caret5, and is computed as
-    #       'sum(length(xyz - mean(xyz)))/n'.
-    #
-    #       When weights are used, the 3D sample standard deviation treats them as
-    #       reliability weights.
-    input_spec = SurfaceAverageInputSpec
-    output_spec = SurfaceAverageOutputSpec
+    """Average surface files together.
+
+    wb_command -surface-average
+    <surface-out> - output - the output averaged surface
+    [-stddev] - compute 3D sample standard deviation
+       <stddev-metric-out> - output - the output metric for 3D sample
+          standard deviation
+    [-uncertainty] - compute caret5 'uncertainty'
+       <uncert-metric-out> - output - the output metric for uncertainty
+    [-surf] - repeatable - specify a surface to include in the average
+       <surface> - a surface file to average
+       [-weight] - specify a weighted average
+          <weight> - the weight to use (default 1)
+
+    The 3D sample standard deviation is computed as
+    'sqrt(sum(squaredlength(xyz - mean(xyz)))/(n - 1))'.
+
+    Uncertainty is a legacy measure used in caret5, and is computed as
+    'sum(length(xyz - mean(xyz)))/n'.
+
+    When weights are used, the 3D sample standard deviation treats them as
+    reliability weights.
+    """
+
+    input_spec = _SurfaceAverageInputSpec
+    output_spec = _SurfaceAverageOutputSpec
     _cmd = "wb_command -surface-average "
 
 
-class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
+class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
+    """Input specification for SurfaceGenerateInflated."""
+
     anatomical_surface_in = File(
         exists=True,
         mandatory=True,
@@ -397,26 +431,388 @@ class SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     )
 
 
-class SurfaceGenerateInflatedOutputSpec(TraitedSpec):
+class _SurfaceGenerateInflatedOutputSpec(TraitedSpec):
+    """Output specification for SurfaceGenerateInflated."""
+
     inflated_out_file = File(exists=True, desc="inflated output file")
     very_inflated_out_file = File(exists=True, desc="very inflated output file")
 
 
 class SurfaceGenerateInflated(WBCommand):
-    # SURFACE GENERATE INFLATED
-    #    wb_command -surface-generate-inflated
-    #       <anatomical-surface-in> - the anatomical surface
-    #       <inflated-surface-out> - output - the output inflated surface
-    #       <very-inflated-surface-out> - output - the output very inflated surface
+    """Generate inflated surface.
 
-    #       [-iterations-scale] - optional iterations scaling
-    #          <iterations-scale-value> - iterations-scale value
+    wb_command -surface-generate-inflated
+       <anatomical-surface-in> - the anatomical surface
+       <inflated-surface-out> - output - the output inflated surface
+       <very-inflated-surface-out> - output - the output very inflated surface
 
-    #       Generate inflated and very inflated surfaces. The output surfaces are
-    #       'matched' (have same XYZ range) to the anatomical surface. In most cases,
-    #       an iterations-scale of 1.0 (default) is sufficient.  However, if the
-    #       surface contains a large number of vertices (150,000), try an
-    #       iterations-scale of 2.5.
-    input_spec = SurfaceGenerateInflatedInputSpec
-    output_spec = SurfaceGenerateInflatedOutputSpec
+       [-iterations-scale] - optional iterations scaling
+          <iterations-scale-value> - iterations-scale value
+
+       Generate inflated and very inflated surfaces. The output surfaces are
+       'matched' (have same XYZ range) to the anatomical surface. In most cases,
+       an iterations-scale of 1.0 (default) is sufficient.  However, if the
+       surface contains a large number of vertices (150,000), try an
+       iterations-scale of 2.5.
+    """
+
+    input_spec = _SurfaceGenerateInflatedInputSpec
+    output_spec = _SurfaceGenerateInflatedOutputSpec
     _cmd = "wb_command -surface-generate-inflated "
+
+
+class _CiftiCorrelationInputSpec(CommandLineInputSpec):
+    """Input specification for CiftiCorrelation."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s ",
+        position=0,
+        desc="The input ptseries or dense series",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="correlation_matrix_%s.nii",
+        keep_extension=True,
+        argstr=" %s",
+        position=1,
+        desc="The output CIFTI",
+    )
+
+    roi_override = traits.Bool(
+        exists=True,
+        argstr="-roi-override %s ",
+        position=2,
+        desc=" perform correlation from a subset of rows to all rows",
+    )
+
+    left_roi = File(
+        exists=True,
+        position=3,
+        argstr="-left-roi %s",
+        desc="Specify the left roi metric  to use",
+    )
+
+    right_roi = File(
+        exists=True,
+        position=5,
+        argstr="-right-roi %s",
+        desc="Specify the right  roi metric  to use",
+    )
+    cerebellum_roi = File(
+        exists=True,
+        position=6,
+        argstr="-cerebellum-roi %s",
+        desc="specify the cerebellum meytric to use",
+    )
+
+    vol_roi = File(
+        exists=True,
+        position=7,
+        argstr="-vol-roi %s",
+        desc="volume roi to use",
+    )
+
+    cifti_roi = File(
+        exists=True,
+        position=8,
+        argstr="-cifti-roi %s",
+        desc="cifti roi to use",
+    )
+    weights_file = File(
+        exists=True,
+        position=9,
+        argstr="-weights %s",
+        desc="specify the cerebellum surface  metricto use",
+    )
+
+    fisher_ztrans = traits.Bool(
+        position=10,
+        argstr="-fisher-z",
+        desc=" fisherz transfrom",
+    )
+    no_demean = traits.Bool(
+        position=11,
+        argstr="-fisher-z",
+        desc=" fisherz transfrom",
+    )
+    compute_covariance = traits.Bool(
+        position=12,
+        argstr="-covariance ",
+        desc=" compute covariance instead of correlation",
+    )
+
+
+class _CiftiCorrelationOutputSpec(TraitedSpec):
+    """Output specification for CiftiCorrelation."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCorrelation(WBCommand):
+    """Compute correlation from CIFTI file.
+
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .ptseries or .dtseries.
+
+    Examples
+    --------
+    >>> cifticorr = CiftiCorrelation()
+    >>> cifticorr.inputs.in_file = 'sub-01XX_task-rest.ptseries.nii'
+    >>> cifticorr.inputs.out_file = 'sub_01XX_task-rest.pconn.nii'
+    >>> cifticorr.cmdline
+    wb_command  -cifti-correlation sub-01XX_task-rest.ptseries.nii \
+        'sub_01XX_task-rest.pconn.nii'
+    """
+
+    input_spec = _CiftiCorrelationInputSpec
+    output_spec = _CiftiCorrelationOutputSpec
+    _cmd = "wb_command  -cifti-correlation"
+
+
+class _CiftiParcellateInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiParcellate command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s ",
+        position=0,
+        desc="The input CIFTI file",
+    )
+    atlas_label = traits.File(
+        mandatory=True,
+        argstr="%s ",
+        position=1,
+        desc="atlas label, in mm",
+    )
+    direction = traits.Enum(
+        "ROW",
+        "COLUMN",
+        mandatory=True,
+        argstr="%s ",
+        position=2,
+        desc="which dimension to smooth along, ROW or COLUMN",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="parcelated_%s.nii",
+        keep_extension=True,
+        argstr=" %s",
+        position=3,
+        desc="The output CIFTI",
+    )
+
+    spatial_weights = traits.Str(
+        argstr="-spatial-weights ",
+        position=4,
+        desc=" spatial weight file",
+    )
+
+    left_area_surf = File(
+        exists=True,
+        position=5,
+        argstr="-left-area-surface %s",
+        desc="Specify the left surface to use",
+    )
+
+    right_area_surf = File(
+        exists=True,
+        position=6,
+        argstr="-right-area-surface %s",
+        desc="Specify the right surface to use",
+    )
+    cerebellum_area_surf = File(
+        exists=True,
+        position=7,
+        argstr="-cerebellum-area-surf %s",
+        desc="specify the cerebellum surface to use",
+    )
+
+    left_area_metric = File(
+        exists=True,
+        position=8,
+        argstr="-left-area-metric %s",
+        desc="Specify the left surface metric to use",
+    )
+
+    right_area_metric = File(
+        exists=True,
+        position=9,
+        argstr="-right-area-metric %s",
+        desc="Specify the right surface  metric to use",
+    )
+    cerebellum_area_metric = File(
+        exists=True,
+        position=10,
+        argstr="-cerebellum-area-metric %s",
+        desc="specify the cerebellum surface  metricto use",
+    )
+
+    cifti_weights = File(
+        exists=True,
+        position=11,
+        argstr="-cifti-weights %s",
+        desc="cifti file containing weights",
+    )
+    cor_method = traits.Str(
+        position=12,
+        default="MEAN ",
+        argstr="-method %s",
+        desc=" correlation method, option inlcude MODE",
+    )
+
+
+class _CiftiParcellateOutputSpec(TraitedSpec):
+    """Output specification for the CiftiParcellate command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiParcellate(WBCommand):
+    """Extract timeseries from CIFTI file.
+
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries.
+
+    Examples
+    --------
+    >>> ciftiparcel = CiftiParcellate()
+    >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
+    >>> ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii'
+    >>> ciftiparcel.inputs.direction = 'COLUMN'
+    >>> ciftiparcel.cmdline
+    wb_command -cifti-parcellate sub-01XX_task-rest.dtseries.nii \
+    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \
+    sub_01XX_task-rest.ptseries.nii
+    """
+
+    input_spec = _CiftiParcellateInputSpec
+    output_spec = _CiftiParcellateOutputSpec
+    _cmd = "wb_command -cifti-parcellate"
+
+
+class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSurfaceResample command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s ",
+        position=0,
+        desc="the gifti file",
+    )
+
+    current_sphere = File(
+        exists=True,
+        position=1,
+        argstr=" %s",
+        desc=" the current sphere surface in gifti for in_file",
+    )
+
+    new_sphere = File(
+        exists=True,
+        position=2,
+        argstr=" %s",
+        desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
+    )
+
+    metric = traits.Str(
+        argstr=" %s ",
+        position=3,
+        desc=" fixed for anatomic",
+        default="  BARYCENTRIC  ",
+    )
+
+    out_file = File(
+        name_source=["in_file"],
+        name_template="resampled_%s.surf.gii",
+        keep_extension=True,
+        argstr=" %s",
+        position=4,
+        desc="The gifti output, either left and right",
+    )
+
+
+class _CiftiSurfaceResampleOutputSpec(TraitedSpec):
+    """Output specification for the CiftiSurfaceResample command."""
+
+    out_file = File(exists=True, desc="output gifti file")
+
+
+class CiftiSurfaceResample(WBCommand):
+    """Resample a surface from one sphere to another.
+
+    TODO: Improve documentation.
+    """
+
+    input_spec = _CiftiSurfaceResampleInputSpec
+    output_spec = _CiftiSurfaceResampleOutputSpec
+    _cmd = "wb_command  -surface-resample"
+
+
+class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSeparateMetric command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s ",
+        position=0,
+        desc="The input dense series",
+    )
+    direction = traits.Enum(
+        "ROW",
+        "COLUMN",
+        mandatory=True,
+        argstr="%s ",
+        position=1,
+        desc="which dimension to smooth along, ROW or COLUMN",
+    )
+    metric = traits.Str(
+        mandatory=True,
+        argstr=" -metric %s ",
+        position=2,
+        desc="which of the structure eg CORTEX_LEFT CORTEX_RIGHT"
+        "check https://www.humanconnectome.org/software/workbench-command/-cifti-separate ",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="correlation_matrix_%s.func.gii",
+        keep_extension=True,
+        argstr=" %s",
+        position=3,
+        desc="The gifti output, iether left and right",
+    )
+
+
+class _CiftiSeparateMetricOutputSpec(TraitedSpec):
+    """Output specification for the CiftiSeparateMetric command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiSeparateMetric(WBCommand):
+    """Extract left or right hemisphere surfaces from CIFTI file (.dtseries).
+
+    Other structures can also be extracted.
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,
+
+    Examples
+    --------
+    >>> ciftiseparate = CiftiSeparateMetric()
+    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftiseparate.inputs.metric = "CORTEX_LEFT" # extract left hemisphere
+    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
+    >>> ciftiseparate.inputs.direction = 'COLUMN'
+    >>> ciftiseparate.cmdline
+    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii'  COLUMN \
+      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    """
+
+    input_spec = _CiftiSeparateMetricInputSpec
+    output_spec = _CiftiSeparateMetricOutputSpec
+    _cmd = "wb_command  -cifti-separate "

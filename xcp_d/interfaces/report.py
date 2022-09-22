@@ -4,12 +4,18 @@
 
 import os
 import time
-import pandas as pd
 
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    InputMultiObject, Str, isdefined,
-                                    SimpleInterface)
+import pandas as pd
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    InputMultiObject,
+    SimpleInterface,
+    Str,
+    TraitedSpec,
+    isdefined,
+    traits,
+)
 
 SUBJECT_TEMPLATE = """\
 \t<ul class="elem-desc">
@@ -40,12 +46,19 @@ ABOUT_TEMPLATE = """\t<ul>
 """
 
 
-class SummaryOutputSpec(TraitedSpec):
+class _SummaryInterfaceOutputSpec(TraitedSpec):
+    """Output specification for SummaryInterface."""
+
     out_report = File(exists=True, desc='HTML segment containing summary')
 
 
 class SummaryInterface(SimpleInterface):
-    output_spec = SummaryOutputSpec
+    """A summary interface.
+
+    This is used as a base class for other summary interfaces.
+    """
+
+    output_spec = _SummaryInterfaceOutputSpec
 
     def _run_interface(self, runtime):
         # Open a file to write information to
@@ -60,22 +73,28 @@ class SummaryInterface(SimpleInterface):
         raise NotImplementedError
 
 
-class SubjectSummaryInputSpec(BaseInterfaceInputSpec):
+class _SubjectSummaryInputSpec(BaseInterfaceInputSpec):
+    """Input specification for SubjectSummaryInterface."""
+
     subject_id = Str(desc='Subject ID')
     bold = InputMultiObject(traits.Either(File(exists=True),
                                           traits.List(File(exists=True))),
                             desc='BOLD or CIFTI functional series')
 
 
-class SubjectSummaryOutputSpec(SummaryOutputSpec):
+class _SubjectSummaryOutputSpec(_SummaryInterfaceOutputSpec):
+    """Output specification for SubjectSummaryInterface."""
+
     # This exists to ensure that the summary is run prior to the first ReconAll
     # call, allowing a determination whether there is a pre-existing directory
     subject_id = Str(desc='Subject ID')
 
 
 class SubjectSummary(SummaryInterface):
-    input_spec = SubjectSummaryInputSpec
-    output_spec = SubjectSummaryOutputSpec
+    """A subject-level summary interface."""
+
+    input_spec = _SubjectSummaryInputSpec
+    output_spec = _SubjectSummaryOutputSpec
 
     def _run_interface(self, runtime):
         if isdefined(self.inputs.subject_id):
@@ -90,7 +109,9 @@ class SubjectSummary(SummaryInterface):
                                        num_bold_files=num_bold_files)
 
 
-class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
+class _FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
+    """Input specification for FunctionalSummary."""
+
     bold_file = traits.File(True, True, desc='cifti or bold File')
     qc_file = traits.File(exists=True, desc='qc file')
     TR = traits.Float(
@@ -100,21 +121,24 @@ class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
 
 
 class FunctionalSummary(SummaryInterface):
-    input_spec = FunctionalSummaryInputSpec
+    """A functional MRI summary interface."""
+
+    input_spec = _FunctionalSummaryInputSpec
     #   Get information from the QC file and return it
 
     def _generate_segment(self):
         space = get_space(self.inputs.bold_file)
         TR = self.inputs.TR
         qcfile = pd.read_csv(self.inputs.qc_file)
-        meanFD = "{} ".format(round(qcfile['meanFD'][0], 4))
-        meanRMS = " {} ".format(round(qcfile['relMeansRMSMotion'][0], 4))
-        maxRMS = " {} ".format(round(qcfile['relMaxRMSMotion'][0], 4))
-        dvars = "  {},{} ".format(round(qcfile['meanDVInit'][0], 4),
-                                  round(qcfile['meanDVFinal'][0], 4))
-        fd_dvars_correlation = " {},  {} ".format(round(qcfile['motionDVCorrInit'][0], 4),
-                                                  round(qcfile['motionDVCorrFinal'][0], 4))
-        num_vols_censored = " {} ".format(round(qcfile['num_censored_volumes'][0], 4))
+        meanFD = f"{round(qcfile['meanFD'][0], 4)} "
+        meanRMS = f" {round(qcfile['relMeansRMSMotion'][0], 4)} "
+        maxRMS = f" {round(qcfile['relMaxRMSMotion'][0], 4)} "
+        dvars = f"  {round(qcfile['meanDVInit'][0], 4)},{round(qcfile['meanDVFinal'][0], 4)} "
+        fd_dvars_correlation = (
+            f" {round(qcfile['motionDVCorrInit'][0], 4)},  "
+            f"{round(qcfile['motionDVCorrFinal'][0], 4)} "
+        )
+        num_vols_censored = f" {round(qcfile['num_censored_volumes'][0], 4)} "
 
         return QC_TEMPLATE.format(space=space,
                                   TR=TR,
@@ -126,14 +150,18 @@ class FunctionalSummary(SummaryInterface):
                                   volcensored=num_vols_censored)
 
 
-class AboutSummaryInputSpec(BaseInterfaceInputSpec):
+class _AboutSummaryInputSpec(BaseInterfaceInputSpec):
+    """Input specification for AboutSummary."""
+
     version = Str(desc='xcp_d version')
     command = Str(desc='xcp_d command')
     # Date not included - update timestamp only if version or command changes
 
 
 class AboutSummary(SummaryInterface):
-    input_spec = AboutSummaryInputSpec
+    """A summary of the xcp_d software used."""
+
+    input_spec = _AboutSummaryInputSpec
 
     def _generate_segment(self):
         return ABOUT_TEMPLATE.format(
@@ -143,8 +171,17 @@ class AboutSummary(SummaryInterface):
 
 
 def get_space(bold_file):
-    """
-     Extract space from bold/cifti via string manipulation
+    """Extract space from bold/cifti via string manipulation.
+
+    Parameters
+    ----------
+    bold_file : str
+        Path to the BOLD file.
+
+    Returns
+    -------
+    space : str
+        The BOLD file's space.
     """
     bold_file = os.path.basename(bold_file)
     if bold_file.endswith('.dtseries.nii'):

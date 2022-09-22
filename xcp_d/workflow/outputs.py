@@ -1,14 +1,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Workflows for collecting and saving xcp_d outputs."""
 import numpy as np
-from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from ..utils import bid_derivative
+
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 
 
 # RF: Not here
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'
 
 
@@ -18,15 +22,14 @@ def init_writederivatives_wf(
     highpass,
     smoothing,
     params,
-    omp_nthreads,
     cifti,
     dummytime,
     output_dir,
     TR,
     name='write_derivatives_wf',
 ):
-    """
-    This workflow is for writing out the output in bids
+    """Write out the xcp_d derivatives in BIDS format.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -39,7 +42,6 @@ def init_writederivatives_wf(
                 highpass,
                 smoothing,
                 params,
-                omp_nthreads,
                 scrub,
                 cifti,
                 dummytime,
@@ -47,9 +49,9 @@ def init_writederivatives_wf(
                 TR,
                 name="fcons_ts_wf",
              )
+
     Parameters
     ----------
-
     mem_gb: float
         memory size in gigabytes
     bold_file: str
@@ -62,8 +64,6 @@ def init_writederivatives_wf(
         smooth kernel size in fwhm
     params: str
         parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
     scrub: bool
         scrubbing
     cifti: bool

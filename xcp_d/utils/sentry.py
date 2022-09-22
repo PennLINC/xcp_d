@@ -1,10 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Stripped out routines for Sentry"""
-from pathlib import Path
+"""Stripped out routines for Sentry."""
 import re
-from niworkflows.utils.misc import read_crashfile
+from pathlib import Path
+
 import sentry_sdk
+from niworkflows.utils.misc import read_crashfile
 
 CHUNK_SIZE = 16384
 # Group common events with pre specified fingerprints
@@ -33,9 +34,12 @@ def start_ping(run_uuid, npart):
 
 
 def sentry_setup(opts, exec_env):
+    """Set up sentry."""
     from os import cpu_count
+
     import psutil
-    from ..__about__ import __version__
+
+    from xcp_d.__about__ import __version__
 
     environment = "develop"
     release = __version__
@@ -72,10 +76,10 @@ def sentry_setup(opts, exec_env):
                 overcommit_kbytes = Path('/proc/sys/vm/overcommit_memory')
                 kb = overcommit_kbytes.read_text().strip()
                 if kb != '0':
-                    limit = '{}kB'.format(kb)
+                    limit = f'{kb}kB'
                 else:
                     overcommit_ratio = Path('/proc/sys/vm/overcommit_ratio')
-                    limit = '{}%'.format(overcommit_ratio.read_text().strip())
+                    limit = f'{overcommit_ratio.read_text().strip()}%'
                 scope.set_tag('overcommit_limit', limit)
             else:
                 scope.set_tag('overcommit_limit', 'n/a')
@@ -88,7 +92,7 @@ def sentry_setup(opts, exec_env):
 
 
 def process_crashfile(crashfile):
-    """Parse the contents of a crashfile and submit sentry messages"""
+    """Parse the contents of a crashfile and submit sentry messages."""
     crash_info = read_crashfile(str(crashfile))
     with sentry_sdk.push_scope() as scope:
         scope.level = 'fatal'
@@ -122,10 +126,10 @@ def process_crashfile(crashfile):
                 scope.set_extra(k, strv[0])
             else:
                 for i, chunk in enumerate(strv):
-                    scope.set_extra('%s_%02d' % (k, i), chunk)
+                    scope.set_extra(f'{k}_{i:02d}', chunk)
 
         fingerprint = ''
-        issue_title = '{}: {}'.format(node_name, gist)
+        issue_title = f'{node_name}: {gist}'
         for new_fingerprint, error_snippets in KNOWN_ERRORS.items():
             for error_snippet in error_snippets:
                 if error_snippet in traceback:
@@ -155,7 +159,7 @@ def process_crashfile(crashfile):
         sentry_sdk.capture_message(message, 'fatal')
 
 
-def before_send(event, hints):
+def before_send(event):
     # Filtering log messages about crashed nodes
     if 'logentry' in event and 'message' in event['logentry']:
         msg = event['logentry']['message']
@@ -181,9 +185,10 @@ def before_send(event, hints):
 
 
 def _chunks(string, length=CHUNK_SIZE):
-    """
-    Splits a string into smaller chunks
+    """Split a string into smaller chunks.
 
+    Examples
+    --------
     >>> list(_chunks('some longer string.', length=3))
     ['som', 'e l', 'ong', 'er ', 'str', 'ing', '.']
 

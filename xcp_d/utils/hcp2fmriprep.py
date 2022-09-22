@@ -1,25 +1,28 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-import os
-import json
-import glob
-import shutil
+"""Functions for converting HCP-format data to fMRIPrep format."""
 import filecmp
+import glob
+import json
+import os
+import shutil
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
 from nilearn.input_data import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
+    """Convert HCP-format data to fMRIPrep format."""
     hcpdir = os.path.abspath(hcpdir)
     outdir = os.path.abspath(outdir)
     if sub_id is None:
         sub_idir = glob.glob(hcpdir + '/*')
         sub_id = [os.path.basename(j) for j in sub_idir]
         if len(sub_id) == 0:
-            raise ValueError('No subject found in %s' % hcpdir)
+            raise ValueError(f'No subject found in {hcpdir}')
         elif len(sub_id) > 0:
             for j in sub_id:
                 hcpfmriprepx(hcp_dir=hcpdir, out_dir=outdir, sub_id=j)
@@ -30,6 +33,7 @@ def hcp2fmriprep(hcpdir, outdir, sub_id=None):
 
 
 def hcpfmriprepx(hcp_dir, out_dir, subid):
+    """Do the internal work for hcp2fmriprep."""
     sub_id = 'sub-' + subid
     anat_dirx = hcp_dir + '/' + subid + '/T1w/'
 
@@ -45,24 +49,24 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
     ribbon = anat_dirx + '/ribbon.nii.gz'
     segm = anat_dirx + '/aparc+aseg.nii.gz'
 
-    midR = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
-    midL = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
-    infR = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
-    infL = glob.glob(anat_dirx +
-                     '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
+    midR = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*R.midthickness.32k_fs_LR.surf.gii')[0]
+    midL = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*L.midthickness.32k_fs_LR.surf.gii')[0]
+    infR = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*R.inflated.32k_fs_LR.surf.gii')[0]
+    infL = glob.glob(anat_dirx
+                     + '/fsaverage_LR32k/*L.inflated.32k_fs_LR.surf.gii')[0]
 
-    pialR = glob.glob(anat_dirx +
-                      '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
-    pialL = glob.glob(anat_dirx +
-                      '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
+    pialR = glob.glob(anat_dirx
+                      + '/fsaverage_LR32k/*R.pial.32k_fs_LR.surf.gii')[0]
+    pialL = glob.glob(anat_dirx
+                      + '/fsaverage_LR32k/*L.pial.32k_fs_LR.surf.gii')[0]
 
-    whiteR = glob.glob(anat_dirx +
-                       '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
-    whiteL = glob.glob(anat_dirx +
-                       '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
+    whiteR = glob.glob(anat_dirx
+                       + '/fsaverage_LR32k/*R.white.32k_fs_LR.surf.gii')[0]
+    whiteL = glob.glob(anat_dirx
+                       + '/fsaverage_LR32k/*L.white.32k_fs_LR.surf.gii')[0]
 
     hcpfiles = [
         tw1, segm, ribbon, brainmask, tw1, tw1, midL, midR, pialL, pialR,
@@ -142,13 +146,13 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         # write out the json
         # jsonreg = pd.DataFrame({'LR': [1, 2, 3]})  # just a fake json
-        regressors.to_csv(funcdir + '/sub-' + subid + '_task-' + idx[1] +
-                          '_acq-' + idx[2] + '_desc-confounds_timeseries.tsv',
+        regressors.to_csv(funcdir + '/sub-' + subid + '_task-' + idx[1]
+                          + '_acq-' + idx[2] + '_desc-confounds_timeseries.tsv',
                           index=False,
                           sep='\t')
-        regressors.to_json(funcdir + '/sub-' + subid + '_task-' + idx[1] +
-                           '_acq-' + idx[2] +
-                           '_desc-confounds_timeseries.json')
+        regressors.to_json(funcdir + '/sub-' + subid + '_task-' + idx[1]
+                           + '_acq-' + idx[2]
+                           + '_desc-confounds_timeseries.json')
 
         # functional files
         hcp_ref = k + '/' + filenamex + '_SBRef.nii.gz'
@@ -190,23 +194,31 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
 
 def copyfileobj_example(src, dst):
+    """Copy a file from source to dest.
+
+    source and dest must be file-like objects,
+    i.e. any object with a read or write method, like for example StringIO.
+    """
     if not os.path.exists(dst) or not filecmp.cmp(src, dst):
         shutil.copyfile(src, dst)
 
 
 def symlinkfiles(source, dest):
+    """Symlink source file to dest file."""
     # Beware, this example does not handle any edge cases!
     with open(source, 'rb') as src, open(dest, 'wb') as dst:
         copyfileobj_example(src, dst)
 
 
 def extractreg(mask, nifti):
+    """Extract mean signal within mask from NIFTI."""
     masker = NiftiMasker(mask_img=mask)
     signals = masker.fit_transform(nifti)
     return np.mean(signals, axis=1)
 
 
 def writejson(data, outfile):
+    """Write dictionary to JSON file."""
     with open(outfile, 'w') as f:
         json.dump(data, f)
     return outfile

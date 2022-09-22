@@ -2,19 +2,14 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-This pipeline is developed by Ted lab
-(https://pennlinc.io/) for
-"""
+"""XCP-D : A Robust Postprocessing Pipeline of fMRI data.
 
-from .__about__ import (  # noqa
-    __version__,
-    __copyright__,
-    __credits__,
-    __packagename__,
-)
+This pipeline is developed by Ted Satterthwaite's lab (https://pennlinc.io/).
+"""
 
 import warnings
+
+from .__about__ import __copyright__, __credits__, __packagename__, __version__  # noqa
 
 # cmp is not used by fmriprep, so ignore nipype-generated warnings
 warnings.filterwarnings('ignore', r'cmp not installed')

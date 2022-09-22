@@ -1,22 +1,20 @@
-#!/usr/bin/env python
+"""Tests for removing volumes from files.
 
-"""
 This file is an example of running pytests either locally or on circleci.
 
 Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
-
-
-
 """
 import os.path as op
+
 import nibabel as nb
+import pandas as pd
+
 from xcp_d.interfaces.prepostcleaning import RemoveTR
 
 
 def test_data_availability(data_dir, working_dir, output_dir):
-    """Makes sure that we have access to all the testing data
-    """
+    """Make sure that we have access to all the testing data."""
     assert op.exists(output_dir)
     assert op.exists(working_dir)
     assert op.exists(data_dir)
@@ -26,10 +24,7 @@ def test_data_availability(data_dir, working_dir, output_dir):
 
 
 def test_RemoveTR_nifti(data_dir):
-    # Test RemoveTR() for NIFTI input data
-    from xcp_d.interfaces.prepostcleaning import RemoveTR
-    import pandas as pd
-
+    """Test RemoveTR() for NIFTI input data."""
     # Define inputs
     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -56,9 +51,8 @@ def test_RemoveTR_nifti(data_dir):
     assert nb.load(results.
                    outputs.bold_file_dropped_TR).get_fdata().shape[3] == original_nvols_nifti
 
-    # Test a nifti file with 'n' volumes to remove
-    for n in range(0, original_nvols_nifti-1):  # Testing all n values till
-        # original_nvols_nifti - 1
+    # Test a nifti file with 1-10 volumes to remove
+    for n in range(0, 10):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
@@ -76,14 +70,12 @@ def test_RemoveTR_nifti(data_dir):
                 == original_nvols_nifti - n
         except Exception as exc:
             exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
-            print("Tests failing at N = {}.".format(n))
-            raise Exception("Number of volumes in dropped nifti is {}.".format(exc))
+            print(f"Tests failing at N = {n}.")
+            raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
 def test_RemoveTR_cifti(data_dir):
-    # Test RemoveTR() for CIFTI input data
-    from xcp_d.interfaces.prepostcleaning import RemoveTR
-    import pandas as pd
+    """Test RemoveTR() for CIFTI input data."""
     # Define inputs
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
@@ -110,9 +102,8 @@ def test_RemoveTR_cifti(data_dir):
     assert nb.load(results.outputs.bold_file_dropped_TR).get_fdata(
     ).shape[0] == original_nvols_cifti
 
-    # Test a cifti file with 'n' volumes to remove
-    for n in range(0, original_nvols_cifti-1):  # Testing all n values till
-        # original_nvols_cifti - 1
+    # Test a cifti file with 1-10 volumes to remove
+    for n in range(0, 10):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
@@ -131,16 +122,12 @@ def test_RemoveTR_cifti(data_dir):
                 == original_nvols_cifti - n
         except Exception as exc:
             exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
-            print("Tests failing at N = {}.".format(n))
-            raise Exception("Number of volumes in dropped cifti is {}.".format(exc))
+            print(f"Tests failing at N = {n}.")
+            raise Exception(f"Number of volumes in dropped cifti is {exc}.")
 
 # Testing with CUSTOM CONFOUNDS
-
-
 # Note: I had to test this locally as I don't have the permissions to share the
 # data I used here at the moment.
-
-
 # def test_fd_interface_cifti_custom(data_dir):  # Checking results
 #     boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
 #         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
@@ -166,7 +153,7 @@ def test_RemoveTR_cifti(data_dir):
 #         print(len(dropped_confounds_timeseries))
 #     except Exception as exc:
 #         exc = len(dropped_confounds_timeseries), dropped_image.get_fdata().shape[0]
-#         raise Exception("Sorry, the shapes are: {}.".format(exc))
+#         raise Exception(f"Sorry, the shapes are: {exc}.")
 
 
 # def test_fd_interface_nifti_custom(data_dir):  # Checking results
@@ -193,4 +180,4 @@ def test_RemoveTR_cifti(data_dir):
 #         print(len(dropped_confounds_timeseries))
 #     except Exception as exc:
 #         exc = len(dropped_confounds_timeseries), dropped_image.get_fdata().shape[3]
-#         raise Exception("Sorry, the shapes are: {}.".format(exc))
+#         raise Exception(f"Sorry, the shapes are: {exc}.")

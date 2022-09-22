@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing BOLD data.
+
 post processing the bold/cifti
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_post_process_wf
@@ -8,47 +9,39 @@ post processing the bold/cifti
 """
 import numpy as np
 import sklearn
-from nipype.pipeline import engine as pe
-from pkg_resources import resource_filename as pkgrf
-from ..utils.utils import stringforparams
-from templateflow.api import get as get_template
-from ..interfaces import (FilteringData, regress)
-from ..interfaces import (interpolate, RemoveTR, CensorScrub)
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.interfaces.fsl import Smooth
-
+from nipype.interfaces.workbench import CiftiSmooth
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from pkg_resources import resource_filename as pkgrf
+from templateflow.api import get as get_template
+
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.utils.utils import stringforparams
 
 
 def init_post_process_wf(
         mem_gb,
         TR,
-        head_radius,
         lower_bpf,
         upper_bpf,
         bpf_order,
         smoothing,
         bold_file,
         params,
-        motion_filter_type,
-        motion_filter_order,
-        band_stop_max,
-        band_stop_min,
-        initial_volumes_to_drop,
         cifti=False,
         dummytime=0,
         fd_thresh=0.2,
         name="post_process_wf"):
-    """
-    This workflow is organizing workflows including
-    selectign confound matrix, regression and filtering
+    """Organize workflows including selecting confound matrix, regression, and filtering.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
             from xcp_d.workflows import init_post_process_wf
-            wf = init_init_post_process_wf_wf(
+            wf = init_post_process_wf(
                 mem_gb,
                 TR,
                 head_radius,
@@ -58,15 +51,12 @@ def init_post_process_wf(
                 smoothing,
                 bold_file,
                 params,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_max,
-                band_stop_min,
                 cifti=False,
                 dummytime,
                 fd_thresh,
                 name="post_process_wf",
                 )
+
     Parameters
     ----------
     TR: float
@@ -110,7 +100,6 @@ def init_post_process_wf(
     initial_volumes_to_drop: int
         the first volumes to be removed before postprocessing
 
-
     Inputs
     ------
     bold
@@ -129,39 +118,35 @@ def init_post_process_wf(
     tmask
         temporal mask
     """
-
     workflow = Workflow(name=name)
     workflow.__desc__ = """ \
 
 """
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-Before nuissance regression and filtering of the data, the first {nvol} were
+        workflow.__desc__ = workflow.__desc__ + f""" \
+Before nuissance regression and filtering of the data, the first {nvolx} were
 discarded. Furthermore, any volumes with framewise-displacement greater than
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were flagged
 as outliers and excluded from nuissance regression.
-""".format(nvol=nvolx, fd_thresh=fd_thresh)
+"""
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = workflow.__desc__ + f""" \
 Before nuissance regression and filtering any volumes with
 framewise-displacement greater than {fd_thresh}
 [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
 and excluded from further analyses.
-""".format(fd_thresh=fd_thresh)
+"""
 
-    workflow.__desc__ = workflow.__desc__ + """ \
-The following nuissance regressors {regressors}
+    workflow.__desc__ = workflow.__desc__ + f""" \
+The following nuissance regressors {stringforparams(params=params)}
 [@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected from nuissance
 confound matrices of fMRIPrep output.  These nuissance regressors were regressed
 out from the bold data with *LinearRegression* as implemented in Scikit-Learn
-{sclver} [@scikit-learn].  The residual were then  band pass filtered within the
-frequency band {highpass}-{lowpass} Hz.
- """.format(regressors=stringforparams(params=params),
-            sclver=sklearn.__version__,
-            lowpass=upper_bpf,
-            highpass=lower_bpf)
+{sklearn.__version__} [@scikit-learn].  The residual were then  band pass filtered within the
+frequency band {lower_bpf}-{upper_bpf} Hz.
+ """
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['bold', 'bold_file', 'bold_mask', 'custom_confounds']),
@@ -172,29 +157,19 @@ frequency band {highpass}-{lowpass} Hz.
 
     inputnode.inputs.bold_file = bold_file
     filtering_wf = pe.Node(FilteringData(TR=TR,
-                                     lowpass=upper_bpf,
-                                     highpass=lower_bpf,
-                                     filter_order=bpf_order),
-                       name="filter_the_data",
-                       mem_gb=0.25 * mem_gb)
-
-    regressy = pe.Node(regress(TR=TR),
-                       name="regress_the_data",
-                       mem_gb=0.25 * mem_gb)
-
-
-    # RF: rename to match
-    interpolatewf = pe.Node(interpolate(TR=TR),
-                            name="interpolation",
-                            mem_gb=0.25 * mem_gb)
-
+                                         lowpass=upper_bpf,
+                                         highpass=lower_bpf,
+                                         filter_order=bpf_order),
+                           name="filter_the_data",
+                           mem_gb=0.25 * mem_gb)
 
     if smoothing:
         sigma_lx = fwhm2sigma(smoothing)
         if cifti:
-            workflow.__desc__ = workflow.__desc__ + """
-The processed bold  was smoothed with the workbench with kernel size (FWHM) of {kernelsize}  mm .
-""".format(kernelsize=str(smoothing))
+            workflow.__desc__ = workflow.__desc__ + f"""
+The processed bold  was smoothed with the workbench with kernel size (FWHM) of
+{str(smoothing)}  mm .
+"""
             smooth_data = pe.Node(CiftiSmooth(
                 sigma_surf=sigma_lx,
                 sigma_vol=sigma_lx,
@@ -217,9 +192,9 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of {
             ])
 
         else:
-            workflow.__desc__ = workflow.__desc__ + """
-The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} mm.
-""".format(kernelsize=str(smoothing))
+            workflow.__desc__ = workflow.__desc__ + f"""
+The processed bold was smoothed with FSL and kernel size (FWHM) of {str(smoothing)} mm.
+"""
             smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
                                          fwhm=smoothing),
                                   name="nifti_smoothing",
@@ -234,6 +209,10 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {kernelsize} 
 
 
 def fwhm2sigma(fwhm):
+    """Convert FWHM to sigma.
+
+    NOTE: Duplicate of function in utils.
+    """
     return fwhm / np.sqrt(8 * np.log(2))
 
 
@@ -301,27 +280,27 @@ def init_resd_smoothing(mem_gb,
                         omp_nthreads,
                         cifti=False,
                         name="smoothing"):
-
+    """Smooth BOLD residuals."""
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
                         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(fields=['smoothed_bold']),
                          name='outputnode')
 
-    sigma_lx = fwhm2sigma(smoothing) # Turn specified FWHM (Full-Width at Half Maximum) 
+    sigma_lx = fwhm2sigma(smoothing)  # Turn specified FWHM (Full-Width at Half Maximum)
     # to standard deviation.
     if cifti:  # For ciftis
-        workflow.__desc__ = """ \
+        workflow.__desc__ = f""" \
 The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
-size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(smoothing))
+size of {str(smoothing)} mm  (FWHM).
+"""
 
         smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
             #  hemisphere
             sigma_surf=sigma_lx,  # the size of the surface kernel
             sigma_vol=sigma_lx,  # the volume of the surface kernel
             direction='COLUMN',  # which direction to smooth along@
-            right_surf=pkgrf( # pull out atlases for each hemisphere
+            right_surf=pkgrf(  # pull out atlases for each hemisphere
                 'xcp_d', 'data/ciftiatlas/'
                 'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
             ),
@@ -338,14 +317,15 @@ size of {kernelsize} mm  (FWHM).
                           (smooth_data, outputnode, [('out_file',
                                                       'smoothed_bold')])])
 
-    else:  #  for Nifti
-        workflow.__desc__ = """ \
-The processed BOLD was smoothed using  FSL with a gaussian kernel size of {kernelsize} mm  (FWHM).
-""".format(kernelsize=str(smoothing))
+    else:  # for Nifti
+        workflow.__desc__ = f""" \
+The processed BOLD was smoothed using  FSL with a gaussian kernel size of {str(smoothing)} mm
+(FWHM).
+"""
         smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),  # FWHM = kernel size
                               name="nifti_smoothing",
                               mem_gb=mem_gb,
-                              n_procs=omp_nthreads)  #  Use fslmaths to smooth the image
+                              n_procs=omp_nthreads)  # Use fslmaths to smooth the image
 
         #  Connect to workflow
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),

@@ -1,30 +1,36 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""Workflows for post-processing CIFTI-format BOLD data.
+
 post processing the bold
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: init_ciftipostprocess_wf
 
 """
 import os
-import sklearn
-import numpy as np
+
 import nibabel as nb
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
+import numpy as np
+import sklearn
 from nipype import logging
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
-from ..interfaces import computeqcplot
-from ..utils import bid_derivative, stringforparams
-from ..interfaces import FunctionalSummary, ciftidespike
-from .connectivity import init_cifti_conts_wf
-from .restingstate import init_compute_alff_wf, init_surface_reho_wf
-from .execsummary import init_execsummary_wf
-from ..interfaces import (FilteringData, regress)
-from .postprocessing import init_pre_smoothing, init_resd_smoothing
-from .outputs import init_writederivatives_wf
-from ..interfaces import (interpolate, RemoveTR, CensorScrub)
+
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.regression import CiftiDespike, Regress
+from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.utils import stringforparams
+from xcp_d.workflow.connectivity import init_cifti_conts_wf
+from xcp_d.workflow.execsummary import init_execsummary_wf
+from xcp_d.workflow.outputs import init_writederivatives_wf
+from xcp_d.workflow.postprocessing import init_pre_smoothing, init_resd_smoothing
+from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_wf
+
 LOGGER = logging.getLogger('nipype.workflow')
 
 
@@ -51,8 +57,8 @@ def init_ciftipostprocess_wf(cifti_file,
                              num_cifti,
                              layout=None,
                              name='cifti_process_wf'):
-    """
-    This workflow organizes cifti processing workflow.
+    """Organize the cifti processing workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -82,7 +88,6 @@ def init_ciftipostprocess_wf(cifti_file,
                 template='MNI152NLin2009cAsym',
                 layout=None,
                 name='cifti_postprocess_wf',)
-
 
     Parameters
     ----------
@@ -166,15 +171,14 @@ def init_ciftipostprocess_wf(cifti_file,
         gordon 333 func matrices
     qc_file
         quality control files
-
     """
     workflow = Workflow(name=name)
-    workflow.__desc__ = """
-For each of the {num_cifti} CIFTI runs found per subject (across all
+    workflow.__desc__ = f"""
+For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
-""".format(num_cifti=num2words(num_cifti))
+"""
 
-    TR = get_ciftiTR(cifti_file)
+    TR = get_cifti_tr(cifti_file)
     if TR is None:
         metadata = layout.get_metadata(cifti_file)
         TR = metadata['RepetitionTime']
@@ -182,37 +186,36 @@ tasks and sessions), the following post-processing was performed:
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
         confounds_tsv = get_confounds_tsv(cifti_file)
-    except Exception as exc:
-        raise Exception("Unable to find confounds file for {}.".format(cifti_file))
+    except Exception:
+        raise Exception(f"Unable to find confounds file for {cifti_file}.")
 
-    # TR = get_ciftiTR(cifti_file=cifti_file)
+    # TR = get_cifti_tr(cifti_file=cifti_file)
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + """ \
-before nuisance regression and filtering of the data,  the first {nvol} were discarded.
+        workflow.__desc__ = workflow.__desc__ + f""" \
+before nuisance regression and filtering of the data,  the first
+{num2words(initial_volumes_to_drop)} were discarded.
 Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
 with framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
 flagged as outliers and excluded from nuisance regression.
-""".format(nvol=num2words(initial_volumes_to_drop), fd_thresh=fd_thresh)
+"""
 
     else:
-        workflow.__desc__ = workflow.__desc__ + """ \
+        workflow.__desc__ = workflow.__desc__ + f""" \
 before nuissance regression and filtering,both the nuisance regressors and volumes were demeaned
 and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
 [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuissance
 regression.
-""".format(fd_thresh=fd_thresh)
+"""
 
-    workflow.__desc__ = workflow.__desc__ + """ \
-{regressors} [@mitigating_2018;@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
-regressed from the BOLD data using linear regression - as implemented in Scikit-Learn {sclver}
-[@scikit-learn]. Residual timeseries from this regression were then band-pass filtered to retain
-signals within the {highpass}-{lowpass} Hz frequency band.
- """.format(regressors=stringforparams(params=params),
-            sclver=sklearn.__version__,
-            lowpass=upper_bpf,
-            highpass=lower_bpf)
+    workflow.__desc__ = workflow.__desc__ + f""" \
+{stringforparams(params=params)} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].
+These nuisance regressors were regressed from the BOLD data using linear regression -
+as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
+Residual timeseries from this regression were then band-pass filtered to retain signals within the
+{lower_bpf}-{upper_bpf} Hz frequency band.
+"""
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
@@ -251,7 +254,6 @@ signals within the {highpass}-{lowpass} Hz frequency band.
 
     reho_compute_wf = init_surface_reho_wf(
         mem_gb=mem_gbx['timeseries'],
-        smoothing=smoothing,
         name="surface_reho_wf",
         omp_nthreads=omp_nthreads)
 
@@ -265,7 +267,6 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         lowpass=upper_bpf,
         highpass=lower_bpf,
         TR=TR,
-        omp_nthreads=omp_nthreads,
         name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(
@@ -307,20 +308,20 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=cifti_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     qcreport = pe.Node(
-        computeqcplot(
+        QCPlot(
             TR=TR,
             bold_file=cifti_file,
             dummytime=dummytime,
@@ -362,8 +363,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
-            mem_gb=0.1*mem_gbx['timeseries'])
-
+            mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (bolddatanode, rm_dummytime, [('bold_file', 'bold_file')]),
@@ -384,7 +384,7 @@ signals within the {highpass}-{lowpass} Hz frequency band.
         ])
 
     if despike:  # If we despike
-        despike3d = pe.Node(ciftidespike(TR=TR),
+        despike3d = pe.Node(CiftiDespike(TR=TR),
                             name="cifti_despike",
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
@@ -592,10 +592,13 @@ def _create_mem_gb(bold_fname):
 
 
 # RF: shouldn't be here
-class DerivativesDataSink(bid_derivative):
+class DerivativesDataSink(BIDSDerivativesDataSink):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'
 
 
-def get_ciftiTR(cifti_file):
+def get_cifti_tr(cifti_file):
+    """Extract TR from CIFTI file."""
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step

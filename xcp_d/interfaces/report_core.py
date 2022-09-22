@@ -1,13 +1,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-from pathlib import Path
-from niworkflows.reports.core import Report as _Report
-import glob as glob
+"""Tools for generating Reports.
 
-# this is from niworklfows, a patched will be submitted
+This is from niworkflows, a patch will be submitted.
+"""
+import glob as glob
+from pathlib import Path
+
+from niworkflows.reports.core import Report as _Report
 
 
 class Report(_Report):
+    """A modified form of niworkflows' core Report object."""
+
     def _load_config(self, config):
         from yaml import safe_load as load
 
@@ -18,7 +23,7 @@ class Report(_Report):
         # In this version, pass reportlets_dir and out_dir with fmriprep in the path.
 
         if self.subject_id is not None:
-            self.root = self.root / "sub-{}".format(self.subject_id)
+            self.root = self.root / f"sub-{self.subject_id}"
 
         if "template_path" in settings:
             self.template_path = config.parent / settings["template_path"]
@@ -39,9 +44,27 @@ def run_reports(
     reportlets_dir=None,
     packagename=None,
 ):
-    """
-    Run the reports.
+    """Run the reports.
 
+    Parameters
+    ----------
+    out_dir : str
+        The output directory.
+    subject_label : str
+        The subject ID.
+    run_uuid : str
+        The UUID of the run for which the report will be generated.
+    config : None or str, optional
+        Configuration file.
+    reportlets_dir : None or str, optional
+        Path to the reportlets directory.
+    packagename : None or str, optional
+        The name of the package.
+
+    Returns
+    -------
+    str
+        An HTML file generated from a Report object.
     """
     return Report(
         out_dir,
@@ -62,7 +85,27 @@ def generate_reports(subject_list,
                      packagename=None,
                      combineruns=False,
                      input_type='fmriprep'):
-    """Execute run_reports on a list of subjects."""
+    """Execute run_reports on a list of subjects.
+
+    subject_list : list of str
+        List of subject IDs.
+    fmri_dir : str
+        The path to the fMRI directory.
+    work_dir : str
+        The path to the working directory.
+    output_dir : str
+        The path to the output directory.
+    run_uuid : str
+        The UUID of the run for which the report will be generated.
+    config : None or str, optional
+        Configuration file.
+    packagename : None or str, optional
+        The name of the package.
+    combineruns : bool, optional
+        Whether to concatenate runs or not. Default is False.
+    input_type : {'fmriprep', 'dcan', 'hcp'}, optional
+        Default is 'fmriprep'.
+    """
     # reportlets_dir = None
     if work_dir is not None:
         work_dir = work_dir
@@ -85,7 +128,7 @@ def generate_reports(subject_list,
 
         logger = logging.getLogger("cli")
         error_list = ", ".join(
-            "%s (%d)" % (subid, err)
+            f"{subid} ({err})"
             for subid, err in zip(subject_list, report_errors) if err)
         logger.error(
             "Processsing did not finish successfully. Errors occurred while processing "
@@ -99,7 +142,7 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/dcanhcp'
             elif input_type == 'hcp':
                 fmri_dir = str(work_dir) + '/hcp/hcp'
-            from ..utils import concatenatebold
+            from xcp_d.utils import concatenatebold
             print('Concatenating bold files ...')
             concatenatebold(subjlist=subject_list,
                             fmridir=str(fmri_dir),
@@ -107,22 +150,23 @@ def generate_reports(subject_list,
                             work_dir=work_dir)
             print('Concatenation complete!')
 
-        from .layout_builder import layout_builder
+        from xcp_d.interfaces.layout_builder import LayoutBuilder
         for subject_label in subject_list:
             brainplotfile = str(
                 glob.glob(
-                    str(Path(output_dir)) + '/xcp_d/sub-' +
-                    str(subject_label) +
-                    '/figures/*_desc-brainplot_T1w.html')[0])
-            layout_builder(html_path=str(Path(output_dir)) + '/xcp_d/',
-                           subject_id=subject_label,
-                           session_id=_getsesid(brainplotfile))
+                    str(Path(output_dir)) + '/xcp_d/sub-'
+                    + str(subject_label)
+                    + '/figures/*_desc-brainplot_T1w.html')[0])
+            LayoutBuilder(html_path=str(Path(output_dir)) + '/xcp_d/',
+                          subject_id=subject_label,
+                          session_id=_getsesid(brainplotfile))
 
         print('Reports generated successfully')
     return errno
 
 
 def _getsesid(filename):
+    """Get session ID from filename."""
     import os
     ses_id = None
     filex = os.path.basename(filename)

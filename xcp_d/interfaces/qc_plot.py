@@ -1,28 +1,34 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: qc
+"""Quality control plotting interfaces.
 
+.. autofunction:: qc
 """
 import os
+
 import numpy as np
-from ..utils.confounds import load_confound, load_motion
-from nipype import logging
-from ..utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-from ..utils import (read_ndata, write_ndata, compute_FD, compute_dvars)
 import pandas as pd
-from ..utils.plot import fMRIPlot
-from ..utils import regisQ
+from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils.concantenation import compute_dvars
+from xcp_d.utils.confounds import load_confound, load_motion
+from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.modified_data import compute_fd
+from xcp_d.utils.plot import FMRIPlot
+from xcp_d.utils.qcmetrics import compute_registration_qc
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _qcInputSpec(BaseInterfaceInputSpec):
+class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
                      desc="Raw bold file from fMRIPrep")
@@ -58,7 +64,7 @@ class _qcInputSpec(BaseInterfaceInputSpec):
         desc='High frequency for Notch filter in BPM')
 
 
-class _qcOutputSpec(TraitedSpec):
+class _QCPlotOutputSpec(TraitedSpec):
     qc_file = File(exists=True, manadatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True,
                       manadatory=True,
@@ -68,29 +74,30 @@ class _qcOutputSpec(TraitedSpec):
                         desc="qc plot after regression")
 
 
-class computeqcplot(SimpleInterface):
-    r"""
-    qc and qc plot
+class QCPlot(SimpleInterface):
+    """Generate a quality control (QC) figure.
+
+    Examples
+    --------
     .. testsetup::
     >>> from tempfile import TemporaryDirectory
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> computeqcwf = computeqcplot()
-    >>> computeqcwf.inputs.cleaned_file = datafile
-    >>> computeqcwf.inputs.bold_file = rawbold
-    >>> computeqcwf.inputs.TR = TR
-    >>> computeqcwf.inputs.tmask = temporalmask
-    >>> computeqcwf.inputs.mask_file = mask
-    >>> computeqcwf.inputs.dummytime = dummytime
-    >>> computeqcwf.run()
+    computeqcwf = QCPlot()
+    computeqcwf.inputs.cleaned_file = datafile
+    computeqcwf.inputs.bold_file = rawbold
+    computeqcwf.inputs.TR = TR
+    computeqcwf.inputs.tmask = temporalmask
+    computeqcwf.inputs.mask_file = mask
+    computeqcwf.inputs.dummytime = dummytime
+    computeqcwf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
-
     """
 
-    input_spec = _qcInputSpec
-    output_spec = _qcOutputSpec
+    input_spec = _QCPlotInputSpec
+    output_spec = _QCPlotOutputSpec
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
@@ -108,7 +115,7 @@ class computeqcplot(SimpleInterface):
                                      "trans_y", "trans_z"
                                  ])
         # Compute fd_timeseries from motion_confounds df
-        fd_timeseries = compute_FD(confound=motion_df,
+        fd_timeseries = compute_fd(confound=motion_df,
                                    head_radius=self.inputs.head_radius)
 
         # Get rmsd
@@ -147,8 +154,9 @@ class computeqcplot(SimpleInterface):
             suffix='_clean_qcplot.svg',
             newpath=runtime.cwd,
             use_ext=False)
-        raw_data_removed_TR = read_ndata(datafile=self.inputs.bold_file,
-                                         maskfile=self.inputs.mask_file)[:, initial_volumes_to_drop:]
+        raw_data_removed_TR = read_ndata(
+            datafile=self.inputs.bold_file,
+            maskfile=self.inputs.mask_file)[:, initial_volumes_to_drop:]
 
         # Get file names to write out & write data out
         if self.inputs.bold_file.endswith('nii.gz'):
@@ -165,7 +173,7 @@ class computeqcplot(SimpleInterface):
 
         confounds = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_before_processing})
 
-        fig = fMRIPlot(func_file=temporary_file,
+        fig = FMRIPlot(func_file=temporary_file,
                        seg_file=self.inputs.seg_file,
                        data=confounds,
                        mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -207,7 +215,7 @@ class computeqcplot(SimpleInterface):
                         filename=temporary_file,
                         TR=self.inputs.TR)
 
-            figure = fMRIPlot(func_file=temporary_file,
+            figure = FMRIPlot(func_file=temporary_file,
                               seg_file=self.inputs.seg_file,
                               data=confounds,
                               mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -226,7 +234,7 @@ class computeqcplot(SimpleInterface):
                                              maskfile=self.inputs.mask_file)
             confounds = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_after_processing})
 
-            figure = fMRIPlot(func_file=self.inputs.cleaned_file,
+            figure = FMRIPlot(func_file=self.inputs.cleaned_file,
                               seg_file=self.inputs.seg_file,
                               data=confounds,
                               mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -257,10 +265,12 @@ class computeqcplot(SimpleInterface):
         qc_dictionary.update(qc_values)
         if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
             # Compute quality of registration
-            registration_qc = regisQ(bold2t1w_mask=self.inputs.bold2T1w_mask,
-                                     t1w_mask=self.inputs.t1w_mask,
-                                     bold2template_mask=self.inputs.bold2temp_mask,
-                                     template_mask=self.inputs.template_mask)
+            registration_qc = compute_registration_qc(
+                bold2t1w_mask=self.inputs.bold2T1w_mask,
+                t1w_mask=self.inputs.t1w_mask,
+                bold2template_mask=self.inputs.bold2temp_mask,
+                template_mask=self.inputs.template_mask,
+            )
             qc_dictionary.update(registration_qc)  # Add values to dictionary
 
         # Convert dictionary to df and write out the qc file

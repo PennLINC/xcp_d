@@ -1,24 +1,27 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
-import numpy as np
-from nipype import logging
-from sklearn.linear_model import LinearRegression
-from ..utils.filemanip import fname_presuffix
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
-
-from xcp_d.utils import confounds
-from ..utils import (read_ndata, write_ndata, despikedatacifti, load_confound_matrix)
+"""Regression interfaces."""
 from os.path import exists
-from scipy import signal
+
 import pandas as pd
+from nipype import logging
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils.confounds import load_confound_matrix
+from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import demean_detrend_data, linear_regression
+from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
 
-class _regressInputSpec(BaseInterfaceInputSpec):
+class _RegressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="The bold file to be regressed")
@@ -38,18 +41,19 @@ class _regressInputSpec(BaseInterfaceInputSpec):
                                      mandatory=False)
 
 
-class _regressOutputSpec(TraitedSpec):
+class _RegressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
     confound_matrix = File(exists=True,
-                            mandatory=True,
-                            desc="Confounds matrix returned for testing purposes only")
+                           mandatory=True,
+                           desc="Confounds matrix returned for testing purposes only")
 
-class regress(SimpleInterface):
-    r"""
-    Takes in the confound tsv, turns it to a matrix and expands it. Custom
-    confounds are added in during this step if present.
+
+class Regress(SimpleInterface):
+    """Takes in the confound tsv, turns it to a matrix and expands it.
+
+    Custom confounds are added in during this step if present.
 
     Then reads in the bold file, does demeaning and a linear detrend.
 
@@ -57,8 +61,8 @@ class regress(SimpleInterface):
     the bold files and returns the residual image, as well as the confounds for testing.
     """
 
-    input_spec = _regressInputSpec
-    output_spec = _regressOutputSpec
+    input_spec = _RegressInputSpec
+    output_spec = _RegressOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -121,57 +125,20 @@ class regress(SimpleInterface):
         return runtime
 
 
-def linear_regression(data, confound):
-    '''
-     data :
-       numpy ndarray- vertices by timepoints for bold file
-     confound:
-       nuissance regressors - vertices by timepoints for confounds matrix
-     returns:
-        residual matrix after regression
-    '''
-    regression = LinearRegression(n_jobs=1)
-    regression.fit(confound.T, data.T)
-    y_predicted = regression.predict(confound.T)
-
-    return data - y_predicted.T
-
-
-def demean_detrend_data(data):
-
-    '''
-    data:
-        numpy ndarray- vertices by timepoints for bold file
-
-    Returns demeaned and detrended data
-    '''
-
-    demeaned = signal.detrend(data, axis=- 1, type='constant', bp=0,
-                              overwrite_data=False)  # Demean data using "constant" detrend,
-    # which subtracts mean
-    detrended = signal.detrend(demeaned, axis=- 1, type='linear', bp=0,
-                               overwrite_data=False)  # Detrend data using linear method
-
-    return detrended  # Subtract these predicted values from the demeaned data
-
-
-class _ciftidespikeInputSpec(BaseInterfaceInputSpec):
+class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
     TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
 
 
-class _ciftidespikeOutputSpec(TraitedSpec):
+class _CiftiDespikeOutputSpec(TraitedSpec):
     des_file = File(exists=True, manadatory=True, desc=" despike cifti")
 
 
-class ciftidespike(SimpleInterface):
-    r"""
+class CiftiDespike(SimpleInterface):
+    """Despike a CIFTI file."""
 
-
-    """
-
-    input_spec = _ciftidespikeInputSpec
-    output_spec = _ciftidespikeOutputSpec
+    input_spec = _CiftiDespikeInputSpec
+    output_spec = _CiftiDespikeOutputSpec
 
     def _run_interface(self, runtime):
 

@@ -2,10 +2,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Version CLI helpers."""
 
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
 import requests
-from .. import __version__
+
+from xcp_d import __version__
 
 RELEASE_EXPIRY_DAYS = 14
 DATE_FMT = '%Y%m%d'
@@ -13,7 +15,7 @@ DATE_FMT = '%Y%m%d'
 
 def check_latest():
     """Determine whether this is the latest version."""
-    from packaging.version import Version, InvalidVersion
+    from packaging.version import InvalidVersion, Version
 
     latest = None
     date = None
@@ -58,8 +60,7 @@ def check_latest():
 
     if cachefile is not None and latest is not None:
         try:
-            cachefile.write_text('|'.join(
-                ('%s' % latest, datetime.now().strftime(DATE_FMT))))
+            cachefile.write_text('|'.join((str(latest), datetime.now().strftime(DATE_FMT))))
         except Exception:
             pass
 
@@ -70,9 +71,10 @@ def is_flagged():
     """Check whether current version is flagged."""
     flagged = tuple()
     try:
-        response = requests.get(url="""\
-https://raw.githubusercontent.com/xcp_d/xcp_d/master/.versions.json""",
-                                timeout=1.0)
+        response = requests.get(
+            url="https://raw.githubusercontent.com/xcp_d/xcp_d/master/.versions.json",
+            timeout=1.0,
+        )
     except Exception:
         response = None
 

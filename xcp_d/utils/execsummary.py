@@ -1,25 +1,38 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-import nilearn.image as nlimage
-import tempita
-from pkg_resources import resource_filename as pkgrf
-from brainsprite import viewer_substitute
-import numpy as np
-import nibabel as nb
+"""Functions for generating the executive summary."""
 from uuid import uuid4
+
+import nibabel as nb
+import nilearn.image as nlimage
+import numpy as np
+import tempita
+from brainsprite import viewer_substitute
 from nilearn.plotting import plot_anat
-from niworkflows.viz.utils import extract_svg, robust_set_limits, compose_view
-from svgutils.transform import fromstring
+from niworkflows.viz.utils import compose_view, extract_svg, robust_set_limits
+from pkg_resources import resource_filename as pkgrf
 from skimage import measure
+from svgutils.transform import fromstring
 
 
 def surf2vol(template, left_surf, right_surf, filename, scale=1):
-    """
-    template, t1w image in nii.gz or mgz from freesufer of other subject
-    left_surf,right_surf, gii file
+    """Convert surface data to volumetric space.
+
+    Parameters
+    ----------
+    template : str
+        t1w image in nii.gz or mgz from freesufer of other subject
+    left_surf/right_surf
+        Path to gii file
+    filename : str
+        Output filename
+    scale : float
+        A scale to apply to the intensity values before their written out.
+
+    Returns
+    -------
     filename
     """
-
     # load the t1 image
     t1_image = nb.load(template)
     ras2vox = np.linalg.inv(t1_image.affine)
@@ -47,10 +60,7 @@ def surf2vol(template, left_surf, right_surf, filename, scale=1):
 
 
 def get_regplot(brain, overlay, out_file, cuts=3, order=("x", "y", "z")):
-    """
-
-    """
-
+    """Create registration plot."""
     brain = nb.load(brain)
     overlay = nb.load(overlay)
     from niworkflows.viz.utils import cuts_from_bbox
@@ -76,8 +86,8 @@ def plot_registrationx(
     contour=None,
     compress="auto",
 ):
-    """
-    Plots the foreground and background views
+    """Plot the foreground and background views.
+
     Default order is: axial, coronal, sagittal
     """
     plot_params = {} if plot_params is None else plot_params
@@ -111,14 +121,14 @@ def plot_registrationx(
         display.close()
 
         # Find and replace the figure_1 id.
-        svg = svg.replace("figure_1", "%s-%s-%s" % (div_id, mode, uuid4()), 1)
+        svg = svg.replace("figure_1", f"{div_id}-{mode}-{uuid4()}", 1)
         out_files.append(fromstring(svg))
 
     return out_files
 
 
 def generate_brain_sprite(template_image, stat_map, out_file):
-
+    """Generate a brainsprite HTML file."""
     file_template = pkgrf("xcp_d", 'data/transform/brainsprite_template.html')
     template = tempita.Template.from_filename(file_template, encoding="utf-8")
 
@@ -144,7 +154,7 @@ def generate_brain_sprite(template_image, stat_map, out_file):
 
 
 def ribbon_to_statmap(ribbon, outfile):
-
+    """Convert a ribbon to a volumetric statistical map."""
     # chek if the data is ribbon or seg_data files
 
     ngbdata = nb.load(ribbon)
@@ -171,7 +181,7 @@ def ribbon_to_statmap(ribbon, outfile):
 
 
 def _get_contour(datax):
-    # contour in each plane
+    """Get contour in each plane."""
     dims = datax.shape
 
     contour = np.zeros_like(datax)

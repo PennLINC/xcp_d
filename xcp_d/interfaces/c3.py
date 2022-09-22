@@ -1,26 +1,29 @@
 # -*- coding: utf-8 -*-
 """Convert3D is a command-line tool for converting 3D images between common file formats."""
+import logging
 import os
 from glob import glob
 
 from nipype.interfaces.base import (
+    CommandLine,
     CommandLineInputSpec,
-    traits,
-    TraitedSpec,
     File,
-    SEMLikeCommandLine,
     InputMultiPath,
     OutputMultiPath,
-    CommandLine,
+    SEMLikeCommandLine,
+    TraitedSpec,
     isdefined,
+    traits,
 )
-from ..utils.filemanip import split_filename
-import logging
+
+from xcp_d.utils.filemanip import split_filename
 
 iflogger = logging.getLogger("interface")
 
 
-class C3dAffineToolInputSpec(CommandLineInputSpec):
+class _C3dAffineToolInputSpec(CommandLineInputSpec):
+    """Input specification for C3dAffineTool."""
+
     reference_file = File(exists=True, argstr="-ref %s", position=1)
     source_file = File(exists=True, argstr="-src %s", position=2)
     transform_file = File(exists=True, argstr="%s", position=3)
@@ -35,16 +38,17 @@ class C3dAffineToolInputSpec(CommandLineInputSpec):
     fsl2ras = traits.Bool(argstr="-fsl2ras", position=4)
 
 
-class C3dAffineToolOutputSpec(TraitedSpec):
+class _C3dAffineToolOutputSpec(TraitedSpec):
+    """Output specification for C3dAffineTool."""
+
     itk_transform = File(exists=True)
 
 
 class C3dAffineTool(SEMLikeCommandLine):
-    """Converts fsl-style Affine registration into ANTS compatible itk format
+    """Convert FSL-style affine registration into ANTS-compatible itk format.
 
-    Example
-    =======
-
+    Examples
+    --------
     >>> from nipype.interfaces.c3 import C3dAffineTool
     >>> c3 = C3dAffineTool()
     >>> c3.inputs.source_file = 'cmatrix.mat'
@@ -54,14 +58,16 @@ class C3dAffineTool(SEMLikeCommandLine):
     'c3d_affine_tool -src cmatrix.mat -fsl2ras -oitk affine.txt'
     """
 
-    input_spec = C3dAffineToolInputSpec
-    output_spec = C3dAffineToolOutputSpec
+    input_spec = _C3dAffineToolInputSpec
+    output_spec = _C3dAffineToolOutputSpec
 
     _cmd = "c3d_affine_tool"
     _outputs_filenames = {"itk_transform": "affine.txt"}
 
 
-class C3dInputSpec(CommandLineInputSpec):
+class _C3dInputSpec(CommandLineInputSpec):
+    """Input specification for C3d."""
+
     in_file = InputMultiPath(
         File(),
         position=1,
@@ -160,12 +166,15 @@ class C3dInputSpec(CommandLineInputSpec):
     )
 
 
-class C3dOutputSpec(TraitedSpec):
+class _C3dOutputSpec(TraitedSpec):
+    """Output specification for C3d."""
+
     out_files = OutputMultiPath(File(exists=False))
 
 
 class C3d(CommandLine):
-    """
+    """A wrapper for the c3d command.
+
     Convert3d is a command-line tool for converting 3D (or 4D) images between
     common file formats. The tool also includes a growing list of commands for
     image manipulation, such as thresholding and resampling. The tool can also
@@ -173,10 +182,8 @@ class C3d(CommandLine):
     Convert3d can be found at:
     https://sourceforge.net/p/c3d/git/ci/master/tree/doc/c3d.md
 
-
-    Example
-    =======
-
+    Examples
+    --------
     >>> from nipype.interfaces.c3 import C3d
     >>> c3 = C3d()
     >>> c3.inputs.in_file = "T1.nii"
@@ -191,8 +198,8 @@ class C3d(CommandLine):
     'c4d epi.nii -type short -o epi.img'
     """
 
-    input_spec = C3dInputSpec
-    output_spec = C3dOutputSpec
+    input_spec = _C3dInputSpec
+    output_spec = _C3dOutputSpec
 
     _cmd = "c3d"
 

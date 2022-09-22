@@ -1,3 +1,4 @@
+"""Tests for filtering methods."""
 # from xcp_d.interfaces.filtering import butter_bandpass  # Butterworth
 # from xcp_d.utils.confounds import motion_regression_filter  # lowpass and notch
 # from xcp_d.utils import read_ndata
@@ -5,7 +6,8 @@
 # import numpy as np
 
 
-# #  Read in raw data and filtered data to compare with as df --> update ASAP to put this on circleCI so we can test there too
+# Read in raw data and filtered data to compare with as df
+# update ASAP to put this on circleCI so we can test there too
 # raw_data = '/Users/kahinim/Desktop/filter/raw_data.csv'
 # raw_data_df = pd.read_table(raw_data, header=None)
 # low_pass = '/Users/kahinim/Desktop/filter/low_passed_MR_data.csv'
@@ -17,13 +19,19 @@
 
 
 # def test_lp_notch():
-#     '''
+#     """
 #     Run LP/Notch on toy data, compare to results that have been verified
-#     '''
+#     """
 #     freqband = [12, 20]
 #     # Confirm the LP filter runs with reasonable parameters
-#     LP_data = motion_regression_filter(raw_data_df.to_numpy().T.copy(), TR=0.8, motion_filter_type='lp',
-#                                        motion_filter_order=2, freqband=freqband, cutoff=12)
+#     LP_data = motion_regression_filter(
+#         raw_data_df.to_numpy().T.copy(),
+#         TR=0.8,
+#         motion_filter_type='lp',
+#         motion_filter_order=2,
+#         freqband=freqband,
+#         cutoff=12,
+#     )
 
 #     # What's the difference from the verified data?
 #     lp_data_comparator = lowpass_data_df.to_numpy().T
@@ -46,9 +54,9 @@
 
 
 # def test_butterworth():
-#     '''
+#     """
 #     Run Butterworth on toy data, compare to results that have been verified
-#     '''
+#     """
 #     # Confirm the butterworth filter runs with reasonable parameters
 #     butterworth_data = butter_bandpass(raw_data_df.to_numpy().T.copy(), fs=1/0.8, highpass=0.009,
 #                                        lowpass=0.080, order=2)

@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
+"""The primary workflows for xcp_d.
+
 post processing
 ^^^^^^^^^^^^^^^
 
@@ -8,23 +9,30 @@ post processing
 
 """
 
-import sys
 import glob
 import json
 import os
+import sys
 from copy import deepcopy
+
 from nipype import __version__ as nipype_ver
-from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
-from ..__about__ import __version__
-from ..utils import (collect_data, get_customfile, select_cifti_bold,
-                     select_registrationfile, extract_t1w_seg)
-from .bold import init_boldpostprocess_wf
-from .cifti import init_ciftipostprocess_wf
-from .anatomical import init_anatomical_wf
+from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from ..interfaces import SubjectSummary, AboutSummary
-from ..utils import bid_derivative
+
+from xcp_d.__about__ import __version__
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.report import AboutSummary, SubjectSummary
+from xcp_d.utils.bids import (
+    collect_data,
+    extract_t1w_seg,
+    select_cifti_bold,
+    select_registrationfile,
+)
+from xcp_d.utils.utils import get_customfile
+from xcp_d.workflow.anatomical import init_anatomical_wf
+from xcp_d.workflow.bold import init_boldpostprocess_wf
+from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
 
 def init_xcpd_wf(layout,
@@ -54,9 +62,10 @@ def init_xcpd_wf(layout,
                  fd_thresh,
                  input_type='fmriprep',
                  name='xcpd_wf'):
-    """
-    This workflow builds and organizes  execution of  xcp_d  pipeline.
-    It is also connect the subworkflows under the xcp_d
+    """Build and organize execution of xcp_d pipeline.
+
+    It also connects the subworkflows under the xcp_d workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -142,12 +151,10 @@ def init_xcpd_wf(layout,
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-s
     """
-
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-
+    print("Begin the " + name + " workflow")
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -180,6 +187,7 @@ s
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
+        print("Analyzing data at the " + str(analysis_level) + " level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
@@ -189,9 +197,9 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
                     motion_filter_type, bandpass_filter,
                     band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
                     subject_id, cifti, despike, head_radius, params, dummytime,
-                    fd_thresh, task_id, presmoothing, smoothing, custom_confounds,
-                    output_dir, input_type, name):
-    """This workflow organizes the postprocessing pipeline for a single subject
+                    fd_thresh, task_id, presmoothing, smoothing, custom_confounds, output_dir,
+                    input_type, name):
+    """Organize the postprocessing pipeline for a single subject.
 
     # RF: this is the wrong function
     Workflow Graph
@@ -269,9 +277,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         path to custom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-
     """
-
     layout, subj_data = collect_data(bids_dir=fmri_dir,
                                      participant_label=subject_id,
                                      task=task_id,
@@ -292,14 +298,13 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """
+    workflow.__desc__ = f"""
 ### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
-was used to post-process the outputs of fMRIPrep version {fvers} [@fmriprep1].
+was used to post-process the outputs of fMRIPrep version {getfmriprepv(fmri_dir=fmri_dir)}
+[@fmriprep1].
 XCP was built with *Nipype* {nipype_ver} [@nipype1].
-""".format(input_type=input_type,
-           nipype_ver=nipype_ver,
-           fvers=getfmriprepv(fmri_dir=fmri_dir))
+"""
 
     workflow.__postdesc__ = """
 
@@ -417,7 +422,6 @@ It is released under the [CC0]\
                 params=params,
                 head_radius=head_radius,
                 omp_nthreads=omp_nthreads,
-                brain_template='MNI152NLin2009cAsym',
                 num_bold=len(subject_data[0]),
                 custom_confounds=custom_confoundsx,
                 layout=layout,
@@ -460,36 +464,28 @@ It is released under the [CC0]\
 
 
 def _prefix(subid):
-    """
-    Prefix for subject id
-    """
+    """Infer prefix from subject ID."""
     if subid.startswith('sub-'):
         return subid
     return '-'.join(('sub', subid))
 
 
 def _pop(inlist):
-    """
-    make a list of lists into a list
-    """
+    """Make a list of lists into a list."""
     if isinstance(inlist, (list, tuple)):
         return inlist[0]
     return inlist
 
 
 # RF: this shouldn't be in this file
-class DerivativesDataSink(bid_derivative):
-    """
-    defines the data sink for the workflow
-    """
+class DerivativesDataSink(BIDSDerivativesDataSink):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'
 
 
 def getfmriprepv(fmri_dir):
-    """
-    get fmriprep/nibabies/dcan/hcp version
-    """
-
+    """Get fmriprep/nibabies/dcan/hcp version."""
     datax = glob.glob(fmri_dir + '/dataset_description.json')
 
     if datax:
@@ -505,9 +501,7 @@ def getfmriprepv(fmri_dir):
 
 
 def _getsesid(filename):
-    """
-    get session id from filename if available
-    """
+    """Get session ID from filename if available."""
     ses_id = None
     filex = os.path.basename(filename)
 

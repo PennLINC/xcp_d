@@ -1,19 +1,24 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
-import os
+"""Workflows for generating the executive summary."""
 import fnmatch
 import glob
-from ..interfaces.connectivity import ApplyTransformsx
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from nipype.pipeline import engine as pe
+import os
+
 from nipype.interfaces import utility as niu
-from ..interfaces import PlotSVGData, PlotImage
-from ..utils import bid_derivative, get_transformfile
+from nipype.pipeline import engine as pe
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.connectivity import ApplyTransformsx
+from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData
+from xcp_d.utils.utils import get_transformfile
 
-class DerivativesDataSink(bid_derivative):
+
+class DerivativesDataSink(BIDSDerivativesDataSink):
+    """Defines the data sink for the workflow."""
+
     out_path_base = 'xcp_d'
 
 
@@ -25,7 +30,7 @@ def init_execsummary_wf(omp_nthreads,
                         mem_gb,
                         layout,
                         name='execsummary_wf'):
-
+    """Generate an executive summary."""
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=[
@@ -95,7 +100,7 @@ def init_execsummary_wf(omp_nthreads,
     ds_plot_bold_reference_file_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                                  dismiss_entities=['den'],
                                                                  datatype="figures",
-                                                                 desc='bold_reference_file'),
+                                                                 desc='boldref'),
                                              name='plotbold_reference_file',
                                              run_without_submitting=True)
 
@@ -118,7 +123,7 @@ def init_execsummary_wf(omp_nthreads,
                                                      in_file=bold_t1w_registration_file,
                                                      dismiss_entities=['den'],
                                                      datatype="figures",
-                                                     desc='bb_registration_file'),
+                                                     desc='bbregister'),
                                  name='bb_registration_file',
                                  run_without_submitting=True)
 
@@ -141,9 +146,7 @@ def init_execsummary_wf(omp_nthreads,
 
 
 def t1_to_native(file_name):
-    '''
-    Get t1 to native transform file
-    '''
+    """Get t1 to native transform file."""
     dir_name = os.path.dirname(file_name)
     filename = os.path.basename(file_name)
     file_name_prefix = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]

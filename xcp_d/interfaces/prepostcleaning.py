@@ -1,14 +1,21 @@
+"""Interfaces for the post-processing workflows."""
 import os
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
-import nibabel as nb
-from ..utils import (read_ndata, write_ndata, compute_FD,
-                     generate_mask, interpolate_masked_data)
-from ..utils.filemanip import fname_presuffix
-from ..utils.confounds import (load_motion)
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface)
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils.confounds import load_motion
+from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
@@ -57,9 +64,10 @@ class RemoveTR(SimpleInterface):
     If the dummy time is less than the repetition time, it will
     be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
 
-    The  number of volumes to be removed has been calculated in a previous
+    The number of volumes to be removed has been calculated in a previous
     workflow.
     """
+
     input_spec = _RemoveTRInputSpec
     output_spec = _RemoveTROutputSpec
 
@@ -200,14 +208,17 @@ class _CensorScrubOutputSpec(TraitedSpec):
 
 
 class CensorScrub(SimpleInterface):
-    r"""
-    Takes in confound files, bold file to be censored, and information about filtering
-    - including band stop values and motion filter type. Then proceeds to create a
-    motion-filtered confounds matrix and recalculates FDfrom filtered motion parameters.
-    Finally generates temporal mask with volumes above fd threshold set to 1, then dropped
-    from both confounds file and bolds file. Outputs temporal mask, framewise displacement
-    timeseries and censored bold files.
+    """Generate a temporal mask based on recalculated FD.
+
+    Takes in confound files, bold file to be censored, and information about filtering-
+    including band stop values and motion filter type.
+    Then proceeds to create a motion-filtered confounds matrix and recalculates FD from
+    filtered motion parameters.
+    Finally generates temporal mask with volumes above FD threshold set to 1,
+    then dropped from both confounds file and bolds file.
+    Outputs temporal mask, framewise displacement timeseries and censored bold files.
     """
+
     input_spec = _CensorScrubInputSpec
     output_spec = _CensorScrubOutputSpec
 
@@ -227,7 +238,7 @@ class CensorScrub(SimpleInterface):
                                      "rot_x", "rot_y", "rot_z", "trans_x",
                                      "trans_y", "trans_z"
                                  ])
-        fd_timeseries_uncensored = compute_FD(confound=motion_df,
+        fd_timeseries_uncensored = compute_fd(confound=motion_df,
                                               head_radius=self.inputs.head_radius)
 
         # Read in custom confounds file (if any) and bold file to be censored
@@ -322,10 +333,7 @@ class CensorScrub(SimpleInterface):
         return runtime
 
 
-# interpolation
-
-
-class _interpolateInputSpec(BaseInterfaceInputSpec):
+class _InterpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
     bold_file = File(exists=True,
                      mandatory=True,
@@ -337,21 +345,23 @@ class _interpolateInputSpec(BaseInterfaceInputSpec):
                       desc="repetition time in TR")
 
 
-class _interpolateOutputSpec(TraitedSpec):
+class _InterpolateOutputSpec(TraitedSpec):
     bold_interpolated = File(exists=True,
                              manadatory=True,
                              desc=" fmriprep censored")
 
 
-class interpolate(SimpleInterface):
-    """
+class Interpolate(SimpleInterface):
+    """Interpolates scrubbed/regressed BOLD data based on temporal mask.
+
     Interpolation takes in the scrubbed/regressed bold file and temporal mask,
     subs in the scrubbed values with 0, and then uses scipy's
     interpolate functionality to interpolate values into these 0s.
     It outputs the interpolated file.
     """
-    input_spec = _interpolateInputSpec
-    output_spec = _interpolateOutputSpec
+
+    input_spec = _InterpolateInputSpec
+    output_spec = _InterpolateOutputSpec
 
     def _run_interface(self, runtime):
         # Read in regressed bold data and temporal mask

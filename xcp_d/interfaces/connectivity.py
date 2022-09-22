@@ -1,22 +1,27 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Handling functional connectvity.
+
+.. testsetup::
+# will comeback
 """
-Handling functional connectvity.
-    .. testsetup::
-    # will comeback
-"""
-from nipype import logging
-from ..utils.filemanip import fname_presuffix
-from pkg_resources import resource_filename as pkgrf
-from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
-from nipype.interfaces.base import (traits, TraitedSpec,
-                                    BaseInterfaceInputSpec, File,
-                                    SimpleInterface, InputMultiObject)
-from ..utils import extract_timeseries_funct
 import matplotlib.pyplot as plt
-from nilearn.plotting import plot_matrix
 import nibabel as nb
 import numpy as np
+from nilearn.plotting import plot_matrix
+from nipype import logging
+from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    InputMultiObject,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
+
+from xcp_d.utils.fcon import extract_timeseries_funct
+from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
 # nifti functional connectivity
@@ -37,10 +42,8 @@ class _NiftiConnectOutputSpec(TraitedSpec):
 
 
 class NiftiConnect(SimpleInterface):
-    r"""
-    extract timeseries and compute connectivity matrices.
+    """Extract timeseries and compute connectivity matrices."""
 
-    """
     input_spec = _NiftiConnectInputSpec
     output_spec = _NiftiConnectOutputSpec
 
@@ -78,8 +81,10 @@ class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
 
 
 class ApplyTransformsx(ApplyTransforms):
-    """
-    ApplyTransforms from nipype as workflow
+    """ApplyTransforms from nipype as workflow.
+
+    This is a modification of the ApplyTransforms interface,
+    with an updated set of inputs and a different default output image name.
     """
 
     input_spec = _ApplyTransformsInputSpec
@@ -94,96 +99,7 @@ class ApplyTransformsx(ApplyTransforms):
         return runtime
 
 
-def get_atlas_nifti(atlasname):
-    r"""
-    select atlas by name from xcp_d/data
-    using pkgrf
-    all atlases are in MNI dimension
-    atlas list:
-      schaefer100x17
-      schaefer200x17
-      schaefer300x17
-      schaefer400x17
-      schaefer500x17
-      schaefer600x17
-      schaefer700x17
-      schaefer800x17
-      schaefer900x17
-      schaefer1000x17
-      glasser360
-      gordon360
-    """
-
-    if atlasname[:8] == 'schaefer':
-        if atlasname[8:12] == '1000':
-            atlasfile = pkgrf(
-                'xcp_d', 'data/niftiatlas/'
-                'Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii')
-        else:
-            atlasfile = pkgrf(
-                'xcp_d', 'data/niftiatlas/'
-                'Schaefer2018_{0}Parcels_17Networks_order_FSLMNI152_2mm.nii'.
-                format(atlasname[8:11]))
-    elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_d',
-                          'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
-    elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_d',
-                          'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
-    elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf(
-            'xcp_d',
-            'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
-    else:
-        raise RuntimeError('Atlas not available')
-    return atlasfile
-
-
-def get_atlas_cifti(atlasname):
-    r"""
-    select atlas by name from xcp_d/data
-    all atlases are in 91K dimension
-    atlas list:
-      schaefer100x17
-      schaefer200x17
-      schaefer300x17
-      schaefer400x17
-      schaefer500x17
-      schaefer600x17
-      schaefer700x17
-      schaefer800x17
-      schaefer900x17
-      schaefer1000x17
-      glasser360
-      gordon360
-    """
-    if atlasname[:8] == 'schaefer':
-        if atlasname[8:12] == '1000':
-            atlasfile = pkgrf(
-                'xcp_d', 'data/ciftiatlas/'
-                'Schaefer2018_1000Parcels_17Networks_order.dlabel.nii')
-        else:
-            atlasfile = pkgrf(
-                'xcp_d', 'data/ciftiatlas/'
-                'Schaefer2018_{0}Parcels_17Networks_order.dlabel.nii'.format(
-                    atlasname[8:11]))
-    elif atlasname == 'glasser360':
-        atlasfile = pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
-    elif atlasname == 'gordon333':
-        atlasfile = pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
-    elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf(
-            'xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
-    else:
-        raise RuntimeError('atlas not available')
-    return atlasfile
-
-
-class _connectplotInputSpec(BaseInterfaceInputSpec):
+class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="bold file")
     sc217_timeseries = File(exists=True, mandatory=True, desc="sc217 atlas")
     sc417_timeseries = File(exists=True, mandatory=True, desc="sc417 atlas")
@@ -191,19 +107,18 @@ class _connectplotInputSpec(BaseInterfaceInputSpec):
     gs360_timeseries = File(exists=True, mandatory=True, desc="glasser atlas")
 
 
-class _connectplotOutputSpec(TraitedSpec):
+class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
         exists=True,
         manadatory=True,
     )
 
 
-class connectplot(SimpleInterface):
-    r"""
-    extract timeseries and compute connectivity matrices.
-    """
-    input_spec = _connectplotInputSpec
-    output_spec = _connectplotOutputSpec
+class ConnectPlot(SimpleInterface):
+    """Extract timeseries and compute connectivity matrices."""
+
+    input_spec = _ConnectPlotInputSpec
+    output_spec = _ConnectPlotOutputSpec
 
     def _run_interface(self, runtime):
 

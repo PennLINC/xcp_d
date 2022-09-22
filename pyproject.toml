@@ -1,0 +1,7 @@
+[build-system]
+requires = ["setuptools==58.2.0", "wheel"]
+
+[tool.isort]
+profile = "black"
+src_paths = ["isort", "test"]
+known_local_folder = ["xcp_d"]
