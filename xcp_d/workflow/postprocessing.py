@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for post-processing BOLD data.
-
-post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_post_process_wf
-
-"""
+"""Workflows for post-processing BOLD data."""
 import numpy as np
 import sklearn
 from nipype.interfaces import utility as niu
@@ -22,83 +16,65 @@ from xcp_d.utils.utils import stringforparams
 
 
 def init_post_process_wf(
-        mem_gb,
-        TR,
-        lower_bpf,
-        upper_bpf,
-        bpf_order,
-        smoothing,
-        bold_file,
-        params,
-        cifti=False,
-        dummytime=0,
-        fd_thresh=0.2,
-        name="post_process_wf"):
+    mem_gb,
+    TR,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    smoothing,
+    bold_file,
+    params,
+    cifti=False,
+    dummytime=0,
+    fd_thresh=0.2,
+    name="post_process_wf",
+):
     """Organize workflows including selecting confound matrix, regression, and filtering.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows.postprocessing import init_post_process_wf
+
+            from xcp_d.workflow.postprocessing import init_post_process_wf
             wf = init_post_process_wf(
-                mem_gb,
-                TR,
-                head_radius,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                smoothing,
-                bold_file,
-                params,
+                mem_gb=0.1,
+                TR=2.,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                smoothing=6,
+                bold_file="/path/to/file.nii.gz",
+                params="36P",
                 cifti=False,
-                dummytime,
-                fd_thresh,
+                dummytime=0,
+                fd_thresh=0.2,
                 name="post_process_wf",
-                )
+            )
 
     Parameters
     ----------
+    mem_gb : float
     TR: float
-         Repetition time in second
-    bold_file: str
-        bold file for post processing
+        Repetition time in second
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        afni depsike
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max, : float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    bpf_order : int
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    custom_confounds: str
-        path to custom nuissance regressors
+    bold_file: str
+        bold file for post processing
+    params: str
+        nuissance regressors to be selected from fmriprep regressors
+    cifti : bool
     dummytime: float
         the first few seconds to be removed before postprocessing
-    initial_volumes_to_drop: int
-        the first volumes to be removed before postprocessing
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    name : str
+        Default is "post_process_wf".
 
     Inputs
     ------
@@ -216,11 +192,13 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def init_resd_smoothing(mem_gb,
-                        smoothing,
-                        omp_nthreads,
-                        cifti=False,
-                        name="smoothing"):
+def init_resd_smoothing(
+    mem_gb,
+    smoothing,
+    omp_nthreads,
+    cifti=False,
+    name="smoothing",
+):
     """Smooth BOLD residuals."""
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
