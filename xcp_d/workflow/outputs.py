@@ -423,7 +423,7 @@ def init_writederivatives_wf(
                                                                 desc='tmask',
                                                                 extension='.tsv',
                                                                 source_file=bold_file),
-                                            name='dv_tmask_wf',
+                                            name='write_derivative_tmask_wf',
                                             run_without_submitting=True,
                                             mem_gb=1)
 
@@ -881,11 +881,11 @@ def init_writederivatives_wf(
         
         write_derivative_tmask_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=['desc'],
+            dismiss_entities=['desc', 'den'],
             desc='tmask',
             extension='.tsv',
             source_file=bold_file),
-            name='dv_tmask_wf',
+            name='write_derivative_tmask_wf',
             run_without_submitting=True,
             mem_gb=1)
 
