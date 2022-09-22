@@ -99,12 +99,12 @@ def init_xcpd_wf(
 
     Parameters
     ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDS dataset layout
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
     despike: bool
         afni depsike
     analysis_level: str
