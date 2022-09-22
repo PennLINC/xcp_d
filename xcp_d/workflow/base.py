@@ -22,8 +22,8 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.utils import get_customfile
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
@@ -184,6 +184,7 @@ def init_xcpd_wf(
     return xcpd_wf
 
 
+@fill_doc
 def init_subject_wf(
     layout,
     lower_bpf,
