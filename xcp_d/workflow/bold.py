@@ -21,6 +21,7 @@ from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
@@ -703,17 +704,6 @@ def _get_ref_mask(fname):
     mask = directx + '/' + filex
     ref = directx + '/' + filez
     return mask, ref
-
-
-def _t12native(fname):  # TODO: Update names and refactor
-    """Take in bold filename and find transform from T1W to native space."""
-    directx = os.path.dirname(fname)
-    filename = os.path.basename(fname)
-    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-
-    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
-
-    return t12ref
 
 
 class DerivativesDataSink(BIDSDerivativesDataSink):
