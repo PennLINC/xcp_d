@@ -37,6 +37,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceSphereProjectUnproject,
 )
 from xcp_d.utils.bids import collect_data
+from xcp_d.utils.doc import fill_doc
 
 
 class DerivativesDataSink(BIDSDerivativesDataSink):
@@ -45,6 +46,7 @@ class DerivativesDataSink(BIDSDerivativesDataSink):
     out_path_base = "xcp_d"
 
 
+@fill_doc
 def init_anatomical_wf(
     omp_nthreads,
     fmri_dir,
@@ -59,38 +61,36 @@ def init_anatomical_wf(
 
     Workflow Graph
         .. workflow::
-        :graph2use: orig
-        :simple_form: yes
-        from xcp_d.workflows import init_anatomical_wf
-        wf = init_anatomical_wf(
-        omp_nthreads,
-        fmri_dir,
-        subject_id,
-        output_dir,
-        t1w_to_mni,
-        name="anatomical_wf",
-     )
-     Parameters
-     ----------
-     omp_nthreads : int
-          number of threads
-     fmri_dir : str
-          fmri output directory
-     subject_id : str
-          subject id
-     output_dir : str
-          output directory
-     t1w_to_mni : str
-          t1w to MNI transform
-     name : str
-          workflow name
+            :graph2use: orig
+            :simple_form: yes
 
-     Inputs
-     ------
-     t1w: str
-          t1w file
-     t1w_seg: str
-          t1w segmentation file
+            from xcp_d.workflows import init_anatomical_wf
+            wf = init_anatomical_wf(
+                omp_nthreads,
+                fmri_dir,
+                subject_id,
+                output_dir,
+                t1w_to_mni,
+                name="anatomical_wf",
+            )
+
+    Parameters
+    ----------
+    %(omp_nthreads)s
+    %(fmri_dir)s
+    subject_id : str
+        subject id
+    %(output_dir)s
+    %(t1w_to_mni)s
+    name : str
+        workflow name
+
+    Inputs
+    ------
+    t1w: str
+        t1w file
+    t1w_seg: str
+        t1w segmentation file
 
     """
     workflow = Workflow(name=name)

@@ -16,9 +16,11 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.workbench import CiftiSeparateMetric
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
 
 
+@fill_doc
 def init_compute_alff_wf(mem_gb,
                          TR,
                          lowpass,
@@ -46,8 +48,7 @@ def init_compute_alff_wf(mem_gb,
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
+    %(mem_gb)s
     TR: float
         repetition time
     lowpass: float
@@ -56,10 +57,8 @@ def init_compute_alff_wf(mem_gb,
         high pass filter
     smoothing: float
         smooth kernel size in fwhm
-    params: str
-        parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
+    %(params)s
+    %(omp_nthreads)s
     cifti: bool
         if cifti or bold
 
@@ -165,6 +164,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     return workflow
 
 
+@fill_doc
 def init_surface_reho_wf(mem_gb,
                          omp_nthreads,
                          name="surface_reho_wf"):
@@ -182,8 +182,7 @@ def init_surface_reho_wf(mem_gb,
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
+    %(mem_gb)s
 
     Inputs
     ------
@@ -243,6 +242,7 @@ vertices to yield ReHo.
     return workflow
 
 
+@fill_doc
 def init_3d_reho_wf(
     mem_gb,
     omp_nthreads,
@@ -263,8 +263,7 @@ def init_3d_reho_wf(
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
+    %(mem_gb)s
     smoothing: float
         smooth kernel size in fwhm
 

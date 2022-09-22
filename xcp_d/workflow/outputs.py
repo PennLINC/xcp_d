@@ -7,6 +7,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.utils.doc import fill_doc
 
 
 # RF: Not here
@@ -16,6 +17,7 @@ class DerivativesDataSink(BIDSDerivativesDataSink):
     out_path_base = 'xcp_d'
 
 
+@fill_doc
 def init_writederivatives_wf(
     bold_file,
     lowpass,
@@ -52,8 +54,7 @@ def init_writederivatives_wf(
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
+    %(mem_gb)s
     bold_file: str
         bold or cifti files
     lowpass: float
@@ -62,8 +63,7 @@ def init_writederivatives_wf(
         high pass filter
     smoothing: float
         smooth kernel size in fwhm
-    params: str
-        parameter regressed out from bold
+    %(params)s
     scrub: bool
         scrubbing
     cifti: bool

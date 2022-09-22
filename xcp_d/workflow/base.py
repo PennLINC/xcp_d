@@ -30,11 +30,13 @@ from xcp_d.utils.bids import (
     select_registrationfile,
 )
 from xcp_d.utils.utils import get_customfile
+from xcp_d.utils.doc import fill_doc
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
 
+@fill_doc
 def init_xcpd_wf(layout,
                  lower_bpf,
                  upper_bpf,
@@ -119,28 +121,24 @@ def init_xcpd_wf(layout,
         respiratory maximum frequency in breathe per minutes(bpm)
     fmriprep_dir : Path
         fmriprep output directory
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
+    %(omp_nthreads)s
     cifti : bool
         To postprocessed cifti files instead of nifti
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
-    output_dir : str
-        Directory in which to save xcp_d output
+    %(output_dir)s
     fd_thresh
         Criterion for flagging framewise displacement outliers
     run_uuid : str
         Unique identifier for execution instance
     subject_list : list
         List of subject labels
-    work_dir : str
-        Directory in which to store workflow execution state and temporary files
+    %(work_dir)s
     head_radius : float
         radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
@@ -261,8 +259,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         Criterion for flagging framewise displacement outliers
     head_radius : float
         radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str

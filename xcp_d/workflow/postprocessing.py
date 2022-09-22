@@ -18,9 +18,11 @@ from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
 
 
+@fill_doc
 def init_post_process_wf(
         mem_gb,
         TR,
@@ -89,8 +91,7 @@ def init_post_process_wf(
         Criterion for flagging framewise displacement outliers
     head_radius : float
         radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str

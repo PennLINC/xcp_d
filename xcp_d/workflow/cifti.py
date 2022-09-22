@@ -24,6 +24,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -34,6 +35,7 @@ from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_
 LOGGER = logging.getLogger('nipype.workflow')
 
 
+@fill_doc
 def init_ciftipostprocess_wf(cifti_file,
                              lower_bpf,
                              upper_bpf,
@@ -117,8 +119,7 @@ def init_ciftipostprocess_wf(cifti_file,
         Criterion for flagging framewise displacement outliers
     head_radius : float
         radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str

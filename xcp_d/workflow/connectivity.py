@@ -16,9 +16,11 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_transformfile
 
 
+@fill_doc
 def init_fcon_ts_wf(
     mem_gb,
     t1w_to_native,
@@ -44,8 +46,7 @@ def init_fcon_ts_wf(
     ----------
     bold_file: str
         bold file for post processing
-    mem_gb: float
-        memory size in gigabytes
+    %(mem_gb)s
     tw1_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
     Inputs
@@ -371,6 +372,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
     return workflow
 
 
+@fill_doc
 def init_cifti_conts_wf(
     mem_gb,
     omp_nthreads,
@@ -392,8 +394,7 @@ def init_cifti_conts_wf(
 
     Parameters
     ----------
-    mem_gb: float
-        memory size in gigabytes
+    %(mem_gb)s
 
     Inputs
     ------

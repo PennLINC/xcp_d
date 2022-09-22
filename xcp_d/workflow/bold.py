@@ -27,6 +27,7 @@ from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
@@ -42,6 +43,7 @@ from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 LOGGER = logging.getLogger('nipype.workflow')
 
 
+@fill_doc
 def init_boldpostprocess_wf(lower_bpf,
                             upper_bpf,
                             bpf_order,
@@ -124,8 +126,7 @@ def init_boldpostprocess_wf(lower_bpf,
         Criterion for flagging framewise displacement outliers
     head_radius : float
         radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
