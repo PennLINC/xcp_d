@@ -1,11 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Anatomical post-processing workflows.
-
-fetch anatomical files/resample surfaces to fsl32k
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-"""
+"""Anatomical post-processing workflows."""
 import fnmatch
 import os
 import shutil
