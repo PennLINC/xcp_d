@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for post-processing CIFTI-format BOLD data.
-
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_ciftipostprocess_wf
-
-"""
+"""Workflows for post-processing CIFTI-format BOLD data."""
 import os
 
 import nibabel as nb
@@ -36,28 +30,30 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
-def init_ciftipostprocess_wf(cifti_file,
-                             lower_bpf,
-                             upper_bpf,
-                             bpf_order,
-                             motion_filter_type,
-                             motion_filter_order,
-                             bandpass_filter,
-                             band_stop_min,
-                             band_stop_max,
-                             smoothing,
-                             head_radius,
-                             params,
-                             output_dir,
-                             custom_confounds,
-                             omp_nthreads,
-                             dummytime,
-                             fd_thresh,
-                             mni_to_t1w,
-                             despike,
-                             num_cifti,
-                             layout=None,
-                             name='cifti_process_wf'):
+def init_ciftipostprocess_wf(
+    cifti_file,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    head_radius,
+    params,
+    output_dir,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    fd_thresh,
+    mni_to_t1w,
+    despike,
+    num_cifti,
+    layout=None,
+    name='cifti_process_wf',
+):
     """Organize the cifti processing workflow.
 
     Workflow Graph
@@ -67,67 +63,68 @@ def init_ciftipostprocess_wf(cifti_file,
 
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
-                bold_file,
+                cifti_file,
                 lower_bpf,
                 upper_bpf,
                 bpf_order,
                 motion_filter_type,
                 motion_filter_order,
+                bandpass_filter,
                 band_stop_min,
                 band_stop_max,
-                despike,
                 smoothing,
                 head_radius,
                 params,
+                output_dir,
                 custom_confounds,
                 omp_nthreads,
                 dummytime,
-                output_dir,
                 fd_thresh,
+                mni_to_t1w,
+                despike,
                 num_cifti,
-                template='MNI152NLin2009cAsym',
                 layout=None,
-                name='cifti_postprocess_wf',)
+                name='cifti_postprocess_wf',
+            )
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
+    cifti_file
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        afni depsike
+    bpf_order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int
         order for motion filter
+    bandpass_filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
         respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
     head_radius : float
         radius of the head for FD computation
     %(params)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(output_dir)s
     custom_confounds: str
         path to cusrtom nuissance regressors
-    scrub: bool
-        remove the censored volumes
+    %(omp_nthreads)s
     dummytime: float
         the first few seconds to be removed before postprocessing
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    mni_to_t1w,
+    despike: bool
+        afni depsike
+    num_cifti,
+    layout : BIDSLayout object
+        BIDS dataset layout
+    name : str
+        Default is 'cifti_postprocess_wf'.
 
     Inputs
     ------

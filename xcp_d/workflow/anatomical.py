@@ -1,11 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Anatomical post-processing workflows.
-
-fectch anatomical files/resmapleing surfaces to fsl32k
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_structral_wf
-"""
+"""Anatomical post-processing workflows."""
 import fnmatch
 import os
 import shutil
@@ -64,13 +59,15 @@ def init_anatomical_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows import init_anatomical_wf
+            from xcp_d.workflow.anatomical import init_anatomical_wf
             wf = init_anatomical_wf(
-                omp_nthreads,
-                fmri_dir,
-                subject_id,
-                output_dir,
-                t1w_to_mni,
+                omp_nthreads=1,
+                fmri_dir=".",
+                subject_id="sub-01",
+                output_dir=".",
+                t1w_to_mni="identity",
+                input_type="fmriprep",
+                mem_gb=0.1,
                 name="anatomical_wf",
             )
 
@@ -82,16 +79,19 @@ def init_anatomical_wf(
         subject id
     %(output_dir)s
     %(t1w_to_mni)s
-    name : str
-        workflow name
+    input_type : {"fmriprep", "dcan", "hcp"}
+        The format of the BIDS derivatives.
+    mem_gb : float
+        The memory limit, in gigabytes.
+    name : str, optional
+        Workflow name. Default is "anatomical_wf".
 
     Inputs
     ------
-    t1w: str
-        t1w file
-    t1w_seg: str
-        t1w segmentation file
-
+    t1w : str
+        Path to the T1w file.
+    t1w_seg : str
+        Path to the T1w segmentation file.
     """
     workflow = Workflow(name=name)
 

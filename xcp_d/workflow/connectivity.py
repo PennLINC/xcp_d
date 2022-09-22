@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for extracting time series and computing functional connectivity.
-
-functional connectvity matrix
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_fcon_ts_wf
-.. autofunction:: init_cifti_conts_wf
-"""
+"""Workflows for extracting time series and computing functional connectivity."""
 
 import nilearn as nl
 from nipype.interfaces import utility as niu
@@ -35,24 +29,30 @@ def init_fcon_ts_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_fcon_ts_wf
+
+            from xcp_d.workflow.connectivity import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
-                mem_gb,
-                bold_file,
-                tw1_to_native,
+                mem_gb=0.1,
+                t1w_to_native="identity",
+                mni_to_t1w="identity",
+                omp_nthreads=1,
+                bold_file="/path/to/file.nii.gz",
                 name="fcons_ts_wf",
-             )
+            )
+
     Parameters
     ----------
+    %(mem_gb)s
+    t1w_to_native: str
+        transformation files from tw1 to native space ( from fmriprep)
+    mni_to_t1w
+    omp_nthreads
     bold_file: str
         bold file for post processing
-    %(mem_gb)s
-    tw1_to_native: str
-        transformation files from tw1 to native space ( from fmriprep)
+    name
+
     Inputs
     ------
-    bold_file
-        bold file from frmiprep
     clean_bold
         clean bold after filtered out nuisscance and filtering
     ref_file
@@ -384,13 +384,13 @@ def init_cifti_conts_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_fcon_ts_wf
+
+            from xcp_d.workflow.connectivity import init_cifti_conts_wf
             wf = init_fcon_ts_wf(
-                mem_gb,
-                bold_file,
-                tw1_to_native,
-                name="fcons_ts_wf",
-             )
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="cifti_ts_con_wf",
+            )
 
     Parameters
     ----------

@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for calculating resting state-specific metrics.
-
-post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_post_process_wf
-
-"""
+"""Workflows for calculating resting state-specific metrics."""
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import Smooth
 from nipype.interfaces.workbench import CiftiSmooth
@@ -21,46 +15,52 @@ from xcp_d.utils.utils import fwhm2sigma
 
 
 @fill_doc
-def init_compute_alff_wf(mem_gb,
-                         TR,
-                         lowpass,
-                         highpass,
-                         smoothing,
-                         cifti,
-                         omp_nthreads,
-                         name="compute_alff_wf"):
+def init_compute_alff_wf(
+    mem_gb,
+    TR,
+    lowpass,
+    highpass,
+    smoothing,
+    cifti,
+    omp_nthreads,
+    name="compute_alff_wf",
+):
     """Compute alff for both nifti and cifti.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_compute_alff_wf
+
+            from xcp_d.workflow.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
-                mem_gb,
-                TR,
-                lowpass,
-                highpass,
-                smoothing,
-                cifti,
+                mem_gb=0.1,
+                TR=2.,
+                lowpass=6.,
+                highpass=60.,
+                smoothing=6,
+                cifti=False,
+                omp_nthreads=1,
                 name="compute_alff_wf",
-             )
+            )
 
     Parameters
     ----------
     %(mem_gb)s
-    TR: float
+    TR : float
         repetition time
-    lowpass: float
+    lowpass : float
         low pass filter
-    highpass: float
+    highpass : float
         high pass filter
-    smoothing: float
+    smoothing : float
         smooth kernel size in fwhm
-    %(params)s
-    %(omp_nthreads)s
-    cifti: bool
+    cifti : bool
         if cifti or bold
+    omp_nthreads : int
+        number of threads
+    name : str, optional
+        Name of the workflow.
 
     Inputs
     ------
@@ -165,24 +165,30 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 
 @fill_doc
-def init_surface_reho_wf(mem_gb,
-                         omp_nthreads,
-                         name="surface_reho_wf"):
+def init_surface_reho_wf(
+    mem_gb,
+    omp_nthreads,
+    name="surface_reho_wf",
+):
     """Compute ReHo from surface (CIFTI) data.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_surface_reho_wf
+
+            from xcp_d.workflow.restingstate import init_surface_reho_wf
             wf = init_surface_reho_wf(
-                mem_gb,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="surface_reho_wf",
-             )
+            )
 
     Parameters
     ----------
     %(mem_gb)s
+    %(omp_nthreads)s
+    name : str
 
     Inputs
     ------
@@ -254,18 +260,20 @@ def init_3d_reho_wf(
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_3d_reho_wf
+
+            from xcp_d.workflow.restingstate import init_3d_reho_wf
             wf = init_3d_reho_wf(
-                mem_gb,
-                smoothing,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="afni_reho_wf",
-             )
+            )
 
     Parameters
     ----------
     %(mem_gb)s
-    smoothing: float
-        smooth kernel size in fwhm
+    %(omp_nthreads)s
+    name : str, optional
+        Name of the workflow. Default is "afni_reho_wf".
 
     Inputs
     ------

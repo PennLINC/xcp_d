@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for post-processing the BOLD data.
-
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_boldpostprocess_wf
-
-"""
+"""Workflows for post-processing the BOLD data."""
 import os
 
 import nibabel as nb
@@ -44,28 +38,30 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
-def init_boldpostprocess_wf(lower_bpf,
-                            upper_bpf,
-                            bpf_order,
-                            motion_filter_type,
-                            motion_filter_order,
-                            bandpass_filter,
-                            band_stop_min,
-                            band_stop_max,
-                            smoothing,
-                            bold_file,
-                            head_radius,
-                            params,
-                            custom_confounds,
-                            omp_nthreads,
-                            dummytime,
-                            output_dir,
-                            fd_thresh,
-                            num_bold,
-                            mni_to_t1w,
-                            despike,
-                            layout=None,
-                            name='bold_postprocess_wf'):
+def init_boldpostprocess_wf(
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    bold_file,
+    head_radius,
+    params,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    output_dir,
+    fd_thresh,
+    num_bold,
+    mni_to_t1w,
+    despike,
+    layout=None,
+    name='bold_postprocess_wf',
+):
     """Organize the bold processing workflow.
 
     Workflow Graph
@@ -75,64 +71,70 @@ def init_boldpostprocess_wf(lower_bpf,
 
             from xcp_d.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
-                bold_file,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_min,
-                band_stop_max,
-                smoothing,
-                head_radius,
-                params,
-                custom_confounds,
-                omp_nthreads,
-                dummytime,
-                output_dir,
-                fd_thresh,
-                num_bold,
-                template='MNI152NLin2009cAsym',
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                bandpass_filter=True,
+                band_stop_min=0.,
+                band_stop_max=0.,
+                smoothing=6,
+                bold_file="/path/to/file.nii.gz",
+                head_radius=50.,
+                params="36P",
+                custom_confounds=None,
+                omp_nthreads=1,
+                dummytime=0,
+                output_dir=".",
+                fd_thresh=0.2,
+                num_bold=1,
+                mni_to_t1w="identity",
+                despike=False,
                 layout=None,
-                name='bold_postprocess_wf')
+                name='bold_postprocess_wf',
+            )
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        If True, run 3dDespike from AFNI
+    bpf_order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int
         order for motion filter
+    bandpass_filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
         respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
+    bold_file: str
+        bold file for post processing
+    head_radius : float
+        radius of the head for FD computation
+    %(params)s
+    custom_confounds: str
+        path to cusrtom nuissance regressors
     omp_nthreads : int
         Maximum number of threads an individual process may use
+    dummytime: float
+        the time in seconds to be removed before postprocessing
     output_dir : str
         Directory in which to save xcp_d output
     fd_thresh
         Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
-    %(params)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
-    custom_confounds: str
-        path to cusrtom nuissance regressors
-    dummytime: float
-        the time in seconds to be removed before postprocessing
+    num_bold
+    mni_to_t1w
+    despike: bool
+        If True, run 3dDespike from AFNI
+    layout : BIDSLayout object
+        BIDS dataset layout
+    name : str
 
     Inputs
     ------
@@ -407,7 +409,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
     )
 
-# Remove TR first:
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
