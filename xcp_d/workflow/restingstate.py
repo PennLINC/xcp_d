@@ -2,8 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for calculating resting state-specific metrics.
 
-post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+post processing the bold/cifti for resting-state data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 """
 from nipype.interfaces import utility as niu

@@ -2,8 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing CIFTI-format BOLD data.
 
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^
+post processing cifti bold
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 """
 import os
