@@ -210,38 +210,37 @@ def init_subject_wf(
 ):
     """Organize the postprocessing pipeline for a single subject.
 
-    # RF: this is the wrong function
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.base import init_single_bold_wf
-            wf = init_single_bold_wf(
-                layout,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_order,
-                motion_filter_type,
-                bandpass_filter,
-                band_stop_min,
-                band_stop_max,
-                fmri_dir,
-                omp_nthreads,
-                subject_id,
-                cifti,
-                despike,
-                head_radius,
-                params,
-                dummytime,
-                fd_thresh,
-                task_id,
-                smoothing,
-                custom_confounds,
-                output_dir,
-                input_type,
-                name,
+            from xcp_d.workflow.base import init_subject_wf
+            wf = init_subject_wf(
+                layout=None,
+                bandpass_filter=True,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                band_stop_min=0,
+                band_stop_max=0,
+                motion_filter_order=4,
+                fmri_dir=".",
+                omp_nthreads=1,
+                subject_id="sub-01",
+                cifti=False,
+                despike=False,
+                head_radius=50,
+                params="36P",
+                dummytime=0,
+                fd_thresh=0.2,
+                task_id="rest",
+                smoothing=6.,
+                custom_confounds=None,
+                output_dir=".",
+                input_type="fmriprep",
+                name="single_subject_sub-01_wf",
             )
 
     Parameters
