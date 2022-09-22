@@ -12,7 +12,7 @@ from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.utils.utils import stringforparams
+from xcp_d.utils.utils import fwhm2sigma, stringforparams
 
 
 def init_post_process_wf(
@@ -182,14 +182,6 @@ The processed bold was smoothed with FSL and kernel size (FWHM) of {str(smoothin
             ])
 
     return workflow
-
-
-def fwhm2sigma(fwhm):
-    """Convert FWHM to sigma.
-
-    NOTE: Duplicate of function in utils.
-    """
-    return fwhm / np.sqrt(8 * np.log(2))
 
 
 def init_resd_smoothing(

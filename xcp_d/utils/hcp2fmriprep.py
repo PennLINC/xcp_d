@@ -1,17 +1,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-format data to fMRIPrep format."""
-import filecmp
 import glob
-import json
 import os
-import shutil
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
+
+from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
@@ -191,34 +189,3 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         for kk, jj in zip(rawfiles, newfiles):
             copyfileobj_example(kk, jj)
-
-
-def copyfileobj_example(src, dst):
-    """Copy a file from source to dest.
-
-    source and dest must be file-like objects,
-    i.e. any object with a read or write method, like for example StringIO.
-    """
-    if not os.path.exists(dst) or not filecmp.cmp(src, dst):
-        shutil.copyfile(src, dst)
-
-
-def symlinkfiles(source, dest):
-    """Symlink source file to dest file."""
-    # Beware, this example does not handle any edge cases!
-    with open(source, 'rb') as src, open(dest, 'wb') as dst:
-        copyfileobj_example(src, dst)
-
-
-def extractreg(mask, nifti):
-    """Extract mean signal within mask from NIFTI."""
-    masker = NiftiMasker(mask_img=mask)
-    signals = masker.fit_transform(nifti)
-    return np.mean(signals, axis=1)
-
-
-def writejson(data, outfile):
-    """Write dictionary to JSON file."""
-    with open(outfile, 'w') as f:
-        json.dump(data, f)
-    return outfile

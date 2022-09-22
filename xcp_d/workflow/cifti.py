@@ -18,6 +18,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -560,9 +561,3 @@ def _create_mem_gb(bold_fname):
     }
 
     return mem_gbz
-
-
-def get_cifti_tr(cifti_file):
-    """Extract TR from CIFTI file."""
-    ciaxis = nb.load(cifti_file).header.get_axis(0)
-    return ciaxis.step
