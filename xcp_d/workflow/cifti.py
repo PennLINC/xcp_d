@@ -282,13 +282,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
-    presmoothing_wf = init_pre_smoothing(
-        mem_gb=mem_gbx['timeseries'],
-        presmoothing=presmoothing,
-        cifti=True,
-        name="presmoothing_wf",
-        omp_nthreads=omp_nthreads)
-
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
@@ -349,6 +342,12 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name='bolddatanode')
 
     if presmoothing > 0:
+        presmoothing_wf = init_pre_smoothing(
+            mem_gb=mem_gbx['timeseries'],
+            presmoothing=presmoothing,
+            cifti=True,
+            name="presmoothing_wf",
+            omp_nthreads=omp_nthreads)
         workflow.connect([
             (inputnode, presmoothing_wf, [('cifti_file', 'inputnode.bold_file')]),
             (presmoothing_wf, bolddatanode, [('outputnode.presmoothed_bold', 'bold_file')]),
