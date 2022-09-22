@@ -94,14 +94,10 @@ def init_ciftipostprocess_wf(
     %(lower_bpf)s
     %(upper_bpf)s
     %(bpf_order)s
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     head_radius : float

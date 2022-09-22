@@ -108,15 +108,10 @@ def init_xcpd_wf(
         afni depsike
     %(bpf_order)s
     %(analysis_level)s
-        only option is 'participant'
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: str
-        respiratory motion order
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
     fmriprep_dir : Path
         fmriprep output directory
     %(omp_nthreads)s
@@ -259,14 +254,10 @@ def init_subject_wf(
     despike: bool
         afni depsike
     %(bpf_order)s
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
     fmriprep_dir : Path
         fmriprep output directory
     omp_nthreads : int

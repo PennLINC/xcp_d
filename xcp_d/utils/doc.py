@@ -100,6 +100,33 @@ bpf_order : :obj:`int`
     This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
 """
 
+docdict["motion_filter_type"] = """
+motion_filter_type : {None, "lp", "notch"}
+    Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+    If None, no filter will be applied.
+"""
+
+docdict["motion_filter_order"] = """
+motion_filter_order : :obj:`int`
+    Number of filter coefficients for the band-stop filter, for filtering motion regressors.
+    Motion filtering is only performed if ``motion_filter_type`` is not None.
+    This parameter is used in conjunction with ``band_stop_max`` and ``band_stop_min``.
+"""
+
+docdict["band_stop_min"] = """
+band_stop_min : :obj:`float`
+    Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    Motion filtering is only performed if ``motion_filter_type`` is not None.
+    This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_max``.
+"""
+
+docdict["band_stop_max"] = """
+band_stop_max : :obj:`float`
+    Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    Motion filtering is only performed if ``motion_filter_type`` is not None.
+    This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_min``.
+"""
+
 docdict["name"] = """
 name : :obj:`str`, optional
     Name of the workflow. This is used for working directories and workflow graphs.

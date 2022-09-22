@@ -179,18 +179,20 @@ def get_parser():
     g_filter = parser.add_argument_group(
         'Filtering parameters and default value')
 
-    g_filter.add_argument('--bandpass_filter',
-                          action='store',
-                          default=True,
-                          type=bool,
-                          help='butterworth bandpass filter the data')
+    g_filter.add_argument(
+        '--bandpass_filter',
+        action='store',
+        default=True,
+        type=bool,
+        help='butterworth bandpass filter the data',
+    )
 
     g_filter.add_argument(
         '--lower-bpf',
         action='store',
         default=0.009,
         type=float,
-        help='lower cut-off frequency (Hz) for the butterworth bandpass filter'
+        help='lower cut-off frequency (Hz) for the butterworth bandpass filter',
     )
 
     g_filter.add_argument(
@@ -198,7 +200,7 @@ def get_parser():
         action='store',
         default=0.08,
         type=float,
-        help='upper cut-off frequency (Hz) for the butterworth bandpass filter'
+        help='upper cut-off frequency (Hz) for the butterworth bandpass filter',
     )
 
     g_filter.add_argument(
@@ -206,7 +208,8 @@ def get_parser():
         action='store',
         default=2,
         type=int,
-        help='number of filter coefficients for butterworth bandpass filter')
+        help='number of filter coefficients for butterworth bandpass filter',
+    )
 
     g_filter.add_argument('--motion-filter-type', action='store', type=str, default='None',
                           choices=['lp', 'notch'],
