@@ -1,13 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""The primary workflows for xcp_d.
-
-post processing
-^^^^^^^^^^^^^^^
-
-.. autofunction:: init_xcpd_wf
-
-"""
+"""The primary workflows for xcp_d."""
 
 import glob
 import json
@@ -35,32 +28,34 @@ from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
 
-def init_xcpd_wf(layout,
-                 lower_bpf,
-                 upper_bpf,
-                 despike,
-                 bpf_order,
-                 motion_filter_type,
-                 motion_filter_order,
-                 band_stop_min,
-                 band_stop_max,
-                 bandpass_filter,
-                 fmri_dir,
-                 omp_nthreads,
-                 cifti,
-                 task_id,
-                 head_radius,
-                 params,
-                 subject_list,
-                 analysis_level,
-                 smoothing,
-                 custom_confounds,
-                 output_dir,
-                 work_dir,
-                 dummytime,
-                 fd_thresh,
-                 input_type='fmriprep',
-                 name='xcpd_wf'):
+def init_xcpd_wf(
+    layout,
+    lower_bpf,
+    upper_bpf,
+    despike,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    bandpass_filter,
+    fmri_dir,
+    omp_nthreads,
+    cifti,
+    task_id,
+    head_radius,
+    params,
+    subject_list,
+    analysis_level,
+    smoothing,
+    custom_confounds,
+    output_dir,
+    work_dir,
+    dummytime,
+    fd_thresh,
+    input_type='fmriprep',
+    name='xcpd_wf',
+):
     """Build and organize execution of xcp_d pipeline.
 
     It also connects the subworkflows under the xcp_d workflow.
@@ -69,32 +64,35 @@ def init_xcpd_wf(layout,
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflow.base import init_xcpd_wf
             wf = init_xcpd_wf(
-                layout,
-                lower_bpf,
-                upper_bpf,
-                despike,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_min,
-                band_stop_max,
-                fmriprep_dir,
-                omp_nthreads,
-                cifti,
-                task_id,
-                head_radius,
-                params,
-                brain_template,
-                subject_list,
-                smoothing,
-                analysis_level,
-                custom_confounds,
-                output_dir,
-                work_dir,
-                dummytime,
-                fd_thresh,
+                layout=None,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                despike=False,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                band_stop_min=0.,
+                band_stop_max=0.,
+                bandpass_filter=True,
+                fmri_dir=".",
+                omp_nthreads=1,
+                cifti=True,
+                task_id="rest",
+                head_radius=50.,
+                params="36P",
+                subject_list=["sub-01", "sub-02"],
+                analysis_level="participant",
+                smoothing=6,
+                custom_confounds=None,
+                output_dir=".",
+                work_dir=".",
+                dummytime=0,
+                fd_thresh=0.2,
+                input_type='fmriprep',
+                name='xcpd_wf',
             )
 
     Parameters
@@ -188,12 +186,32 @@ def init_xcpd_wf(layout,
     return xcpd_wf
 
 
-def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order,
-                    motion_filter_type, bandpass_filter,
-                    band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
-                    subject_id, cifti, despike, head_radius, params, dummytime,
-                    fd_thresh, task_id, smoothing, custom_confounds, output_dir,
-                    input_type, name):
+def init_subject_wf(
+    layout,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_order,
+    motion_filter_type,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    fmri_dir,
+    omp_nthreads,
+    subject_id,
+    cifti,
+    despike,
+    head_radius,
+    params,
+    dummytime,
+    fd_thresh,
+    task_id,
+    smoothing,
+    custom_confounds,
+    output_dir,
+    input_type,
+    name,
+):
     """Organize the postprocessing pipeline for a single subject.
 
     # RF: this is the wrong function
@@ -201,32 +219,35 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows.base import init_single_bold_wf
+
+            from xcp_d.workflow.base import init_single_bold_wf
             wf = init_single_bold_wf(
                 layout,
                 lower_bpf,
                 upper_bpf,
                 bpf_order,
-                motion_filter_type,
                 motion_filter_order,
+                motion_filter_type,
+                bandpass_filter,
                 band_stop_min,
                 band_stop_max,
-                fmriprep_dir,
+                fmri_dir,
                 omp_nthreads,
                 subject_id,
                 cifti,
+                despike,
                 head_radius,
                 params,
-                scrub,
                 dummytime,
                 fd_thresh,
                 task_id,
-                template,
                 smoothing,
                 custom_confounds,
-                bids_filters,
-                output_dir
-             )
+                output_dir,
+                input_type,
+                name,
+            )
+
     Parameters
     ----------
     lower_bpf : float
