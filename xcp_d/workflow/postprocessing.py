@@ -62,8 +62,7 @@ def init_post_process_wf(
     %(lower_bpf)s
     %(upper_bpf)s
     %(bpf_order)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(smoothing)s
     bold_file: str
         bold file for post processing
     %(params)s

@@ -53,8 +53,7 @@ def init_compute_alff_wf(
         low pass filter
     highpass : float
         high pass filter
-    smoothing : float
-        smooth kernel size in fwhm
+    %(smoothing)s
     cifti : bool
         if cifti or bold
     %(omp_nthreads)s

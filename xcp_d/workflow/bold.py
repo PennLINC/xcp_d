@@ -105,8 +105,7 @@ def init_boldpostprocess_wf(
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(smoothing)s
     bold_file: str
         bold file for post processing
     %(head_radius)s

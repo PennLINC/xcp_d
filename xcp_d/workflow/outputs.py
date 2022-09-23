@@ -59,8 +59,7 @@ def init_writederivatives_wf(
         low pass filter
     highpass : float
         high pass filter
-    smoothing : float
-        smooth kernel size in fwhm
+    %(smoothing)s
     %(params)s
     cifti : bool
         if cifti or bold

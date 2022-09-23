@@ -70,6 +70,12 @@ input_type : {"fmriprep", "dcan", "hcp"}
     The format of the BIDS derivatives.
 """
 
+docdict["smoothing"] = """
+smoothing : float
+    The full width at half maximum (FWHM), in millimeters,
+    of the smoothing kernel that will be applied to the post-processed and denoised data.
+"""
+
 docdict["head_radius"] = """
 head_radius : float
     Radius of the head, in millimeters, for framewise displacement calculation.

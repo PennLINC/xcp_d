@@ -98,8 +98,7 @@ def init_ciftipostprocess_wf(
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(smoothing)s
     %(head_radius)s
     %(params)s
     %(output_dir)s

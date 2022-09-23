@@ -130,8 +130,7 @@ def init_xcpd_wf(
     %(work_dir)s
     %(head_radius)s
     %(params)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(smoothing)s
     custom_confounds: str
         path to cusrtom nuissance regressors
     dummytime: float
@@ -269,8 +268,7 @@ def init_subject_wf(
     %(fd_thresh)s
     %(head_radius)s
     %(params)s
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(smoothing)s
     custom_confounds: str
         path to custom nuissance regressors
     dummytime: float
