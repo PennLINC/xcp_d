@@ -91,11 +91,11 @@ Processing Steps
       - X
 
 
-   For more information about confound regresssors selection, please refer to `Ciric et. al. 2017`_ .
+   For more information about confound regresssors selection, please refer to :footcite:t:`benchmarkp`.
 
    After the selection of confound regressors,
    the respiratory effects can optionally be filtered out from the motion estimates with band-stop filtering to improve fMRI data quality.
-   Please refer to `Fair et. al. 2020`_ for more information.
+   Please refer to :footcite:t:`fair2020correction` for more information.
    These band-stop parameters are age-specific (see table below) and can be added to the command line arguments
    (see :ref:`usage_cli`).
    The user may also select from one of two filters - Lowpass or Notch.
