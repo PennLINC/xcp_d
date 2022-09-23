@@ -121,7 +121,7 @@ def init_writederivatives_wf(
     cleaned_data_dictionary = {
         'RepetitionTime': TR,
         'Freq Band': [highpass, lowpass],
-        'nuissance parameters': params,
+        'nuisance parameters': params,
         'dummy vols': int(np.ceil(dummytime / TR))
     }
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing

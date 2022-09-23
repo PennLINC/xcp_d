@@ -117,9 +117,9 @@ def init_boldpostprocess_wf(
     head_radius : float
         radius of the head for FD computation
     params: str
-        nuissance regressors to be selected from fmriprep regressors
+        nuisance regressors to be selected from fmriprep regressors
     custom_confounds: str
-        path to cusrtom nuissance regressors
+        path to cusrtom nuisance regressors
     omp_nthreads : int
         Maximum number of threads an individual process may use
     dummytime: float

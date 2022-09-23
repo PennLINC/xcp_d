@@ -151,7 +151,7 @@ def load_global_signal(confounds_df):
 
 
 def load_wm_csf(confounds_df):
-    """Select white matter and CSF nuissance regressors from confounds DataFrame.
+    """Select white matter and CSF nuisance regressors from confounds DataFrame.
 
     Parameters
     ----------

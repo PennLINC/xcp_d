@@ -469,7 +469,7 @@ def plot_svgx(rawdata,
     rawdata :
         nifti or cifti before processing
     regressed_data :
-        nifti or cifti after nuissance regression
+        nifti or cifti after nuisance regression
     residual_data :
         nifti or cifti after regression and filtering
     mask :

@@ -172,8 +172,7 @@ def get_parser():
         choices=['27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr', 'aroma_gsr', 'custom'],
         type=str,
         help=(
-            'Nuisance parameters to be selected, other options include 24P and 36P acompcor and '
-            'aroma, see Ciric etal 2007.'
+            'Nuisance parameters to be selected. See Ciric etal 2007.'
         )
     )
     g_param.add_argument(
@@ -182,7 +181,7 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help='custom confound to be added to nuissance regressors')
+        help='Custom confound to be added to nuisance regressors.')
     g_param.add_argument(
         '-d',
         '--dummytime',
@@ -640,7 +639,7 @@ def build_workflow(opts, retval):
         task_id=opts.task_id,
         despike=opts.despike,
         smoothing=opts.smoothing,
-        params=opts.nuissance_regressors,
+        params=opts.nuisance_regressors,
         cifti=opts.cifti,
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
