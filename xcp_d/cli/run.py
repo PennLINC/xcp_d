@@ -148,18 +148,33 @@ def get_parser():
                          action='store_true',
                          default=False,
                          help='despike the nifti/cifti before postprocessing')
-    g_param.add_argument(
-        '-p',
+
+    nuisance_params = g_param.add_mutually_exclusive_group()
+    nuisance_params.add_argument(
         '--nuissance-regressors',
+        dest="nuisance_regressors",
         required=False,
         default='36P',
-        choices=[
-            '27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr',
-            'aroma_gsr', 'custom'
-        ],
+        choices=['27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr', 'aroma_gsr', 'custom'],
         type=str,
-        help='nuissance parameters to be selected, other options include 24P and 36P \
-                                           acompcor and aroma, see Ciric etal 2007'
+        help=(
+            'Nuisance parameters to be selected, other options include 24P and 36P acompcor and '
+            'aroma, see Ciric etal 2007. '
+            'This parameter is deprecated. '
+            'Please use "-p" or "--nuisance-regressors".'
+        )
+    )
+    nuisance_params.add_argument(
+        '-p',
+        '--nuisance-regressors',
+        dest="nuisance_regressors",
+        required=False,
+        choices=['27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr', 'aroma_gsr', 'custom'],
+        type=str,
+        help=(
+            'Nuisance parameters to be selected, other options include 24P and 36P acompcor and '
+            'aroma, see Ciric etal 2007.'
+        )
     )
     g_param.add_argument(
         '-c',
@@ -176,8 +191,7 @@ def get_parser():
         help='first volume in seconds to be removed or skipped before postprocessing'
     )
 
-    g_filter = parser.add_argument_group(
-        'Filtering parameters and default value')
+    g_filter = parser.add_argument_group('Filtering parameters and default value')
 
     g_filter.add_argument('--bandpass_filter',
                           action='store',
