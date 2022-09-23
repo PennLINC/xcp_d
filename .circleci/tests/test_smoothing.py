@@ -74,8 +74,7 @@ def test_smoothing_Nifti(data_dir):
 # establish necessary variables
 # smoothing = 6
 # # turn into standard deviation
-# def fwhm2sigma(fwhm):
-#     return fwhm / np.sqrt(8 * np.log(2))
+# from xcp_d.utils.utils import fwhm2sigma
 # sigma_lx = fwhm2sigma(smoothing)
 # def test_smoothing_Cifti(data_dir, sigma_lx):
 #     # Specify inputs

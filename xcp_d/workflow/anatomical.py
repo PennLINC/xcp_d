@@ -32,6 +32,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceSphereProjectUnproject,
 )
 from xcp_d.utils.bids import collect_data
+from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.doc import fill_doc
 
 
@@ -1342,16 +1343,3 @@ def init_anatomical_wf(
             )
 
     return workflow
-
-
-def _getsesid(filename):
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split("_")
-    for k in file_id:
-        if "ses" in k:
-            ses_id = k.split("-")[1]
-            break
-
-    return ses_id

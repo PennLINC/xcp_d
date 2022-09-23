@@ -371,7 +371,7 @@ def main():
 
         from pkg_resources import resource_filename as pkgrf
 
-        from xcp_d.interfaces import generate_reports
+        from xcp_d.interfaces.report_core import generate_reports
 
         citation_files = {
             ext: output_dir / 'xcp_d' / 'logs' / f'CITATION.{ext}'
@@ -453,7 +453,7 @@ def build_workflow(opts, retval):
     from nipype import logging as nlogging
 
     from xcp_d.__about__ import __version__
-    from xcp_d.utils import collect_participants
+    from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
     build_log = nlogging.getLogger('nipype.workflow')
 
@@ -491,7 +491,7 @@ def build_workflow(opts, retval):
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type == 'dcan':
         opts.cifti = True
-        from xcp_d.utils import dcan2fmriprep
+        from xcp_d.utils.dcan2fmriprep import dcan2fmriprep
         from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
         print('checking the DCAN files')
@@ -510,7 +510,7 @@ def build_workflow(opts, retval):
 
     elif opts.input_type == 'hcp':
         opts.cifti = True
-        from xcp_d.utils import hcp2fmriprep
+        from xcp_d.utils.hcp2fmriprep import hcp2fmriprep
         from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
         print('checking the HCP files')

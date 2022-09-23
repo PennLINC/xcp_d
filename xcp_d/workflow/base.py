@@ -457,13 +457,6 @@ It is released under the [CC0]\
     return workflow
 
 
-def _prefix(subid):
-    """Infer prefix from subject ID."""
-    if subid.startswith('sub-'):
-        return subid
-    return '-'.join(('sub', subid))
-
-
 def _pop(inlist):
     """Make a list of lists into a list."""
     if isinstance(inlist, (list, tuple)):
@@ -492,17 +485,3 @@ def getfmriprepv(fmri_dir):
         fvers = str('Unknown vers')
 
     return fvers
-
-
-def _getsesid(filename):
-    """Get session ID from filename if available."""
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split('_')
-    for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
-            break
-
-    return ses_id

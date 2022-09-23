@@ -18,6 +18,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
@@ -557,9 +558,3 @@ class DerivativesDataSink(BIDSDerivativesDataSink):
     """Defines the data sink for the workflow."""
 
     out_path_base = 'xcp_d'
-
-
-def get_cifti_tr(cifti_file):
-    """Extract TR from CIFTI file."""
-    ciaxis = nb.load(cifti_file).header.get_axis(0)
-    return ciaxis.step

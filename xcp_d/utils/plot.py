@@ -15,6 +15,7 @@ from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
+from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, scalex, write_ndata
 
 
@@ -81,25 +82,6 @@ def plot_svg(fdata, fd, dvars, filename, TR=1):
         TR=TR,
     )
     fig.savefig(filename, bbox_inches="tight", pad_inches=None)
-
-
-def compute_dvars(datat):
-    """Compute standard DVARS.
-
-    Parameters
-    ----------
-    datat : numpy.ndarray
-        Data matrix with shape vertices by timepoints.
-
-    Returns
-    -------
-    numpy.ndarray
-        1D array (T) of DVARS values.
-    """
-    firstcolumn = np.zeros((datat.shape[0]))[..., None]
-    datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
-    return np.sqrt(datax_ss)
 
 
 def confoundplot(time_series,
