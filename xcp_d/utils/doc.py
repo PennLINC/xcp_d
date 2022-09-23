@@ -73,7 +73,8 @@ input_type : {"fmriprep", "dcan", "hcp"}
 docdict["smoothing"] = """
 smoothing : float
     The full width at half maximum (FWHM), in millimeters,
-    of the smoothing kernel that will be applied to the post-processed and denoised data.
+    of the Gaussian smoothing kernel that will be applied to the post-processed and denoised data.
+    ALFF and ReHo outputs will also be smoothing with this kernel.
 """
 
 docdict["head_radius"] = """
