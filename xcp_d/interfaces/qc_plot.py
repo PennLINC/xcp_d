@@ -17,7 +17,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.concantenation import compute_dvars
+from xcp_d.utils.concatenation import compute_dvars
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd

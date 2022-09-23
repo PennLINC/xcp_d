@@ -8,7 +8,7 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
-from xcp_d.utils.concantenation import concatenatebold
+from xcp_d.utils.concatenation import concatenatebold
 from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.dcan2fmriprep import dcan2fmriprep
 from xcp_d.utils.execsummary import (

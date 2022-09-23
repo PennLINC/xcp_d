@@ -38,7 +38,7 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     """
     outdir = outputdir
     fmr = glob.glob(
-        f'{str(outdir)}/*{subjlist[0]}/*func/*_desc-residual*bold*nii*')[0]
+        f'{str(outdir)}/*{_prefix(subjlist[0])}/*func/*_desc-residual*bold*nii*')[0]
     if fmr.endswith('nii.gz'):
         cifti = False
     else:
