@@ -70,6 +70,20 @@ input_type : {"fmriprep", "dcan", "hcp"}
     The format of the BIDS derivatives.
 """
 
+docdict["head_radius"] = """
+head_radius : float
+    Radius of the head, in millimeters, for framewise displacement calculation.
+
+    ``xcp_d``'s default head radius is 50. The recommended value for infants is 35.
+"""
+
+docdict["fd_thresh"] = """
+fd_thresh : float
+    Framewise displacement threshold for censoring, in millimeters.
+    Any framewise displacement values higher than the threshold are flagged as "high motion".
+    Default is 0.2 mm.
+"""
+
 docdict["bandpass_filter"] = """
 bandpass_filter : :obj:`bool`
     If True, a Butterworth bandpass filter will be applied to the fMRI data after interpolation,

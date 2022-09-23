@@ -109,8 +109,7 @@ def init_boldpostprocess_wf(
         smooth the derivatives output with kernel size (fwhm)
     bold_file: str
         bold file for post processing
-    head_radius : float
-        radius of the head for FD computation
+    %(head_radius)s
     %(params)s
     custom_confounds: str
         path to cusrtom nuissance regressors
@@ -119,8 +118,7 @@ def init_boldpostprocess_wf(
         the time in seconds to be removed before postprocessing
     output_dir : str
         Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    %(fd_thresh)s
     num_bold
     mni_to_t1w
     despike: bool

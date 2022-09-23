@@ -64,25 +64,25 @@ def init_ciftipostprocess_wf(
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
                 cifti_file,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                bandpass_filter,
-                band_stop_min,
-                band_stop_max,
-                smoothing,
-                head_radius,
-                params,
-                output_dir,
-                custom_confounds,
-                omp_nthreads,
-                dummytime,
-                fd_thresh,
-                mni_to_t1w,
-                despike,
-                num_cifti,
+                bandpass_filter=True,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                band_stop_min=0,
+                band_stop_max=0,
+                smoothing=6,
+                head_radius=50,
+                params="36P",
+                output_dir=".",
+                custom_confounds=None,
+                omp_nthreads=1,
+                dummytime=0,
+                fd_thresh=0.2,
+                mni_to_t1w="identity",
+                despike=False,
+                num_cifti=1,
                 layout=None,
                 name='cifti_postprocess_wf',
             )
@@ -100,8 +100,7 @@ def init_ciftipostprocess_wf(
     %(band_stop_max)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
-    head_radius : float
-        radius of the head for FD computation
+    %(head_radius)s
     %(params)s
     %(output_dir)s
     custom_confounds: str
@@ -109,12 +108,11 @@ def init_ciftipostprocess_wf(
     %(omp_nthreads)s
     dummytime: float
         the first few seconds to be removed before postprocessing
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    mni_to_t1w,
+    %(fd_thresh)s
+    %(mni_to_t1w)s
     despike: bool
         afni depsike
-    num_cifti,
+    num_cifti
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s

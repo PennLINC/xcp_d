@@ -122,15 +122,13 @@ def init_xcpd_wf(
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
     %(output_dir)s
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    %(fd_thresh)s
     run_uuid : str
         Unique identifier for execution instance
     subject_list : list
         List of subject labels
     %(work_dir)s
-    head_radius : float
-        radius of the head for FD computation
+    %(head_radius)s
     %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
@@ -268,10 +266,8 @@ def init_subject_wf(
         Write uncompressed .nii files in some cases to reduce memory usage
     output_dir : str
         Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
+    %(fd_thresh)s
+    %(head_radius)s
     %(params)s
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)

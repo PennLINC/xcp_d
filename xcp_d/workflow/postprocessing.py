@@ -70,8 +70,7 @@ def init_post_process_wf(
     cifti : bool
     dummytime: float
         the first few seconds to be removed before postprocessing
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    %(fd_thresh)s
     %(name)s
         Default is "post_process_wf".
 
