@@ -223,10 +223,10 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     for task in tasklist:
         resbold = natsorted(
             fnmatch.filter(all_func_files,
-                           '*' + task + '*_desc-residual*bold*.nii.gz'))
+                           '*_task-' + task + '_*desc-residual*bold*.nii.gz'))
         resbold_unsmoothed_only = natsorted(
             fnmatch.filter(all_func_files,
-                           '*' + task + '*_desc-residual_bold*.nii.gz'))
+                           '*_task-' + task + '_*desc-residual_bold*.nii.gz'))
         regressed_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold_unsmoothed_only) == 1:
@@ -265,7 +265,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     mask = natsorted(
                         glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                                   + '*' + resid.partition('_desc')[0]
-                                  + '*_desc-brain_mask.nii.gz'))[0]
+                                  + '_desc-brain_mask.nii.gz'))[0]
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)
                     for b in filex:
                         dvar = compute_dvars(read_ndata(b, mask))
@@ -275,12 +275,12 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             filey = natsorted(
                 glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                           + '*' + resid.partition('_desc')[0]
-                          + '*_desc-preproc_bold.nii.gz'))
+                          + '_desc-preproc_bold.nii.gz'))
 
             mask = natsorted(
                 glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                           + '*' + resid.partition('_desc')[0]
-                          + '*_desc-brain_mask.nii.gz'))[0]
+                          + '_desc-brain_mask.nii.gz'))[0]
 
             segfile = get_segfile(filey[0])
             TR = nb.load(filey[0]).header.get_zooms()[-1]
@@ -336,7 +336,7 @@ def compute_dvars(datat):
     Parameters
     ----------
     datat : numpy.ndarray
-        The data matrix fromw hich to calculate DVARS.
+        The data matrix from which to calculate DVARS.
         Ordered as vertices by timepoints.
 
     Returns
@@ -413,11 +413,11 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         resbold = natsorted(
             fnmatch.filter(
                 all_func_files,
-                '*' + task + '*den-91k_desc-residual*bold.dtseries.nii'))
+                '*_task-' + task + '_*den-91k_desc-residual*bold.dtseries.nii'))
         resbold_unsmoothed_only = natsorted(
             fnmatch.filter(
                 all_func_files,
-                '*' + task + '*den-91k_desc-residual_bold.dtseries.nii'))
+                '*_task-' + task + '_*den-91k_desc-residual_bold.dtseries.nii'))
         if len(resbold_unsmoothed_only) == 1:
             res = resbold[0]
             resid = res.split('task-')[1].partition('_')[-1]
