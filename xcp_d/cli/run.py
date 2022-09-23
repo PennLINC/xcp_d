@@ -40,11 +40,15 @@ def check_deps(workflow):
 
 
 class DeprecatedStoreAction(Action):
+    """A custom argparse "store" action to raise a DeprecationWarning.
+
+    Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
+    """
+
     def __call__(self, parser, namespace, values, option_string=None):
-        warnings.warn(
-            f"Argument {self.option_string} is deprecated and will be removed in version 0.1.6. "
-            "Please use '--nuisance-regressors' or '-p'.",
-            DeprecationWarning,
+        NIWORKFLOWS_LOG.warn(
+            f"Argument '{option_string}' is deprecated and will be removed in version 0.1.6. "
+            "Please use '--nuisance-regressors' or '-p'."
         )
         setattr(namespace, self.dest, values)
 
