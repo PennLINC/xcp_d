@@ -1,16 +1,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+"""Workflows for collecting and saving xcp_d outputs."""
 import numpy as np
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.utils import bid_derivative
-
-
-# RF: Not here
-class DerivativesDataSink(bid_derivative):
-    out_path_base = 'xcp_d'
+from xcp_d.interfaces.bids import DerivativesDataSink
 
 
 def init_writederivatives_wf(
@@ -19,62 +15,54 @@ def init_writederivatives_wf(
     highpass,
     smoothing,
     params,
-    omp_nthreads,
     cifti,
     dummytime,
     output_dir,
     TR,
     name='write_derivatives_wf',
 ):
-    """
-    This workflow is for writing out the output in bids
+    """Write out the xcp_d derivatives in BIDS format.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_writederivatives_wf
+
+            from xcp_d.workflow.outputs import init_writederivatives_wf
             wf = init_writederivatives_wf(
-                mem_gb,
-                bold_file,
-                lowpass,
-                highpass,
-                smoothing,
-                params,
-                omp_nthreads,
-                scrub,
-                cifti,
-                dummytime,
-                output_dir,
-                TR,
+                bold_file="/path/to/file.nii.gz",
+                lowpass=6.,
+                highpass=60.,
+                smoothing=6,
+                params="36P",
+                cifti=False,
+                dummytime=0,
+                output_dir=".",
+                TR=2.,
                 name="fcons_ts_wf",
-             )
+            )
+
     Parameters
     ----------
-
-    mem_gb: float
-        memory size in gigabytes
-    bold_file: str
+    bold_file : str
         bold or cifti files
-    lowpass: float
+    lowpass : float
         low pass filter
-    highpass: float
+    highpass : float
         high pass filter
-    smoothing: float
+    smoothing : float
         smooth kernel size in fwhm
-    params: str
+    params : str
         parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
-    scrub: bool
-        scrubbing
-    cifti: bool
+    cifti : bool
         if cifti or bold
-    dummytime: float
+    dummytime : float
         volume(s) removed before postprocessing in seconds
-    output_dir: str
+    output_dir : str
         output directory
-    TR: float
+    TR : float
         repetition time in seconds
+    name : str
 
     Inputs
     ------

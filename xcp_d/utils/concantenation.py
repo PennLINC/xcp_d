@@ -14,9 +14,11 @@ import numpy as np
 from natsort import natsorted
 from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
-from xcp_d.utils.utils import get_transformfile
-from xcp_d.utils import read_ndata
+
 from xcp_d.utils.plot import plot_svgx
+from xcp_d.utils.qcmetrics import compute_dvars
+from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils.write_save import read_ndata
 
 
 def concatenatebold(subjlist, fmridir, outputdir, work_dir):
@@ -82,7 +84,7 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
                                   work_dir=work_dir)
 
 
-def make_DCAN_DF(fds_files, name):
+def make_dcan_df(fds_files, name):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
@@ -239,7 +241,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combine_fd(filex, outfile)
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
-                    make_DCAN_DF(filex, name)
+                    make_dcan_df(filex, name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     mask = natsorted(
@@ -308,27 +310,6 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             shutil.copy(bb1reg, gboldbbreg)
             shutil.copy(bb1ref, bboldref)
-
-
-def compute_dvars(datat):
-    """Compute standard DVARS.
-
-    Parameters
-    ----------
-    datat : numpy.ndarray
-        The data matrix fromw hich to calculate DVARS.
-        Ordered as vertices by timepoints.
-
-    Returns
-    -------
-    numpy.ndarray
-        The calculated DVARS array.
-        A (timepoints,) array.
-    """
-    firstcolumn = np.zeros((datat.shape[0]))[..., None]
-    datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
-    return np.sqrt(datax_ss)
 
 
 def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
@@ -418,7 +399,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         glob.glob(res.split('run-')[0] + '*run*' + j))
                     combine_fd(filex, outfile)
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
-                    make_DCAN_DF(filex, name)
+                    make_dcan_df(filex, name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(
@@ -444,7 +425,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 dvar = compute_dvars(read_ndata(f))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
-            TR = get_ciftiTR(filey[0])
+            TR = get_cifti_tr(filey[0])
             rawdata = tempfile.mkdtemp() + '/den-91k_bold.dtseries.nii'
             combinefile = " -cifti ".join(filey)
             os.system('wb_command -cifti-merge ' + rawdata + ' -cifti '
@@ -548,6 +529,8 @@ def get_segfile(bold_file):
 def _t12native(fname):
     """Select T1w-to-scanner transform associated with a given BOLD file.
 
+    TODO: Update names and refactor
+
     Parameters
     ----------
     fname : str
@@ -586,7 +569,7 @@ def combine_fd(fds_file, fileout):
     np.savetxt(fileout, df, fmt='%.5f', delimiter=',')
 
 
-def get_ciftiTR(cifti_file):
+def get_cifti_tr(cifti_file):
     """Extract repetition time from a CIFTI file.
 
     Parameters
@@ -599,8 +582,6 @@ def get_ciftiTR(cifti_file):
     float
         The TR of the CIFTI file.
     """
-    import nibabel as nb
-
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step
 

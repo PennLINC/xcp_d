@@ -1,26 +1,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-Time series extractions
-functional connectvity matrix
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_fcon_ts_wf
-.. autofunction:: init_cifti_conts_wf
-"""
+"""Workflows for extracting time series and computing functional connectivity."""
 
 import nilearn as nl
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces import connectplot
-from xcp_d.interfaces.connectivity import (
-    ApplyTransformsx,
-    NiftiConnect,
-    get_atlas_cifti,
-    get_atlas_nifti,
-)
-from xcp_d.utils import CiftiCorrelation, CiftiParcellate
+from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
+from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.utils import get_transformfile
 
 
@@ -29,38 +18,40 @@ def init_fcon_ts_wf(
     t1w_to_native,
     mni_to_t1w,
     omp_nthreads,
-    brain_template,
     bold_file,
     name="fcons_ts_wf",
 ):
-    """
-    This workflow is for bold timeseries extraction.
+    """Extract BOLD time series and compute functional connectivity.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_fcon_ts_wf
+
+            from xcp_d.workflow.connectivity import init_fcon_ts_wf
             wf = init_fcon_ts_wf(
-                mem_gb,
-                bold_file,
-                tw1_to_native,
-                template='MNI152NLin2009cAsym',
+                mem_gb=0.1,
+                t1w_to_native="identity",
+                mni_to_t1w="identity",
+                omp_nthreads=1,
+                bold_file="/path/to/file.nii.gz",
                 name="fcons_ts_wf",
-             )
+            )
+
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
     mem_gb: float
         memory size in gigabytes
-    template: str
-        template of bold
-    tw1_to_native: str
+    t1w_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
+    mni_to_t1w
+    omp_nthreads
+    bold_file: str
+        bold file for post processing
+    name
+
     Inputs
     ------
-    bold_file
-        bold file from frmiprep
     clean_bold
         clean bold after filtered out nuisscance and filtering
     ref_file
@@ -246,7 +237,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                              n_procs=omp_nthreads)
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(connectplot(in_file=bold_file),
+    matrix_plot = pe.Node(ConnectPlot(in_file=bold_file),
                           name="matrix_plot_wf",
                           mem_gb=mem_gb)
 
@@ -385,29 +376,30 @@ def init_cifti_conts_wf(
     omp_nthreads,
     name="cifti_ts_con_wf",
 ):
-    """
-    This workflow is for cifti timeseries extraction.
+    """Extract CIFTI time series.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_fcon_ts_wf
+
+            from xcp_d.workflow.connectivity import init_cifti_conts_wf
             wf = init_fcon_ts_wf(
-                mem_gb,
-                bold_file,
-                tw1_to_native,
-                template='MNI152NLin2009cAsym',
-                name="fcons_ts_wf",
-             )
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="cifti_ts_con_wf",
+            )
+
     Parameters
     ----------
-
     mem_gb: float
         memory size in gigabytes
+
     Inputs
     ------
     clean_cifti
         clean cifti after filtered out nuisscance and filtering
+
     Outputs
     -------
     schaefer time series and func matrices, 100-1000 nodes
@@ -422,7 +414,6 @@ def init_cifti_conts_wf(
         gordon 333 func matrices
     qc_file
         quality control files
-
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -528,7 +519,7 @@ timeseries with the Connectome Workbench.
                          n_procs=omp_nthreads)
 
     # Create a node for plotting the matrixes
-    matrix_plot = pe.Node(connectplot(), name="matrix_plot_wf", mem_gb=mem_gb)
+    matrix_plot = pe.Node(ConnectPlot(), name="matrix_plot_wf", mem_gb=mem_gb)
 
     # Compute correlation matrixes via Connectome Workbench
     sc117corr = pe.Node(CiftiCorrelation(),

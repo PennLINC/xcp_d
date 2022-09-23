@@ -1,20 +1,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-format data to fMRIPrep format."""
-import filecmp
 import glob
-import json
 import os
-import shutil
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
+
+from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
+    """Convert HCP-format data to fMRIPrep format."""
     hcpdir = os.path.abspath(hcpdir)
     outdir = os.path.abspath(outdir)
     if sub_id is None:
@@ -32,6 +31,7 @@ def hcp2fmriprep(hcpdir, outdir, sub_id=None):
 
 
 def hcpfmriprepx(hcp_dir, out_dir, subid):
+    """Do the internal work for hcp2fmriprep."""
     sub_id = 'sub-' + subid
     anat_dirx = hcp_dir + '/' + subid + '/T1w/'
 
@@ -189,26 +189,3 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
 
         for kk, jj in zip(rawfiles, newfiles):
             copyfileobj_example(kk, jj)
-
-
-def copyfileobj_example(src, dst):
-    if not os.path.exists(dst) or not filecmp.cmp(src, dst):
-        shutil.copyfile(src, dst)
-
-
-def symlinkfiles(source, dest):
-    # Beware, this example does not handle any edge cases!
-    with open(source, 'rb') as src, open(dest, 'wb') as dst:
-        copyfileobj_example(src, dst)
-
-
-def extractreg(mask, nifti):
-    masker = NiftiMasker(mask_img=mask)
-    signals = masker.fit_transform(nifti)
-    return np.mean(signals, axis=1)
-
-
-def writejson(data, outfile):
-    with open(outfile, 'w') as f:
-        json.dump(data, f)
-    return outfile

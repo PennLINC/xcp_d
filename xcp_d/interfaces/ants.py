@@ -41,12 +41,15 @@ class ConvertTransformFile(CommandLine):
     Without any options, the output filename extension must be .txt or .tfm to signify a
     text-formatted transform file.
     """
+
     _cmd = "ConvertTransformFile"
     input_spec = _ConvertTransformFileInputSpec
     output_spec = _ConvertTransformFileOutputSpec
 
 
-class CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
+class _CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
+    """Input specification for CompositeInvTransformUtil."""
+
     process = traits.Enum(
         "assemble",
         "disassemble",
@@ -77,7 +80,9 @@ class CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
     )
 
 
-class CompositeInvTransformUtilOutputSpec(TraitedSpec):
+class _CompositeInvTransformUtilOutputSpec(TraitedSpec):
+    """Output specification for CompositeInvTransformUtil."""
+
     affine_transform = File(desc="Affine transform component")
     displacement_field = File(desc="Displacement field component")
     out_file = File(desc="Compound transformation file")
@@ -111,13 +116,14 @@ class CompositeInvTransformUtil(ANTSCommand):
     """
 
     _cmd = "CompositeTransformUtil"
-    input_spec = CompositeInvTransformUtilInputSpec
-    output_spec = CompositeInvTransformUtilOutputSpec
+    input_spec = _CompositeInvTransformUtilInputSpec
+    output_spec = _CompositeInvTransformUtilOutputSpec
 
     def _num_threads_update(self):
-        """
+        """Do not update the number of threads environment variable.
+
         CompositeInvTransformUtil ignores environment variables,
-        so override environment update from ANTSCommand class
+        so override environment update from ANTSCommand class.
         """
         pass
 

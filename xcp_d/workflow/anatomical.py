@@ -1,13 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Anatomical post-processing workflows.
-
-fectch anatomical files/resmapleing surfaces to fsl32k
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_structral_wf
-
-"""
-
+"""Anatomical post-processing workflows."""
 import fnmatch
 import os
 import shutil
@@ -15,34 +8,31 @@ from pathlib import Path
 
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.ants.resampling import (
-    ApplyTransforms as antsapplytransforms,  # TM
-)
+from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
 from nipype.interfaces.freesurfer import MRIsConvert
-from nipype.interfaces.fsl import Merge as fslmerge  # TM
-from nipype.interfaces.fsl.maths import BinaryMaths as fslbinarymaths  # TM
+from nipype.interfaces.fsl import Merge as FSLMerge  # TM
+from nipype.interfaces.fsl.maths import BinaryMaths  # TM
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
+from xcp_d.interfaces.surfplotting import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
     ChangeXfmType,
+    CiftiSurfaceResample,
     ConvertAffine,
     SurfaceAverage,
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils import CiftiSurfaceResample, bid_derivative, collect_data
-
-
-class DerivativesDataSink(bid_derivative):
-    out_path_base = "xcp_d"
+from xcp_d.utils.bids import collect_data
+from xcp_d.utils.concantenation import _getsesid
 
 
 def init_anatomical_wf(
@@ -55,45 +45,50 @@ def init_anatomical_wf(
     mem_gb,
     name="anatomical_wf",
 ):
-    """
-    This workflow is convert surfaces (gifti) from fMRI to standard space-fslr-32k
-    It also resamples the t1w segmnetation to standard space, MNI
+    """Convert surfaces from native to standard fslr-32k space and resample T1w seg to MNI.
 
     Workflow Graph
         .. workflow::
-        :graph2use: orig
-        :simple_form: yes
-        from xcp_d.workflows import init_anatomical_wf
-        wf = init_anatomical_wf(
-        omp_nthreads,
-        fmri_dir,
-        subject_id,
-        output_dir,
-        t1w_to_mni,
-        name="anatomical_wf",
-     )
-     Parameters
-     ----------
-     omp_nthreads : int
-          number of threads
-     fmri_dir : str
-          fmri output directory
-     subject_id : str
-          subject id
-     output_dir : str
-          output directory
-     t1w_to_mni : str
-          t1w to MNI transform
-     name : str
-          workflow name
+            :graph2use: orig
+            :simple_form: yes
 
-     Inputs
-     ------
-     t1w: str
-          t1w file
-     t1w_seg: str
-          t1w segmentation file
+            from xcp_d.workflow.anatomical import init_anatomical_wf
+            wf = init_anatomical_wf(
+                omp_nthreads=1,
+                fmri_dir=".",
+                subject_id="sub-01",
+                output_dir=".",
+                t1w_to_mni="identity",
+                input_type="fmriprep",
+                mem_gb=0.1,
+                name="anatomical_wf",
+            )
 
+    Parameters
+    ----------
+    omp_nthreads : int
+        Number of threads.
+    fmri_dir : str
+        Path to the BIDS derivatives directory.
+    subject_id : str
+        subject id
+    output_dir : str
+        Output directory for xcp_d derivatives.
+    t1w_to_mni : str
+        Path to the T1w to MNI transform file.
+    input_type : {"fmriprep", "dcan", "hcp"}
+        The format of the BIDS derivatives.
+    mem_gb : float
+        The memory limit, in gigabytes.
+    name : str, optional
+        Workflow name. Default is "anatomical_wf".
+
+    Inputs
+    ------
+    t1w : str
+        Path to the T1w file.
+    t1w_seg : str
+        Path to the T1w segmentation file.
     """
     workflow = Workflow(name=name)
 
@@ -447,7 +442,7 @@ def init_anatomical_wf(
             #
 
             combine_xfms = pe.Node(
-                antsapplytransforms(
+                ApplyTransforms(
                     reference_image=mnitemplate,
                     interpolation="LanczosWindowedSinc",
                     print_out_composite_warp_file=True,
@@ -458,7 +453,7 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )
             combine_inv_xfms = pe.Node(
-                antsapplytransforms(
+                ApplyTransforms(
                     reference_image=mnitemplate,
                     interpolation="LanczosWindowedSinc",
                     print_out_composite_warp_file=True,
@@ -542,13 +537,13 @@ def init_anatomical_wf(
             # for use with wb_command -surface-apply-warpfield)
 
             reverse_y_component = pe.Node(
-                fslbinarymaths(operation="mul", operand_value=-1.0),
+                BinaryMaths(operation="mul", operand_value=-1.0),
                 name="reverse_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             reverse_inv_y_component = pe.Node(
-                fslbinarymaths(operation="mul", operand_value=-1.0),
+                BinaryMaths(operation="mul", operand_value=-1.0),
                 name="reverse_inv_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -570,13 +565,13 @@ def init_anatomical_wf(
 
             # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
             remerge_warpfield = pe.Node(
-                fslmerge(dimension="t"),
+                FSLMerge(dimension="t"),
                 name="remerge_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             remerge_inv_warpfield = pe.Node(
-                fslmerge(dimension="t"),
+                FSLMerge(dimension="t"),
                 name="remerge_inv_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -1346,16 +1341,3 @@ def init_anatomical_wf(
             )
 
     return workflow
-
-
-def _getsesid(filename):
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split("_")
-    for k in file_id:
-        if "ses" in k:
-            ses_id = k.split("-")[1]
-            break
-
-    return ses_id

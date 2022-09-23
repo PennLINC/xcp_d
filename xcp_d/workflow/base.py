@@ -1,13 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""The primary workflows for xcp_d.
-
-post processing
-^^^^^^^^^^^^^^^
-
-.. autofunction:: init_xcpd_wf
-
-"""
+"""The primary workflows for xcp_d."""
 
 import glob
 import json
@@ -21,9 +14,9 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
-from xcp_d.interfaces import AboutSummary, SubjectSummary
-from xcp_d.utils import (
-    bid_derivative,
+from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.report import AboutSummary, SubjectSummary
+from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
     select_cifti_bold,
@@ -35,65 +28,71 @@ from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
 
-def init_xcpd_wf(layout,
-                 lower_bpf,
-                 upper_bpf,
-                 despike,
-                 bpf_order,
-                 motion_filter_type,
-                 motion_filter_order,
-                 band_stop_min,
-                 band_stop_max,
-                 bandpass_filter,
-                 fmri_dir,
-                 omp_nthreads,
-                 cifti,
-                 task_id,
-                 head_radius,
-                 params,
-                 subject_list,
-                 analysis_level,
-                 smoothing,
-                 custom_confounds,
-                 output_dir,
-                 work_dir,
-                 dummytime,
-                 fd_thresh,
-                 input_type='fmriprep',
-                 name='xcpd_wf'):
-    """
-    This workflow builds and organizes  execution of  xcp_d  pipeline.
-    It is also connect the subworkflows under the xcp_d
+def init_xcpd_wf(
+    layout,
+    lower_bpf,
+    upper_bpf,
+    despike,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    bandpass_filter,
+    fmri_dir,
+    omp_nthreads,
+    cifti,
+    task_id,
+    head_radius,
+    params,
+    subject_list,
+    analysis_level,
+    smoothing,
+    custom_confounds,
+    output_dir,
+    work_dir,
+    dummytime,
+    fd_thresh,
+    input_type='fmriprep',
+    name='xcpd_wf',
+):
+    """Build and organize execution of xcp_d pipeline.
+
+    It also connects the subworkflows under the xcp_d workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
+
             from xcp_d.workflow.base import init_xcpd_wf
             wf = init_xcpd_wf(
-                layout,
-                lower_bpf,
-                upper_bpf,
-                despike,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_min,
-                band_stop_max,
-                fmriprep_dir,
-                omp_nthreads,
-                cifti,
-                task_id,
-                head_radius,
-                params,
-                brain_template,
-                subject_list,
-                smoothing,
-                analysis_level,
-                custom_confounds,
-                output_dir,
-                work_dir,
-                dummytime,
-                fd_thresh,
+                layout=None,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                despike=False,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                band_stop_min=0.,
+                band_stop_max=0.,
+                bandpass_filter=True,
+                fmri_dir=".",
+                omp_nthreads=1,
+                cifti=True,
+                task_id="rest",
+                head_radius=50.,
+                params="36P",
+                subject_list=["sub-01", "sub-02"],
+                analysis_level="participant",
+                smoothing=6,
+                custom_confounds=None,
+                output_dir=".",
+                work_dir=".",
+                dummytime=0,
+                fd_thresh=0.2,
+                input_type='fmriprep',
+                name='xcpd_wf',
             )
 
     Parameters
@@ -146,12 +145,10 @@ def init_xcpd_wf(layout,
         path to cusrtom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-s
     """
-
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-
+    print("Begin the " + name + " workflow")
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -183,50 +180,74 @@ s
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
+        print("Analyzing data at the " + str(analysis_level) + " level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
 
 
-def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order,
-                    motion_filter_type, bandpass_filter,
-                    band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
-                    subject_id, cifti, despike, head_radius, params, dummytime,
-                    fd_thresh, task_id, smoothing, custom_confounds, output_dir,
-                    input_type, name):
-    """This workflow organizes the postprocessing pipeline for a single subject
+def init_subject_wf(
+    layout,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_order,
+    motion_filter_type,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    fmri_dir,
+    omp_nthreads,
+    subject_id,
+    cifti,
+    despike,
+    head_radius,
+    params,
+    dummytime,
+    fd_thresh,
+    task_id,
+    smoothing,
+    custom_confounds,
+    output_dir,
+    input_type,
+    name,
+):
+    """Organize the postprocessing pipeline for a single subject.
 
     # RF: this is the wrong function
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows.base import init_single_bold_wf
+
+            from xcp_d.workflow.base import init_single_bold_wf
             wf = init_single_bold_wf(
                 layout,
                 lower_bpf,
                 upper_bpf,
                 bpf_order,
-                motion_filter_type,
                 motion_filter_order,
+                motion_filter_type,
+                bandpass_filter,
                 band_stop_min,
                 band_stop_max,
-                fmriprep_dir,
+                fmri_dir,
                 omp_nthreads,
                 subject_id,
                 cifti,
+                despike,
                 head_radius,
                 params,
-                scrub,
                 dummytime,
                 fd_thresh,
                 task_id,
-                template,
                 smoothing,
                 custom_confounds,
-                bids_filters,
-                output_dir
-             )
+                output_dir,
+                input_type,
+                name,
+            )
+
     Parameters
     ----------
     lower_bpf : float
@@ -269,9 +290,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         path to custom nuissance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
-
     """
-
     layout, subj_data = collect_data(bids_dir=fmri_dir,
                                      participant_label=subject_id,
                                      task=task_id,
@@ -414,7 +433,6 @@ It is released under the [CC0]\
                 params=params,
                 head_radius=head_radius,
                 omp_nthreads=omp_nthreads,
-                brain_template='MNI152NLin2009cAsym',
                 num_bold=len(subject_data[0]),
                 custom_confounds=custom_confoundsx,
                 layout=layout,
@@ -456,37 +474,15 @@ It is released under the [CC0]\
     return workflow
 
 
-def _prefix(subid):
-    """
-    Prefix for subject id
-    """
-    if subid.startswith('sub-'):
-        return subid
-    return '-'.join(('sub', subid))
-
-
 def _pop(inlist):
-    """
-    make a list of lists into a list
-    """
+    """Make a list of lists into a list."""
     if isinstance(inlist, (list, tuple)):
         return inlist[0]
     return inlist
 
 
-# RF: this shouldn't be in this file
-class DerivativesDataSink(bid_derivative):
-    """
-    defines the data sink for the workflow
-    """
-    out_path_base = 'xcp_d'
-
-
 def getfmriprepv(fmri_dir):
-    """
-    get fmriprep/nibabies/dcan/hcp version
-    """
-
+    """Get fmriprep/nibabies/dcan/hcp version."""
     datax = glob.glob(fmri_dir + '/dataset_description.json')
 
     if datax:
@@ -499,19 +495,3 @@ def getfmriprepv(fmri_dir):
         fvers = str('Unknown vers')
 
     return fvers
-
-
-def _getsesid(filename):
-    """
-    get session id from filename if available
-    """
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split('_')
-    for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
-            break
-
-    return ses_id

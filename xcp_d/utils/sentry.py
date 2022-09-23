@@ -34,6 +34,7 @@ def start_ping(run_uuid, npart):
 
 
 def sentry_setup(opts, exec_env):
+    """Set up sentry."""
     from os import cpu_count
 
     import psutil
@@ -91,7 +92,7 @@ def sentry_setup(opts, exec_env):
 
 
 def process_crashfile(crashfile):
-    """Parse the contents of a crashfile and submit sentry messages"""
+    """Parse the contents of a crashfile and submit sentry messages."""
     crash_info = read_crashfile(str(crashfile))
     with sentry_sdk.push_scope() as scope:
         scope.level = 'fatal'
@@ -158,7 +159,7 @@ def process_crashfile(crashfile):
         sentry_sdk.capture_message(message, 'fatal')
 
 
-def before_send(event, hints):
+def before_send(event):
     # Filtering log messages about crashed nodes
     if 'logentry' in event and 'message' in event['logentry']:
         msg = event['logentry']['message']
@@ -184,9 +185,10 @@ def before_send(event, hints):
 
 
 def _chunks(string, length=CHUNK_SIZE):
-    """
-    Splits a string into smaller chunks
+    """Split a string into smaller chunks.
 
+    Examples
+    --------
     >>> list(_chunks('some longer string.', length=3))
     ['som', 'e l', 'ong', 'er ', 'str', 'ing', '.']
 

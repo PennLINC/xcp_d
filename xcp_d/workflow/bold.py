@@ -1,11 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_boldpostprocess_wf
-
-"""
+"""Workflows for post-processing the BOLD data."""
 import os
 
 import nibabel as nb
@@ -19,55 +14,54 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from num2words import num2words
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import (
-    CensorScrub,
-    FilteringData,
-    FunctionalSummary,
-    RemoveTR,
-    computeqcplot,
-    interpolate,
-    regress,
-)
+from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.regression import Regress
+from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
     stringforparams,
 )
-from xcp_d.utils import DespikePatch, bid_derivative
-from xcp_d.workflow import init_3d_reho_wf, init_compute_alff_wf, init_fcon_ts_wf
+from xcp_d.workflow.connectivity import init_fcon_ts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
+from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_boldpostprocess_wf(lower_bpf,
-                            upper_bpf,
-                            bpf_order,
-                            motion_filter_type,
-                            motion_filter_order,
-                            bandpass_filter,
-                            band_stop_min,
-                            band_stop_max,
-                            smoothing,
-                            bold_file,
-                            head_radius,
-                            params,
-                            custom_confounds,
-                            omp_nthreads,
-                            dummytime,
-                            output_dir,
-                            fd_thresh,
-                            num_bold,
-                            mni_to_t1w,
-                            despike,
-                            brain_template='MNI152NLin2009cAsym',
-                            layout=None,
-                            name='bold_postprocess_wf'):
-    """
-    This workflow organizes bold processing workflow.
+def init_boldpostprocess_wf(
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    bold_file,
+    head_radius,
+    params,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    output_dir,
+    fd_thresh,
+    num_bold,
+    mni_to_t1w,
+    despike,
+    layout=None,
+    name='bold_postprocess_wf',
+):
+    """Organize the bold processing workflow.
 
     Workflow Graph
         .. workflow::
@@ -76,65 +70,71 @@ def init_boldpostprocess_wf(lower_bpf,
 
             from xcp_d.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
-                bold_file,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_min,
-                band_stop_max,
-                smoothing,
-                head_radius,
-                params,
-                custom_confounds,
-                omp_nthreads,
-                dummytime,
-                output_dir,
-                fd_thresh,
-                num_bold,
-                template='MNI152NLin2009cAsym',
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                bandpass_filter=True,
+                band_stop_min=0.,
+                band_stop_max=0.,
+                smoothing=6,
+                bold_file="/path/to/file.nii.gz",
+                head_radius=50.,
+                params="36P",
+                custom_confounds=None,
+                omp_nthreads=1,
+                dummytime=0,
+                output_dir=".",
+                fd_thresh=0.2,
+                num_bold=1,
+                mni_to_t1w="identity",
+                despike=False,
                 layout=None,
-                name='bold_postprocess_wf')
+                name='bold_postprocess_wf',
+            )
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        If True, run 3dDespike from AFNI
+    bpf_order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int
         order for motion filter
+    bandpass_filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
         respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
+    bold_file: str
+        bold file for post processing
     head_radius : float
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
         path to cusrtom nuissance regressors
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
     dummytime: float
         the time in seconds to be removed before postprocessing
+    output_dir : str
+        Directory in which to save xcp_d output
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    num_bold
+    mni_to_t1w
+    despike: bool
+        If True, run 3dDespike from AFNI
+    layout : BIDSLayout object
+        BIDS dataset layout
+    name : str
 
     Inputs
     ------
@@ -180,7 +180,6 @@ def init_boldpostprocess_wf(lower_bpf,
     qc_file
         quality control files
     """
-
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
@@ -258,7 +257,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                  mni_to_t1w=mni_to_t1w,
                                  t1w_to_native=_t12native(bold_file),
                                  bold_file=bold_file,
-                                 brain_template=brain_template,
                                  name="fcons_ts_wf",
                                  omp_nthreads=omp_nthreads)
 
@@ -284,7 +282,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                                    lowpass=upper_bpf,
                                                    highpass=lower_bpf,
                                                    TR=TR,
-                                                   omp_nthreads=omp_nthreads,
                                                    name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(
@@ -319,14 +316,14 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -389,25 +386,30 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    qcreport = pe.Node(computeqcplot(TR=TR,
-                                     bold_file=bold_file,
-                                     dummytime=dummytime,
-                                     t1w_mask=t1w_mask,
-                                     template_mask=str(
-                                         get_template(
-                                             'MNI152NLin2009cAsym',
-                                             resolution=2,
-                                             desc='brain',
-                                             suffix='mask',
-                                             extension=['.nii', '.nii.gz'])),
-                                     head_radius=head_radius,
-                                     low_freq=band_stop_max,
-                                     high_freq=band_stop_min),
-                       name="qc_report",
-                       mem_gb=mem_gbx['timeseries'],
-                       n_procs=omp_nthreads)
+    qcreport = pe.Node(
+        QCPlot(
+            TR=TR,
+            bold_file=bold_file,
+            dummytime=dummytime,
+            t1w_mask=t1w_mask,
+            template_mask=str(
+                get_template(
+                    'MNI152NLin2009cAsym',
+                    resolution=2,
+                    desc='brain',
+                    suffix='mask',
+                    extension=['.nii', '.nii.gz']
+                )
+            ),
+            head_radius=head_radius,
+            low_freq=band_stop_max,
+            high_freq=band_stop_min),
+        name="qc_report",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads,
+    )
 
-# Remove TR first:
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
@@ -702,20 +704,3 @@ def _get_ref_mask(fname):
     mask = directx + '/' + filex
     ref = directx + '/' + filez
     return mask, ref
-
-
-def _t12native(fname):  # TODO: Update names and refactor
-    """
-    Takes in bold filename, finds transform from T1W to native space
-    """
-    directx = os.path.dirname(fname)
-    filename = os.path.basename(fname)
-    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-
-    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
-
-    return t12ref
-
-
-class DerivativesDataSink(bid_derivative):
-    out_path_base = 'xcp_d'

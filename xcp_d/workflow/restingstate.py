@@ -1,11 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-post processing the bold/cifti
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_post_process_wf
-
-"""
+"""Workflows for calculating resting state-specific metrics."""
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import Smooth
 from nipype.interfaces.workbench import CiftiSmooth
@@ -13,54 +8,58 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces import brainplot, computealff, surfaceReho
-from xcp_d.utils import CiftiSeparateMetric
+from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
+from xcp_d.interfaces.workbench import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
 
 
-def init_compute_alff_wf(mem_gb,
-                         TR,
-                         lowpass,
-                         highpass,
-                         smoothing,
-                         cifti,
-                         omp_nthreads,
-                         name="compute_alff_wf"):
-    """
-    This workflow compute alff for both nifti and cifti
+def init_compute_alff_wf(
+    mem_gb,
+    TR,
+    lowpass,
+    highpass,
+    smoothing,
+    cifti,
+    omp_nthreads,
+    name="compute_alff_wf",
+):
+    """Compute alff for both nifti and cifti.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_compute_alff_wf
+
+            from xcp_d.workflow.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
-                mem_gb,
-                TR,
-                lowpass,
-                highpass,
-                smoothing,
-                cifti,
+                mem_gb=0.1,
+                TR=2.,
+                lowpass=6.,
+                highpass=60.,
+                smoothing=6,
+                cifti=False,
+                omp_nthreads=1,
                 name="compute_alff_wf",
-             )
+            )
+
     Parameters
     ----------
-
-    mem_gb: float
+    mem_gb : float
         memory size in gigabytes
-    TR: float
+    TR : float
         repetition time
-    lowpass: float
+    lowpass : float
         low pass filter
-    highpass: float
+    highpass : float
         high pass filter
-    smoothing: float
+    smoothing : float
         smooth kernel size in fwhm
-    params: str
-        parameter regressed out from bold
-    omp_nthreads: int
-        number of threads
-    cifti: bool
+    cifti : bool
         if cifti or bold
+    omp_nthreads : int
+        number of threads
+    name : str, optional
+        Name of the workflow.
 
     Inputs
     ------
@@ -78,7 +77,6 @@ def init_compute_alff_wf(mem_gb,
     html
         alff html for nifti
     """
-
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f""" \
@@ -96,13 +94,13 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         name='outputnode')
 
     # compute alff
-    alff_compt = pe.Node(computealff(TR=TR, lowpass=lowpass,
+    alff_compt = pe.Node(ComputeALFF(TR=TR, lowpass=lowpass,
                                      highpass=highpass),
                          mem_gb=mem_gb,
                          name='alff_compt',
                          n_procs=omp_nthreads)
     # create a node for the Nifti HTML
-    brain_plot = pe.Node(brainplot(),
+    brain_plot = pe.Node(BrainPlot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)
@@ -165,30 +163,32 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     return workflow
 
 
-#  For cifti
-def init_surface_reho_wf(mem_gb,
-                         omp_nthreads,
-                         smoothing,
-                         name="surface_reho_wf"):
-    """
-    This workflow compute surface reho
+def init_surface_reho_wf(
+    mem_gb,
+    omp_nthreads,
+    name="surface_reho_wf",
+):
+    """Compute ReHo from surface (CIFTI) data.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_surface_reho_wf
+
+            from xcp_d.workflow.restingstate import init_surface_reho_wf
             wf = init_surface_reho_wf(
-                mem_gb,
-                smoothing,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="surface_reho_wf",
-             )
+            )
+
     Parameters
     ----------
-
-    mem_gb: float
-        memory size in gigabytes
-    smoothing: float
-        smooth kernel size in fwhm
+    mem_gb : float
+        Memory size in gigabytes.
+    omp_nthreads : int
+        Maximum number of threads an individual process may use.
+    name : str
 
     Inputs
     ------
@@ -202,7 +202,6 @@ def init_surface_reho_wf(mem_gb,
     rh_reho
         right hemisphere surface reho
     """
-
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 
@@ -228,11 +227,11 @@ vertices to yield ReHo.
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
     # Calculate the reho by hemipshere
-    lh_reho = pe.Node(surfaceReho(surf_hemi='L'),
+    lh_reho = pe.Node(SurfaceReHo(surf_hemi='L'),
                       name="reho_lh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-    rh_reho = pe.Node(surfaceReho(surf_hemi='R'),
+    rh_reho = pe.Node(SurfaceReHo(surf_hemi='R'),
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
@@ -249,31 +248,33 @@ vertices to yield ReHo.
     return workflow
 
 
-# For nifti
 def init_3d_reho_wf(
     mem_gb,
     omp_nthreads,
     name="afni_reho_wf",
 ):
-    """
-    This workflow compute surface reho
+    """Compute ReHo on volumetric (NIFTI) data.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
-            from xcp_d.workflows import init_3d_reho_wf
+
+            from xcp_d.workflow.restingstate import init_3d_reho_wf
             wf = init_3d_reho_wf(
-                mem_gb,
-                smoothing,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="afni_reho_wf",
-             )
+            )
+
     Parameters
     ----------
-
-    mem_gb: float
-        memory size in gigabytes
-    smoothing: float
-        smooth kernel size in fwhm
+    mem_gb : float
+        Memory size in gigabytes.
+    omp_nthreads : int
+        Maximum number of threads an individual process may use.
+    name : str, optional
+        Name of the workflow. Default is "afni_reho_wf".
 
     Inputs
     ------
@@ -287,7 +288,6 @@ def init_3d_reho_wf(
     reho_out
         reho output
     """
-
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI [@afni].
@@ -299,7 +299,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     outputnode = pe.Node(
         niu.IdentityInterface(fields=['reho_out', 'rehohtml']),
         name='outputnode')
-    from xcp_d.utils import ReHoNamePatch
+    from xcp_d.interfaces.resting_state import ReHoNamePatch
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),
@@ -307,7 +307,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
     # Get the HTML
-    brain_plot = pe.Node(brainplot(),
+    brain_plot = pe.Node(BrainPlot(),
                          mem_gb=mem_gb,
                          name='brain_plot',
                          n_procs=omp_nthreads)

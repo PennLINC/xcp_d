@@ -12,15 +12,10 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils import (
-    compute_FD,
-    generate_mask,
-    interpolate_masked_data,
-    read_ndata,
-    write_ndata,
-)
 from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
@@ -243,7 +238,7 @@ class CensorScrub(SimpleInterface):
                                      "rot_x", "rot_y", "rot_z", "trans_x",
                                      "trans_y", "trans_z"
                                  ])
-        fd_timeseries_uncensored = compute_FD(confound=motion_df,
+        fd_timeseries_uncensored = compute_fd(confound=motion_df,
                                               head_radius=self.inputs.head_radius)
 
         # Read in custom confounds file (if any) and bold file to be censored
@@ -338,10 +333,7 @@ class CensorScrub(SimpleInterface):
         return runtime
 
 
-# interpolation
-
-
-class _interpolateInputSpec(BaseInterfaceInputSpec):
+class _InterpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
     bold_file = File(exists=True,
                      mandatory=True,
@@ -353,13 +345,13 @@ class _interpolateInputSpec(BaseInterfaceInputSpec):
                       desc="repetition time in TR")
 
 
-class _interpolateOutputSpec(TraitedSpec):
+class _InterpolateOutputSpec(TraitedSpec):
     bold_interpolated = File(exists=True,
                              manadatory=True,
                              desc=" fmriprep censored")
 
 
-class interpolate(SimpleInterface):
+class Interpolate(SimpleInterface):
     """Interpolates scrubbed/regressed BOLD data based on temporal mask.
 
     Interpolation takes in the scrubbed/regressed bold file and temporal mask,
@@ -368,8 +360,8 @@ class interpolate(SimpleInterface):
     It outputs the interpolated file.
     """
 
-    input_spec = _interpolateInputSpec
-    output_spec = _interpolateOutputSpec
+    input_spec = _InterpolateInputSpec
+    output_spec = _InterpolateOutputSpec
 
     def _run_interface(self, runtime):
         # Read in regressed bold data and temporal mask

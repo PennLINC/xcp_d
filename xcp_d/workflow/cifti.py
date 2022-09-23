@@ -1,11 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_ciftipostprocess_wf
-
-"""
+"""Workflows for post-processing CIFTI-format BOLD data."""
 import os
 
 import nibabel as nb
@@ -17,17 +12,13 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
-from xcp_d.interfaces import (
-    CensorScrub,
-    FilteringData,
-    FunctionalSummary,
-    RemoveTR,
-    ciftidespike,
-    computeqcplot,
-    interpolate,
-    regress,
-)
-from xcp_d.utils import bid_derivative
+from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.regression import CiftiDespike, Regress
+from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -38,30 +29,32 @@ from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_ciftipostprocess_wf(cifti_file,
-                             lower_bpf,
-                             upper_bpf,
-                             bpf_order,
-                             motion_filter_type,
-                             motion_filter_order,
-                             bandpass_filter,
-                             band_stop_min,
-                             band_stop_max,
-                             smoothing,
-                             head_radius,
-                             params,
-                             output_dir,
-                             custom_confounds,
-                             omp_nthreads,
-                             dummytime,
-                             fd_thresh,
-                             mni_to_t1w,
-                             despike,
-                             num_cifti,
-                             layout=None,
-                             name='cifti_process_wf'):
-    """
-    This workflow organizes cifti processing workflow.
+def init_ciftipostprocess_wf(
+    cifti_file,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    head_radius,
+    params,
+    output_dir,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    fd_thresh,
+    mni_to_t1w,
+    despike,
+    num_cifti,
+    layout=None,
+    name='cifti_process_wf',
+):
+    """Organize the cifti processing workflow.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -69,69 +62,71 @@ def init_ciftipostprocess_wf(cifti_file,
 
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
-                bold_file,
+                cifti_file,
                 lower_bpf,
                 upper_bpf,
                 bpf_order,
                 motion_filter_type,
                 motion_filter_order,
+                bandpass_filter,
                 band_stop_min,
                 band_stop_max,
-                despike,
                 smoothing,
                 head_radius,
                 params,
+                output_dir,
                 custom_confounds,
                 omp_nthreads,
                 dummytime,
-                output_dir,
                 fd_thresh,
+                mni_to_t1w,
+                despike,
                 num_cifti,
-                template='MNI152NLin2009cAsym',
                 layout=None,
-                name='cifti_postprocess_wf',)
-
+                name='cifti_postprocess_wf',
+            )
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
+    cifti_file
     lower_bpf : float
         Lower band pass filter
     upper_bpf : float
         Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        afni depsike
+    bpf_order
     motion_filter_type: str
         respiratory motion filter type: lp or notch
     motion_filter_order: int
         order for motion filter
+    bandpass_filter
     band_stop_min: float
         respiratory minimum frequency in breathe per minutes(bpm)
     band_stop_max,: float
         respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    smoothing: float
+        smooth the derivatives output with kernel size (fwhm)
     head_radius : float
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    output_dir : str
+        Directory in which to save xcp_d output
     custom_confounds: str
         path to cusrtom nuissance regressors
-    scrub: bool
-        remove the censored volumes
+    omp_nthreads : int
+        Maximum number of threads an individual process may use
     dummytime: float
         the first few seconds to be removed before postprocessing
+    fd_thresh
+        Criterion for flagging framewise displacement outliers
+    mni_to_t1w,
+    despike: bool
+        afni depsike
+    num_cifti,
+    layout : BIDSLayout object
+        BIDS dataset layout
+    name : str
+        Default is 'cifti_postprocess_wf'.
 
     Inputs
     ------
@@ -172,7 +167,6 @@ def init_ciftipostprocess_wf(cifti_file,
         gordon 333 func matrices
     qc_file
         quality control files
-
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
@@ -180,7 +174,7 @@ For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
 
-    TR = get_ciftiTR(cifti_file)
+    TR = get_cifti_tr(cifti_file)
     if TR is None:
         metadata = layout.get_metadata(cifti_file)
         TR = metadata['RepetitionTime']
@@ -191,7 +185,7 @@ tasks and sessions), the following post-processing was performed:
     except Exception:
         raise Exception(f"Unable to find confounds file for {cifti_file}.")
 
-    # TR = get_ciftiTR(cifti_file=cifti_file)
+    # TR = get_cifti_tr(cifti_file=cifti_file)
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.floor(dummytime / TR))
@@ -256,7 +250,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     reho_compute_wf = init_surface_reho_wf(
         mem_gb=mem_gbx['timeseries'],
-        smoothing=smoothing,
         name="surface_reho_wf",
         omp_nthreads=omp_nthreads)
 
@@ -270,7 +263,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         lowpass=upper_bpf,
         highpass=lower_bpf,
         TR=TR,
-        omp_nthreads=omp_nthreads,
         name="write_derivative_wf")
 
     censor_scrub = pe.Node(CensorScrub(
@@ -305,20 +297,20 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        regress(TR=TR,
+        Regress(TR=TR,
                 original_file=cifti_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     interpolate_wf = pe.Node(
-        interpolate(TR=TR),
+        Interpolate(TR=TR),
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
     qcreport = pe.Node(
-        computeqcplot(
+        QCPlot(
             TR=TR,
             bold_file=cifti_file,
             dummytime=dummytime,
@@ -338,7 +330,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-# Remove TR first:
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
@@ -364,7 +356,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             ])])
 
     if despike:  # If we despike
-        despike3d = pe.Node(ciftidespike(TR=TR),
+        despike3d = pe.Node(CiftiDespike(TR=TR),
                             name="cifti_despike",
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
@@ -569,13 +561,3 @@ def _create_mem_gb(bold_fname):
     }
 
     return mem_gbz
-
-
-# RF: shouldn't be here
-class DerivativesDataSink(bid_derivative):
-    out_path_base = 'xcp_d'
-
-
-def get_ciftiTR(cifti_file):
-    ciaxis = nb.load(cifti_file).header.get_axis(0)
-    return ciaxis.step

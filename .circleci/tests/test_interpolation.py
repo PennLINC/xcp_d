@@ -1,11 +1,15 @@
-# source: https://pythonnumericalmethods.berkeley.edu/notebooks/chapter24.04-FFT-in-Python.html
+"""Tests for interpolation methods.
+
+source: https://pythonnumericalmethods.berkeley.edu/notebooks/chapter24.04-FFT-in-Python.html
+"""
 import os
 import tempfile
 
 import numpy as np
 from scipy.fftpack import fft
-from xcp_d.interfaces.prepostcleaning import interpolate
-from xcp_d.utils import read_ndata, write_ndata
+
+from xcp_d.interfaces.prepostcleaning import Interpolate
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def test_interpolate_cifti(data_dir, tmp_path_factory):
@@ -84,7 +88,7 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
     tmask[100] = 1
     np.savetxt(tmask_file, tmask)
 
-    interpolation = interpolate()
+    interpolation = Interpolate()
     interpolation.inputs.tmask = tmask_file
     interpolation.inputs.in_file = noise_file
     interpolation.inputs.bold_file = boldfile
@@ -113,7 +117,8 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
     assert diff1 < diff2
 
 
-def test_interpolate_nifti(data_dir):  # Checking results - first must censor file
+def test_interpolate_nifti(data_dir):
+    """Check results - first must censor file."""
     boldfile = (
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -190,7 +195,7 @@ def test_interpolate_nifti(data_dir):  # Checking results - first must censor fi
     tmask[8] = 1
     np.savetxt("tmask.tsv", tmask)
 
-    interpolation = interpolate()
+    interpolation = Interpolate()
     interpolation.inputs.tmask = "tmask.tsv"
     interpolation.inputs.in_file = "noisy_file.nii.gz"
     interpolation.inputs.bold_file = boldfile

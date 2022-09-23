@@ -1,17 +1,23 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Handling computation of reho and alff.
+"""Interfaces for working with resting-state fMRI data.
 
-    .. testsetup::
-    # will comeback
+.. testsetup::
+
 """
 import os
+import shutil
 
-import nibabel as nb
-import numpy as np
 import tempita
 from brainsprite import viewer_substitute
 from nipype import logging
+from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
+from nipype.interfaces.afni.utils import (
+    ReHoInputSpec,
+    ReHoOutputSpec,
+    UnifizeInputSpec,
+    UnifizeOutputSpec,
+)
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -21,33 +27,27 @@ from nipype.interfaces.base import (
 )
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils import (
-    compute_2d_reho,
-    compute_alff,
-    mesh_adjacency,
-    read_gii,
-    read_ndata,
-    write_gii,
-    write_ndata,
-)
+from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import zscore_nifti
+from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
 
 # compute 2D reho
-class _surfaceRehoInputSpec(BaseInterfaceInputSpec):
+class _SurfaceReHoInputSpec(BaseInterfaceInputSpec):
     surf_bold = File(exists=True,
                      mandatory=True,
                      desc="left or right hemisphere gii ")
     surf_hemi = traits.Str(exists=True, mandatory=True, desc="L or R ")
 
 
-class _surfaceRehoOutputSpec(TraitedSpec):
+class _SurfaceReHoOutputSpec(TraitedSpec):
     surf_gii = File(exists=True, manadatory=True, desc=" lh hemisphere reho")
 
 
-class surfaceReho(SimpleInterface):
+class SurfaceReHo(SimpleInterface):
     """Calculate regional homogeneity (ReHo) on a surface file.
 
     Examples
@@ -57,16 +57,16 @@ class surfaceReho(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    >>> surfaceRehowf = surfaceReho()
-    >>> surfaceRehowf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfaceRehowf.inputs.surf_hemi = 'R'
-    >>> surfaceRehowf.run()
+    >>> surfacereho_wf = SurfaceReHo()
+    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+    >>> surfacereho_wf.inputs.surf_hemi = 'R'
+    >>> surfacereho_wf.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _surfaceRehoInputSpec
-    output_spec = _surfaceRehoOutputSpec
+    input_spec = _SurfaceReHoInputSpec
+    output_spec = _SurfaceReHoOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -92,7 +92,7 @@ class surfaceReho(SimpleInterface):
         return runtime
 
 
-class _alffInputSpec(BaseInterfaceInputSpec):
+class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
     TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
     lowpass = traits.Float(exists=True,
@@ -108,11 +108,11 @@ class _alffInputSpec(BaseInterfaceInputSpec):
                 desc=" brain mask for nifti file")
 
 
-class _alffOutputSpec(TraitedSpec):
+class _ComputeALFFOutputSpec(TraitedSpec):
     alff_out = File(exists=True, manadatory=True, desc=" alff")
 
 
-class computealff(SimpleInterface):
+class ComputeALFF(SimpleInterface):
     """Compute ALFF.
 
     Examples
@@ -122,7 +122,7 @@ class computealff(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computealffwf = computealff()
+    computealffwf = ComputeALFF()
     computealffwf.inputs.in_file = datafile
     computealffwf.inputs.lowpass = 0.1
     computealffwf.inputs.highpass = 0.01
@@ -133,8 +133,8 @@ class computealff(SimpleInterface):
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _alffInputSpec
-    output_spec = _alffOutputSpec
+    input_spec = _ComputeALFFInputSpec
+    output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -168,23 +168,23 @@ class computealff(SimpleInterface):
         return runtime
 
 
-class _brainplotInputSpec(BaseInterfaceInputSpec):
+class _BrainPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="alff or reho")
     mask_file = File(exists=True, mandatory=True, desc="mask file ")
 
 
-class _brainplotOutputSpec(TraitedSpec):
+class _BrainPlotOutputSpec(TraitedSpec):
     nifti_html = File(exists=True, manadatory=True, desc="zscore html")
 
 
-class brainplot(SimpleInterface):
+class BrainPlot(SimpleInterface):
     """Create a brainsprite figure from a NIFTI file.
 
     The image will first be normalized (z-scored) before the figure is generated.
     """
 
-    input_spec = _brainplotInputSpec
-    output_spec = _brainplotOutputSpec
+    input_spec = _BrainPlotInputSpec
+    output_spec = _BrainPlotOutputSpec
 
     def _run_interface(self, runtime):
 
@@ -225,47 +225,84 @@ class brainplot(SimpleInterface):
         return runtime
 
 
-def zscore_nifti(img, outputname, mask=None):
-    """Normalize (z-score) a NIFTI image.
+class ReHoNamePatch(SimpleInterface):
+    """Compute ReHo for a given neighbourhood, based on a local neighborhood of that voxel.
 
-    Image and mask must be in the same space.
-    TODO: Use Nilearn for masking.
+    For complete details, see the `3dReHo Documentation.
+    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dReHo.html>`_
 
-    Parameters
-    ----------
-    img : str
-        Path to the NIFTI image to z-score.
-    outputname : str
-        Output filename.
-    mask : str or None, optional
-        Path to binary mask file. Default is None.
-
-    Returns
-    -------
-    outputname : str
-        Output filename. Same as the ``outputname`` parameter.
+    Examples
+    --------
+    >>> from nipype.interfaces import afni
+    >>> reho = afni.ReHo()
+    >>> reho.inputs.in_file = 'functional.nii'
+    >>> reho.inputs.out_file = 'reho.nii.gz'
+    >>> reho.inputs.neighborhood = 'vertices'
+    >>> reho.cmdline
+    '3dReHo -prefix reho.nii.gz -inset functional.nii -nneigh 27'
+    >>> res = reho.run()  # doctest: +SKIP
     """
-    img = nb.load(img)
 
-    if mask:
-        # z-score the data
-        maskdata = nb.load(mask).get_fdata()
-        imgdata = img.get_fdata()
-        meandata = imgdata[maskdata > 0].mean()
-        stddata = imgdata[maskdata > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-        # values where the mask is less than 1 are set to 0
-        zscore_fdata[maskdata < 1] = 0
-    else:
-        # z-score the data
-        imgdata = img.get_fdata()
-        meandata = imgdata[np.abs(imgdata) > 0].mean()
-        stddata = imgdata[np.abs(imgdata) > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
+    _cmd = "3dReHo"
+    input_spec = ReHoInputSpec
+    output_spec = ReHoOutputSpec
 
-    # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata,
-                             affine=img.affine,
-                             header=img.header)
-    dataout.to_filename(outputname)
-    return outputname
+    def _run_interface(self, runtime):
+        outfile = runtime.cwd + "/reho.nii.gz"
+        shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
+        shutil.copyfile(self.inputs.mask_file, runtime.cwd + "/mask.nii.gz")
+        os.system(
+            "3dReHo -inset inset.nii.gz -mask mask.nii.gz -nneigh 27 -prefix reho.nii.gz"
+        )
+        self._results['out_file'] = outfile
+
+
+class DespikePatch(SimpleInterface):
+    """Remove 'spikes' from the 3D+time input dataset.
+
+    For complete details, see the `3dDespike Documentation.
+    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html>`_
+
+    Examples
+    --------
+    >>> from nipype.interfaces import afni
+    >>> despike = afni.Despike()
+    >>> despike.inputs.in_file = 'functional.nii'
+    >>> despike.cmdline
+    '3dDespike -prefix functional_despike functional.nii'
+    >>> res = despike.run()  # doctest: +SKIP
+    """
+
+    _cmd = "3dDespike"
+    input_spec = DespikeInputSpec
+    output_spec = AFNICommandOutputSpec
+
+    def _run_interface(self, runtime):
+        outfile = runtime.cwd + "/3despike.nii.gz"
+        shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
+        os.system("3dDespike -NEW -prefix  3despike.nii.gz inset.nii.gz")
+        self._results['out_file'] = outfile
+
+
+class ContrastEnhancement(SimpleInterface):
+    """Perform contrast enhancement with AFNI.
+
+    3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
+    """
+
+    _cmd = "3dUnifize"
+    input_spec = UnifizeInputSpec
+    output_spec = UnifizeOutputSpec
+
+    def _run_interface(self, runtime):
+        outfile = runtime.cwd + "/3dunfixed.nii.gz"
+
+        if self.inputs.in_file.endswith(".nii.gz"):
+            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
+        else:
+            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.mgz")
+            os.system("mri_convert inset.mgz inset.nii.gz")
+
+        os.system(
+            "3dUnifize -T2  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")
+        self._results['out_file'] = outfile

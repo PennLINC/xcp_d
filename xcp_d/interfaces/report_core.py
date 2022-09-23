@@ -1,12 +1,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Tools for generating Reports."""
+"""Tools for generating Reports.
+
+This is from niworkflows, a patch will be submitted.
+"""
 import glob as glob
 from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
 
-# this is from niworklfows, a patched will be submitted
+from xcp_d.utils.concantenation import _getsesid
 
 
 class Report(_Report):
@@ -141,7 +144,7 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/dcanhcp'
             elif input_type == 'hcp':
                 fmri_dir = str(work_dir) + '/hcp/hcp'
-            from xcp_d.utils import concatenatebold
+            from xcp_d.utils.concantenation import concatenatebold
             print('Concatenating bold files ...')
             concatenatebold(subjlist=subject_list,
                             fmridir=str(fmri_dir),
@@ -162,18 +165,3 @@ def generate_reports(subject_list,
 
         print('Reports generated successfully')
     return errno
-
-
-def _getsesid(filename):
-    """Get session ID from filename."""
-    import os
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split('_')
-    for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
-            break
-
-    return ses_id
