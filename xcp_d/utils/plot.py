@@ -360,47 +360,56 @@ def confoundplotx(time_series,
             maximum_value.append(max(time_series[c]))
             minimum_value.append(min(time_series[c]))
 
-            # Threshold fd at 0.1, 0.2 and 0.5 and plot
-            time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
+            # Threshold fd at 0.05, 0.1, 0.2, 0.5, 1.0 mm and plot
+            time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
             fda = time_series[c].copy()
             FD_timeseries = time_series[c].copy()
-            FD_timeseries[FD_timeseries > 0] = 1.05
-            time_series_axis.plot(fda, '.', color='gray', markersize=40)
-            time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
+            FD_timeseries[FD_timeseries >= 0.00] = 1.05
+            time_series_axis.plot(fda, '.', color='gray', markersize=25)
+            time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=25)
 
-            time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
             fda[fda < 0.05] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.05] = 1.05
             FD_timeseries[FD_timeseries < 0.05] = np.nan
-            time_series_axis.plot(fda, '.', color='gray', markersize=40)
-            time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
+            time_series_axis.plot(fda, '.', color='#66c2a5', markersize=25)
+            time_series_axis.plot(FD_timeseries, '.', color='#66c2a5', markersize=25)
 
-            time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
             fda[fda < 0.1] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.1] = 1.05
             FD_timeseries[FD_timeseries < 0.1] = np.nan
-            time_series_axis.plot(fda, '.', color='#66c2a5', markersize=40)
-            time_series_axis.plot(FD_timeseries, '.', color='#66c2a5', markersize=40)
+            time_series_axis.plot(fda, '.', color='#fc8d62', markersize=25)
+            time_series_axis.plot(FD_timeseries, '.', color='#fc8d62', markersize=25)
 
-            time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
             fda[fda < 0.2] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.2] = 1.05
             FD_timeseries[FD_timeseries < 0.2] = np.nan
-            time_series_axis.plot(fda, '.', color='#fc8d62', markersize=40)
-            time_series_axis.plot(FD_timeseries, '.', color='#fc8d62', markersize=40)
+            time_series_axis.plot(fda, '.', color='#8da0cb', markersize=25)
+            time_series_axis.plot(FD_timeseries, '.', color='#8da0cb', markersize=25)
 
-            time_series_axis.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
             fda[fda < 0.5] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.5] = 1.05
             FD_timeseries[FD_timeseries < 0.5] = np.nan
-            time_series_axis.plot(fda, '.', color='#8da0cb', markersize=40)
-            time_series_axis.plot(FD_timeseries, '.', color='#8da0cb', markersize=40)
+            time_series_axis.plot(fda, '.', color='gray', markersize=25)
+            time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=25)
 
-            #  Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
+            #  Plot the good volumes, i.e: thresholded at 0.05, 0.1, 0.2, 0.5
+            good_vols = len(time_series[c][time_series[c] < 0.05])
+            time_series_axis.text(1.01,
+                                  .05,
+                                  good_vols,
+                                  c='grey',
+                                  verticalalignment='top',
+                                  horizontalalignment='left',
+                                  transform=time_series_axis.transAxes,
+                                  fontsize=30)
             good_vols = len(time_series[c][time_series[c] < 0.1])
             time_series_axis.text(1.01,
                                   .1,
@@ -428,15 +437,6 @@ def confoundplotx(time_series,
                                   horizontalalignment='left',
                                   transform=time_series_axis.transAxes,
                                   fontsize=30)
-            good_vols = len(time_series[c][time_series[c] < 0.05])
-            time_series_axis.text(1.01,
-                                  .05,
-                                  good_vols,
-                                  c='grey',
-                                  verticalalignment='top',
-                                  horizontalalignment='left',
-                                  transform=time_series_axis.transAxes,
-                                  fontsize=30)
     else:  # If no thresholding
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=5)
@@ -450,7 +450,7 @@ def confoundplotx(time_series,
     time_series_axis.legend(fontsize=40)
     if FD is True:
         time_series_axis.set_ylim(0, 1.1)
-        time_series_axis.set_yticks([0, 0.05, .1, 0.2, .5, 1])
+        time_series_axis.set_yticks([0, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0])
     elif ylims:
         time_series_axis.set_ylim(ylims)
     else:
@@ -531,9 +531,10 @@ def plot_svgx(rawdata,
         # regressed_dvars_data = raw_dvars_data #TODO: Check if this is needed
 
     # Create dataframes for the bold_data DVARS, FD
+    # #TODO: Uncomment post-reg once we have solution to ensure length equals pre/post-all
     DVARS_timeseries = pd.DataFrame({
         'Pre regression': raw_dvars_data,
-        'Post regression': regressed_dvars_data,
+        # 'Post regression': regressed_dvars_data,
         'Post all': residual_dvars_data
     })
 
@@ -580,12 +581,12 @@ def plot_svgx(rawdata,
     # Plot the data and confounds, plus the carpet plot
     plt.cla()
     plt.clf()
-    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
+    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(45, 65))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
-                        height_ratios=[1, 1, 0.2, 2.5, 1])
+                        height_ratios=[1, 1, 0.2, 2.5, 1.5])
     confoundplotx(time_series=DVARS_timeseries,
                   grid_spec_ts=grid[0],
                   TR=TR,
@@ -612,12 +613,12 @@ def plot_svgx(rawdata,
     plt.clf()
 
     # Plot the data and confounds, plus the carpet plot
-    processed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
+    processed_figure = plt.figure(constrained_layout=True, figsize=(45, 65))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
-                        height_ratios=[1, 1, 0.2, 2.5, 1])
+                        height_ratios=[1, 1, 0.2, 2.5, 1.5])
 
     confoundplotx(time_series=DVARS_timeseries,
                   grid_spec_ts=grid[0],

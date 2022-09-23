@@ -194,7 +194,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         '_atlas-Schaefer517_desc-timeseries_bold.tsv',
         '_atlas-Schaefer1017_desc-timeseries_bold.tsv',
         '_atlas-subcortical_desc-timeseries_bold.tsv',
-        '_desc-framewisedisplacement_bold.tsv', '_desc-residual_bold.nii.gz',
+        '_desc-framewisedisplacement_bold.tsv',
+        '_desc-tmask_bold.tsv',
+        '_desc-residual_bold.nii.gz',
         '_desc-residual_smooth_bold.nii.gz'
     ]
 
@@ -221,10 +223,24 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     for task in tasklist:
         resbold = natsorted(
             fnmatch.filter(all_func_files,
-                           '*' + task + '*run*_desc-residual*bold*.nii.gz'))
+                           '*_task-' + task + '_*desc-residual*bold*.nii.gz'))
+        resbold_unsmoothed_only = natsorted(
+            fnmatch.filter(all_func_files,
+                           '*_task-' + task + '_*desc-residual_bold*.nii.gz'))
         regressed_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
-        if len(resbold) > 1:
+        if len(resbold_unsmoothed_only) == 1:
+            res = resbold[0]
+            resid = res.split('task-')[1].partition('_')[-1]
+            # print(resid)
+            for j in datafile:
+                fileid = res.split('task-')[0] + resid.partition('_desc')[0]
+                outfile = fileid + j
+                filex = glob.glob(res.split('task-')[0] + '*task*' + j)
+                if j.endswith('framewisedisplacement_bold.tsv'):
+                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
+                    make_dcan_df(filex, name)
+        if len(resbold_unsmoothed_only) > 1:
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
             for j in datafile:
@@ -241,12 +257,15 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 if j.endswith('_desc-framewisedisplacement_bold.tsv'):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
+                    for f in filex:
+                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5" 
+                        make_dcan_df([f], name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
                     mask = natsorted(
                         glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                                   + '*' + resid.partition('_desc')[0]
-                                  + '*_desc-brain_mask.nii.gz'))[0]
+                                  + '_desc-brain_mask.nii.gz'))[0]
                     os.system('fslmerge -t ' + outfile + '  ' + combinefile)
                     for b in filex:
                         dvar = compute_dvars(read_ndata(b, mask))
@@ -256,12 +275,12 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             filey = natsorted(
                 glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                           + '*' + resid.partition('_desc')[0]
-                          + '*_desc-preproc_bold.nii.gz'))
+                          + '_desc-preproc_bold.nii.gz'))
 
             mask = natsorted(
                 glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                           + '*' + resid.partition('_desc')[0]
-                          + '*_desc-brain_mask.nii.gz'))[0]
+                          + '_desc-brain_mask.nii.gz'))[0]
 
             segfile = get_segfile(filey[0])
             TR = nb.load(filey[0]).header.get_zooms()[-1]
@@ -317,7 +336,7 @@ def compute_dvars(datat):
     Parameters
     ----------
     datat : numpy.ndarray
-        The data matrix fromw hich to calculate DVARS.
+        The data matrix from which to calculate DVARS.
         Ordered as vertices by timepoints.
 
     Returns
@@ -367,6 +386,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         '_atlas-Schaefer917_den-91k_bold.ptseries.nii',
         '_atlas-Schaefer1017_den-91k_bold.ptseries.nii',
         '_desc-framewisedisplacement_bold.tsv',
+        '_desc-tmask_bold.tsv',
         '_atlas-subcortical_den-91k_bold.ptseries.nii'
     ]
 
@@ -394,8 +414,24 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         resbold = natsorted(
             fnmatch.filter(
                 all_func_files,
-                '*' + task + '*run*den-91k_desc-residual*bold.dtseries.nii'))
-        if len(resbold) > 1:
+                '*_task-' + task + '_*den-91k_desc-residual*bold.dtseries.nii'))
+        resbold_unsmoothed_only = natsorted(
+            fnmatch.filter(
+                all_func_files,
+                '*_task-' + task + '_*den-91k_desc-residual_bold.dtseries.nii'))
+        if len(resbold_unsmoothed_only) == 1:
+            res = resbold[0]
+            resid = res.split('task-')[1].partition('_')[-1]
+            # print(resid)
+            for j in datafile:
+                fileid = res.split('task-')[0] + resid.partition('_desc')[0]
+                outfile = fileid + j
+                if j.endswith('framewisedisplacement_bold.tsv'):
+                    fileid = fileid.split('_den-91k')[0]
+                    filex = glob.glob(res.split('task-')[0] + '*task*' + j)
+                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
+                    make_dcan_df(filex, name)
+        if len(resbold_unsmoothed_only) > 1:
             regressed_dvars = []
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
@@ -420,6 +456,9 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combine_fd(filex, outfile)
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
+                    for f in filex:
+                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5" 
+                        make_dcan_df([f], name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
                         glob.glob(

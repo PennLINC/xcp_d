@@ -136,7 +136,7 @@ def init_ciftipostprocess_wf(cifti_file,
     ------
     cifti_file
         CIFTI file
-    cutstom_conf
+    custom_conf
         custom regressors
 
     Outputs
@@ -171,6 +171,8 @@ def init_ciftipostprocess_wf(cifti_file,
         gordon 333 func matrices
     qc_file
         quality control files
+    tmask
+        binary mask of frames with FD below specified threshold
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
@@ -231,7 +233,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         'sc617_ts', 'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc',
         'sc917_ts', 'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'gs360_ts',
         'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
-        'fd'
+        'fd', 'tmask'
     ]),
         name='outputnode')
 
@@ -439,6 +441,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     workflow.connect([
         (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
+        (censor_scrub, outputnode, [('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
@@ -480,6 +483,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('fd_timeseries',
                                               'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('tmask',
+                                              'inputnode.tmask')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
