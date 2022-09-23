@@ -160,7 +160,7 @@ def get_parser():
         help=(
             'Nuisance parameters to be selected, other options include 24P and 36P acompcor and '
             'aroma, see Ciric etal 2007. '
-            'This parameter is deprecated. '
+            'This parameter is deprecated and will be removed in version 0.1.6. '
             'Please use "-p" or "--nuisance-regressors".'
         )
     )
