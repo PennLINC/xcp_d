@@ -531,9 +531,10 @@ def plot_svgx(rawdata,
         # regressed_dvars_data = raw_dvars_data #TODO: Check if this is needed
 
     # Create dataframes for the bold_data DVARS, FD
+    # #TODO: Uncomment post-reg once we have solution to ensure length equals pre/post-all
     DVARS_timeseries = pd.DataFrame({
         'Pre regression': raw_dvars_data,
-        'Post regression': regressed_dvars_data,
+        # 'Post regression': regressed_dvars_data,
         'Post all': residual_dvars_data
     })
 
