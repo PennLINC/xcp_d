@@ -238,7 +238,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 outfile = fileid + j
                 filex = glob.glob(res.split('task-')[0] + '*task*' + j)
                 if j.endswith('framewisedisplacement_bold.tsv'):
-                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
         if len(resbold_unsmoothed_only) > 1:
             res = resbold[0]
@@ -258,7 +258,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
                     for f in filex:
-                        name = '{0}{1}-DCAN.hdf5'.format(f.split('_space-')[0], j.split('.')[0])
+                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5" 
                         make_dcan_df([f], name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
@@ -428,7 +428,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 if j.endswith('framewisedisplacement_bold.tsv'):
                     fileid = fileid.split('_den-91k')[0]
                     filex = glob.glob(res.split('task-')[0] + '*task*' + j)
-                    name = '{0}{1}-DCAN.hdf5'.format(fileid, j.split('.')[0])
+                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
         if len(resbold_unsmoothed_only) > 1:
             regressed_dvars = []
@@ -456,7 +456,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
                     for f in filex:
-                        name = '{0}{1}-DCAN.hdf5'.format(f.split('_space-')[0], j.split('.')[0])
+                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5" 
                         make_dcan_df([f], name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
