@@ -96,7 +96,7 @@ class _DerivativesDataSinkOutputSpec(TraitedSpec):
     fixed_hdr = traits.List(traits.Bool, desc="whether derivative header was fixed")
 
 
-class DerivativesDataSink(SimpleInterface):
+class BaseDerivativesDataSink(SimpleInterface):
     """Store derivative files.
 
     Saves the ``in_file`` into a BIDS-Derivatives folder provided
@@ -330,3 +330,9 @@ class DerivativesDataSink(SimpleInterface):
                 sidecar.write_text(dumps(self._metadata, sort_keys=True, indent=2))
                 self._results["out_meta"] = str(sidecar)
         return runtime
+
+
+class DerivativesDataSink(BaseDerivativesDataSink):
+    """An updated data-sink for xcp_d derivatives."""
+
+    out_path_base = "xcp_d"

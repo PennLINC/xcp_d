@@ -14,7 +14,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
-from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
@@ -479,13 +479,6 @@ def _pop(inlist):
     if isinstance(inlist, (list, tuple)):
         return inlist[0]
     return inlist
-
-
-# RF: this shouldn't be in this file
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'
 
 
 def getfmriprepv(fmri_dir):

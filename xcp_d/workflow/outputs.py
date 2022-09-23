@@ -6,14 +6,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
-
-
-# RF: Not here
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'
+from xcp_d.interfaces.bids import DerivativesDataSink
 
 
 def init_writederivatives_wf(
