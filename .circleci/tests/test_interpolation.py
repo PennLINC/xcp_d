@@ -9,7 +9,7 @@ import numpy as np
 from scipy.fftpack import fft
 
 from xcp_d.interfaces.prepostcleaning import Interpolate
-from xcp_d.utils import read_ndata, write_ndata
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def test_interpolate_cifti(data_dir, tmp_path_factory):

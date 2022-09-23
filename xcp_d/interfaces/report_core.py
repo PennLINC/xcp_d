@@ -144,7 +144,7 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/dcanhcp'
             elif input_type == 'hcp':
                 fmri_dir = str(work_dir) + '/hcp/hcp'
-            from xcp_d.utils import concatenatebold
+            from xcp_d.utils.concantenation import concatenatebold
             print('Concatenating bold files ...')
             concatenatebold(subjlist=subject_list,
                             fmridir=str(fmri_dir),
