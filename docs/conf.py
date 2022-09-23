@@ -55,6 +55,7 @@ extensions = [
     "sphinx_markdown_tables",
     "sphinxarg.ext",  # argparse extension
     "sphinxcontrib.apidoc",
+    "sphinxcontrib.bibtex",
 ]
 
 # Mock modules in autodoc:
@@ -395,6 +396,14 @@ intersphinx_mapping = {
     "nipype": ("https://nipype.readthedocs.io/en/latest/", None),
 }
 suppress_warnings = ["image.nonlocal_uri"]
+
+# -----------------------------------------------------------------------------
+# sphinxcontrib-bibtex
+# -----------------------------------------------------------------------------
+bibtex_bibfiles = ["../xcp_d/data/boilerplate.bib"]
+bibtex_style = "unsrt"
+bibtex_reference_style = "author_year"
+bibtex_footbibliography_header = ""
 
 
 def setup(app):
