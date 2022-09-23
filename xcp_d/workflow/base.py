@@ -254,8 +254,7 @@ def init_subject_wf(
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    fmriprep_dir : Path
-        fmriprep output directory
+    %(fmri_dir)s
     %(omp_nthreads)s
     cifti : bool
         To postprocessed cifti files instead of nifti
@@ -263,8 +262,7 @@ def init_subject_wf(
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
-    output_dir : str
-        Directory in which to save xcp_d output
+    %(output_dir)s
     %(fd_thresh)s
     %(head_radius)s
     %(params)s
