@@ -386,6 +386,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         '_atlas-Schaefer917_den-91k_bold.ptseries.nii',
         '_atlas-Schaefer1017_den-91k_bold.ptseries.nii',
         '_desc-framewisedisplacement_bold.tsv',
+        '_desc-tmask_bold.tsv',
         '_atlas-subcortical_den-91k_bold.ptseries.nii'
     ]
 
