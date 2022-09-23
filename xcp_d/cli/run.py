@@ -12,7 +12,7 @@ import os
 import sys
 import uuid
 import warnings
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 from time import strftime
 
@@ -37,6 +37,16 @@ def check_deps(workflow):
                   for node in workflow._get_all_nodes()
                   if (hasattr(node.interface, '_cmd') and which
                   (node.interface._cmd.split()[0]) is None))
+
+
+class DeprecatedStoreAction(Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        warnings.warn(
+            f"Argument {self.option_string} is deprecated and will be removed in version 0.1.6. "
+            "Please use '--nuisance-regressors' or '-p'.",
+            DeprecationWarning,
+        )
+        setattr(namespace, self.dest, values)
 
 
 def get_parser():
@@ -153,6 +163,7 @@ def get_parser():
     nuisance_params.add_argument(
         '--nuissance-regressors',
         dest="nuisance_regressors",
+        action=DeprecatedStoreAction,
         required=False,
         default='36P',
         choices=['27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr', 'aroma_gsr', 'custom'],
