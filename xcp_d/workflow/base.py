@@ -21,8 +21,8 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
@@ -53,6 +53,7 @@ def init_xcpd_wf(layout,
                  params,
                  subject_list,
                  analysis_level,
+                 presmoothing,
                  smoothing,
                  custom_confounds,
                  output_dir,
@@ -88,6 +89,7 @@ def init_xcpd_wf(layout,
                 params,
                 brain_template,
                 subject_list,
+                presmoothing,
                 smoothing,
                 analysis_level,
                 custom_confounds,
@@ -141,6 +143,8 @@ def init_xcpd_wf(layout,
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
+    presmoothing: float
+        smooth the input with kernel size (fwhm)
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
@@ -170,6 +174,7 @@ def init_xcpd_wf(layout,
             head_radius=head_radius,
             params=params,
             task_id=task_id,
+            presmoothing=presmoothing,
             smoothing=smoothing,
             output_dir=output_dir,
             dummytime=dummytime,
@@ -192,7 +197,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
                     motion_filter_type, bandpass_filter,
                     band_stop_min, band_stop_max, fmri_dir, omp_nthreads,
                     subject_id, cifti, despike, head_radius, params, dummytime,
-                    fd_thresh, task_id, smoothing, custom_confounds, output_dir,
+                    fd_thresh, task_id, presmoothing, smoothing, custom_confounds, output_dir,
                     input_type, name):
     """Organize the postprocessing pipeline for a single subject.
 
@@ -222,6 +227,7 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
                 fd_thresh,
                 task_id,
                 template,
+                presmoothing,
                 smoothing,
                 custom_confounds,
                 bids_filters,
@@ -263,6 +269,8 @@ def init_subject_wf(layout, lower_bpf, upper_bpf, bpf_order, motion_filter_order
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
+    presmoothing: float
+        smooth the input with kernel size (fwhm)
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
@@ -364,6 +372,7 @@ It is released under the [CC0]\
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,
                 bandpass_filter=bandpass_filter,
+                presmoothing=presmoothing,
                 smoothing=smoothing,
                 params=params,
                 head_radius=head_radius,
@@ -408,6 +417,7 @@ It is released under the [CC0]\
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,
                 bandpass_filter=bandpass_filter,
+                presmoothing=presmoothing,
                 smoothing=smoothing,
                 params=params,
                 head_radius=head_radius,

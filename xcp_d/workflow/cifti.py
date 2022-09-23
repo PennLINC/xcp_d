@@ -18,17 +18,17 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
-from xcp_d.workflow.postprocessing import init_resd_smoothing
+from xcp_d.workflow.postprocessing import init_pre_smoothing, init_resd_smoothing
 from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
@@ -43,6 +43,7 @@ def init_ciftipostprocess_wf(cifti_file,
                              bandpass_filter,
                              band_stop_min,
                              band_stop_max,
+                             presmoothing,
                              smoothing,
                              head_radius,
                              params,
@@ -74,6 +75,7 @@ def init_ciftipostprocess_wf(cifti_file,
                 band_stop_min,
                 band_stop_max,
                 despike,
+                presmoothing,
                 smoothing,
                 head_radius,
                 params,
@@ -119,6 +121,8 @@ def init_ciftipostprocess_wf(cifti_file,
         radius of the head for FD computation
     params: str
         nuissance regressors to be selected from fmriprep regressors
+    presmoothing: float
+        presmooth the input with kernel size (fwhm)
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
@@ -332,6 +336,29 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         omp_nthreads=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
+    # if presmoothing is enabled, use the presmoothed bold file as input to
+    # further preprocessing
+    # else, use the bold (cifti) file from inputnode
+    bold_data_node = pe.Node(niu.IdentityInterface(
+        fields=['bold_file']),
+        name='bold_data_node')
+
+    if presmoothing > 0:
+        presmoothing_wf = init_pre_smoothing(
+            mem_gb=mem_gbx['timeseries'],
+            presmoothing=presmoothing,
+            cifti=True,
+            name="presmoothing_wf",
+            omp_nthreads=omp_nthreads)
+        workflow.connect([
+            (inputnode, presmoothing_wf, [('cifti_file', 'inputnode.bold_file')]),
+            (presmoothing_wf, bold_data_node, [('outputnode.presmoothed_bold', 'bold_file')]),
+        ])
+    else:
+        workflow.connect([
+            (inputnode, bold_data_node, [('cifti_file', 'bold_file')]),
+        ])
+
     # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
@@ -340,7 +367,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
+            (bold_data_node, rm_dummytime, [('bold_file', 'bold_file')]),
             (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
@@ -352,10 +379,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [
-                ('cifti_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-            ])])
+            (inputnode, censor_scrub,
+                [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (bold_data_node, censor_scrub, [('bold_file', 'in_file')]),
+        ])
 
     if despike:  # If we despike
         despike3d = pe.Node(CiftiDespike(TR=TR),
@@ -381,7 +408,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # interpolation workflow
     workflow.connect([
-        (inputnode, interpolate_wf, [('cifti_file', 'bold_file')]),
+        (bold_data_node, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])

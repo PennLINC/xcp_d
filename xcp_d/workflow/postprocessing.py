@@ -216,6 +216,65 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
+def init_pre_smoothing(mem_gb,
+                       presmoothing,
+                       omp_nthreads,
+                       cifti=False,
+                       name="presmoothing"):
+    """Smooth input BOLD before postprocessing."""
+    workflow = Workflow(name=name)
+    inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']),
+                        name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(fields=['presmoothed_bold']),
+                         name='outputnode')
+
+    sigma_lx = fwhm2sigma(presmoothing)  # Turn specified FWHM (Full-Width at Half Maximum)
+    # to standard deviation.
+    if cifti:  # For ciftis
+        workflow.__desc__ = f""" \
+The preprocessed BOLD input was pre-smoothed using Connectome Workbench with a
+gaussian kernel size of {str(presmoothing)} mm (FWHM).
+"""
+
+        presmooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
+            #  hemisphere
+            sigma_surf=sigma_lx,  # the size of the surface kernel
+            sigma_vol=sigma_lx,  # the volume of the surface kernel
+            direction='COLUMN',  # which direction to smooth along@
+            right_surf=pkgrf(  # pull out atlases for each hemisphere
+                'xcp_d', 'data/ciftiatlas/'
+                'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
+            ),
+            left_surf=pkgrf(
+                'xcp_d', 'data/ciftiatlas/'
+                'Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
+            )),
+            name="cifti_presmoothing",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads)
+
+        #  Connect to workflow
+        workflow.connect([(inputnode, presmooth_data, [('bold_file', 'in_file')]),
+                          (presmooth_data, outputnode, [('out_file',
+                                                         'presmoothed_bold')])])
+
+    else:  # for Nifti
+        workflow.__desc__ = f""" \
+The preprocessed BOLD input was pre-smoothed using FSL with a
+gaussian kernel size of {str(presmoothing)} mm  (FWHM).
+"""
+        presmooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=presmoothing),
+                                 name="nifti_presmoothing",
+                                 mem_gb=mem_gb,
+                                 n_procs=omp_nthreads)  # Use fslmaths to smooth the image
+
+        #  Connect to workflow
+        workflow.connect([(inputnode, presmooth_data, [('bold_file', 'in_file')]),
+                          (presmooth_data, outputnode, [('smoothed_file',
+                                                         'presmoothed_bold')])])
+    return workflow
+
+
 def init_resd_smoothing(mem_gb,
                         smoothing,
                         omp_nthreads,
@@ -232,8 +291,8 @@ def init_resd_smoothing(mem_gb,
     # to standard deviation.
     if cifti:  # For ciftis
         workflow.__desc__ = f""" \
-The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
-size of {str(smoothing)} mm  (FWHM).
+The processed BOLD was smoothed using Connectome Workbench with a gaussian kernel
+size of {str(smoothing)} mm (FWHM).
 """
 
         smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each

@@ -10,9 +10,9 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
 from xcp_d.utils.utils import get_transformfile
 
 

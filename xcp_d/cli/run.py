@@ -138,6 +138,12 @@ def get_parser():
 
     g_param = parser.add_argument_group('Parameters for postprocessing')
 
+    g_param.add_argument('--presmoothing',
+                         default=0,
+                         action='store',
+                         type=float,
+                         help='presmoothing the preprocessed input (fwhm)')
+
     g_param.add_argument('--smoothing',
                          default=6,
                          action='store',
@@ -625,6 +631,7 @@ def build_workflow(opts, retval):
         work_dir=str(work_dir),
         task_id=opts.task_id,
         despike=opts.despike,
+        presmoothing=opts.presmoothing,
         smoothing=opts.smoothing,
         params=opts.nuissance_regressors,
         cifti=opts.cifti,

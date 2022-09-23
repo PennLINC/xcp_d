@@ -1,6 +1,9 @@
 .. include:: links.rst
 .. include:: ../README.rst
-.. include:: ../LICENSE
+
+.. admonition:: License
+
+   .. include:: ../LICENSE
 
 
 Contents
@@ -14,3 +17,4 @@ Contents
    generalworkflow
    output
    api
+   workflows
