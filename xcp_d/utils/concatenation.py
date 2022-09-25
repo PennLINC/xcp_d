@@ -221,13 +221,14 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
     # do for each task
     for task in tasklist:
+        raw_dvars = []
+        regressed_dvars = []
         resbold = natsorted(
             fnmatch.filter(all_func_files,
                            '*_task-' + task + '_*desc-residual*bold*.nii.gz'))
         resbold_unsmoothed_only = natsorted(
             fnmatch.filter(all_func_files,
                            '*_task-' + task + '_*desc-residual_bold*.nii.gz'))
-        regressed_dvars = []
         # resbold may be in different space like native space or MNI space or T1w or MNI
         if len(resbold_unsmoothed_only) == 1:
             res = resbold[0]
@@ -236,9 +237,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             for j in datafile:
                 fileid = res.split('task-')[0] + resid.partition('_desc')[0]
                 outfile = fileid + j
-                filex = glob.glob(res.split('task-')[0] + '*task*' + j)
+                filex = glob.glob(res.split('space-')[0] + '*' + j)
                 if j.endswith('framewisedisplacement_bold.tsv'):
-                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
+                    name = f"{filex[0].split('_space')[0]}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
         if len(resbold_unsmoothed_only) > 1:
             res = resbold[0]
@@ -258,7 +259,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
                     for f in filex:
-                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5" 
+                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5"
                         make_dcan_df([f], name)
                 elif j.endswith('nii.gz'):
                     combinefile = "  ".join(filex)
@@ -293,11 +294,13 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 fileid) + '_desc-precarpetplot_bold.svg'
             postcarpet = figure_files + os.path.basename(
                 fileid) + '_desc-postcarpetplot_bold.svg'
-            raw_dvars = []
             for f in filey:
                 dvar = compute_dvars(read_ndata(f, mask))
                 dvar[0] = np.mean(dvar)
                 raw_dvars.append(dvar)
+
+            raw_dvars = np.concatenate([a.ravel() for a in raw_dvars])
+            regressed_dvars = np.concatenate([a.ravel() for a in regressed_dvars])
 
             plot_svgx(rawdata=rawdata,
                       regressed_data=fileid + '_desc-residual_bold.nii.gz',
@@ -411,6 +414,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
     # do for each task
     for task in tasklist:
+        raw_dvars = []
+        regressed_dvars = []
         resbold = natsorted(
             fnmatch.filter(
                 all_func_files,
@@ -428,11 +433,10 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 outfile = fileid + j
                 if j.endswith('framewisedisplacement_bold.tsv'):
                     fileid = fileid.split('_den-91k')[0]
-                    filex = glob.glob(res.split('task-')[0] + '*task*' + j)
-                    name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
+                    filex = glob.glob(res.split('_space-')[0] + '*' + j)
+                    name = f"{filex[0].split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
         if len(resbold_unsmoothed_only) > 1:
-            regressed_dvars = []
             res = resbold[0]
             resid = res.split('run-')[1].partition('_')[-1]
             # print(resid)
@@ -448,6 +452,12 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     combinefile = " -cifti ".join(filex)
                     os.system('wb_command -cifti-merge ' + outfile
                               + ' -cifti ' + combinefile)
+                if j.endswith('tmask_bold.tsv'):
+                    fileid = fileid.split('_desc-tmask')[0]
+                    outfile = fileid + j
+                    filex = natsorted(
+                        glob.glob(res.split('run-')[0] + '*run*' + j))
+                    combine_fd(filex, outfile)
                 if j.endswith('framewisedisplacement_bold.tsv'):
                     fileid = fileid.split('_den-91k')[0]
                     outfile = fileid + j
@@ -457,7 +467,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     name = f"{fileid}{j.split('.')[0]}-DCAN.hdf5"
                     make_dcan_df(filex, name)
                     for f in filex:
-                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5" 
+                        name = f"{f.split('_space-')[0]}{j.split('.')[0]}-DCAN.hdf5"
                         make_dcan_df([f], name)
                 if j.endswith('dtseries.nii'):
                     filex = natsorted(
@@ -475,8 +485,6 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                             dvar = compute_dvars(read_ndata(b))
                             dvar[0] = np.mean(dvar)
                             regressed_dvars.append(dvar)
-
-            raw_dvars = []
             filey = natsorted(
                 glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                           + '*run*' + '*_den-91k_bold.dtseries.nii'))
@@ -495,8 +503,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             postcarpet = figure_files + os.path.basename(
                 fileid) + '_desc-postcarpetplot_bold.svg'
 
-            raw_dvars = np.array(raw_dvars).flatten()
-            regressed_dvars = np.array(regressed_dvars).flatten()
+            raw_dvars = np.concatenate([a.ravel() for a in raw_dvars])
+            regressed_dvars = np.concatenate([a.ravel() for a in regressed_dvars])
             plot_svgx(
                 rawdata=rawdata,
                 regressed_data=res.split('run-')[0] + resid.partition('_desc')[0]
