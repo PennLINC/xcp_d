@@ -14,9 +14,4 @@
 .. _`Docker installation`: https://docs.docker.com/install/
 .. _`Docker Hub`: https://hub.docker.com/r/pennlinc/xcp_d/tags
 .. _`Singularity`: https://sylabs.io/guides/3.5/user-guide/introduction.html
-.. _`Ciric et. al. 2017`: https://pubmed.ncbi.nlm.nih.gov/28302591
-.. _`Fair et. al. 2020`: https://www.sciencedirect.com/science/article/pii/S1053811919309917
 .. _Outputs: output.html
-.. _`Satterthwaite et al. 2013`: https://pubmed.ncbi.nlm.nih.gov/22926292
-.. _`Power et. al. 2012`: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3254728/
-
