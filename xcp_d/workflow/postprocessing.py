@@ -169,16 +169,15 @@ The processed bold  was smoothed with the workbench with kernel size (FWHM) of
 
         else:
             workflow.__desc__ = workflow.__desc__ + f"""
-The processed bold was smoothed with FSL and kernel size (FWHM) of {str(smoothing)} mm.
+The processed bold was smoothed with Nilearn and kernel size (FWHM) of {str(smoothing)} mm.
 """
-            smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
-                                         fwhm=smoothing),
+            smooth_data = pe.Node(Smooth(fwhm=smoothing),
                                   name="nifti_smoothing",
                                   mem_gb=mem_gb)
 
             workflow.connect([
                 (filtering_wf, smooth_data, [('filtered_file', 'in_file')]),
-                (smooth_data, outputnode, [('smoothed_file', 'smoothed_bold')])
+                (smooth_data, outputnode, [('out_file', 'smoothed_bold')])
             ])
 
     return workflow
@@ -230,13 +229,13 @@ size of {str(smoothing)} mm  (FWHM).
 
     else:  # for Nifti
         workflow.__desc__ = f""" \
-The processed BOLD was smoothed using  FSL with a gaussian kernel size of {str(smoothing)} mm
+The processed BOLD was smoothed using Nilearn with a gaussian kernel size of {str(smoothing)} mm
 (FWHM).
 """
-        smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=smoothing),  # FWHM = kernel size
+        smooth_data = pe.Node(Smooth(fwhm=smoothing),  # FWHM = kernel size
                               name="nifti_smoothing",
                               mem_gb=mem_gb,
-                              n_procs=omp_nthreads)  # Use fslmaths to smooth the image
+                              n_procs=omp_nthreads)  # Use nilearn to smooth the image
 
         #  Connect to workflow
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),

@@ -4,7 +4,6 @@
 .. _Installation: installation.html
 .. _Task Regression: taskregression.html
 .. _workflows: workflows.html
-.. _FSL: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/
 .. _ANTs: https://stnava.github.io/ANTs/
 .. _AFNI: https://afni.nimh.nih.gov/
 .. _`Connectome Workbench`: https://www.humanconnectome.org/software/connectome-workbench.html

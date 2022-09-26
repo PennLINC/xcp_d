@@ -119,7 +119,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
             workflow.__desc__ = workflow.__desc__ + (
-                " The ALFF maps were smoothed with FSL using a gaussian kernel size of "
+                " The ALFF maps were smoothed with Nilearn using a gaussian kernel size of "
                 f"{str(smoothing)} mm (FWHM)."
             )
             # Smooth via Nilearn
