@@ -14,7 +14,7 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from num2words import num2words
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
@@ -695,9 +695,3 @@ def _get_ref_mask(fname):
     mask = directx + '/' + filex
     ref = directx + '/' + filez
     return mask, ref
-
-
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'

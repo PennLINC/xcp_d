@@ -12,7 +12,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
-from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
@@ -189,9 +189,9 @@ flagged as outliers and excluded from nuisance regression.
 
     else:
         workflow.__desc__ = workflow.__desc__ + f""" \
-before nuissance regression and filtering,both the nuisance regressors and volumes were demeaned
+before nuisance regression and filtering,both the nuisance regressors and volumes were demeaned
 and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
-[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuissance
+[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
 regression.
 """
 
@@ -551,10 +551,3 @@ def _create_mem_gb(bold_fname):
     }
 
     return mem_gbz
-
-
-# RF: shouldn't be here
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'

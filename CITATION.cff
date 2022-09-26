@@ -1,0 +1,85 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  XCP-D : A Robust Postprocessing Pipeline of fMRI
+  data
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Azeez
+    family-names: Adebimpe
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9049-0135'
+  - given-names: Maxwell
+    family-names: Bertolero
+    orcid: 'https://orcid.org/0000-0002-2691-3698'
+    affiliation: University of Pennsylvania
+  - given-names: Kahini
+    family-names: Mehta
+    email: kahini.mehta@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9466-100X'
+  - given-names: Kristin
+    family-names: Murtha
+    affiliation: University of Pennsylvania
+  - given-names: Matthew
+    family-names: Cieslak
+    email: matthew.cieslak@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0002-1931-4734'
+  - given-names: Steven
+    family-names: Meisler
+    orcid: 'https://orcid.org/0000-0002-8888-1572'
+    affiliation: >-
+      Harvard-MIT Division of Health Sciences and
+      Technology
+  - given-names: Thomas
+    family-names: Madison
+    affiliation: University of Minnesota
+    orcid: 'https://orcid.org/0000-0003-3030-6580'
+  - given-names: Valerie
+    family-names: Sydnor
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0002-8640-668X'
+  - given-names: Sydney
+    family-names: Covitz
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0002-7430-4125'
+  - given-names: Damien
+    family-names: Fair
+    affiliation: University of Minnesota
+    orcid: 'https://orcid.org/0000-0001-8602-393X'
+  - given-names: Theodore
+    family-names: Satterthwaite
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-7072-9399'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.5139942
+    description: The Zenodo DOI
+repository-code: 'https://github.com/PennLINC/xcp_d'
+url: 'https://xcp-d.readthedocs.io'
+abstract: >-
+  XCP-D paves the final section of the reproducible
+  and scalable route from the MRI scanner to
+  functional connectivity data in the hands of
+  neuroscientists. We developed XCP-D to extend the
+  BIDS and NiPrep apparatus to the point where data
+  is most commonly consumed and analyzed by
+  neuroscientists studying functional connectivity.
+  Thus, with the development of XCP-D, data can be
+  automatically preprocessed and analyzed in BIDS
+  format, using NiPrep-style containerized code, all
+  the way from the from the scanner to functional
+  connectivity matrices.
+keywords:
+  - fMRI
+  - BIDS-App
+  - Neuroimaging
+license: BSD-3-Clause
+version: 0.1.3
+date-released: '2022-08-16'

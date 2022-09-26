@@ -98,24 +98,24 @@ def init_post_process_wf(
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + f""" \
-Before nuissance regression and filtering of the data, the first {nvolx} were
+Before nuisance regression and filtering of the data, the first {nvolx} were
 discarded. Furthermore, any volumes with framewise-displacement greater than
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were flagged
-as outliers and excluded from nuissance regression.
+as outliers and excluded from nuisance regression.
 """
 
     else:
         workflow.__desc__ = workflow.__desc__ + f""" \
-Before nuissance regression and filtering any volumes with
+Before nuisance regression and filtering any volumes with
 framewise-displacement greater than {fd_thresh}
 [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
 and excluded from further analyses.
 """
 
     workflow.__desc__ = workflow.__desc__ + f""" \
-The following nuissance regressors {stringforparams(params=params)}
-[@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected from nuissance
-confound matrices of fMRIPrep output.  These nuissance regressors were regressed
+The following nuisance regressors {stringforparams(params=params)}
+[@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected from nuisance
+confound matrices of fMRIPrep output.  These nuisance regressors were regressed
 out from the bold data with *LinearRegression* as implemented in Scikit-Learn
 {sklearn.__version__} [@scikit-learn].  The residual were then  band pass filtered within the
 frequency band {lower_bpf}-{upper_bpf} Hz.

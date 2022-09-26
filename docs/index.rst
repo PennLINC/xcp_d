@@ -18,3 +18,4 @@ Contents
    output
    api
    workflows
+   dev_guide

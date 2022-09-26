@@ -6,15 +6,8 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.doc import fill_doc
-
-
-# RF: Not here
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'
 
 
 @fill_doc
@@ -122,7 +115,7 @@ def init_writederivatives_wf(
     cleaned_data_dictionary = {
         'RepetitionTime': TR,
         'Freq Band': [highpass, lowpass],
-        'nuissance parameters': params,
+        'nuisance parameters': params,
         'dummy vols': int(np.ceil(dummytime / TR))
     }
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
