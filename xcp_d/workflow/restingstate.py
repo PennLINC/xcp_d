@@ -2,12 +2,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for calculating resting state-specific metrics."""
 from nipype.interfaces import utility as niu
-from nipype.interfaces.fsl import Smooth
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.workbench import CiftiSeparateMetric
 from xcp_d.utils.utils import fwhm2sigma
@@ -122,14 +122,15 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                 " The ALFF maps were smoothed with FSL using a gaussian kernel size of "
                 f"{str(smoothing)} mm (FWHM)."
             )
-            # Smooth via FSL
-            smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ',
-                                         fwhm=smoothing),
-                                  name="niftismoothing",
-                                  n_procs=omp_nthreads)
+            # Smooth via Nilearn
+            smooth_data = pe.Node(
+                Smooth(fwhm=smoothing),
+                name="niftismoothing",
+                n_procs=omp_nthreads,
+            )
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
-                (smooth_data, outputnode, [('smoothed_file', 'smoothed_alff')])
+                (smooth_data, outputnode, [('out_file', 'smoothed_alff')])
             ])
 
         else:  # If cifti
