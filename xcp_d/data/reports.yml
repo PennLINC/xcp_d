@@ -16,3 +16,14 @@ sections:
 - name: About
   reportlets:
   - bids: {datatype: figures, desc: about, suffix: bold}
+- name: Executive Summary
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+  reportlets:
+  - bids:
+      datatype: figures
+      desc: brainplot
+      extension: [.html]
+      suffix: T1W
+    caption: Anatomical Data
+    static: false
+  
