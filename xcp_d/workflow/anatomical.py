@@ -10,8 +10,6 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
 from nipype.interfaces.freesurfer import MRIsConvert
-from nipype.interfaces.fsl import Merge as FSLMerge  # TM
-from nipype.interfaces.fsl.maths import BinaryMaths  # TM
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
@@ -20,6 +18,7 @@ from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFil
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
+from xcp_d.interfaces.nilearn import BinaryMath, Merge
 from xcp_d.interfaces.surfplotting import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
@@ -537,13 +536,13 @@ def init_anatomical_wf(
             # for use with wb_command -surface-apply-warpfield)
 
             reverse_y_component = pe.Node(
-                BinaryMaths(operation="mul", operand_value=-1.0),
+                BinaryMath(expression="img * -1"),
                 name="reverse_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             reverse_inv_y_component = pe.Node(
-                BinaryMaths(operation="mul", operand_value=-1.0),
+                BinaryMath(operation="img * -1"),
                 name="reverse_inv_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -565,13 +564,13 @@ def init_anatomical_wf(
 
             # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
             remerge_warpfield = pe.Node(
-                FSLMerge(dimension="t"),
+                Merge(),
                 name="remerge_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             remerge_inv_warpfield = pe.Node(
-                FSLMerge(dimension="t"),
+                Merge(),
                 name="remerge_inv_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -969,12 +968,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         lh_surface_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         lh_surface_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         left_sphere_raw_mris,
@@ -1016,12 +1015,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         rh_surface_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         rh_surface_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         right_sphere_raw_mris,
