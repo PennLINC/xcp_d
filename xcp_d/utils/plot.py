@@ -939,7 +939,7 @@ def _carpet(func,
     ax0.set_yticks(tick_locs)
     ax0.set_yticklabels(labels,
                         fontdict={'fontsize': labelsize},
-                        rotation=90,
+                        rotation=0,
                         va='center')
     ax0.grid(False)
     ax0.spines["left"].set_visible(False)
