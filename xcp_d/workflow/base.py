@@ -138,11 +138,11 @@ def init_xcpd_wf(
     head_radius : float
         radius of the head for FD computation
     params: str
-        nuissance regressors to be selected from fmriprep regressors
+        nuisance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
-        path to cusrtom nuissance regressors
+        path to cusrtom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     """
@@ -283,11 +283,11 @@ def init_subject_wf(
     head_radius : float
         radius of the head for FD computation
     params: str
-        nuissance regressors to be selected from fmriprep regressors
+        nuisance regressors to be selected from fmriprep regressors
     smoothing: float
         smooth the derivatives output with kernel size (fwhm)
     custom_confounds: str
-        path to custom nuissance regressors
+        path to custom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     """

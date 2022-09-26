@@ -480,7 +480,7 @@ def regression(data, confound):
     data:
         numpy ndarray- vertices by timepoints
     confound:
-        nuissance regressors reg by timepoints
+        nuisance regressors reg by timepoints
     return:
         residual matrix
     """
