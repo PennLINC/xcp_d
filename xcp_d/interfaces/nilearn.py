@@ -95,7 +95,7 @@ class Smooth(NilearnBaseInterface, SimpleInterface):
         return runtime
 
 
-class _SmoothInputSpec(BaseInterfaceInputSpec):
+class _BinaryMathInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -113,7 +113,7 @@ class _SmoothInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _SmoothOutputSpec(TraitedSpec):
+class _BinaryMathOutputSpec(TraitedSpec):
     out_file = File(
         exists=True,
         desc="Mathified output file.",
@@ -123,8 +123,8 @@ class _SmoothOutputSpec(TraitedSpec):
 class BinaryMath(NilearnBaseInterface, SimpleInterface):
     """Do math on an image."""
 
-    input_spec = _SmoothInputSpec
-    output_spec = _SmoothOutputSpec
+    input_spec = _BinaryMathInputSpec
+    output_spec = _BinaryMathOutputSpec
 
     def _run_interface(self, runtime):
         from nilearn.image import math_img
