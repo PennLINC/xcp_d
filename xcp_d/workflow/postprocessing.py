@@ -66,7 +66,7 @@ def init_post_process_wf(
     bold_file: str
         bold file for post processing
     %(params)s
-    cifti : bool
+    %(cifti)s
     dummytime: float
         the first few seconds to be removed before postprocessing
     %(fd_thresh)s

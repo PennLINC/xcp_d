@@ -115,8 +115,7 @@ def init_xcpd_wf(
     fmriprep_dir : Path
         fmriprep output directory
     %(omp_nthreads)s
-    cifti : bool
-        To postprocessed cifti files instead of nifti
+    %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     low_mem : bool
@@ -256,8 +255,7 @@ def init_subject_wf(
     %(band_stop_max)s
     %(fmri_dir)s
     %(omp_nthreads)s
-    cifti : bool
-        To postprocessed cifti files instead of nifti
+    %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     low_mem : bool

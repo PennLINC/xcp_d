@@ -183,6 +183,13 @@ name : :obj:`str`, optional
     Name of the workflow. This is used for working directories and workflow graphs.
 """
 
+docdict["cifti"] = """
+cifti : :obj:`bool`
+    Post-process surface data (CIFTIs) instead of volumetric data (NIFTIs).
+    This parameter is overridden when DCAN- or HCP-format data are provided.
+    Default is False.
+"""
+
 docdict_indented = {}
 
 

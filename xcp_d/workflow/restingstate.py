@@ -54,8 +54,7 @@ def init_compute_alff_wf(
     highpass : float
         high pass filter
     %(smoothing)s
-    cifti : bool
-        if cifti or bold
+    %(cifti)s
     %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".

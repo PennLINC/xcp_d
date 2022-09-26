@@ -54,8 +54,7 @@ def init_writederivatives_wf(
         high pass filter
     %(smoothing)s
     %(params)s
-    cifti : bool
-        if cifti or bold
+    %(cifti)s
     dummytime : float
         volume(s) removed before postprocessing in seconds
     output_dir : str
