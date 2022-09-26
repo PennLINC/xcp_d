@@ -12,7 +12,7 @@ import h5py
 import nibabel as nb
 import numpy as np
 from natsort import natsorted
-from nilearn.image import concat_img
+from nilearn.image import concat_imgs
 from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
 
@@ -250,7 +250,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                                   + '*' + resid.partition('_desc')[0]
                                   + '*_desc-brain_mask.nii.gz'))[0]
 
-                    combine_img = concat_img(combinefile)
+                    combine_img = concat_imgs(combinefile)
                     combine_img.to_filename(outfile)
 
                     for b in filex:
@@ -274,7 +274,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             combinefiley = "  ".join(filey)
             rawdata = tempfile.mkdtemp() + '/rawdata.nii.gz'
 
-            combine_img = concat_img(combinefiley)
+            combine_img = concat_imgs(combinefiley)
             combine_img.to_filename(rawdata)
 
             precarpet = figure_files + os.path.basename(
