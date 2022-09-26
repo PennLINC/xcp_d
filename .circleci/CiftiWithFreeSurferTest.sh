@@ -24,7 +24,7 @@ CFG=${TESTDIR}/data/nipype.cfg
 export FS_LICENSE=${TESTDIR}/data/license.txt
 
 # Test dipy_mapmri
-TESTNAME=nifti_with_freesurfer
+TESTNAME=cifti_with_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
