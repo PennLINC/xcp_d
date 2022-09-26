@@ -358,7 +358,7 @@ def confoundplotx(time_series,
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
 
-            time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=20)
             fda[fda < 0.1] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.1] = 1.05
@@ -366,7 +366,7 @@ def confoundplotx(time_series,
             time_series_axis.plot(fda, '.', color='#66c2a5', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='#66c2a5', markersize=40)
 
-            time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=15)
             fda[fda < 0.2] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.2] = 1.05
