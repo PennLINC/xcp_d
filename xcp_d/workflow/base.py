@@ -321,9 +321,9 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1].
 
     workflow.__postdesc__ = """
 
-Many internal operations of *XCP* use *Nibabel* [@nilearn], *numpy*
-[@harris2020array], and  *scipy* [@2020SciPy-NMeth]. For more details,
-see the *xcp_d* website https://xcp-d.readthedocs.io.
+Many internal operations of *XCP* use *TemplateFlow* [@ciric2022templateflow],
+*Nibabel* [@nilearn], *numpy* [@harris2020array], and *scipy* [@2020SciPy-NMeth].
+For more details, see the *xcp_d* website https://xcp-d.readthedocs.io.
 
 
 #### Copyright Waiver
