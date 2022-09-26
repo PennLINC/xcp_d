@@ -542,7 +542,7 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )
             reverse_inv_y_component = pe.Node(
-                BinaryMath(operation="img * -1"),
+                BinaryMath(expression="img * -1"),
                 name="reverse_inv_y_component",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
