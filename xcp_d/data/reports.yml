@@ -25,24 +25,24 @@ sections:
       desc: brainplot
       extension: [.html]
       suffix: T1W
-      caption: Anatomical Data
-      subtitle: T1W
+      title: Anatomical Data
+      caption: T1W
       static: false
   - bids:
       datatype: figures
       desc: brainplot
       extension: [.html]
       suffix: T2W
-      subtitle: T2W
-      caption: Anatomical Data
+      caption: T2W
+      title: Anatomical Data
       static: false
   - bids:
       datatype: figures
       desc: bbregister
       extension: [.svg]
       suffix: bold
-      subtitle: <sub>0</sub>_<task>0</task>_<space>0</space>_<run>0</run>
-      caption: Functional
+      caption: <sub>0</sub>_<task>0</task>_<space>0</space>_<run>0</run>
+      title: Functional
       static: false
   - bids:
       datatype: figures
