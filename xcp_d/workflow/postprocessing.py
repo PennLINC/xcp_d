@@ -239,6 +239,5 @@ The processed BOLD was smoothed using Nilearn with a gaussian kernel size of {st
 
         #  Connect to workflow
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
-                          (smooth_data, outputnode, [('smoothed_file',
-                                                      'smoothed_bold')])])
+                          (smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
     return workflow
