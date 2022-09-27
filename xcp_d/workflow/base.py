@@ -408,7 +408,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (
                     inputnode, bold_postproc_wf,
                     [
-                        ('mni_to_t1w', 'inputnode.mni_to_t1w'),
                         ('t1w', 'inputnode.t1w'),
                         ('t1seg', 'inputnode.t1seg'),
                     ],
