@@ -308,7 +308,8 @@ MODAL_END = """
 #    image_class, image_file, display_name.
 IMAGE_WITH_CLASS = """
                 <div class="w3-display-container {image_class}">
-                     <object type="image" data={image_file}</object>
+                    <object type="image/svg+xml" data={image_file}>
+                    <img src={image_file}/> </object>
                     <div class="w3-display-topleft w3-black"><p>{display_name}</p></div>
                 </div>
                 """
