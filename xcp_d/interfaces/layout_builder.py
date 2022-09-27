@@ -3,7 +3,7 @@
 
 __doc__ = """
 Builds the layout for the Executive Summary of the bids-formatted output from
-the DCAN-Labs fMRI pipelines.
+the DCAN-Labs fMRI pipelines. Draws on constants from "constants.py"
 """
 
 __version__ = "2.0.0"
@@ -116,6 +116,7 @@ class ModalContainer(object):
             modal_id=self.modal_id,
             image_class=self.image_class,
             image_file=image_file,
+            static=False,
             display_name=display_name)
 
         self.image_class_idx += 1
