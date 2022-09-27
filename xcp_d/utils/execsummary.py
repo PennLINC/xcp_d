@@ -1,6 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Functions for generating the executive summary."""
+"""
+Functions for generating the executive summary.
+Note that the actual .html is generated in layout_builder.py
+"""
 from uuid import uuid4
 
 import nibabel as nb
