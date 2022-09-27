@@ -282,7 +282,7 @@ def init_subject_wf(
                                      bids_validate=False)
 
     mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
-    subject_data = select_cifti_bold(subj_data=subj_data)
+    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
     t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
     inputnode = pe.Node(niu.IdentityInterface(
@@ -325,7 +325,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 """
 
     summary = pe.Node(SubjectSummary(subject_id=subject_id,
-                                     bold=subject_data[0]),
+                                     bold=preproc_nifti_files),
                       name='summary')
 
     about = pe.Node(AboutSummary(version=__version__,
@@ -334,7 +334,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_summary = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=subject_data[0][0],
+        source_file=preproc_nifti_files[0],
         desc='summary',
         datatype="figures"),
         name='ds_report_summary')
@@ -356,9 +356,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
     # loop over each bold run to be postprocessed
-    for i_run, bold_file in enumerate(subject_data[1]):
+    for i_run, bold_file in enumerate(preproc_files):
         custom_confounds_file = get_customfile(
             custom_confounds=custom_confounds,
             bold_file=bold_file,
@@ -378,7 +379,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             params=params,
             head_radius=head_radius,
             omp_nthreads=omp_nthreads,
-            n_runs=len(subject_data[0]),
+            n_runs=preproc_files,
             custom_confounds=custom_confounds_file,
             layout=layout,
             despike=despike,
