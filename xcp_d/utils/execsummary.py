@@ -2,7 +2,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 Functions for generating the executive summary.
-Note that the actual .html is generated in layout_builder.py
+
+Note that the actual .html is generated in "layout_builder.py".
+The plots are generated in "plot.py" and can be edited there
+accordingly
 """
 from uuid import uuid4
 
