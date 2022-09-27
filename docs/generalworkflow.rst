@@ -91,11 +91,11 @@ Processing Steps
       - X
 
 
-   For more information about confound regresssors selection, please refer to `Ciric et. al. 2017`_ .
+   For more information about confound regresssors selection, please refer to :footcite:t:`benchmarkp`.
 
    After the selection of confound regressors,
    the respiratory effects can optionally be filtered out from the motion estimates with band-stop filtering to improve fMRI data quality.
-   Please refer to `Fair et. al. 2020`_ for more information.
+   Please refer to :footcite:t:`fair2020correction` for more information.
    These band-stop parameters are age-specific (see table below) and can be added to the command line arguments
    (see :ref:`usage_cli`).
    The user may also select from one of two filters - Lowpass or Notch.
@@ -131,7 +131,7 @@ Processing Steps
     The default FD threshold implemented in ``xcp_d`` is 0.2 mm.
     This can be modifeid in the commmand line argument with ``--fd-threshold X`` where X is the FD threshold in mm.
     Any volume with FD above the threshold will be flagged as an outlier before the regession.
-    Please refer to `Satterthwaite et al. 2013`_ and `Power et. al. 2012`_ for more information.
+    Please refer to :footcite:t:`satterthwaite_2013` and :footcite:t:`power2012spurious` for more information.
 
 4.  Despiking [Optional]: Despiking is a process in which large spikes in the BOLD times series are truncated.
     Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those data points with an imputed reduced amplitude.
@@ -158,8 +158,7 @@ Processing Steps
   a.  Schaefer 100,200,300,400,500,600,700,800,900,1000
   b.  Glasser 360
   c.  Gordon 333
-  d.  Tian Subcortical Atlas
-      `Tian et al <https://www.nature.com/articles/s41593-020-00711-6.epdf?sharing_token=Fzk9fg_oTs49l2_4GcFHvtRgN0jAjWel9jnR3ZoTv0OcoEh_rWSSGTYcOuTVFJlvyoz7cKiJgYmHRlYIGzAnNt5tMyMZIXn3xdgdMC_wzDAONIDh5m0cUiLGzNChnEK_AHqVJl2Qrno8-hzk8CanTnXjGX3rRfZX3WXgTLew1oE%3D>`_
+  d.  Tian Subcortical Atlas :footcite:p:`tian2020topographic`
 
 8.  Resting-state derivatives:
     For each BOLD data, the resting-state derivatives are computed.
@@ -203,3 +202,8 @@ If both images are not in MNI2006 space, they are resampled to MNI space.
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space (fsLR-32K).
 
 See `Outputs`_ for file details about xcp_d outputs.
+
+References
+----------
+
+.. footbibliography::
