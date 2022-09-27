@@ -57,7 +57,7 @@ def init_boldpostprocess_wf(
     dummytime,
     output_dir,
     fd_thresh,
-    num_bold,
+    n_runs,
     mni_to_t1w,
     despike,
     layout=None,
@@ -89,7 +89,7 @@ def init_boldpostprocess_wf(
                 dummytime=0,
                 output_dir=".",
                 fd_thresh=0.2,
-                num_bold=1,
+                n_runs=1,
                 mni_to_t1w="identity",
                 despike=False,
                 layout=None,
@@ -119,7 +119,7 @@ def init_boldpostprocess_wf(
     output_dir : str
         Directory in which to save xcp_d output
     %(fd_thresh)s
-    num_bold
+    n_runs
     mni_to_t1w
     despike: bool
         If True, run 3dDespike from AFNI
@@ -189,7 +189,7 @@ def init_boldpostprocess_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f"""
-For each of the {num2words(num_bold)} BOLD series found per subject (across all
+For each of the {num2words(n_runs)} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
     initial_volumes_to_drop = 0

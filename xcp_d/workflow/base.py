@@ -421,7 +421,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 params=params,
                 head_radius=head_radius,
                 omp_nthreads=omp_nthreads,
-                num_bold=len(subject_data[0]),
+                n_runs=len(subject_data[0]),
                 custom_confounds=custom_confoundsx,
                 layout=layout,
                 despike=despike,
