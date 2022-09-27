@@ -7,8 +7,10 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.utils.doc import fill_doc
 
 
+@fill_doc
 def init_writederivatives_wf(
     bold_file,
     lowpass,
@@ -50,19 +52,17 @@ def init_writederivatives_wf(
         low pass filter
     highpass : float
         high pass filter
-    smoothing : float
-        smooth kernel size in fwhm
-    params : str
-        parameter regressed out from bold
-    cifti : bool
-        if cifti or bold
+    %(smoothing)s
+    %(params)s
+    %(cifti)s
     dummytime : float
         volume(s) removed before postprocessing in seconds
     output_dir : str
         output directory
     TR : float
         repetition time in seconds
-    name : str
+    %(name)s
+        Default is "fcons_ts_wf".
 
     Inputs
     ------
@@ -114,7 +114,7 @@ def init_writederivatives_wf(
     cleaned_data_dictionary = {
         'RepetitionTime': TR,
         'Freq Band': [highpass, lowpass],
-        'nuissance parameters': params,
+        'nuisance parameters': params,
         'dummy vols': int(np.ceil(dummytime / TR))
     }
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing

@@ -19,6 +19,7 @@ from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.concantenation import get_cifti_tr
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_conts_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -29,6 +30,7 @@ from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_
 LOGGER = logging.getLogger('nipype.workflow')
 
 
+@fill_doc
 def init_ciftipostprocess_wf(
     cifti_file,
     lower_bpf,
@@ -63,25 +65,25 @@ def init_ciftipostprocess_wf(
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
                 cifti_file,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                bandpass_filter,
-                band_stop_min,
-                band_stop_max,
-                smoothing,
-                head_radius,
-                params,
-                output_dir,
-                custom_confounds,
-                omp_nthreads,
-                dummytime,
-                fd_thresh,
-                mni_to_t1w,
-                despike,
-                num_cifti,
+                bandpass_filter=True,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                band_stop_min=0,
+                band_stop_max=0,
+                smoothing=6,
+                head_radius=50,
+                params="36P",
+                output_dir=".",
+                custom_confounds=None,
+                omp_nthreads=1,
+                dummytime=0,
+                fd_thresh=0.2,
+                mni_to_t1w="identity",
+                despike=False,
+                num_cifti=1,
                 layout=None,
                 name='cifti_postprocess_wf',
             )
@@ -89,43 +91,31 @@ def init_ciftipostprocess_wf(
     Parameters
     ----------
     cifti_file
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    bpf_order
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    bandpass_filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
-    output_dir : str
-        Directory in which to save xcp_d output
+    %(bandpass_filter)s
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(smoothing)s
+    %(head_radius)s
+    %(params)s
+    %(output_dir)s
     custom_confounds: str
         path to cusrtom nuissance regressors
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
+    %(omp_nthreads)s
     dummytime: float
         the first few seconds to be removed before postprocessing
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    mni_to_t1w,
+    %(fd_thresh)s
+    %(mni_to_t1w)s
     despike: bool
         afni depsike
-    num_cifti,
+    num_cifti
     layout : BIDSLayout object
         BIDS dataset layout
-    name : str
+    %(name)s
         Default is 'cifti_postprocess_wf'.
 
     Inputs
@@ -199,9 +189,9 @@ flagged as outliers and excluded from nuisance regression.
 
     else:
         workflow.__desc__ = workflow.__desc__ + f""" \
-before nuissance regression and filtering,both the nuisance regressors and volumes were demeaned
+before nuisance regression and filtering,both the nuisance regressors and volumes were demeaned
 and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
-[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuissance
+[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
 regression.
 """
 

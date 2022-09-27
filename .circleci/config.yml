@@ -53,6 +53,8 @@ jobs:
           command: |
             cd /src/xcp_d/.circleci
             bash NiftiWithoutFreeSurferTest.sh
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/nifti_without_freesurfer/derivatives/xcp_d/
 
       # - run:
       #     name: Checking outputs of nifti_without_freesurfer
@@ -86,6 +88,8 @@ jobs:
           command: |
             cd /src/xcp_d/.circleci
             bash NiftiWithFreeSurferTest.sh
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/xcp_d/
 
   #     - run:
   #         name: Checking outputs of nifti_with_freesurfer
@@ -120,6 +124,8 @@ jobs:
           command: |
             cd /src/xcp_d/.circleci
             bash CiftiWithFreeSurferTest.sh
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/cifti_with_freesurfer/derivatives/xcp_d/
 
   #     - run:
   #         name: Checking outputs of cifti_with_freesurfer

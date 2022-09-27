@@ -8,6 +8,10 @@ import os
 import sys
 from copy import deepcopy
 
+import nibabel as nb
+import numpy as np
+import scipy
+import templateflow
 from nipype import __version__ as nipype_ver
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -22,12 +26,14 @@ from xcp_d.utils.bids import (
     select_cifti_bold,
     select_registrationfile,
 )
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
 
+@fill_doc
 def init_xcpd_wf(
     layout,
     lower_bpf,
@@ -97,54 +103,43 @@ def init_xcpd_wf(
 
     Parameters
     ----------
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    layout : BIDSLayout object
+    layout : :obj:`bids.layout.BIDSLayout`
         BIDS dataset layout
+    %(bandpass_filter)s
+    %(lower_bpf)s
+    %(upper_bpf)s
     despike: bool
         afni depsike
-    analysis_level: str
-        only option is 'participant'
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: str
-        respiratory motion order
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
+    %(bpf_order)s
+    %(analysis_level)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
     fmriprep_dir : Path
         fmriprep output directory
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    cifti : bool
-        To postprocessed cifti files instead of nifti
+    %(omp_nthreads)s
+    %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    %(output_dir)s
+    %(fd_thresh)s
     run_uuid : str
         Unique identifier for execution instance
     subject_list : list
         List of subject labels
-    work_dir : str
-        Directory in which to store workflow execution state and temporary files
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(work_dir)s
+    %(head_radius)s
+    %(params)s
+    %(smoothing)s
     custom_confounds: str
-        path to cusrtom nuissance regressors
+        path to cusrtom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(input_type)s
+    %(name)s
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
@@ -186,6 +181,7 @@ def init_xcpd_wf(
     return xcpd_wf
 
 
+@fill_doc
 def init_subject_wf(
     layout,
     lower_bpf,
@@ -214,82 +210,71 @@ def init_subject_wf(
 ):
     """Organize the postprocessing pipeline for a single subject.
 
-    # RF: this is the wrong function
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.base import init_single_bold_wf
-            wf = init_single_bold_wf(
-                layout,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_order,
-                motion_filter_type,
-                bandpass_filter,
-                band_stop_min,
-                band_stop_max,
-                fmri_dir,
-                omp_nthreads,
-                subject_id,
-                cifti,
-                despike,
-                head_radius,
-                params,
-                dummytime,
-                fd_thresh,
-                task_id,
-                smoothing,
-                custom_confounds,
-                output_dir,
-                input_type,
-                name,
+            from xcp_d.workflow.base import init_subject_wf
+            wf = init_subject_wf(
+                layout=None,
+                bandpass_filter=True,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                band_stop_min=0,
+                band_stop_max=0,
+                motion_filter_order=4,
+                fmri_dir=".",
+                omp_nthreads=1,
+                subject_id="sub-01",
+                cifti=False,
+                despike=False,
+                head_radius=50,
+                params="36P",
+                dummytime=0,
+                fd_thresh=0.2,
+                task_id="rest",
+                smoothing=6.,
+                custom_confounds=None,
+                output_dir=".",
+                input_type="fmriprep",
+                name="single_subject_sub-01_wf",
             )
 
     Parameters
     ----------
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
     layout : BIDSLayout object
         BIDS dataset layout
+    %(bandpass_filter)s
+    %(lower_bpf)s
+    %(upper_bpf)s
     despike: bool
         afni depsike
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    fmriprep_dir : Path
-        fmriprep output directory
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    cifti : bool
-        To postprocessed cifti files instead of nifti
+    %(bpf_order)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(fmri_dir)s
+    %(omp_nthreads)s
+    %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(output_dir)s
+    %(fd_thresh)s
+    %(head_radius)s
+    %(params)s
+    %(smoothing)s
     custom_confounds: str
-        path to custom nuissance regressors
+        path to custom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(input_type)s
+    %(name)s
     """
     layout, subj_data = collect_data(bids_dir=fmri_dir,
                                      participant_label=subject_id,
@@ -315,23 +300,26 @@ def init_subject_wf(
 ### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of fMRIPrep version {getfmriprepv(fmri_dir=fmri_dir)}
-[@fmriprep1].
-XCP was built with *Nipype* {nipype_ver} [@nipype1].
+[@esteban2019fmriprep;esteban2020analysis, RRID:SCR_016216].
+XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
 
-    workflow.__postdesc__ = """
+    workflow.__postdesc__ = f"""
 
-Many internal operations of *XCP* use *Nibabel* [@nilearn], *numpy*
-[@harris2020array], and  *scipy* [@2020SciPy-NMeth]. For more details,
-see the *xcp_d* website https://xcp-d.readthedocs.io.
+Many internal operations of *XCP* use
+*TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
+*Nibabel* version {nb.__version__} [@brett_matthew_2022_6658382],
+*numpy* version {np.__version__} [@harris2020array],
+and *scipy* version {scipy.__version__} [@2020SciPy-NMeth].
+For more details, see the *xcp_d* website https://xcp-d.readthedocs.io.
 
 
 #### Copyright Waiver
-The above methods descrip text was automatically generated by *XCP*
+
+The above methods description text was automatically generated by *XCP*
 with the express intention that users should copy and paste this
 text into their manuscripts *unchanged*.
-It is released under the [CC0]\
-(https://creativecommons.org/publicdomain/zero/1.0/) license.
+It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0/) license.
 
 #### References
 

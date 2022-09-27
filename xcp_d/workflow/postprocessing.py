@@ -12,9 +12,11 @@ from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma, stringforparams
 
 
+@fill_doc
 def init_post_process_wf(
     mem_gb,
     TR,
@@ -54,26 +56,21 @@ def init_post_process_wf(
 
     Parameters
     ----------
-    mem_gb : float
+    %(mem_gb)s
     TR: float
         Repetition time in second
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    bpf_order : int
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
+    %(smoothing)s
     bold_file: str
         bold file for post processing
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
-    cifti : bool
+    %(params)s
+    %(cifti)s
     dummytime: float
         the first few seconds to be removed before postprocessing
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    name : str
+    %(fd_thresh)s
+    %(name)s
         Default is "post_process_wf".
 
     Inputs
@@ -101,24 +98,24 @@ def init_post_process_wf(
     if dummytime > 0:
         nvolx = str(np.floor(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + f""" \
-Before nuissance regression and filtering of the data, the first {nvolx} were
+Before nuisance regression and filtering of the data, the first {nvolx} were
 discarded. Furthermore, any volumes with framewise-displacement greater than
 {fd_thresh} [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were flagged
-as outliers and excluded from nuissance regression.
+as outliers and excluded from nuisance regression.
 """
 
     else:
         workflow.__desc__ = workflow.__desc__ + f""" \
-Before nuissance regression and filtering any volumes with
+Before nuisance regression and filtering any volumes with
 framewise-displacement greater than {fd_thresh}
 [@satterthwaite2;@power_fd_dvars;@satterthwaite_2013] were  flagged as outlier
 and excluded from further analyses.
 """
 
     workflow.__desc__ = workflow.__desc__ + f""" \
-The following nuissance regressors {stringforparams(params=params)}
-[@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected from nuissance
-confound matrices of fMRIPrep output.  These nuissance regressors were regressed
+The following nuisance regressors {stringforparams(params=params)}
+[@mitigating_2018;@benchmarkp;@satterthwaite_2013] were selected from nuisance
+confound matrices of fMRIPrep output.  These nuisance regressors were regressed
 out from the bold data with *LinearRegression* as implemented in Scikit-Learn
 {sklearn.__version__} [@scikit-learn].  The residual were then  band pass filtered within the
 frequency band {lower_bpf}-{upper_bpf} Hz.

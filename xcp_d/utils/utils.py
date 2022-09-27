@@ -11,6 +11,8 @@ from scipy.signal import butter, detrend, filtfilt
 from sklearn.linear_model import LinearRegression
 from templateflow.api import get as get_template
 
+from xcp_d.utils.doc import fill_doc
+
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     """Obtain the correct transform files in reverse order to transform to MNI space/T1W space.
@@ -253,13 +255,13 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
+@fill_doc
 def stringforparams(params):
     """Infer nuisance regression description from parameter set.
 
     Parameters
     ----------
-    params : {"custom", "24P", "27P", "36P", "aroma", "acompcor", "aroma_gsr", "acompcor_gsr"}
-        String indicating parameter set.
+    %(params)s
 
     Returns
     -------

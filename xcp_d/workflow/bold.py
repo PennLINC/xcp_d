@@ -22,6 +22,7 @@ from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.concantenation import _t12native
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
@@ -37,6 +38,7 @@ from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 LOGGER = logging.getLogger('nipype.workflow')
 
 
+@fill_doc
 def init_boldpostprocess_wf(
     lower_bpf,
     upper_bpf,
@@ -96,45 +98,34 @@ def init_boldpostprocess_wf(
 
     Parameters
     ----------
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    bpf_order
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    bandpass_filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(bandpass_filter)s
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(smoothing)s
     bold_file: str
         bold file for post processing
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
+    %(head_radius)s
+    %(params)s
     custom_confounds: str
         path to cusrtom nuissance regressors
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
+    %(omp_nthreads)s
     dummytime: float
         the time in seconds to be removed before postprocessing
     output_dir : str
         Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
+    %(fd_thresh)s
     num_bold
     mni_to_t1w
     despike: bool
         If True, run 3dDespike from AFNI
     layout : BIDSLayout object
         BIDS dataset layout
-    name : str
+    %(name)s
 
     Inputs
     ------
