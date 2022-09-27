@@ -108,11 +108,11 @@ def init_ciftipostprocess_wf(
     head_radius : float
         radius of the head for FD computation
     params: str
-        nuissance regressors to be selected from fmriprep regressors
+        nuisance regressors to be selected from fmriprep regressors
     output_dir : str
         Directory in which to save xcp_d output
     custom_confounds: str
-        path to cusrtom nuissance regressors
+        path to cusrtom nuisance regressors
     omp_nthreads : int
         Maximum number of threads an individual process may use
     dummytime: float
@@ -199,9 +199,9 @@ flagged as outliers and excluded from nuisance regression.
 
     else:
         workflow.__desc__ = workflow.__desc__ + f""" \
-before nuissance regression and filtering,both the nuisance regressors and volumes were demeaned
+before nuisance regression and filtering,both the nuisance regressors and volumes were demeaned
 and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
-[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuissance
+[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
 regression.
 """
 
