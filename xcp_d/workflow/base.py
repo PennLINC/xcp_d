@@ -378,7 +378,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 custom_confounds=custom_confoundsx,
                 omp_nthreads=omp_nthreads,
-                num_cifti=len(subject_data[1]),
+                n_runs=len(subject_data[1]),
                 dummytime=dummytime,
                 fd_thresh=fd_thresh,
                 despike=despike,

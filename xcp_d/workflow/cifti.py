@@ -51,7 +51,7 @@ def init_ciftipostprocess_wf(
     fd_thresh,
     mni_to_t1w,
     despike,
-    num_cifti,
+    n_runs,
     layout=None,
     name='cifti_process_wf',
 ):
@@ -83,7 +83,7 @@ def init_ciftipostprocess_wf(
                 fd_thresh=0.2,
                 mni_to_t1w="identity",
                 despike=False,
-                num_cifti=1,
+                n_runs=1,
                 layout=None,
                 name='cifti_postprocess_wf',
             )
@@ -112,7 +112,7 @@ def init_ciftipostprocess_wf(
     %(mni_to_t1w)s
     despike: bool
         afni depsike
-    num_cifti
+    n_runs
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s
@@ -160,7 +160,7 @@ def init_ciftipostprocess_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
-For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
+For each of the {num2words(n_runs)} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
 
