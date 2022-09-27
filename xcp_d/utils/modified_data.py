@@ -3,7 +3,10 @@
 """Functions for interpolating over high-motion volumes."""
 import numpy as np
 
+from xcp_d.utils.doc import fill_doc
 
+
+@fill_doc
 def compute_fd(confound, head_radius=50):
     """Compute framewise displacement.
 
@@ -14,8 +17,7 @@ def compute_fd(confound, head_radius=50):
     ----------
     confound : pandas.DataFrame
         DataFrame with six motion parameters.
-    head_radius : int, optional
-        The head radius, in millimeters. Default is 50.
+    %(head_radius)s
 
     Returns
     -------
@@ -34,6 +36,7 @@ def compute_fd(confound, head_radius=50):
     return fdres
 
 
+@fill_doc
 def generate_mask(fd_res, fd_thresh):
     """Create binary temporal mask flagging high-motion volumes.
 
@@ -42,9 +45,7 @@ def generate_mask(fd_res, fd_thresh):
     fd_res : numpy.ndarray of shape (T)
         Framewise displacement time series.
         T = time.
-    fd_thresh : float
-        Threshold used to identify high-motion volumes.
-        Any ``fd_res`` values greater than the threshold will be flagged.
+    %(fd_thresh)s
 
     Returns
     -------

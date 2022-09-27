@@ -10,9 +10,11 @@ from templateflow.api import get as get_template
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.workbench import CiftiSeparateMetric
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
 
 
+@fill_doc
 def init_compute_alff_wf(
     mem_gb,
     TR,
@@ -44,22 +46,18 @@ def init_compute_alff_wf(
 
     Parameters
     ----------
-    mem_gb : float
-        memory size in gigabytes
+    %(mem_gb)s
     TR : float
         repetition time
     lowpass : float
         low pass filter
     highpass : float
         high pass filter
-    smoothing : float
-        smooth kernel size in fwhm
-    cifti : bool
-        if cifti or bold
-    omp_nthreads : int
-        number of threads
-    name : str, optional
-        Name of the workflow.
+    %(smoothing)s
+    %(cifti)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "compute_alff_wf".
 
     Inputs
     ------
@@ -164,6 +162,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     return workflow
 
 
+@fill_doc
 def init_surface_reho_wf(
     mem_gb,
     omp_nthreads,
@@ -185,11 +184,10 @@ def init_surface_reho_wf(
 
     Parameters
     ----------
-    mem_gb : float
-        Memory size in gigabytes.
-    omp_nthreads : int
-        Maximum number of threads an individual process may use.
-    name : str
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "surface_reho_wf".
 
     Inputs
     ------
@@ -249,6 +247,7 @@ vertices to yield ReHo.
     return workflow
 
 
+@fill_doc
 def init_3d_reho_wf(
     mem_gb,
     omp_nthreads,
@@ -270,12 +269,10 @@ def init_3d_reho_wf(
 
     Parameters
     ----------
-    mem_gb : float
-        Memory size in gigabytes.
-    omp_nthreads : int
-        Maximum number of threads an individual process may use.
-    name : str, optional
-        Name of the workflow. Default is "afni_reho_wf".
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "afni_reho_wf".
 
     Inputs
     ------
