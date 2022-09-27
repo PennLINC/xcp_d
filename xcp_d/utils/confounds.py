@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import filtfilt, firwin, iirnotch
 
+from xcp_d.utils.doc import fill_doc
+
 
 def get_confounds_tsv(datafile):
     """Find path to confounds TSV file.
@@ -270,6 +272,7 @@ def square_confound(confound):
     return confound**2  # Square the confound data
 
 
+@fill_doc
 def load_confound_matrix(datafile,
                          original_file,
                          custom_confounds=None,
@@ -287,9 +290,7 @@ def load_confound_matrix(datafile,
         Custom confounds TSV if there is one. Default is None.
     confound_tsv : str or None, optional
         The path to the confounds TSV file. Default is None.
-    params : {"36P", "24P", "27P", "acompcor", "aroma", "aroma_gsr", "custom"}, optional
-        Shorthand for the parameter set to extract from the confounds TSV.
-        Default is 36p, most expansive option.
+    %(params)s
 
     Returns
     -------

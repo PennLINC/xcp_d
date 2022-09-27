@@ -33,8 +33,10 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 )
 from xcp_d.utils.bids import collect_data
 from xcp_d.utils.concantenation import _getsesid
+from xcp_d.utils.doc import fill_doc
 
 
+@fill_doc
 def init_anatomical_wf(
     omp_nthreads,
     fmri_dir,
@@ -66,22 +68,16 @@ def init_anatomical_wf(
 
     Parameters
     ----------
-    omp_nthreads : int
-        Number of threads.
-    fmri_dir : str
-        Path to the BIDS derivatives directory.
+    %(omp_nthreads)s
+    %(fmri_dir)s
     subject_id : str
         subject id
-    output_dir : str
-        Output directory for xcp_d derivatives.
-    t1w_to_mni : str
-        Path to the T1w to MNI transform file.
-    input_type : {"fmriprep", "dcan", "hcp"}
-        The format of the BIDS derivatives.
-    mem_gb : float
-        The memory limit, in gigabytes.
-    name : str, optional
-        Workflow name. Default is "anatomical_wf".
+    %(output_dir)s
+    %(t1w_to_mni)s
+    %(input_type)s
+    %(mem_gb)s
+    %(name)s
+        Default is "anatomical_wf".
 
     Inputs
     ------
