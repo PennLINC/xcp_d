@@ -4,7 +4,6 @@
 import numpy as np
 import sklearn
 from nipype.interfaces import utility as niu
-from nipype.interfaces.fsl import Smooth
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -12,6 +11,7 @@ from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.utils.utils import fwhm2sigma, stringforparams
 
 
