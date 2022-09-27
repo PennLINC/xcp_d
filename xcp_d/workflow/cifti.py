@@ -32,7 +32,7 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 @fill_doc
 def init_ciftipostprocess_wf(
-    cifti_file,
+    bold_file,
     lower_bpf,
     upper_bpf,
     bpf_order,
@@ -64,7 +64,7 @@ def init_ciftipostprocess_wf(
 
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
-                cifti_file,
+                bold_file,
                 bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
@@ -90,7 +90,7 @@ def init_ciftipostprocess_wf(
 
     Parameters
     ----------
-    cifti_file
+    bold_file
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -120,7 +120,7 @@ def init_ciftipostprocess_wf(
 
     Inputs
     ------
-    cifti_file
+    bold_file
         CIFTI file
     cutstom_conf
         custom regressors
@@ -164,18 +164,18 @@ For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
 
-    TR = get_cifti_tr(cifti_file)
+    TR = get_cifti_tr(bold_file)
     if TR is None:
-        metadata = layout.get_metadata(cifti_file)
+        metadata = layout.get_metadata(bold_file)
         TR = metadata['RepetitionTime']
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
-        confounds_tsv = get_confounds_tsv(cifti_file)
+        confounds_tsv = get_confounds_tsv(bold_file)
     except Exception:
-        raise Exception(f"Unable to find confounds file for {cifti_file}.")
+        raise Exception(f"Unable to find confounds file for {bold_file}.")
 
-    # TR = get_cifti_tr(cifti_file=cifti_file)
+    # TR = get_cifti_tr(cifti_file=bold_file)
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.floor(dummytime / TR))
@@ -204,10 +204,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 """
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
+        fields=['bold_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
         name='inputnode')
 
-    inputnode.inputs.cifti_file = cifti_file
+    inputnode.inputs.bold_file = bold_file
     inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
     outputnode = pe.Node(niu.IdentityInterface(fields=[
@@ -221,7 +221,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     ]),
         name='outputnode')
 
-    mem_gbx = _create_mem_gb(cifti_file)
+    mem_gbx = _create_mem_gb(bold_file)
 
     cifti_conts_wf = init_cifti_conts_wf(
         mem_gb=mem_gbx['timeseries'],
@@ -245,7 +245,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
-        bold_file=cifti_file,
+        bold_file=bold_file,
         params=params,
         cifti=True,
         output_dir=output_dir,
@@ -288,7 +288,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     regression_wf = pe.Node(
         Regress(TR=TR,
-                original_file=cifti_file),
+                original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -302,7 +302,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            bold_file=cifti_file,
+            bold_file=bold_file,
             dummytime=dummytime,
             head_radius=head_radius,
             low_freq=band_stop_max,
@@ -313,7 +313,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     executivesummary_wf = init_execsummary_wf(
         TR=TR,
-        bold_file=cifti_file,
+        bold_file=bold_file,
         layout=layout,
         output_dir=output_dir,
         mni_to_t1w=mni_to_t1w,
@@ -328,7 +328,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
+            (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
             (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
@@ -341,7 +341,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         # Censor Scrub:
         workflow.connect([
             (inputnode, censor_scrub, [
-                ('cifti_file', 'in_file'),
+                ('bold_file', 'in_file'),
                 ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
             ])])
 
@@ -369,7 +369,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # interpolation workflow
     workflow.connect([
-        (inputnode, interpolate_wf, [('cifti_file', 'bold_file')]),
+        (inputnode, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
@@ -479,21 +479,21 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, TR=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=True)
 
     ds_report_qualitycontrol = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         desc='qualitycontrol',
-        source_file=cifti_file,
+        source_file=bold_file,
         datatype="figures"),
         name='ds_report_qualitycontrol',
         run_without_submitting=True)
 
     ds_report_preprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=cifti_file,
+        source_file=bold_file,
         desc='preprocessing',
         datatype="figures"),
         name='ds_report_preprocessing',
@@ -501,7 +501,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=cifti_file,
+        source_file=bold_file,
         desc='postprocessing',
         datatype="figures"),
         name='ds_report_postprocessing',
@@ -509,7 +509,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=cifti_file,
+        source_file=bold_file,
         desc='connectvityplot',
         datatype="figures"),
         name='ds_report_connectivity',
@@ -528,7 +528,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
-                                          ('cifti_file', 'inputnode.bold_file')
+                                          ('bold_file', 'inputnode.bold_file')
                                           ]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
                                               ]),

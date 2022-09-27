@@ -359,12 +359,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # RF: get rid of ii's
     if cifti:
         ii = 0
-        for cifti_file in subject_data[1]:
+        for bold_file in subject_data[1]:
             ii = ii + 1
             custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=cifti_file)
+                                               bold_file=bold_file)
             cifti_postproc_wf = init_ciftipostprocess_wf(
-                cifti_file=cifti_file,
+                bold_file=bold_file,
                 lower_bpf=lower_bpf,
                 upper_bpf=upper_bpf,
                 bpf_order=bpf_order,
@@ -389,7 +389,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             ds_report_about = pe.Node(DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=cifti_file,
+                source_file=bold_file,
                 desc='about',
                 datatype="figures",
             ),
