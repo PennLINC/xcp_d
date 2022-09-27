@@ -1,5 +1,5 @@
 
-if [[ "$SHELL" =~ zsh ]]; then
+if [[ "$SHELL" == zsh ]]; then
   setopt SH_WORD_SPLIT
 fi
 
