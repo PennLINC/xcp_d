@@ -119,7 +119,7 @@ The results of running a colornest subject through fmriprep
 freesurfer_colornest:
 ---------------------
 
-The freesurfer results for the same data as in `fmriprep_colornest`
+The freesurfer results for the same data as in "fmriprep_colornest"
 
 fsaverage*:
 -----------
