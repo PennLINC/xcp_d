@@ -281,17 +281,16 @@ def init_subject_wf(
                                      task=task_id,
                                      bids_validate=False)
 
-    regfile = select_registrationfile(subj_data=subj_data)
+    mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
     subject_data = select_cifti_bold(subj_data=subj_data)
-    t1wseg = extract_t1w_seg(subj_data=subj_data)
+    t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
         name='inputnode')
     inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.t1w = t1wseg[0]
-    inputnode.inputs.t1seg = t1wseg[1]
-    mni_to_t1w = regfile[0]
+    inputnode.inputs.t1w = t1w
+    inputnode.inputs.t1seg = t1wseg
     inputnode.inputs.mni_to_t1w = mni_to_t1w
 
     workflow = Workflow(name=name)
@@ -345,7 +344,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         fmri_dir=fmri_dir,
         subject_id=subject_id,
         output_dir=output_dir,
-        t1w_to_mni=regfile[1],
+        t1w_to_mni=t1w_to_mni,
         input_type=input_type,
         mem_gb=5)  # RF: need to chnage memory size
 
