@@ -262,25 +262,33 @@ def extract_t1w_seg(subj_data):
 
     Parameters
     ----------
-    subj_data
+    subj_data : dict
 
     Returns
     -------
-    t1w : str
+    selected_t1w_file : str
         Preprocessed T1-weighted file.
-    t1seg : str
+    selected_t1w_seg_file : str
         Segmentation file.
     """
-    all_t1w = subj_data["t1w"]
-    for i in all_t1w:
-        ii = os.path.basename(i)
-        if not fnmatch.fnmatch(ii, "*_space-*"):
-            t1w = i
+    selected_t1w_file, selected_t1w_seg_file = None, None
+    for t1w_file in subj_data["t1w"]:
+        t1w_filename = os.path.basename(t1w_file)
+        if not fnmatch.fnmatch(t1w_filename, "*_space-*"):
+            selected_t1w_file = t1w_file
 
-    all_seg = subj_data["seg_data"]
-    for j in all_seg:
-        ii = os.path.basename(j)
-        if not (fnmatch.fnmatch(ii, "*_space-*") or fnmatch.fnmatch(ii, "*aseg*")):
-            t1seg = j
+    for t1w_seg_file in subj_data["seg_data"]:
+        t1w_seg_filename = os.path.basename(t1w_seg_file)
+        if not (
+            fnmatch.fnmatch(t1w_seg_filename, "*_space-*")
+            or fnmatch.fnmatch(t1w_seg_filename, "*aseg*")
+        ):
+            selected_t1w_seg_file = t1w_seg_file
 
-    return t1w, t1seg
+    if not selected_t1w_file:
+        raise ValueError("No segmentation file found.")
+
+    if not selected_t1w_seg_file:
+        raise ValueError("No segmentation file found.")
+
+    return selected_t1w_file, selected_t1w_seg_file
