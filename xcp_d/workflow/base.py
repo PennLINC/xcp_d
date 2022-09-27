@@ -355,94 +355,66 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                                     ('t1seg', 'inputnode.t1seg')]),
     ])
 
-    # loop over each bold data to be postprocessed
-    # RF: get rid of ii's
-    if cifti:
-        ii = 0
-        for bold_file in subject_data[1]:
-            ii = ii + 1
-            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=bold_file)
-            cifti_postproc_wf = init_ciftipostprocess_wf(
-                bold_file=bold_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
-                smoothing=smoothing,
-                params=params,
-                head_radius=head_radius,
-                custom_confounds=custom_confoundsx,
-                omp_nthreads=omp_nthreads,
-                n_runs=len(subject_data[1]),
-                dummytime=dummytime,
-                fd_thresh=fd_thresh,
-                despike=despike,
-                layout=layout,
-                mni_to_t1w=regfile[0],
-                output_dir=output_dir,
-                name='cifti_postprocess_' + str(ii) + '_wf')
+    # determine the appropriate post-processing workflow
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
 
-            ds_report_about = pe.Node(DerivativesDataSink(
+    # loop over each bold run to be postprocessed
+    for i_run, bold_file in enumerate(subject_data[1]):
+        custom_confounds_file = get_customfile(
+            custom_confounds=custom_confounds,
+            bold_file=bold_file,
+        )
+
+        bold_postproc_wf = postproc_wf_function(
+            bold_file=bold_file,
+            lower_bpf=lower_bpf,
+            upper_bpf=upper_bpf,
+            bpf_order=bpf_order,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            bandpass_filter=bandpass_filter,
+            smoothing=smoothing,
+            params=params,
+            head_radius=head_radius,
+            omp_nthreads=omp_nthreads,
+            n_runs=len(subject_data[0]),
+            custom_confounds=custom_confounds_file,
+            layout=layout,
+            despike=despike,
+            dummytime=dummytime,
+            fd_thresh=fd_thresh,
+            output_dir=output_dir,
+            mni_to_t1w=mni_to_t1w,
+            name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
+        )
+
+        # NOTE: TS- Why is the data sink initialized separately for each run?
+        # If it's run-specific, shouldn't the name reflect the run?
+        ds_report_about = pe.Node(
+            DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
                 desc='about',
                 datatype="figures",
             ),
-                name='ds_report_about',
-                run_without_submitting=True)
+            name='ds_report_about',
+            run_without_submitting=True,
+        )
 
-            workflow.connect([(inputnode, cifti_postproc_wf,
-                               [('custom_confounds', 'inputnode.custom_confounds'),
-                                ('t1w', 'inputnode.t1w'),
-                                ('t1seg', 'inputnode.t1seg')])])
-
-    else:
-        ii = 0
-        for bold_file in subject_data[0]:
-            ii = ii + 1
-            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=bold_file)
-            bold_postproc_wf = init_boldpostprocess_wf(
-                bold_file=bold_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
-                smoothing=smoothing,
-                params=params,
-                head_radius=head_radius,
-                omp_nthreads=omp_nthreads,
-                n_runs=len(subject_data[0]),
-                custom_confounds=custom_confoundsx,
-                layout=layout,
-                despike=despike,
-                dummytime=dummytime,
-                fd_thresh=fd_thresh,
-                output_dir=output_dir,
-                mni_to_t1w=mni_to_t1w,
-                name='bold_postprocess_' + str(ii) + '_wf')
-
-            ds_report_about = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc='about',
-                datatype="figures"),
-                name='ds_report_about',
-                run_without_submitting=True)
-
-            workflow.connect([(inputnode, bold_postproc_wf,
-                               [('mni_to_t1w', 'inputnode.mni_to_t1w'),
-                                ('t1w', 'inputnode.t1w'),
-                                ('t1seg', 'inputnode.t1seg')])])
+        workflow.connect(
+            [
+                (
+                    inputnode, bold_postproc_wf,
+                    [
+                        ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                        ('t1w', 'inputnode.t1w'),
+                        ('t1seg', 'inputnode.t1seg'),
+                    ],
+                ),
+            ],
+        )
 
     try:
         workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
