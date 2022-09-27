@@ -116,7 +116,6 @@ class ModalContainer(object):
             modal_id=self.modal_id,
             image_class=self.image_class,
             image_file=image_file,
-            static=False,
             display_name=display_name)
 
         self.image_class_idx += 1
