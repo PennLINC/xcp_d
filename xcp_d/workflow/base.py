@@ -379,7 +379,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             params=params,
             head_radius=head_radius,
             omp_nthreads=omp_nthreads,
-            n_runs=preproc_files,
+            n_runs=len(preproc_files),
             custom_confounds=custom_confounds_file,
             layout=layout,
             despike=despike,
