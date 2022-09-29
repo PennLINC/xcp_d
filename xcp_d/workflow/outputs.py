@@ -639,65 +639,80 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        write_derivative_sc117ts_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            atlas='Schaefer117',
-            check_hdr=False,
-            density='91k',
-            extension='.ptseries.nii',
-            source_file=bold_file),
+        write_derivative_sc117ts_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=['desc'],
+                atlas='Schaefer117',
+                check_hdr=False,
+                density='91k',
+                extension='.ptseries.nii',
+                source_file=bold_file,
+            ),
             name='write_derivative_sc117ts_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_sc217ts_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            atlas='Schaefer217',
-            check_hdr=False,
-            density='91k',
-            extension='.ptseries.nii',
-            source_file=bold_file),
+        write_derivative_sc217ts_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=['desc'],
+                atlas='Schaefer217',
+                check_hdr=False,
+                density='91k',
+                extension='.ptseries.nii',
+                source_file=bold_file,
+            ),
             name='write_derivative_sc217ts_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_sc317ts_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            atlas='Schaefer317',
-            check_hdr=False,
-            density='91k',
-            extension='.ptseries.nii',
-            source_file=bold_file),
+        write_derivative_sc317ts_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=['desc'],
+                atlas='Schaefer317',
+                check_hdr=False,
+                density='91k',
+                extension='.ptseries.nii',
+                source_file=bold_file,
+            ),
             name='write_derivative_sc317ts_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_sc417ts_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            atlas='Schaefer417',
-            extension='.ptseries.nii',
-            source_file=bold_file,
-            density='91k',
-            check_hdr=False),
+        write_derivative_sc417ts_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=['desc'],
+                atlas='Schaefer417',
+                extension='.ptseries.nii',
+                source_file=bold_file,
+                density='91k',
+                check_hdr=False,
+            ),
             name='write_derivative_sc417ts_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_sc517ts_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            atlas='Schaefer517',
-            extension='.ptseries.nii',
-            source_file=bold_file,
-            density='91k',
-            check_hdr=False),
+        write_derivative_sc517ts_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=['desc'],
+                atlas='Schaefer517',
+                extension='.ptseries.nii',
+                source_file=bold_file,
+                density='91k',
+                check_hdr=False,
+            ),
             name='write_derivative_sc517ts_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
         write_derivative_sc617ts_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
@@ -856,7 +871,7 @@ def init_writederivatives_wf(
 
         write_derivative_sc617fc_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
+            dismiss_entities=['desc'],
             atlas='Schaefer617',
             extension='.pconn.nii',
             density='91k',
