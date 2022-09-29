@@ -3,6 +3,7 @@
 """Workflows for extracting time series and computing functional connectivity."""
 
 import nilearn as nl
+from nipype import Function, JoinNode
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -88,37 +89,38 @@ all regions was computed for each atlas, which was operationalized as the
 Pearson's correlation of each parcel's (unsmoothed) timeseries.
  """
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=[
-        'bold_file',
-        'clean_bold',
-        'ref_file',
-    ]),
-        name='inputnode')
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc', 'sc317_ts', 'sc317_fc',
-        'sc417_ts', 'sc417_fc', 'sc517_ts', 'sc517_fc', 'sc617_ts', 'sc617_fc',
-        'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts', 'sc917_fc',
-        'sc1017_ts', 'sc1017_fc', 'gs360_ts', 'gs360_fc', 'gd333_ts',
-        'gd333_fc', 'ts50_ts', 'ts50_fc', 'connectplot'
-    ]),
-        name='outputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['bold_file', 'clean_bold', 'ref_file']),
+        name='inputnode',
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=['timeseries', 'correlations', 'connectplot']),
+        name='outputnode',
+    )
 
     inputnode.inputs.bold_file = bold_file
 
     # get atlases via pkgrf
-    sc117atlas = get_atlas_nifti(atlasname='schaefer100x17')
-    sc217atlas = get_atlas_nifti(atlasname='schaefer200x17')
-    sc317atlas = get_atlas_nifti(atlasname='schaefer300x17')
-    sc417atlas = get_atlas_nifti(atlasname='schaefer400x17')
-    sc517atlas = get_atlas_nifti(atlasname='schaefer500x17')
-    sc617atlas = get_atlas_nifti(atlasname='schaefer600x17')
-    sc717atlas = get_atlas_nifti(atlasname='schaefer700x17')
-    sc817atlas = get_atlas_nifti(atlasname='schaefer800x17')
-    sc917atlas = get_atlas_nifti(atlasname='schaefer900x17')
-    sc1017atlas = get_atlas_nifti(atlasname='schaefer1000x17')
-    gs360atlas = get_atlas_nifti(atlasname='glasser360')
-    gd333atlas = get_atlas_nifti(atlasname='gordon333')
-    ts50atlas = get_atlas_nifti(atlasname='tiansubcortical')
+    ATLAS_NAMES = [
+        "schaefer100x17",
+        "schaefer200x17",
+        "schaefer300x17",
+        "schaefer400x17",
+        "schaefer500x17",
+        "schaefer600x17",
+        "schaefer700x17",
+        "schaefer800x17",
+        "schaefer900x17",
+        "schaefer1000x17",
+        "glasser360",
+        "gordon333",
+        "tiansubcortical",
+    ]
+    atlas_nifti_grabber = pe.Node(
+        Function(input_names=["atlasname"], output_names=["out_file"], function=get_atlas_nifti),
+        name="atlas_nifti_grabber",
+    )
+    atlas_nifti_grabber.iterables = ("atlasname", ATLAS_NAMES)
 
     # get transfrom file via string manipulation
     transformfile = get_transformfile(bold_file=bold_file,
@@ -126,6 +128,40 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
                                       t1w_to_native=t1w_to_native)
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
+    atlas_transform = pe.MapNode(
+        ApplyTransformsx(
+            transforms=transformfile,
+            interpolation="MultiLabel",
+            input_image_type=3,
+            dimension=3,
+        ),
+        name="atlas_mni_to_native",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    nifti_connect = pe.Node(NiftiConnect(), name="nifti_connect", mem_gb=mem_gb)
+
+    reconnect_node = JoinNode(
+        Function(
+            input_names=["datetime_list"],
+            output_names=["dob_sorted"],
+            function=None,
+        ),
+        joinsource=atlas_nifti_grabber,
+        joinfield=['atlasname'],
+        name="rejoin",
+    )
+
+    workflow.connect([
+        # Transform Atlas to correct MNI2009 space
+        (inputnode, atlas_nifti_grabber, [('ref_file', 'reference_image')]),
+        (atlas_nifti_grabber, atlas_transform, [('out_file, input_image')]),
+        (inputnode, nifti_connect, [('clean_bold', 'filtered_file')]),
+        (nifti_connect, outputnode, [('time_series_tsv', 'sc317_ts'),
+                                     ('fcon_matrix_tsv', 'sc317_fc')]),
+    ])
+
     schaefer_117_transform = pe.Node(ApplyTransformsx(input_image=sc117atlas,
                                                       transforms=transformfile,
                                                       interpolation="MultiLabel",
