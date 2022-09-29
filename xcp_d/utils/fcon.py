@@ -38,8 +38,8 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
     # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
 
-    np.savetxt(fconmatrix, correlation_matrices, delimiter=",")
-    np.savetxt(timeseries, time_series, delimiter=",")
+    np.savetxt(fconmatrix, correlation_matrices, delimiter="\t")
+    np.savetxt(timeseries, time_series, delimiter="\t")
 
     return timeseries, fconmatrix
 
