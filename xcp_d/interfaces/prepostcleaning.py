@@ -320,11 +320,11 @@ class CensorScrub(SimpleInterface):
                                                index=False,
                                                header=True,
                                                sep="\t")
-        np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
+        np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter='\t')
         np.savetxt(self._results['fd_timeseries'],
                    fd_timeseries_uncensored,
                    fmt="%1.4f",
-                   delimiter=',')
+                   delimiter='\t')
         if self.inputs.custom_confounds:
             custom_confounds_tsv_censored.to_csv(self._results['custom_confounds_censored'],
                                                  index=False,

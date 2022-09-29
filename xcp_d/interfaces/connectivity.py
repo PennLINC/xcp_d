@@ -136,13 +136,13 @@ class ConnectPlot(SimpleInterface):
         else:  # for nifti
             #  Get the correlation coefficient of the data
             sc217 = np.corrcoef(
-                np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
+                np.loadtxt(self.inputs.sc217_timeseries, delimiter='\t').T)
             sc417 = np.corrcoef(
-                np.loadtxt(self.inputs.sc417_timeseries, delimiter=',').T)
+                np.loadtxt(self.inputs.sc417_timeseries, delimiter='\t').T)
             gd333 = np.corrcoef(
-                np.loadtxt(self.inputs.gd333_timeseries, delimiter=',').T)
+                np.loadtxt(self.inputs.gd333_timeseries, delimiter='\t').T)
             gs360 = np.corrcoef(
-                np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
+                np.loadtxt(self.inputs.gs360_timeseries, delimiter='\t').T)
 
         # Generate a plot of each matrix's correlation coefficients
         fig, ax1 = plt.subplots(2, 2)
