@@ -475,7 +475,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # functional connect workflow
     workflow.connect([
-        (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file')]),
+        (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
+                                 ('ref_file', 'inputnode.ref_file')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 

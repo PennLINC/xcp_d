@@ -52,6 +52,7 @@ def init_fcon_ts_wf(
     ------
     bold_file
         Used for names.
+    ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
     atlas_names
@@ -98,7 +99,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
     ]
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['bold_file', 'clean_bold', 'atlas_names']),
+        niu.IdentityInterface(fields=['bold_file', 'ref_file', 'clean_bold', 'atlas_names']),
         name='inputnode',
     )
     outputnode = pe.Node(
@@ -158,6 +159,7 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         (inputnode, outputnode, [('atlas_names', 'atlas_names')]),
         (inputnode, atlas_file_grabber, [('atlas_names', 'atlasname')]),
         (inputnode, get_transformfile_node, [('bold_file', 'bold_file')]),
+        (inputnode, atlas_transform, [('ref_file', 'reference_image')]),
         (inputnode, nifti_connect, [('clean_bold', 'filtered_file')]),
         (inputnode, matrix_plot, [('clean_bold', 'in_file'), ['atlas_names', 'atlas_names']]),
         (atlas_file_grabber, atlas_transform, [('out_file', 'input_image')]),
