@@ -263,18 +263,20 @@ timeseries with the Connectome Workbench.
         iterfield=["atlasname"],
     )
 
-    parcellate_data = pe.Node(
+    parcellate_data = pe.MapNode(
         CiftiParcellate(direction='COLUMN'),
         mem_gb=mem_gb,
         name='parcellate_data',
         n_procs=omp_nthreads,
+        iterfield=["atlas_label"],
     )
 
-    correlate_data = pe.Node(
+    correlate_data = pe.MapNode(
         CiftiCorrelation(),
         mem_gb=mem_gb,
         name='correlate_data',
         n_procs=omp_nthreads,
+        iterfield=["in_file"],
     )
 
     # Create a node to plot the matrixes
@@ -294,7 +296,7 @@ timeseries with the Connectome Workbench.
         (parcellate_data, correlate_data, [('out_file', 'in_file')]),
         (parcellate_data, outputnode, [('out_file', 'timeseries')]),
         (correlate_data, outputnode, [('out_file', 'correlations')]),
-        (correlate_data, matrix_plot, [('out_file', 'time_series_tsv')]),
+        (parcellate_data, matrix_plot, [('out_file', 'time_series_tsv')]),
         (matrix_plot, outputnode, [('connectplot', 'connectplot')]),
     ])
 
