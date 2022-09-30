@@ -21,7 +21,6 @@ def init_fcon_ts_wf(
     t1w_to_native,
     mni_to_t1w,
     omp_nthreads,
-    bold_file,
     name="fcons_ts_wf",
 ):
     """Extract BOLD time series and compute functional connectivity.
@@ -37,7 +36,6 @@ def init_fcon_ts_wf(
                 t1w_to_native="identity",
                 mni_to_t1w="identity",
                 omp_nthreads=1,
-                bold_file="/path/to/file.nii.gz",
                 name="fcons_ts_wf",
             )
 
@@ -48,8 +46,6 @@ def init_fcon_ts_wf(
         transformation files from tw1 to native space ( from fmriprep)
     mni_to_t1w
     %(omp_nthreads)s
-    bold_file: str
-        bold file for post processing
     name
 
     Inputs
@@ -110,7 +106,6 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         name='outputnode',
     )
 
-    inputnode.inputs.bold_file = bold_file
     inputnode.inputs.atlas_names = ATLAS_NAMES
 
     # get atlases via pkgrf
@@ -120,17 +115,20 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         iterfield=["atlasname"],
     )
 
-    # get transform file via string manipulation
-    transformfile = get_transformfile(
-        bold_file=bold_file,
-        mni_to_t1w=mni_to_t1w,
-        t1w_to_native=t1w_to_native,
+    get_transformfile_node = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["transformfile"],
+            function=get_transformfile,
+        ),
+        name="get_transformfile_node",
     )
+    get_transformfile_node.inputs.mni_to_t1w = mni_to_t1w
+    get_transformfile_node.inputs.t1w_to_native = t1w_to_native
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     atlas_transform = pe.MapNode(
         ApplyTransformsx(
-            transforms=transformfile,
             interpolation="MultiLabel",
             input_image_type=3,
             dimension=3,
@@ -159,9 +157,11 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
         # Transform Atlas to correct MNI2009 space
         (inputnode, outputnode, [('atlas_names', 'atlas_names')]),
         (inputnode, atlas_file_grabber, [('atlas_names', 'atlasname')]),
+        (inputnode, get_transformfile_node, [('bold_file', 'bold_file')]),
         (inputnode, nifti_connect, [('clean_bold', 'filtered_file')]),
         (inputnode, matrix_plot, [('clean_bold', 'in_file'), ['atlas_names', 'atlas_names']]),
         (atlas_file_grabber, atlas_transform, [('out_file', 'input_image')]),
+        (get_transformfile_node, atlas_transform, [('transformfile', 'transforms')]),
         (atlas_transform, nifti_connect, [('output_image', 'atlas')]),
         (nifti_connect, outputnode, [('time_series_tsv', 'timeseries'),
                                      ('fcon_matrix_tsv', 'correlations')]),
