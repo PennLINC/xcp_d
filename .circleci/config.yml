@@ -95,7 +95,7 @@ jobs:
           command: |
             mkdir -p /tmp/nifti_with_freesurfer/test
             CHECK_OUTPUTS_FILE="nifti_with_freesurfer_outputs.txt"
-            find /src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/tmp/nifti_with_freesurfer/++ | grep -v sourcedata | sort > /tmp/nifti_with_freesurfer/test/outputs.out
+            find /src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/nifti_with_freesurfer/test/outputs.out
             diff /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE} /tmp/nifti_with_freesurfer/test/outputs.out
             exit $?
 
