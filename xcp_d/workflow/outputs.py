@@ -224,7 +224,7 @@ def init_writederivatives_wf(
             ])
 
     else:  # For cifti files
-        # Write out detivatives via DerivativesDataSink
+        # Write out derivatives via DerivativesDataSink
         write_derivative_cleandata_wf = pe.Node(DerivativesDataSink(
             base_directory=output_dir,
             meta_dict=cleaned_data_dictionary,

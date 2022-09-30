@@ -111,10 +111,6 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="List of TSV file with time series. Aligned with the list of atlases in atlas_names",
     )
-    sc217_timeseries = File(exists=True, mandatory=True, desc="sc217 atlas")
-    sc417_timeseries = File(exists=True, mandatory=True, desc="sc417 atlas")
-    gd333_timeseries = File(exists=True, mandatory=True, desc="gordon atlas")
-    gs360_timeseries = File(exists=True, mandatory=True, desc="glasser atlas")
 
 
 class _ConnectPlotOutputSpec(TraitedSpec):
