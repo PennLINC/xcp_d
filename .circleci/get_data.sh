@@ -1,26 +1,36 @@
 
-if [[ "$SHELL" =~ zsh ]]; then
+if [[ "$SHELL" == zsh ]]; then
   setopt SH_WORD_SPLIT
 fi
 
 # Edit these for project-wide testing
 WGET="wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q"
-LOCAL_PATCH= ~/projects/xcp_d/xcp_d  # Change to your local patch 
-IMAGE=pennlinc/xcp_d:unstable
+LOCAL_PATCH="~/projects/xcp_d/xcp_d"  # Change to your local patch
+IMAGE="pennlinc/xcp_d:unstable"
 
 # Determine if we're in a CI test
 if [[ "${CIRCLECI}" = "true" ]]; then
-  IN_CI=true
+  IN_CI="true"
   NTHREADS=2
   OMP_NTHREADS=2
+
   if [[ -n "${CIRCLE_CPUS}" ]]; then
     NTHREADS=${CIRCLE_CPUS}
     OMP_NTHREADS=$(expr $NTHREADS - 1)
   fi
+
 else
   IN_CI="false"
   NTHREADS=2
   OMP_NTHREADS=2
+
+  # check that the local xcp_d path exists
+  if [ ! -d $LOCAL_PATCH ]
+  then
+    echo "Path $LOCAL_PATCH DNE"
+    exit 125
+  fi
+
 fi
 export IN_CI NTHREADS OMP_NTHREADS
 
@@ -109,7 +119,7 @@ The results of running a colornest subject through fmriprep
 freesurfer_colornest:
 ---------------------
 
-The freesurfer results for the same data as in `fmriprep_colornest`
+The freesurfer results for the same data as in "fmriprep_colornest"
 
 fsaverage*:
 -----------
