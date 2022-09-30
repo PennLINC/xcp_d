@@ -3,7 +3,7 @@
 """Workflows for extracting time series and computing functional connectivity."""
 
 import nilearn as nl
-from nipype import Function, JoinNode
+from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -87,42 +87,44 @@ with  *Nilearn* {nl.__version__}'s *NiftiLabelsMasker* for the following atlases
 [@Gordon_2014] atlases.  Corresponding pair-wise functional connectivity between
 all regions was computed for each atlas, which was operationalized as the
 Pearson's correlation of each parcel's (unsmoothed) timeseries.
- """
+"""
+
+    ATLAS_NAMES = [
+        "Schaefer100x17",
+        "Schaefer200x17",
+        "Schaefer300x17",
+        "Schaefer400x17",
+        "Schaefer500x17",
+        "Schaefer600x17",
+        "Schaefer700x17",
+        "Schaefer800x17",
+        "Schaefer900x17",
+        "Schaefer1000x17",
+        "Glasser360",
+        "Gordon333",
+        "TianSubcortical",
+    ]
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['bold_file', 'clean_bold', 'ref_file']),
+        niu.IdentityInterface(fields=['bold_file', 'clean_bold', 'ref_file', 'atlas_names']),
         name='inputnode',
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['timeseries', 'correlations', 'connectplot']),
+        niu.IdentityInterface(fields=['atlas_names', 'timeseries', 'correlations', 'connectplot']),
         name='outputnode',
     )
 
     inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.atlas_names = ATLAS_NAMES
 
     # get atlases via pkgrf
-    ATLAS_NAMES = [
-        "schaefer100x17",
-        "schaefer200x17",
-        "schaefer300x17",
-        "schaefer400x17",
-        "schaefer500x17",
-        "schaefer600x17",
-        "schaefer700x17",
-        "schaefer800x17",
-        "schaefer900x17",
-        "schaefer1000x17",
-        "glasser360",
-        "gordon333",
-        "tiansubcortical",
-    ]
-    atlas_nifti_grabber = pe.Node(
+    atlas_nifti_grabber = pe.MapNode(
         Function(input_names=["atlasname"], output_names=["out_file"], function=get_atlas_nifti),
         name="atlas_nifti_grabber",
+        iterfield=["atlasname"],
     )
-    atlas_nifti_grabber.iterables = ("atlasname", ATLAS_NAMES)
 
-    # get transfrom file via string manipulation
+    # get transform file via string manipulation
     transformfile = get_transformfile(bold_file=bold_file,
                                       mni_to_t1w=mni_to_t1w,
                                       t1w_to_native=t1w_to_native)
@@ -136,275 +138,39 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
             dimension=3,
         ),
         name="atlas_mni_to_native",
+        iterfield=["input_image"],
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
 
-    nifti_connect = pe.Node(NiftiConnect(), name="nifti_connect", mem_gb=mem_gb)
+    nifti_connect = pe.MapNode(
+        NiftiConnect(),
+        name="nifti_connect",
+        iterfield=["atlas"],
+        mem_gb=mem_gb,
+    )
 
-    reconnect_node = JoinNode(
-        Function(
-            input_names=["datetime_list"],
-            output_names=["dob_sorted"],
-            function=None,
-        ),
-        joinsource=atlas_nifti_grabber,
-        joinfield=['atlasname'],
-        name="rejoin",
+    # Create a node to plot the matrixes
+    matrix_plot = pe.Node(
+        ConnectPlot(),
+        name="matrix_plot_wf",
+        mem_gb=mem_gb,
     )
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, atlas_nifti_grabber, [('ref_file', 'reference_image')]),
-        (atlas_nifti_grabber, atlas_transform, [('out_file, input_image')]),
+        (inputnode, outputnode, [('atlas_names', 'atlas_names')]),
+        (inputnode, atlas_nifti_grabber, [('atlas_names', 'atlasname')]),
         (inputnode, nifti_connect, [('clean_bold', 'filtered_file')]),
-        (nifti_connect, outputnode, [('time_series_tsv', 'sc317_ts'),
-                                     ('fcon_matrix_tsv', 'sc317_fc')]),
+        (inputnode, matrix_plot, [('bold_file', 'in_file'), ['atlas_names', 'atlas_names']]),
+        (atlas_nifti_grabber, atlas_transform, [('out_file', 'input_image')]),
+        (atlas_transform, nifti_connect, [('output_image', 'atlas')]),
+        (nifti_connect, outputnode, [('time_series_tsv', 'timeseries'),
+                                     ('fcon_matrix_tsv', 'correlations')]),
+        (nifti_connect, matrix_plot, [('time_series_tsv', 'time_series_tsv')]),
+        (matrix_plot, outputnode, [('connectplot', 'connectplot')]),
     ])
 
-    schaefer_117_transform = pe.Node(ApplyTransformsx(input_image=sc117atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_117",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-
-    schaefer_217_transform = pe.Node(ApplyTransformsx(input_image=sc217atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_217",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-    schaefer_317_transform = pe.Node(ApplyTransformsx(input_image=sc317atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_317",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-
-    schaefer_417_transform = pe.Node(ApplyTransformsx(input_image=sc417atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_417",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-    schaefer_517_transform = pe.Node(ApplyTransformsx(input_image=sc517atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_517",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-
-    schaefer_617_transform = pe.Node(ApplyTransformsx(input_image=sc617atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_617",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-    schaefer_717_transform = pe.Node(ApplyTransformsx(input_image=sc717atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_717",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-
-    schaefer_817_transform = pe.Node(ApplyTransformsx(input_image=sc817atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_817",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-    schaefer_917_transform = pe.Node(ApplyTransformsx(input_image=sc917atlas,
-                                                      transforms=transformfile,
-                                                      interpolation="MultiLabel",
-                                                      input_image_type=3,
-                                                      dimension=3),
-                                     name="apply_transform_schaefer_917",
-                                     mem_gb=mem_gb,
-                                     n_procs=omp_nthreads)
-
-    schaefer_1017_transform = pe.Node(ApplyTransformsx(input_image=sc1017atlas,
-                                                       transforms=transformfile,
-                                                       interpolation="MultiLabel",
-                                                       input_image_type=3,
-                                                       dimension=3),
-                                      name="apply_transform_schaefer_1017",
-                                      mem_gb=mem_gb,
-                                      n_procs=omp_nthreads)
-    gs360_transform = pe.Node(ApplyTransformsx(input_image=gs360atlas,
-                                               transforms=transformfile,
-                                               interpolation="MultiLabel",
-                                               input_image_type=3,
-                                               dimension=3),
-                              name="apply_tranform_gs36",
-                              mem_gb=mem_gb,
-                              n_procs=omp_nthreads)
-    gd333_transform = pe.Node(ApplyTransformsx(input_image=gd333atlas,
-                                               transforms=transformfile,
-                                               interpolation="MultiLabel",
-                                               input_image_type=3,
-                                               dimension=3),
-                              name="apply_tranform_gd33",
-                              mem_gb=mem_gb,
-                              n_procs=omp_nthreads)
-
-    ts50_transform = pe.Node(ApplyTransformsx(input_image=ts50atlas,
-                                              transforms=transformfile,
-                                              interpolation="MultiLabel",
-                                              input_image_type=3,
-                                              dimension=3),
-                             name="apply_tranform_tian50",
-                             mem_gb=mem_gb,
-                             n_procs=omp_nthreads)
-
-    # Create a node to plot the matrixes
-    matrix_plot = pe.Node(ConnectPlot(in_file=bold_file),
-                          name="matrix_plot_wf",
-                          mem_gb=mem_gb)
-
-    # Get the timeseries and the correlation coefficient of the timeseries
-    # i.e: functional connectivity matrix
-
-    NiftiConnect_sc17 = pe.Node(NiftiConnect(),
-                                name="sc17_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc27 = pe.Node(NiftiConnect(),
-                                name="sc27_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc37 = pe.Node(NiftiConnect(),
-                                name="sc37_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc47 = pe.Node(NiftiConnect(),
-                                name="sc47_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc57 = pe.Node(NiftiConnect(),
-                                name="sc57_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc67 = pe.Node(NiftiConnect(),
-                                name="sc67_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc77 = pe.Node(NiftiConnect(),
-                                name="sc77_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc87 = pe.Node(NiftiConnect(),
-                                name="sc87_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc97 = pe.Node(NiftiConnect(),
-                                name="sc97_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_sc107 = pe.Node(NiftiConnect(),
-                                 name="sc107_connect",
-                                 mem_gb=mem_gb)
-    NiftiConnect_gd33 = pe.Node(NiftiConnect(),
-                                name="gd33_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_gs36 = pe.Node(NiftiConnect(),
-                                name="gs36_connect",
-                                mem_gb=mem_gb)
-    NiftiConnect_ts50 = pe.Node(NiftiConnect(),
-                                name="tiansub_connect",
-                                mem_gb=mem_gb)
-
-    workflow.connect([
-        # Transform Atlas to correct MNI2009 space
-        (inputnode, schaefer_117_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_217_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_317_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_417_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_517_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_617_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_717_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_817_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_917_transform, [('ref_file', 'reference_image')]),
-        (inputnode, schaefer_1017_transform, [('ref_file', 'reference_image')]),
-        (inputnode, gs360_transform, [('ref_file', 'reference_image')]),
-        (inputnode, gd333_transform, [('ref_file', 'reference_image')]),
-        (inputnode, ts50_transform, [('ref_file', 'reference_image')]),
-
-        # Load bold for timeseries extraction and connectivity
-        (inputnode, NiftiConnect_sc17, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc27, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc37, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc47, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc57, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc67, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc77, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc87, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc97, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_sc107, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_gd33, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_gs36, [('clean_bold', 'filtered_file')]),
-        (inputnode, NiftiConnect_ts50, [('clean_bold', 'filtered_file')]),
-
-        # Link the atlas to the transformed file as necessary
-        (schaefer_117_transform, NiftiConnect_sc17, [('output_image', 'atlas')]),
-        (schaefer_217_transform, NiftiConnect_sc27, [('output_image', 'atlas')]),
-        (schaefer_317_transform, NiftiConnect_sc37, [('output_image', 'atlas')]),
-        (schaefer_417_transform, NiftiConnect_sc47, [('output_image', 'atlas')]),
-        (schaefer_517_transform, NiftiConnect_sc57, [('output_image', 'atlas')]),
-        (schaefer_617_transform, NiftiConnect_sc67, [('output_image', 'atlas')]),
-        (schaefer_717_transform, NiftiConnect_sc77, [('output_image', 'atlas')]),
-        (schaefer_817_transform, NiftiConnect_sc87, [('output_image', 'atlas')]),
-        (schaefer_917_transform, NiftiConnect_sc97, [('output_image', 'atlas')]),
-        (schaefer_1017_transform, NiftiConnect_sc107, [('output_image', 'atlas')]),
-        (gd333_transform, NiftiConnect_gd33, [('output_image', 'atlas')]),
-        (gs360_transform, NiftiConnect_gs36, [('output_image', 'atlas')]),
-        (ts50_transform, NiftiConnect_ts50, [('output_image', 'atlas')]),
-
-        # Connect out the matrixes as needed to the output node
-        (NiftiConnect_sc17, outputnode, [('time_series_tsv', 'sc117_ts'),
-                                         ('fcon_matrix_tsv', 'sc117_fc')]),
-        (NiftiConnect_sc27, outputnode, [('time_series_tsv', 'sc217_ts'),
-                                         ('fcon_matrix_tsv', 'sc217_fc')]),
-        (NiftiConnect_sc37, outputnode, [('time_series_tsv', 'sc317_ts'),
-                                         ('fcon_matrix_tsv', 'sc317_fc')]),
-        (NiftiConnect_sc47, outputnode, [('time_series_tsv', 'sc417_ts'),
-                                         ('fcon_matrix_tsv', 'sc417_fc')]),
-        (NiftiConnect_sc57, outputnode, [('time_series_tsv', 'sc517_ts'),
-                                         ('fcon_matrix_tsv', 'sc517_fc')]),
-        (NiftiConnect_sc67, outputnode, [('time_series_tsv', 'sc617_ts'),
-                                         ('fcon_matrix_tsv', 'sc617_fc')]),
-        (NiftiConnect_sc77, outputnode, [('time_series_tsv', 'sc717_ts'),
-                                         ('fcon_matrix_tsv', 'sc717_fc')]),
-        (NiftiConnect_sc87, outputnode, [('time_series_tsv', 'sc817_ts'),
-                                         ('fcon_matrix_tsv', 'sc817_fc')]),
-        (NiftiConnect_sc97, outputnode, [('time_series_tsv', 'sc917_ts'),
-                                         ('fcon_matrix_tsv', 'sc917_fc')]),
-        (NiftiConnect_sc107, outputnode, [('time_series_tsv', 'sc1017_ts'),
-                                          ('fcon_matrix_tsv', 'sc1017_fc')]),
-        (NiftiConnect_gs36, outputnode, [('time_series_tsv', 'gs360_ts'),
-                                         ('fcon_matrix_tsv', 'gs360_fc')]),
-        (NiftiConnect_gd33, outputnode, [('time_series_tsv', 'gd333_ts'),
-                                         ('fcon_matrix_tsv', 'gd333_fc')]),
-        (NiftiConnect_ts50, outputnode, [('time_series_tsv', 'ts50_ts'),
-                                         ('fcon_matrix_tsv', 'ts50_fc')]),
-        # Have the timeseries plotted and connected to the output node
-        (NiftiConnect_sc27, matrix_plot, [('time_series_tsv',
-                                           'sc217_timeseries')]),
-        (NiftiConnect_sc47, matrix_plot, [('time_series_tsv',
-                                           'sc417_timeseries')]),
-        (NiftiConnect_gs36, matrix_plot, [('time_series_tsv',
-                                           'gd333_timeseries')]),
-        (NiftiConnect_gd33, matrix_plot, [('time_series_tsv',
-                                           'gs360_timeseries')]),
-        (matrix_plot, outputnode, [('connectplot', 'connectplot')])
-    ])
     return workflow
 
 
