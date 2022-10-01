@@ -1,8 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
-
-import glob
 import json
 import os
 import sys
@@ -296,11 +294,13 @@ def init_subject_wf(
 
     workflow = Workflow(name=name)
 
+    info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
+
     workflow.__desc__ = f"""
 ### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
-was used to post-process the outputs of fMRIPrep version {getfmriprepv(fmri_dir=fmri_dir)}
-[@esteban2019fmriprep;esteban2020analysis, RRID:SCR_016216].
+was used to post-process the outputs of {input_type} version {info_dict["version"]}
+{info_dict["references"]}.
 XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
 
@@ -469,17 +469,28 @@ def _pop(inlist):
     return inlist
 
 
-def getfmriprepv(fmri_dir):
-    """Get fmriprep/nibabies/dcan/hcp version."""
-    datax = glob.glob(fmri_dir + '/dataset_description.json')
+def get_preproc_pipeline_info(input_type, fmri_dir):
+    """Get preprocessing pipeline information."""
+    info_dict = {}
 
-    if datax:
-        datax = datax[0]
-        with open(datax) as f:
-            datay = json.load(f)
+    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description):
+        with open(dataset_description) as f:
+            dataset_dict = json.load(f)
 
-        fvers = datay['GeneratedBy'][0]['Version']
+        info_dict["version"] = dataset_dict['GeneratedBy'][0]['Version']
     else:
-        fvers = str('Unknown vers')
+        info_dict["version"] = "unknown"
 
-    return fvers
+    if input_type == "fmriprep":
+        info_dict["references"] = "[@esteban2019fmriprep;esteban2020analysis, RRID:SCR_016216]"
+    elif input_type == "dcan":
+        info_dict["references"] = ""
+    elif input_type == "hcp":
+        info_dict["references"] = ""
+    elif input_type == "nibabies":
+        info_dict["references"] = ""
+    else:
+        raise ValueError(f"Unsupported input_type '{input_type}'")
+
+    return info_dict
