@@ -84,7 +84,8 @@ def get_parser():
 
     parser.add_argument(
         '--func-only',
-        action='store',
+        action='store_true',
+        default=False,
         help="Run the functional post-processing workflows only.",
     )
 
