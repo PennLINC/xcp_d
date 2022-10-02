@@ -673,6 +673,7 @@ def build_workflow(opts, retval):
         custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
+        func_only=opts.func_only,
         input_type=opts.input_type,
         name='xcpd_wf')
     retval['return_code'] = 0
