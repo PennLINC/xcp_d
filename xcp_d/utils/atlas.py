@@ -111,7 +111,7 @@ def get_atlas_cifti(atlas_name):
                 'xcp_d',
                 (
                     'data/ciftiatlas/'
-                    f'Schaefer2018_{atlas_name[8:11]}Parcels_17Networks_order.dlabel.nii',
+                    f'Schaefer2018_{atlas_name[8:11]}Parcels_17Networks_order.dlabel.nii'
                 ),
             )
     elif atlas_name == 'Glasser360':
