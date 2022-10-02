@@ -21,7 +21,7 @@ from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
-from xcp_d.workflow.connectivity import init_cifti_conts_wf
+from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
@@ -219,7 +219,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     mem_gbx = _create_mem_gb(cifti_file)
 
-    cifti_conts_wf = init_cifti_conts_wf(
+    fcon_ts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
         name='cifti_ts_con_wf',
         omp_nthreads=omp_nthreads)
@@ -379,8 +379,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, cifti_conts_wf,
-                       [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
 
     # reho and alff
     workflow.connect([(filtering_wf, alff_compute_wf,
@@ -403,9 +402,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
         (reho_compute_wf, outputnode, [('outputnode.lh_reho', 'reho_lh'),
                                        ('outputnode.rh_reho', 'reho_rh')]),
-        (cifti_conts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
-                                      ('outputnode.correlations', 'correlations'),
-                                      ('outputnode.timeseries', 'timeseries')]),
+        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
+                                  ('outputnode.correlations', 'correlations'),
+                                  ('outputnode.timeseries', 'timeseries')]),
     ])
 
     # write derivatives
@@ -422,7 +421,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (reho_compute_wf, write_derivative_wf,
          [('outputnode.rh_reho', 'inputnode.reho_rh'),
           ('outputnode.lh_reho', 'inputnode.reho_lh')]),
-        (cifti_conts_wf, write_derivative_wf,
+        (fcon_ts_wf, write_derivative_wf,
             [('outputnode.atlas_names', 'inputnode.atlas_names'),
              ('outputnode.correlations', 'inputnode.correlations'),
              ('outputnode.timeseries', 'inputnode.timeseries')]),
@@ -470,8 +469,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (cifti_conts_wf, ds_report_connectivity, [('outputnode.connectplot',
-                                                   "in_file")])
+        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
 
     # exexetive summary workflow

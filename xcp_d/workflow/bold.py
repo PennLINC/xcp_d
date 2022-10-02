@@ -29,7 +29,7 @@ from xcp_d.utils.utils import (
     get_transformfilex,
     stringforparams,
 )
-from xcp_d.workflow.connectivity import init_fcon_ts_wf
+from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
@@ -240,11 +240,13 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     mem_gbx = _create_mem_gb(bold_file)
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
-                                 mni_to_t1w=mni_to_t1w,
-                                 t1w_to_native=_t12native(bold_file),
-                                 name="fcons_ts_wf",
-                                 omp_nthreads=omp_nthreads)
+    fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        mem_gb=mem_gbx['timeseries'],
+        mni_to_t1w=mni_to_t1w,
+        t1w_to_native=_t12native(bold_file),
+        name="fcons_ts_wf",
+        omp_nthreads=omp_nthreads,
+    )
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
                                            TR=TR,
@@ -593,10 +595,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml',
-                                                'in_file')]),
-        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml',
-                                                'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
     # exexetive summary workflow

@@ -116,7 +116,8 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
 class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
         exists=True,
-        manadatory=True,
+        mandatory=True,
+        desc="Path to SVG file with four correlation heat maps.",
     )
 
 

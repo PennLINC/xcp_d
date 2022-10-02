@@ -16,12 +16,12 @@ from xcp_d.utils.utils import get_transformfile
 
 
 @fill_doc
-def init_fcon_ts_wf(
+def init_nifti_functional_connectivity_wf(
     mem_gb,
     t1w_to_native,
     mni_to_t1w,
     omp_nthreads,
-    name="fcons_ts_wf",
+    name="nifti_fcon_wf",
 ):
     """Extract BOLD time series and compute functional connectivity.
 
@@ -30,13 +30,13 @@ def init_fcon_ts_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.connectivity import init_fcon_ts_wf
-            wf = init_fcon_ts_wf(
+            from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
+            wf = init_nifti_functional_connectivity_wf(
                 mem_gb=0.1,
                 t1w_to_native="identity",
                 mni_to_t1w="identity",
                 omp_nthreads=1,
-                name="fcons_ts_wf",
+                name="nifti_fcon_wf",
             )
 
     Parameters
@@ -175,10 +175,10 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
 
 
 @fill_doc
-def init_cifti_conts_wf(
+def init_cifti_functional_connectivity_wf(
     mem_gb,
     omp_nthreads,
-    name="cifti_ts_con_wf",
+    name="cifti_fcon_wf",
 ):
     """Extract CIFTI time series.
 
@@ -187,11 +187,11 @@ def init_cifti_conts_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.connectivity import init_cifti_conts_wf
-            wf = init_cifti_conts_wf(
+            from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
+            wf = init_cifti_functional_connectivity_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="cifti_ts_con_wf",
+                name="cifti_fcon_wf",
             )
 
     Parameters
@@ -203,13 +203,13 @@ def init_cifti_conts_wf(
     ------
     clean_bold
         clean cifti after filtered out nuisscance and filtering
-    atlas_names
+    %(atlas_names)s
         Defined in the function.
 
     Outputs
     -------
-    atlas_names : list of str
-        List of atlas names. Used for indexing ``timeseries`` and ``correlations``.
+    %(atlas_names)s
+        Used for indexing ``timeseries`` and ``correlations``.
     timeseries : list of str
         List of paths to atlas-specific time series files.
     correlations : list of str

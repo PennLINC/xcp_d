@@ -190,6 +190,14 @@ cifti : :obj:`bool`
     Default is False.
 """
 
+docdict["atlas_names"] = """
+atlas_names : :obj:`list` of :obj:`str`
+    A list of atlases used for parcellating the BOLD data.
+    The atlases include: "Schaefer100x17", "Schaefer200x17", "Schaefer300x17", "Schaefer400x17",
+    "Schaefer500x17", "Schaefer600x17", "Schaefer700x17", "Schaefer800x17", "Schaefer900x17",
+    "Schaefer1000x17", "Glasser360", "Gordon333", and "TianSubcortical".
+"""
+
 docdict_indented = {}
 
 
