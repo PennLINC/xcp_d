@@ -10,7 +10,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
+from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_transformfile
 
@@ -56,8 +56,6 @@ def init_nifti_functional_connectivity_wf(
     ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
-    %(atlas_names)s
-        Defined within the workflow.
 
     Outputs
     -------
@@ -82,24 +80,8 @@ Corresponding pair-wise functional connectivity between all regions was computed
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 """
 
-    ATLAS_NAMES = [
-        "Schaefer100x17",
-        "Schaefer200x17",
-        "Schaefer300x17",
-        "Schaefer400x17",
-        "Schaefer500x17",
-        "Schaefer600x17",
-        "Schaefer700x17",
-        "Schaefer800x17",
-        "Schaefer900x17",
-        "Schaefer1000x17",
-        "Glasser360",
-        "Gordon333",
-        "TianSubcortical",
-    ]
-
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold_file", "ref_file", "clean_bold", "atlas_names"]),
+        niu.IdentityInterface(fields=["bold_file", "ref_file", "clean_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -107,13 +89,20 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         name="outputnode",
     )
 
-    inputnode.inputs.atlas_names = ATLAS_NAMES
-
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
-        Function(input_names=["atlasname"], output_names=["out_file"], function=get_atlas_nifti),
+        Function(
+            input_names=["atlas_name"],
+            output_names=["atlas_file"],
+            function=get_atlas_nifti,
+        ),
         name="atlas_file_grabber",
-        iterfield=["atlasname"],
+        iterfield=["atlas_name"],
+    )
+
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
     )
 
     get_transformfile_node = pe.Node(
@@ -150,19 +139,20 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
         ConnectPlot(),
-        name="matrix_plot_wf",
+        name="matrix_plot",
         mem_gb=mem_gb,
     )
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, outputnode, [("atlas_names", "atlas_names")]),
-        (inputnode, atlas_file_grabber, [("atlas_names", "atlasname")]),
         (inputnode, get_transformfile_node, [("bold_file", "bold_file")]),
         (inputnode, atlas_transform, [("ref_file", "reference_image")]),
         (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
-        (inputnode, matrix_plot, [("clean_bold", "in_file"), ["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, atlas_transform, [("out_file", "input_image")]),
+        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (atlas_file_grabber, atlas_transform, [("atlas_file", "input_image")]),
         (get_transformfile_node, atlas_transform, [("transformfile", "transforms")]),
         (atlas_transform, nifti_connect, [("output_image", "atlas")]),
         (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
@@ -230,24 +220,8 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 the Connectome Workbench.
 """
 
-    ATLAS_NAMES = [
-        "Schaefer100x17",
-        "Schaefer200x17",
-        "Schaefer300x17",
-        "Schaefer400x17",
-        "Schaefer500x17",
-        "Schaefer600x17",
-        "Schaefer700x17",
-        "Schaefer800x17",
-        "Schaefer900x17",
-        "Schaefer1000x17",
-        "Glasser360",
-        "Gordon333",
-        "TianSubcortical",
-    ]
-
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "atlas_names"]),
+        niu.IdentityInterface(fields=["clean_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -255,13 +229,20 @@ the Connectome Workbench.
         name="outputnode",
     )
 
-    inputnode.inputs.atlas_names = ATLAS_NAMES
-
     # get atlases via pkgrf
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
+    )
+
     atlas_file_grabber = pe.MapNode(
-        Function(input_names=["atlasname"], output_names=["out_file"], function=get_atlas_cifti),
+        Function(
+            input_names=["atlas_name"],
+            output_names=["atlas_file"],
+            function=get_atlas_cifti,
+        ),
         name="atlas_file_grabber",
-        iterfield=["atlasname"],
+        iterfield=["atlas_name"],
     )
 
     parcellate_data = pe.MapNode(
@@ -283,17 +264,18 @@ the Connectome Workbench.
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
         ConnectPlot(),
-        name="matrix_plot_wf",
+        name="matrix_plot",
         mem_gb=mem_gb,
     )
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, outputnode, [("atlas_names", "atlas_names")]),
-        (inputnode, atlas_file_grabber, [("atlas_names", "atlasname")]),
         (inputnode, parcellate_data, [("clean_bold", "in_file")]),
-        (inputnode, matrix_plot, [("clean_bold", "in_file"), ["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, parcellate_data, [("out_file", "atlas_label")]),
+        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
         (parcellate_data, correlate_data, [("out_file", "in_file")]),
         (parcellate_data, outputnode, [("out_file", "timeseries")]),
         (correlate_data, outputnode, [("out_file", "correlations")]),
