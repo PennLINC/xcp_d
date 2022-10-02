@@ -82,6 +82,12 @@ def get_parser():
     # optional arguments
     parser.add_argument('--version', action='version', version=verstr)
 
+    parser.add_argument(
+        '--func-only',
+        action='store',
+        help="Run the functional post-processing workflows only.",
+    )
+
     g_bidx = parser.add_argument_group('Options for filtering BIDS queries')
     g_bidx.add_argument(
         '--participant_label',
