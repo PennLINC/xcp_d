@@ -8,9 +8,10 @@ def get_atlas_nifti(atlasname):
 
     Parameters
     ----------
-    atlasname : {"schaefer100x17", "schaefer200x17", "schaefer300x17", "schaefer400x17", \
-                 "schaefer500x17", "schaefer600x17", "schaefer700x17", "schaefer800x17", \
-                 "schaefer900x17", "schaefer1000x17", "glasser360", "gordon360"}
+    atlasname : {"Schaefer100x17", "Schaefer200x17", "Schaefer300x17", "Schaefer400x17", \
+                 "Schaefer500x17", "Schaefer600x17", "Schaefer700x17", "Schaefer800x17", \
+                 "Schaefer900x17", "Schaefer1000x17", "Glasser360", "Gordon360", \
+                 "TianSubcortical"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -52,9 +53,10 @@ def get_atlas_cifti(atlasname):
 
     Parameters
     ----------
-    atlasname : {"schaefer100x17", "schaefer200x17", "schaefer300x17", "schaefer400x17", \
-                 "schaefer500x17", "schaefer600x17", "schaefer700x17", "schaefer800x17", \
-                 "schaefer900x17", "schaefer1000x17", "glasser360", "gordon360"}
+    atlasname : {"Schaefer100x17", "Schaefer200x17", "Schaefer300x17", "Schaefer400x17", \
+                 "Schaefer500x17", "Schaefer600x17", "Schaefer700x17", "Schaefer800x17", \
+                 "Schaefer900x17", "Schaefer1000x17", "Glasser360", "Gordon360", \
+                 "TianSubcortical"}
         The name of the CIFTI atlas to fetch.
 
     Returns
