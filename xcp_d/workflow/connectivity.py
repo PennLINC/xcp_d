@@ -269,7 +269,6 @@ the Connectome Workbench.
     )
 
     workflow.connect([
-        # Transform Atlas to correct MNI2009 space
         (inputnode, parcellate_data, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
