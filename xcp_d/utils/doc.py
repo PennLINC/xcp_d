@@ -198,6 +198,16 @@ atlas_names : :obj:`list` of :obj:`str`
     "Schaefer1000x17", "Glasser360", "Gordon333", and "TianSubcortical".
 """
 
+docdict["timeseries"] = """
+timeseries : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific time series files.
+"""
+
+docdict["correlations"] = """
+correlations : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific ROI-to-ROI correlation files.
+"""
+
 docdict_indented = {}
 
 

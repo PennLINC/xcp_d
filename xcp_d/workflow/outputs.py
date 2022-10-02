@@ -66,9 +66,12 @@ def init_writederivatives_wf(
 
     Inputs
     ------
-    atlas_names
-    timeseries
-    correlations
+    %(atlas_names)s
+        Used for indexing ``timeseries`` and ``correlations``.
+    timeseries : list of str
+        List of paths to parcellated time series files.
+    correlations : list of str
+        List of paths to ROI-to-ROI correlation files.
     qc_file
         quality control files
     processed_bold
@@ -83,18 +86,30 @@ def init_writederivatives_wf(
         reho left hemisphere
     reho_rh
         reho right hemisphere
+    reho_out
+    fd
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold',
-        'alff_out', 'smoothed_alff',
-        'atlas_names', 'timeseries', 'correlations',
-        'reho_lh', 'reho_rh', 'reho_out',
-        'qc_file',
-        'fd',
-    ]),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "atlas_names",
+                "timeseries",
+                "correlations",
+                "qc_file",
+                "processed_bold",
+                "smoothed_bold",
+                "alff_out",
+                "smoothed_alff",
+                "reho_lh",
+                "reho_rh",
+                "reho_out",
+                "fd",
+            ],
+        ),
+        name="inputnode",
+    )
 
     # Create dictionary of basic information
     cleaned_data_dictionary = {

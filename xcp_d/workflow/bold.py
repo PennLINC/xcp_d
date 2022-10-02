@@ -131,14 +131,17 @@ def init_boldpostprocess_wf(
     ------
     bold_file
         BOLD series NIfTI file
-    mni_to_t1w
-        MNI to T1W ants Transformation file/h5
     ref_file
         Bold reference file from fmriprep
     bold_mask
         bold_mask from fmriprep
-    cutstom_conf
+    custom_confounds
         custom regressors
+    mni_to_t1w
+        MNI to T1W ants Transformation file/h5
+    t1w
+    t1seg
+    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -152,24 +155,12 @@ def init_boldpostprocess_wf(
         smoothed alff
     reho_out
         reho output computed by afni.3dreho
-    sc217_ts
-        schaefer 200 timeseries
-    sc217_fc
-        schaefer 200 func matrices
-    sc417_ts
-        schaefer 400 timeseries
-    sc417_fc
-        schaefer 400 func matrices
-    gs360_ts
-        glasser 360 timeseries
-    gs360_fc
-        glasser 360  func matrices
-    gd333_ts
-        gordon 333 timeseries
-    gd333_fc
-        gordon 333 func matrices
+    %(atlas_names)s
+    %(timeseries)s
+    %(correlations)s
     qc_file
         quality control files
+    fd
     """
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
@@ -221,10 +212,21 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
-                't1w', 't1seg', 'fmriprep_confounds_tsv']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold_file',
+                'ref_file',
+                'bold_mask',
+                'custom_confounds',
+                'mni_to_t1w',
+                't1w',
+                't1seg',
+                'fmriprep_confounds_tsv',
+            ],
+        ),
+        name='inputnode',
+    )
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
@@ -232,11 +234,23 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-        'reho_out', 'atlas_names', 'timeseries', 'correlations', 'qc_file', 'fd'
-    ]),
-        name='outputnode')
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'processed_bold',
+                'smoothed_bold',
+                'alff_out',
+                'smoothed_alff',
+                'reho_out',
+                'atlas_names',
+                'timeseries',
+                'correlations',
+                'qc_file',
+                'fd',
+            ],
+        ),
+        name='outputnode',
+    )
 
     mem_gbx = _create_mem_gb(bold_file)
 

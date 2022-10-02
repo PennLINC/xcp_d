@@ -122,8 +122,11 @@ def init_ciftipostprocess_wf(
     ------
     cifti_file
         CIFTI file
-    cutstom_conf
+    custom_confounds
         custom regressors
+    t1w
+    t1seg
+    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -139,22 +142,9 @@ def init_ciftipostprocess_wf(
         reho left hemisphere
     reho_rh
         reho right hemisphere
-    sc217_ts
-        schaefer 200 timeseries
-    sc217_fc
-        schaefer 200 func matrices
-    sc417_ts
-        schaefer 400 timeseries
-    sc417_fc
-        schaefer 400 func matrices
-    gs360_ts
-        glasser 360 timeseries
-    gs360_fc
-        glasser 360  func matrices
-    gd333_ts
-        gordon 333 timeseries
-    gd333_fc
-        gordon 333 func matrices
+    %(atlas_names)s
+    %(timeseries)s
+    %(correlations)s
     qc_file
         quality control files
     """
@@ -203,19 +193,40 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'cifti_file',
+                'custom_confounds',
+                't1w',
+                't1seg',
+                'fmriprep_confounds_tsv',
+            ],
+        ),
+        name='inputnode',
+    )
 
     inputnode.inputs.cifti_file = cifti_file
     inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-        'reho_lh', 'reho_rh', 'atlas_names', 'timeseries', 'correlations', 'qc_file',
-        'fd'
-    ]),
-        name='outputnode')
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'processed_bold',
+                'smoothed_bold',
+                'alff_out',
+                'smoothed_alff',
+                'reho_lh',
+                'reho_rh',
+                'atlas_names',
+                'timeseries',
+                'correlations',
+                'qc_file',
+                'fd'
+            ],
+        ),
+        name='outputnode',
+    )
 
     mem_gbx = _create_mem_gb(cifti_file)
 

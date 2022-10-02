@@ -44,9 +44,10 @@ def init_nifti_functional_connectivity_wf(
     %(mem_gb)s
     t1w_to_native: str
         transformation files from tw1 to native space ( from fmriprep)
-    mni_to_t1w
+    %(mni_to_t1w)s
     %(omp_nthreads)s
-    name
+    %(name)s
+        Default is "nifti_fcon_wf".
 
     Inputs
     ------
@@ -55,17 +56,15 @@ def init_nifti_functional_connectivity_wf(
     ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
-    atlas_names
-        Defined within the function
+    %(atlas_names)s
+        Defined within the workflow.
 
     Outputs
     -------
-    atlas_names : list of str
-        List of atlas names. Used for indexing ``timeseries`` and ``correlations``.
-    timeseries : list of str
-        List of paths to atlas-specific time series files.
-    correlations : list of str
-        List of paths to atlas-specific ROI-to-ROI correlation files.
+    %(atlas_names)s
+        Used for indexing ``timeseries`` and ``correlations``.
+    %(timeseries)s
+    %(correlations)s
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -73,13 +72,14 @@ def init_nifti_functional_connectivity_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f"""
-Processed functional timeseries were extracted  from  the residual BOLD signal
-with  *Nilearn* {nl.__version__}'s *NiftiLabelsMasker* for the following atlases
-[@nilearn]: the Schaefer 200 and 400-parcel resolution atlas
-[@Schaefer_2017],the Glasser atlas [@Glasser_2016], and the Gordon atlas
-[@Gordon_2014] atlases.  Corresponding pair-wise functional connectivity between
-all regions was computed for each atlas, which was operationalized as the
-Pearson's correlation of each parcel's (unsmoothed) timeseries.
+Processed functional timeseries were extracted from the residual BOLD signal
+with *Nilearn's* [version {nl.__version__}, @nilearn] *NiftiLabelsMasker* for the following
+atlases:
+the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
+atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
+the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
+Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
+which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 """
 
     ATLAS_NAMES = [
@@ -99,12 +99,12 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
     ]
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['bold_file', 'ref_file', 'clean_bold', 'atlas_names']),
-        name='inputnode',
+        niu.IdentityInterface(fields=["bold_file", "ref_file", "clean_bold", "atlas_names"]),
+        name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['atlas_names', 'timeseries', 'correlations', 'connectplot']),
-        name='outputnode',
+        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        name="outputnode",
     )
 
     inputnode.inputs.atlas_names = ATLAS_NAMES
@@ -156,19 +156,19 @@ Pearson's correlation of each parcel's (unsmoothed) timeseries.
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, outputnode, [('atlas_names', 'atlas_names')]),
-        (inputnode, atlas_file_grabber, [('atlas_names', 'atlasname')]),
-        (inputnode, get_transformfile_node, [('bold_file', 'bold_file')]),
-        (inputnode, atlas_transform, [('ref_file', 'reference_image')]),
-        (inputnode, nifti_connect, [('clean_bold', 'filtered_file')]),
-        (inputnode, matrix_plot, [('clean_bold', 'in_file'), ['atlas_names', 'atlas_names']]),
-        (atlas_file_grabber, atlas_transform, [('out_file', 'input_image')]),
-        (get_transformfile_node, atlas_transform, [('transformfile', 'transforms')]),
-        (atlas_transform, nifti_connect, [('output_image', 'atlas')]),
-        (nifti_connect, outputnode, [('time_series_tsv', 'timeseries'),
-                                     ('fcon_matrix_tsv', 'correlations')]),
-        (nifti_connect, matrix_plot, [('time_series_tsv', 'time_series_tsv')]),
-        (matrix_plot, outputnode, [('connectplot', 'connectplot')]),
+        (inputnode, outputnode, [("atlas_names", "atlas_names")]),
+        (inputnode, atlas_file_grabber, [("atlas_names", "atlasname")]),
+        (inputnode, get_transformfile_node, [("bold_file", "bold_file")]),
+        (inputnode, atlas_transform, [("ref_file", "reference_image")]),
+        (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
+        (inputnode, matrix_plot, [("clean_bold", "in_file"), ["atlas_names", "atlas_names"]]),
+        (atlas_file_grabber, atlas_transform, [("out_file", "input_image")]),
+        (get_transformfile_node, atlas_transform, [("transformfile", "transforms")]),
+        (atlas_transform, nifti_connect, [("output_image", "atlas")]),
+        (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
+                                     ("fcon_matrix_tsv", "correlations")]),
+        (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
+        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
 
     return workflow
@@ -202,7 +202,9 @@ def init_cifti_functional_connectivity_wf(
     Inputs
     ------
     clean_bold
-        clean cifti after filtered out nuisscance and filtering
+        Clean CIFTI after filtering and nuisance regression.
+        The CIFTI file is in the same standard space as the atlases,
+        so no transformations will be applied to the data before parcellation.
     %(atlas_names)s
         Defined in the function.
 
@@ -210,23 +212,22 @@ def init_cifti_functional_connectivity_wf(
     -------
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
-    timeseries : list of str
-        List of paths to atlas-specific time series files.
-    correlations : list of str
-        List of paths to atlas-specific ROI-to-ROI correlation files.
+    %(timeseries)s
+    %(correlations)s
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-Processed functional timeseries were extracted from residual BOLD  using
-Connectome Workbench[@hcppipelines]: for the following atlases: the Schaefer 200
-and 400-parcel resolution atlas [@Schaefer_2017], the Glasser atlas
-[@Glasser_2016] and the Gordon atlas [@Gordon_2014].  Corresponding pair-wise
-functional connectivity between all regions was computed for each atlas, which
-was operationalized as the Pearson's correlation of each parcel's (unsmoothed)
-timeseries with the Connectome Workbench.
+Processed functional timeseries were extracted from residual BOLD using
+Connectome Workbench [@hcppipelines] for the following atlases:
+the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
+atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
+the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
+Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
+which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
+the Connectome Workbench.
 """
 
     ATLAS_NAMES = [
@@ -246,12 +247,12 @@ timeseries with the Connectome Workbench.
     ]
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['clean_bold', 'atlas_names']),
-        name='inputnode',
+        niu.IdentityInterface(fields=["clean_bold", "atlas_names"]),
+        name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['atlas_names', 'timeseries', 'correlations', 'connectplot']),
-        name='outputnode',
+        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        name="outputnode",
     )
 
     inputnode.inputs.atlas_names = ATLAS_NAMES
@@ -264,9 +265,9 @@ timeseries with the Connectome Workbench.
     )
 
     parcellate_data = pe.MapNode(
-        CiftiParcellate(direction='COLUMN'),
+        CiftiParcellate(direction="COLUMN"),
         mem_gb=mem_gb,
-        name='parcellate_data',
+        name="parcellate_data",
         n_procs=omp_nthreads,
         iterfield=["atlas_label"],
     )
@@ -274,7 +275,7 @@ timeseries with the Connectome Workbench.
     correlate_data = pe.MapNode(
         CiftiCorrelation(),
         mem_gb=mem_gb,
-        name='correlate_data',
+        name="correlate_data",
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
@@ -288,16 +289,16 @@ timeseries with the Connectome Workbench.
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, outputnode, [('atlas_names', 'atlas_names')]),
-        (inputnode, atlas_file_grabber, [('atlas_names', 'atlasname')]),
-        (inputnode, parcellate_data, [('clean_bold', 'in_file')]),
-        (inputnode, matrix_plot, [('clean_bold', 'in_file'), ['atlas_names', 'atlas_names']]),
-        (atlas_file_grabber, parcellate_data, [('out_file', 'atlas_label')]),
-        (parcellate_data, correlate_data, [('out_file', 'in_file')]),
-        (parcellate_data, outputnode, [('out_file', 'timeseries')]),
-        (correlate_data, outputnode, [('out_file', 'correlations')]),
-        (parcellate_data, matrix_plot, [('out_file', 'time_series_tsv')]),
-        (matrix_plot, outputnode, [('connectplot', 'connectplot')]),
+        (inputnode, outputnode, [("atlas_names", "atlas_names")]),
+        (inputnode, atlas_file_grabber, [("atlas_names", "atlasname")]),
+        (inputnode, parcellate_data, [("clean_bold", "in_file")]),
+        (inputnode, matrix_plot, [("clean_bold", "in_file"), ["atlas_names", "atlas_names"]]),
+        (atlas_file_grabber, parcellate_data, [("out_file", "atlas_label")]),
+        (parcellate_data, correlate_data, [("out_file", "in_file")]),
+        (parcellate_data, outputnode, [("out_file", "timeseries")]),
+        (correlate_data, outputnode, [("out_file", "correlations")]),
+        (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
+        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
 
     return workflow
