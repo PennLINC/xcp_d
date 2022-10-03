@@ -173,7 +173,7 @@ get_bids_data() {
     then
       dataset_dir="$TEST_DATA_DIR/fmriprep"
       # Do not re-download if the folder exists
-      if [ ! -d $data_dir ]
+      if [ ! -d $dataset_dir ]
       then
         echo "Downloading ${DS} data to $dataset_dir"
 
