@@ -153,7 +153,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['desc'],
+                dismiss_entities=['desc', "space"],
                 suffix='qc',
                 extension='.csv',
             ),
@@ -166,7 +166,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['desc'],
+                dismiss_entities=['desc', "space"],
                 suffix='timeseries',
                 extension=".tsv",
             ),
@@ -179,7 +179,8 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['desc'],
+                dismiss_entities=['desc', "space"],
+                measure="pearsoncorrelation",
                 suffix='conmat',
                 extension=".tsv",
             ),
@@ -207,6 +208,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
+                dismiss_entities=["atlas", "res", "space"],
                 desc='framewisedisplacement',
                 suffix="motion",
                 extension='.tsv',
@@ -216,15 +218,8 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        workflow.connect([
-            (inputnode, timeseries_wf, [('atlas_names', 'atlas'), ('timeseries', 'in_file')]),
-            (inputnode, correlations_wf, [('atlas_names', 'atlas'), ('correlations', 'in_file')]),
-            (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
-            (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
-            (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
-            (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
-            (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
-        ])
+        workflow.connect([(inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')])])
+
         if smoothing:  # if smoothed
             # Write out detivatives via DerivativesDataSink
             write_derivative_smoothcleandata_wf = pe.Node(
@@ -256,11 +251,6 @@ def init_writederivatives_wf(
                 mem_gb=1,
             )
 
-            workflow.connect([
-                (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold', 'in_file')]),
-                (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
-            ])
-
     else:  # For cifti files
         # Write out derivatives via DerivativesDataSink
         write_derivative_cleandata_wf = pe.Node(
@@ -285,7 +275,7 @@ def init_writederivatives_wf(
                 dismiss_entities=['desc'],
                 density='91k',
                 suffix='alff',
-                extension='.dtseries.nii',
+                extension='.dscalar.nii',
             ),
             name='write_derivative_alff_wf',
             run_without_submitting=True,
@@ -328,6 +318,7 @@ def init_writederivatives_wf(
                 check_hdr=False,
                 dismiss_entities=['desc'],
                 density='91k',
+                suffix='conmat',
                 extension='.pconn.nii',
             ),
             name="correlations_wf",
@@ -372,7 +363,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['den'],
+                dismiss_entities=["atlas", "den", "res", "space"],
                 desc='framewisedisplacement',
                 suffix="motion",
                 extension='.tsv',
@@ -383,16 +374,8 @@ def init_writederivatives_wf(
         )
 
         workflow.connect([
-            (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
-            (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
-            (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
-            (inputnode, timeseries_wf, [('timeseries', 'in_file'),
-                                        ('atlas_names', 'atlas')]),
-            (inputnode, correlations_wf, [('correlations', 'in_file'),
-                                          ('atlas_names', 'atlas')]),
             (inputnode, write_derivative_reholh_wf, [('reho_lh', 'in_file')]),
             (inputnode, write_derivative_rehorh_wf, [('reho_rh', 'in_file')]),
-            (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
         ])
 
         if smoothing:  # If smoothed
@@ -428,9 +411,19 @@ def init_writederivatives_wf(
                 mem_gb=1,
             )
 
-            workflow.connect([
-                (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold', 'in_file')]),
-                (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
-            ])
+    workflow.connect([
+        (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
+        (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
+        (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
+        (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
+    ])
+
+    if smoothing:
+        workflow.connect([
+            (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold', 'in_file')]),
+            (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
+        ])
 
     return workflow
