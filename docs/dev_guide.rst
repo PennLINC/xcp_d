@@ -13,23 +13,35 @@ Setting up your testing environment
 In order to run the tests locally, you must do the following:
 
 #.  Install Docker.
-#.  Create a ``.circleci/local_xcpd_path.txt`` file within your local clone of the ``xcp_d`` repository.
-    This file should contain the path to your local clone of the ``xcp_d`` repository.
-#.  Create a symlinked testing directory.
+#.  Create a testing directory.
     The tests will download and generate a lot of data,
     so it is a good idea to use a separate testing directory with symlinks of the testing files.
     For example:
 
     .. code-block:: bash
 
-        # First, create the folder you want to use for testing
         mkdir /path/to/testing/folder/
 
-        # Create symlink of each of the testing files
+#.  Symlink the ``xcp_d``'s testing files to the new testing directory.
+    For example:
+
+    .. code-block:: bash
+
+        ln -s /path/to/xcp_d/.circleci/get_data.sh /path/to/testing/folder/get_data.sh
         ln -s /path/to/xcp_d/.circleci/CiftiWithFreeSurferTest.sh /path/to/testing/folder/CiftiWithFreeSurferTest.sh
         ln -s /path/to/xcp_d/.circleci/NiftiWithFreeSurferTest.sh /path/to/testing/folder/NiftiWithFreeSurferTest.sh
         ln -s /path/to/xcp_d/.circleci/NiftiWithoutFreeSurferTest.sh /path/to/testing/folder/NiftiWithoutFreeSurferTest.sh
         ln -s /path/to/xcp_d/.circleci/RunPyTests.sh /path/to/testing/folder/RunPyTests.sh
+
+#.  Create a ``local_xcpd_path.txt`` file within your new testing folder.
+    This file should contain the path to your local clone of the ``xcp_d`` repository.
+    For example:
+
+    .. code-block:: bash
+
+        # Note that the path includes the xcp_d code subdirectory.
+        # It's not just the path to the repository.
+        echo "/path/to/xcp_d/xcp_d/" >> /path/to/testing/folder/local_xcpd_path.txt
 
 #.  Now, you can run the tests locally, within the new testing directory.
     The test scripts will call ``.circleci/get_data.sh`` to download the necessary data.
