@@ -165,7 +165,7 @@ get_bids_data() {
         rm withoutfs_sub01.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     # colornest subject who also has freesurfer data (in a different archive)
@@ -184,7 +184,7 @@ get_bids_data() {
         rm withfs_fmriprep_colornest001.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     elif [[ ${DS} = freesurfer_colornest ]]
@@ -202,7 +202,7 @@ get_bids_data() {
         rm withfs_fs_colornest001.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     elif [[ ${DS} = fsaverage4 ]]
@@ -220,7 +220,7 @@ get_bids_data() {
         rm withfs_fs_fsaverage4.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     elif [[ ${DS} = fsaverage5 ]]
@@ -238,7 +238,7 @@ get_bids_data() {
         rm withfs_fs_fsaverage5.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     elif [[ ${DS} = fsaverage6 ]]
@@ -256,7 +256,7 @@ get_bids_data() {
         rm withfs_fs_fsaverage6.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     elif [[ ${DS} = fsaverage_sym ]]
@@ -274,7 +274,7 @@ get_bids_data() {
         rm withfs_fs_fsaverage_sym.tar.xz
 
       else
-        echo "Data directory already exists. If you need to re-download the data, remove the data folder."
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
     else
