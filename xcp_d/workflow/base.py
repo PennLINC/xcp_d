@@ -281,17 +281,16 @@ def init_subject_wf(
                                      task=task_id,
                                      bids_validate=False)
 
-    regfile = select_registrationfile(subj_data=subj_data)
-    subject_data = select_cifti_bold(subj_data=subj_data)
-    t1wseg = extract_t1w_seg(subj_data=subj_data)
+    mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
+    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
+    t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
         name='inputnode')
     inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.t1w = t1wseg[0]
-    inputnode.inputs.t1seg = t1wseg[1]
-    mni_to_t1w = regfile[0]
+    inputnode.inputs.t1w = t1w
+    inputnode.inputs.t1seg = t1wseg
     inputnode.inputs.mni_to_t1w = mni_to_t1w
 
     workflow = Workflow(name=name)
@@ -326,7 +325,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 """
 
     summary = pe.Node(SubjectSummary(subject_id=subject_id,
-                                     bold=subject_data[0]),
+                                     bold=preproc_nifti_files),
                       name='summary')
 
     about = pe.Node(AboutSummary(version=__version__,
@@ -335,7 +334,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_summary = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=subject_data[0][0],
+        source_file=preproc_nifti_files[0],
         desc='summary',
         datatype="figures"),
         name='ds_report_summary')
@@ -345,7 +344,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         fmri_dir=fmri_dir,
         subject_id=subject_id,
         output_dir=output_dir,
-        t1w_to_mni=regfile[1],
+        t1w_to_mni=t1w_to_mni,
         input_type=input_type,
         mem_gb=5)  # RF: need to chnage memory size
 
@@ -355,94 +354,66 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                                     ('t1seg', 'inputnode.t1seg')]),
     ])
 
-    # loop over each bold data to be postprocessed
-    # RF: get rid of ii's
-    if cifti:
-        ii = 0
-        for cifti_file in subject_data[1]:
-            ii = ii + 1
-            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=cifti_file)
-            cifti_postproc_wf = init_ciftipostprocess_wf(
-                cifti_file=cifti_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
-                smoothing=smoothing,
-                params=params,
-                head_radius=head_radius,
-                custom_confounds=custom_confoundsx,
-                omp_nthreads=omp_nthreads,
-                num_cifti=len(subject_data[1]),
-                dummytime=dummytime,
-                fd_thresh=fd_thresh,
-                despike=despike,
-                layout=layout,
-                mni_to_t1w=regfile[0],
-                output_dir=output_dir,
-                name='cifti_postprocess_' + str(ii) + '_wf')
+    # determine the appropriate post-processing workflow
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
-            ds_report_about = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=cifti_file,
-                desc='about',
-                datatype="figures",
-            ),
-                name='ds_report_about',
-                run_without_submitting=True)
+    # loop over each bold run to be postprocessed
+    for i_run, bold_file in enumerate(preproc_files):
+        custom_confounds_file = get_customfile(
+            custom_confounds=custom_confounds,
+            bold_file=bold_file,
+        )
 
-            workflow.connect([(inputnode, cifti_postproc_wf,
-                               [('custom_confounds', 'inputnode.custom_confounds'),
-                                ('t1w', 'inputnode.t1w'),
-                                ('t1seg', 'inputnode.t1seg')])])
+        bold_postproc_wf = postproc_wf_function(
+            bold_file=bold_file,
+            lower_bpf=lower_bpf,
+            upper_bpf=upper_bpf,
+            bpf_order=bpf_order,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            bandpass_filter=bandpass_filter,
+            smoothing=smoothing,
+            params=params,
+            head_radius=head_radius,
+            omp_nthreads=omp_nthreads,
+            n_runs=len(preproc_files),
+            custom_confounds=custom_confounds_file,
+            layout=layout,
+            despike=despike,
+            dummytime=dummytime,
+            fd_thresh=fd_thresh,
+            output_dir=output_dir,
+            mni_to_t1w=mni_to_t1w,
+            name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
+        )
 
-    else:
-        ii = 0
-        for bold_file in subject_data[0]:
-            ii = ii + 1
-            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=bold_file)
-            bold_postproc_wf = init_boldpostprocess_wf(
-                bold_file=bold_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
-                smoothing=smoothing,
-                params=params,
-                head_radius=head_radius,
-                omp_nthreads=omp_nthreads,
-                num_bold=len(subject_data[0]),
-                custom_confounds=custom_confoundsx,
-                layout=layout,
-                despike=despike,
-                dummytime=dummytime,
-                fd_thresh=fd_thresh,
-                output_dir=output_dir,
-                mni_to_t1w=mni_to_t1w,
-                name='bold_postprocess_' + str(ii) + '_wf')
-
-            ds_report_about = pe.Node(DerivativesDataSink(
+        # NOTE: TS- Why is the data sink initialized separately for each run?
+        # If it's run-specific, shouldn't the name reflect the run?
+        ds_report_about = pe.Node(
+            DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
                 desc='about',
-                datatype="figures"),
-                name='ds_report_about',
-                run_without_submitting=True)
+                datatype="figures",
+            ),
+            name='ds_report_about',
+            run_without_submitting=True,
+        )
 
-            workflow.connect([(inputnode, bold_postproc_wf,
-                               [('mni_to_t1w', 'inputnode.mni_to_t1w'),
-                                ('t1w', 'inputnode.t1w'),
-                                ('t1seg', 'inputnode.t1seg')])])
+        workflow.connect(
+            [
+                (
+                    inputnode, bold_postproc_wf,
+                    [
+                        ('t1w', 'inputnode.t1w'),
+                        ('t1seg', 'inputnode.t1seg'),
+                    ],
+                ),
+            ],
+        )
 
     try:
         workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
