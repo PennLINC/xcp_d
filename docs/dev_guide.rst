@@ -70,10 +70,12 @@ To make an xcp_d release, complete the following steps:
 2.  Modify the CITATION.cff file, updating the version number and release date.
 3.  In GitHub's release tool, draft a new release.
 
-    1.  Define a release title. The release title should be the same as the new tag (e.g., ``1.0.0``).
-        For pre-releases, use release candidate terminology (e.g., ``0.0.12rc1``) and select the "This is a pre-release" option.
-    2.  Select the "Generate release notes" button. This will create most of the necessary release notes based on ``xcp_d``'s config file.
-    3.  At the top of the release notes, add some information summarizing the release.
+    #.  Create a new tag. Use semantic versioning terminology (e.g., ``1.0.0``).
+        For pre-releases, use release candidate terminology (e.g., ``0.0.12rc1``).
+    #.  Define a release title. The release title should be the same as the new tag (e.g., ``1.0.0``).
+    #.  For pre-releases, select the "This is a pre-release" option.
+    #.  Select the "Generate release notes" button. This will create most of the necessary release notes based on ``xcp_d``'s config file.
+    #.  At the top of the release notes, add some information summarizing the release.
 
 4.  Once the release notes have been completed, you can publish the release.
     This will make the release on GitHub.
