@@ -26,10 +26,10 @@ else
   LOCAL_PATCH_FILE="local_xcpd_path.txt"
 
   # check that the patch file exists
-  if [ ! -f LOCAL_PATCH_FILE ]
+  if [ ! -f $LOCAL_PATCH_FILE ]
   then
     echo "File $LOCAL_PATCH_FILE DNE"
-    exit 125
+    exit 1
   fi
 
   LOCAL_PATCH="$( cat ${LOCAL_PATCH_FILE} )"  # Load path from file
@@ -38,7 +38,7 @@ else
   if [ ! -d $LOCAL_PATCH ]
   then
     echo "Path $LOCAL_PATCH DNE"
-    exit 125
+    exit 1
   fi
 
 fi
@@ -279,7 +279,7 @@ get_bids_data() {
 
     else
       echo "Dataset ${DS} not recognized"
-      exit 125
+      exit 1
 
     fi
     cd ${ENTRYDIR}
