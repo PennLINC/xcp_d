@@ -29,7 +29,7 @@ from xcp_d.utils.utils import (
     get_transformfilex,
     stringforparams,
 )
-from xcp_d.workflow.connectivity import init_fcon_ts_wf
+from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
@@ -131,14 +131,17 @@ def init_boldpostprocess_wf(
     ------
     bold_file
         BOLD series NIfTI file
-    mni_to_t1w
-        MNI to T1W ants Transformation file/h5
     ref_file
         Bold reference file from fmriprep
     bold_mask
         bold_mask from fmriprep
-    cutstom_conf
+    custom_confounds
         custom regressors
+    mni_to_t1w
+        MNI to T1W ants Transformation file/h5
+    t1w
+    t1seg
+    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -152,24 +155,12 @@ def init_boldpostprocess_wf(
         smoothed alff
     reho_out
         reho output computed by afni.3dreho
-    sc217_ts
-        schaefer 200 timeseries
-    sc217_fc
-        schaefer 200 func matrices
-    sc417_ts
-        schaefer 400 timeseries
-    sc417_fc
-        schaefer 400 func matrices
-    gs360_ts
-        glasser 360 timeseries
-    gs360_fc
-        glasser 360  func matrices
-    gd333_ts
-        gordon 333 timeseries
-    gd333_fc
-        gordon 333 func matrices
+    %(atlas_names)s
+    %(timeseries)s
+    %(correlations)s
     qc_file
         quality control files
+    fd
     """
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
@@ -221,10 +212,21 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
-                't1w', 't1seg', 'fmriprep_confounds_tsv']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold_file',
+                'ref_file',
+                'bold_mask',
+                'custom_confounds',
+                'mni_to_t1w',
+                't1w',
+                't1seg',
+                'fmriprep_confounds_tsv',
+            ],
+        ),
+        name='inputnode',
+    )
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
@@ -233,24 +235,33 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-        'reho_out', 'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc', 'sc317_ts',
-        'sc317_fc', 'sc417_ts', 'sc417_fc', 'sc517_ts', 'sc517_fc', 'sc617_ts',
-        'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts',
-        'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'ts50_ts', 'ts50_fc', 'gs360_ts',
-        'gs360_fc', 'gd333_ts', 'gd333_fc', 'qc_file', 'fd'
-    ]),
-        name='outputnode')
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'processed_bold',
+                'smoothed_bold',
+                'alff_out',
+                'smoothed_alff',
+                'reho_out',
+                'atlas_names',
+                'timeseries',
+                'correlations',
+                'qc_file',
+                'fd',
+            ],
+        ),
+        name='outputnode',
+    )
 
     mem_gbx = _create_mem_gb(bold_file)
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
-                                 mni_to_t1w=mni_to_t1w,
-                                 t1w_to_native=_t12native(bold_file),
-                                 bold_file=bold_file,
-                                 name="fcons_ts_wf",
-                                 omp_nthreads=omp_nthreads)
+    fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        mem_gb=mem_gbx['timeseries'],
+        mni_to_t1w=mni_to_t1w,
+        t1w_to_native=_t12native(bold_file),
+        name="fcons_ts_wf",
+        omp_nthreads=omp_nthreads,
+    )
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
                                            TR=TR,
@@ -481,7 +492,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # functional connect workflow
     workflow.connect([
-        (inputnode, fcon_ts_wf, [('ref_file', 'inputnode.ref_file')]),
+        (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
+                                 ('ref_file', 'inputnode.ref_file')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
@@ -517,32 +529,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                        ('outputnode.smoothed_alff',
                                         'smoothed_alff')]),
         (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
-        (fcon_ts_wf, outputnode, [('outputnode.sc117_ts', 'sc117_ts'),
-                                  ('outputnode.sc117_fc', 'sc117_fc'),
-                                  ('outputnode.sc217_ts', 'sc217_ts'),
-                                  ('outputnode.sc217_fc', 'sc217_fc'),
-                                  ('outputnode.sc317_ts', 'sc317_ts'),
-                                  ('outputnode.sc317_fc', 'sc317_fc'),
-                                  ('outputnode.sc417_ts', 'sc417_ts'),
-                                  ('outputnode.sc417_fc', 'sc417_fc'),
-                                  ('outputnode.sc517_ts', 'sc517_ts'),
-                                  ('outputnode.sc517_fc', 'sc517_fc'),
-                                  ('outputnode.sc617_ts', 'sc617_ts'),
-                                  ('outputnode.sc617_fc', 'sc617_fc'),
-                                  ('outputnode.sc717_ts', 'sc717_ts'),
-                                  ('outputnode.sc717_fc', 'sc717_fc'),
-                                  ('outputnode.sc817_ts', 'sc817_ts'),
-                                  ('outputnode.sc817_fc', 'sc817_fc'),
-                                  ('outputnode.sc917_ts', 'sc917_ts'),
-                                  ('outputnode.sc917_fc', 'sc917_fc'),
-                                  ('outputnode.sc1017_ts', 'sc1017_ts'),
-                                  ('outputnode.sc1017_fc', 'sc1017_fc'),
-                                  ('outputnode.gs360_ts', 'gs360_ts'),
-                                  ('outputnode.gs360_fc', 'gs360_fc'),
-                                  ('outputnode.gd333_ts', 'gd333_ts'),
-                                  ('outputnode.gd333_fc', 'gd333_fc'),
-                                  ('outputnode.ts50_ts', 'ts50_ts'),
-                                  ('outputnode.ts50_fc', 'ts50_fc')])
+        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
+                                  ('outputnode.correlations', 'correlations'),
+                                  ('outputnode.timeseries', 'timeseries')]),
     ])
 
     # write derivatives
@@ -558,34 +547,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
         (reho_compute_wf, write_derivative_wf, [('outputnode.reho_out',
                                                  'inputnode.reho_out')]),
-        (fcon_ts_wf, write_derivative_wf,
-         [('outputnode.sc117_ts', 'inputnode.sc117_ts'),
-          ('outputnode.sc117_fc', 'inputnode.sc117_fc'),
-          ('outputnode.sc217_ts', 'inputnode.sc217_ts'),
-          ('outputnode.sc217_fc', 'inputnode.sc217_fc'),
-          ('outputnode.sc317_ts', 'inputnode.sc317_ts'),
-          ('outputnode.sc317_fc', 'inputnode.sc317_fc'),
-          ('outputnode.sc417_ts', 'inputnode.sc417_ts'),
-          ('outputnode.sc417_fc', 'inputnode.sc417_fc'),
-          ('outputnode.sc517_ts', 'inputnode.sc517_ts'),
-          ('outputnode.sc517_fc', 'inputnode.sc517_fc'),
-          ('outputnode.sc617_ts', 'inputnode.sc617_ts'),
-          ('outputnode.sc617_fc', 'inputnode.sc617_fc'),
-          ('outputnode.sc717_ts', 'inputnode.sc717_ts'),
-          ('outputnode.sc717_fc', 'inputnode.sc717_fc'),
-          ('outputnode.sc817_ts', 'inputnode.sc817_ts'),
-          ('outputnode.sc817_fc', 'inputnode.sc817_fc'),
-          ('outputnode.sc917_ts', 'inputnode.sc917_ts'),
-          ('outputnode.sc917_fc', 'inputnode.sc917_fc'),
-          ('outputnode.sc1017_ts', 'inputnode.sc1017_ts'),
-          ('outputnode.sc1017_fc', 'inputnode.sc1017_fc'),
-          ('outputnode.gs360_ts', 'inputnode.gs360_ts'),
-          ('outputnode.gs360_fc', 'inputnode.gs360_fc'),
-          ('outputnode.gd333_ts', 'inputnode.gd333_ts'),
-          ('outputnode.gd333_fc', 'inputnode.gd333_fc'),
-          ('outputnode.ts50_ts', 'inputnode.ts50_ts'),
-          ('outputnode.ts50_fc', 'inputnode.ts50_fc')]),
-        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
+        (fcon_ts_wf, write_derivative_wf, [('outputnode.atlas_names', 'inputnode.atlas_names'),
+                                           ('outputnode.correlations', 'inputnode.correlations'),
+                                           ('outputnode.timeseries', 'inputnode.timeseries')]),
+        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')]),
     ])
 
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
@@ -644,12 +609,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot',
-                                               'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml',
-                                                'in_file')]),
-        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml',
-                                                'in_file')]),
+        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
     # exexetive summary workflow

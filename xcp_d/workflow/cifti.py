@@ -21,7 +21,7 @@ from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
-from xcp_d.workflow.connectivity import init_cifti_conts_wf
+from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
@@ -122,8 +122,11 @@ def init_ciftipostprocess_wf(
     ------
     bold_file
         CIFTI file
-    cutstom_conf
+    custom_confounds
         custom regressors
+    t1w
+    t1seg
+    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -139,22 +142,9 @@ def init_ciftipostprocess_wf(
         reho left hemisphere
     reho_rh
         reho right hemisphere
-    sc217_ts
-        schaefer 200 timeseries
-    sc217_fc
-        schaefer 200 func matrices
-    sc417_ts
-        schaefer 400 timeseries
-    sc417_fc
-        schaefer 400 func matrices
-    gs360_ts
-        glasser 360 timeseries
-    gs360_fc
-        glasser 360  func matrices
-    gd333_ts
-        gordon 333 timeseries
-    gd333_fc
-        gordon 333 func matrices
+    %(atlas_names)s
+    %(timeseries)s
+    %(correlations)s
     qc_file
         quality control files
     """
@@ -203,27 +193,44 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'cifti_file',
+                'custom_confounds',
+                't1w',
+                't1seg',
+                'fmriprep_confounds_tsv',
+            ],
+        ),
+        name='inputnode',
+    )
 
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-        'reho_lh', 'reho_rh', 'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc',
-        'sc317_ts', 'sc317_fc', 'sc517_ts', 'sc517_fc', 'sc517_ts', 'sc517_fc',
-        'sc617_ts', 'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc',
-        'sc917_ts', 'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'gs360_ts',
-        'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
-        'fd'
-    ]),
-        name='outputnode')
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'processed_bold',
+                'smoothed_bold',
+                'alff_out',
+                'smoothed_alff',
+                'reho_lh',
+                'reho_rh',
+                'atlas_names',
+                'timeseries',
+                'correlations',
+                'qc_file',
+                'fd'
+            ],
+        ),
+        name='outputnode',
+    )
 
     mem_gbx = _create_mem_gb(bold_file)
 
-    cifti_conts_wf = init_cifti_conts_wf(
+    fcon_ts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
         name='cifti_ts_con_wf',
         omp_nthreads=omp_nthreads)
@@ -383,8 +390,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, cifti_conts_wf,
-                       [('filtered_file', 'inputnode.clean_cifti')])])
+    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
 
     # reho and alff
     workflow.connect([(filtering_wf, alff_compute_wf,
@@ -407,32 +413,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
         (reho_compute_wf, outputnode, [('outputnode.lh_reho', 'reho_lh'),
                                        ('outputnode.rh_reho', 'reho_rh')]),
-        (cifti_conts_wf, outputnode, [('outputnode.sc117_ts', 'sc117_ts'),
-                                      ('outputnode.sc117_fc', 'sc117_fc'),
-                                      ('outputnode.sc217_ts', 'sc217_ts'),
-                                      ('outputnode.sc217_fc', 'sc217_fc'),
-                                      ('outputnode.sc317_ts', 'sc317_ts'),
-                                      ('outputnode.sc317_fc', 'sc317_fc'),
-                                      ('outputnode.sc417_ts', 'sc417_ts'),
-                                      ('outputnode.sc417_fc', 'sc417_fc'),
-                                      ('outputnode.sc517_ts', 'sc517_ts'),
-                                      ('outputnode.sc517_fc', 'sc517_fc'),
-                                      ('outputnode.sc617_ts', 'sc617_ts'),
-                                      ('outputnode.sc617_fc', 'sc617_fc'),
-                                      ('outputnode.sc717_ts', 'sc717_ts'),
-                                      ('outputnode.sc717_fc', 'sc717_fc'),
-                                      ('outputnode.sc817_ts', 'sc817_ts'),
-                                      ('outputnode.sc817_fc', 'sc817_fc'),
-                                      ('outputnode.sc917_ts', 'sc917_ts'),
-                                      ('outputnode.sc917_fc', 'sc917_fc'),
-                                      ('outputnode.sc1017_ts', 'sc1017_ts'),
-                                      ('outputnode.sc1017_fc', 'sc1017_fc'),
-                                      ('outputnode.gs360_ts', 'gs360_ts'),
-                                      ('outputnode.gs360_fc', 'gs360_fc'),
-                                      ('outputnode.gd333_ts', 'gd333_ts'),
-                                      ('outputnode.gd333_fc', 'gd333_fc'),
-                                      ('outputnode.ts50_ts', 'ts50_ts'),
-                                      ('outputnode.ts50_fc', 'ts50_fc')])
+        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
+                                  ('outputnode.correlations', 'correlations'),
+                                  ('outputnode.timeseries', 'timeseries')]),
     ])
 
     # write derivatives
@@ -449,33 +432,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (reho_compute_wf, write_derivative_wf,
          [('outputnode.rh_reho', 'inputnode.reho_rh'),
           ('outputnode.lh_reho', 'inputnode.reho_lh')]),
-        (cifti_conts_wf, write_derivative_wf,
-         [('outputnode.sc117_ts', 'inputnode.sc117_ts'),
-          ('outputnode.sc117_fc', 'inputnode.sc117_fc'),
-          ('outputnode.sc217_ts', 'inputnode.sc217_ts'),
-          ('outputnode.sc217_fc', 'inputnode.sc217_fc'),
-          ('outputnode.sc317_ts', 'inputnode.sc317_ts'),
-          ('outputnode.sc317_fc', 'inputnode.sc317_fc'),
-          ('outputnode.sc417_ts', 'inputnode.sc417_ts'),
-          ('outputnode.sc417_fc', 'inputnode.sc417_fc'),
-          ('outputnode.sc517_ts', 'inputnode.sc517_ts'),
-          ('outputnode.sc517_fc', 'inputnode.sc517_fc'),
-          ('outputnode.sc617_ts', 'inputnode.sc617_ts'),
-          ('outputnode.sc617_fc', 'inputnode.sc617_fc'),
-          ('outputnode.sc717_ts', 'inputnode.sc717_ts'),
-          ('outputnode.sc717_fc', 'inputnode.sc717_fc'),
-          ('outputnode.sc817_ts', 'inputnode.sc817_ts'),
-          ('outputnode.sc817_fc', 'inputnode.sc817_fc'),
-          ('outputnode.sc917_ts', 'inputnode.sc917_ts'),
-          ('outputnode.sc917_fc', 'inputnode.sc917_fc'),
-          ('outputnode.sc1017_ts', 'inputnode.sc1017_ts'),
-          ('outputnode.sc1017_fc', 'inputnode.sc1017_fc'),
-          ('outputnode.gs360_ts', 'inputnode.gs360_ts'),
-          ('outputnode.gs360_fc', 'inputnode.gs360_fc'),
-          ('outputnode.gd333_ts', 'inputnode.gd333_ts'),
-          ('outputnode.gd333_fc', 'inputnode.gd333_fc'),
-          ('outputnode.ts50_ts', 'inputnode.ts50_ts'),
-          ('outputnode.ts50_fc', 'inputnode.ts50_fc')]),
+        (fcon_ts_wf, write_derivative_wf,
+            [('outputnode.atlas_names', 'inputnode.atlas_names'),
+             ('outputnode.correlations', 'inputnode.correlations'),
+             ('outputnode.timeseries', 'inputnode.timeseries')]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
@@ -520,8 +480,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (cifti_conts_wf, ds_report_connectivity, [('outputnode.connectplot',
-                                                   "in_file")])
+        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
 
     # exexetive summary workflow

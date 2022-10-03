@@ -180,6 +180,12 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     transformfile : list of str
         A list of paths to transform files.
     """
+    import glob
+    import os
+
+    from pkg_resources import resource_filename as pkgrf
+    from templateflow.api import get as get_template
+
     file_base = os.path.basename(str(bold_file))  # file base is the bold_name
 
     # get the correct template via templateflow/ pkgrf
