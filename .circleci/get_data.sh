@@ -5,7 +5,7 @@ fi
 
 # Edit these for project-wide testing
 WGET="wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q"
-LOCAL_PATCH="~/projects/xcp_d/xcp_d"  # Change to your local patch
+LOCAL_PATCH="$( cat local_xcpd_path.txt )"  # Load path from file
 IMAGE="pennlinc/xcp_d:unstable"
 
 # Determine if we're in a CI test
