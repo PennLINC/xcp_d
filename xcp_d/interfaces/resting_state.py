@@ -44,7 +44,7 @@ class _SurfaceReHoInputSpec(BaseInterfaceInputSpec):
 
 
 class _SurfaceReHoOutputSpec(TraitedSpec):
-    surf_gii = File(exists=True, manadatory=True, desc=" lh hemisphere reho")
+    surf_gii = File(exists=True, mandatory=True, desc=" lh hemisphere reho")
 
 
 class SurfaceReHo(SimpleInterface):
@@ -109,7 +109,7 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
-    alff_out = File(exists=True, manadatory=True, desc=" alff")
+    alff_out = File(exists=True, mandatory=True, desc=" alff")
 
 
 class ComputeALFF(SimpleInterface):
@@ -174,7 +174,7 @@ class _BrainPlotInputSpec(BaseInterfaceInputSpec):
 
 
 class _BrainPlotOutputSpec(TraitedSpec):
-    nifti_html = File(exists=True, manadatory=True, desc="zscore html")
+    nifti_html = File(exists=True, mandatory=True, desc="zscore html")
 
 
 class BrainPlot(SimpleInterface):

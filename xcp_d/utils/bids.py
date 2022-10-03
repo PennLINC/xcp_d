@@ -232,7 +232,7 @@ def select_registrationfile(subj_data):
 
 
 def select_cifti_bold(subj_data):
-    """Select preprocessed BOLD NIFTI and CIFTI files.
+    """Split list of preprocessed fMRI files into bold (volumetric) and cifti.
 
     Parameters
     ----------
@@ -246,15 +246,17 @@ def select_cifti_bold(subj_data):
         List of paths to preprocessed BOLD CIFTI files.
     """
     boldfile = subj_data["boldfile"]
-    bold_file = []
-    cifti_file = []
+    bold_files = []
+    cifti_files = []
 
-    for j in boldfile:
-        if "preproc_bold" in j:
-            bold_file.append(j)
-        if "bold.dtseries.nii" in j:
-            cifti_file.append(j)
-    return bold_file, cifti_file
+    for file_ in boldfile:
+        if "preproc_bold" in file_:
+            bold_files.append(file_)
+
+        elif "bold.dtseries.nii" in file_:
+            cifti_files.append(file_)
+
+    return bold_files, cifti_files
 
 
 def extract_t1w_seg(subj_data):
