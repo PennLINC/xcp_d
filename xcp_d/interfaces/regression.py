@@ -131,7 +131,7 @@ class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
 
 
 class _CiftiDespikeOutputSpec(TraitedSpec):
-    des_file = File(exists=True, manadatory=True, desc=" despike cifti")
+    des_file = File(exists=True, mandatory=True, desc=" despike cifti")
 
 
 class CiftiDespike(SimpleInterface):

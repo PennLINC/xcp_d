@@ -34,10 +34,10 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 class _NiftiConnectOutputSpec(TraitedSpec):
     time_series_tsv = File(exists=True,
-                           manadatory=True,
+                           mandatory=True,
                            desc=" time series file")
     fcon_matrix_tsv = File(exists=True,
-                           manadatory=True,
+                           mandatory=True,
                            desc=" time series file")
 
 
@@ -110,7 +110,7 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
 class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
         exists=True,
-        manadatory=True,
+        mandatory=True,
     )
 
 

@@ -47,7 +47,7 @@ class _FilteringDataInputSpec(BaseInterfaceInputSpec):
 
 
 class _FilteringDataOutputSpec(TraitedSpec):
-    filtered_file = File(exists=True, manadatory=True, desc="Filtered file")
+    filtered_file = File(exists=True, mandatory=True, desc="Filtered file")
 
 
 class FilteringData(SimpleInterface):
