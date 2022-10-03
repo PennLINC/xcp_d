@@ -129,19 +129,19 @@ class ConnectPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         ATLAS_LOOKUP = {
-            "Schaefer200x17": {
+            "Schaefer217": {
                 "title": "schaefer 200  17 networks",
                 "axes": [0, 0],
             },
-            "Schaefer400x17": {
+            "Schaefer417": {
                 "title": "schaefer 400  17 networks",
                 "axes": [0, 1],
             },
-            "Gordon333": {
+            "Gordon": {
                 "title": "Gordon 333",
                 "axes": [1, 0],
             },
-            "Glasser360": {
+            "Glasser": {
                 "title": "Glasser 360",
                 "axes": [1, 1],
             },
