@@ -12,19 +12,19 @@ def get_atlas_names():
         List of atlases.
     """
     return [
-        "Schaefer100x17",
-        "Schaefer200x17",
-        "Schaefer300x17",
-        "Schaefer400x17",
-        "Schaefer500x17",
-        "Schaefer600x17",
-        "Schaefer700x17",
-        "Schaefer800x17",
-        "Schaefer900x17",
-        "Schaefer1000x17",
-        "Glasser360",
-        "Gordon333",
-        "TianSubcortical",
+        "Schaefer117",
+        "Schaefer217",
+        "Schaefer317",
+        "Schaefer417",
+        "Schaefer517",
+        "Schaefer617",
+        "Schaefer717",
+        "Schaefer817",
+        "Schaefer917",
+        "Schaefer1017",
+        "Glasser",
+        "Gordon",
+        "subcortical",
     ]
 
 
@@ -35,10 +35,10 @@ def get_atlas_nifti(atlas_name):
 
     Parameters
     ----------
-    atlas_name : {"Schaefer100x17", "Schaefer200x17", "Schaefer300x17", "Schaefer400x17", \
-                  "Schaefer500x17", "Schaefer600x17", "Schaefer700x17", "Schaefer800x17", \
-                  "Schaefer900x17", "Schaefer1000x17", "Glasser360", "Gordon360", \
-                  "TianSubcortical"}
+    atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
+                  "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
+                  "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
+                  "subcortical"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -49,7 +49,7 @@ def get_atlas_nifti(atlas_name):
     from pkg_resources import resource_filename as pkgrf
 
     if atlas_name[:8] == 'Schaefer':
-        if atlas_name[8:12] == '1000':
+        if atlas_name[8:12] == '1017':
             atlas_file = pkgrf(
                 'xcp_d',
                 (
@@ -62,14 +62,14 @@ def get_atlas_nifti(atlas_name):
                 'xcp_d',
                 (
                     'data/niftiatlas/'
-                    f'Schaefer2018_{atlas_name[8:11]}Parcels_17Networks_order_FSLMNI152_2mm.nii'
+                    f'Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_FSLMNI152_2mm.nii'
                 ),
             )
-    elif atlas_name == 'Glasser360':
+    elif atlas_name == 'Glasser':
         atlas_file = pkgrf('xcp_d', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
-    elif atlas_name == 'Gordon333':
+    elif atlas_name == 'Gordon':
         atlas_file = pkgrf('xcp_d', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
-    elif atlas_name == 'TianSubcortical':
+    elif atlas_name == 'subcortical':
         atlas_file = pkgrf(
             'xcp_d',
             'data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz',
@@ -87,10 +87,10 @@ def get_atlas_cifti(atlas_name):
 
     Parameters
     ----------
-    atlas_name : {"Schaefer100x17", "Schaefer200x17", "Schaefer300x17", "Schaefer400x17", \
-                  "Schaefer500x17", "Schaefer600x17", "Schaefer700x17", "Schaefer800x17", \
-                  "Schaefer900x17", "Schaefer1000x17", "Glasser360", "Gordon360", \
-                  "TianSubcortical"}
+    atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
+                  "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
+                  "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
+                  "subcortical"}
         The name of the CIFTI atlas to fetch.
 
     Returns
@@ -101,7 +101,7 @@ def get_atlas_cifti(atlas_name):
     from pkg_resources import resource_filename as pkgrf
 
     if atlas_name[:8] == 'Schaefer':
-        if atlas_name[8:12] == '1000':
+        if atlas_name[8:12] == '1017':
             atlas_file = pkgrf(
                 'xcp_d',
                 'data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order.dlabel.nii',
@@ -111,20 +111,20 @@ def get_atlas_cifti(atlas_name):
                 'xcp_d',
                 (
                     'data/ciftiatlas/'
-                    f'Schaefer2018_{atlas_name[8:11]}Parcels_17Networks_order.dlabel.nii'
+                    f'Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order.dlabel.nii'
                 ),
             )
-    elif atlas_name == 'Glasser360':
+    elif atlas_name == 'Glasser':
         atlas_file = pkgrf(
             'xcp_d',
             'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii',
         )
-    elif atlas_name == 'Gordon333':
+    elif atlas_name == 'Gordon':
         atlas_file = pkgrf(
             'xcp_d',
             'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii',
         )
-    elif atlas_name == 'TianSubcortical':
+    elif atlas_name == 'subcortical':
         atlas_file = pkgrf('xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
