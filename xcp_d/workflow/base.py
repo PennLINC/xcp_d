@@ -59,6 +59,7 @@ def init_xcpd_wf(
     work_dir,
     dummytime,
     fd_thresh,
+    func_only,
     input_type='fmriprep',
     name='xcpd_wf',
 ):
@@ -97,6 +98,7 @@ def init_xcpd_wf(
                 work_dir=".",
                 dummytime=0,
                 fd_thresh=0.2,
+                func_only=False,
                 input_type='fmriprep',
                 name='xcpd_wf',
             )
@@ -168,6 +170,7 @@ def init_xcpd_wf(
             dummytime=dummytime,
             custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
+            func_only=func_only,
             input_type=input_type,
             name="single_subject_" + subject_id + "_wf")
 
@@ -204,6 +207,7 @@ def init_subject_wf(
     task_id,
     smoothing,
     custom_confounds,
+    func_only,
     output_dir,
     input_type,
     name,
@@ -238,6 +242,7 @@ def init_subject_wf(
                 task_id="rest",
                 smoothing=6.,
                 custom_confounds=None,
+                func_only=False,
                 output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
@@ -339,20 +344,21 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         datatype="figures"),
         name='ds_report_summary')
 
-    anatomical_wf = init_anatomical_wf(
-        omp_nthreads=omp_nthreads,
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        output_dir=output_dir,
-        t1w_to_mni=t1w_to_mni,
-        input_type=input_type,
-        mem_gb=5)  # RF: need to chnage memory size
+    if not func_only:
+        anatomical_wf = init_anatomical_wf(
+            omp_nthreads=omp_nthreads,
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            output_dir=output_dir,
+            t1w_to_mni=t1w_to_mni,
+            input_type=input_type,
+            mem_gb=5)  # RF: need to chnage memory size
 
-    # send t1w and t1seg to anatomical workflow
-    workflow.connect([
-        (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                    ('t1seg', 'inputnode.t1seg')]),
-    ])
+        # send t1w and t1seg to anatomical workflow
+        workflow.connect([
+            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                        ('t1seg', 'inputnode.t1seg')]),
+        ])
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
