@@ -65,12 +65,12 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
 
 
 class _QCPlotOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, manadatory=True, desc="qc file in tsv")
+    qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True,
-                      manadatory=True,
+                      mandatory=True,
                       desc="qc plot before regression")
     clean_qcplot = File(exists=True,
-                        manadatory=True,
+                        mandatory=True,
                         desc="qc plot after regression")
 
 

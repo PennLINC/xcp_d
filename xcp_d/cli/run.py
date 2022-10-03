@@ -82,6 +82,13 @@ def get_parser():
     # optional arguments
     parser.add_argument('--version', action='version', version=verstr)
 
+    parser.add_argument(
+        '--func-only',
+        action='store_true',
+        default=False,
+        help="Run the functional post-processing workflows only.",
+    )
+
     g_bidx = parser.add_argument_group('Options for filtering BIDS queries')
     g_bidx.add_argument(
         '--participant_label',
@@ -666,6 +673,7 @@ def build_workflow(opts, retval):
         custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
+        func_only=opts.func_only,
         input_type=opts.input_type,
         name='xcpd_wf')
     retval['return_code'] = 0

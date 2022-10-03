@@ -57,7 +57,7 @@ class _SurftoVolumeInputSpec(BaseInterfaceInputSpec):
 
 
 class _SurftoVolumeOutputSpec(TraitedSpec):
-    out_file = File(exists=True, manadatory=True, desc=" t1image")
+    out_file = File(exists=True, mandatory=True, desc=" t1image")
 
 
 class SurftoVolume(SimpleInterface):
@@ -89,7 +89,7 @@ class _BrainPlotxInputSpec(BaseInterfaceInputSpec):
 
 
 class _BrainPlotxOutputSpec(TraitedSpec):
-    out_html = File(exists=True, manadatory=True, desc="zscore html")
+    out_html = File(exists=True, mandatory=True, desc="zscore html")
 
 
 class BrainPlotx(SimpleInterface):
@@ -122,7 +122,7 @@ class _RegPlotInputSpec(BaseInterfaceInputSpec):
 
 
 class _RegPlotOutputSpec(TraitedSpec):
-    out_file = File(exists=True, manadatory=True, desc="svg file")
+    out_file = File(exists=True, mandatory=True, desc="svg file")
 
 
 class RegPlot(SimpleInterface):
@@ -167,10 +167,10 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
 
 class _PlotSVGDataOutputSpec(TraitedSpec):
     before_process = File(exists=True,
-                          manadatory=True,
+                          mandatory=True,
                           desc=".SVG file before processing")
     after_process = File(exists=True,
-                         manadatory=True,
+                         mandatory=True,
                          desc=".SVG file after processing")
 
 
@@ -220,7 +220,7 @@ class _RibbontoStatmapInputSpec(BaseInterfaceInputSpec):
 
 class _RibbontoStatmapOutputSpec(TraitedSpec):
     out_file = File(exists=True,
-                    manadatory=True,
+                    mandatory=True,
                     desc="ribbon > pial and white")
 
 

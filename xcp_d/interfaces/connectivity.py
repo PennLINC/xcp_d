@@ -34,10 +34,10 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 class _NiftiConnectOutputSpec(TraitedSpec):
     time_series_tsv = File(exists=True,
-                           manadatory=True,
+                           mandatory=True,
                            desc=" time series file")
     fcon_matrix_tsv = File(exists=True,
-                           manadatory=True,
+                           mandatory=True,
                            desc=" time series file")
 
 
@@ -101,16 +101,23 @@ class ApplyTransformsx(ApplyTransforms):
 
 class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="bold file")
-    sc217_timeseries = File(exists=True, mandatory=True, desc="sc217 atlas")
-    sc417_timeseries = File(exists=True, mandatory=True, desc="sc417 atlas")
-    gd333_timeseries = File(exists=True, mandatory=True, desc="gordon atlas")
-    gs360_timeseries = File(exists=True, mandatory=True, desc="glasser atlas")
+    atlas_names = InputMultiObject(
+        traits.Str,
+        mandatory=True,
+        desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
+    )
+    time_series_tsv = InputMultiObject(
+        File(exists=True),
+        mandatory=True,
+        desc="List of TSV file with time series. Aligned with the list of atlases in atlas_names",
+    )
 
 
 class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
         exists=True,
-        manadatory=True,
+        mandatory=True,
+        desc="Path to SVG file with four correlation heat maps.",
     )
 
 
@@ -121,41 +128,53 @@ class ConnectPlot(SimpleInterface):
     output_spec = _ConnectPlotOutputSpec
 
     def _run_interface(self, runtime):
-
-        if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
-            #  Get the correlation coefficient of the data
-            sc217 = np.corrcoef(
-                nb.load(self.inputs.sc217_timeseries).get_fdata().T)
-            sc417 = np.corrcoef(
-                nb.load(self.inputs.sc417_timeseries).get_fdata().T)
-            gd333 = np.corrcoef(
-                nb.load(self.inputs.gd333_timeseries).get_fdata().T)
-            gs360 = np.corrcoef(
-                nb.load(self.inputs.gs360_timeseries).get_fdata().T)
-
-        else:  # for nifti
-            #  Get the correlation coefficient of the data
-            sc217 = np.corrcoef(
-                np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
-            sc417 = np.corrcoef(
-                np.loadtxt(self.inputs.sc417_timeseries, delimiter=',').T)
-            gd333 = np.corrcoef(
-                np.loadtxt(self.inputs.gd333_timeseries, delimiter=',').T)
-            gs360 = np.corrcoef(
-                np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
+        ATLAS_LOOKUP = {
+            "Schaefer217": {
+                "title": "schaefer 200  17 networks",
+                "axes": [0, 0],
+            },
+            "Schaefer417": {
+                "title": "schaefer 400  17 networks",
+                "axes": [0, 1],
+            },
+            "Gordon": {
+                "title": "Gordon 333",
+                "axes": [1, 0],
+            },
+            "Glasser": {
+                "title": "Glasser 360",
+                "axes": [1, 1],
+            },
+        }
 
         # Generate a plot of each matrix's correlation coefficients
-        fig, ax1 = plt.subplots(2, 2)
+        fig, axes = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
         font = {'weight': 'normal', 'size': 20}
-        plot_matrix(mat=sc217, colorbar=False, vmax=1, vmin=-1, axes=ax1[0, 0])
-        ax1[0, 0].set_title('schaefer 200  17 networks', fontdict=font)
-        plot_matrix(mat=sc417, colorbar=False, vmax=1, vmin=-1, axes=ax1[0, 1])
-        ax1[0, 1].set_title('schaefer 400  17 networks', fontdict=font)
-        plot_matrix(mat=gd333, colorbar=False, vmax=1, vmin=-1, axes=ax1[1, 0])
-        ax1[1, 0].set_title('Gordon 333', fontdict=font)
-        plot_matrix(mat=gs360, colorbar=False, vmax=1, vmin=-1, axes=ax1[1, 1])
-        ax1[1, 1].set_title('Glasser 360', fontdict=font)
+
+        for atlas_name, subdict in ATLAS_LOOKUP.items():
+            atlas_idx = self.inputs.atlas_names.index(atlas_name)
+            atlas_file = self.inputs.time_series_tsv[atlas_idx]
+
+            if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
+                #  Get the correlation coefficient of the data
+                corrs = np.corrcoef(nb.load(atlas_file).get_fdata().T)
+
+            else:  # for nifti
+                #  Get the correlation coefficient of the data
+                corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter=',').T)
+
+            plot_matrix(
+                mat=corrs,
+                colorbar=False,
+                vmax=1,
+                vmin=-1,
+                axes=axes[subdict["axes"][0], subdict["axes"][1]],
+            )
+            axes[subdict["axes"][0], subdict["axes"][1]].set_title(
+                subdict["title"],
+                fontdict=font,
+            )
 
         # Write the results out
         self._results['connectplot'] = fname_presuffix(

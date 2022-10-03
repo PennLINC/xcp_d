@@ -73,7 +73,6 @@ nipype_, and requires some other neuroimaging software tools that are
 not handled by the Python's packaging system (Pypi) used to deploy
 the ``xcp_d`` package:
 
-- FSL_ (version 5.0.9 or higher)
 - ANTs_ (version 2.2.0 - or higher)
 - AFNI_ (version Debian-16.2.07)
 - `bids-validator <https://github.com/bids-standard/bids-validator>`_ (version 1.6.0)
