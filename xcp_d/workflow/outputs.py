@@ -121,26 +121,28 @@ def init_writederivatives_wf(
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
-        write_derivative_cleandata_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            meta_dict=cleaned_data_dictionary,
-            dismiss_entities=['desc'],
-            desc='denoised',
-            extension='.nii.gz',
-            source_file=bold_file,
-            compression=True),
+        write_derivative_cleandata_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                meta_dict=cleaned_data_dictionary,
+                source_file=bold_file,
+                desc='denoised',
+                extension='.nii.gz',
+                compression=True,
+            ),
             name='write_derivative_cleandata_wf',
             run_without_submitting=True,
-            mem_gb=2)
+            mem_gb=2,
+        )
 
         write_derivative_alff_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 dismiss_entities=["desc"],
-                compression=True,
                 suffix="alff",
                 extension='.nii.gz',
-                source_file=bold_file,
+                compression=True,
             ),
             name='write_derivative_alff_wf',
             run_without_submitting=True,
@@ -150,10 +152,9 @@ def init_writederivatives_wf(
         write_derivative_qcfile_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=['desc'],
-                desc='qc',
                 source_file=bold_file,
-                compression=True,
+                dismiss_entities=['desc'],
+                suffix='qc',
                 extension='.csv',
             ),
             name='write_derivative_qcfile_wf',
@@ -164,9 +165,10 @@ def init_writederivatives_wf(
         timeseries_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 dismiss_entities=['desc'],
-                desc='timeseries',
-                source_file=bold_file
+                suffix='timeseries',
+                extension=".tsv",
             ),
             name="timeseries_wf",
             run_without_submitting=True,
@@ -176,9 +178,10 @@ def init_writederivatives_wf(
         correlations_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 dismiss_entities=['desc'],
-                desc='connectivity',
-                source_file=bold_file
+                suffix='conmat',
+                extension=".tsv",
             ),
             name="correlations_wf",
             run_without_submitting=True,
@@ -189,11 +192,11 @@ def init_writederivatives_wf(
         write_derivative_reho_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                extension='.nii.gz',
-                dismiss_entities=['desc'],
-                compression=True,
-                suffix='reho',
                 source_file=bold_file,
+                dismiss_entities=['desc'],
+                suffix='reho',
+                extension='.nii.gz',
+                compression=True,
             ),
             name='write_derivative_reho_wf',
             run_without_submitting=True,
@@ -203,10 +206,10 @@ def init_writederivatives_wf(
         write_derivative_fd_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 desc='framewisedisplacement',
                 suffix="motion",
                 extension='.tsv',
-                source_file=bold_file,
             ),
             name='write_derivative_fd_wf',
             run_without_submitting=True,
@@ -228,8 +231,8 @@ def init_writederivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
-                    desc='denoisedSmoothed',
                     source_file=bold_file,
+                    desc='denoisedSmoothed',
                     extension='.nii.gz',
                     compression=True,
                 ),
@@ -242,9 +245,9 @@ def init_writederivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
+                    source_file=bold_file,
                     desc='smooth',
                     suffix="alff",
-                    source_file=bold_file,
                     extension='.nii.gz',
                     compression=True,
                 ),
@@ -260,14 +263,15 @@ def init_writederivatives_wf(
 
     else:  # For cifti files
         # Write out derivatives via DerivativesDataSink
-        write_derivative_cleandata_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            meta_dict=cleaned_data_dictionary,
-            dismiss_entities=['desc', 'den'],
-            desc='residual',
-            source_file=bold_file,
-            density='91k',
-            extension='.dtseries.nii'),
+        write_derivative_cleandata_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                meta_dict=cleaned_data_dictionary,
+                source_file=bold_file,
+                desc='residual',
+                density='91k',
+                extension='.dtseries.nii',
+            ),
             name='write_derivative_cleandata_wf',
             run_without_submitting=True,
             mem_gb=2,
@@ -276,12 +280,12 @@ def init_writederivatives_wf(
         write_derivative_alff_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
+                check_hdr=False,
                 dismiss_entities=['desc'],
                 density='91k',
                 suffix='alff',
                 extension='.dtseries.nii',
-                source_file=bold_file,
-                check_hdr=False,
             ),
             name='write_derivative_alff_wf',
             run_without_submitting=True,
@@ -291,11 +295,11 @@ def init_writederivatives_wf(
         write_derivative_qcfile_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=['desc'],
-                desc='qc',
-                extension='.csv',
-                density='91k',
                 source_file=bold_file,
+                dismiss_entities=['desc'],
+                density='91k',
+                suffix='qc',
+                extension='.csv',
             ),
             name='write_derivative_qcfile_wf',
             run_without_submitting=True,
@@ -305,11 +309,11 @@ def init_writederivatives_wf(
         timeseries_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=['desc', 'den'],
+                source_file=bold_file,
                 check_hdr=False,
+                dismiss_entities=['desc'],
                 density='91k',
                 extension='.ptseries.nii',
-                source_file=bold_file,
             ),
             name="timeseries_wf",
             run_without_submitting=True,
@@ -320,11 +324,11 @@ def init_writederivatives_wf(
         correlations_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=['desc', 'den'],
+                source_file=bold_file,
                 check_hdr=False,
+                dismiss_entities=['desc'],
                 density='91k',
                 extension='.pconn.nii',
-                source_file=bold_file,
             ),
             name="correlations_wf",
             run_without_submitting=True,
@@ -335,13 +339,13 @@ def init_writederivatives_wf(
         write_derivative_reholh_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=['desc'],
                 density='32k',
                 hemi='L',
                 suffix='reho',
                 extension='.shape.gii',
-                source_file=bold_file,
             ),
             name='write_derivative_reholh_wf',
             run_without_submitting=True,
@@ -351,13 +355,13 @@ def init_writederivatives_wf(
         write_derivative_rehorh_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=['desc'],
                 density='32k',
                 hemi='R',
                 suffix='reho',
                 extension='.shape.gii',
-                source_file=bold_file,
             ),
             name='write_derivative_rehorh_wf',
             run_without_submitting=True,
@@ -367,11 +371,11 @@ def init_writederivatives_wf(
         write_derivative_fd_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 dismiss_entities=['den'],
                 desc='framewisedisplacement',
                 suffix="motion",
                 extension='.tsv',
-                source_file=bold_file,
             ),
             name='write_derivative_fd_wf',
             run_without_submitting=True,
@@ -397,10 +401,9 @@ def init_writederivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
-                    dismiss_entities=['desc'],
+                    source_file=bold_file,
                     density='91k',
                     desc='denoisedSmoothed',
-                    source_file=bold_file,
                     extension='.dtseries.nii',
                     check_hdr=False,
                 ),
@@ -413,11 +416,10 @@ def init_writederivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
-                    dismiss_entities=['desc'],
+                    source_file=bold_file,
                     desc='smooth',
                     density='91k',
                     suffix='alff',
-                    source_file=bold_file,
                     extension='.dtseries.nii',
                     check_hdr=False,
                 ),
