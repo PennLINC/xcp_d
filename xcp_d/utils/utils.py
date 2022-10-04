@@ -500,6 +500,8 @@ def extract_ptseries(in_file):
         The first column is named "Node", and it is the index of the parcels from the CIFTI file.
         The remaining columns are the names of the parcels.
     """
+    import os
+
     import nibabel as nib
     import pandas as pd
 
@@ -520,4 +522,4 @@ def extract_ptseries(in_file):
     df_corr = df.corr(method="pearson")
     df_corr.to_csv(correlations_file, index_label="Node", sep="\t")
 
-    return timeseries_file, correlations_file
+    return os.path.abspath(timeseries_file), os.path.abspath(correlations_file)
