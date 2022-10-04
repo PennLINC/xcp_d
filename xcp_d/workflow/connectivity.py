@@ -12,7 +12,7 @@ from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiCo
 from xcp_d.interfaces.workbench import CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_transformfile, extract_ptseries
+from xcp_d.utils.utils import extract_ptseries, get_transformfile
 
 
 @fill_doc
