@@ -403,7 +403,7 @@ def init_writederivatives_wf(
                     desc='smooth',
                     density='91k',
                     suffix='alff',
-                    extension='.dtseries.nii',
+                    extension='.dscalar.nii',
                     check_hdr=False,
                 ),
                 name='write_derivative_smoothalff_wf',
