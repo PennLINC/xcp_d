@@ -480,3 +480,23 @@ def demean_detrend_data(data):
                         overwrite_data=False)  # Detrend data using linear method
 
     return detrended  # Subtract these predicted values from the demeaned data
+
+
+def extract_ptseries(in_file, timeseries_file, correlations_file):
+    """Extract time series and parcel names from ptseries CIFTI file."""
+    import nibabel as nib
+    import pandas as pd
+
+    img = nib.load(in_file)
+    assert "ConnParcelSries" in img.nifti_header.get_intent(), img.nifti_header.get_intent()
+
+    # First axis should be time, second should be parcels
+    ax = img.header.get_axis(1)
+
+    # Place the data in a DataFrame and save to a TSV
+    df = pd.DataFrame(columns=ax.name, data=img.get_fdata())
+    df.to_csv(timeseries_file, index=False, sep="\t")
+
+    # Compute Pearson correlation
+    df_corr = df.corr(method="pearson")
+    df_corr.to_csv(correlations_file, index_label="Node", sep="\t")
