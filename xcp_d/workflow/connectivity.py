@@ -9,10 +9,10 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
-from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
+from xcp_d.interfaces.workbench import CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils.utils import get_transformfile, extract_ptseries
 
 
 @fill_doc
@@ -254,10 +254,12 @@ the Connectome Workbench.
     )
 
     correlate_data = pe.MapNode(
-        CiftiCorrelation(),
-        mem_gb=mem_gb,
+        Function(
+            input_names=["in_file"],
+            output_names=["timeseries_file", "correlations_file"],
+            function=extract_ptseries,
+        ),
         name="correlate_data",
-        n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
 
@@ -276,8 +278,8 @@ the Connectome Workbench.
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
         (parcellate_data, correlate_data, [("out_file", "in_file")]),
-        (parcellate_data, outputnode, [("out_file", "timeseries")]),
-        (correlate_data, outputnode, [("out_file", "correlations")]),
+        (correlate_data, outputnode, [("timeseries_file", "timeseries"),
+                                      ("correlations_file", "correlations")]),
         (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
