@@ -434,7 +434,6 @@ def init_anatomical_wf(
 
             # combine the affine and warpfield xfms from the
             # disassembled h5 into a single warpfield xfm
-            #
 
             combine_xfms = pe.Node(
                 ApplyTransforms(
