@@ -32,7 +32,6 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceSphereProjectUnproject,
 )
 from xcp_d.utils.bids import collect_data
-from xcp_d.utils.ciftiresample import CiftiSurfaceResample
 from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.doc import fill_doc
 
