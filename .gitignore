@@ -1,10 +1,19 @@
+# local path for tests
+.circleci/local_xcpd_path.txt
 
+# documentation
+docs/api/
+docs/_build
+docs/*.dot
+docs/etc/
+docs/args.txt
+
+# other stuff
 xcp_surface/.DS_Store
 .DS_Store
 *.pyc
 *.tsv
 *.pyc
-docs/_build
 .eggs
 .Rhistory
 *.egg-info

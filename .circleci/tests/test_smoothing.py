@@ -3,8 +3,9 @@ import os
 import tempfile
 
 import numpy as np
-from nipype.interfaces.fsl import Smooth
 from nipype.pipeline import engine as pe
+
+from xcp_d.interfaces.nilearn import Smooth
 
 
 def test_smoothing_Nifti(data_dir):
@@ -40,11 +41,11 @@ def test_smoothing_Nifti(data_dir):
     os.system('rm -rf 3dFWHMx.1D test_fwhm.out test_file.out')
 
     # Smooth the data
-    smooth_data = pe.Node(Smooth(output_type='NIFTI_GZ', fwhm=6),  # FWHM = kernel size
+    smooth_data = pe.Node(Smooth(fwhm=6),  # FWHM = kernel size
                           name="nifti_smoothing")  # Use fslmaths to smooth the image
     smooth_data.inputs.in_file = in_file
     results = smooth_data.run()
-    out_file = results.outputs.smoothed_file
+    out_file = results.outputs.out_file
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
     # i.e : the "ShowMeClassicFWHM" option
@@ -74,8 +75,7 @@ def test_smoothing_Nifti(data_dir):
 # establish necessary variables
 # smoothing = 6
 # # turn into standard deviation
-# def fwhm2sigma(fwhm):
-#     return fwhm / np.sqrt(8 * np.log(2))
+# from xcp_d.utils.utils import fwhm2sigma
 # sigma_lx = fwhm2sigma(smoothing)
 # def test_smoothing_Cifti(data_dir, sigma_lx):
 #     # Specify inputs

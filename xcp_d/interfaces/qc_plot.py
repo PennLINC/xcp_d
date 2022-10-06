@@ -21,7 +21,7 @@ from xcp_d.utils.concantenation import compute_dvars
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
-from xcp_d.utils.plot import fMRIPlot
+from xcp_d.utils.plot import FMRIPlot
 from xcp_d.utils.qcmetrics import compute_registration_qc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -65,12 +65,12 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
 
 
 class _QCPlotOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, manadatory=True, desc="qc file in tsv")
+    qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True,
-                      manadatory=True,
+                      mandatory=True,
                       desc="qc plot before regression")
     clean_qcplot = File(exists=True,
-                        manadatory=True,
+                        mandatory=True,
                         desc="qc plot after regression")
 
 
@@ -173,7 +173,7 @@ class QCPlot(SimpleInterface):
 
         confounds = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_before_processing})
 
-        fig = fMRIPlot(func_file=temporary_file,
+        fig = FMRIPlot(func_file=temporary_file,
                        seg_file=self.inputs.seg_file,
                        data=confounds,
                        mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -215,7 +215,7 @@ class QCPlot(SimpleInterface):
                         filename=temporary_file,
                         TR=self.inputs.TR)
 
-            figure = fMRIPlot(func_file=temporary_file,
+            figure = FMRIPlot(func_file=temporary_file,
                               seg_file=self.inputs.seg_file,
                               data=confounds,
                               mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -234,7 +234,7 @@ class QCPlot(SimpleInterface):
                                              maskfile=self.inputs.mask_file)
             confounds = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_after_processing})
 
-            figure = fMRIPlot(func_file=self.inputs.cleaned_file,
+            figure = FMRIPlot(func_file=self.inputs.cleaned_file,
                               seg_file=self.inputs.seg_file,
                               data=confounds,
                               mask_file=self.inputs.mask_file).plot(labelsize=8)

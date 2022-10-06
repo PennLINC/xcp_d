@@ -12,10 +12,12 @@ import h5py
 import nibabel as nb
 import numpy as np
 from natsort import natsorted
+from nilearn.image import concat_imgs
 from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
 
 from xcp_d.utils.plot import plot_svgx
+from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_transformfile
 from xcp_d.utils.write_save import read_ndata
 
@@ -247,7 +249,10 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                                   + '*' + resid.partition('_desc')[0]
                                   + '*_desc-brain_mask.nii.gz'))[0]
-                    os.system('fslmerge -t ' + outfile + '  ' + combinefile)
+
+                    combine_img = concat_imgs(combinefile)
+                    combine_img.to_filename(outfile)
+
                     for b in filex:
                         dvar = compute_dvars(read_ndata(b, mask))
                         dvar[0] = np.mean(dvar)
@@ -268,7 +273,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             combinefiley = "  ".join(filey)
             rawdata = tempfile.mkdtemp() + '/rawdata.nii.gz'
-            os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
+
+            combine_img = concat_imgs(combinefiley)
+            combine_img.to_filename(rawdata)
 
             precarpet = figure_files + os.path.basename(
                 fileid) + '_desc-precarpetplot_bold.svg'
@@ -309,27 +316,6 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             shutil.copy(bb1reg, gboldbbreg)
             shutil.copy(bb1ref, bboldref)
-
-
-def compute_dvars(datat):
-    """Compute standard DVARS.
-
-    Parameters
-    ----------
-    datat : numpy.ndarray
-        The data matrix fromw hich to calculate DVARS.
-        Ordered as vertices by timepoints.
-
-    Returns
-    -------
-    numpy.ndarray
-        The calculated DVARS array.
-        A (timepoints,) array.
-    """
-    firstcolumn = np.zeros((datat.shape[0]))[..., None]
-    datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
-    return np.sqrt(datax_ss)
 
 
 def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
@@ -549,6 +535,8 @@ def get_segfile(bold_file):
 def _t12native(fname):
     """Select T1w-to-scanner transform associated with a given BOLD file.
 
+    TODO: Update names and refactor
+
     Parameters
     ----------
     fname : str
@@ -600,8 +588,6 @@ def get_cifti_tr(cifti_file):
     float
         The TR of the CIFTI file.
     """
-    import nibabel as nb
-
     ciaxis = nb.load(cifti_file).header.get_axis(0)
     return ciaxis.step
 

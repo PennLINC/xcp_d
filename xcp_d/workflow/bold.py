@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for post-processing the BOLD data.
-
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_boldpostprocess_wf
-
-"""
+"""Workflows for post-processing the BOLD data."""
 import os
 
 import nibabel as nb
@@ -20,20 +14,22 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from num2words import num2words
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
-from xcp_d.utils.restingstate import DespikePatch
+from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.utils.concantenation import _t12native
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
     stringforparams,
 )
-from xcp_d.workflow.connectivity import init_fcon_ts_wf
+from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
@@ -42,28 +38,31 @@ from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_boldpostprocess_wf(lower_bpf,
-                            upper_bpf,
-                            bpf_order,
-                            motion_filter_type,
-                            motion_filter_order,
-                            bandpass_filter,
-                            band_stop_min,
-                            band_stop_max,
-                            smoothing,
-                            bold_file,
-                            head_radius,
-                            params,
-                            custom_confounds,
-                            omp_nthreads,
-                            dummytime,
-                            output_dir,
-                            fd_thresh,
-                            num_bold,
-                            mni_to_t1w,
-                            despike,
-                            layout=None,
-                            name='bold_postprocess_wf'):
+@fill_doc
+def init_boldpostprocess_wf(
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    bold_file,
+    head_radius,
+    params,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    output_dir,
+    fd_thresh,
+    n_runs,
+    mni_to_t1w,
+    despike,
+    layout=None,
+    name='bold_postprocess_wf',
+):
     """Organize the bold processing workflow.
 
     Workflow Graph
@@ -73,78 +72,76 @@ def init_boldpostprocess_wf(lower_bpf,
 
             from xcp_d.workflow.bold import init_boldpostprocess_wf
             wf = init_boldpostprocess_wf(
-                bold_file,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_min,
-                band_stop_max,
-                smoothing,
-                head_radius,
-                params,
-                custom_confounds,
-                omp_nthreads,
-                dummytime,
-                output_dir,
-                fd_thresh,
-                num_bold,
-                template='MNI152NLin2009cAsym',
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                bandpass_filter=True,
+                band_stop_min=0.,
+                band_stop_max=0.,
+                smoothing=6,
+                bold_file="/path/to/file.nii.gz",
+                head_radius=50.,
+                params="36P",
+                custom_confounds=None,
+                omp_nthreads=1,
+                dummytime=0,
+                output_dir=".",
+                fd_thresh=0.2,
+                n_runs=1,
+                mni_to_t1w="identity",
+                despike=False,
                 layout=None,
-                name='bold_postprocess_wf')
+                name='bold_postprocess_wf',
+            )
 
     Parameters
     ----------
+    %(bandpass_filter)s
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(smoothing)s
     bold_file: str
         bold file for post processing
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        If True, run 3dDespike from AFNI
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    %(head_radius)s
+    %(params)s
     custom_confounds: str
         path to cusrtom nuissance regressors
+    %(omp_nthreads)s
     dummytime: float
         the time in seconds to be removed before postprocessing
+    output_dir : str
+        Directory in which to save xcp_d output
+    %(fd_thresh)s
+    n_runs
+    mni_to_t1w
+    despike: bool
+        If True, run 3dDespike from AFNI
+    layout : BIDSLayout object
+        BIDS dataset layout
+    %(name)s
 
     Inputs
     ------
     bold_file
         BOLD series NIfTI file
-    mni_to_t1w
-        MNI to T1W ants Transformation file/h5
     ref_file
         Bold reference file from fmriprep
     bold_mask
         bold_mask from fmriprep
-    cutstom_conf
+    custom_confounds
         custom regressors
+    mni_to_t1w
+        MNI to T1W ants Transformation file/h5
+    t1w
+    t1seg
+    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -158,24 +155,12 @@ def init_boldpostprocess_wf(lower_bpf,
         smoothed alff
     reho_out
         reho output computed by afni.3dreho
-    sc217_ts
-        schaefer 200 timeseries
-    sc217_fc
-        schaefer 200 func matrices
-    sc417_ts
-        schaefer 400 timeseries
-    sc417_fc
-        schaefer 400 func matrices
-    gs360_ts
-        glasser 360 timeseries
-    gs360_fc
-        glasser 360  func matrices
-    gd333_ts
-        gordon 333 timeseries
-    gd333_fc
-        gordon 333 func matrices
+    %(atlas_names)s
+    %(timeseries)s
+    %(correlations)s
     qc_file
         quality control files
+    fd
     """
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
@@ -195,7 +180,7 @@ def init_boldpostprocess_wf(lower_bpf,
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f"""
-For each of the {num2words(num_bold)} BOLD series found per subject (across all
+For each of the {num2words(n_runs)} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
     initial_volumes_to_drop = 0
@@ -227,35 +212,56 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['bold_file', 'ref_file', 'bold_mask', 'cutstom_conf', 'mni_to_t1w',
-                't1w', 't1seg', 'fmriprep_confounds_tsv']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold_file',
+                'ref_file',
+                'bold_mask',
+                'custom_confounds',
+                'mni_to_t1w',
+                't1w',
+                't1seg',
+                'fmriprep_confounds_tsv',
+            ],
+        ),
+        name='inputnode',
+    )
 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
+    inputnode.inputs.mni_to_t1w = str(mni_to_t1w)
     inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-        'reho_out', 'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc', 'sc317_ts',
-        'sc317_fc', 'sc417_ts', 'sc417_fc', 'sc517_ts', 'sc517_fc', 'sc617_ts',
-        'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc', 'sc917_ts',
-        'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'ts50_ts', 'ts50_fc', 'gs360_ts',
-        'gs360_fc', 'gd333_ts', 'gd333_fc', 'qc_file', 'fd'
-    ]),
-        name='outputnode')
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'processed_bold',
+                'smoothed_bold',
+                'alff_out',
+                'smoothed_alff',
+                'reho_out',
+                'atlas_names',
+                'timeseries',
+                'correlations',
+                'qc_file',
+                'fd',
+            ],
+        ),
+        name='outputnode',
+    )
 
     mem_gbx = _create_mem_gb(bold_file)
 
-    fcon_ts_wf = init_fcon_ts_wf(mem_gb=mem_gbx['timeseries'],
-                                 mni_to_t1w=mni_to_t1w,
-                                 t1w_to_native=_t12native(bold_file),
-                                 bold_file=bold_file,
-                                 name="fcons_ts_wf",
-                                 omp_nthreads=omp_nthreads)
+    fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        mem_gb=mem_gbx['timeseries'],
+        mni_to_t1w=mni_to_t1w,
+        t1w_to_native=_t12native(bold_file),
+        name="fcons_ts_wf",
+        omp_nthreads=omp_nthreads,
+    )
 
     alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
                                            TR=TR,
@@ -406,7 +412,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads,
     )
 
-# Remove TR first:
+    # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
@@ -486,7 +492,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # functional connect workflow
     workflow.connect([
-        (inputnode, fcon_ts_wf, [('ref_file', 'inputnode.ref_file')]),
+        (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
+                                 ('ref_file', 'inputnode.ref_file')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
@@ -522,32 +529,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                        ('outputnode.smoothed_alff',
                                         'smoothed_alff')]),
         (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
-        (fcon_ts_wf, outputnode, [('outputnode.sc117_ts', 'sc117_ts'),
-                                  ('outputnode.sc117_fc', 'sc117_fc'),
-                                  ('outputnode.sc217_ts', 'sc217_ts'),
-                                  ('outputnode.sc217_fc', 'sc217_fc'),
-                                  ('outputnode.sc317_ts', 'sc317_ts'),
-                                  ('outputnode.sc317_fc', 'sc317_fc'),
-                                  ('outputnode.sc417_ts', 'sc417_ts'),
-                                  ('outputnode.sc417_fc', 'sc417_fc'),
-                                  ('outputnode.sc517_ts', 'sc517_ts'),
-                                  ('outputnode.sc517_fc', 'sc517_fc'),
-                                  ('outputnode.sc617_ts', 'sc617_ts'),
-                                  ('outputnode.sc617_fc', 'sc617_fc'),
-                                  ('outputnode.sc717_ts', 'sc717_ts'),
-                                  ('outputnode.sc717_fc', 'sc717_fc'),
-                                  ('outputnode.sc817_ts', 'sc817_ts'),
-                                  ('outputnode.sc817_fc', 'sc817_fc'),
-                                  ('outputnode.sc917_ts', 'sc917_ts'),
-                                  ('outputnode.sc917_fc', 'sc917_fc'),
-                                  ('outputnode.sc1017_ts', 'sc1017_ts'),
-                                  ('outputnode.sc1017_fc', 'sc1017_fc'),
-                                  ('outputnode.gs360_ts', 'gs360_ts'),
-                                  ('outputnode.gs360_fc', 'gs360_fc'),
-                                  ('outputnode.gd333_ts', 'gd333_ts'),
-                                  ('outputnode.gd333_fc', 'gd333_fc'),
-                                  ('outputnode.ts50_ts', 'ts50_ts'),
-                                  ('outputnode.ts50_fc', 'ts50_fc')])
+        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
+                                  ('outputnode.correlations', 'correlations'),
+                                  ('outputnode.timeseries', 'timeseries')]),
     ])
 
     # write derivatives
@@ -563,34 +547,10 @@ Residual timeseries from this regression were then band-pass filtered to retain 
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
         (reho_compute_wf, write_derivative_wf, [('outputnode.reho_out',
                                                  'inputnode.reho_out')]),
-        (fcon_ts_wf, write_derivative_wf,
-         [('outputnode.sc117_ts', 'inputnode.sc117_ts'),
-          ('outputnode.sc117_fc', 'inputnode.sc117_fc'),
-          ('outputnode.sc217_ts', 'inputnode.sc217_ts'),
-          ('outputnode.sc217_fc', 'inputnode.sc217_fc'),
-          ('outputnode.sc317_ts', 'inputnode.sc317_ts'),
-          ('outputnode.sc317_fc', 'inputnode.sc317_fc'),
-          ('outputnode.sc417_ts', 'inputnode.sc417_ts'),
-          ('outputnode.sc417_fc', 'inputnode.sc417_fc'),
-          ('outputnode.sc517_ts', 'inputnode.sc517_ts'),
-          ('outputnode.sc517_fc', 'inputnode.sc517_fc'),
-          ('outputnode.sc617_ts', 'inputnode.sc617_ts'),
-          ('outputnode.sc617_fc', 'inputnode.sc617_fc'),
-          ('outputnode.sc717_ts', 'inputnode.sc717_ts'),
-          ('outputnode.sc717_fc', 'inputnode.sc717_fc'),
-          ('outputnode.sc817_ts', 'inputnode.sc817_ts'),
-          ('outputnode.sc817_fc', 'inputnode.sc817_fc'),
-          ('outputnode.sc917_ts', 'inputnode.sc917_ts'),
-          ('outputnode.sc917_fc', 'inputnode.sc917_fc'),
-          ('outputnode.sc1017_ts', 'inputnode.sc1017_ts'),
-          ('outputnode.sc1017_fc', 'inputnode.sc1017_fc'),
-          ('outputnode.gs360_ts', 'inputnode.gs360_ts'),
-          ('outputnode.gs360_fc', 'inputnode.gs360_fc'),
-          ('outputnode.gd333_ts', 'inputnode.gd333_ts'),
-          ('outputnode.gd333_fc', 'inputnode.gd333_fc'),
-          ('outputnode.ts50_ts', 'inputnode.ts50_ts'),
-          ('outputnode.ts50_fc', 'inputnode.ts50_fc')]),
-        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
+        (fcon_ts_wf, write_derivative_wf, [('outputnode.atlas_names', 'inputnode.atlas_names'),
+                                           ('outputnode.correlations', 'inputnode.correlations'),
+                                           ('outputnode.timeseries', 'inputnode.timeseries')]),
+        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')]),
     ])
 
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
@@ -649,12 +609,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot',
-                                               'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml',
-                                                'in_file')]),
-        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml',
-                                                'in_file')]),
+        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
     # exexetive summary workflow
@@ -701,20 +658,3 @@ def _get_ref_mask(fname):
     mask = directx + '/' + filex
     ref = directx + '/' + filez
     return mask, ref
-
-
-def _t12native(fname):  # TODO: Update names and refactor
-    """Take in bold filename and find transform from T1W to native space."""
-    directx = os.path.dirname(fname)
-    filename = os.path.basename(fname)
-    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-
-    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
-
-    return t12ref
-
-
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'

@@ -1,7 +1,7 @@
 """Tests for filtering methods."""
 # from xcp_d.interfaces.filtering import butter_bandpass  # Butterworth
 # from xcp_d.utils.confounds import motion_regression_filter  # lowpass and notch
-# from xcp_d.utils import read_ndata
+# from xcp_d.utils.write_save import read_ndata
 # import pandas as pd
 # import numpy as np
 

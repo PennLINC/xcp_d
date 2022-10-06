@@ -19,7 +19,6 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
-from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.fcon import extract_timeseries_funct
 from xcp_d.utils.filemanip import fname_presuffix
@@ -35,10 +34,10 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 class _NiftiConnectOutputSpec(TraitedSpec):
     time_series_tsv = File(exists=True,
-                           manadatory=True,
+                           mandatory=True,
                            desc=" time series file")
     fcon_matrix_tsv = File(exists=True,
-                           manadatory=True,
+                           mandatory=True,
                            desc=" time series file")
 
 
@@ -100,101 +99,25 @@ class ApplyTransformsx(ApplyTransforms):
         return runtime
 
 
-def get_atlas_nifti(atlasname):
-    """Select atlas by name from xcp_d/data using pkgrf.
-
-    All atlases are in MNI dimension.
-
-    Parameters
-    ----------
-    atlasname : {"schaefer100x17", "schaefer200x17", "schaefer300x17", "schaefer400x17", \
-                 "schaefer500x17", "schaefer600x17", "schaefer700x17", "schaefer800x17", \
-                 "schaefer900x17", "schaefer1000x17", "glasser360", "gordon360"}
-        The name of the NIFTI atlas to fetch.
-
-    Returns
-    -------
-    atlasfile : str
-        Path to the atlas file.
-    """
-    if atlasname[:8] == 'schaefer':
-        if atlasname[8:12] == '1000':
-            atlasfile = pkgrf(
-                'xcp_d', 'data/niftiatlas/'
-                'Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii')
-        else:
-            atlasfile = pkgrf(
-                'xcp_d', 'data/niftiatlas/'
-                f'Schaefer2018_{atlasname[8:11]}Parcels_17Networks_order_FSLMNI152_2mm.nii')
-    elif atlasname == 'glasser360':
-        atlasfile = pkgrf('xcp_d',
-                          'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
-    elif atlasname == 'gordon333':
-        atlasfile = pkgrf('xcp_d',
-                          'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
-    elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf(
-            'xcp_d',
-            'data//niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz')
-    else:
-        raise RuntimeError('Atlas not available')
-    return atlasfile
-
-
-def get_atlas_cifti(atlasname):
-    """Select atlas by name from xcp_d/data.
-
-    All atlases are in 91K dimension.
-
-    Parameters
-    ----------
-    atlasname : {"schaefer100x17", "schaefer200x17", "schaefer300x17", "schaefer400x17", \
-                 "schaefer500x17", "schaefer600x17", "schaefer700x17", "schaefer800x17", \
-                 "schaefer900x17", "schaefer1000x17", "glasser360", "gordon360"}
-        The name of the CIFTI atlas to fetch.
-
-    Returns
-    -------
-    atlasfile : str
-        Path to the atlas file.
-    """
-    if atlasname[:8] == 'schaefer':
-        if atlasname[8:12] == '1000':
-            atlasfile = pkgrf(
-                'xcp_d', 'data/ciftiatlas/'
-                'Schaefer2018_1000Parcels_17Networks_order.dlabel.nii')
-        else:
-            atlasfile = pkgrf(
-                'xcp_d', 'data/ciftiatlas/'
-                f'Schaefer2018_{atlasname[8:11]}Parcels_17Networks_order.dlabel.nii')
-    elif atlasname == 'glasser360':
-        atlasfile = pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii')
-    elif atlasname == 'gordon333':
-        atlasfile = pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii')
-    elif atlasname == 'tiansubcortical':
-        atlasfile = pkgrf(
-            'xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
-    else:
-        raise RuntimeError('atlas not available')
-    return atlasfile
-
-
 class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="bold file")
-    sc217_timeseries = File(exists=True, mandatory=True, desc="sc217 atlas")
-    sc417_timeseries = File(exists=True, mandatory=True, desc="sc417 atlas")
-    gd333_timeseries = File(exists=True, mandatory=True, desc="gordon atlas")
-    gs360_timeseries = File(exists=True, mandatory=True, desc="glasser atlas")
+    atlas_names = InputMultiObject(
+        traits.Str,
+        mandatory=True,
+        desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
+    )
+    time_series_tsv = InputMultiObject(
+        File(exists=True),
+        mandatory=True,
+        desc="List of TSV file with time series. Aligned with the list of atlases in atlas_names",
+    )
 
 
 class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
         exists=True,
-        manadatory=True,
+        mandatory=True,
+        desc="Path to SVG file with four correlation heat maps.",
     )
 
 
@@ -205,41 +128,53 @@ class ConnectPlot(SimpleInterface):
     output_spec = _ConnectPlotOutputSpec
 
     def _run_interface(self, runtime):
-
-        if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
-            #  Get the correlation coefficient of the data
-            sc217 = np.corrcoef(
-                nb.load(self.inputs.sc217_timeseries).get_fdata().T)
-            sc417 = np.corrcoef(
-                nb.load(self.inputs.sc417_timeseries).get_fdata().T)
-            gd333 = np.corrcoef(
-                nb.load(self.inputs.gd333_timeseries).get_fdata().T)
-            gs360 = np.corrcoef(
-                nb.load(self.inputs.gs360_timeseries).get_fdata().T)
-
-        else:  # for nifti
-            #  Get the correlation coefficient of the data
-            sc217 = np.corrcoef(
-                np.loadtxt(self.inputs.sc217_timeseries, delimiter=',').T)
-            sc417 = np.corrcoef(
-                np.loadtxt(self.inputs.sc417_timeseries, delimiter=',').T)
-            gd333 = np.corrcoef(
-                np.loadtxt(self.inputs.gd333_timeseries, delimiter=',').T)
-            gs360 = np.corrcoef(
-                np.loadtxt(self.inputs.gs360_timeseries, delimiter=',').T)
+        ATLAS_LOOKUP = {
+            "Schaefer217": {
+                "title": "schaefer 200  17 networks",
+                "axes": [0, 0],
+            },
+            "Schaefer417": {
+                "title": "schaefer 400  17 networks",
+                "axes": [0, 1],
+            },
+            "Gordon": {
+                "title": "Gordon 333",
+                "axes": [1, 0],
+            },
+            "Glasser": {
+                "title": "Glasser 360",
+                "axes": [1, 1],
+            },
+        }
 
         # Generate a plot of each matrix's correlation coefficients
-        fig, ax1 = plt.subplots(2, 2)
+        fig, axes = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
         font = {'weight': 'normal', 'size': 20}
-        plot_matrix(mat=sc217, colorbar=False, vmax=1, vmin=-1, axes=ax1[0, 0])
-        ax1[0, 0].set_title('schaefer 200  17 networks', fontdict=font)
-        plot_matrix(mat=sc417, colorbar=False, vmax=1, vmin=-1, axes=ax1[0, 1])
-        ax1[0, 1].set_title('schaefer 400  17 networks', fontdict=font)
-        plot_matrix(mat=gd333, colorbar=False, vmax=1, vmin=-1, axes=ax1[1, 0])
-        ax1[1, 0].set_title('Gordon 333', fontdict=font)
-        plot_matrix(mat=gs360, colorbar=False, vmax=1, vmin=-1, axes=ax1[1, 1])
-        ax1[1, 1].set_title('Glasser 360', fontdict=font)
+
+        for atlas_name, subdict in ATLAS_LOOKUP.items():
+            atlas_idx = self.inputs.atlas_names.index(atlas_name)
+            atlas_file = self.inputs.time_series_tsv[atlas_idx]
+
+            if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
+                #  Get the correlation coefficient of the data
+                corrs = np.corrcoef(nb.load(atlas_file).get_fdata().T)
+
+            else:  # for nifti
+                #  Get the correlation coefficient of the data
+                corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter=',').T)
+
+            plot_matrix(
+                mat=corrs,
+                colorbar=False,
+                vmax=1,
+                vmin=-1,
+                axes=axes[subdict["axes"][0], subdict["axes"][1]],
+            )
+            axes[subdict["axes"][0], subdict["axes"][1]].set_title(
+                subdict["title"],
+                fontdict=font,
+            )
 
         # Write the results out
         self._results['connectplot'] = fname_presuffix(

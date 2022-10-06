@@ -12,7 +12,7 @@ import os
 import sys
 import uuid
 import warnings
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 from time import strftime
 
@@ -37,6 +37,21 @@ def check_deps(workflow):
                   for node in workflow._get_all_nodes()
                   if (hasattr(node.interface, '_cmd') and which
                   (node.interface._cmd.split()[0]) is None))
+
+
+class DeprecatedStoreAction(Action):
+    """A custom argparse "store" action to raise a DeprecationWarning.
+
+    Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
+    """
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
+        NIWORKFLOWS_LOG.warn(
+            f"Argument '{option_string}' is deprecated and will be removed in version 0.1.6. "
+            "Please use '--nuisance-regressors' or '-p'."
+        )
+        setattr(namespace, self.dest, values)
 
 
 def get_parser():
@@ -66,6 +81,13 @@ def get_parser():
 
     # optional arguments
     parser.add_argument('--version', action='version', version=verstr)
+
+    parser.add_argument(
+        '--func-only',
+        action='store_true',
+        default=False,
+        help="Run the functional post-processing workflows only.",
+    )
 
     g_bidx = parser.add_argument_group('Options for filtering BIDS queries')
     g_bidx.add_argument(
@@ -148,18 +170,33 @@ def get_parser():
                          action='store_true',
                          default=False,
                          help='despike the nifti/cifti before postprocessing')
-    g_param.add_argument(
-        '-p',
+
+    nuisance_params = g_param.add_mutually_exclusive_group()
+    nuisance_params.add_argument(
         '--nuissance-regressors',
+        dest="nuisance_regressors",
+        action=DeprecatedStoreAction,
         required=False,
         default='36P',
-        choices=[
-            '27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr',
-            'aroma_gsr', 'custom'
-        ],
+        choices=['27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr', 'aroma_gsr', 'custom'],
         type=str,
-        help='nuissance parameters to be selected, other options include 24P and 36P \
-                                           acompcor and aroma, see Ciric etal 2007'
+        help=(
+            'Nuisance parameters to be selected, other options include 24P and 36P acompcor and '
+            'aroma, see Ciric etal 2007. '
+            'This parameter is deprecated and will be removed in version 0.1.6. '
+            'Please use "-p" or "--nuisance-regressors".'
+        )
+    )
+    nuisance_params.add_argument(
+        '-p',
+        '--nuisance-regressors',
+        dest="nuisance_regressors",
+        required=False,
+        choices=['27P', '36P', '24P', 'acompcor', 'aroma', 'acompcor_gsr', 'aroma_gsr', 'custom'],
+        type=str,
+        help=(
+            'Nuisance parameters to be selected. See Ciric etal 2007.'
+        )
     )
     g_param.add_argument(
         '-c',
@@ -167,7 +204,7 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help='custom confound to be added to nuissance regressors')
+        help='Custom confound to be added to nuisance regressors.')
     g_param.add_argument(
         '-d',
         '--dummytime',
@@ -176,21 +213,22 @@ def get_parser():
         help='first volume in seconds to be removed or skipped before postprocessing'
     )
 
-    g_filter = parser.add_argument_group(
-        'Filtering parameters and default value')
+    g_filter = parser.add_argument_group('Filtering parameters and default value')
 
-    g_filter.add_argument('--bandpass_filter',
-                          action='store',
-                          default=True,
-                          type=bool,
-                          help='butterworth bandpass filter the data')
+    g_filter.add_argument(
+        '--bandpass_filter',
+        action='store',
+        default=True,
+        type=bool,
+        help='butterworth bandpass filter the data',
+    )
 
     g_filter.add_argument(
         '--lower-bpf',
         action='store',
         default=0.009,
         type=float,
-        help='lower cut-off frequency (Hz) for the butterworth bandpass filter'
+        help='lower cut-off frequency (Hz) for the butterworth bandpass filter',
     )
 
     g_filter.add_argument(
@@ -198,7 +236,7 @@ def get_parser():
         action='store',
         default=0.08,
         type=float,
-        help='upper cut-off frequency (Hz) for the butterworth bandpass filter'
+        help='upper cut-off frequency (Hz) for the butterworth bandpass filter',
     )
 
     g_filter.add_argument(
@@ -206,7 +244,8 @@ def get_parser():
         action='store',
         default=2,
         type=int,
-        help='number of filter coefficients for butterworth bandpass filter')
+        help='number of filter coefficients for butterworth bandpass filter',
+    )
 
     g_filter.add_argument('--motion-filter-type', action='store', type=str, default='None',
                           choices=['lp', 'notch'],
@@ -368,7 +407,7 @@ def main():
 
         from pkg_resources import resource_filename as pkgrf
 
-        from xcp_d.interfaces import generate_reports
+        from xcp_d.interfaces.report_core import generate_reports
 
         citation_files = {
             ext: output_dir / 'xcp_d' / 'logs' / f'CITATION.{ext}'
@@ -450,7 +489,7 @@ def build_workflow(opts, retval):
     from nipype import logging as nlogging
 
     from xcp_d.__about__ import __version__
-    from xcp_d.utils import collect_participants
+    from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
     build_log = nlogging.getLogger('nipype.workflow')
 
@@ -488,7 +527,7 @@ def build_workflow(opts, retval):
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type == 'dcan':
         opts.cifti = True
-        from xcp_d.utils import dcan2fmriprep
+        from xcp_d.utils.dcan2fmriprep import dcan2fmriprep
         from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
         print('checking the DCAN files')
@@ -507,7 +546,7 @@ def build_workflow(opts, retval):
 
     elif opts.input_type == 'hcp':
         opts.cifti = True
-        from xcp_d.utils import hcp2fmriprep
+        from xcp_d.utils.hcp2fmriprep import hcp2fmriprep
         from xcp_d.workflow.base import _prefix
         NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
         print('checking the HCP files')
@@ -626,7 +665,7 @@ def build_workflow(opts, retval):
         task_id=opts.task_id,
         despike=opts.despike,
         smoothing=opts.smoothing,
-        params=opts.nuissance_regressors,
+        params=opts.nuisance_regressors,
         cifti=opts.cifti,
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
@@ -634,6 +673,7 @@ def build_workflow(opts, retval):
         custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
+        func_only=opts.func_only,
         input_type=opts.input_type,
         name='xcpd_wf')
     retval['return_code'] = 0
