@@ -999,12 +999,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         lh_native_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         lh_native_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         lh_sphere_raw_mris,
@@ -1029,12 +1029,14 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         lh_32k_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
+
                     ),
                     (
                         remerge_inv_warpfield,
                         lh_32k_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
+
                     ),
                     (
                         lh_32k_apply_affine,
@@ -1081,12 +1083,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         rh_native_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         rh_native_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         rh_sphere_raw_mris,
@@ -1111,12 +1113,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         rh_32k_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         rh_32k_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         rh_32k_apply_affine,
@@ -1340,12 +1342,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         lh_32k_hcpmidthick_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         lh_32k_hcpmidthick_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         lh_32k_hcpmidthick_apply_affine,
@@ -1385,12 +1387,12 @@ def init_anatomical_wf(
                     (
                         remerge_warpfield,
                         rh_32k_hcpmidthick_apply_warpfield,
-                        [("merged_file", "forward_warp")],
+                        [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
                         rh_32k_hcpmidthick_apply_warpfield,
-                        [("merged_file", "warpfield")],
+                        [("out_file", "warpfield")],
                     ),
                     (
                         rh_32k_hcpmidthick_apply_affine,
