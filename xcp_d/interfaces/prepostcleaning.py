@@ -193,7 +193,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
 
 class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True,
-                         manadatory=True,
+                         mandatory=True,
                          desc="FD-censored bold file")
 
     fmriprep_confounds_censored = File(exists=True,
@@ -347,7 +347,7 @@ class _InterpolateInputSpec(BaseInterfaceInputSpec):
 
 class _InterpolateOutputSpec(TraitedSpec):
     bold_interpolated = File(exists=True,
-                             manadatory=True,
+                             mandatory=True,
                              desc=" fmriprep censored")
 
 

@@ -1,3 +1,6 @@
+# local path for tests
+.circleci/local_xcpd_path.txt
+
 # documentation
 docs/api/
 docs/_build
