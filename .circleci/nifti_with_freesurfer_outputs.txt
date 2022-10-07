@@ -55,7 +55,6 @@ xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-M
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-smooth_alff.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-smooth_alff.nii.gz
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_qc.csv
-xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_qc.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_reho.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_reho.nii.gz
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-denoised_bold.json
@@ -94,7 +93,6 @@ xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-M
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-smooth_alff.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-smooth_alff.nii.gz
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_qc.csv
-xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_qc.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_reho.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_reho.nii.gz
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-denoised_bold.json
