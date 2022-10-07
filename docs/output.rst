@@ -14,10 +14,12 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
      In those instances, we attempt to follow recommendations from existing BIDS Extension Proposals (BEPs),
      which are in-progress proposals to add new features to BIDS.
 
-     Two BEPs that are of particular use in ``xcp_d`` are
-     `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_
+     Three BEPs that are of particular use in ``xcp_d`` are
+     `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
+     `BEP017: BIDS connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
      and
-     `BEP017: BIDS connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_.
+     `BEPXXX: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_
+     (currently unnumbered).
 
      In cases where a derivative type is not covered by an existing BEP,
      we have simply attempted to follow the general principles of BIDS.
