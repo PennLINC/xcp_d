@@ -155,7 +155,7 @@ class ConnectPlot(SimpleInterface):
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
             atlas_file = self.inputs.time_series_tsv[atlas_idx]
 
-            #  Get the correlation coefficient of the data
+            # Get the correlation coefficient of the data
             corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter='\t').T)
 
             plot_matrix(
