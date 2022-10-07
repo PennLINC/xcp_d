@@ -147,9 +147,14 @@ def get_parser():
         '--input-type',
         required=False,
         default='fmriprep',
-        type=str,
-        choices=['fmriprep', 'dcan', 'hpc'],
-        help='fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
+        choices=['fmriprep', 'dcan', 'hpc', 'nibabies'],
+        help=(
+            "The pipeline used to generate the preprocessed derivatives. "
+            "The default pipeline is 'fmriprep'. "
+            "The 'dcan', 'hcp', and 'nibabies' pipelines are also supported. "
+            "'nibabies' assumes the same structure as 'fmriprep'."
+        ),
+    )
 
     g_param = parser.add_argument_group('Parameters for postprocessing')
 

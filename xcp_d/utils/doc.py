@@ -66,8 +66,12 @@ params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \
 """
 
 docdict["input_type"] = """
-input_type : {"fmriprep", "dcan", "hcp"}
-    The format of the BIDS derivatives.
+input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
+    The format of the incoming preprocessed BIDS derivatives.
+    DCAN- and HCP-format derivatives will automatically be converted to a more
+    BIDS-compliant format.
+    fMRIPrep and Nibabies derivatives are assumed to be roughly equivalent in terms of
+    file organization and naming.
 """
 
 docdict["smoothing"] = """
