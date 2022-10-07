@@ -174,7 +174,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         (extract_parcel_timeseries, outputnode, [("timeseries", "timeseries")]),
         (extract_parcel_timeseries, correlate_timeseries, [("timeseries", "in_file")]),
         (correlate_timeseries, outputnode, [("correlations_file", "correlations")]),
-        (extract_parcel_timeseries, matrix_plot, [("timeseries", "time_series_tsv")]),
+        (correlate_timeseries, matrix_plot, [("correlations_file", "correlation_tsvs")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
 
@@ -309,7 +309,7 @@ the Connectome Workbench.
         (parcellate_data, extract_parcel_timeseries, [("out_file", "in_file")]),
         (extract_parcel_timeseries, outputnode, [("timeseries_file", "timeseries")]),
         (extract_parcel_timeseries, correlate_timeseries, [("timeseries_file", "in_file")]),
-        (extract_parcel_timeseries, matrix_plot, [("timeseries_file", "time_series_tsv")]),
+        (correlate_timeseries, matrix_plot, [("correlations_file", "correlation_tsvs")]),
         (correlate_timeseries, outputnode, [("correlations_file", "correlations")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])

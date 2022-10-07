@@ -6,7 +6,7 @@
 # will comeback
 """
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 from nilearn.plotting import plot_matrix
 from nipype import logging
 from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
@@ -19,7 +19,6 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.fcon import extract_timeseries_funct
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -58,12 +57,15 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     atlas_names = InputMultiObject(
         traits.Str,
         mandatory=True,
-        desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
+        desc="List of atlases. Aligned with the list of time series in correlation_tsvs.",
     )
-    time_series_tsv = InputMultiObject(
+    correlation_tsvs = InputMultiObject(
         File(exists=True),
         mandatory=True,
-        desc="List of TSV file with time series. Aligned with the list of atlases in atlas_names",
+        desc=(
+            "List of TSV file with correlation matrices. "
+            "Aligned with the list of atlases in atlas_names."
+        ),
     )
 
 
@@ -108,13 +110,12 @@ class ConnectPlot(SimpleInterface):
 
         for atlas_name, subdict in ATLAS_LOOKUP.items():
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
-            atlas_file = self.inputs.time_series_tsv[atlas_idx]
+            atlas_file = self.inputs.correlation_tsvs[atlas_idx]
 
-            # Get the correlation coefficient of the data
-            corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter='\t').T)
+            correlations_df = pd.read_table(atlas_file)
 
             plot_matrix(
-                mat=corrs,
+                mat=correlations_df.to_numpy(),
                 colorbar=False,
                 vmax=1,
                 vmin=-1,
