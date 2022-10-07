@@ -23,51 +23,6 @@ from xcp_d.utils.fcon import extract_timeseries_funct
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
-# nifti functional connectivity
-
-
-class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
-    filtered_file = File(exists=True, mandatory=True, desc="filtered file")
-    atlas = File(exists=True, mandatory=True, desc="atlas file")
-
-
-class _NiftiConnectOutputSpec(TraitedSpec):
-    time_series_tsv = File(exists=True,
-                           mandatory=True,
-                           desc=" time series file")
-    fcon_matrix_tsv = File(exists=True,
-                           mandatory=True,
-                           desc=" time series file")
-
-
-class NiftiConnect(SimpleInterface):
-    """Extract timeseries and compute connectivity matrices."""
-
-    input_spec = _NiftiConnectInputSpec
-    output_spec = _NiftiConnectOutputSpec
-
-    def _run_interface(self, runtime):
-        # Write out time series using Nilearn's NiftiLabelMasker
-        # Then write out functional correlation matrix of
-        # timeseries using numpy.
-        self._results['time_series_tsv'] = fname_presuffix(
-            self.inputs.filtered_file,
-            suffix='time_series.tsv',
-            newpath=runtime.cwd,
-            use_ext=False)
-        self._results['fcon_matrix_tsv'] = fname_presuffix(
-            self.inputs.filtered_file,
-            suffix='fcon_matrix.tsv',
-            newpath=runtime.cwd,
-            use_ext=False)
-
-        self._results['time_series_tsv'], self._results['fcon_matrix_tsv'] = \
-            extract_timeseries_funct(
-                in_file=self.inputs.filtered_file,
-                atlas=self.inputs.atlas,
-                timeseries=self._results['time_series_tsv'],
-                fconmatrix=self._results['fcon_matrix_tsv'])
-        return runtime
 
 
 class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):

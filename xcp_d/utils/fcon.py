@@ -3,13 +3,13 @@
 """Functions for calculating functional connectivity in NIFTI files."""
 import nibabel as nb
 import numpy as np
-from nilearn.input_data import NiftiLabelsMasker
+import pandas as pd
 from scipy import signal
 from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 
-def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
+def extract_timeseries_funct(in_file, atlas, node_names):
     """Use Nilearn NiftiLabelsMasker to extract timeseries.
 
     Parameters
@@ -18,30 +18,35 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
         bold file timeseries
     atlas : str
         atlas in the same space with bold
-    timeseries : str
-        extracted timeseries filename
-    fconmatrix : str
-        functional connectivity matrix filename
+    node_names : list of str
+        The name of each node in the atlas, in the same order as the values in the atlas file.
 
     Returns
     -------
-    timeseries : str
+    timeseries_file : str
         extracted timeseries filename
-    fconmatrix : str
-        functional connectivity matrix filename
     """
-    masker = NiftiLabelsMasker(labels_img=atlas,
-                               smoothing_fwhm=None,
-                               standardize=False)
-    # Use nilearn for time_series
-    time_series = masker.fit_transform(in_file)
-    # Use numpy for correlation matrix
-    correlation_matrices = np.corrcoef(time_series.T)
+    import os
 
-    np.savetxt(fconmatrix, correlation_matrices, delimiter="\t")
-    np.savetxt(timeseries, time_series, delimiter="\t")
+    from nilearn.input_data import NiftiLabelsMasker
 
-    return timeseries, fconmatrix
+    timeseries_file = os.path.abspath("timeseries.tsv")
+
+    # Extract time series with nilearn
+    masker = NiftiLabelsMasker(labels_img=atlas, smoothing_fwhm=None, standardize=False)
+    timeseries_arr = masker.fit_transform(in_file)
+
+    if timeseries_arr.shape[1] != len(node_names):
+        raise ValueError(
+            f"The number of detected nodes ({timeseries_arr.shape[1]}) does not equal "
+            f"the number of expected nodes ({len(node_names)}) in {atlas}."
+        )
+
+    # The time series file is tab-delimited, with node names included in the first row.
+    timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_names)
+    timeseries_df.to_csv(timeseries_file, sep="\t", index=False)
+
+    return timeseries_file
 
 
 def compute_2d_reho(datat, adjacency_matrix):
@@ -173,3 +178,34 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
     alff = np.reshape(alff, [len(alff), 1])
     return alff
+
+
+def compute_functional_connectivity(in_file):
+    """Compute pair-wise correlations between columns in a tab-delimited file.
+
+    Parameters
+    ----------
+    in_file : str
+        Path to a tab-delimited file with time series.
+        Column headers should indicate the nodes/parcels of the atlas.
+
+    Returns
+    -------
+    correlations_file : str
+        The saved tab-delimited correlations file.
+        The first column is named "Node", and it is the node names from the time series file.
+        The remaining columns are the names of the nodes.
+    """
+    import os
+
+    import pandas as pd
+
+    df = pd.read_table(in_file)
+
+    correlations_file = os.path.abspath("correlations.tsv")
+
+    # Compute Pearson correlation
+    df_corr = df.corr(method="pearson")
+    df_corr.to_csv(correlations_file, index_label="Node", sep="\t")
+
+    return correlations_file

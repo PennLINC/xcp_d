@@ -495,18 +495,13 @@ def extract_ptseries(in_file):
     timeseries_file : str
         The saved tab-delimited time series file.
         Column headers are the names of the parcels from the CIFTI file.
-    correlations_file : str
-        The saved tab-delimited correlations file.
-        The first column is named "Node", and it is the index of the parcels from the CIFTI file.
-        The remaining columns are the names of the parcels.
     """
     import os
 
     import nibabel as nib
     import pandas as pd
 
-    timeseries_file = "timeseries.tsv"
-    correlations_file = "correlations.tsv"
+    timeseries_file = os.path.abspath("timeseries.tsv")
 
     img = nib.load(in_file)
     assert "ConnParcelSries" in img.nifti_header.get_intent(), img.nifti_header.get_intent()
@@ -518,8 +513,4 @@ def extract_ptseries(in_file):
     df = pd.DataFrame(columns=ax.name, data=img.get_fdata())
     df.to_csv(timeseries_file, index=False, sep="\t")
 
-    # Compute Pearson correlation
-    df_corr = df.corr(method="pearson")
-    df_corr.to_csv(correlations_file, index_label="Node", sep="\t")
-
-    return os.path.abspath(timeseries_file), os.path.abspath(correlations_file)
+    return timeseries_file

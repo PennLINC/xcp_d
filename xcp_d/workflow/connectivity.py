@@ -8,10 +8,11 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot
 from xcp_d.interfaces.workbench import CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.fcon import compute_functional_connectivity, extract_timeseries_funct
 from xcp_d.utils.utils import extract_ptseries, get_transformfile
 
 
@@ -116,7 +117,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     get_transformfile_node.inputs.mni_to_t1w = mni_to_t1w
     get_transformfile_node.inputs.t1w_to_native = t1w_to_native
 
-    # Using the generated transforms, apply them to get everything in the correct MNI form
+    # Using the generated transforms, apply them to get the atlases in the correct MNI form
     atlas_transform = pe.MapNode(
         ApplyTransformsx(
             interpolation="MultiLabel",
@@ -129,10 +130,25 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         n_procs=omp_nthreads,
     )
 
-    nifti_connect = pe.MapNode(
-        NiftiConnect(),
-        name="nifti_connect",
+    extract_parcel_timeseries = pe.MapNode(
+        Function(
+            input_names=["in_file", "atlas"],
+            output_names=["timeseries"],
+            function=extract_timeseries_funct,
+        ),
+        name="extract_parcel_timeseries",
         iterfield=["atlas"],
+        mem_gb=mem_gb,
+    )
+
+    correlate_timeseries = pe.MapNode(
+        Function(
+            input_names=["in_file"],
+            output_names=["correlations_file"],
+            function=compute_functional_connectivity,
+        ),
+        name="correlate_timeseries",
+        iterfield=["in_file"],
         mem_gb=mem_gb,
     )
 
@@ -147,17 +163,18 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         # Transform Atlas to correct MNI2009 space
         (inputnode, get_transformfile_node, [("bold_file", "bold_file")]),
         (inputnode, atlas_transform, [("ref_file", "reference_image")]),
-        (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
+        (inputnode, extract_parcel_timeseries, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, atlas_transform, [("atlas_file", "input_image")]),
         (get_transformfile_node, atlas_transform, [("transformfile", "transforms")]),
-        (atlas_transform, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
-                                     ("fcon_matrix_tsv", "correlations")]),
-        (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
+        (atlas_transform, extract_parcel_timeseries, [("output_image", "atlas")]),
+        (extract_parcel_timeseries, outputnode, [("timeseries", "timeseries")]),
+        (extract_parcel_timeseries, correlate_timeseries, [("timeseries", "in_file")]),
+        (correlate_timeseries, outputnode, [("correlations_file", "correlations")]),
+        (extract_parcel_timeseries, matrix_plot, [("timeseries", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
 
@@ -253,14 +270,26 @@ the Connectome Workbench.
         iterfield=["atlas_label"],
     )
 
-    correlate_data = pe.MapNode(
+    extract_parcel_timeseries = pe.MapNode(
         Function(
             input_names=["in_file"],
             output_names=["timeseries_file", "correlations_file"],
             function=extract_ptseries,
         ),
-        name="correlate_data",
+        name="extract_timeseries",
         iterfield=["in_file"],
+        mem_gb=mem_gb,
+    )
+
+    correlate_timeseries = pe.MapNode(
+        Function(
+            input_names=["in_file"],
+            output_names=["correlations_file"],
+            function=compute_functional_connectivity,
+        ),
+        name="correlate_timeseries",
+        iterfield=["in_file"],
+        mem_gb=mem_gb,
     )
 
     # Create a node to plot the matrixes
@@ -277,10 +306,11 @@ the Connectome Workbench.
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
-        (parcellate_data, correlate_data, [("out_file", "in_file")]),
-        (correlate_data, outputnode, [("timeseries_file", "timeseries"),
-                                      ("correlations_file", "correlations")]),
-        (correlate_data, matrix_plot, [("timeseries_file", "time_series_tsv")]),
+        (parcellate_data, extract_parcel_timeseries, [("out_file", "in_file")]),
+        (extract_parcel_timeseries, outputnode, [("timeseries_file", "timeseries")]),
+        (extract_parcel_timeseries, correlate_timeseries, [("timeseries_file", "in_file")]),
+        (extract_parcel_timeseries, matrix_plot, [("timeseries_file", "time_series_tsv")]),
+        (correlate_timeseries, outputnode, [("correlations_file", "correlations")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
 
