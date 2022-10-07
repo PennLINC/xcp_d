@@ -319,6 +319,7 @@ def init_writederivatives_wf(
                 check_hdr=False,
                 dismiss_entities=['desc', 'den'],
                 density='91k',
+                measure="pearsoncorrelation",
                 suffix='conmat',
                 extension='.pconn.nii',
             ),

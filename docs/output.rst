@@ -45,14 +45,14 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    a. Denoised or residual BOLD data::
 
        # Nifti
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-residual_bold.nii.gz
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-residual_bold.json
+       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-denoised_bold.nii.gz
+       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-denoised_bold.json
 
        # Cifti
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-residual_bold.json
+       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
+       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-denoised_bold.json
 
-      The json/sidecar contains paramters of the data and processing steps.
+      The json/sidecar contains parameters of the data and processing steps.
 
        .. code-block:: json-object
 
@@ -67,33 +67,33 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    b. Functional timeseries and connectivity matrices::
 
         #Nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_atlas-${atlasname}_desc-timeseries_bold.tsv
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_atlas-${atlasname}_desc-connectivity_bold.tsv
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_atlas-${atlasname}_timeseries.tsv
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_atlas-${atlasname}_measure-pearsoncorrelation_conmat.tsv
 
         #Cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_atlas-${atlasname}_den-91k_bold.pconn.nii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_atlas-${atlasname}_den-91k_bold.ptseries.nii
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_atlas-${atlasname}_den-91k_timeseries.ptseries.nii
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_atlas-${atlasname}_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 
-   c. Resting-state derivatives (ReHo and ALFF)::
+   c. Resting-state derivatives (Regional Homogeneity and ALFF)::
 
         # Nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-reho_bold.nii.gz
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-alff_bold.nii.gz
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_reho.nii.gz
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_alff.nii.gz
 
         # Cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-32k_hemi-L_desc-reho_bold.func.gii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-32k_hemi-R_desc-reho_bold.func.gii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-alff_bold.dtseries.nii
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-32k_hemi-L_reho.func.gii
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-32k_hemi-R_reho.func.gii
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_alff.dtseries.nii
 
    d. Other outputs include quality control and framewise  displacement::
 
         # Nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-qc_bold.csv
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-framewisedisplacement_bold.tsv
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_qc.csv
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-framewisedisplacement_motion.tsv
 
         # Cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_desc-qc_bold.csv
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_desc-framewisedisplacement_den-91k_bold.tsv
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_qc.csv
+        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_desc-framewisedisplacement_motion.tsv
 
 
    e. DCAN style scrubbing file.
