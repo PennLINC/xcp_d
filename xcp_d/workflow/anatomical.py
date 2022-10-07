@@ -700,7 +700,6 @@ def init_anatomical_wf(
                 "in_file",
                 [R_midthick_surf, R_pial_surf, R_wm_surf],
             )
-            
             # apply affine to 32k surfs
             lh_32k_apply_affine = pe.Node(
                 ApplyAffine(),
@@ -1099,7 +1098,7 @@ def init_anatomical_wf(
                         surface_sphere_project_unproject_rh,
                         rh_32k_resample_wf,
                         [("out_file", "current_sphere")],
-                    ), 
+                    ),
                     (
                         rh_32k_resample_wf,
                         rh_32k_apply_affine,
