@@ -280,7 +280,7 @@ the Connectome Workbench.
         (parcellate_data, correlate_data, [("out_file", "in_file")]),
         (correlate_data, outputnode, [("timeseries_file", "timeseries"),
                                       ("correlations_file", "correlations")]),
-        (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
+        (correlate_data, matrix_plot, [("timeseries_file", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
 
