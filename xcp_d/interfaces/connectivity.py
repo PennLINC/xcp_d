@@ -156,13 +156,8 @@ class ConnectPlot(SimpleInterface):
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
             atlas_file = self.inputs.time_series_tsv[atlas_idx]
 
-            if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
-                #  Get the correlation coefficient of the data
-                corrs = np.corrcoef(nb.load(atlas_file).get_fdata().T)
-
-            else:  # for nifti
-                #  Get the correlation coefficient of the data
-                corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter=',').T)
+            #  Get the correlation coefficient of the data
+            corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter=',').T)
 
             plot_matrix(
                 mat=corrs,
