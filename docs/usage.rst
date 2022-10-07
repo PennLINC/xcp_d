@@ -237,7 +237,7 @@ Multiple realt outputs can be combined by modifying the example code below.
       "{0}_{1}_task-{2}_desc-custom_timeseries.tsv".format(subid, sesid, taskid),
       index=False,
       header=False,
-      sep=' ',
+      sep='\t',
    )
 
 The space-delimited ``*desc-custom_timeseries.tsv`` file for a 5 condition task may look like::
