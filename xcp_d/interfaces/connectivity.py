@@ -6,7 +6,6 @@
 # will comeback
 """
 import matplotlib.pyplot as plt
-import nibabel as nb
 import numpy as np
 from nilearn.plotting import plot_matrix
 from nipype import logging
