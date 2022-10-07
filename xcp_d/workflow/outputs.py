@@ -153,7 +153,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['desc', "space"],
+                dismiss_entities=['desc'],
                 suffix='qc',
                 extension='.csv',
             ),
@@ -166,7 +166,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['desc', "space"],
+                dismiss_entities=['desc'],
                 suffix='timeseries',
                 extension=".tsv",
             ),
@@ -179,7 +179,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                dismiss_entities=['desc', "space"],
+                dismiss_entities=['desc'],
                 measure="pearsoncorrelation",
                 suffix='conmat',
                 extension=".tsv",
@@ -259,7 +259,7 @@ def init_writederivatives_wf(
                 meta_dict=cleaned_data_dictionary,
                 source_file=bold_file,
                 dismiss_entities=["den"],
-                desc='residual',
+                desc='denoised',
                 density='91k',
                 extension='.dtseries.nii',
             ),
@@ -304,6 +304,7 @@ def init_writederivatives_wf(
                 check_hdr=False,
                 dismiss_entities=['desc', 'den'],
                 density='91k',
+                suffix="timeseries",
                 extension='.ptseries.nii',
             ),
             name="timeseries_wf",
