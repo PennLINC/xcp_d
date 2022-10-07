@@ -115,7 +115,7 @@ def get_parser():
                          action='store_true',
                          default=False,
                          help='postprocess cifti instead of nifti'
-                         'this is set default for dcan and hpc')
+                         'this is set default for dcan and hcp')
 
     g_perfm = parser.add_argument_group('Options to for resource management ')
     g_perfm.add_argument('--nthreads',
@@ -155,7 +155,7 @@ def get_parser():
         required=False,
         default='fmriprep',
         type=str,
-        choices=['fmriprep', 'dcan', 'hpc'],
+        choices=['fmriprep', 'dcan', 'hcp'],
         help='fMRIPprep/nibabies are default structures, DCAN and HCP are optional')
 
     g_param = parser.add_argument_group('Parameters for postprocessing')
