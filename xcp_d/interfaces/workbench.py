@@ -568,7 +568,7 @@ class CiftiCorrelation(WBCommand):
 
     input_spec = _CiftiCorrelationInputSpec
     output_spec = _CiftiCorrelationOutputSpec
-    _cmd = "wb_command  -cifti-correlation"
+    _cmd = "wb_command -cifti-correlation"
 
 
 class _CiftiParcellateInputSpec(CommandLineInputSpec):
