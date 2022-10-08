@@ -59,7 +59,7 @@ def init_xcpd_wf(
     work_dir,
     dummytime,
     fd_thresh,
-    func_only,
+    process_surfaces=False,
     input_type='fmriprep',
     name='xcpd_wf',
 ):
@@ -98,7 +98,7 @@ def init_xcpd_wf(
                 work_dir=".",
                 dummytime=0,
                 fd_thresh=0.2,
-                func_only=False,
+                process_surfaces=True,
                 input_type='fmriprep',
                 name='xcpd_wf',
             )
@@ -140,6 +140,7 @@ def init_xcpd_wf(
         path to cusrtom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(process_surfaces)s
     %(input_type)s
     %(name)s
     """
@@ -170,7 +171,7 @@ def init_xcpd_wf(
             dummytime=dummytime,
             custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
-            func_only=func_only,
+            process_surfaces=process_surfaces,
             input_type=input_type,
             name="single_subject_" + subject_id + "_wf")
 
@@ -207,7 +208,7 @@ def init_subject_wf(
     task_id,
     smoothing,
     custom_confounds,
-    func_only,
+    process_surfaces,
     output_dir,
     input_type,
     name,
@@ -242,7 +243,7 @@ def init_subject_wf(
                 task_id="rest",
                 smoothing=6.,
                 custom_confounds=None,
-                func_only=False,
+                process_surfaces=True,
                 output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
@@ -278,6 +279,7 @@ def init_subject_wf(
         path to custom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(process_surfaces)s
     %(input_type)s
     %(name)s
     """
@@ -344,7 +346,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         datatype="figures"),
         name='ds_report_summary')
 
-    if not func_only:
+    if process_surfaces:
         anatomical_wf = init_anatomical_wf(
             omp_nthreads=omp_nthreads,
             fmri_dir=fmri_dir,
