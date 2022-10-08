@@ -85,7 +85,7 @@ def test_cifti_despike(data_dir):
     # Let's write this out
     file_data[2, :] = voxel_data
     tempdir = tempfile.mkdtemp()
-    filename = tempdir + "/test.nii"
+    filename = os.path.join(tempdir, "test.nii")
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
