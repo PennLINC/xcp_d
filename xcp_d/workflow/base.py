@@ -294,6 +294,10 @@ def init_subject_wf(
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
     t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
+    # determine the appropriate post-processing workflow
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
         name='inputnode',
@@ -334,20 +338,36 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
 """
 
-    summary = pe.Node(SubjectSummary(subject_id=subject_id,
-                                     bold=preproc_nifti_files),
-                      name='summary')
+    summary = pe.Node(
+        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        name='summary',
+    )
 
-    about = pe.Node(AboutSummary(version=__version__,
-                                 command=' '.join(sys.argv)),
-                    name='about')
+    about = pe.Node(
+        AboutSummary(version=__version__, command=' '.join(sys.argv)),
+        name='about',
+    )
 
-    ds_report_summary = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=preproc_nifti_files[0],
-        desc='summary',
-        datatype="figures"),
-        name='ds_report_summary')
+    ds_report_summary = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_nifti_files[0],
+            desc='summary',
+            datatype="figures",
+        ),
+        name='ds_report_summary',
+    )
+
+    ds_report_about = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_files[0],
+            desc='about',
+            datatype="figures",
+        ),
+        name='ds_report_about',
+        run_without_submitting=True,
+    )
 
     if not func_only:
         anatomical_wf = init_anatomical_wf(
@@ -364,10 +384,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
                                         ('t1seg', 'inputnode.t1seg')]),
         ])
-
-    # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
     # loop over each bold run to be postprocessed
     for i_run, bold_file in enumerate(preproc_files):
@@ -399,19 +415,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             output_dir=output_dir,
             mni_to_t1w=mni_to_t1w,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
-        )
-
-        # NOTE: TS- Why is the data sink initialized separately for each run?
-        # If it's run-specific, shouldn't the name reflect the run?
-        ds_report_about = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc='about',
-                datatype="figures",
-            ),
-            name='ds_report_about',
-            run_without_submitting=True,
         )
 
         workflow.connect(

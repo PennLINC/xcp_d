@@ -491,7 +491,8 @@ def build_workflow(opts, retval):
     from xcp_d.__about__ import __version__
     from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
-    build_log = nlogging.getLogger('nipype.workflow')
+
+    build_log = nlogging.getLogger('xcpd')
 
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
@@ -499,6 +500,7 @@ def build_workflow(opts, retval):
 
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
+
         build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
         if not clean_directory(work_dir):
             build_log.warning(
@@ -518,62 +520,62 @@ def build_workflow(opts, retval):
             f'(suggestion: {rec_path}).')
         retval['return_code'] = 1
         return retval
+
     if str(opts.analysis_level) != 'participant':
-        build_log.error(
-            'Please select analysis level "participant"')
+        build_log.error('Please select analysis level "participant"')
         retval['return_code'] = 1
         return retval
 
     # First check that fmriprep_dir looks like a BIDS folder
-    if opts.input_type == 'dcan':
-        opts.cifti = True
-        from xcp_d.utils.dcan2fmriprep import dcan2fmriprep
+    if opts.input_type in ("dcan", "hcp"):
         from xcp_d.workflow.base import _prefix
-        NIWORKFLOWS_LOG.info('Converting dcan to fmriprep format')
-        print('checking the DCAN files')
-        dcan_output_dir = str(work_dir) + '/dcanhcp'
-        os.makedirs(dcan_output_dir, exist_ok=True)
+
+        if not opts.cifti:
+            build_log.warning(
+                f"With input_type {opts.input_type}, cifti processing will be enabled "
+                "automatically."
+            )
+            opts.cifti = True
+
+        if opts.input_type == 'dcan':
+            from xcp_d.utils.dcan2fmriprep import dcan2fmriprep as convert_to_fmriprep
+        elif opts.input_type == 'hcp':
+            from xcp_d.utils.hcp2fmriprep import hcp2fmriprep as convert_to_fmriprep
+
+        NIWORKFLOWS_LOG.info(f'Converting {opts.input_type} to fmriprep format')
+        print(f'checking the {opts.input_type} files')
+        converted_fmri_dir = os.path.join(work_dir, "dcanhcp")
+        os.makedirs(converted_fmri_dir, exist_ok=True)
 
         if opts.participant_label is not None:
-            for kk in opts.participant_label:
-                dcan2fmriprep(dcandir=fmri_dir,
-                              outdir=dcan_output_dir,
-                              sub_id=_prefix(str(kk)))
+            for subject_id in opts.participant_label:
+                convert_to_fmriprep(
+                    fmri_dir,
+                    outdir=converted_fmri_dir,
+                    sub_id=_prefix(str(subject_id)),
+                )
         else:
-            dcan2fmriprep(dcandir=fmri_dir, outdir=dcan_output_dir)
+            convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)
 
-        fmri_dir = dcan_output_dir
-
-    elif opts.input_type == 'hcp':
-        opts.cifti = True
-        from xcp_d.utils.hcp2fmriprep import hcp2fmriprep
-        from xcp_d.workflow.base import _prefix
-        NIWORKFLOWS_LOG.info('Converting hcp to fmriprep format')
-        print('checking the HCP files')
-        hcp_output_dir = str(work_dir) + '/hcphcp'
-        os.makedirs(hcp_output_dir, exist_ok=True)
-        if opts.participant_label is not None:
-            for kk in opts.participant_label:
-                hcp2fmriprep(fmri_dir, hcp_output_dir, sub_id=_prefix(str(kk)))
-        else:
-            hcp2fmriprep(fmri_dir, hcp_output_dir)
-        fmri_dir = hcp_output_dir
+        fmri_dir = converted_fmri_dir
 
     # Set up some instrumental utilities
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval['run_uuid'] = run_uuid
 
     layout = BIDSLayout(str(fmri_dir), validate=False, derivatives=True)
-    subject_list = collect_participants(
-        layout, participant_label=opts.participant_label)
+    subject_list = collect_participants(layout, participant_label=opts.participant_label)
     retval['subject_list'] = subject_list
 
     # Load base plugin_settings from file if --use-plugin
     if opts.use_plugin is not None:
         from yaml import load as loadyml
+
         with open(opts.use_plugin) as f:
             plugin_settings = loadyml(f)
+
         plugin_settings.setdefault('plugin_args', {})
+
     else:
         # Defaults
         plugin_settings = {
@@ -607,6 +609,7 @@ def build_workflow(opts, retval):
         build_log.warning(
             'Per-process threads (--omp-nthreads=%d) exceed total '
             'threads (--nthreads/--n_cpus=%d)', omp_nthreads, nthreads)
+
     retval['plugin_settings'] = plugin_settings
 
     # Set up directories
