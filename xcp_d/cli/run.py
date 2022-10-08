@@ -131,9 +131,7 @@ def get_parser():
         "--cifti",
         action="store_true",
         default=False,
-        help=(
-            "postprocess cifti instead of nifti " "this is set default for dcan and hcp"
-        ),
+        help="postprocess cifti instead of nifti this is set default for dcan and hcp",
     )
 
     g_perfm = parser.add_argument_group("Options to for resource management")
