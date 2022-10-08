@@ -25,6 +25,7 @@ from xcp_d.utils.bids import (
     extract_t1w_seg,
     select_cifti_bold,
     select_registrationfile,
+    write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
@@ -146,6 +147,8 @@ def init_xcpd_wf(
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
     print(f"Begin the {name} workflow")
+
+    write_dataset_description(fmri_dir, output_dir)
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(

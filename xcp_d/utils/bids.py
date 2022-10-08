@@ -294,3 +294,42 @@ def extract_t1w_seg(subj_data):
         raise ValueError("No segmentation file found.")
 
     return selected_t1w_file, selected_t1w_seg_file
+
+
+def write_dataset_description(fmri_dir, xcpd_dir):
+    import json
+
+    from xcp_d import __version__
+
+    orig_dset_description = os.path.join(fmri_dir, "dataset_description.json")
+    if not os.path.isfile(orig_dset_description):
+        dset_desc = {}
+
+    else:
+        with open(orig_dset_description, "r") as fo:
+            dset_desc = json.load(fo)
+
+        assert dset_desc["DatasetType"] == "derivative"
+
+    # Update dataset description
+    dset_desc["Name"] = "xcpd"
+    generated_by = dset_desc.get("GeneratedBy", [])
+    generated_by.insert(
+        0,
+        {
+            "Name": "xcpd",
+            "Version": __version__,
+            "CodeURL": f"https://github.com/PennLINC/xcp_d/archive/{__version__}.tar.gz"
+        },
+    )
+    dset_desc["GeneratedBy"] = generated_by
+    dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
+
+    xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
+    if os.path.isfile(xcpd_dset_description):
+        # check hash of file
+        pass
+
+    else:
+        with open(xcpd_dset_description, "w") as fo:
+            json.dump(dset_desc, fo, indent=4, sort_keys=True)

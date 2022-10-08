@@ -5,7 +5,6 @@
 xcp_d preprocessing workflow
 ============================
 """
-
 import gc
 import logging
 import os
