@@ -145,7 +145,8 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print("Begin the " + name + " workflow")
+    print(f"Begin the {name} workflow")
+
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -172,13 +173,14 @@ def init_xcpd_wf(
             fd_thresh=fd_thresh,
             func_only=func_only,
             input_type=input_type,
-            name="single_subject_" + subject_id + "_wf")
+            name=f"single_subject_{subject_id}_wf",
+        )
 
         single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
-        print("Analyzing data at the " + str(analysis_level) + " level")
+        print(f"Analyzing data at the {analysis_level} level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
@@ -281,18 +283,21 @@ def init_subject_wf(
     %(input_type)s
     %(name)s
     """
-    layout, subj_data = collect_data(bids_dir=fmri_dir,
-                                     participant_label=subject_id,
-                                     task=task_id,
-                                     bids_validate=False)
+    layout, subj_data = collect_data(
+        bids_dir=fmri_dir,
+        participant_label=subject_id,
+        task=task_id,
+        bids_validate=False,
+    )
 
     mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
     t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
+        name='inputnode',
+    )
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.t1w = t1w
     inputnode.inputs.t1seg = t1wseg
