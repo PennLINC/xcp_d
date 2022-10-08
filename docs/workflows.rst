@@ -42,6 +42,7 @@ BOLD Workflow
 
     wf = init_boldpostprocess_wf(
         bold_file=str(bold_file),
+        bandpass_filter=True,
         upper_bpf=0.08,
         lower_bpf=0.01,
         bpf_order=2,
@@ -57,7 +58,7 @@ BOLD Workflow
         dummytime=0,
         output_dir='output_dir',
         fd_thresh=0.2,
-        num_bold=1,
+        n_runs=1,
         layout=layout,
         mni_to_t1w=regfile,
         despike=False,

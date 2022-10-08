@@ -64,7 +64,7 @@ def init_ciftipostprocess_wf(
 
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
-                bold_file,
+                bold_file="/path/to/cifti.dtseries.nii",
                 bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,

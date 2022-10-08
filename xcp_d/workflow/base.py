@@ -28,7 +28,7 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
-from xcp_d.workflow.anatomical import init_anatomical_wf
+from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 
@@ -293,12 +293,13 @@ def init_subject_wf(
     t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
+        fields=['custom_confounds', 'mni_to_t1w', 't1w_to_mni', 't1w', 't1seg']),
         name='inputnode')
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.t1w = t1w
     inputnode.inputs.t1seg = t1wseg
     inputnode.inputs.mni_to_t1w = mni_to_t1w
+    inputnode.inputs.t1w_to_mni = mni_to_t1w
 
     workflow = Workflow(name=name)
 
@@ -346,6 +347,17 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         datatype="figures"),
         name='ds_report_summary')
 
+    t1w_wf = init_t1w_wf(
+        output_dir=output_dir,
+        input_type=input_type,
+        omp_nthreads=omp_nthreads,
+        mem_gb=5,  # RF: need to change memory size
+    )
+    # send t1w and t1seg to anatomical workflow
+    workflow.connect([
+        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
+    ])
+
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
             omp_nthreads=omp_nthreads,
@@ -354,7 +366,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             output_dir=output_dir,
             t1w_to_mni=t1w_to_mni,
             input_type=input_type,
-            mem_gb=5)  # RF: need to chnage memory size
+            mem_gb=5,  # RF: need to chnage memory size
+        )
 
         # send t1w and t1seg to anatomical workflow
         workflow.connect([

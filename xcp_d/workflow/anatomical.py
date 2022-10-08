@@ -36,6 +36,155 @@ from xcp_d.utils.doc import fill_doc
 
 
 @fill_doc
+def init_t1w_wf(
+    output_dir,
+    input_type,
+    omp_nthreads,
+    mem_gb,
+    name="t1w_wf",
+):
+    """Copy T1w and segmentation to the derivative directory.
+
+    If necessary, this workflow will also warp the images to standard space.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_t1w_wf
+            wf = init_t1w_wf(
+                output_dir=".",
+                input_type="fmriprep",
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="t1w_wf",
+            )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    %(input_type)s
+    %(omp_nthreads)s
+    %(mem_gb)s
+    %(name)s
+        Default is "t1w_wf".
+
+    Inputs
+    ------
+    t1w : str
+        Path to the T1w file.
+    t1seg : str
+        Path to the T1w segmentation file.
+    %(t1w_to_mni)s
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+        name="inputnode",
+    )
+
+    # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
+    mnitemplate = str(
+        get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
+    )
+    # mnitemplatemask = str(
+    #     get_template(
+    #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
+    #     )
+    # )
+
+    if input_type in ("dcan", "hcp"):
+        ds_t1wmni = pe.Node(
+            DerivativesDataSink(base_directory=output_dir),
+            name="ds_t1wmni",
+            run_without_submitting=False,
+        )
+
+        ds_t1wseg = pe.Node(
+            DerivativesDataSink(base_directory=output_dir),
+            name="ds_t1wseg",
+            run_without_submitting=False,
+        )
+
+        workflow.connect(
+            [
+                (inputnode, ds_t1wmni, [("t1w", "in_file")]),
+                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+            ]
+        )
+    else:
+        # #TM: need to replace MNI92FSL xfm with the correct
+        # xfm from the MNI output space of fMRIPrep/NiBabies
+        # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
+        # to MNI152NLin6Asym.
+        t1w_transform = pe.Node(
+            ApplyTransformsx(
+                num_threads=2,
+                reference_image=mnitemplate,
+                interpolation="LanczosWindowedSinc",
+                input_image_type=3,
+                dimension=3,
+            ),
+            name="t1w_transform",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        seg_transform = pe.Node(
+            ApplyTransformsx(
+                num_threads=2,
+                reference_image=mnitemplate,
+                interpolation="MultiLabel",
+                input_image_type=3,
+                dimension=3,
+            ),
+            name="seg_transform",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        ds_t1wmni = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space="MNI152NLin6Asym",
+            ),
+            name="ds_t1wmni",
+            run_without_submitting=False,
+        )
+
+        ds_t1wseg = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space="MNI152NLin6Asym",
+            ),
+            name="ds_t1wseg",
+            run_without_submitting=False,
+        )
+
+        workflow.connect(
+            [
+                (inputnode, t1w_transform, [("t1w", "input_image"),
+                                            ("t1w_to_mni", "transforms")]),
+                (inputnode, seg_transform, [("t1seg", "input_image"),
+                                            ("t1w_to_mni", "transforms")]),
+                (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
+                (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
+            ]
+        )
+
+    workflow.connect(
+        [
+            (inputnode, ds_t1wmni, [("t1w", "source_file")]),
+            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
+        ]
+    )
+
+    return workflow
+
+
+@fill_doc
 def init_anatomical_wf(
     omp_nthreads,
     fmri_dir,
@@ -82,7 +231,7 @@ def init_anatomical_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1w_seg : str
+    t1seg : str
         Path to the T1w segmentation file.
     """
     workflow = Workflow(name=name)
@@ -105,37 +254,6 @@ def init_anatomical_wf(
     )
 
     if input_type == "dcan" or input_type == "hcp":
-        ds_t1wmni_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                desc="preproc",
-                suffix="T1w",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wmni_wf",
-            run_without_submitting=False,
-        )
-
-        ds_t1wseg_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                suffix="dseg",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wseg_wf",
-            run_without_submitting=False,
-        )
-        workflow.connect(
-            [
-                (inputnode, ds_t1wmni_wf, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg_wf, [("t1seg", "in_file")]),
-                (inputnode, ds_t1wmni_wf, [("t1w", "source_file")]),
-                (inputnode, ds_t1wseg_wf, [("t1w", "source_file")]),
-            ]
-        )
-
         all_files = list(layout.get_files())
         L_inflated_surf = fnmatch.filter(
             all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
@@ -219,74 +337,6 @@ def init_anatomical_wf(
 
     else:
         all_files = list(layout.get_files())
-
-        # #TM: need to replace MNI92FSL xfm with the correct
-        # xfm from the MNI output space of fMRIPrep/NiBabies
-        # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
-        # to MNI152NLin6Asym.
-        t1w_transform_wf = pe.Node(
-            ApplyTransformsx(
-                num_threads=2,
-                reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
-                transforms=t1w_to_mni,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-            ),
-            name="t1w_transform",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        seg_transform_wf = pe.Node(
-            ApplyTransformsx(
-                num_threads=2,
-                reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
-                transforms=t1w_to_mni,
-                interpolation="MultiLabel",
-                input_image_type=3,
-                dimension=3,
-            ),
-            name="seg_transform",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        ds_t1wmni_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                desc="preproc",
-                suffix="T1w",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wmni_wf",
-            run_without_submitting=False,
-        )
-
-        ds_t1wseg_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                suffix="dseg",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wseg_wf",
-            run_without_submitting=False,
-        )
-
-        workflow.connect(
-            [
-                (inputnode, t1w_transform_wf, [("t1w", "input_image")]),
-                (inputnode, seg_transform_wf, [("t1seg", "input_image")]),
-                (t1w_transform_wf, ds_t1wmni_wf, [("output_image", "in_file")]),
-                (seg_transform_wf, ds_t1wseg_wf, [("output_image", "in_file")]),
-                (inputnode, ds_t1wmni_wf, [("t1w", "source_file")]),
-                (inputnode, ds_t1wseg_wf, [("t1w", "source_file")]),
-            ]
-        )
 
         # verify freesurfer directory
 
