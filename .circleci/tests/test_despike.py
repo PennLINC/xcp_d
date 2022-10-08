@@ -66,7 +66,6 @@ def test_nifti_despike(data_dir):
     assert spiked_max > despiked_max
     assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
-    return
 
 
 def test_cifti_despike(data_dir):
