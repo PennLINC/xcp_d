@@ -92,7 +92,7 @@ def test_cifti_despike(data_dir):
     in_file = filename
     TR = _get_tr(nb.load(filename))
     tempdir = tempfile.mkdtemp()
-    os.system('cd ' + tempdir)
+    os.chdir(tempdir)
     despike3d = pe.Node(CiftiDespike(TR=TR),
                         name="cifti_despike",
                         mem_gb=4,
