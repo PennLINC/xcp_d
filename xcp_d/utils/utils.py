@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
-import glob as glob
 import os
 
 import nibabel as nb
@@ -9,7 +8,6 @@ import numpy as np
 from pkg_resources import resource_filename as pkgrf
 from scipy.signal import butter, detrend, filtfilt
 from sklearn.linear_model import LinearRegression
-from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
 
@@ -36,6 +34,11 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     transformfileT1W : list of str
         A list of paths to transform files for warping to T1w space.
     """
+    import glob
+    import os
+
+    from templateflow.api import get as get_template
+
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
     MNI6 = str(
@@ -201,7 +204,7 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     if 'space-MNI152NLin6Asym' in file_base:
         transform_list = [str(fMNI6)]
     elif 'space-MNI152NLin2009cAsym' in file_base:
-        transform_list = str(FSL2MNI9)
+        transform_list = [str(FSL2MNI9)]
     elif 'space-PNC' in file_base:
         #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]

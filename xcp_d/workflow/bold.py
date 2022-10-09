@@ -338,24 +338,24 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # get transform file for resampling and fcon
     get_std2native_transform = pe.Node(
         Function(
-            inputs=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            outputs=["transform_list"],
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["transform_list"],
             function=get_transformfile,
         ),
         name="get_std2native_transform",
     )
     get_t1w_mask = pe.Node(
         Function(
-            inputs=["bold_file", "mni_to_t1w"],
-            outputs=["bold_mask", "t1w_mask"],
+            input_names=["bold_file", "mni_to_t1w"],
+            output_names=["bold_mask", "t1w_mask"],
             function=get_maskfiles,
         ),
         name="get_t1w_mask",
     )
     get_native2space_transforms = pe.Node(
         Function(
-            inputs=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            outputs=["bold2MNI_trans", "bold2T1w_trans"],
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["bold2MNI_trans", "bold2T1w_trans"],
             function=get_transformfilex,
         ),
         name="get_native2space_transforms",

@@ -90,8 +90,8 @@ def init_execsummary_wf(omp_nthreads,
     # Get the transform file to native space
     get_std2native_transform = pe.Node(
         Function(
-            inputs=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            outputs=["transform_list"],
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["transform_list"],
             function=get_transformfile,
         ),
         name="get_std2native_transform",
