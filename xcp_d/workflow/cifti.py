@@ -49,7 +49,6 @@ def init_ciftipostprocess_wf(
     omp_nthreads,
     dummytime,
     fd_thresh,
-    mni_to_t1w,
     despike,
     n_runs,
     layout=None,
