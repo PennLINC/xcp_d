@@ -563,7 +563,7 @@ def build_workflow(opts, retval):
     from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
 
-    build_log = nlogging.getLogger("xcpd")
+    build_log = nlogging.getLogger("nipype.workflow")
 
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
