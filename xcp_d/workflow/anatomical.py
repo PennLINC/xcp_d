@@ -190,7 +190,6 @@ def init_anatomical_wf(
     fmri_dir,
     subject_id,
     output_dir,
-    t1w_to_mni,
     input_type,
     mem_gb,
     name="anatomical_wf",
@@ -221,7 +220,6 @@ def init_anatomical_wf(
     subject_id : str
         subject id
     %(output_dir)s
-    %(t1w_to_mni)s
     %(input_type)s
     %(mem_gb)s
     %(name)s

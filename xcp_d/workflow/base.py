@@ -364,9 +364,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            t1w_to_mni=t1w_to_mni,
             input_type=input_type,
-            mem_gb=5,  # RF: need to chnage memory size
+            mem_gb=5,  # RF: need to change memory size
         )
 
         # send t1w and t1seg to anatomical workflow
