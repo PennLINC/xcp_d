@@ -148,7 +148,7 @@ def init_xcpd_wf(
     xcpd_wf.base_dir = work_dir
     print(f"Begin the {name} workflow")
 
-    write_dataset_description(fmri_dir, output_dir)
+    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
