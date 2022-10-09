@@ -1,4 +1,5 @@
 xcp_d/
+xcp_d/dataset_description.json
 xcp_d/logs
 xcp_d/logs/CITATION.bib
 xcp_d/logs/CITATION.html
