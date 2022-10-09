@@ -13,6 +13,7 @@ import numpy as np
 import scipy
 import templateflow
 from nipype import __version__ as nipype_ver
+from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
