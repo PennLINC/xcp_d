@@ -49,10 +49,8 @@ def init_boldpostprocess_wf(
     band_stop_min,
     band_stop_max,
     smoothing,
-    bold_file,
     head_radius,
     params,
-    custom_confounds,
     omp_nthreads,
     dummytime,
     output_dir,
@@ -81,10 +79,8 @@ def init_boldpostprocess_wf(
                 band_stop_min=0.,
                 band_stop_max=0.,
                 smoothing=6,
-                bold_file="/path/to/file.nii.gz",
                 head_radius=50.,
                 params="36P",
-                custom_confounds=None,
                 omp_nthreads=1,
                 dummytime=0,
                 output_dir=".",
@@ -107,12 +103,8 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
-    bold_file: str
-        bold file for post processing
     %(head_radius)s
     %(params)s
-    custom_confounds: str
-        path to cusrtom nuissance regressors
     %(omp_nthreads)s
     dummytime: float
         the time in seconds to be removed before postprocessing
@@ -228,11 +220,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name='inputnode',
     )
 
-    inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
-    inputnode.inputs.mni_to_t1w = str(mni_to_t1w)
-    inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
 
     outputnode = pe.Node(

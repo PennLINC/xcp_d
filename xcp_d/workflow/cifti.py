@@ -32,7 +32,6 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 @fill_doc
 def init_ciftipostprocess_wf(
-    bold_file,
     lower_bpf,
     upper_bpf,
     bpf_order,
@@ -45,7 +44,6 @@ def init_ciftipostprocess_wf(
     head_radius,
     params,
     output_dir,
-    custom_confounds,
     omp_nthreads,
     dummytime,
     fd_thresh,
@@ -64,7 +62,6 @@ def init_ciftipostprocess_wf(
 
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
-                bold_file,
                 bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
@@ -77,7 +74,6 @@ def init_ciftipostprocess_wf(
                 head_radius=50,
                 params="36P",
                 output_dir=".",
-                custom_confounds=None,
                 omp_nthreads=1,
                 dummytime=0,
                 fd_thresh=0.2,
@@ -90,7 +86,6 @@ def init_ciftipostprocess_wf(
 
     Parameters
     ----------
-    bold_file
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -103,8 +98,6 @@ def init_ciftipostprocess_wf(
     %(head_radius)s
     %(params)s
     %(output_dir)s
-    custom_confounds: str
-        path to cusrtom nuissance regressors
     %(omp_nthreads)s
     dummytime: float
         the first few seconds to be removed before postprocessing
@@ -196,7 +189,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'cifti_file',
+                'bold_file',
                 'custom_confounds',
                 't1w',
                 't1seg',
@@ -206,7 +199,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name='inputnode',
     )
 
-    inputnode.inputs.bold_file = bold_file
     inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
     outputnode = pe.Node(

@@ -364,6 +364,57 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
     preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
+    datasource = pe.Node(
+        niu.IdentityInterface(fields=['bold_file']),
+        name="infosource",
+    )
+    datasource.iterables = [('bold_file', preproc_files)]
+
+    get_customfile_node = pe.Node(
+        Function(
+            input_names=["custom_confounds", "bold_file"],
+            output_names=["custom_confounds_file"],
+            function=get_customfile,
+        ),
+        name="get_customfile_node",
+    )
+    get_customfile_node.inputs.custom_confounds = custom_confounds
+
+    workflow.connect([(datasource, get_customfile_node, [("bold_file", "bold_file")])])
+
+    bold_postproc_wf = postproc_wf_function(
+        lower_bpf=lower_bpf,
+        upper_bpf=upper_bpf,
+        bpf_order=bpf_order,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        bandpass_filter=bandpass_filter,
+        smoothing=smoothing,
+        params=params,
+        head_radius=head_radius,
+        omp_nthreads=omp_nthreads,
+        n_runs=len(preproc_files),
+        despike=despike,
+        dummytime=dummytime,
+        fd_thresh=fd_thresh,
+        output_dir=output_dir,
+        layout=layout,
+        name=f"{'cifti' if cifti else 'nifti'}_postprocess_wf",
+    )
+    workflow.connect([
+        (datasource, bold_postproc_wf, [("bold_file", "inputnode.bold_file")]),
+        (get_customfile_node, bold_postproc_wf, [
+            ("custom_confounds_file", "inputnode.custom_confounds_file"),
+        ]),
+        (t1w_file_grabber, bold_postproc_wf, [
+            ('t1w', 'inputnode.t1w'),
+            ('t1seg', 'inputnode.t1seg'),
+        ]),
+        (transform_file_grabber, bold_postproc_wf, [('mni_to_t1w', 'inputnode.mni_to_t1w')]),
+    ])
+
     # loop over each bold run to be postprocessed
     for i_run, bold_file in enumerate(preproc_files):
         custom_confounds_file = get_customfile(
@@ -396,30 +447,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
-        # NOTE: TS- Why is the data sink initialized separately for each run?
-        # If it's run-specific, shouldn't the name reflect the run?
-        ds_report_about = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc='about',
-                datatype="figures",
-            ),
-            name='ds_report_about',
-            run_without_submitting=True,
-        )
-
-        workflow.connect(
-            [
-                (
-                    inputnode, bold_postproc_wf,
-                    [
-                        ('t1w', 'inputnode.t1w'),
-                        ('t1seg', 'inputnode.t1seg'),
-                    ],
-                ),
-            ],
-        )
+    # NOTE: TS- Why is the data sink initialized separately for each run?
+    # If it's run-specific, shouldn't the name reflect the run?
+    ds_report_about = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc='about',
+            datatype="figures",
+        ),
+        name='ds_report_about',
+        run_without_submitting=True,
+    )
 
     try:
         workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
