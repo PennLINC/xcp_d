@@ -8,10 +8,10 @@ A PR will be submitted to niworkflows at some point.
 import fnmatch
 import os
 import warnings
-from packaging.version import Version
 
 from bids import BIDSLayout
 from nipype import logging
+from packaging.version import Version
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -298,10 +298,18 @@ def extract_t1w_seg(subj_data):
 
 
 def write_dataset_description(fmri_dir, xcpd_dir):
-    """"""
+    """Write dataset_description.json file for derivatives.
+
+    Parameters
+    ----------
+    fmri_dir : str
+        Path to the BIDS derivative dataset being ingested.
+    xcpd_dir : str
+        Path to the output xcp-d dataset.
+    """
     import json
 
-    from xcp_d.__about__ import __version__, DOWNLOAD_URL
+    from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
     orig_dset_description = os.path.join(fmri_dir, "dataset_description.json")
     if not os.path.isfile(orig_dset_description):
