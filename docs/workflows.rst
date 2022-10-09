@@ -23,10 +23,6 @@ BOLD Workflow
         task='rest',
         bids_validate=False,
     )
-    regfile = pkgrf(
-        'xcp_d',
-        'data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5',
-    )
 
     bold_file = pkgrf(
         'xcp_d',
@@ -60,7 +56,6 @@ BOLD Workflow
         fd_thresh=0.2,
         n_runs=1,
         layout=layout,
-        mni_to_t1w=regfile,
         despike=False,
         name='bold_postprocess_wf',
     )

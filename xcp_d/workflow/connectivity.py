@@ -31,7 +31,6 @@ def init_nifti_functional_connectivity_wf(
             from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
             wf = init_nifti_functional_connectivity_wf(
                 mem_gb=0.1,
-                t1w_to_native="identity",
                 omp_nthreads=1,
                 name="nifti_fcon_wf",
             )

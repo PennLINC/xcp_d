@@ -207,7 +207,6 @@ def init_anatomical_wf(
                 fmri_dir=".",
                 subject_id="sub-01",
                 output_dir=".",
-                t1w_to_mni="identity",
                 input_type="fmriprep",
                 mem_gb=0.1,
                 name="anatomical_wf",
