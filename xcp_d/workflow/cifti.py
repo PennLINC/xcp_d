@@ -198,6 +198,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 'custom_confounds',
                 't1w',
                 't1seg',
+                'mni_to_t1w',
                 'fmriprep_confounds_tsv',
             ],
         ),
