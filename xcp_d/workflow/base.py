@@ -396,6 +396,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
     # loop over each bold run to be postprocessed
+    # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
+    # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
         custom_confounds_file = get_customfile(
             custom_confounds=custom_confounds,

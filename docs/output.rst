@@ -15,7 +15,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 2. Anatomical outputs: Anatomical outputs conists of anatomical preprocessed T1w/T2w  and segmentation images in MNI spaces::
 
         xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-        xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
+        xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_dseg.nii.gz
 
 
    If there are gifti files in fMRIPrep output, the gifti files are resampled to standard space::

@@ -9,7 +9,7 @@ xcp_d/sub-colornest001.html
 xcp_d/sub-colornest001/ses-1
 xcp_d/sub-colornest001/ses-1/anat
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
+xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-MNI152NLin6Asym_dseg.nii.gz
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_hcpinflated.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_hcpmidthickness.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_hcpveryinflated.surf.gii
