@@ -97,13 +97,19 @@ def init_t1w_wf(
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
-            DerivativesDataSink(base_directory=output_dir),
+            DerivativesDataSink(
+                base_directory=output_dir,
+                extension=".nii.gz",
+            ),
             name="ds_t1wmni",
             run_without_submitting=False,
         )
 
         ds_t1wseg = pe.Node(
-            DerivativesDataSink(base_directory=output_dir),
+            DerivativesDataSink(
+                base_directory=output_dir,
+                extension=".nii.gz",
+            ),
             name="ds_t1wseg",
             run_without_submitting=False,
         )
@@ -149,6 +155,7 @@ def init_t1w_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 space="MNI152NLin6Asym",
+                extension=".nii.gz",
             ),
             name="ds_t1wmni",
             run_without_submitting=False,
@@ -158,6 +165,7 @@ def init_t1w_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 space="MNI152NLin6Asym",
+                extension=".nii.gz",
             ),
             name="ds_t1wseg",
             run_without_submitting=False,
