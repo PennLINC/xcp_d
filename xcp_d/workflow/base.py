@@ -347,7 +347,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     t1w_file_grabber = pe.Node(
         Function(
             input_names=["subj_data"],
-            output_names=["t1w", "t1wseg"],
+            output_names=["t1w", "t1seg"],
             function=extract_t1w_seg,
         ),
         name="t1w_file_grabber",
