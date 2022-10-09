@@ -18,8 +18,6 @@ from xcp_d.utils.utils import get_transformfile
 @fill_doc
 def init_nifti_functional_connectivity_wf(
     mem_gb,
-    t1w_to_native,
-    mni_to_t1w,
     omp_nthreads,
     name="nifti_fcon_wf",
 ):
@@ -34,7 +32,6 @@ def init_nifti_functional_connectivity_wf(
             wf = init_nifti_functional_connectivity_wf(
                 mem_gb=0.1,
                 t1w_to_native="identity",
-                mni_to_t1w="identity",
                 omp_nthreads=1,
                 name="nifti_fcon_wf",
             )
@@ -42,9 +39,6 @@ def init_nifti_functional_connectivity_wf(
     Parameters
     ----------
     %(mem_gb)s
-    t1w_to_native: str
-        transformation files from tw1 to native space ( from fmriprep)
-    %(mni_to_t1w)s
     %(omp_nthreads)s
     %(name)s
         Default is "nifti_fcon_wf".
@@ -56,6 +50,8 @@ def init_nifti_functional_connectivity_wf(
     ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
+    %(mni_to_t1w)s
+    t1w_to_native
 
     Outputs
     -------
@@ -81,7 +77,9 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold_file", "ref_file", "clean_bold"]),
+        niu.IdentityInterface(
+            fields=["bold_file", "ref_file", "clean_bold", "mni_to_t1w", "t1w_to_native"],
+        ),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -113,8 +111,6 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         ),
         name="get_transformfile_node",
     )
-    get_transformfile_node.inputs.mni_to_t1w = mni_to_t1w
-    get_transformfile_node.inputs.t1w_to_native = t1w_to_native
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     atlas_transform = pe.MapNode(
@@ -145,7 +141,9 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, get_transformfile_node, [("bold_file", "bold_file")]),
+        (inputnode, get_transformfile_node, [("bold_file", "bold_file"),
+                                             ("mni_to_t1w", "mni_to_t1w"),
+                                             ("t1w_to_native", "t1w_to_native")]),
         (inputnode, atlas_transform, [("ref_file", "reference_image")]),
         (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),

@@ -5,8 +5,6 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import fnmatch
-import os
 import warnings
 
 from bids import BIDSLayout
@@ -273,6 +271,9 @@ def extract_t1w_seg(subj_data):
     selected_t1w_seg_file : str
         Segmentation file.
     """
+    import fnmatch
+    import os
+
     selected_t1w_file, selected_t1w_seg_file = None, None
     for t1w_file in subj_data["t1w"]:
         t1w_filename = os.path.basename(t1w_file)

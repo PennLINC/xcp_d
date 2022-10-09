@@ -81,7 +81,6 @@ def init_ciftipostprocess_wf(
                 omp_nthreads=1,
                 dummytime=0,
                 fd_thresh=0.2,
-                mni_to_t1w="identity",
                 despike=False,
                 n_runs=1,
                 layout=None,
@@ -109,7 +108,6 @@ def init_ciftipostprocess_wf(
     dummytime: float
         the first few seconds to be removed before postprocessing
     %(fd_thresh)s
-    %(mni_to_t1w)s
     despike: bool
         afni depsike
     n_runs
@@ -126,6 +124,7 @@ def init_ciftipostprocess_wf(
         custom regressors
     t1w
     t1seg
+    %(mni_to_t1w)s
     fmriprep_confounds_tsv
 
     Outputs
@@ -323,9 +322,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         bold_file=bold_file,
         layout=layout,
         output_dir=output_dir,
-        mni_to_t1w=mni_to_t1w,
         omp_nthreads=omp_nthreads,
-        mem_gb=mem_gbx['timeseries'])
+        mem_gb=mem_gbx['timeseries'],
+    )
 
     # Remove TR first:
     if dummytime > 0:
@@ -487,8 +486,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
-                                          ('bold_file', 'inputnode.bold_file')
-                                          ]),
+                                          ('bold_file', 'inputnode.bold_file'),
+                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
                                               ]),
         (filtering_wf, executivesummary_wf, [('filtered_file',

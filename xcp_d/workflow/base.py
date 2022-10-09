@@ -12,6 +12,7 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
+from nipype import Function
 from nipype import __version__ as nipype_ver
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -288,18 +289,14 @@ def init_subject_wf(
                                      task=task_id,
                                      bids_validate=False)
 
-    mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
-    t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_confounds', 'mni_to_t1w', 't1w_to_mni', 't1w', 't1seg']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
+        name='inputnode',
+    )
     inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.t1w = t1w
-    inputnode.inputs.t1seg = t1wseg
-    inputnode.inputs.mni_to_t1w = mni_to_t1w
-    inputnode.inputs.t1w_to_mni = mni_to_t1w
+    inputnode.inputs.subj_data = subj_data
 
     workflow = Workflow(name=name)
 
@@ -347,15 +344,36 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         datatype="figures"),
         name='ds_report_summary')
 
+    t1w_file_grabber = pe.Node(
+        Function(
+            input_names=["subj_data"],
+            output_names=["t1w", "t1wseg"],
+            function=extract_t1w_seg,
+        ),
+        name="t1w_file_grabber",
+    )
+
+    transform_file_grabber = pe.Node(
+        Function(
+            input_names=["subj_data"],
+            output_names=["mni_to_t1w", "t1w_to_mni"],
+            function=select_registrationfile,
+        ),
+        name="transform_file_grabber",
+    )
+
     t1w_wf = init_t1w_wf(
         output_dir=output_dir,
         input_type=input_type,
         omp_nthreads=omp_nthreads,
         mem_gb=5,  # RF: need to change memory size
     )
-    # send t1w and t1seg to anatomical workflow
+
     workflow.connect([
-        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
+        (inputnode, t1w_file_grabber, [('subj_data', 'subj_data')]),
+        (inputnode, transform_file_grabber, [('subj_data', 'subj_data')]),
+        (t1w_file_grabber, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
+        (transform_file_grabber, t1w_wf, [('t1w_to_mni', 'inputnode.t1w_to_mni')]),
     ])
 
     if process_surfaces:
@@ -368,10 +386,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,  # RF: need to change memory size
         )
 
-        # send t1w and t1seg to anatomical workflow
         workflow.connect([
-            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                        ('t1seg', 'inputnode.t1seg')]),
+            (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                               ('t1seg', 'inputnode.t1seg')]),
         ])
 
     # determine the appropriate post-processing workflow
@@ -406,7 +423,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dummytime=dummytime,
             fd_thresh=fd_thresh,
             output_dir=output_dir,
-            mni_to_t1w=mni_to_t1w,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
@@ -425,13 +441,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         workflow.connect(
             [
-                (
-                    inputnode, bold_postproc_wf,
-                    [
-                        ('t1w', 'inputnode.t1w'),
-                        ('t1seg', 'inputnode.t1seg'),
-                    ],
-                ),
+                (t1w_file_grabber, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
+                                                      ('t1seg', 'inputnode.t1seg')]),
+                (transform_file_grabber, bold_postproc_wf, [
+                    ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                ]),
             ],
         )
 

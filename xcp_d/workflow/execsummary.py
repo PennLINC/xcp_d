@@ -5,6 +5,7 @@ import fnmatch
 import glob
 import os
 
+from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -13,22 +14,45 @@ from templateflow.api import get as get_template
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_transformfile
 
 
+@fill_doc
 def init_execsummary_wf(omp_nthreads,
                         bold_file,
                         output_dir,
-                        mni_to_t1w,
                         TR,
                         mem_gb,
                         layout,
                         name='execsummary_wf'):
-    """Generate an executive summary."""
+    """Generate an executive summary.
+
+    Parameters
+    ----------
+    %(omp_nthreads)s
+    bold_file
+    %(output_dir)s
+    TR
+    %(mem_gb)s
+    layout
+    %(name)s
+
+    Inputs
+    ------
+    t1w
+    t1seg
+    regressed_data
+    residual_data
+    fd
+    rawdata
+    mask
+    %(mni_to_t1w)s
+    """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=[
-        't1w', 't1seg', 'regressed_data', 'residual_data', 'fd', 'rawdata', 'mask'
+        't1w', 't1seg', 'regressed_data', 'residual_data', 'fd', 'rawdata', 'mask', 'mni_to_t1w'
     ]),
         name='inputnode')
     inputnode.inputs.bold_file = bold_file
@@ -64,9 +88,17 @@ def init_execsummary_wf(omp_nthreads,
     plotrefbold_wf = pe.Node(PlotImage(in_file=bold_reference_file), name='plotrefbold_wf')
 
     # Get the transform file to native space
-    transform_file = get_transformfile(bold_file=bold_file,
-                                       mni_to_t1w=mni_to_t1w,
-                                       t1w_to_native=t1_to_native(bold_file))
+    get_std2native_transform = pe.Node(
+        Function(
+            inputs=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            outputs=["transform_list"],
+            function=get_transformfile,
+        ),
+        name="get_std2native_transform",
+    )
+    get_std2native_transform.inputs.bold_file = bold_file
+    get_std2native_transform.inputs.t1w_to_native = t1_to_native(bold_file)
+
     # Transform the file to native space
     resample_parc = pe.Node(ApplyTransformsx(
         dimension=3,
@@ -77,8 +109,7 @@ def init_execsummary_wf(omp_nthreads,
                          suffix='dseg',
                          extension=['.nii', '.nii.gz'])),
         interpolation='MultiLabel',
-        reference_image=bold_reference_file,
-        transforms=transform_file),
+        reference_image=bold_reference_file),
         name='resample_parc',
         n_procs=omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads)
@@ -127,6 +158,8 @@ def init_execsummary_wf(omp_nthreads,
         (inputnode, plot_svgx_wf, [('fd', 'fd'), ('regressed_data', 'regressed_data'),
                                    ('residual_data', 'residual_data'), ('mask', 'mask'),
                                    ('bold_file', 'rawdata')]),
+        (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
+        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
         (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
         (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
