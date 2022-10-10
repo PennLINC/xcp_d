@@ -13,7 +13,12 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import BrainPlotx, PlotImage, PlotSVGData, RibbontoStatmap
+from xcp_d.interfaces.surfplotting import (
+    BrainPlotx,
+    PlotImage,
+    PlotSVGData,
+    RibbontoStatmap,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_transformfile
 
