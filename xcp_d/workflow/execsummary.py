@@ -79,6 +79,8 @@ def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite
         ]
     )
 
+    return workflow
+
 
 @fill_doc
 def init_execsummary_wf(omp_nthreads,
