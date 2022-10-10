@@ -33,6 +33,7 @@ def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
+        Default is "init_brainsprite_wf".
 
     Inputs
     ------
@@ -45,7 +46,6 @@ def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite
         niu.IdentityInterface(fields=["t1w", "ribbon"]),
         name="inputnode",
     )
-
     ribbon2statmap_wf = pe.Node(
         RibbontoStatmap(),
         name="ribbon2statmap",
@@ -62,14 +62,13 @@ def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite
         DerivativesDataSink(
             base_directory=output_dir,
             check_hdr=False,
-            dismiss_entities=[
-                "desc",
-            ],
+            dismiss_entities=["desc"],
             desc="brainplot",
             datatype="figures",
         ),
         name="brainspriteplot",
     )
+
     workflow.connect(
         [
             (inputnode, generate_brainsprite, [("t1w", "template")]),
