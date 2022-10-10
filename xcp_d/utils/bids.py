@@ -309,6 +309,7 @@ def write_dataset_description(fmri_dir, xcpd_dir):
         Path to the output xcp-d dataset.
     """
     import json
+    import os
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
