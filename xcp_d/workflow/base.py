@@ -26,6 +26,7 @@ from xcp_d.utils.bids import (
     extract_t1w_seg,
     select_cifti_bold,
     select_registrationfile,
+    write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
@@ -148,7 +149,10 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print("Begin the " + name + " workflow")
+    print(f"Begin the {name} workflow")
+
+    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
+
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -175,13 +179,14 @@ def init_xcpd_wf(
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
             input_type=input_type,
-            name="single_subject_" + subject_id + "_wf")
+            name=f"single_subject_{subject_id}_wf",
+        )
 
         single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
-        print("Analyzing data at the " + str(analysis_level) + " level")
+        print(f"Analyzing data at the {analysis_level} level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
@@ -285,12 +290,18 @@ def init_subject_wf(
     %(input_type)s
     %(name)s
     """
-    layout, subj_data = collect_data(bids_dir=fmri_dir,
-                                     participant_label=subject_id,
-                                     task=task_id,
-                                     bids_validate=False)
+    layout, subj_data = collect_data(
+        bids_dir=fmri_dir,
+        participant_label=subject_id,
+        task=task_id,
+        bids_validate=False,
+    )
 
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
+
+    # determine the appropriate post-processing workflow
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
@@ -330,20 +341,36 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
 """
 
-    summary = pe.Node(SubjectSummary(subject_id=subject_id,
-                                     bold=preproc_nifti_files),
-                      name='summary')
+    summary = pe.Node(
+        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        name='summary',
+    )
 
-    about = pe.Node(AboutSummary(version=__version__,
-                                 command=' '.join(sys.argv)),
-                    name='about')
+    about = pe.Node(
+        AboutSummary(version=__version__, command=' '.join(sys.argv)),
+        name='about',
+    )
 
-    ds_report_summary = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=preproc_nifti_files[0],
-        desc='summary',
-        datatype="figures"),
-        name='ds_report_summary')
+    ds_report_summary = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_nifti_files[0],
+            desc='summary',
+            datatype="figures",
+        ),
+        name='ds_report_summary',
+    )
+
+    ds_report_about = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_files[0],
+            desc='about',
+            datatype="figures",
+        ),
+        name='ds_report_about',
+        run_without_submitting=True,
+    )
 
     t1w_file_grabber = pe.Node(
         Function(
@@ -404,10 +431,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     else:
         workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1seg', 'inputnode.ribbon')])])
 
-    # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
-
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
@@ -439,19 +462,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fd_thresh=fd_thresh,
             output_dir=output_dir,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
-        )
-
-        # NOTE: TS- Why is the data sink initialized separately for each run?
-        # If it's run-specific, shouldn't the name reflect the run?
-        ds_report_about = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc='about',
-                datatype="figures",
-            ),
-            name='ds_report_about',
-            run_without_submitting=True,
         )
 
         workflow.connect(
