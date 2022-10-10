@@ -225,8 +225,7 @@ class _RibbontoStatmapOutputSpec(TraitedSpec):
 
 
 class RibbontoStatmap(SimpleInterface):
-    """Plot of fd, dvars, carpet plots of bold data before and after regression/filtering."""
-    #TODO: This is not accurate
+    """Plot of fd, dvars, carpet plots of bold data before and after regression/filtering."""  # TODO: This is not accurate
     input_spec = _RibbontoStatmapInputSpec
     output_spec = _RibbontoStatmapOutputSpec
 
