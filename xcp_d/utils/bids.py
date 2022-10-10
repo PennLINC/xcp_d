@@ -311,6 +311,8 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
+    MINIMUM_BIDS_VERSION = "1.8.0"
+
     orig_dset_description = os.path.join(fmri_dir, "dataset_description.json")
     if not os.path.isfile(orig_dset_description):
         dset_desc = {}
@@ -320,6 +322,14 @@ def write_dataset_description(fmri_dir, xcpd_dir):
             dset_desc = json.load(fo)
 
         assert dset_desc["DatasetType"] == "derivative"
+
+    # xcp-d uses BIDS URIs, which require BIDS version >= 1.8.0
+    orig_bids_version = dset_desc.get("BIDSVersion", MINIMUM_BIDS_VERSION)
+    if Version(orig_bids_version).public < Version(MINIMUM_BIDS_VERSION).public:
+        LOGGER.warning(
+            f"Updating BIDSVersion from {orig_bids_version} to {MINIMUM_BIDS_VERSION}."
+        )
+        dset_desc["BIDSVersion"] = MINIMUM_BIDS_VERSION
 
     # Update dataset description
     dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
