@@ -248,6 +248,13 @@ def init_anatomical_wf(
         niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode"
     )
 
+    # Simple storage of the ribbon file
+    # NOTE: TS- I don't know if there's a better solution,
+    # but setting outputnode.inputs.ribbon didn't work.
+    ribbonnode = pe.Node(
+        niu.IdentityInterface(fields=["ribbon"]), name="ribbonnode"
+    )
+
     outputnode = pe.Node(
         niu.IdentityInterface(fields=["ribbon"]), name="outputnode"
     )
@@ -315,7 +322,7 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
-        outputnode.inputs.ribbon = ribbon
+        ribbonnode.inputs.ribbon = ribbon
 
     else:
         all_files = list(layout.get_files())
@@ -1300,9 +1307,11 @@ def init_anatomical_wf(
             if not Path(t1w_mgz).is_file():
                 t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/norm.mgz"
 
-            outputnode.inputs.ribbon = ribbon
+            ribbonnode.inputs.ribbon = ribbon
 
         else:
-            workflow.connect([inputnode, outputnode, [("t1seg", "ribbon")]])
+            workflow.connect([inputnode, ribbonnode, [("t1seg", "ribbon")]])
+
+        workflow.connect([ribbonnode, outputnode, [("ribbon", "ribbon")]])
 
     return workflow
