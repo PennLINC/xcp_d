@@ -224,17 +224,20 @@ process_surfaces : :obj:`bool`, optional
         * - Filename
           - Description
         * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpinflated.surf.gii``
-          - Something
+          - An inflation of the midthickness surface (useful for visualization).
+            Something something HCP.
         * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpmidthickness.surf.gii``
-          - Something
+          - The midpoints between wm and pial surfaces. Something something HCP.
         * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpveryinflated.surf.gii``
-          - Something
+          - A very-inflated midthicknesss surface (also for visualization).
+            Something something HCP.
+            This is not created if the input type is "hcp" or "dcan".
         * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii``
-          - Something
+          - The midpoints between wm and pial surfaces.
         * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
-          - Something
+          - The gray matter / pial matter border.
         * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
-          - Something
+          - The smoothed gray matter / white matter border for the cortex.
 """
 
 docdict_indented = {}

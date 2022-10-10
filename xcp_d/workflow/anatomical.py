@@ -196,17 +196,23 @@ def init_t1w_wf(
 
 @fill_doc
 def init_anatomical_wf(
-    omp_nthreads,
     fmri_dir,
     subject_id,
     output_dir,
     input_type,
+    omp_nthreads,
     mem_gb,
     name="anatomical_wf",
 ):
-    """Convert surfaces from native to standard fslr-32k space and resample T1w seg to MNI.
+    """Transform surfaces from native to standard fsLR-32k space.
 
+    For the ``hcp`` and ``dcan`` preprocessing workflows,
+    the fsLR-32k space surfaces already exist, and will simply be copied to the output directory.
 
+    For other preprocessing workflows, the native space surfaces are present in the Freesurfer
+    directory (if Freesurfer was run), and must be transformed to standard space.
+    If Freesurfer derivatives are not available, then a warning will be raised and
+    no output files will be generated.
 
     Workflow Graph
         .. workflow::
@@ -226,12 +232,12 @@ def init_anatomical_wf(
 
     Parameters
     ----------
-    %(omp_nthreads)s
     %(fmri_dir)s
     subject_id : str
         subject id
     %(output_dir)s
     %(input_type)s
+    %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
         Default is "anatomical_wf".
@@ -245,7 +251,9 @@ def init_anatomical_wf(
 
     Outputs
     -------
-    ribbon
+    ribbon : str
+        Path to a ribbon file.
+        This is used in a later workflow to generate a brainsprite figure.
     """
     workflow = Workflow(name=name)
 
