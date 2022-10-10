@@ -7,6 +7,7 @@ Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
 import os
+from pytest import TempPathFactory
 import os.path as op
 import numpy as np
 import nibabel as nb
@@ -15,15 +16,7 @@ from xcp_d.interfaces.regression import CiftiDespike
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.utils.plot import _get_tr
 
-
-def test_data_availability(data_dir, working_dir, output_dir):
-    """Makes sure that we have access to all the testing data."""
-    assert op.exists(output_dir)
-    assert op.exists(working_dir)
-    assert op.exists(data_dir)
-    boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    assert op.exists(boldfile)
+data_dir = '/Users/kahinim/Desktop/xcp_test/data'
 
 
 def test_nifti_despike(data_dir, tmp_path_factory):
@@ -100,7 +93,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
-    in_file = filename
+    in_file = tempdir+"/"+filename
     TR = _get_tr(nb.load(filename))
     despike3d = pe.Node(CiftiDespike(TR=TR),
                         name="cifti_despike",
@@ -123,3 +116,4 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     assert despiked_intent[0] == original_intent[0]
 
     return
+
