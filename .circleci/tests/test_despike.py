@@ -7,8 +7,6 @@ Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
 import os
-from pytest import TempPathFactory
-import os.path as op
 import numpy as np
 import nibabel as nb
 from nipype.pipeline import engine as pe
