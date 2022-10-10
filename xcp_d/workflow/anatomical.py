@@ -19,7 +19,6 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
-from xcp_d.interfaces.surfplotting import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -238,11 +237,19 @@ def init_anatomical_wf(
         Path to the T1w file.
     t1seg : str
         Path to the T1w segmentation file.
+
+    Outputs
+    -------
+    ribbon
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode"
+    )
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["ribbon"]), name="outputnode"
     )
 
     # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
@@ -308,37 +315,7 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
-        ribbon2statmap_wf = pe.Node(
-            RibbontoStatmap(ribbon=ribbon),
-            name="ribbon2statmap",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        brainspritex_wf = pe.Node(
-            BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
-        )
-
-        ds_brainspriteplot_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                check_hdr=False,
-                dismiss_entities=["desc"],
-                desc="brainplot",
-                datatype="figures",
-            ),
-            name="brainspriteplot",
-            run_without_submitting=True,
-        )
-
-        workflow.connect(
-            [
-                (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                (inputnode, brainspritex_wf, [("t1w", "template")]),
-                (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-                (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
-            ]
-        )
+        outputnode.inputs.ribbon = ribbon
 
     else:
         all_files = list(layout.get_files())
@@ -1323,71 +1300,9 @@ def init_anatomical_wf(
             if not Path(t1w_mgz).is_file():
                 t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/norm.mgz"
 
-            ribbon2statmap_wf = pe.Node(
-                RibbontoStatmap(ribbon=ribbon),
-                name="ribbon2statmap",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # brainplot
-            brainspritex_wf = pe.Node(
-                BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
-            )
-
-            ds_brainspriteplot_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    dismiss_entities=["desc"],
-                    desc="brainplot",
-                    datatype="figures",
-                ),
-                name="brainspriteplot",
-            )
-
-            workflow.connect(
-                [
-                    # (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
-                    # (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
-                    (inputnode, brainspritex_wf, [("t1w", "template")]),
-                    (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                    (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-                    (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
-                ]
-            )
+            outputnode.inputs.ribbon = ribbon
 
         else:
-            ribbon2statmap_wf = pe.Node(
-                RibbontoStatmap(),
-                name="ribbon2statmap",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            brainspritex_wf = pe.Node(
-                BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
-            )
-            ds_brainspriteplot_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    dismiss_entities=[
-                        "desc",
-                    ],
-                    desc="brainplot",
-                    datatype="figures",
-                ),
-                name="brainspriteplot",
-            )
-
-            workflow.connect(
-                [
-                    (inputnode, brainspritex_wf, [("t1w", "template")]),
-                    (inputnode, ribbon2statmap_wf, [("t1seg", "ribbon")]),
-                    (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                    (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-                    (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
-                ]
-            )
+            workflow.connect([inputnode, outputnode, [("t1seg", "ribbon")]])
 
     return workflow

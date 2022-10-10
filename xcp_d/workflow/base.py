@@ -32,6 +32,7 @@ from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
+from xcp_d.workflow.execsummary import init_brainsprite_wf
 
 
 @fill_doc
@@ -376,6 +377,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (transform_file_grabber, t1w_wf, [('t1w_to_mni', 'inputnode.t1w_to_mni')]),
     ])
 
+    # Plot the ribbon on the brain in a brainsprite figure
+    brainsprite_wf = init_brainsprite_wf(
+        output_dir=output_dir,
+        omp_nthreads=omp_nthreads,
+        mem_gb=5,
+    )
+
+    workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1w', 'inputnode.t1w')])])
+
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
             omp_nthreads=omp_nthreads,
@@ -389,7 +399,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
                                                ('t1seg', 'inputnode.t1seg')]),
+            (anatomical_wf, brainsprite_wf, [('outputnode.ribbon', 'inputnode.ribbon')])
         ])
+    else:
+        workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1seg', 'inputnode.ribbon')])])
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf

@@ -13,9 +13,67 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData
+from xcp_d.interfaces.surfplotting import BrainPlotx, PlotImage, PlotSVGData, RibbontoStatmap
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_transformfile
+
+
+@fill_doc
+def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite_wf"):
+    """Create a brainsprite figure from stuff.
+
+    Parameters
+    ----------
+    %(output_dir)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+
+    Inputs
+    ------
+    t1w
+    ribbon
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "ribbon"]),
+        name="inputnode",
+    )
+
+    ribbon2statmap_wf = pe.Node(
+        RibbontoStatmap(),
+        name="ribbon2statmap",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    generate_brainsprite = pe.Node(
+        BrainPlotx(),
+        name="brainsprite",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    ds_brainspriteplot_wf = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=[
+                "desc",
+            ],
+            desc="brainplot",
+            datatype="figures",
+        ),
+        name="brainspriteplot",
+    )
+    workflow.connect(
+        [
+            (inputnode, generate_brainsprite, [("t1w", "template")]),
+            (inputnode, ribbon2statmap_wf, [("ribbon", "ribbon")]),
+            (ribbon2statmap_wf, generate_brainsprite, [("out_file", "in_file")]),
+            (generate_brainsprite, ds_brainspriteplot_wf, [("out_html", "in_file")]),
+            (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
+        ]
+    )
 
 
 @fill_doc
