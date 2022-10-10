@@ -50,12 +50,13 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     spiked_max = max(voxel_data)
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
-    tempdir = tmp_path_factory.mktemp("test_despike")
-    filename = tempdir + "/spikedfile.nii.gz"
+    tempdir = tmp_path_factory.mktemp("test_despike_nifti")
+    os.chdir(tempdir)
+    filename = "spikedfile.nii.gz"
     write_ndata(data_matrix=file_data, mask=maskfile, template=boldfile, TR=0.8, filename=filename)
     spikedfile = filename
     # Let's despike the image and write it out to a temp file
-    tempdir = tmp_path_factory.mktemp("test_despike")
+    tempdir = os.getcwd()
     os.system("3dDespike -NEW -prefix " + tempdir + "/3dDespike.nii.gz " + spikedfile)
     despiked_file = tempdir + "/3dDespike.nii.gz"
     file_data = read_ndata(despiked_file, maskfile)
@@ -93,15 +94,14 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     spiked_min = min(voxel_data)
     # Let's write this out
     file_data[2, :] = voxel_data
-    tempdir = tmp_path_factory.mktemp("test_despike")
-    filename = tempdir + "/test.nii"
+    tempdir = tmp_path_factory.mktemp("test_despike_cifti")
+    os.chdir(tempdir)
+    filename = "test.nii"
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
     in_file = filename
     TR = _get_tr(nb.load(filename))
-    tempdir = tmp_path_factory.mktemp("test_despike")
-    os.system('cd ' + tempdir)
     despike3d = pe.Node(CiftiDespike(TR=TR),
                         name="cifti_despike",
                         mem_gb=4,
