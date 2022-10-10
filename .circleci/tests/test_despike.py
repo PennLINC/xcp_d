@@ -93,7 +93,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
-    in_file = tempdir+"/"+filename
+    in_file = os.getcwd() + "/" +filename
     TR = _get_tr(nb.load(filename))
     despike3d = pe.Node(CiftiDespike(TR=TR),
                         name="cifti_despike",
