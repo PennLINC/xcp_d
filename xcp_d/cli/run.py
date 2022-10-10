@@ -823,5 +823,5 @@ Running xcp_d version {__version__}:
 if __name__ == "__main__":
     raise RuntimeError(
         "xcp_d/cli/run.py should not be run directly;\n"
-        "Please `pip install` xcp_d and use the `xcp_d` command"
+        "Please use the `xcp_d` command-line interface."
     )
