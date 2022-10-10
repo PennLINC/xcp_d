@@ -244,20 +244,14 @@ def init_anatomical_wf(
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode"
-    )
+    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
 
     # Simple storage of the ribbon file
     # NOTE: TS- I don't know if there's a better solution,
     # but setting outputnode.inputs.ribbon didn't work.
-    ribbonnode = pe.Node(
-        niu.IdentityInterface(fields=["ribbon"]), name="ribbonnode"
-    )
+    ribbonnode = pe.Node(niu.IdentityInterface(fields=["ribbon"]), name="ribbonnode")
 
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["ribbon"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["ribbon"]), name="outputnode")
 
     # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
     mnitemplate = str(
@@ -1310,8 +1304,8 @@ def init_anatomical_wf(
             ribbonnode.inputs.ribbon = ribbon
 
         else:
-            workflow.connect([inputnode, ribbonnode, [("t1seg", "ribbon")]])
+            workflow.connect([(inputnode, ribbonnode, [("t1seg", "ribbon")])])
 
-        workflow.connect([ribbonnode, outputnode, [("ribbon", "ribbon")]])
+        workflow.connect([(ribbonnode, outputnode, [("ribbon", "ribbon")])])
 
     return workflow
