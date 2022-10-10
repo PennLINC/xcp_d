@@ -8,7 +8,6 @@ mounted in a container somewhere unintuitively.
 """
 import os
 import os.path as op
-import tempfile
 import numpy as np
 import nibabel as nb
 from nipype.pipeline import engine as pe
@@ -27,8 +26,13 @@ def test_data_availability(data_dir, working_dir, output_dir):
     assert op.exists(boldfile)
 
 
-def test_nifti_despike(data_dir):
-    """Test Nifti despiking."""
+def test_nifti_despike(data_dir, tmp_path_factory):
+    """
+    Test Nifti despiking.
+
+    Confirm that the maximum and minimum voxel values decrease
+    after despiking.
+    """
     # Read in the necessary inputs
     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -46,12 +50,12 @@ def test_nifti_despike(data_dir):
     spiked_max = max(voxel_data)
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
-    tempdir = tempfile.mkdtemp()
+    tempdir = tmp_path_factory.mktemp("test_despike")
     filename = tempdir + "/spikedfile.nii.gz"
     write_ndata(data_matrix=file_data, mask=maskfile, template=boldfile, TR=0.8, filename=filename)
     spikedfile = filename
     # Let's despike the image and write it out to a temp file
-    tempdir = tempfile.mkdtemp()
+    tempdir = tmp_path_factory.mktemp("test_despike")
     os.system("3dDespike -NEW -prefix " + tempdir + "/3dDespike.nii.gz " + spikedfile)
     despiked_file = tempdir + "/3dDespike.nii.gz"
     file_data = read_ndata(despiked_file, maskfile)
@@ -69,8 +73,13 @@ def test_nifti_despike(data_dir):
     return
 
 
-def test_cifti_despike(data_dir):
-    """Test Cifti despiking."""
+def test_cifti_despike(data_dir, tmp_path_factory):
+    """
+    Test Cifti despiking.
+
+    Confirm that the maximum and minimum voxel values decrease
+    after despiking.
+    """
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
     # Let's add some noise
@@ -85,14 +94,14 @@ def test_cifti_despike(data_dir):
     spiked_min = min(voxel_data)
     # Let's write this out
     file_data[2, :] = voxel_data
-    tempdir = tempfile.mkdtemp()
+    tempdir = tmp_path_factory.mktemp("test_despike")
     filename = tempdir + "/test.nii"
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
     in_file = filename
     TR = _get_tr(nb.load(filename))
-    tempdir = tempfile.mkdtemp()
+    tempdir = tmp_path_factory.mktemp("test_despike")
     os.system('cd ' + tempdir)
     despike3d = pe.Node(CiftiDespike(TR=TR),
                         name="cifti_despike",
