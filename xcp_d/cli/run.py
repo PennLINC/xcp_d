@@ -601,9 +601,7 @@ def build_workflow(opts, retval):
 
         build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
         if not clean_directory(work_dir):
-            build_log.warning(
-                f"Could not clear all contents of working directory: {work_dir}"
-            )
+            build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
 
     retval["return_code"] = 1
     retval["workflow"] = None
@@ -658,6 +656,13 @@ def build_workflow(opts, retval):
             convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)
 
         fmri_dir = converted_fmri_dir
+
+    if opts.process_surfaces and not opts.cifti:
+        build_log.warning(
+            "With current settings, structural surfaces will be warped to standard space, "
+            "but BOLD postprocessing will be performed on volumetric data. "
+            "This is not recommended."
+        )
 
     # Set up some instrumental utilities
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"

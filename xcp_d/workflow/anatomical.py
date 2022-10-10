@@ -6,6 +6,7 @@ import os
 import shutil
 from pathlib import Path
 
+from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
@@ -32,6 +33,8 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 from xcp_d.utils.bids import collect_data
 from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.doc import fill_doc
+
+LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
@@ -202,6 +205,8 @@ def init_anatomical_wf(
     name="anatomical_wf",
 ):
     """Convert surfaces from native to standard fslr-32k space and resample T1w seg to MNI.
+
+
 
     Workflow Graph
         .. workflow::
@@ -1304,6 +1309,10 @@ def init_anatomical_wf(
             ribbonnode.inputs.ribbon = ribbon
 
         else:
+            LOGGER.warning(
+                "No FreeSurfer derivatives detected. "
+                "Surface transformation will not be performed."
+            )
             workflow.connect([(inputnode, ribbonnode, [("t1seg", "ribbon")])])
 
         workflow.connect([(ribbonnode, outputnode, [("ribbon", "ribbon")])])
