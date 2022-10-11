@@ -306,6 +306,10 @@ def write_dataset_description(fmri_dir, xcpd_dir):
         Path to the BIDS derivative dataset being ingested.
     xcpd_dir : str
         Path to the output xcp-d dataset.
+
+    Returns
+    -------
+    usable_dataset_links : :obj:`dict`
     """
     import json
 
@@ -345,6 +349,27 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     dset_desc["GeneratedBy"] = generated_by
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
 
+    # Define a dataset link to preprocessed derivatives in BIDS URIs throughout xcpd derivatives.
+    dataset_links = dset_desc.get("DatasetLinks", {})
+    relative_path = os.path.relpath(fmri_dir, start=xcpd_dir)
+
+    if dataset_links.get("preprocessed", relative_path) == relative_path:
+        usable_dataset_links = {"preprocessed": relative_path}
+    else:
+        LOGGER.info(
+            "DatasetLink 'preprocessed' is already defined. "
+            "Will use 'preprocessed([0-9]+)' instead."
+        )
+
+        # Find an unused (or pre-set) preprocessed([0-9]+) key to use.
+        key_counter = 0
+        while dataset_links.get(f"preprocessed{key_counter}", relative_path) != relative_path:
+            key_counter += 1
+
+        usable_dataset_links = {f"preprocessed{key_counter}": relative_path}
+
+    dataset_links.update(usable_dataset_links)
+
     xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
         with open(xcpd_dset_description, "r") as fo:
@@ -357,3 +382,5 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     else:
         with open(xcpd_dset_description, "w") as fo:
             json.dump(dset_desc, fo, indent=4, sort_keys=True)
+
+    return usable_dataset_links
