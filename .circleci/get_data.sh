@@ -5,7 +5,6 @@ fi
 
 # Edit these for project-wide testing
 WGET="wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q"
-LOCAL_PATCH="~/projects/xcp_d/xcp_d"  # Change to your local patch
 IMAGE="pennlinc/xcp_d:unstable"
 
 # Determine if we're in a CI test
@@ -24,11 +23,22 @@ else
   NTHREADS=2
   OMP_NTHREADS=2
 
+  LOCAL_PATCH_FILE="local_xcpd_path.txt"
+
+  # check that the patch file exists
+  if [ ! -f $LOCAL_PATCH_FILE ]
+  then
+    echo "File $LOCAL_PATCH_FILE DNE"
+    exit 1
+  fi
+
+  LOCAL_PATCH="$( cat ${LOCAL_PATCH_FILE} )"  # Load path from file
+
   # check that the local xcp_d path exists
   if [ ! -d $LOCAL_PATCH ]
   then
     echo "Path $LOCAL_PATCH DNE"
-    exit 125
+    exit 1
   fi
 
 fi
@@ -135,73 +145,143 @@ get_bids_data() {
     echo "working dir: ${WORKDIR}"
     echo "fetching dataset: ${DS}"
     ENTRYDIR=`pwd`
-    mkdir -p ${WORKDIR}/data
-    cd ${WORKDIR}/data
+    TEST_DATA_DIR="${WORKDIR}/data"
+    mkdir -p $TEST_DATA_DIR
+    cd $TEST_DATA_DIR
 
     # without freesurfer, sub-01
-    if [[ ${DS} = sub01 ]]; then
-      ${WGET} \
-        -O withoutfs_sub01.tar.xz \
-	    "https://upenn.box.com/shared/static/4eq4hdefriqhhuyeqswxmkhno0gtezli.xz"
-      tar xvfJ withoutfs_sub01.tar.xz -C ${WORKDIR}/data/
-      rm withoutfs_sub01.tar.xz
-    fi
+    if [[ ${DS} = sub01 ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/withoutfreesurfer"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} data to $dataset_dir"
+
+        ${WGET} \
+          -O withoutfs_sub01.tar.xz \
+        "https://upenn.box.com/shared/static/4eq4hdefriqhhuyeqswxmkhno0gtezli.xz"
+        tar xvfJ withoutfs_sub01.tar.xz -C $TEST_DATA_DIR
+        rm withoutfs_sub01.tar.xz
+
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
 
     # colornest subject who also has freesurfer data (in a different archive)
-    if [[ ${DS} = fmriprep_colornest ]]; then
-      echo "Getting fmriprep colornest"
-      ${WGET} \
-        -O withfs_fmriprep_colornest001.tar.xz \
-        "https://upenn.box.com/shared/static/xxmty7kbg3umifu4l1z6e5tg8ha7hjxx.xz"
-      tar xvfJ withfs_fmriprep_colornest001.tar.xz -C ${WORKDIR}/data/
-      rm withfs_fmriprep_colornest001.tar.xz
-    fi
+    elif [[ ${DS} = fmriprep_colornest ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/fmriprep"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} data to $dataset_dir"
 
-    # freesurfer data for colornest subject
-    if [[ ${DS} = freesurfer_colornest ]]; then
-		  ${WGET} \
-        -O withfs_fs_colornest001.tar.xz \
-        "https://upenn.box.com/shared/static/ej43w925h5cozsizuamnh7bjtdevi61b.xz"
-      tar xvfJ withfs_fs_colornest001.tar.xz -C ${WORKDIR}/data/
-      rm withfs_fs_colornest001.tar.xz
-    fi
+        ${WGET} \
+          -O withfs_fmriprep_colornest001.tar.xz \
+          "https://upenn.box.com/shared/static/xxmty7kbg3umifu4l1z6e5tg8ha7hjxx.xz"
+        tar xvfJ withfs_fmriprep_colornest001.tar.xz -C $TEST_DATA_DIR
+        rm withfs_fmriprep_colornest001.tar.xz
 
-    # fsaverage4
-    if [[ ${DS} = fsaverage4 ]]; then
-      ${WGET} \
-        -O withfs_fs_fsaverage4.tar.xz \
-        "https://upenn.box.com/shared/static/mcc2ri4xd2da0barnkunw045uszczwuu.xz"
-      tar xvfJ withfs_fs_fsaverage4.tar.xz -C ${WORKDIR}/data/
-      rm withfs_fs_fsaverage4.tar.xz
-    fi
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
 
-    # fsaverage5
-    if [[ ${DS} = fsaverage5 ]]; then
-      ${WGET} \
-        -O withfs_fs_fsaverage5.tar.xz \
-        "https://upenn.box.com/shared/static/xjydc4ac71ercd8j9lqbiq875w01y8p4.xz"
-      tar xvfJ withfs_fs_fsaverage5.tar.xz -C ${WORKDIR}/data/
-      rm withfs_fs_fsaverage5.tar.xz
-    fi
+    elif [[ ${DS} = freesurfer_colornest ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/freesurfer"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} data to $dataset_dir"
 
-    # fsaverage6
-    if [[ ${DS} = fsaverage6 ]]; then
-      ${WGET} \
-        -O withfs_fs_fsaverage4.tar.xz \
-        "hhttps://upenn.box.com/shared/static/hfv2sbdr7z3pasqr2bxh4ajyzni4wm93.xz"
-      tar xvfJ withfs_fs_fsaverage4.tar.xz -C ${WORKDIR}/data/
-      rm withfs_fs_fsaverage4.tar.xz
-    fi
+        ${WGET} \
+          -O withfs_fs_colornest001.tar.xz \
+          "https://upenn.box.com/shared/static/ej43w925h5cozsizuamnh7bjtdevi61b.xz"
+        tar xvfJ withfs_fs_colornest001.tar.xz -C $TEST_DATA_DIR
+        rm withfs_fs_colornest001.tar.xz
 
-    # fsaverage_sym
-    if [[ ${DS} = fsaverage_sym ]]; then
-      ${WGET} \
-        -O withfs_fs_fsaverage_sym.tar.xz \
-        "https://upenn.box.com/shared/static/8xi851ymcffxd5a0pacryaq7swy4gkpy.xz"
-      tar xvfJ withfs_fs_fsaverage_sym.tar.xz -C ${WORKDIR}/data/
-      rm withfs_fs_fsaverage_sym.tar.xz
-    fi
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
 
+    elif [[ ${DS} = fsaverage4 ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/fsaverage4"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} data to $dataset_dir"
+
+        ${WGET} \
+          -O withfs_fs_fsaverage4.tar.xz \
+          "https://upenn.box.com/shared/static/mcc2ri4xd2da0barnkunw045uszczwuu.xz"
+        tar xvfJ withfs_fs_fsaverage4.tar.xz -C $TEST_DATA_DIR
+        rm withfs_fs_fsaverage4.tar.xz
+
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
+
+    elif [[ ${DS} = fsaverage5 ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/fsaverage5"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} colornest data to $dataset_dir"
+
+        ${WGET} \
+          -O withfs_fs_fsaverage5.tar.xz \
+          "https://upenn.box.com/shared/static/xjydc4ac71ercd8j9lqbiq875w01y8p4.xz"
+        tar xvfJ withfs_fs_fsaverage5.tar.xz -C $TEST_DATA_DIR
+        rm withfs_fs_fsaverage5.tar.xz
+
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
+
+    elif [[ ${DS} = fsaverage6 ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/fsaverage6"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} colornest data to $dataset_dir"
+
+        ${WGET} \
+          -O withfs_fs_fsaverage6.tar.xz \
+          "hhttps://upenn.box.com/shared/static/hfv2sbdr7z3pasqr2bxh4ajyzni4wm93.xz"
+        tar xvfJ withfs_fs_fsaverage6.tar.xz -C $TEST_DATA_DIR
+        rm withfs_fs_fsaverage6.tar.xz
+
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
+
+    elif [[ ${DS} = fsaverage_sym ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/fsaverage_sym"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} colornest data to $dataset_dir"
+
+        ${WGET} \
+          -O withfs_fs_fsaverage_sym.tar.xz \
+          "https://upenn.box.com/shared/static/8xi851ymcffxd5a0pacryaq7swy4gkpy.xz"
+        tar xvfJ withfs_fs_fsaverage_sym.tar.xz -C $TEST_DATA_DIR
+        rm withfs_fs_fsaverage_sym.tar.xz
+
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
+
+    else
+      echo "Dataset ${DS} not recognized"
+      exit 1
+
+    fi
     cd ${ENTRYDIR}
 }
 

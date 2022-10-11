@@ -12,6 +12,7 @@ import h5py
 import nibabel as nb
 import numpy as np
 from natsort import natsorted
+from nilearn.image import concat_imgs
 from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
 
@@ -125,9 +126,9 @@ def make_dcan_df(fds_files, name):
         TR = nb.load(nii).header.get_zooms()[-1]
         print(exc)
 
-    fd = np.loadtxt(fds_files[0], delimiter=',').T
+    fd = np.loadtxt(fds_files[0], delimiter='\t').T
     for j in range(1, len(fds_files)):
-        dx = np.loadtxt(fds_files[j], delimiter=',')
+        dx = np.loadtxt(fds_files[j], delimiter='\t')
         fd = np.hstack([fd, dx.T])
 
     # NOTE: TS- Maybe close the file object or nest in a with statement?
@@ -248,7 +249,10 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         glob.glob(fmri_files + os.path.basename(res.split('run-')[0])
                                   + '*' + resid.partition('_desc')[0]
                                   + '*_desc-brain_mask.nii.gz'))[0]
-                    os.system('fslmerge -t ' + outfile + '  ' + combinefile)
+
+                    combine_img = concat_imgs(combinefile)
+                    combine_img.to_filename(outfile)
+
                     for b in filex:
                         dvar = compute_dvars(read_ndata(b, mask))
                         dvar[0] = np.mean(dvar)
@@ -269,7 +273,9 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             combinefiley = "  ".join(filey)
             rawdata = tempfile.mkdtemp() + '/rawdata.nii.gz'
-            os.system('fslmerge -t ' + rawdata + '  ' + combinefiley)
+
+            combine_img = concat_imgs(combinefiley)
+            combine_img.to_filename(rawdata)
 
             precarpet = figure_files + os.path.basename(
                 fileid) + '_desc-precarpetplot_bold.svg'
@@ -561,12 +567,12 @@ def combine_fd(fds_file, fileout):
     fileout : str
         Path to the file that will be written out.
     """
-    df = np.loadtxt(fds_file[0], delimiter=',').T
+    df = np.loadtxt(fds_file[0], delimiter='\t').T
     fds = fds_file
     for j in range(1, len(fds)):
-        dx = np.loadtxt(fds[j], delimiter=',')
+        dx = np.loadtxt(fds[j], delimiter='\t')
         df = np.hstack([df, dx.T])
-    np.savetxt(fileout, df, fmt='%.5f', delimiter=',')
+    np.savetxt(fileout, df, fmt='%.5f', delimiter='\t')
 
 
 def get_cifti_tr(cifti_file):

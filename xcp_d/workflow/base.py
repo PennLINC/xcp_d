@@ -23,6 +23,7 @@ from xcp_d.utils.bids import (
     extract_t1w_seg,
     select_cifti_bold,
     select_registrationfile,
+    write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
@@ -57,6 +58,7 @@ def init_xcpd_wf(
     work_dir,
     dummytime,
     fd_thresh,
+    func_only,
     input_type='fmriprep',
     name='xcpd_wf',
 ):
@@ -95,6 +97,7 @@ def init_xcpd_wf(
                 work_dir=".",
                 dummytime=0,
                 fd_thresh=0.2,
+                func_only=False,
                 input_type='fmriprep',
                 name='xcpd_wf',
             )
@@ -141,7 +144,10 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print("Begin the " + name + " workflow")
+    print(f"Begin the {name} workflow")
+
+    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
+
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -166,14 +172,16 @@ def init_xcpd_wf(
             dummytime=dummytime,
             custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
+            func_only=func_only,
             input_type=input_type,
-            name="single_subject_" + subject_id + "_wf")
+            name=f"single_subject_{subject_id}_wf",
+        )
 
         single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
-        print("Analyzing data at the " + str(analysis_level) + " level")
+        print(f"Analyzing data at the {analysis_level} level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
@@ -202,6 +210,7 @@ def init_subject_wf(
     task_id,
     smoothing,
     custom_confounds,
+    func_only,
     output_dir,
     input_type,
     name,
@@ -236,6 +245,7 @@ def init_subject_wf(
                 task_id="rest",
                 smoothing=6.,
                 custom_confounds=None,
+                func_only=False,
                 output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
@@ -274,22 +284,28 @@ def init_subject_wf(
     %(input_type)s
     %(name)s
     """
-    layout, subj_data = collect_data(bids_dir=fmri_dir,
-                                     participant_label=subject_id,
-                                     task=task_id,
-                                     bids_validate=False)
+    layout, subj_data = collect_data(
+        bids_dir=fmri_dir,
+        participant_label=subject_id,
+        task=task_id,
+        bids_validate=False,
+    )
 
-    regfile = select_registrationfile(subj_data=subj_data)
-    subject_data = select_cifti_bold(subj_data=subj_data)
-    t1wseg = extract_t1w_seg(subj_data=subj_data)
+    mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
+    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
+    t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
-        name='inputnode')
+    # determine the appropriate post-processing workflow
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
+        name='inputnode',
+    )
     inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.t1w = t1wseg[0]
-    inputnode.inputs.t1seg = t1wseg[1]
-    mni_to_t1w = regfile[0]
+    inputnode.inputs.t1w = t1w
+    inputnode.inputs.t1seg = t1wseg
     inputnode.inputs.mni_to_t1w = mni_to_t1w
 
     workflow = Workflow(name=name)
@@ -325,124 +341,96 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
 """
 
-    summary = pe.Node(SubjectSummary(subject_id=subject_id,
-                                     bold=subject_data[0]),
-                      name='summary')
+    summary = pe.Node(
+        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        name='summary',
+    )
 
-    about = pe.Node(AboutSummary(version=__version__,
-                                 command=' '.join(sys.argv)),
-                    name='about')
+    about = pe.Node(
+        AboutSummary(version=__version__, command=' '.join(sys.argv)),
+        name='about',
+    )
 
-    ds_report_summary = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=subject_data[0][0],
-        desc='summary',
-        datatype="figures"),
-        name='ds_report_summary')
+    ds_report_summary = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_nifti_files[0],
+            desc='summary',
+            datatype="figures",
+        ),
+        name='ds_report_summary',
+    )
 
-    anatomical_wf = init_anatomical_wf(
-        omp_nthreads=omp_nthreads,
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        output_dir=output_dir,
-        t1w_to_mni=regfile[1],
-        input_type=input_type,
-        mem_gb=5)  # RF: need to chnage memory size
+    ds_report_about = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_files[0],
+            desc='about',
+            datatype="figures",
+        ),
+        name='ds_report_about',
+        run_without_submitting=True,
+    )
 
-    # send t1w and t1seg to anatomical workflow
-    workflow.connect([
-        (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                    ('t1seg', 'inputnode.t1seg')]),
-    ])
+    if not func_only:
+        anatomical_wf = init_anatomical_wf(
+            omp_nthreads=omp_nthreads,
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            output_dir=output_dir,
+            t1w_to_mni=t1w_to_mni,
+            input_type=input_type,
+            mem_gb=5)  # RF: need to chnage memory size
 
-    # loop over each bold data to be postprocessed
-    # RF: get rid of ii's
-    if cifti:
-        ii = 0
-        for cifti_file in subject_data[1]:
-            ii = ii + 1
-            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=cifti_file)
-            cifti_postproc_wf = init_ciftipostprocess_wf(
-                cifti_file=cifti_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
-                smoothing=smoothing,
-                params=params,
-                head_radius=head_radius,
-                custom_confounds=custom_confoundsx,
-                omp_nthreads=omp_nthreads,
-                num_cifti=len(subject_data[1]),
-                dummytime=dummytime,
-                fd_thresh=fd_thresh,
-                despike=despike,
-                layout=layout,
-                mni_to_t1w=regfile[0],
-                output_dir=output_dir,
-                name='cifti_postprocess_' + str(ii) + '_wf')
+        # send t1w and t1seg to anatomical workflow
+        workflow.connect([
+            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                        ('t1seg', 'inputnode.t1seg')]),
+        ])
 
-            ds_report_about = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=cifti_file,
-                desc='about',
-                datatype="figures",
-            ),
-                name='ds_report_about',
-                run_without_submitting=True)
+    # loop over each bold run to be postprocessed
+    for i_run, bold_file in enumerate(preproc_files):
+        custom_confounds_file = get_customfile(
+            custom_confounds=custom_confounds,
+            bold_file=bold_file,
+        )
 
-            workflow.connect([(inputnode, cifti_postproc_wf,
-                               [('custom_confounds', 'inputnode.custom_confounds'),
-                                ('t1w', 'inputnode.t1w'),
-                                ('t1seg', 'inputnode.t1seg')])])
+        bold_postproc_wf = postproc_wf_function(
+            bold_file=bold_file,
+            lower_bpf=lower_bpf,
+            upper_bpf=upper_bpf,
+            bpf_order=bpf_order,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            bandpass_filter=bandpass_filter,
+            smoothing=smoothing,
+            params=params,
+            head_radius=head_radius,
+            omp_nthreads=omp_nthreads,
+            n_runs=len(preproc_files),
+            custom_confounds=custom_confounds_file,
+            layout=layout,
+            despike=despike,
+            dummytime=dummytime,
+            fd_thresh=fd_thresh,
+            output_dir=output_dir,
+            mni_to_t1w=mni_to_t1w,
+            name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
+        )
 
-    else:
-        ii = 0
-        for bold_file in subject_data[0]:
-            ii = ii + 1
-            custom_confoundsx = get_customfile(custom_confounds=custom_confounds,
-                                               bold_file=bold_file)
-            bold_postproc_wf = init_boldpostprocess_wf(
-                bold_file=bold_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
-                smoothing=smoothing,
-                params=params,
-                head_radius=head_radius,
-                omp_nthreads=omp_nthreads,
-                num_bold=len(subject_data[0]),
-                custom_confounds=custom_confoundsx,
-                layout=layout,
-                despike=despike,
-                dummytime=dummytime,
-                fd_thresh=fd_thresh,
-                output_dir=output_dir,
-                mni_to_t1w=mni_to_t1w,
-                name='bold_postprocess_' + str(ii) + '_wf')
-
-            ds_report_about = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc='about',
-                datatype="figures"),
-                name='ds_report_about',
-                run_without_submitting=True)
-
-            workflow.connect([(inputnode, bold_postproc_wf,
-                               [('mni_to_t1w', 'inputnode.mni_to_t1w'),
-                                ('t1w', 'inputnode.t1w'),
-                                ('t1seg', 'inputnode.t1seg')])])
+        workflow.connect(
+            [
+                (
+                    inputnode, bold_postproc_wf,
+                    [
+                        ('t1w', 'inputnode.t1w'),
+                        ('t1seg', 'inputnode.t1seg'),
+                    ],
+                ),
+            ],
+        )
 
     try:
         workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
