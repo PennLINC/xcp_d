@@ -28,31 +28,34 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
 1. Summary reports: There are two summary reports - an executive summary per session and a participant summary::
 
-       xcp_d/sub-${sub-id}_ses-${ses-id}_executive_summary.html
-       xcp_d/sub-${sub-id}.html
+       xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
+       xcp_d/sub-<label>.html
 
-2. Anatomical outputs: Anatomical outputs conists of anatomical preprocessed T1w/T2w  and segmentation images in MNI spaces::
+2. Anatomical outputs: Anatomical outputs conists of anatomical preprocessed T1w/T2w and segmentation images in MNI spaces::
 
-        xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-        xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
-
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
 
    If there are gifti files in fMRIPrep output, the gifti files are resampled to standard space::
 
-        xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_den-32k_hemi-L_${surface}.surf.gii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_den-32k_hemi-R_${surface}.surf.gii
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
 
 3. Functional outputs: Functional outputs consist of processed/denoised BOLD data, timeseries, functional connectivity matrices, and resting-state derivatives.
 
    a. Denoised or residual BOLD data::
 
        # Nifti
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-denoised_bold.nii.gz
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_desc-denoised_bold.json
+       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-denoised_bold.nii.gz
+       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-denoised_bold.json
 
        # Cifti
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_desc-denoised_bold.json
+       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
+       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-denoised_bold.json
 
       The json/sidecar contains parameters of the data and processing steps.
 
@@ -69,33 +72,33 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    b. Functional timeseries and connectivity matrices::
 
         #Nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_atlas-${atlasname}_timeseries.tsv
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_atlas-${atlasname}_measure-pearsoncorrelation_conmat.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_atlas-<label>_timeseries.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
 
         #Cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_atlas-${atlasname}_den-91k_timeseries.ptseries.nii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_atlas-${atlasname}_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 
    c. Resting-state derivatives (Regional Homogeneity and ALFF)::
 
         # Nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_reho.nii.gz
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_alff.nii.gz
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_reho.nii.gz
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_alff.nii.gz
 
         # Cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-32k_hemi-L_reho.func.gii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-32k_hemi-R_reho.func.gii
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_den-91k_alff.dtseries.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-32k_hemi-L_reho.func.gii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-32k_hemi-R_reho.func.gii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_alff.dtseries.nii
 
    d. Other outputs include quality control and framewise  displacement::
 
         # Nifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-${space}_qc.csv
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
 
         # Cifti
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_space-fsLR_qc.csv
-        xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_run-${run}_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
 
 
    e. DCAN style scrubbing file.
@@ -103,10 +106,10 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
       At each step the following variables are present::
 
        # Nifti
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-${space}_desc-framewisedisplacement_bold-DCAN.hdf5
+       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-framewisedisplacement_bold-DCAN.hdf5
 
        # Cifti
-       xcp_d/sub-${sub-id}/ses-${ses-id}/func/sub-${sub-id}_ses-${ses-id}_task-${taskname}_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
+       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
 
        These files have the following keys:
        1. FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
