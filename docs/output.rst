@@ -17,8 +17,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
         xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_space-MNI152NLin6Asym_dseg.nii.gz
 
-
-   If there are gifti files in fMRIPrep output, the gifti files are resampled to standard space::
+   If the ``--warp-surfaces-native2std`` option is selected, and reconstructed surfaces are available in the preprocessed dataset,
+   then these surfaces will be warped to fsLR space at 32k density::
 
         xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_den-32k_hemi-L_${surface}.surf.gii
         xcp_d/sub-${sub-id}/ses-${ses-id}/anat/sub-${sub-id}_ses-${ses-id}_den-32k_hemi-R_${surface}.surf.gii
