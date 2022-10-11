@@ -13,7 +13,7 @@ xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-MNI15
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii
-xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_desc-hcp-vinflated.surf.gii
+xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_desc-hcp_vinflated.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_midthickness.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_pial.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-L_smoothwm.surf.gii

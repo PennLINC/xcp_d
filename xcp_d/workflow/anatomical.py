@@ -854,14 +854,14 @@ def init_anatomical_wf(
             ds_midLsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
+                    check_hdr=False,
+                    source_file=L_midthick_surf,
                     dismiss_entities=["desc"],
                     space="fsLR",
                     density="32k",
-                    desc="midthickness",
-                    check_hdr=False,
+                    suffix="midthickness",
                     extension=".surf.gii",
                     hemi="L",
-                    source_file=L_midthick_surf,
                 ),
                 name="ds_midLsurf_wf",
                 run_without_submitting=False,
