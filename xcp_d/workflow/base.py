@@ -475,9 +475,9 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     elif input_type == "dcan":
         info_dict["references"] = ""
     elif input_type == "hcp":
-        info_dict["references"] = ""
+        info_dict["references"] = "[@hcppipelines]"
     elif input_type == "nibabies":
-        info_dict["references"] = ""
+        info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
     else:
         raise ValueError(f"Unsupported input_type '{input_type}'")
 
