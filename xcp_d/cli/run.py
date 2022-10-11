@@ -383,19 +383,25 @@ By default, this workflow is disabled.
     :stub-columns: 1
 
     * - Filename
-      - Description
+        - Description
     * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpinflated.surf.gii``
-      - Something
+        - An inflation of the midthickness surface (useful for visualization).
+        Something something HCP.
     * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpmidthickness.surf.gii``
-      - Something
-    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpveryinflated.surf.gii``
-      - Something
+        - The midpoints between wm and pial surfaces.
+        This is created by averaging the coordinates from the wm and pial surfaces.
     * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii``
-      - Something
+        - The midpoints between wm and pial surfaces.
+        This is derived from the FreeSurfer graymid
+        (``mris_expand`` with distance=0.5 applied to the WM surfs).
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpveryinflated.surf.gii``
+        - A very-inflated midthicknesss surface (also for visualization).
+        Something something HCP.
+        This is not created if the input type is "hcp" or "dcan".
     * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
-      - Something
+        - The gray matter / pial matter border.
     * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
-      - Something
+        - The smoothed gray matter / white matter border for the cortex.
 """
     )
 
