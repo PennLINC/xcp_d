@@ -364,9 +364,9 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         info_dict["version"] = "unknown"
 
     if input_type == "fmriprep":
-        info_dict["references"] = "[@esteban2019fmriprep;esteban2020analysis, RRID:SCR_016216]"
+        info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
     elif input_type == "dcan":
-        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;feczko2021adolescent]"
+        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
     elif input_type == "hcp":
         info_dict["references"] = "[@hcppipelines]"
     elif input_type == "nibabies":
