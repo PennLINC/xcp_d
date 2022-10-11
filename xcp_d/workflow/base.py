@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
-import json
 import os
 import sys
 from copy import deepcopy
@@ -21,6 +20,7 @@ from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
+    get_preproc_pipeline_info,
     select_cifti_bold,
     select_registrationfile,
     write_dataset_description,
@@ -455,30 +455,3 @@ def _pop(inlist):
     if isinstance(inlist, (list, tuple)):
         return inlist[0]
     return inlist
-
-
-def get_preproc_pipeline_info(input_type, fmri_dir):
-    """Get preprocessing pipeline information."""
-    info_dict = {}
-
-    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if os.path.isfile(dataset_description):
-        with open(dataset_description) as f:
-            dataset_dict = json.load(f)
-
-        info_dict["version"] = dataset_dict['GeneratedBy'][0]['Version']
-    else:
-        info_dict["version"] = "unknown"
-
-    if input_type == "fmriprep":
-        info_dict["references"] = "[@esteban2019fmriprep;esteban2020analysis, RRID:SCR_016216]"
-    elif input_type == "dcan":
-        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;feczko2021adolescent]"
-    elif input_type == "hcp":
-        info_dict["references"] = "[@hcppipelines]"
-    elif input_type == "nibabies":
-        info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
-    else:
-        raise ValueError(f"Unsupported input_type '{input_type}'")
-
-    return info_dict
