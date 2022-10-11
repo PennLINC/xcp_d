@@ -12,6 +12,7 @@ from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
 from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
@@ -341,21 +342,21 @@ def init_anatomical_wf(
             else:
                 subid = subject_id
 
-            left_sphere_fsLR = str(
+            lh_sphere_fsLR = str(
                 get_template(template="fsLR", hemi="L", density="32k", suffix="sphere")[
                     0
                 ]
             )
-            right_sphere_fsLR = str(
+            rh_sphere_fsLR = str(
                 get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[
                     0
                 ]
             )
 
-            left_sphere_raw = (
+            lh_sphere_raw = (
                 str(freesurfer_path) + "/" + subid + "/surf/lh.sphere.reg"
             )  # MB, TM
-            right_sphere_raw = (
+            rh_sphere_raw = (
                 str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"
             )  # MB, TM
 
@@ -381,7 +382,7 @@ def init_anatomical_wf(
                 CompositeTransformUtil(
                     process="disassemble",
                     in_file=h5_file,
-                    output_prefix="T1w_to_MNI152Lin6Asym",
+                    output_prefix="T1w_to_MNI152NLin6Asym",
                 ),
                 name="disassemble_h5",
                 mem_gb=mem_gb,
@@ -395,7 +396,7 @@ def init_anatomical_wf(
                 CompositeInvTransformUtil(
                     process="disassemble",
                     in_file=h5_inv_file,
-                    output_prefix="MNI152Lin6Asym_to_T1w",
+                    output_prefix="MNI152NLin6Asym_to_T1w",
                 ),
                 name="disassemble_h5_inv",
                 mem_gb=mem_gb,
@@ -572,55 +573,55 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )
             # convert spheres (from FreeSurfer surf dir) to gifti #MB
-            left_sphere_raw_mris = pe.Node(
-                MRIsConvert(out_datatype="gii", in_file=left_sphere_raw),
-                name="left_sphere_raw_mris",
+            lh_sphere_raw_mris = pe.Node(
+                MRIsConvert(out_datatype="gii", in_file=lh_sphere_raw),
+                name="lh_sphere_raw_mris",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # MB
-            right_sphere_raw_mris = pe.Node(
+            rh_sphere_raw_mris = pe.Node(
                 MRIsConvert(
                     out_datatype="gii",
-                    in_file=right_sphere_raw,
+                    in_file=rh_sphere_raw,
                 ),
-                name="right_sphere_raw_mris",
+                name="rh_sphere_raw_mris",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # MB
 
             # apply affine to native surfs
-            lh_surface_apply_affine = pe.Node(
+            lh_native_apply_affine = pe.Node(
                 ApplyAffine(),
-                name="lh_surface_apply_affine",
+                name="lh_native_apply_affine",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # TM
-            lh_surface_apply_affine.iterables = (
+            lh_native_apply_affine.iterables = (
                 "in_file",
                 [L_midthick_surf, L_pial_surf, L_wm_surf],
             )
 
-            rh_surface_apply_affine = pe.Node(
+            rh_native_apply_affine = pe.Node(
                 ApplyAffine(),
-                name="rh_surface_apply_affine",
+                name="rh_native_apply_affine",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # TM
-            rh_surface_apply_affine.iterables = (
+            rh_native_apply_affine.iterables = (
                 "in_file",
                 [R_midthick_surf, R_pial_surf, R_wm_surf],
             )
             # apply FNIRT-format warpfield
-            lh_surface_apply_warpfield = pe.Node(
+            lh_native_apply_warpfield = pe.Node(
                 ApplyWarpfield(),
-                name="lh_surface_apply_warpfield",
+                name="lh_native_apply_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # TM
 
-            rh_surface_apply_warpfield = pe.Node(
+            rh_native_apply_warpfield = pe.Node(
                 ApplyWarpfield(),
-                name="rh_surface_apply_warpfield",
+                name="rh_native_apply_warpfield",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )  # TM
@@ -647,25 +648,13 @@ def init_anatomical_wf(
                 )
             )
 
-            fs_L2fsLR = str(
-                get_template(
-                    template="fsaverage",
-                    hemi="L",
-                    density="164k",
-                    desc="std",
-                    suffix="sphere",
-                )
-            )
+            fs_L2fsLR = pkgrf('xcp_d',
+                              ('data/standard_mesh_atlases/fs_L/'
+                               'fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii'))
 
-            fs_R2fsLR = str(
-                get_template(
-                    template="fsaverage",
-                    hemi="R",
-                    density="164k",
-                    desc="std",
-                    suffix="sphere",
-                )
-            )
+            fs_R2fsLR = pkgrf('xcp_d',
+                              ('data/standard_mesh_atlases/fs_R/'
+                               'fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii'))
 
             surface_sphere_project_unproject_lh = pe.Node(
                 SurfaceSphereProjectUnproject(
@@ -684,72 +673,117 @@ def init_anatomical_wf(
 
             # resample the mid, pial, wm surfs to fsLR32k
 
-            lh_32k_midthick_wf = pe.Node(
+            lh_32k_resample_wf = pe.Node(
                 CiftiSurfaceResample(
-                    in_file=L_midthick_surf,
-                    new_sphere=left_sphere_fsLR,
+                    new_sphere=lh_sphere_fsLR,
                     metric=" BARYCENTRIC ",
                 ),
-                name="lh_32k_midthick_wf",
+                name="lh_32k_resample_wf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            lh_32k_resample_wf.iterables = (
+                "in_file",
+                [L_midthick_surf, L_pial_surf, L_wm_surf],
+            )
+
+            rh_32k_resample_wf = pe.Node(
+                CiftiSurfaceResample(
+                    new_sphere=rh_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
+                name="rh_32k_resample_wf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            rh_32k_resample_wf.iterables = (
+                "in_file",
+                [R_midthick_surf, R_pial_surf, R_wm_surf],
+            )
+            # apply affine to 32k surfs
+            lh_32k_apply_affine = pe.Node(
+                ApplyAffine(),
+                name="lh_32k_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            rh_32k_apply_affine = pe.Node(
+                ApplyAffine(),
+                name="rh_32k_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            # apply FNIRT-format warpfield
+            lh_32k_apply_warpfield = pe.Node(
+                ApplyWarpfield(),
+                name="lh_32k_apply_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            rh_32k_apply_warpfield = pe.Node(
+                ApplyWarpfield(),
+                name="rh_32k_apply_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            join_lh_32k_warped_surfs = pe.JoinNode(
+                niu.Merge(1),
+                name="join_lh_32k_warped_surfs",
+                joinsource="lh_32k_resample_wf",
+                joinfield="in1",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
 
-            lh_32k_pial_wf = pe.Node(
-                CiftiSurfaceResample(
-                    in_file=L_pial_surf,
-                    new_sphere=left_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="lh_32k_pial_wf",
+            join_rh_32k_warped_surfs = pe.JoinNode(
+                niu.Merge(1),
+                name="join_rh_32k_warped_surfs",
+                joinsource="rh_32k_resample_wf",
+                joinfield="in1",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
 
-            lh_32k_wm_wf = pe.Node(
-                CiftiSurfaceResample(
-                    in_file=L_wm_surf,
-                    new_sphere=left_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="lh_32k_wm_wf",
+            select_lh_32k_midthick_surf = pe.Node(
+                niu.Select(index=[0]),
+                name="select_lh_32k_midthick_surf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-
-            rh_32k_midthick_wf = pe.Node(
-                CiftiSurfaceResample(
-                    in_file=R_midthick_surf,
-                    new_sphere=right_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="rh_32k_midthick_wf",
+            select_lh_32k_pial_surf = pe.Node(
+                niu.Select(index=[1]),
+                name="select_lh_32k_pial_surf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-
-            rh_32k_pial_wf = pe.Node(
-                CiftiSurfaceResample(
-                    in_file=R_pial_surf,
-                    new_sphere=right_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="rh_32k_pial_wf",
+            select_lh_32k_wm_surf = pe.Node(
+                niu.Select(index=[2]),
+                name="select_lh_32k_wm_surf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-
-            rh_32k_wm_wf = pe.Node(
-                CiftiSurfaceResample(
-                    in_file=R_wm_surf,
-                    new_sphere=right_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="rh_32k_wm_wf",
+            select_rh_32k_midthick_surf = pe.Node(
+                niu.Select(index=[0]),
+                name="select_rh_32k_midthick_surf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-
+            select_rh_32k_pial_surf = pe.Node(
+                niu.Select(index=[1]),
+                name="select_rh_32k_pial_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            select_rh_32k_wm_surf = pe.Node(
+                niu.Select(index=[2]),
+                name="select_rh_32k_wm_surf",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
             # write report node
             ds_wmLsurf_wf = pe.Node(
                 DerivativesDataSink(
@@ -953,134 +987,236 @@ def init_anatomical_wf(
                 [
                     (
                         convert_xfm2world,
-                        lh_surface_apply_affine,
+                        lh_native_apply_affine,
                         [("out_file", "affine")],
                     ),
                     (
-                        lh_surface_apply_affine,
-                        lh_surface_apply_warpfield,
+                        lh_native_apply_affine,
+                        lh_native_apply_warpfield,
                         [("out_file", "in_file")],
                     ),
                     (
                         remerge_warpfield,
-                        lh_surface_apply_warpfield,
+                        lh_native_apply_warpfield,
                         [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
-                        lh_surface_apply_warpfield,
+                        lh_native_apply_warpfield,
                         [("out_file", "warpfield")],
                     ),
                     (
-                        left_sphere_raw_mris,
+                        lh_sphere_raw_mris,
                         surface_sphere_project_unproject_lh,
                         [("converted", "in_file")]
                     ),
                     (
                         surface_sphere_project_unproject_lh,
-                        lh_32k_midthick_wf,
+                        lh_32k_resample_wf,
                         [("out_file", "current_sphere")],
                     ),
                     (
-                        surface_sphere_project_unproject_lh,
-                        lh_32k_pial_wf,
-                        [("out_file", "current_sphere")],
+                        lh_32k_resample_wf,
+                        lh_32k_apply_affine,
+                        [("out_file", "in_file")],
                     ),
                     (
-                        surface_sphere_project_unproject_lh,
-                        lh_32k_wm_wf,
-                        [("out_file", "current_sphere")],
+                        convert_xfm2world,
+                        lh_32k_apply_affine,
+                        [("out_file", "affine")],
                     ),
-                    (lh_32k_midthick_wf, ds_midLsurf_wf, [("out_file", "in_file")]),
-                    (lh_32k_pial_wf, ds_pialLsurf_wf, [("out_file", "in_file")]),
-                    (lh_32k_wm_wf, ds_wmLsurf_wf, [("out_file", "in_file")]),
+                    (
+                        remerge_warpfield,
+                        lh_32k_apply_warpfield,
+                        [("out_file", "forward_warp")],
+
+                    ),
+                    (
+                        remerge_inv_warpfield,
+                        lh_32k_apply_warpfield,
+                        [("out_file", "warpfield")],
+
+                    ),
+                    (
+                        lh_32k_apply_affine,
+                        lh_32k_apply_warpfield,
+                        [("out_file", "in_file")],
+                    ),
+                    (
+                        lh_32k_apply_warpfield,
+                        join_lh_32k_warped_surfs,
+                        [("out_file", "in1")],
+                    ),
+                    (
+                        join_lh_32k_warped_surfs,
+                        select_lh_32k_midthick_surf,
+                        [("out", "inlist")],
+                    ),
+                    (
+                        join_lh_32k_warped_surfs,
+                        select_lh_32k_pial_surf,
+                        [("out", "inlist")],
+                    ),
+                    (
+                        join_lh_32k_warped_surfs,
+                        select_lh_32k_wm_surf,
+                        [("out", "inlist")],
+                    ),
+                    (select_lh_32k_midthick_surf, ds_midLsurf_wf, [("out", "in_file")]),
+                    (select_lh_32k_pial_surf, ds_pialLsurf_wf, [("out", "in_file")]),
+                    (select_lh_32k_wm_surf, ds_wmLsurf_wf, [("out", "in_file")]),
                 ]
             )
             workflow.connect(
                 [
                     (
                         convert_xfm2world,
-                        rh_surface_apply_affine,
+                        rh_native_apply_affine,
                         [("out_file", "affine")],
                     ),
                     (
-                        rh_surface_apply_affine,
-                        rh_surface_apply_warpfield,
+                        rh_native_apply_affine,
+                        rh_native_apply_warpfield,
                         [("out_file", "in_file")],
                     ),
                     (
                         remerge_warpfield,
-                        rh_surface_apply_warpfield,
+                        rh_native_apply_warpfield,
                         [("out_file", "forward_warp")],
                     ),
                     (
                         remerge_inv_warpfield,
-                        rh_surface_apply_warpfield,
+                        rh_native_apply_warpfield,
                         [("out_file", "warpfield")],
                     ),
                     (
-                        right_sphere_raw_mris,
+                        rh_sphere_raw_mris,
                         surface_sphere_project_unproject_rh,
                         [("converted", "in_file")]
                     ),
                     (
                         surface_sphere_project_unproject_rh,
-                        rh_32k_midthick_wf,
-                        [("out_file", "current_sphere")],
-                    ), (
-                        surface_sphere_project_unproject_rh,
-                        rh_32k_pial_wf,
+                        rh_32k_resample_wf,
                         [("out_file", "current_sphere")],
                     ),
                     (
-                        surface_sphere_project_unproject_rh,
-                        rh_32k_wm_wf,
-                        [("out_file", "current_sphere")],
+                        rh_32k_resample_wf,
+                        rh_32k_apply_affine,
+                        [("out_file", "in_file")],
                     ),
-                    (rh_32k_midthick_wf, ds_midRsurf_wf, [("out_file", "in_file")]),
-                    (rh_32k_pial_wf, ds_pialRsurf_wf, [("out_file", "in_file")]),
-                    (rh_32k_wm_wf, ds_wmRsurf_wf, [("out_file", "in_file")]),
+                    (
+                        convert_xfm2world,
+                        rh_32k_apply_affine,
+                        [("out_file", "affine")],
+                    ),
+                    (
+                        remerge_warpfield,
+                        rh_32k_apply_warpfield,
+                        [("out_file", "forward_warp")],
+                    ),
+                    (
+                        remerge_inv_warpfield,
+                        rh_32k_apply_warpfield,
+                        [("out_file", "warpfield")],
+                    ),
+                    (
+                        rh_32k_apply_affine,
+                        rh_32k_apply_warpfield,
+                        [("out_file", "in_file")],
+                    ),
+                    (
+                        rh_32k_apply_warpfield,
+                        join_rh_32k_warped_surfs,
+                        [("out_file", "in1")],
+                    ),
+                    (
+                        join_rh_32k_warped_surfs,
+                        select_rh_32k_midthick_surf,
+                        [("out", "inlist")],
+                    ),
+                    (
+                        join_rh_32k_warped_surfs,
+                        select_rh_32k_pial_surf,
+                        [("out", "inlist")],
+                    ),
+                    (
+                        join_rh_32k_warped_surfs,
+                        select_rh_32k_wm_surf,
+                        [("out", "inlist")],
+                    ),
+                    (select_rh_32k_midthick_surf, ds_midRsurf_wf, [("out", "in_file")]),
+                    (select_rh_32k_pial_surf, ds_pialRsurf_wf, [("out", "in_file")]),
+                    (select_rh_32k_wm_surf, ds_wmRsurf_wf, [("out", "in_file")]),
                 ]
             )
 
             # make "HCP-style" native midthickness and inflated
-            left_hcpmidthick_native_wf = pe.Node(
+            lh_native_hcpmidthick_wf = pe.Node(
                 SurfaceAverage(surface_in1=L_pial_surf, surface_in2=L_wm_surf),
-                name="left_hcpmidthick_native_wf",
+                name="lh_native_hcpmidthick_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            right_hcpmidthick_native_wf = pe.Node(
+            rh_native_hcpmidthick_wf = pe.Node(
                 SurfaceAverage(surface_in1=R_pial_surf, surface_in2=R_wm_surf),
-                name="right_hcpmidthick_native_wf",
+                name="rh_native_hcpmidthick_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            left_hcpmidthick_surf_wf = pe.Node(
+            lh_32k_hcpmidthick_resample_wf = pe.Node(
                 CiftiSurfaceResample(
-                    new_sphere=left_sphere_fsLR,
+                    new_sphere=lh_sphere_fsLR,
                     metric=" BARYCENTRIC "
                 ),
-                name="left_hcpmidthick_surf_wf",
+                name="lh_32k_hcpmidthick_resample_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            right_hcpmidthick_surf_wf = pe.Node(
+            rh_32k_hcpmidthick_resample_wf = pe.Node(
                 CiftiSurfaceResample(
-                    new_sphere=right_sphere_fsLR,
+                    new_sphere=rh_sphere_fsLR,
                     metric=" BARYCENTRIC "
                 ),
-                name="right_hcpmidthick_surf_wf",
+                name="rh_32k_hcpmidthick_resample_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
-            left_hcpinflated_surf_wf = pe.Node(
+            # apply affine to 32k hcpmidthick
+            lh_32k_hcpmidthick_apply_affine = pe.Node(
+                ApplyAffine(),
+                name="lh_32k_hcpmidthick_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            rh_32k_hcpmidthick_apply_affine = pe.Node(
+                ApplyAffine(),
+                name="rh_32k_hcpmidthick_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            # apply FNIRT-format warpfield
+            lh_32k_hcpmidthick_apply_warpfield = pe.Node(
+                ApplyWarpfield(),
+                name="lh_32k_hcpmidthick_apply_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+
+            rh_32k_hcpmidthick_apply_warpfield = pe.Node(
+                ApplyWarpfield(),
+                name="rh_32k_hcpmidthick_apply_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )  # TM
+            lh_32k_hcpinflated_surf_wf = pe.Node(
                 SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name="left_hcpinflated_surf_wf",
+                name="lh_hcpinflated_surf_wf",
             )
-            right_hcpinflated_surf_wf = pe.Node(
+            rh_32k_hcpinflated_surf_wf = pe.Node(
                 SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name="right_hcpinflated_surf_wf",
+                name="rh_hcpinflated_surf_wf",
             )
 
             ds_hcpmidLsurf_wf = pe.Node(
@@ -1184,16 +1320,41 @@ def init_anatomical_wf(
                 [
                     (
                         surface_sphere_project_unproject_lh,
-                        left_hcpmidthick_surf_wf,
+                        lh_32k_hcpmidthick_resample_wf,
                         [("out_file", "current_sphere")],
                     ),
                     (
-                        left_hcpmidthick_native_wf,
-                        left_hcpmidthick_surf_wf,
+                        lh_native_hcpmidthick_wf,
+                        lh_32k_hcpmidthick_resample_wf,
                         [("out_file", "in_file")],
                     ),
                     (
-                        left_hcpmidthick_surf_wf,
+                        lh_32k_hcpmidthick_resample_wf,
+                        lh_32k_hcpmidthick_apply_affine,
+                        [("out_file", "in_file")],
+                    ),
+                    (
+                        convert_xfm2world,
+                        lh_32k_hcpmidthick_apply_affine,
+                        [("out_file", "affine")],
+                    ),
+                    (
+                        remerge_warpfield,
+                        lh_32k_hcpmidthick_apply_warpfield,
+                        [("out_file", "forward_warp")],
+                    ),
+                    (
+                        remerge_inv_warpfield,
+                        lh_32k_hcpmidthick_apply_warpfield,
+                        [("out_file", "warpfield")],
+                    ),
+                    (
+                        lh_32k_hcpmidthick_apply_affine,
+                        lh_32k_hcpmidthick_apply_warpfield,
+                        [("out_file", "in_file")],
+                    ),
+                    (
+                        lh_32k_hcpmidthick_apply_warpfield,
                         ds_hcpmidLsurf_wf,
                         [("out_file", "in_file")],
                     ),
@@ -1204,16 +1365,41 @@ def init_anatomical_wf(
                 [
                     (
                         surface_sphere_project_unproject_rh,
-                        right_hcpmidthick_surf_wf,
+                        rh_32k_hcpmidthick_resample_wf,
                         [("out_file", "current_sphere")],
                     ),
                     (
-                        right_hcpmidthick_native_wf,
-                        right_hcpmidthick_surf_wf,
+                        rh_native_hcpmidthick_wf,
+                        rh_32k_hcpmidthick_resample_wf,
                         [("out_file", "in_file")],
                     ),
                     (
-                        right_hcpmidthick_surf_wf,
+                        rh_32k_hcpmidthick_resample_wf,
+                        rh_32k_hcpmidthick_apply_affine,
+                        [("out_file", "in_file")],
+                    ),
+                    (
+                        convert_xfm2world,
+                        rh_32k_hcpmidthick_apply_affine,
+                        [("out_file", "affine")],
+                    ),
+                    (
+                        remerge_warpfield,
+                        rh_32k_hcpmidthick_apply_warpfield,
+                        [("out_file", "forward_warp")],
+                    ),
+                    (
+                        remerge_inv_warpfield,
+                        rh_32k_hcpmidthick_apply_warpfield,
+                        [("out_file", "warpfield")],
+                    ),
+                    (
+                        rh_32k_hcpmidthick_apply_affine,
+                        rh_32k_hcpmidthick_apply_warpfield,
+                        [("out_file", "in_file")],
+                    ),
+                    (
+                        rh_32k_hcpmidthick_apply_warpfield,
                         ds_hcpmidRsurf_wf,
                         [("out_file", "in_file")],
                     ),
@@ -1223,17 +1409,17 @@ def init_anatomical_wf(
             workflow.connect(
                 [
                     (
-                        left_hcpmidthick_surf_wf,
-                        left_hcpinflated_surf_wf,
+                        lh_32k_hcpmidthick_apply_warpfield,
+                        lh_32k_hcpinflated_surf_wf,
                         [("out_file", "anatomical_surface_in")],
                     ),
                     (
-                        left_hcpinflated_surf_wf,
+                        lh_32k_hcpinflated_surf_wf,
                         ds_hcpinfLsurf_wf,
                         [("inflated_out_file", "in_file")],
                     ),
                     (
-                        left_hcpinflated_surf_wf,
+                        lh_32k_hcpinflated_surf_wf,
                         ds_hcpveryinfLsurf_wf,
                         [("very_inflated_out_file", "in_file")],
                     ),
@@ -1243,17 +1429,17 @@ def init_anatomical_wf(
             workflow.connect(
                 [
                     (
-                        right_hcpmidthick_surf_wf,
-                        right_hcpinflated_surf_wf,
+                        rh_32k_hcpmidthick_apply_warpfield,
+                        rh_32k_hcpinflated_surf_wf,
                         [("out_file", "anatomical_surface_in")],
                     ),
                     (
-                        right_hcpinflated_surf_wf,
+                        rh_32k_hcpinflated_surf_wf,
                         ds_hcpinfRsurf_wf,
                         [("inflated_out_file", "in_file")],
                     ),
                     (
-                        right_hcpinflated_surf_wf,
+                        rh_32k_hcpinflated_surf_wf,
                         ds_hcpveryinfRsurf_wf,
                         [("very_inflated_out_file", "in_file")],
                     ),
