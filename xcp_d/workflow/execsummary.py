@@ -117,17 +117,16 @@ def init_brainsprite_wf(
         if len(freesurfer_paths) > 0:
             freesurfer_path = freesurfer_paths[0]
             LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
-        else:
-            freesurfer_path = None
-            LOGGER.info("No Freesurfer derivatives found.")
-
-        if freesurfer_path:
             ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
             LOGGER.info(f"Using {ribbon} for ribbon.")
 
             if not ribbon.is_file():
                 LOGGER.warning(f"File DNE: {ribbon}")
                 use_t1seg_as_ribbon = True
+
+        else:
+            LOGGER.info("No Freesurfer derivatives found.")
+            use_t1seg_as_ribbon = True
 
     if use_t1seg_as_ribbon:
         LOGGER.info("Using T1w segmentation for ribbon.")
