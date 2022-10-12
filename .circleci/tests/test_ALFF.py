@@ -94,7 +94,8 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     and confirm the ALFF after addition to lower frequencies
     has changed in the expected direction.
     """
-    bold_file = data_dir + "ses-1/func/sub-colornest001_ses-1_task-res" \
+    bold_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
+        "sub-colornest001_ses-1_task-res" \
         "t_run-2_space_fsLR_den-91k_bold.dtseries.nii"
     bold_mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym"\
