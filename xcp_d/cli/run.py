@@ -636,10 +636,17 @@ def build_workflow(opts, retval):
 
         if not opts.cifti:
             build_log.warning(
-                f"With input_type {opts.input_type}, cifti processing will be enabled "
-                "automatically."
+                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
+                "enabled automatically."
             )
             opts.cifti = True
+
+        if not opts.process_surfaces:
+            build_log.warning(
+                f"With input_type {opts.input_type}, surface processing "
+                "(--warp-surfaces-native2std) will be enabled automatically."
+            )
+            opts.process_surfaces = True
 
         if opts.input_type == "dcan":
             from xcp_d.utils.dcan2fmriprep import dcan2fmriprep as convert_to_fmriprep
@@ -675,9 +682,7 @@ def build_workflow(opts, retval):
     retval["run_uuid"] = run_uuid
 
     layout = BIDSLayout(str(fmri_dir), validate=False, derivatives=True)
-    subject_list = collect_participants(
-        layout, participant_label=opts.participant_label
-    )
+    subject_list = collect_participants(layout, participant_label=opts.participant_label)
     retval["subject_list"] = subject_list
 
     # Load base plugin_settings from file if --use-plugin
