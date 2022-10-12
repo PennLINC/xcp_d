@@ -26,6 +26,7 @@ from xcp_d.utils.bids import (
     extract_t1w_seg,
     select_cifti_bold,
     select_registrationfile,
+    write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
@@ -146,7 +147,10 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print("Begin the " + name + " workflow")
+    print(f"Begin the {name} workflow")
+
+    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
+
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
@@ -173,13 +177,14 @@ def init_xcpd_wf(
             fd_thresh=fd_thresh,
             func_only=func_only,
             input_type=input_type,
-            name="single_subject_" + subject_id + "_wf")
+            name=f"single_subject_{subject_id}_wf",
+        )
 
         single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
             output_dir, "xcp_d", "sub-" + subject_id, 'log'))
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
-        print("Analyzing data at the " + str(analysis_level) + " level")
+        print(f"Analyzing data at the {analysis_level} level")
         xcpd_wf.add_nodes([single_subj_wf])
 
     return xcpd_wf
@@ -282,18 +287,25 @@ def init_subject_wf(
     %(input_type)s
     %(name)s
     """
-    layout, subj_data = collect_data(bids_dir=fmri_dir,
-                                     participant_label=subject_id,
-                                     task=task_id,
-                                     bids_validate=False)
+    layout, subj_data = collect_data(
+        bids_dir=fmri_dir,
+        participant_label=subject_id,
+        task=task_id,
+        bids_validate=False,
+    )
 
     mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
     t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
-        name='inputnode')
+    # determine the appropriate post-processing workflow
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
+        name='inputnode',
+    )
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.t1w = t1w
     inputnode.inputs.t1seg = t1wseg
@@ -330,20 +342,36 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
 """
 
-    summary = pe.Node(SubjectSummary(subject_id=subject_id,
-                                     bold=preproc_nifti_files),
-                      name='summary')
+    summary = pe.Node(
+        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        name='summary',
+    )
 
-    about = pe.Node(AboutSummary(version=__version__,
-                                 command=' '.join(sys.argv)),
-                    name='about')
+    about = pe.Node(
+        AboutSummary(version=__version__, command=' '.join(sys.argv)),
+        name='about',
+    )
 
-    ds_report_summary = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=preproc_nifti_files[0],
-        desc='summary',
-        datatype="figures"),
-        name='ds_report_summary')
+    ds_report_summary = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_nifti_files[0],
+            desc='summary',
+            datatype="figures",
+        ),
+        name='ds_report_summary',
+    )
+
+    ds_report_about = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=preproc_files[0],
+            desc='about',
+            datatype="figures",
+        ),
+        name='ds_report_about',
+        run_without_submitting=True,
+    )
 
     if not func_only:
         anatomical_wf = init_anatomical_wf(
@@ -415,38 +443,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ]),
         (transform_file_grabber, bold_postproc_wf, [('mni_to_t1w', 'inputnode.mni_to_t1w')]),
     ])
-
-    # loop over each bold run to be postprocessed
-    for i_run, bold_file in enumerate(preproc_files):
-        custom_confounds_file = get_customfile(
-            custom_confounds=custom_confounds,
-            bold_file=bold_file,
-        )
-
-        bold_postproc_wf = postproc_wf_function(
-            bold_file=bold_file,
-            lower_bpf=lower_bpf,
-            upper_bpf=upper_bpf,
-            bpf_order=bpf_order,
-            motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            bandpass_filter=bandpass_filter,
-            smoothing=smoothing,
-            params=params,
-            head_radius=head_radius,
-            omp_nthreads=omp_nthreads,
-            n_runs=len(preproc_files),
-            custom_confounds=custom_confounds_file,
-            layout=layout,
-            despike=despike,
-            dummytime=dummytime,
-            fd_thresh=fd_thresh,
-            output_dir=output_dir,
-            mni_to_t1w=mni_to_t1w,
-            name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
-        )
 
     # NOTE: TS- Why is the data sink initialized separately for each run?
     # If it's run-specific, shouldn't the name reflect the run?
