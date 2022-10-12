@@ -148,7 +148,7 @@ def init_xcpd_wf(
     xcpd_wf.base_dir = work_dir
     print(f"Begin the {name} workflow")
 
-    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
+    dataset_links = write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
@@ -176,6 +176,7 @@ def init_xcpd_wf(
             fd_thresh=fd_thresh,
             func_only=func_only,
             input_type=input_type,
+            dataset_links=dataset_links,
             name=f"single_subject_{subject_id}_wf",
         )
 
@@ -215,6 +216,7 @@ def init_subject_wf(
     func_only,
     output_dir,
     input_type,
+    dataset_links,
     name,
 ):
     """Organize the postprocessing pipeline for a single subject.
@@ -250,6 +252,7 @@ def init_subject_wf(
                 func_only=False,
                 output_dir=".",
                 input_type="fmriprep",
+                dataset_links={},
                 name="single_subject_sub-01_wf",
             )
 
@@ -302,13 +305,22 @@ def init_subject_wf(
     preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
+        niu.IdentityInterface(
+            fields=[
+                'custom_confounds',
+                'mni_to_t1w',
+                't1w',
+                't1seg',
+                'dataset_links',
+            ],
+        ),
         name='inputnode',
     )
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.t1w = t1w
     inputnode.inputs.t1seg = t1wseg
     inputnode.inputs.mni_to_t1w = mni_to_t1w
+    inputnode.inputs.dataset_links = dataset_links
 
     workflow = Workflow(name=name)
 
@@ -380,6 +392,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             output_dir=output_dir,
             t1w_to_mni=t1w_to_mni,
             input_type=input_type,
+            dataset_links=dataset_links,
             mem_gb=5)  # RF: need to chnage memory size
 
         # send t1w and t1seg to anatomical workflow
@@ -417,6 +430,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fd_thresh=fd_thresh,
             output_dir=output_dir,
             mni_to_t1w=mni_to_t1w,
+            dataset_links=dataset_links,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 

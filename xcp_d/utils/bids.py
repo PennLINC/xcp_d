@@ -397,3 +397,15 @@ def write_dataset_description(fmri_dir, xcpd_dir):
             json.dump(dset_desc, fo, indent=4, sort_keys=True)
 
     return usable_dataset_links
+
+
+def resolve_bids_uri(filepath, xcpd_dir, dataset_links):
+    """Resolve BIDS URI."""
+    dataset_name, xcpd_dir_relpath = dataset_links['preprocessed']
+
+    preproc_dir = os.path.abspath(os.path.join(xcpd_dir, xcpd_dir_relpath))
+    filepath_relative = os.path.relpath(filepath, start=preproc_dir)
+
+    bids_uri = f"bids:{dataset_name}:{filepath_relative}"
+
+    return bids_uri
