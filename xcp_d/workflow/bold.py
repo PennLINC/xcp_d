@@ -399,8 +399,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
-            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
-                     custom_confounds=custom_confounds),
+            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
