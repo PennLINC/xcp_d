@@ -62,7 +62,7 @@ def init_brainsprite_wf(
         niu.IdentityInterface(fields=["t1w", "t1seg"]),
         name="inputnode",
     )
-    ribbon2statmap_wf = pe.Node(
+    ribbon2statmap = pe.Node(
         RibbontoStatmap(),
         name="ribbon2statmap",
         mem_gb=mem_gb,
@@ -74,7 +74,7 @@ def init_brainsprite_wf(
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-    ds_brainspriteplot_wf = pe.Node(
+    ds_brainspriteplot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             check_hdr=False,
@@ -82,7 +82,7 @@ def init_brainsprite_wf(
             desc="brainplot",
             datatype="figures",
         ),
-        name="brainspriteplot",
+        name="ds_brainspriteplot",
     )
 
     if "sub-" not in subject_id:
@@ -136,16 +136,16 @@ def init_brainsprite_wf(
 
     if use_t1seg_as_ribbon:
         LOGGER.info("Using T1w segmentation for ribbon.")
-        workflow.connect([(inputnode, ribbon2statmap_wf, [("t1seg", "ribbon")])])
+        workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
     else:
-        ribbon2statmap_wf.inputnode.ribbon = ribbon
+        ribbon2statmap.inputs.ribbon = ribbon
 
     workflow.connect(
         [
             (inputnode, generate_brainsprite, [("t1w", "template")]),
-            (ribbon2statmap_wf, generate_brainsprite, [("out_file", "in_file")]),
-            (generate_brainsprite, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-            (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
+            (ribbon2statmap, generate_brainsprite, [("out_file", "in_file")]),
+            (generate_brainsprite, ds_brainspriteplot, [("out_html", "in_file")]),
+            (inputnode, ds_brainspriteplot, [("t1w", "source_file")]),
         ]
     )
 
