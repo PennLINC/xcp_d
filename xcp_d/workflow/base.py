@@ -10,14 +10,14 @@ import sys
 from copy import deepcopy
 
 import nibabel as nb
+import nipype.__version__ as nipype_ver
+import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
+import niworkflows.engine.workflows.LiterateWorkflow as Workflow
 import numpy as np
 import scipy
 import templateflow
-from nipype import __version__ as nipype_ver
 from nipype import Function, logging
-from nipype.interfaces import utility as niu
-from nipype.pipeline import engine as pe
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
 from xcp_d.interfaces.bids import DerivativesDataSink
@@ -290,7 +290,6 @@ def init_subject_wf(
     %(input_type)s
     %(name)s
     """
-
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f"""
