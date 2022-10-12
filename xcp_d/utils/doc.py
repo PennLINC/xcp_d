@@ -248,6 +248,11 @@ subject_id : :obj:`str`
     The participant ID. This SHOULD NOT include the ``sub-`` prefix.
 """
 
+docdict["layout"] = """
+layout : :obj:`bids.layout.BIDSLayout`
+    BIDSLayout indexing the ingested (e.g., fMRIPrep-format) derivatives.
+"""
+
 docdict_indented = {}
 
 
