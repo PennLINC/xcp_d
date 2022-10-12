@@ -121,7 +121,7 @@ def init_writederivatives_wf(
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
-        write_derivative_cleandata_wf = pe.Node(
+        ds_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 meta_dict=cleaned_data_dictionary,
@@ -130,12 +130,12 @@ def init_writederivatives_wf(
                 extension='.nii.gz',
                 compression=True,
             ),
-            name='write_derivative_cleandata_wf',
+            name='ds_denoised_bold',
             run_without_submitting=True,
             mem_gb=2,
         )
 
-        write_derivative_alff_wf = pe.Node(
+        ds_alff = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -144,12 +144,12 @@ def init_writederivatives_wf(
                 extension='.nii.gz',
                 compression=True,
             ),
-            name='write_derivative_alff_wf',
+            name='ds_alff',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        write_derivative_qcfile_wf = pe.Node(
+        ds_qc_file = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -157,12 +157,12 @@ def init_writederivatives_wf(
                 suffix='qc',
                 extension='.csv',
             ),
-            name='write_derivative_qcfile_wf',
+            name='ds_qc_file',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        timeseries_wf = pe.MapNode(
+        ds_timeseries = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -170,12 +170,12 @@ def init_writederivatives_wf(
                 suffix='timeseries',
                 extension=".tsv",
             ),
-            name="timeseries_wf",
+            name="ds_timeseries",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
-        correlations_wf = pe.MapNode(
+        ds_conmats = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -184,13 +184,13 @@ def init_writederivatives_wf(
                 suffix='conmat',
                 extension=".tsv",
             ),
-            name="correlations_wf",
+            name="ds_conmats",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
 
-        write_derivative_reho_wf = pe.Node(
+        ds_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -199,12 +199,12 @@ def init_writederivatives_wf(
                 extension='.nii.gz',
                 compression=True,
             ),
-            name='write_derivative_reho_wf',
+            name='ds_reho',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        write_derivative_fd_wf = pe.Node(
+        ds_fd_motion = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -213,16 +213,16 @@ def init_writederivatives_wf(
                 suffix="motion",
                 extension='.tsv',
             ),
-            name='write_derivative_fd_wf',
+            name='ds_fd_motion',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        workflow.connect([(inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')])])
+        workflow.connect([(inputnode, ds_reho, [('reho_out', 'in_file')])])
 
         if smoothing:  # if smoothed
             # Write out detivatives via DerivativesDataSink
-            write_derivative_smoothcleandata_wf = pe.Node(
+            ds_denoised_smoothed_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
@@ -231,12 +231,12 @@ def init_writederivatives_wf(
                     extension='.nii.gz',
                     compression=True,
                 ),
-                name='write_derivative_smoothcleandata_wf',
+                name='ds_denoised_smoothed_bold',
                 run_without_submitting=True,
                 mem_gb=2,
             )
 
-            write_derivative_smoothalff_wf = pe.Node(
+            ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
@@ -246,14 +246,14 @@ def init_writederivatives_wf(
                     extension='.nii.gz',
                     compression=True,
                 ),
-                name='write_derivative_smoothalff_wf',
+                name='ds_smoothed_alff',
                 run_without_submitting=True,
                 mem_gb=1,
             )
 
     else:  # For cifti files
         # Write out derivatives via DerivativesDataSink
-        write_derivative_cleandata_wf = pe.Node(
+        ds_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 meta_dict=cleaned_data_dictionary,
@@ -263,12 +263,12 @@ def init_writederivatives_wf(
                 density='91k',
                 extension='.dtseries.nii',
             ),
-            name='write_derivative_cleandata_wf',
+            name='ds_denoised_bold',
             run_without_submitting=True,
             mem_gb=2,
         )
 
-        write_derivative_alff_wf = pe.Node(
+        ds_alff = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -278,12 +278,12 @@ def init_writederivatives_wf(
                 suffix='alff',
                 extension='.dscalar.nii',
             ),
-            name='write_derivative_alff_wf',
+            name='ds_alff',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        write_derivative_qcfile_wf = pe.Node(
+        ds_qc_file = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -292,12 +292,12 @@ def init_writederivatives_wf(
                 suffix='qc',
                 extension='.csv',
             ),
-            name='write_derivative_qcfile_wf',
+            name='ds_qc_file',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        timeseries_wf = pe.MapNode(
+        ds_timeseries = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -307,13 +307,13 @@ def init_writederivatives_wf(
                 suffix="timeseries",
                 extension='.ptseries.nii',
             ),
-            name="timeseries_wf",
+            name="ds_timeseries",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
 
-        correlations_wf = pe.MapNode(
+        ds_conmats = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -324,13 +324,13 @@ def init_writederivatives_wf(
                 suffix='conmat',
                 extension='.pconn.nii',
             ),
-            name="correlations_wf",
+            name="ds_conmats",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
 
-        write_derivative_reholh_wf = pe.Node(
+        ds_reho_lh = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -341,12 +341,12 @@ def init_writederivatives_wf(
                 suffix='reho',
                 extension='.shape.gii',
             ),
-            name='write_derivative_reholh_wf',
+            name='ds_reho_lh',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        write_derivative_rehorh_wf = pe.Node(
+        ds_reho_rh = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -357,12 +357,12 @@ def init_writederivatives_wf(
                 suffix='reho',
                 extension='.shape.gii',
             ),
-            name='write_derivative_rehorh_wf',
+            name='ds_reho_rh',
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        write_derivative_fd_wf = pe.Node(
+        ds_fd_motion = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -371,19 +371,19 @@ def init_writederivatives_wf(
                 suffix="motion",
                 extension='.tsv',
             ),
-            name='write_derivative_fd_wf',
+            name='ds_fd_motion',
             run_without_submitting=True,
             mem_gb=1,
         )
 
         workflow.connect([
-            (inputnode, write_derivative_reholh_wf, [('reho_lh', 'in_file')]),
-            (inputnode, write_derivative_rehorh_wf, [('reho_rh', 'in_file')]),
+            (inputnode, ds_reho_lh, [('reho_lh', 'in_file')]),
+            (inputnode, ds_reho_rh, [('reho_rh', 'in_file')]),
         ])
 
         if smoothing:  # If smoothed
             # Write out detivatives via DerivativesDataSink
-            write_derivative_smoothcleandata_wf = pe.Node(
+            ds_denoised_smoothed_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
@@ -394,12 +394,12 @@ def init_writederivatives_wf(
                     extension='.dtseries.nii',
                     check_hdr=False,
                 ),
-                name='write_derivative_smoothcleandata_wf',
+                name='ds_denoised_smoothed_bold',
                 run_without_submitting=True,
                 mem_gb=2,
             )
 
-            write_derivative_smoothalff_wf = pe.Node(
+            ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
@@ -411,24 +411,24 @@ def init_writederivatives_wf(
                     extension='.dscalar.nii',
                     check_hdr=False,
                 ),
-                name='write_derivative_smoothalff_wf',
+                name='ds_smoothed_alff',
                 run_without_submitting=True,
                 mem_gb=1,
             )
 
     workflow.connect([
-        (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
-        (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
-        (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
-        (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
-        (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
-        (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
+        (inputnode, ds_denoised_bold, [('processed_bold', 'in_file')]),
+        (inputnode, ds_alff, [('alff_out', 'in_file')]),
+        (inputnode, ds_qc_file, [('qc_file', 'in_file')]),
+        (inputnode, ds_timeseries, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, ds_conmats, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, ds_fd_motion, [('fd', 'in_file')]),
     ])
 
     if smoothing:
         workflow.connect([
-            (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold', 'in_file')]),
-            (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
+            (inputnode, ds_denoised_smoothed_bold, [('smoothed_bold', 'in_file')]),
+            (inputnode, ds_smoothed_alff, [('smoothed_alff', 'in_file')]),
         ])
 
     return workflow
