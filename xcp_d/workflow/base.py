@@ -406,7 +406,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # Plot the ribbon on the brain in a brainsprite figure
     brainsprite_wf = init_brainsprite_wf(
+        layout=layout,
+        fmri_dir=fmri_dir,
+        subject_id=subject_id,
         output_dir=output_dir,
+        input_type=input_type,
         omp_nthreads=omp_nthreads,
         mem_gb=5,
     )
@@ -415,21 +419,19 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
-            omp_nthreads=omp_nthreads,
+            layout=layout,
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
             input_type=input_type,
+            omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
         )
 
         workflow.connect([
             (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
                                                ('t1seg', 'inputnode.t1seg')]),
-            (anatomical_wf, brainsprite_wf, [('outputnode.ribbon', 'inputnode.ribbon')])
         ])
-    else:
-        workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1seg', 'inputnode.ribbon')])])
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html

@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
 import fnmatch
+import glob
 import os
 import shutil
 from pathlib import Path
@@ -31,7 +32,6 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import collect_data
 from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.doc import fill_doc
 
@@ -197,6 +197,7 @@ def init_t1w_wf(
 
 @fill_doc
 def init_anatomical_wf(
+    layout,
     fmri_dir,
     subject_id,
     output_dir,
@@ -222,6 +223,7 @@ def init_anatomical_wf(
 
             from xcp_d.workflow.anatomical import init_anatomical_wf
             wf = init_anatomical_wf(
+                layout=None,
                 omp_nthreads=1,
                 fmri_dir=".",
                 subject_id="sub-01",
@@ -233,6 +235,7 @@ def init_anatomical_wf(
 
     Parameters
     ----------
+    %(layout)s
     %(fmri_dir)s
     subject_id : str
         subject id
@@ -249,38 +252,15 @@ def init_anatomical_wf(
         Path to the T1w file.
     t1seg : str
         Path to the T1w segmentation file.
-
-    Outputs
-    -------
-    ribbon : str
-        Path to a ribbon file.
-        This is used in a later workflow to generate a brainsprite figure.
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
 
-    # Simple storage of the ribbon file
-    # NOTE: TS- I don't know if there's a better solution,
-    # but setting outputnode.inputs.ribbon didn't work.
-    ribbonnode = pe.Node(niu.IdentityInterface(fields=["ribbon"]), name="ribbonnode")
+    mnitemplate = get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=["ribbon"]), name="outputnode")
-
-    # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
-    mnitemplate = str(
-        get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
-    )
-    # mnitemplatemask = str(
-    #     get_template(
-    #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
-    #     )
-    # )
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir, participant_label=subject_id, bids_validate=False
-    )
-
-    if input_type == "dcan" or input_type == "hcp":
+    if input_type in ("dcan", "hcp"):
+        # TODO: Replace with layout.get call(s). No reason to search through a list of strings.
         all_files = list(layout.get_files())
         L_inflated_surf = fnmatch.filter(
             all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
@@ -307,14 +287,10 @@ def init_anatomical_wf(
             all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii"
         )[0]
 
-        ribbon = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*desc-ribbon.nii.gz"
-        )[0]
-
-        ses_id = _getsesid(ribbon)
-        anatdir = output_dir + "/xcp_d/sub-" + subject_id + "/ses-" + ses_id + "/anat"
-        if not os.path.exists(anatdir):
-            os.makedirs(anatdir)
+        # All of the converted dcan and hcp files should have a session entity/folder
+        ses_id = _getsesid(R_wm_surf)
+        anatdir = os.path.join(output_dir, "xcp_d", f"sub-{subject_id}", f"ses-{ses_id}", "anat")
+        os.makedirs(anatdir, exist_ok=True)
 
         surf = [
             L_inflated_surf,
@@ -330,15 +306,11 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
-        ribbonnode.inputs.ribbon = ribbon
-
     else:
         all_files = list(layout.get_files())
 
         # verify freesurfer directory
-
         p = Path(fmri_dir)
-        import glob as glob
 
         freesurfer_paths = glob.glob(
             str(p.parent) + "/freesurfer*"
@@ -1492,23 +1464,10 @@ def init_anatomical_wf(
                 ]
             )
 
-            ribbon = str(freesurfer_path) + "/" + subid + "/mri/ribbon.mgz"
-
-            t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/orig.mgz"
-
-            # nibabies outputs do not  have ori.mgz, ori is the same as norm.mgz
-            if not Path(t1w_mgz).is_file():
-                t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/norm.mgz"
-
-            ribbonnode.inputs.ribbon = ribbon
-
         else:
             LOGGER.warning(
                 "No FreeSurfer derivatives detected. "
                 "Surface transformation will not be performed."
             )
-            workflow.connect([(inputnode, ribbonnode, [("t1seg", "ribbon")])])
-
-        workflow.connect([(ribbonnode, outputnode, [("ribbon", "ribbon")])])
 
     return workflow

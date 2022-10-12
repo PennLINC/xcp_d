@@ -4,8 +4,9 @@
 import fnmatch
 import glob
 import os
+from pathlib import Path
 
-from nipype import Function
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -22,14 +23,29 @@ from xcp_d.interfaces.surfplotting import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_transformfile
 
+LOGGER = logging.getLogger("nipype.workflow")
+
 
 @fill_doc
-def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite_wf"):
+def init_brainsprite_wf(
+    layout,
+    fmri_dir,
+    subject_id,
+    output_dir,
+    input_type,
+    mem_gb,
+    omp_nthreads,
+    name="init_brainsprite_wf",
+):
     """Create a brainsprite figure from stuff.
 
     Parameters
     ----------
+    %(layout)s
+    %(fmri_dir)s
+    %(subject_id)s
     %(output_dir)s
+    %(input_type)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -38,12 +54,12 @@ def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite
     Inputs
     ------
     t1w
-    ribbon
+    t1seg
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "ribbon"]),
+        niu.IdentityInterface(fields=["t1w", "t1seg"]),
         name="inputnode",
     )
     ribbon2statmap_wf = pe.Node(
@@ -69,10 +85,64 @@ def init_brainsprite_wf(output_dir, mem_gb, omp_nthreads, name="init_brainsprite
         name="brainspriteplot",
     )
 
+    if "sub-" not in subject_id:
+        subid = "sub-" + subject_id
+    else:
+        subid = subject_id
+
+    use_t1seg_as_ribbon = False
+    if input_type in ("dcan", "hcp"):
+        # The dcan2fmriprep/hcp2fmriprep functions copy the ribbon file to the derivatives dset.
+        ribbon = layout.get(
+            return_type="file",
+            subject=subject_id,
+            desc="ribbon",
+            extension="nii.gz",
+        )
+        if len(ribbon) != 1:
+            LOGGER.warning(f"{len(ribbon)} matches found for the ribbon file: {ribbon}")
+            use_t1seg_as_ribbon = True
+        else:
+            ribbon = ribbon[0]
+
+    else:
+        # verify freesurfer directory
+        fmri_path = Path(fmri_dir).absolute()
+
+        # for fmriprep and nibabies versions before XXXX,
+        # the freesurfer dir was placed at the same level as the main derivatives
+        freesurfer_paths = [fp for fp in fmri_path.parent.glob("freesurfer*") if fp.is_dir()]
+        if len(freesurfer_paths) == 0:
+            # for later versions, the freesurfer dir is placed in sourcedata
+            # within the main derivatives folder
+            freesurfer_paths = [
+                fp for fp in fmri_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
+            ]
+
+        if len(freesurfer_paths) > 0:
+            freesurfer_path = freesurfer_paths[0]
+            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
+        else:
+            freesurfer_path = None
+            LOGGER.info("No Freesurfer derivatives found.")
+
+        if freesurfer_path:
+            ribbon = freesurfer_path / subid / "mri" / "ribbon.mgz"
+            LOGGER.info(f"Using {ribbon} for ribbon.")
+
+            if not ribbon.is_file():
+                LOGGER.warning(f"File DNE: {ribbon}")
+                use_t1seg_as_ribbon = True
+
+    if use_t1seg_as_ribbon:
+        LOGGER.info("Using T1w segmentation for ribbon.")
+        workflow.connect([(inputnode, ribbon2statmap_wf, [("t1seg", "ribbon")])])
+    else:
+        ribbon2statmap_wf.inputnode.ribbon = ribbon
+
     workflow.connect(
         [
             (inputnode, generate_brainsprite, [("t1w", "template")]),
-            (inputnode, ribbon2statmap_wf, [("ribbon", "ribbon")]),
             (ribbon2statmap_wf, generate_brainsprite, [("out_file", "in_file")]),
             (generate_brainsprite, ds_brainspriteplot_wf, [("out_html", "in_file")]),
             (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
