@@ -3,7 +3,7 @@
 
 __doc__ = """
 Builds the layout for the Executive Summary of the bids-formatted output from
-the DCAN-Labs fMRI pipelines."
+the DCAN-Labs fMRI pipelines.
 """
 
 __version__ = "2.0.0"
