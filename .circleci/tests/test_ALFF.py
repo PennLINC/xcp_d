@@ -48,7 +48,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     original_alff = os.getcwd() + "/compute_alff_wf/alff_compt/sub-color" \
         "nest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-" \
         "preproc_bold_alff.nii.gz"
-    original_alff_data_mean = read_ndata(original_alff, bold_mask).mean()
+    original_alff_data_mean = nb.load(original_alff).mean()
     # Now let's do an FFT to get some fake data in the low
     # frequency regions of a certain voxel
     original_bold_data = read_ndata(bold_file, bold_mask)
@@ -80,7 +80,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     # Let's get the new ALFF mean
     new_alff = os.getcwd() + "/compute_alff_wf/alff_compt/editedfile_al" \
         "ff.nii.gz"
-    new_alff_data_mean = read_ndata(new_alff, bold_mask).mean()
+    new_alff_data_mean = nb.load(new_alff).mean()
     # Now let's make sure ALFF has increased ...
     assert new_alff_data_mean > original_alff_data_mean
     return
@@ -120,7 +120,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     original_alff = os.getcwd() + "/compute_alff_wf/alff_compt/sub-color" \
         "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_" \
         "bold_alff.dtseries.nii"
-    original_alff_data_mean = read_ndata(original_alff, bold_mask).mean()
+    original_alff_data_mean = nb.load(original_alff).mean()
     # Now let's do an FFT to get some fake data in the low
     # frequency regions of a certain voxel
     original_bold_data = read_ndata(bold_file, bold_mask)
@@ -152,7 +152,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     # Let's get the new ALFF mean
     new_alff = os.getcwd() + "/compute_alff_wf/alff_compt/editedfile_al" \
         "ff.dtseries.nii"
-    new_alff_data_mean = read_ndata(new_alff, bold_mask).mean()
+    new_alff_data_mean = nb.load(new_alff).mean()
     # Now let's make sure ALFF has increased ...
     assert new_alff_data_mean > original_alff_data_mean
     return
