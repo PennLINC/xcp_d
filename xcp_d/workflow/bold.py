@@ -60,6 +60,7 @@ def init_boldpostprocess_wf(
     n_runs,
     mni_to_t1w,
     despike,
+    dataset_links,
     layout=None,
     name='bold_postprocess_wf',
 ):
@@ -125,6 +126,7 @@ def init_boldpostprocess_wf(
         If True, run 3dDespike from AFNI
     layout : BIDSLayout object
         BIDS dataset layout
+    dataset_links
     %(name)s
 
     Inputs
@@ -235,24 +237,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
 
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                'processed_bold',
-                'smoothed_bold',
-                'alff_out',
-                'smoothed_alff',
-                'reho_out',
-                'atlas_names',
-                'timeseries',
-                'correlations',
-                'qc_file',
-                'fd',
-            ],
-        ),
-        name='outputnode',
-    )
-
     mem_gbx = _create_mem_gb(bold_file)
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
@@ -263,7 +247,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         omp_nthreads=omp_nthreads,
     )
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
+    compute_alff_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
                                            TR=TR,
                                            lowpass=upper_bpf,
                                            highpass=lower_bpf,
@@ -272,7 +256,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                            name="compute_alff_wf",
                                            omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],
+    compute_reho_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],
                                       name="afni_reho_wf",
                                       omp_nthreads=omp_nthreads)
 
@@ -307,27 +291,27 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name="resd_smoothing_wf",
         omp_nthreads=omp_nthreads)
 
-    filtering_wf = pe.Node(
+    bandpass_filter_bold = pe.Node(
         FilteringData(
             TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter),
-        name="filtering_wf",
+        name="bandpass_filter_bold",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
-    regression_wf = pe.Node(
+    denoise_bold = pe.Node(
         Regress(TR=TR,
                 original_file=bold_file),
-        name="regression_wf",
+        name="denoise_bold",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
-    interpolate_wf = pe.Node(
+    interpolate_censored_volumes = pe.Node(
         Interpolate(TR=TR),
-        name="interpolation_wf",
+        name="interpolate_censored_volumes",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
 
@@ -458,105 +442,94 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
         # Censor Scrub:
         workflow.connect([
-            (despike3d, regression_wf, [
-                ('out_file', 'in_file')]),
-            (inputnode, regression_wf, [('bold_mask', 'mask')]),
-            (censor_scrub, regression_wf,
-             [('fmriprep_confounds_censored', 'confounds'),
-              ('custom_confounds_censored', 'custom_confounds')])])
+            (despike3d, denoise_bold, [('out_file', 'in_file')]),
+            (inputnode, denoise_bold, [('bold_mask', 'mask')]),
+            (censor_scrub, denoise_bold, [('fmriprep_confounds_censored', 'confounds'),
+                                          ('custom_confounds_censored', 'custom_confounds')]),
+        ])
 
     else:  # If we don't despike
         # regression workflow
-        workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
-                          (censor_scrub, regression_wf,
-                         [('bold_censored', 'in_file'),
-                          ('fmriprep_confounds_censored', 'confounds'),
-                          ('custom_confounds_censored', 'custom_confounds')])])
+        workflow.connect([
+            (inputnode, denoise_bold, [('bold_mask', 'mask')]),
+            (censor_scrub, denoise_bold, [('bold_censored', 'in_file'),
+                                          ('fmriprep_confounds_censored', 'confounds'),
+                                          ('custom_confounds_censored', 'custom_confounds')]),
+        ])
 
     # interpolation workflow
     workflow.connect([
-        (inputnode, interpolate_wf, [('bold_file', 'bold_file'),
-                                     ('bold_mask', 'mask_file')]),
-        (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
-        (regression_wf, interpolate_wf, [('res_file', 'in_file')])
+        (inputnode, interpolate_censored_volumes, [('bold_file', 'bold_file'),
+                                                   ('bold_mask', 'mask_file')]),
+        (censor_scrub, interpolate_censored_volumes, [('tmask', 'tmask')]),
+        (denoise_bold, interpolate_censored_volumes, [('res_file', 'in_file')]),
     ])
 
     # add filtering workflow
-    workflow.connect([(inputnode, filtering_wf, [('bold_mask', 'mask')]),
-                      (interpolate_wf, filtering_wf, [('bold_interpolated',
-                                                       'in_file')])])
+    workflow.connect([
+        (inputnode, bandpass_filter_bold, [('bold_mask', 'mask')]),
+        (interpolate_censored_volumes, bandpass_filter_bold, [('bold_interpolated', 'in_file')]),
+    ])
 
     # residual smoothing
-    workflow.connect([(filtering_wf, resdsmoothing_wf,
-                       [('filtered_file', 'inputnode.bold_file')])])
+    workflow.connect([
+        (bandpass_filter_bold, resdsmoothing_wf, [('filtered_file', 'inputnode.bold_file')]),
+    ])
 
     # functional connect workflow
     workflow.connect([
         (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
                                  ('ref_file', 'inputnode.ref_file')]),
-        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
+        (bandpass_filter_bold, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
 
     # reho and alff
     workflow.connect([
-        (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')
-                                         ]),
-        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')
-                                         ]),
+        (inputnode, compute_alff_wf, [('bold_mask', 'inputnode.bold_mask')]),
+        (inputnode, compute_reho_wf, [('bold_mask', 'inputnode.bold_mask')]),
+        (bandpass_filter_bold, compute_alff_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (bandpass_filter_bold, compute_reho_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
 
     # qc report
     workflow.connect([
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
-        (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
+        (bandpass_filter_bold, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
         (resample_bold2T1w, qcreport, [('output_image', 'bold2T1w_mask')]),
         (resample_bold2MNI, qcreport, [('output_image', 'bold2temp_mask')]),
-        (qcreport, outputnode, [('qc_file', 'qc_file')])
-    ])
-
-    # write  to the outputnode, may be use in future
-    workflow.connect([
-        (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
-        (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
-                                         'smoothed_bold')]),
-        (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
-                                       ('outputnode.smoothed_alff',
-                                        'smoothed_alff')]),
-        (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
-        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
-                                  ('outputnode.correlations', 'correlations'),
-                                  ('outputnode.timeseries', 'timeseries')]),
     ])
 
     # write derivatives
     workflow.connect([
-        (filtering_wf, write_derivative_wf, [('filtered_file',
-                                              'inputnode.processed_bold')]),
-        (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
-                                                  'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
-        (alff_compute_wf, write_derivative_wf,
-         [('outputnode.alff_out', 'inputnode.alff_out'),
-          ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
-        (reho_compute_wf, write_derivative_wf, [('outputnode.reho_out',
-                                                 'inputnode.reho_out')]),
-        (fcon_ts_wf, write_derivative_wf, [('outputnode.atlas_names', 'inputnode.atlas_names'),
-                                           ('outputnode.correlations', 'inputnode.correlations'),
-                                           ('outputnode.timeseries', 'inputnode.timeseries')]),
+        (bandpass_filter_bold, write_derivative_wf, [
+            ('filtered_file', 'inputnode.processed_bold'),
+        ]),
+        (resdsmoothing_wf, write_derivative_wf, [
+            ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
+        ]),
+        (censor_scrub, write_derivative_wf, [('fd_timeseries', 'inputnode.fd')]),
+        (compute_alff_wf, write_derivative_wf, [
+            ('outputnode.alff_out', 'inputnode.alff_out'),
+            ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
+        ]),
+        (compute_reho_wf, write_derivative_wf, [('outputnode.reho_out', 'inputnode.reho_out')]),
+        (fcon_ts_wf, write_derivative_wf, [
+            ('outputnode.atlas_names', 'inputnode.atlas_names'),
+            ('outputnode.correlations', 'inputnode.correlations'),
+            ('outputnode.timeseries', 'inputnode.timeseries'),
+        ]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')]),
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
-                            name='qcsummary',
-                            run_without_submitting=False,
-                            mem_gb=mem_gbx['timeseries'])
+    functional_qc = pe.Node(
+        FunctionalSummary(bold_file=bold_file, TR=TR),
+        name='qcsummary',
+        run_without_submitting=False,
+        mem_gb=mem_gbx['timeseries'],
+    )
 
     ds_report_qualitycontrol = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
@@ -610,22 +583,21 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
-        (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
+        (compute_reho_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (compute_alff_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
-    # exexetive summary workflow
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
                                           ('bold_file', 'inputnode.bold_file'),
                                           ('bold_mask', 'inputnode.mask')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
-                                              ]),
-        (filtering_wf, executivesummary_wf, [('filtered_file',
-                                              'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+        (denoise_bold, executivesummary_wf, [('res_file', 'inputnode.regressed_data')]),
+        (bandpass_filter_bold, executivesummary_wf, [
+            ('filtered_file', 'inputnode.residual_data'),
+        ]),
+        (censor_scrub, executivesummary_wf, [('fd_timeseries', 'inputnode.fd')]),
     ])
 
     return workflow
