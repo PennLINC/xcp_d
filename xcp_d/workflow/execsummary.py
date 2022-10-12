@@ -85,11 +85,6 @@ def init_brainsprite_wf(
         name="ds_brainspriteplot",
     )
 
-    if "sub-" not in subject_id:
-        subid = "sub-" + subject_id
-    else:
-        subid = subject_id
-
     use_t1seg_as_ribbon = False
     if input_type in ("dcan", "hcp"):
         # The dcan2fmriprep/hcp2fmriprep functions copy the ribbon file to the derivatives dset.
@@ -127,7 +122,7 @@ def init_brainsprite_wf(
             LOGGER.info("No Freesurfer derivatives found.")
 
         if freesurfer_path:
-            ribbon = freesurfer_path / subid / "mri" / "ribbon.mgz"
+            ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
             LOGGER.info(f"Using {ribbon} for ribbon.")
 
             if not ribbon.is_file():

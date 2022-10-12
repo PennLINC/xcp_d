@@ -240,7 +240,7 @@ def init_subject_wf(
                 motion_filter_order=4,
                 fmri_dir=".",
                 omp_nthreads=1,
-                subject_id="sub-01",
+                subject_id="01",
                 cifti=False,
                 despike=False,
                 head_radius=50,
@@ -287,6 +287,7 @@ def init_subject_wf(
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(process_surfaces)s
+    %(subject_id)s
     %(input_type)s
     %(name)s
     """

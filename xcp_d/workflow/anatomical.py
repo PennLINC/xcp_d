@@ -226,7 +226,7 @@ def init_anatomical_wf(
                 layout=None,
                 omp_nthreads=1,
                 fmri_dir=".",
-                subject_id="sub-01",
+                subject_id="01",
                 output_dir=".",
                 input_type="fmriprep",
                 mem_gb=0.1,
@@ -237,8 +237,7 @@ def init_anatomical_wf(
     ----------
     %(layout)s
     %(fmri_dir)s
-    subject_id : str
-        subject id
+    %(subject_id)s
     %(output_dir)s
     %(input_type)s
     %(omp_nthreads)s

@@ -243,6 +243,11 @@ process_surfaces : :obj:`bool`, optional
           - The smoothed gray matter / white matter border for the cortex.
 """
 
+docdict["subject_id"] = """
+subject_id : :obj:`str`
+    The participant ID. This SHOULD NOT include the ``sub-`` prefix.
+"""
+
 docdict_indented = {}
 
 
