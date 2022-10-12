@@ -121,44 +121,54 @@ def init_writederivatives_wf(
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
-        write_derivative_cleandata_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            meta_dict=cleaned_data_dictionary,
-            dismiss_entities=['desc'],
-            desc='residual',
-            extension='.nii.gz',
-            source_file=bold_file,
-            compression=True),
+        write_derivative_cleandata_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                meta_dict=cleaned_data_dictionary,
+                source_file=bold_file,
+                desc='denoised',
+                extension='.nii.gz',
+                compression=True,
+            ),
             name='write_derivative_cleandata_wf',
             run_without_submitting=True,
-            mem_gb=2)
+            mem_gb=2,
+        )
 
-        write_derivative_alff_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                               dismiss_entities=['desc'],
-                                                               compression=True,
-                                                               desc='alff',
-                                                               extension='.nii.gz',
-                                                               source_file=bold_file),
-                                           name='write_derivative_alff_wf',
-                                           run_without_submitting=True,
-                                           mem_gb=1)
+        write_derivative_alff_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=["desc"],
+                suffix="alff",
+                extension='.nii.gz',
+                compression=True,
+            ),
+            name='write_derivative_alff_wf',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
 
-        write_derivative_qcfile_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                                 dismiss_entities=['desc'],
-                                                                 desc='qc',
-                                                                 source_file=bold_file,
-                                                                 compression=True,
-                                                                 extension='.csv'),
-                                             name='write_derivative_qcfile_wf',
-                                             run_without_submitting=True,
-                                             mem_gb=1)
+        write_derivative_qcfile_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=['desc'],
+                suffix='qc',
+                extension='.csv',
+            ),
+            name='write_derivative_qcfile_wf',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
 
         timeseries_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 dismiss_entities=['desc'],
-                desc='timeseries',
-                source_file=bold_file
+                suffix='timeseries',
+                extension=".tsv",
             ),
             name="timeseries_wf",
             run_without_submitting=True,
@@ -168,9 +178,11 @@ def init_writederivatives_wf(
         correlations_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
+                source_file=bold_file,
                 dismiss_entities=['desc'],
-                desc='connectivity',
-                source_file=bold_file
+                measure="pearsoncorrelation",
+                suffix='conmat',
+                extension=".tsv",
             ),
             name="correlations_wf",
             run_without_submitting=True,
@@ -178,111 +190,122 @@ def init_writederivatives_wf(
             iterfield=["atlas", "in_file"],
         )
 
-        write_derivative_reho_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                               extension='.nii.gz',
-                                                               dismiss_entities=['desc'],
-                                                               compression=True,
-                                                               desc='reho',
-                                                               source_file=bold_file),
-                                           name='write_derivative_reho_wf',
-                                           run_without_submitting=True,
-                                           mem_gb=1)
+        write_derivative_reho_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=['desc'],
+                suffix='reho',
+                extension='.nii.gz',
+                compression=True,
+            ),
+            name='write_derivative_reho_wf',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
 
-        write_derivative_fd_wf = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                             dismiss_entities=['desc'],
-                                                             desc='framewisedisplacement',
-                                                             extension='.tsv',
-                                                             source_file=bold_file),
-                                         name='write_derivative_fd_wf',
-                                         run_without_submitting=True,
-                                         mem_gb=1)
+        write_derivative_fd_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=["atlas", "res", "space"],
+                desc='framewisedisplacement',
+                suffix="motion",
+                extension='.tsv',
+            ),
+            name='write_derivative_fd_wf',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
 
-        workflow.connect([
-            (inputnode, timeseries_wf, [('atlas_names', 'atlas'), ('timeseries', 'in_file')]),
-            (inputnode, correlations_wf, [('atlas_names', 'atlas'), ('correlations', 'in_file')]),
-            (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
-            (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
-            (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
-            (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
-            (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
-        ])
+        workflow.connect([(inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')])])
+
         if smoothing:  # if smoothed
             # Write out detivatives via DerivativesDataSink
-            write_derivative_smoothcleandata_wf = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                meta_dict=smoothed_data_dictionary,
-                dismiss_entities=['desc'],
-                desc='residual_smooth',
-                source_file=bold_file,
-                extension='.nii.gz',
-                compression=True),
+            write_derivative_smoothcleandata_wf = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    meta_dict=smoothed_data_dictionary,
+                    source_file=bold_file,
+                    desc='denoisedSmoothed',
+                    extension='.nii.gz',
+                    compression=True,
+                ),
                 name='write_derivative_smoothcleandata_wf',
                 run_without_submitting=True,
-                mem_gb=2)
+                mem_gb=2,
+            )
 
-            write_derivative_smoothalff_wf = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                meta_dict=smoothed_data_dictionary,
-                dismiss_entities=['desc'],
-                desc='alff_smooth',
-                source_file=bold_file,
-                extension='.nii.gz',
-                compression=True),
+            write_derivative_smoothalff_wf = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    meta_dict=smoothed_data_dictionary,
+                    source_file=bold_file,
+                    desc='smooth',
+                    suffix="alff",
+                    extension='.nii.gz',
+                    compression=True,
+                ),
                 name='write_derivative_smoothalff_wf',
                 run_without_submitting=True,
-                mem_gb=1)
-
-            workflow.connect([
-                (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold',
-                                                                   'in_file')]),
-                (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
-            ])
+                mem_gb=1,
+            )
 
     else:  # For cifti files
         # Write out derivatives via DerivativesDataSink
-        write_derivative_cleandata_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            meta_dict=cleaned_data_dictionary,
-            dismiss_entities=['desc', 'den'],
-            desc='residual',
-            source_file=bold_file,
-            density='91k',
-            extension='.dtseries.nii'),
+        write_derivative_cleandata_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                meta_dict=cleaned_data_dictionary,
+                source_file=bold_file,
+                dismiss_entities=["den"],
+                desc='denoised',
+                density='91k',
+                extension='.dtseries.nii',
+            ),
             name='write_derivative_cleandata_wf',
             run_without_submitting=True,
-            mem_gb=2)
+            mem_gb=2,
+        )
 
-        write_derivative_alff_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            desc='alff',
-            density='91k',
-            extension='.dtseries.nii',
-            source_file=bold_file,
-            check_hdr=False),
+        write_derivative_alff_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=['desc', 'den'],
+                density='91k',
+                suffix='alff',
+                extension='.dscalar.nii',
+            ),
             name='write_derivative_alff_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_qcfile_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            desc='qc',
-            source_file=bold_file,
-            extension='.csv',
-            density='91k'),
+        write_derivative_qcfile_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=['desc', 'den'],
+                density='91k',
+                suffix='qc',
+                extension='.csv',
+            ),
             name='write_derivative_qcfile_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
         timeseries_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=['desc', 'den'],
-                check_hdr=False,
-                density='91k',
-                extension='.ptseries.nii',
                 source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=['desc', 'den'],
+                density='91k',
+                suffix="timeseries",
+                extension='.ptseries.nii',
             ),
             name="timeseries_wf",
             run_without_submitting=True,
@@ -293,11 +316,13 @@ def init_writederivatives_wf(
         correlations_wf = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=['desc', 'den'],
-                check_hdr=False,
-                density='91k',
-                extension='.pconn.nii',
                 source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=['desc', 'den'],
+                density='91k',
+                measure="pearsoncorrelation",
+                suffix='conmat',
+                extension='.pconn.nii',
             ),
             name="correlations_wf",
             run_without_submitting=True,
@@ -305,87 +330,105 @@ def init_writederivatives_wf(
             iterfield=["atlas", "in_file"],
         )
 
-        write_derivative_reholh_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=['desc', 'den'],
-            desc='reho',
-            density='32k',
-            hemi='L',
-            extension='.shape.gii',
-            source_file=bold_file),
+        write_derivative_reholh_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=['desc', 'den'],
+                density='32k',
+                hemi='L',
+                suffix='reho',
+                extension='.shape.gii',
+            ),
             name='write_derivative_reholh_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_rehorh_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=['desc', 'den'],
-            desc='reho',
-            density='32k',
-            hemi='R',
-            extension='.shape.gii',
-            source_file=bold_file),
+        write_derivative_rehorh_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=['desc', 'den'],
+                density='32k',
+                hemi='R',
+                suffix='reho',
+                extension='.shape.gii',
+            ),
             name='write_derivative_rehorh_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
-        write_derivative_fd_wf = pe.Node(DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=['desc', 'den'],
-            desc='framewisedisplacement',
-            extension='.tsv',
-            source_file=bold_file),
+        write_derivative_fd_wf = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=["atlas", "den", "res", "space"],
+                desc='framewisedisplacement',
+                suffix="motion",
+                extension='.tsv',
+            ),
             name='write_derivative_fd_wf',
             run_without_submitting=True,
-            mem_gb=1)
+            mem_gb=1,
+        )
 
         workflow.connect([
-            (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
-            (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
-            (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
-            (inputnode, timeseries_wf, [('timeseries', 'in_file'),
-                                        ('atlas_names', 'atlas')]),
-            (inputnode, correlations_wf, [('correlations', 'in_file'),
-                                          ('atlas_names', 'atlas')]),
             (inputnode, write_derivative_reholh_wf, [('reho_lh', 'in_file')]),
             (inputnode, write_derivative_rehorh_wf, [('reho_rh', 'in_file')]),
-            (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
         ])
 
         if smoothing:  # If smoothed
             # Write out detivatives via DerivativesDataSink
-            write_derivative_smoothcleandata_wf = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                meta_dict=smoothed_data_dictionary,
-                dismiss_entities=['desc', 'den'],
-                density='91k',
-                desc='residual_smooth',
-                source_file=bold_file,
-                extension='.dtseries.nii',
-                check_hdr=False),
+            write_derivative_smoothcleandata_wf = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    meta_dict=smoothed_data_dictionary,
+                    source_file=bold_file,
+                    dismiss_entities=["den"],
+                    density='91k',
+                    desc='denoisedSmoothed',
+                    extension='.dtseries.nii',
+                    check_hdr=False,
+                ),
                 name='write_derivative_smoothcleandata_wf',
                 run_without_submitting=True,
-                mem_gb=2)
+                mem_gb=2,
+            )
 
-            write_derivative_smoothalff_wf = pe.Node(DerivativesDataSink(
-                base_directory=output_dir,
-                meta_dict=smoothed_data_dictionary,
-                dismiss_entities=['desc', 'den'],
-                desc='alff_smooth',
-                density='91k',
-                source_file=bold_file,
-                extension='.dtseries.nii',
-                check_hdr=False),
+            write_derivative_smoothalff_wf = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    meta_dict=smoothed_data_dictionary,
+                    source_file=bold_file,
+                    dismiss_entities=["den"],
+                    desc='smooth',
+                    density='91k',
+                    suffix='alff',
+                    extension='.dscalar.nii',
+                    check_hdr=False,
+                ),
                 name='write_derivative_smoothalff_wf',
                 run_without_submitting=True,
-                mem_gb=1)
+                mem_gb=1,
+            )
 
-            workflow.connect([
-                (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold',
-                                                                   'in_file')]),
-                (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
-            ])
+    workflow.connect([
+        (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
+        (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
+        (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
+        (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
+    ])
+
+    if smoothing:
+        workflow.connect([
+            (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold', 'in_file')]),
+            (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
+        ])
 
     return workflow
