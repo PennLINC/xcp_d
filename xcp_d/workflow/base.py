@@ -416,7 +416,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,
     )
 
-    workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1w', 'inputnode.t1w')])])
+    workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1w', 'inputnode.t1w'),
+                                                          ('t1seg', 'inputnode.t1seg')])])
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
