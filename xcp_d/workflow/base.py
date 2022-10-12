@@ -5,6 +5,7 @@
 import glob
 import json
 import os
+import pprint
 import sys
 from copy import deepcopy
 
@@ -13,7 +14,7 @@ import numpy as np
 import scipy
 import templateflow
 from nipype import __version__ as nipype_ver
-from nipype import Function
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -33,6 +34,8 @@ from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
+
+LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
@@ -287,29 +290,6 @@ def init_subject_wf(
     %(input_type)s
     %(name)s
     """
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir,
-        participant_label=subject_id,
-        task=task_id,
-        bids_validate=False,
-    )
-
-    mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
-    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
-    t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
-
-    # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
-        name='inputnode',
-    )
-    inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.t1w = t1w
-    inputnode.inputs.t1seg = t1wseg
-    inputnode.inputs.mni_to_t1w = mni_to_t1w
 
     workflow = Workflow(name=name)
 
@@ -341,6 +321,120 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 #### References
 
 """
+    layout, subj_data = collect_data(
+        bids_dir=fmri_dir,
+        participant_label=subject_id,
+        task=task_id,
+        bids_validate=False,
+    )
+
+    # determine the appropriate post-processing workflow and inputs
+    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
+    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+
+    if not preproc_files:
+        LOGGER.error(
+            f"No preprocessed BOLD files found for {subject_id}.\n"
+            f"Available data: {pprint.pformat(subj_data)}")
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['custom_confounds']),
+        name='inputnode',
+    )
+    inputnode.inputs.custom_confounds = custom_confounds
+    inputnode.inputs.subj_data = subj_data
+
+    # Collect necessary files
+    t1w_file_grabber = pe.Node(
+        Function(
+            input_names=["subj_data"],
+            output_names=["t1w", "t1seg"],
+            function=extract_t1w_seg,
+        ),
+        name="t1w_file_grabber",
+    )
+
+    transform_file_grabber = pe.Node(
+        Function(
+            input_names=["subj_data"],
+            output_names=["mni_to_t1w", "t1w_to_mni"],
+            function=select_registrationfile,
+        ),
+        name="transform_file_grabber",
+    )
+
+    if not func_only:
+        anatomical_wf = init_anatomical_wf(
+            omp_nthreads=omp_nthreads,
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            output_dir=output_dir,
+            input_type=input_type,
+            mem_gb=5)  # RF: need to chnage memory size
+
+        # send t1w and t1seg to anatomical workflow
+        workflow.connect([
+            (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                               ('t1seg', 'inputnode.t1seg')]),
+        ])
+
+    # Split workflow across BOLD files
+    datasource = pe.Node(
+        niu.IdentityInterface(fields=['bold_file']),
+        name="datasource",
+    )
+    datasource.iterables = [('bold_file', preproc_files)]
+
+    get_customfile_node = pe.Node(
+        Function(
+            input_names=["custom_confounds", "bold_file"],
+            output_names=["custom_confounds_file"],
+            function=get_customfile,
+        ),
+        name="get_customfile_node",
+    )
+
+    workflow.connect([
+        (inputnode, t1w_file_grabber, [("subj_data", "subj_data")]),
+        (inputnode, transform_file_grabber, [("subj_data", "subj_data")]),
+        (inputnode, get_customfile_node, [("custom_confounds", "custom_confounds")]),
+        (datasource, get_customfile_node, [("bold_file", "bold_file")]),
+    ])
+
+    bold_postproc_wf = postproc_wf_function(
+        lower_bpf=lower_bpf,
+        upper_bpf=upper_bpf,
+        bpf_order=bpf_order,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        bandpass_filter=bandpass_filter,
+        smoothing=smoothing,
+        params=params,
+        head_radius=head_radius,
+        omp_nthreads=omp_nthreads,
+        n_runs=len(preproc_files),
+        despike=despike,
+        dummytime=dummytime,
+        fd_thresh=fd_thresh,
+        output_dir=output_dir,
+        layout=layout,
+        name=f"{'cifti' if cifti else 'nifti'}_postprocess_wf",
+    )
+
+    workflow.connect([
+        (datasource, bold_postproc_wf, [("bold_file", "inputnode.bold_file")]),
+        (get_customfile_node, bold_postproc_wf, [
+            ("custom_confounds_file", "inputnode.custom_confounds_file"),
+        ]),
+        (t1w_file_grabber, bold_postproc_wf, [
+            ('t1w', 'inputnode.t1w'),
+            ('t1seg', 'inputnode.t1seg'),
+        ]),
+        (transform_file_grabber, bold_postproc_wf, [('mni_to_t1w', 'inputnode.mni_to_t1w')]),
+    ])
 
     summary = pe.Node(
         SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
@@ -373,100 +467,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         run_without_submitting=True,
     )
 
-    if not func_only:
-        anatomical_wf = init_anatomical_wf(
-            omp_nthreads=omp_nthreads,
-            fmri_dir=fmri_dir,
-            subject_id=subject_id,
-            output_dir=output_dir,
-            t1w_to_mni=t1w_to_mni,
-            input_type=input_type,
-            mem_gb=5)  # RF: need to chnage memory size
-
-        # send t1w and t1seg to anatomical workflow
-        workflow.connect([
-            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                        ('t1seg', 'inputnode.t1seg')]),
-        ])
-
-    # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
-
-    datasource = pe.Node(
-        niu.IdentityInterface(fields=['bold_file']),
-        name="infosource",
-    )
-    datasource.iterables = [('bold_file', preproc_files)]
-
-    get_customfile_node = pe.Node(
-        Function(
-            input_names=["custom_confounds", "bold_file"],
-            output_names=["custom_confounds_file"],
-            function=get_customfile,
-        ),
-        name="get_customfile_node",
-    )
-    get_customfile_node.inputs.custom_confounds = custom_confounds
-
-    workflow.connect([(datasource, get_customfile_node, [("bold_file", "bold_file")])])
-
-    bold_postproc_wf = postproc_wf_function(
-        lower_bpf=lower_bpf,
-        upper_bpf=upper_bpf,
-        bpf_order=bpf_order,
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        bandpass_filter=bandpass_filter,
-        smoothing=smoothing,
-        params=params,
-        head_radius=head_radius,
-        omp_nthreads=omp_nthreads,
-        n_runs=len(preproc_files),
-        despike=despike,
-        dummytime=dummytime,
-        fd_thresh=fd_thresh,
-        output_dir=output_dir,
-        layout=layout,
-        name=f"{'cifti' if cifti else 'nifti'}_postprocess_wf",
-    )
     workflow.connect([
-        (datasource, bold_postproc_wf, [("bold_file", "inputnode.bold_file")]),
-        (get_customfile_node, bold_postproc_wf, [
-            ("custom_confounds_file", "inputnode.custom_confounds_file"),
-        ]),
-        (t1w_file_grabber, bold_postproc_wf, [
-            ('t1w', 'inputnode.t1w'),
-            ('t1seg', 'inputnode.t1seg'),
-        ]),
-        (transform_file_grabber, bold_postproc_wf, [('mni_to_t1w', 'inputnode.mni_to_t1w')]),
+        (summary, ds_report_summary, [('out_report', 'in_file')]),
+        (about, ds_report_about, [('out_report', 'in_file')]),
     ])
-
-    # NOTE: TS- Why is the data sink initialized separately for each run?
-    # If it's run-specific, shouldn't the name reflect the run?
-    ds_report_about = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            desc='about',
-            datatype="figures",
-        ),
-        name='ds_report_about',
-        run_without_submitting=True,
-    )
-
-    try:
-        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
-                                                        ]),
-                          (about, ds_report_about, [('out_report', 'in_file')])])
-    except Exception as exc:
-        if cifti:
-            exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
-                " participants."
-            print(exc)
-            sys.exit()
 
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
