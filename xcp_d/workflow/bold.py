@@ -6,7 +6,7 @@ import os
 import nibabel as nb
 import numpy as np
 import sklearn
-from nipype import logging
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -129,6 +129,7 @@ def init_boldpostprocess_wf(
         bold_mask from fmriprep
     custom_confounds
         custom regressors
+    confounds_file
     mni_to_t1w
         MNI to T1W ants Transformation file/h5
     t1w
@@ -161,13 +162,6 @@ def init_boldpostprocess_wf(
         TR = layout.get_tr(bold_file)
     if not isinstance(TR, float):
         raise Exception(f"Unable to determine TR of {bold_file}")
-
-    # Confounds file is necessary: ensure we can find it
-    from xcp_d.utils.confounds import get_confounds_tsv
-    try:
-        confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception:
-        raise Exception(f"Unable to find confounds file for {bold_file}.")
 
     workflow = Workflow(name=name)
 
@@ -202,8 +196,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 {lower_bpf}-{upper_bpf} Hz frequency band.
  """
 
-    # get reference and mask
-    mask_file, ref_file = _get_ref_mask(fname=bold_file)
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -219,10 +211,17 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         ),
         name='inputnode',
     )
+    # get reference and mask
+    get_ref_mask_node = pe.Node(
+        Function(
+            input_names=["fname"],
+            output_names=["bold_mask", "ref_file"],
+            function=_get_ref_mask,
+        ),
+        name="get_standard_confounds_file",
+    )
 
-    inputnode.inputs.ref_file = str(ref_file)
-    inputnode.inputs.bold_mask = str(mask_file)
-    inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
+    workflow.connect([(inputnode, get_ref_mask_node, [("bold_file", "fname")])])
 
     outputnode = pe.Node(
         niu.IdentityInterface(

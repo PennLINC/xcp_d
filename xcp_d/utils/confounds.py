@@ -20,17 +20,24 @@ def get_confounds_tsv(datafile):
 
     Returns
     -------
-    confounds_timeseries : str
+    confounds_file : str
         Associated confounds TSV file.
     """
-    if 'space' in os.path.basename(datafile):
-        confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
-                                                "_desc-confounds_timeseries.tsv")
+    if "space" in os.path.basename(datafile):
+        confounds_file = datafile.replace(
+            "_space-" + datafile.split("space-")[1],
+            "_desc-confounds_timeseries.tsv",
+        )
     else:
-        confounds_timeseries = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.tsv"
+        confounds_file = datafile.replace(
+            "_desc-preproc_bold.nii.gz",
+            "_desc-confounds_timeseries.tsv",
+        )
 
-    return confounds_timeseries
+    if not os.path.isfile(confounds_file):
+        raise ValueError(f"Confounds file does not exist: {confounds_file}")
+
+    return confounds_file
 
 
 def load_confound(datafile):

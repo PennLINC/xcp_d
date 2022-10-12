@@ -29,6 +29,7 @@ from xcp_d.utils.bids import (
     select_registrationfile,
     write_dataset_description,
 )
+from xcp_d.utils.confounds import get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf
@@ -385,20 +386,29 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
     datasource.iterables = [('bold_file', preproc_files)]
 
-    get_customfile_node = pe.Node(
+    get_standard_confounds_file = pe.Node(
+        Function(
+            input_names=["bold_file"],
+            output_names=["confounds_file"],
+            function=get_confounds_tsv,
+        ),
+        name="get_standard_confounds_file",
+    )
+    get_custom_confounds_file = pe.Node(
         Function(
             input_names=["custom_confounds", "bold_file"],
             output_names=["custom_confounds_file"],
             function=get_customfile,
         ),
-        name="get_customfile_node",
+        name="get_custom_confounds_file",
     )
 
     workflow.connect([
         (inputnode, t1w_file_grabber, [("subj_data", "subj_data")]),
         (inputnode, transform_file_grabber, [("subj_data", "subj_data")]),
-        (inputnode, get_customfile_node, [("custom_confounds", "custom_confounds")]),
-        (datasource, get_customfile_node, [("bold_file", "bold_file")]),
+        (inputnode, get_custom_confounds_file, [("custom_confounds", "custom_confounds")]),
+        (datasource, get_custom_confounds_file, [("bold_file", "bold_file")]),
+        (datasource, get_standard_confounds_file, [("bold_file", "bold_file")]),
     ])
 
     bold_postproc_wf = postproc_wf_function(
@@ -425,8 +435,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     workflow.connect([
         (datasource, bold_postproc_wf, [("bold_file", "inputnode.bold_file")]),
-        (get_customfile_node, bold_postproc_wf, [
+        (get_custom_confounds_file, bold_postproc_wf, [
             ("custom_confounds_file", "inputnode.custom_confounds_file"),
+        ]),
+        (get_standard_confounds_file, bold_postproc_wf, [
+            ("confounds_file", "inputnode.confounds_file"),
         ]),
         (t1w_file_grabber, bold_postproc_wf, [
             ('t1w', 'inputnode.t1w'),
