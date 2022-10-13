@@ -108,21 +108,6 @@ lower_bpf : :obj:`float`
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
-
-    Here is a list of recommended values, based on participant age:
-
-    ================= =================
-    Age Range (years) Recommended Value
-    ================= =================
-    < 1               30
-    1 - 2             25
-    2 - 6             20
-    6 - 12            15
-    12 - 18           12
-    19 - 65           12
-    65 - 80           12
-    > 80              10
-    ================= =================
 """
 
 docdict["upper_bpf"] = """
@@ -131,21 +116,6 @@ upper_bpf : :obj:`float`
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
-
-    Here is a list of recommended values, based on participant age:
-
-    ================= =================
-    Age Range (years) Recommended Value
-    ================= =================
-    < 1               60
-    1 - 2             50
-    2 - 6             35
-    6 - 12            25
-    12 - 18           20
-    19 - 65           18
-    65 - 80           28
-    > 80              30
-    ================= =================
 """
 
 docdict["bpf_order"] = """
@@ -173,6 +143,21 @@ band_stop_min : :obj:`float`
     Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_max``.
+
+    Here is a list of recommended values, based on participant age:
+
+    ================= =================
+    Age Range (years) Recommended Value
+    ================= =================
+    < 1               30
+    1 - 2             25
+    2 - 6             20
+    6 - 12            15
+    12 - 18           12
+    19 - 65           12
+    65 - 80           12
+    > 80              10
+    ================= =================
 """
 
 docdict["band_stop_max"] = """
@@ -180,6 +165,21 @@ band_stop_max : :obj:`float`
     Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_min``.
+
+    Here is a list of recommended values, based on participant age:
+
+    ================= =================
+    Age Range (years) Recommended Value
+    ================= =================
+    < 1               60
+    1 - 2             50
+    2 - 6             35
+    6 - 12            25
+    12 - 18           20
+    19 - 65           18
+    65 - 80           28
+    > 80              30
+    ================= =================
 """
 
 docdict["name"] = """
