@@ -82,7 +82,6 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
     # Now let's make sure ALFF has increased ...
     assert new_alff_data_mean > original_alff_data_mean
-    return
 
 
 def test_cifti_alff(data_dir, tmp_path_factory):
