@@ -52,7 +52,8 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     reho_wf.inputs.inputnode.clean_bold = bold_file
     reho_wf.run()
     # Get the original mean of the ReHo for later comparison
-    original_reho = os.getcwd() + "/afni_reho_wf/reho_3d/reho.nii.gz"
+    original_reho = os.path.join(reho_wf.base_dir,
+                                 "afni_reho_wf/reho_3d/reho.nii.gz")
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
     original_bold_data = read_ndata(bold_file, bold_mask)
     # Add some noise to the original data and write it out
@@ -63,7 +64,8 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     reho_wf.inputs.inputnode.clean_bold = filename
     reho_wf.run()
     # Has the new ReHo's mean decreased?
-    new_reho = os.getcwd() + "/afni_reho_wf/reho_3d/reho.nii.gz"
+    new_reho = os.path.join(reho_wf.base_dir,
+                            "afni_reho_wf/reho_3d/reho.nii.gz")
     new_reho_mean = nb.load(new_reho).get_fdata().mean()
     assert new_reho_mean < original_reho_mean
     return
