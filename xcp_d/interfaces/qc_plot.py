@@ -107,7 +107,9 @@ class QCPlot(SimpleInterface):
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
-            freqband=[self.inputs.low_freq, self.inputs.high_freq])
+            freqband=[self.inputs.low_freq, self.inputs.high_freq],
+            cutoff=np.min([self.inputs.low_freq, self.inputs.high_freq]),
+        )
         # Pull out motion confounds
         motion_df = pd.DataFrame(data=motion_conf.values,
                                  columns=[

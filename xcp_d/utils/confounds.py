@@ -89,7 +89,7 @@ def readjson(jsonfile):
     return data
 
 
-def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=0.1, motion_filter_order=4):
+def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff, motion_filter_order=4):
     """Load the six basic motion regressors (three rotations, three translations).
 
     Parameters
@@ -104,10 +104,9 @@ def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=0.1, moti
         Otherwise, no filtering will be applied.
     freqband
         This only has an impact is ``motion_filter_type`` is "lp" or "notch".
-    cutoff : float, optional
-        Frequency cutoff, in Hertz.
+    cutoff : float
+        Frequency cutoff, in breaths-per-minute.
         This only has an impact is ``motion_filter_type`` is "lp" or "notch".
-        Default is 0.1.
     motion_filter_order : int, optional
         This only has an impact is ``motion_filter_type`` is "lp" or "notch".
         Default is 4.
@@ -126,12 +125,14 @@ def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff=0.1, moti
     # Apply LP or notch filter
     if motion_filter_type == 'lp' or motion_filter_type == 'notch':
         motion_confounds = motion_confounds.T
-        motion_confounds = motion_regression_filter(data=motion_confounds,
-                                                    TR=TR,
-                                                    motion_filter_type=motion_filter_type,
-                                                    freqband=freqband,
-                                                    cutoff=cutoff,
-                                                    motion_filter_order=motion_filter_order)
+        motion_confounds = motion_regression_filter(
+            data=motion_confounds,
+            TR=TR,
+            motion_filter_type=motion_filter_type,
+            freqband=freqband,
+            cutoff=cutoff,
+            motion_filter_order=motion_filter_order,
+        )
         motion_confounds = motion_confounds.T  # Transpose motion confounds
     return pd.DataFrame(motion_confounds)
 
@@ -418,12 +419,14 @@ def load_aroma(datafile):
     return aroma
 
 
-def motion_regression_filter(data,
-                             TR,
-                             motion_filter_type,
-                             freqband,
-                             cutoff=.1,
-                             motion_filter_order=4):
+def motion_regression_filter(
+    data,
+    TR,
+    motion_filter_type,
+    freqband,
+    cutoff,
+    motion_filter_order=4,
+):
     """Filter translation and rotation motion parameters.
 
     Parameters
@@ -436,9 +439,8 @@ def motion_regression_filter(data,
         The type of motion filter to apply.
         Filtering will only be performed if set to "lp" or "notch".
     freqband
-    cutoff : float, optional
-        The minimum frequency, in Hertz.
-        Default is 0.1.
+    cutoff : float
+        The minimum frequency, in breaths-per-minute.
     motion_filter_order : int, optional
         Default is 4.
 

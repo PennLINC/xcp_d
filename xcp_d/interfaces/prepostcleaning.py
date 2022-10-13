@@ -232,7 +232,8 @@ class CensorScrub(SimpleInterface):
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
             freqband=[self.inputs.low_freq, self.inputs.high_freq],
-            cutoff=np.min([self.inputs.low_freq, self.inputs.high_freq]))
+            cutoff=np.min([self.inputs.low_freq, self.inputs.high_freq]),
+        )
         motion_df = pd.DataFrame(data=motion_confounds.values,
                                  columns=[
                                      "rot_x", "rot_y", "rot_z", "trans_x",
