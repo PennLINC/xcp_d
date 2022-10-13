@@ -14,8 +14,6 @@ from xcp_d.interfaces.regression import CiftiDespike
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.utils.plot import _get_tr
 
-data_dir = "/Users/kahinim/Desktop/xcp_test/data"
-
 
 def test_nifti_despike(data_dir, tmp_path_factory):
     """
