@@ -149,7 +149,7 @@ def cifti_con_test(data_dir):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
     out_file = os.getcwd() + os.path.join(cifti_conts_wf.base_dir,
-                            "cifti_ts_con_wf/sc417corr", out_file)
+                                          "cifti_ts_con_wf/sc417corr", out_file)
     # Read it out
     data = read_ndata(out_file)
     # Do the two match up?
