@@ -235,7 +235,7 @@ class CensorScrub(SimpleInterface):
 
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
-        motion_confounds = load_motion(
+        motion_df = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
@@ -243,11 +243,7 @@ class CensorScrub(SimpleInterface):
             band_stop_min=self.inputs.band_stop_min,
             band_stop_max=self.inputs.band_stop_max,
         )
-        motion_df = pd.DataFrame(data=motion_confounds.values,
-                                 columns=[
-                                     "rot_x", "rot_y", "rot_z", "trans_x",
-                                     "trans_y", "trans_z"
-                                 ])
+
         fd_timeseries_uncensored = compute_fd(confound=motion_df,
                                               head_radius=self.inputs.head_radius)
 
