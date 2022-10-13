@@ -18,8 +18,8 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     Test ALFF computations as done for Niftis.
 
     Get the FFT of a Nifti, add to its lower frequencies
-    and confirm the ALFF after addition to lower frequencies
-    has changed in the expected direction.
+    and confirm the mean ALFF after addition to lower frequencies
+    has increased.
     """
     # Get the file names
     bold_file = (
