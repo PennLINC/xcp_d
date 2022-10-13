@@ -4,6 +4,10 @@
 Running XCP-D
 =============
 
+.. warning::
+
+   XCP-D may not run correctly on **M1 chips**.
+
 .. _usage_inputs:
 
 Execution and Input Formats
