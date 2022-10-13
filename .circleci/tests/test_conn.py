@@ -38,7 +38,7 @@ def nifti_conn_test(data_dir):
                                     size=shape)
     # Let's write that out
     tempdir = tempfile.mkdtemp()
-    filename = os.path.join(tempdir, "fake_signal_file.nii.gz")
+    filename = os.getcwd() + os.path.join(tempdir, "fake_signal_file.nii.gz")
     write_ndata(
         fake_signal,
         template=bold_file,
@@ -73,7 +73,7 @@ def nifti_conn_test(data_dir):
     for file in os.listdir(fcon_ts_wf.base_dir + "/fcons_ts_wf/sc47_connect"):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
-    out_file = os.path.join(fcon_ts_wf.base_dir,
+    out_file = os.getcwd() + os.path.join(fcon_ts_wf.base_dir,
                             "fcons_ts_wf/sc47_connect", out_file)
     # Read that into a df
     df = pd.read_csv(out_file, header=None)
@@ -85,7 +85,7 @@ def nifti_conn_test(data_dir):
     ):
         if fnmatch.fnmatch(file, "*.nii.gz*"):
             atlas = file
-    atlas = os.path.join(fcon_ts_wf.base_dir,
+    atlas = os.getcwd() + os.path.join(fcon_ts_wf.base_dir,
                          "fcons_ts_wf/apply_transform_schaefer_417/", atlas)
     atlas = nilearn.image.load_img(atlas)
     # Masking img
@@ -118,7 +118,7 @@ def cifti_con_test(data_dir):
                                     size=shape)
     # Let's write that out
     tmpdir = tempfile.mkdtemp()
-    filename = os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
+    filename = os.getcwd() + os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
     write_ndata(
         fake_signal,
         template=boldfile,
@@ -139,7 +139,7 @@ def cifti_con_test(data_dir):
     for file in os.listdir(cifti_conts_wf.base_dir + "cifti_ts_con_wf/sc417parcel"):
         if fnmatch.fnmatch(file, "*dtseries*"):
             out_file = file
-    out_file = os.path.join(cifti_conts_wf.base_dir,
+    out_file = os.getcwd() + os.path.join(cifti_conts_wf.base_dir,
                             "cifti_ts_con_wf/sc417parcel", out_file)
     # Let's read out the parcellated time series and get its corr coeff
     data = read_ndata(out_file)
@@ -148,7 +148,7 @@ def cifti_con_test(data_dir):
     for file in os.listdir(cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417corr"):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
-    out_file = os.path.join(cifti_conts_wf.base_dir,
+    out_file = os.getcwd() + os.path.join(cifti_conts_wf.base_dir,
                             "cifti_ts_con_wf/sc417corr", out_file)
     # Read it out
     data = read_ndata(out_file)
