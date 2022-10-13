@@ -96,7 +96,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     original_bold_data = read_ndata(bold_file)
     # Add some noise to the original data and write it out
     noisy_bold_data = noisy(original_bold_data)
-    filename = os.getcwd() + "/test.nii"
+    filename = os.getcwd() + "/test.dtseries.nii"
     write_ndata(noisy_bold_data,
                 template=bold_file,
                 filename=filename)
