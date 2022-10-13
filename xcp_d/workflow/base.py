@@ -1,9 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
-
-import glob
-import json
 import os
 import sys
 from copy import deepcopy
@@ -24,6 +21,7 @@ from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
+    get_preproc_pipeline_info,
     select_cifti_bold,
     select_registrationfile,
     write_dataset_description,
@@ -313,11 +311,13 @@ def init_subject_wf(
 
     workflow = Workflow(name=name)
 
+    info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
+
     workflow.__desc__ = f"""
 ### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
-was used to post-process the outputs of fMRIPrep version {getfmriprepv(fmri_dir=fmri_dir)}
-[@esteban2019fmriprep;esteban2020analysis, RRID:SCR_016216].
+was used to post-process the outputs of {input_type} version {info_dict["version"]}
+{info_dict["references"]}.
 XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
 
@@ -501,19 +501,3 @@ def _pop(inlist):
     if isinstance(inlist, (list, tuple)):
         return inlist[0]
     return inlist
-
-
-def getfmriprepv(fmri_dir):
-    """Get fmriprep/nibabies/dcan/hcp version."""
-    datax = glob.glob(fmri_dir + '/dataset_description.json')
-
-    if datax:
-        datax = datax[0]
-        with open(datax) as f:
-            datay = json.load(f)
-
-        fvers = datay['GeneratedBy'][0]['Version']
-    else:
-        fvers = str('Unknown vers')
-
-    return fvers
