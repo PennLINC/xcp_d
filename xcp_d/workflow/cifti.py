@@ -187,7 +187,7 @@ def init_ciftipostprocess_wf(
 
     fd_str = (
         f"{filter_str}framewise displacement was calculated using the formula from "
-        f"@power_fd_dvars, with a head radius of {head_radius} mm."
+        f"@power_fd_dvars, with a head radius of {head_radius} mm"
     )
 
     dummytime_str = ""
