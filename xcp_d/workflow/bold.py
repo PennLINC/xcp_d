@@ -184,8 +184,8 @@ def init_boldpostprocess_wf(
     if motion_filter_type:
         if motion_filter_type == "notch":
             filter_sub_str = (
-                f"band-pass filtered between {band_stop_min} and {band_stop_max} "
-                "breaths-per-minute using a notch filter"
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a notch filter"
             )
         else:
             filter_sub_str = f"low-pass filtered below {band_stop_min} breaths-per-minute"

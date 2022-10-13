@@ -676,19 +676,19 @@ def build_workflow(opts, retval):
             )
 
     elif opts.motion_filter_type == "lp":
-        if not opts.band_stop_max:
+        if not opts.band_stop_min:
             build_log.error(
-                "Please set '--band-stop-max' if you want to apply the 'lp' motion filter."
+                "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
             )
             retval["return_code"] = 1
-        elif opts.band_stop_max < 1:
+        elif opts.band_stop_min < 1:
             build_log.warning(
-                f"'--band-stop-max' ({opts.band_stop_max}) is suspiciously low. "
+                f"'--band-stop-min' ({opts.band_stop_max}) is suspiciously low. "
                 "Please remember that this value should be in breaths-per-minute."
             )
 
-        if opts.band_stop_min:
-            build_log.warning("'--band-stop-min' is ignored when '--motion-filter-type' is 'lp'.")
+        if opts.band_stop_max:
+            build_log.warning("'--band-stop-max' is ignored when '--motion-filter-type' is 'lp'.")
 
     elif opts.band_stop_min or opts.band_stop_max:
         build_log.warning(

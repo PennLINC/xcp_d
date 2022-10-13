@@ -450,6 +450,9 @@ def motion_regression_filter(
         Repetition time of the data.
     motion_filter_type : {"lp", "notch", other}
         The type of motion filter to apply.
+        If "notch", the frequencies between ``band_stop_min`` and ``band_stop_max`` will be
+        removed.
+        If "lp", the frequencies above ``band_stop_min`` will be removed.
         Filtering will only be performed if set to "lp" or "notch".
     %(band_stop_min)s
     %(band_stop_max)s
@@ -467,9 +470,10 @@ def motion_regression_filter(
 
     if motion_filter_type:
         if motion_filter_type == 'lp':  # low-pass filter
-            assert band_stop_max is not None
+            # Remove any frequencies above band_stop_min.
+            assert band_stop_min is not None
 
-            low_pass_freq_hertz = band_stop_max / 60  # change BPM to right time unit
+            low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
             fs = 1. / TR  # sampling frequency
             fNy = fs / 2.  # Nyquist frequency
             # cutting frequency
@@ -480,6 +484,7 @@ def motion_regression_filter(
             a_filt = 1.
             num_f_apply = 1  # num of times to apply
         elif motion_filter_type == 'notch':  # notch filter
+            # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
             assert band_stop_max is not None
             assert band_stop_min is not None
             assert band_stop_min < band_stop_max
