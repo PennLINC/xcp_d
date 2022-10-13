@@ -52,20 +52,20 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     reho_wf.inputs.inputnode.clean_bold = bold_file
     reho_wf.run()
     # Get the original mean of the ReHo for later comparison
-    original_reho = os.getcwd() + os.path.join(reho_wf.base_dir,
-                                               "afni_reho_wf/reho_3d/reho.nii.gz")
+    original_reho = "/src/xcp_d/.circleci" + os.path.join(reho_wf.base_dir,
+                                                          "afni_reho_wf/reho_3d/reho.nii.gz")
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
     original_bold_data = read_ndata(bold_file, bold_mask)
     # Add some noise to the original data and write it out
     noisy_bold_data = noisy(original_bold_data)
-    filename = os.getcwd() + os.path.join(tempdir, "test.nii.gz")
+    filename = "/src/xcp_d/.circleci" + os.path.join(tempdir, "test.nii.gz")
     write_ndata(noisy_bold_data, template=bold_file, mask=bold_mask, filename=filename)
     # Run ReHo again
     reho_wf.inputs.inputnode.clean_bold = filename
     reho_wf.run()
     # Has the new ReHo's mean decreased?
-    new_reho = os.getcwd() + os.path.join(reho_wf.base_dir,
-                                          "afni_reho_wf/reho_3d/reho.nii.gz")
+    new_reho = "/src/xcp_d/.circleci" + os.path.join(reho_wf.base_dir,
+                                                     "afni_reho_wf/reho_3d/reho.nii.gz")
     new_reho_mean = nb.load(new_reho).get_fdata().mean()
     assert new_reho_mean < original_reho_mean
     return
@@ -91,7 +91,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     reho_wf.inputs.inputnode.clean_bold = bold_file
     reho_wf.run()
     # Get the original mean of the ReHo for later comparison
-    original_reho = os.getcwd() + os.path.join(
+    original_reho = "/src/xcp_d/.circleci" + os.path.join(
         tempdir, "surface_reho_wf/reho_lh/"
         "correlation_matrix_"
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR",
@@ -101,13 +101,13 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     original_bold_data = read_ndata(bold_file)
     # Add some noise to the original data and write it out
     noisy_bold_data = noisy(original_bold_data)
-    filename = os.getcwd() + os.path.join(tempdir, "test.dtseries.nii")
+    filename = "/src/xcp_d/.circleci" + os.path.join(tempdir, "test.dtseries.nii")
     write_ndata(noisy_bold_data, template=bold_file, filename=filename)
     # Run ReHo again
     reho_wf.inputs.inputnode.clean_bold = filename
     reho_wf.run()
     # Has the new ReHo's mean decreased?
-    new_reho = os.getcwd() + os.path.join(
+    new_reho = "/src/xcp_d/.circleci" + os.path.join(
         tempdir, "surface_reho_wf/reho_lh/correlation_matrix_",
         "test.dtseries.shape.gii"
     )

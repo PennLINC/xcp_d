@@ -49,7 +49,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
     alff_compute_wf.run()
     # Let's get the mean of the ALFF for later comparison
-    original_alff = os.getcwd() + os.path.join(
+    original_alff = "/src/xcp_d/.circleci" + os.path.join(
         tempdir, "compute_alff_wf/alff_compt/sub-color"
         "nest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
         "preproc_bold_alff.nii.gz"
@@ -69,7 +69,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     # Let's replace the original value with the fake data
     original_bold_data[2, :] = changed_voxel_data
     # Let's write this out
-    filename = os.getcwd() + os.path.join(tempdir, "editedfile.nii.gz")
+    filename = "/src/xcp_d/.circleci" + os.path.join(tempdir, "editedfile.nii.gz")
     write_ndata(
         original_bold_data, template=bold_file, mask=bold_mask, filename=filename
     )
@@ -82,8 +82,8 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.inputs.inputnode.clean_bold = filename
     alff_compute_wf.run()
     # Let's get the new ALFF mean
-    new_alff = os.getcwd() + os.path.join(tempdir, "compute_alff_wf/alff_compt/"
-                                          "editedfile_alff.nii.gz")
+    new_alff = "/src/xcp_d/.circleci" + os.path.join(tempdir, "compute_alff_wf/alff_compt/"
+                                                     "editedfile_alff.nii.gz")
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
     # Now let's make sure ALFF has increased ...
     assert new_alff_data_mean > original_alff_data_mean
@@ -125,7 +125,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
     alff_compute_wf.run()
     # Let's get the mean of the data for later comparison
-    original_alff = os.getcwd() + os.path.join(
+    original_alff = "/src/xcp_d/.circleci" + os.path.join(
         tempdir, "compute_alff_wf/alff_compt/sub-color"
         "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_"
         "bold_alff.dtseries.nii"
@@ -144,7 +144,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     # Let's replace the original value with the fake data
     original_bold_data[2, :] = changed_voxel_data
     # Let's write this out
-    filename = os.getcwd() + os.path.join(tempdir, "editedfile.dtseries.nii")
+    filename = "/src/xcp_d/.circleci" + os.path.join(tempdir, "editedfile.dtseries.nii")
     write_ndata(
         original_bold_data, template=bold_file, mask=bold_mask,
         filename=filename
@@ -156,7 +156,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.inputs.inputnode.clean_bold = filename
     alff_compute_wf.run()
     # Let's get the new ALFF mean
-    new_alff = os.getcwd() + os.path.join(
+    new_alff = "/src/xcp_d/.circleci" + os.path.join(
         tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dtseries.nii"
     )
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
