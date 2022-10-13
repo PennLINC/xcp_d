@@ -94,7 +94,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     original_reho = os.path.join(
         tempdir, "surface_reho_wf/reho_lh/"
         "correlation_matrix_"
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR",
+        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR"
         "_den-91k_bold.dtseries.shape.gii"
     )
     original_reho_mean = nb.load(original_reho).agg_data().mean()
@@ -108,7 +108,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     reho_wf.run()
     # Has the new ReHo's mean decreased?
     new_reho = os.path.join(
-        tempdir, "surface_reho_wf/reho_lh/correlation_matrix_",
+        tempdir, "surface_reho_wf/reho_lh/correlation_matrix_"
         "test.dtseries.shape.gii"
     )
     new_reho_mean = nb.load(new_reho).agg_data().mean()

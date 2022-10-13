@@ -98,7 +98,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     # Let's write this out
     file_data[2, :] = voxel_data
     tempdir = tmp_path_factory.mktemp("test_despike_cifti")
-    filename = "test.nii"
+    filename = os.path.join(tempdir, "test.dtseries.nii")
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8,
                 filename=filename)
     # Let's despike the data
