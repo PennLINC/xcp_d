@@ -161,7 +161,7 @@ def get_parser():
         default=None,
         help=(
             "nipype plugin configuration file. for more information see "
-            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html",
+            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html"
         ),
     )
     g_perfm.add_argument(
@@ -302,7 +302,7 @@ If not set, no filter will be applied.
 
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
 must be defined.
-If the filter type is set to "lp", then only ``band-stop-max`` must be defined.
+If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
 """
     )
     g_filter.add_argument(
@@ -313,7 +313,8 @@ If the filter type is set to "lp", then only ``band-stop-max`` must be defined.
         help="""\
 Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
 Motion filtering is only performed if ``motion-filter-type`` is not None.
-This parameter is only used if ``motion-filter-type`` is set to "notch".
+If used with the "lp" ``motion-filter-type``, this parameter essentially corresponds to a
+low-pass filter (the maximum allowed frequency in the filtered data).
 This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-max``.
 
 .. list-table:: Recommended values, based on participant age
@@ -339,6 +340,9 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         - 12
     *   - > 80
         - 10
+
+When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-used value for
+this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
 """
     )
     g_filter.add_argument(
@@ -349,6 +353,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="""\
 Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
 Motion filtering is only performed if ``motion-filter-type`` is not None.
+This parameter is only used if ``motion-filter-type`` is set to "notch".
 This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-min``.
 
 .. list-table:: Recommended values, based on participant age

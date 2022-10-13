@@ -121,6 +121,10 @@ def load_motion(
     motion_confounds : pandas.DataFrame
         The six motion regressors.
         The three rotations are listed first, then the three translations.
+
+    References
+    ----------
+    .. footbibliography::
     """
     # Select the motion columns from the overall confounds DataFrame
     motion_confounds_df = confounds_df[
@@ -463,6 +467,10 @@ def motion_regression_filter(
     -------
     data : numpy.ndarray
         Filtered data.
+
+    References
+    ----------
+    .. footbibliography::
     """
     # casting all variables
     TR = float(TR)

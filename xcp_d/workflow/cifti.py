@@ -147,6 +147,10 @@ def init_ciftipostprocess_wf(
     %(correlations)s
     qc_file
         quality control files
+
+    References
+    ----------
+    .. footbibliography::
     """
     TR = get_cifti_tr(bold_file)
     if TR is None:
@@ -167,14 +171,18 @@ def init_ciftipostprocess_wf(
         if motion_filter_type == "notch":
             filter_sub_str = (
                 f"band-stop filtered to remove signals between {band_stop_min} and "
-                f"{band_stop_max} breaths-per-minute using a notch filter"
+                f"{band_stop_max} breaths-per-minute using a notch filter, based on "
+                "@fair2020correction"
             )
-        else:
-            filter_sub_str = f"low-pass filtered below {band_stop_min} breaths-per-minute"
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute, "
+                "based on @fair2020correction and @gratton2020removal"
+            )
 
         filter_str = (
-            f"the six translation and rotation head motion traces were {filter_sub_str}, "
-            "based on @fair2020correction. Next, "
+            f"the six translation and rotation head motion traces were {filter_sub_str}. "
+            "Next, "
         )
 
     fd_str = (

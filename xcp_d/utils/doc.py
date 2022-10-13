@@ -164,6 +164,9 @@ band_stop_min : :obj:`float` or None
     65 - 80           12
     > 80              10
     ================= =================
+
+    When ``motion_filter_type`` is set to "lp" (low-pass filter), another commonly-used value for
+    this parameter is 6 BPM (equivalent to 0.1 Hertz), based on :footcite:t:`gratton2020removal`.
 """
 
 docdict["band_stop_max"] = """
