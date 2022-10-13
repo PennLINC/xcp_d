@@ -141,8 +141,12 @@ def load_motion(
             motion_filter_order=motion_filter_order,
         )
         motion_confounds = motion_confounds.T  # Transpose motion confounds back to RxT
+        motion_confounds_df = pd.DataFrame(
+            data=motion_confounds,
+            columns=motion_confounds_df.columns,
+        )
 
-    return pd.DataFrame(data=motion_confounds, columns=motion_confounds_df.columns)
+    return motion_confounds_df
 
 
 def load_global_signal(confounds_df):
