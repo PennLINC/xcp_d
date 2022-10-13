@@ -644,15 +644,27 @@ def build_workflow(opts, retval):
         build_log.error('Please select analysis level "participant"')
         retval["return_code"] = 1
 
+    # Bandpass filter parameters
+    if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf):
+        build_log.error(
+            f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
+            f"'--upper-bpf' ({opts.upper_bpf})."
+        )
+        retval["return_code"] = 1
+
+    # Motion filtering parameters
     if opts.motion_filter_type == "notch":
         if not (opts.band_stop_min and opts.band_stop_max):
             build_log.error(
-                "Please set '--band-stop-min' and '--band-stop-max' if you want to apply the "
-                "'notch' motion filter."
+                "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
+                "the 'notch' motion filter."
             )
             retval["return_code"] = 1
         elif opts.band_stop_min >= opts.band_stop_max:
-            build_log.error("'--band-stop-min' must be lower than '--band-stop-max'.")
+            build_log.error(
+                f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
+                f"'--band-stop-max' ({opts.band_stop_max})."
+            )
             retval["return_code"] = 1
 
     elif opts.motion_filter_type == "lp":
