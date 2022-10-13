@@ -39,8 +39,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
                                            smoothing=6)
     # Let's move to a temporary directory before running
     tempdir = tmp_path_factory.mktemp("test_ALFF_nifti")
-    os.chdir(tempdir)
-    alff_compute_wf.base_dir = os.getcwd()
+    alff_compute_wf.base_dir = tempdir
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
     alff_compute_wf.run()
