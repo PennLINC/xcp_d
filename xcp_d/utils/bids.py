@@ -353,6 +353,9 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
 def get_preproc_pipeline_info(input_type, fmri_dir):
     """Get preprocessing pipeline information from the dataset_description.json file."""
+    import json
+    import os
+
     info_dict = {}
 
     dataset_description = os.path.join(fmri_dir, "dataset_description.json")
