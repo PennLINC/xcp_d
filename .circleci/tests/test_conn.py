@@ -19,24 +19,26 @@ from xcp_d.workflow.connectivity import init_cifti_conts_wf, init_fcon_ts_wf
 
 def nifti_conn_test(data_dir):
     """Test the nifti workflow."""
-    bold_file = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/sub-color"
-        "nest001_ses-1_task-rest_run-1_space-MNI152"
+    bold_file = os.path.join(
+        data_dir, "fmriprep/sub-colornest001/ses-1/func/sub-color",
+        "nest001_ses-1_task-rest_run-1_space-MNI152",
         "NLin2009cAsym_desc-preproc_bold.nii.gz"
     )
-    bold_mask = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152"
+    bold_mask = os.path.join(
+        data_dir, "/fmriprep/sub-colornest001/ses-1/func/",
+        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152",
         "NLin2009cAsym_desc-brain_mask.nii.gz"
     )
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
     shape = bold_data.shape  # Get the shape so we can generate a matrix of
     # random numbers with the same shape
-    fake_signal = np.random.randint(bold_data.min(), bold_data.max(), size=shape)
+    fake_signal = np.random.randint(bold_data.min(),
+                                    bold_data.max(),
+                                    size=shape)
     # Let's write that out
     tempdir = tempfile.mkdtemp()
-    filename = tempdir + "/fake_signal_file.nii.gz"
+    filename = os.path.join(tempdir, "fake_signal_file.nii.gz")
     write_ndata(
         fake_signal,
         template=bold_file,
@@ -46,9 +48,9 @@ def nifti_conn_test(data_dir):
     )
     fake_bold_file = filename
     # Let's define the inputs and create the node
-    mni_to_t1w = (
-        data_dir + "fmriprep/sub-colornest001/ses-1/anat/"
-        "sub-colornest001_ses-1_rec-refaced_"
+    mni_to_t1w = os.path.join(
+        data_dir, "fmriprep/sub-colornest001/ses-1/anat",
+        "sub-colornest001_ses-1_rec-refaced_",
         "from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
     )
     fcon_ts_wf = init_fcon_ts_wf(
@@ -60,9 +62,9 @@ def nifti_conn_test(data_dir):
         omp_nthreads=2,
     )
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
-    fcon_ts_wf.inputs.inputnode.ref_file = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest"
+    fcon_ts_wf.inputs.inputnode.ref_file = os.path.join(
+        data_dir, "fmriprep/sub-colornest001/ses-1/func",
+        "sub-colornest001_ses-1_task-rest",
         "_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz"
     )
     fcon_ts_wf.base_dir = tempfile.mkdtemp()
@@ -71,7 +73,8 @@ def nifti_conn_test(data_dir):
     for file in os.listdir(fcon_ts_wf.base_dir + "/fcons_ts_wf/sc47_connect"):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
-    out_file = fcon_ts_wf.base_dir + "/fcons_ts_wf/sc47_connect/" + out_file
+    out_file = os.path.join(fcon_ts_wf.base_dir,
+                            "fcons_ts_wf/sc47_connect", out_file)
     # Read that into a df
     df = pd.read_csv(out_file, header=None)
     # ... and then convert to an array
@@ -82,7 +85,8 @@ def nifti_conn_test(data_dir):
     ):
         if fnmatch.fnmatch(file, "*.nii.gz*"):
             atlas = file
-    atlas = fcon_ts_wf.base_dir + "/fcons_ts_wf/apply_transform_schaefer_417/" + atlas
+    atlas = os.path.join(fcon_ts_wf.base_dir,
+                         "fcons_ts_wf/apply_transform_schaefer_417", atlas)
     atlas = nilearn.image.load_img(atlas)
     # Masking img
     masker = NiftiLabelsMasker(atlas, standardize=False)
@@ -100,20 +104,26 @@ def nifti_conn_test(data_dir):
 def cifti_con_test(data_dir):
     """Test the cifti workflow - only correlation, not parcellation."""
     # Define bold file
-    boldfile = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_bold.dtseries.nii"
+    boldfile = os.path.join(
+        data_dir,"fmriprep/sub-colornest001/ses-1/func",
+        "sub-colornest001_ses-1_task-rest_run-2_space-",
+        "fsLR_den-91k_bold.dtseries.nii"
     )
     # Generate fake signal
     bold_data = read_ndata(boldfile)
     shape = bold_data.shape  # get the shape so we can generate a
     # matrix of random numbers with the same shape
-    fake_signal = np.random.randint(bold_data.min(), bold_data.max(), size=shape)
+    fake_signal = np.random.randint(bold_data.min(),
+                                    bold_data.max(),
+                                    size=shape)
     # Let's write that out
     tmpdir = tempfile.mkdtemp()
-    filename = tmpdir + "/fake_signal_file.dtseries.nii"
+    filename = os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
     write_ndata(
-        fake_signal, template=boldfile, TR=_get_tr(nb.load(boldfile)), filename=filename
+        fake_signal,
+        template=boldfile,
+        TR=_get_tr(nb.load(boldfile)),
+        filename=filename
     )
     fake_bold_file = filename
     # Create the node and a tempdir to write its results out to
@@ -129,7 +139,8 @@ def cifti_con_test(data_dir):
     for file in os.listdir(cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417parcel"):
         if fnmatch.fnmatch(file, "*dtseries*"):
             out_file = file
-    out_file = cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417parcel/" + out_file
+    out_file = os.path.join(cifti_conts_wf.base_dir,
+                            "cifti_ts_con_wf/sc417parcel", out_file)
     # Let's read out the parcellated time series and get its corr coeff
     data = read_ndata(out_file)
     ground_truth = np.corrcoef(data)
@@ -137,7 +148,8 @@ def cifti_con_test(data_dir):
     for file in os.listdir(cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417corr"):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
-    out_file = cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417corr/" + out_file
+    out_file = os.path.join(cifti_conts_wf.base_dir,
+                            "cifti_ts_con_wf/sc417corr", out_file)
     # Read it out
     data = read_ndata(out_file)
     # Do the two match up?
