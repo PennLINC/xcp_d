@@ -58,7 +58,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     original_bold_data = read_ndata(bold_file, bold_mask)
     # Add some noise to the original data and write it out
     noisy_bold_data = noisy(original_bold_data)
-    filename = os.getcwd() + "/test.nii.gz"
+    filename = os.path.join(tempdir, "/test.nii.gz")
     write_ndata(noisy_bold_data, template=bold_file, mask=bold_mask, filename=filename)
     # Run ReHo again
     reho_wf.inputs.inputnode.clean_bold = filename
