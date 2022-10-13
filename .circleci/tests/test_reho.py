@@ -34,12 +34,16 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     Nifti image.
     """
     # Get the names of the files
-    bold_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
-        "sub-colornest001_ses-1_"\
+    bold_file = (
+        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
+        "sub-colornest001_ses-1_"
         "task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    bold_mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
-        "sub-colornest001_ses-1_"\
+    )
+    bold_mask = (
+        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
+        "sub-colornest001_ses-1_"
         "task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+    )
     # Set up and run the ReHo wf in a tempdir
     reho_wf = init_3d_reho_wf(omp_nthreads=2, mem_gb=4)
     reho_wf.inputs.inputnode.bold_mask = bold_mask
@@ -55,10 +59,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     # Add some noise to the original data and write it out
     noisy_bold_data = noisy(original_bold_data)
     filename = os.getcwd() + "/test.nii.gz"
-    write_ndata(noisy_bold_data,
-                template=bold_file,
-                mask=bold_mask,
-                filename=filename)
+    write_ndata(noisy_bold_data, template=bold_file, mask=bold_mask, filename=filename)
     # Run ReHo again
     reho_wf.inputs.inputnode.clean_bold = filename
     reho_wf.run()
@@ -77,35 +78,39 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     Cifti image.
     """
     # Get the names of the files
-    bold_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
-        "sub-colornest001_ses-1_"\
+    bold_file = (
+        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
+        "sub-colornest001_ses-1_"
         "task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
+    )
     # Set up and run the ReHo wf in a tempdir
     reho_wf = init_surface_reho_wf(omp_nthreads=2, mem_gb=4)
-    tempdir = tmp_path_factory.mktemp('test_REHO_cifti')
+    tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
     os.chdir(tempdir)
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
     reho_wf.run()
     # Get the original mean of the ReHo for later comparison
-    original_reho = os.getcwd() + "/surface_reho_wf/reho_lh/"\
-        "correlation_matrix_" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR"\
+    original_reho = (
+        os.getcwd() + "/surface_reho_wf/reho_lh/"
+        "correlation_matrix_"
+        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR"
         "_den-91k_bold.dtseries.shape.gii"
+    )
     original_reho_mean = nb.load(original_reho).agg_data().mean()
     original_bold_data = read_ndata(bold_file)
     # Add some noise to the original data and write it out
     noisy_bold_data = noisy(original_bold_data)
     filename = os.getcwd() + "/test.dtseries.nii"
-    write_ndata(noisy_bold_data,
-                template=bold_file,
-                filename=filename)
+    write_ndata(noisy_bold_data, template=bold_file, filename=filename)
     # Run ReHo again
     reho_wf.inputs.inputnode.clean_bold = filename
     reho_wf.run()
     # Has the new ReHo's mean decreased?
-    new_reho = os.getcwd() + "/surface_reho_wf/reho_lh/correlation_matrix_" \
+    new_reho = (
+        os.getcwd() + "/surface_reho_wf/reho_lh/correlation_matrix_"
         "test.dtseries.shape.gii"
+    )
     new_reho_mean = nb.load(new_reho).agg_data().mean()
     assert new_reho_mean < original_reho_mean
     return

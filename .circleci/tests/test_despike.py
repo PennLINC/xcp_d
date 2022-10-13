@@ -14,7 +14,7 @@ from xcp_d.interfaces.regression import CiftiDespike
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.utils.plot import _get_tr
 
-data_dir = '/Users/kahinim/Desktop/xcp_test/data'
+data_dir = "/Users/kahinim/Desktop/xcp_test/data"
 
 
 def test_nifti_despike(data_dir, tmp_path_factory):
@@ -25,10 +25,14 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     # Read in the necessary inputs
-    boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
+    boldfile = (
+        data_dir + "/withoutfreesurfer/sub-01/func/"
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    maskfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
+    )
+    maskfile = (
+        data_dir + "/withoutfreesurfer/sub-01/func/"
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+    )
     # Create some spikes in the second voxel
     file_data = read_ndata(boldfile, maskfile)
     voxel_data = file_data[2, :]  # a voxel across time
@@ -44,7 +48,13 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     os.chdir(tempdir)
     filename = "spikedfile.nii.gz"
-    write_ndata(data_matrix=file_data, mask=maskfile, template=boldfile, TR=0.8, filename=filename)
+    write_ndata(
+        data_matrix=file_data,
+        mask=maskfile,
+        template=boldfile,
+        TR=0.8,
+        filename=filename,
+    )
     spikedfile = filename
     # Let's despike the image and write it out to a temp file
     tempdir = os.getcwd()
@@ -62,6 +72,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     assert spiked_max > despiked_max
     assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
+
 def test_cifti_despike(data_dir, tmp_path_factory):
     """
     Test Cifti despiking.
@@ -69,8 +80,10 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
-    boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/"\
+    boldfile = (
+        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
+    )
     # Let's add some noise
     file_data = read_ndata(boldfile)
     voxel_data = file_data[2, :]  # a voxel across time
@@ -91,10 +104,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     # Run the node the same way it's run in XCP
     in_file = os.getcwd() + "/" + filename
     TR = _get_tr(nb.load(filename))
-    despike3d = pe.Node(CiftiDespike(TR=TR),
-                        name="cifti_despike",
-                        mem_gb=4,
-                        n_procs=2)
+    despike3d = pe.Node(CiftiDespike(TR=TR), name="cifti_despike", mem_gb=4, n_procs=2)
     despike3d.inputs.in_file = in_file
     results = despike3d.run()
     # Let's write out the file and read it in as a matrix
@@ -112,4 +122,3 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     assert despiked_intent[0] == original_intent[0]
 
     return
-
