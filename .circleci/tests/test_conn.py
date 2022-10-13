@@ -74,7 +74,7 @@ def nifti_conn_test(data_dir):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
     out_file = os.getcwd() + os.path.join(fcon_ts_wf.base_dir,
-                            "fcons_ts_wf/sc47_connect", out_file)
+                                          "fcons_ts_wf/sc47_connect", out_file)
     # Read that into a df
     df = pd.read_csv(out_file, header=None)
     # ... and then convert to an array
@@ -86,7 +86,7 @@ def nifti_conn_test(data_dir):
         if fnmatch.fnmatch(file, "*.nii.gz*"):
             atlas = file
     atlas = os.getcwd() + os.path.join(fcon_ts_wf.base_dir,
-                         "fcons_ts_wf/apply_transform_schaefer_417/", atlas)
+                                       "fcons_ts_wf/apply_transform_schaefer_417/", atlas)
     atlas = nilearn.image.load_img(atlas)
     # Masking img
     masker = NiftiLabelsMasker(atlas, standardize=False)
@@ -140,7 +140,7 @@ def cifti_con_test(data_dir):
         if fnmatch.fnmatch(file, "*dtseries*"):
             out_file = file
     out_file = os.getcwd() + os.path.join(cifti_conts_wf.base_dir,
-                            "cifti_ts_con_wf/sc417parcel", out_file)
+                                          "cifti_ts_con_wf/sc417parcel", out_file)
     # Let's read out the parcellated time series and get its corr coeff
     data = read_ndata(out_file)
     ground_truth = np.corrcoef(data)

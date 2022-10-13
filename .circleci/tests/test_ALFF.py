@@ -4,7 +4,6 @@
 
 import os
 import nibabel as nb
-import numpy as np
 
 from numpy.fft import fft, ifft
 
