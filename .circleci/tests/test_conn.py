@@ -3,7 +3,6 @@
 # Necessary imports
 import fnmatch
 import os
-import tempfile
 
 import nibabel as nb
 import nilearn
@@ -17,7 +16,7 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflow.connectivity import init_cifti_conts_wf, init_fcon_ts_wf
 
 
-def nifti_conn_test(data_dir):
+def nifti_conn_test(data_dir, tmp_path_factory):
     """Test the nifti workflow."""
     bold_file = os.path.join(
         data_dir, "fmriprep/sub-colornest001/ses-1/func/sub-color"
@@ -37,8 +36,8 @@ def nifti_conn_test(data_dir):
                                     bold_data.max(),
                                     size=shape)
     # Let's write that out
-    tempdir = tempfile.mkdtemp()
-    filename = "/src/xcp_d/.circleci" + os.path.join(tempdir, "fake_signal_file.nii.gz")
+    tempdir = tmp_path_factory.mktemp('fcon_nifti_test')
+    filename = os.path.join(tempdir, "fake_signal_file.nii.gz")
     write_ndata(
         fake_signal,
         template=bold_file,
@@ -67,14 +66,14 @@ def nifti_conn_test(data_dir):
         "sub-colornest001_ses-1_task-rest"
         "_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz"
     )
-    fcon_ts_wf.base_dir = tempfile.mkdtemp()
+    fcon_ts_wf.base_dir = tmp_path_factory.mktemp("fcon_nifti_test_2")
     fcon_ts_wf.run()
     # Let's find the correct FCON matrix file
     for file in os.listdir(fcon_ts_wf.base_dir + "/fcons_ts_wf/sc47_connect"):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
-    out_file = "/src/xcp_d/.circleci" + os.path.join(fcon_ts_wf.base_dir,
-                                                     "fcons_ts_wf/sc47_connect", out_file)
+    out_file = os.path.join(fcon_ts_wf.base_dir,
+                            "fcons_ts_wf/sc47_connect", out_file)
     # Read that into a df
     df = pd.read_csv(out_file, header=None)
     # ... and then convert to an array
@@ -85,9 +84,9 @@ def nifti_conn_test(data_dir):
     ):
         if fnmatch.fnmatch(file, "*.nii.gz*"):
             atlas = file
-    atlas = "/src/xcp_d/.circleci" + os.path.join(fcon_ts_wf.base_dir,
-                                                  "fcons_ts_wf/apply_"
-                                                  "transform_schaefer_417/", atlas)
+    atlas = os.path.join(fcon_ts_wf.base_dir,
+                         "fcons_ts_wf/apply_"
+                         "transform_schaefer_417/", atlas)
     atlas = nilearn.image.load_img(atlas)
     # Masking img
     masker = NiftiLabelsMasker(atlas, standardize=False)
@@ -102,7 +101,7 @@ def nifti_conn_test(data_dir):
     return
 
 
-def cifti_con_test(data_dir):
+def cifti_con_test(data_dir, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
     # Define bold file
     boldfile = os.path.join(
@@ -118,8 +117,8 @@ def cifti_con_test(data_dir):
                                     bold_data.max(),
                                     size=shape)
     # Let's write that out
-    tmpdir = tempfile.mkdtemp()
-    filename = "/src/xcp_d/.circleci" + os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
+    tmpdir = tmp_path_factory.mktemp("fcon_cifti_test")
+    filename = os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
     write_ndata(
         fake_signal,
         template=boldfile,
@@ -128,7 +127,7 @@ def cifti_con_test(data_dir):
     )
     fake_bold_file = filename
     # Create the node and a tempdir to write its results out to
-    tmpdir = tempfile.mkdtemp()
+    tmpdir = tmp_path_factory.mktemp("fcon_cifti_test_2")
     cifti_conts_wf = init_cifti_conts_wf(
         mem_gb=4, name="cifti_ts_con_wf", omp_nthreads=2
     )
@@ -140,8 +139,8 @@ def cifti_con_test(data_dir):
     for file in os.listdir(cifti_conts_wf.base_dir + "cifti_ts_con_wf/sc417parcel"):
         if fnmatch.fnmatch(file, "*dtseries*"):
             out_file = file
-    out_file = "/src/xcp_d/.circleci" + os.path.join(cifti_conts_wf.base_dir,
-                                                     "cifti_ts_con_wf/sc417parcel", out_file)
+    out_file = os.path.join(cifti_conts_wf.base_dir,
+                            "cifti_ts_con_wf/sc417parcel", out_file)
     # Let's read out the parcellated time series and get its corr coeff
     data = read_ndata(out_file)
     ground_truth = np.corrcoef(data)
@@ -149,8 +148,8 @@ def cifti_con_test(data_dir):
     for file in os.listdir(cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417corr"):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
-    out_file = "/src/xcp_d/.circleci" + os.path.join(cifti_conts_wf.base_dir,
-                                                     "cifti_ts_con_wf/sc417corr", out_file)
+    out_file = os.path.join(cifti_conts_wf.base_dir,
+                            "cifti_ts_con_wf/sc417corr", out_file)
     # Read it out
     data = read_ndata(out_file)
     # Do the two match up?

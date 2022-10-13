@@ -103,7 +103,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
                 filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
-    in_file = "/src/xcp_d/.circleci" + os.path.join(tempdir, filename)
+    in_file = os.path.join(tempdir, filename)
     TR = _get_tr(nb.load(filename))
     despike3d = pe.Node(CiftiDespike(TR=TR), name="cifti_despike",
                         mem_gb=4, n_procs=2)
