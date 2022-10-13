@@ -383,25 +383,29 @@ By default, this workflow is disabled.
     :stub-columns: 1
 
     * - Filename
-        - Description
-    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpinflated.surf.gii``
-        - An inflation of the midthickness surface (useful for visualization).
-        Something something HCP.
-    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpmidthickness.surf.gii``
-        - The midpoints between wm and pial surfaces.
-        This is created by averaging the coordinates from the wm and pial surfaces.
+      - Description
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
+      - The gray matter / pial matter border.
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
+      - The smoothed gray matter / white matter border for the cortex.
     * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii``
-        - The midpoints between wm and pial surfaces.
+      - The midpoints between wm and pial surfaces.
         This is derived from the FreeSurfer graymid
         (``mris_expand`` with distance=0.5 applied to the WM surfs).
-    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_hcpveryinflated.surf.gii``
-        - A very-inflated midthicknesss surface (also for visualization).
-        Something something HCP.
-        This is not created if the input type is "hcp" or "dcan".
-    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
-        - The gray matter / pial matter border.
-    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
-        - The smoothed gray matter / white matter border for the cortex.
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_inflated.surf.gii``
+      - An inflation of the midthickness surface (useful for visualization).
+        This file is only created if the input type is "hcp" or "dcan".
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii``
+      - The midpoints between wm and pial surfaces.
+        This is created by averaging the coordinates from the wm and pial surfaces.
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii``
+      - An inflation of the midthickness surface (useful for visualization).
+        This is derived from the HCP midthickness file.
+        This file is only created if the input type is "fmriprep" or "nibabies".
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii``
+      - A very-inflated midthicknesss surface (also for visualization).
+        This is derived from the HCP midthickness file.
+        This file is only created if the input type is "fmriprep" or "nibabies".
 """
     )
 

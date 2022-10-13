@@ -251,6 +251,15 @@ def init_anatomical_wf(
         Path to the T1w file.
     t1seg : str
         Path to the T1w segmentation file.
+
+    Notes
+    -----
+    If "hcp" or "dcan" input type, pre-generated surface files will be collected from the
+    converted preprocessed derivatives.
+    However, these derivatives do not include HCP-style surfaces.
+
+    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from the
+    associated Freesurfer directory (if available), and warped to fsLR space.
     """
     workflow = Workflow(name=name)
 
