@@ -43,7 +43,12 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
                              default_value=0,
                              desc="Dummy time to drop")
     TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
-    motion_filter_type = traits.Float(exists=False, mandatory=False)
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        exists=False,
+        mandatory=False,
+    )
     motion_filter_order = traits.Int(exists=False, mandatory=False)
     head_radius = traits.Float(
         exists=True,

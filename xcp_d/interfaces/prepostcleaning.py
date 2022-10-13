@@ -178,7 +178,12 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
                                mandatory=False,
                                default_value=50,
                                desc="Head radius in mm ")
-    motion_filter_type = traits.Str(exists=False, mandatory=True)
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        exists=False,
+        mandatory=True,
+    )
     motion_filter_order = traits.Int(exists=False, mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     band_stop_min = traits.Either(
