@@ -33,8 +33,8 @@ def test_fd_interface_cifti(data_dir):
     cscrub.inputs.fd_thresh = 0.2
     cscrub.inputs.motion_filter_type = 'None'
     cscrub.inputs.motion_filter_order = 4
-    cscrub.inputs.low_freq = 0
-    cscrub.inputs.high_freq = 0
+    cscrub.inputs.band_stop_min = 0
+    cscrub.inputs.band_stop_max = 0
     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
     cscrub.inputs.head_radius = 50
     results = cscrub.run()
@@ -80,8 +80,8 @@ def test_fd_interface_nifti(data_dir):
     cscrub.inputs.fd_thresh = 0.2
     cscrub.inputs.motion_filter_type = 'None'
     cscrub.inputs.motion_filter_order = 4
-    cscrub.inputs.low_freq = 0
-    cscrub.inputs.high_freq = 0
+    cscrub.inputs.band_stop_min = 0
+    cscrub.inputs.band_stop_max = 0
     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
     cscrub.inputs.head_radius = 50
     results = cscrub.run()
@@ -131,8 +131,8 @@ def test_fd_interface_nifti(data_dir):
 #     cscrub.inputs.TR = 0.8
 #     cscrub.inputs.fd_thresh = 0.2
 #     cscrub.inputs.motion_filter_type = 'None'
-#     cscrub.inputs.low_freq = 0
-#     cscrub.inputs.high_freq = 0
+#     cscrub.inputs.band_stop_min = 0
+#     cscrub.inputs.band_stop_max = 0
 #     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
 #     cscrub.inputs.custom_confounds = custom_confounds_tsv
 #     cscrub.inputs.head_radius = 50
@@ -172,8 +172,8 @@ def test_fd_interface_nifti(data_dir):
 #     cscrub.inputs.TR = 0.8
 #     cscrub.inputs.fd_thresh = 0.2
 #     cscrub.inputs.motion_filter_type = 'None'
-#     cscrub.inputs.low_freq = 0
-#     cscrub.inputs.high_freq = 0
+#     cscrub.inputs.band_stop_min = 0
+#     cscrub.inputs.band_stop_max = 0
 #     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
 #     cscrub.inputs.custom_confounds = custom_confounds_tsv
 #     cscrub.inputs.head_radius = 50

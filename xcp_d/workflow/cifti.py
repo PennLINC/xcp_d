@@ -265,8 +265,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
         custom_confounds=custom_confounds,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         head_radius=head_radius,
@@ -312,8 +312,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             bold_file=bold_file,
             dummytime=dummytime,
             head_radius=head_radius,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min),
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min),
         name="qc_report",
         mem_gb=mem_gbx['resampled'],
         n_procs=omp_nthreads)
