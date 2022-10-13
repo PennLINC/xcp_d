@@ -129,6 +129,10 @@ docdict["motion_filter_type"] = """
 motion_filter_type : {None, "lp", "notch"}
     Type of band-stop filter to use for removing respiratory artifact from motion regressors.
     If None, no filter will be applied.
+
+    If the filter type is set to "notch", then both ``band_stop_min`` and ``band_stop_max``
+    must be defined.
+    If the filter type is set to "lp", then only ``band_stop_max`` must be defined.
 """
 
 docdict["motion_filter_order"] = """
@@ -142,6 +146,7 @@ docdict["band_stop_min"] = """
 band_stop_min : :obj:`float`
     Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
+    This parameter is only used if ``motion-filter-type`` is set to "notch"`.
     This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_max``.
 
     Here is a list of recommended values, based on participant age:

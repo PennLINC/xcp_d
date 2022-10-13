@@ -294,20 +294,26 @@ def get_parser():
         "--motion-filter-type",
         action="store",
         type=str,
-        default="None",
+        default=None,
         choices=["lp", "notch"],
-        help=(
-            "type of band-stop filter to use for removing respiratory "
-            "artifact from motion regressors"
-        ),
+        help="""\
+Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+If not set, no filter will be applied.
+
+If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
+must be defined.
+If the filter type is set to "lp", then only ``band-stop-max`` must be defined.
+"""
     )
     g_filter.add_argument(
         "--band-stop-min",
-        default=0,
+        default=None,
         type=float,
+        metavar="BPM",
         help="""\
 Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
 Motion filtering is only performed if ``motion-filter-type`` is not None.
+This parameter is only used if ``motion-filter-type`` is set to "notch"`.
 This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-max``.
 
 .. list-table:: Recommended values, based on participant age
@@ -337,8 +343,9 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_filter.add_argument(
         "--band-stop-max",
-        default=0,
+        default=None,
         type=float,
+        metavar="BPM",
         help="""\
 Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
 Motion filtering is only performed if ``motion-filter-type`` is not None.
@@ -623,6 +630,50 @@ def build_workflow(opts, retval):
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
 
+    # Check the validity of inputs
+    if output_dir == fmri_dir:
+        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
+        build_log.error(
+            "The selected output folder is the same as the input fmri input. "
+            "Please modify the output path "
+            f"(suggestion: {rec_path})."
+        )
+        retval["return_code"] = 1
+
+    if opts.analysis_level != "participant":
+        build_log.error('Please select analysis level "participant"')
+        retval["return_code"] = 1
+
+    if opts.motion_filter_type == "notch":
+        if not (opts.band_stop_min and opts.band_stop_max):
+            build_log.error(
+                "Please set '--band-stop-min' and '--band-stop-max' if you want to apply the "
+                "'notch' motion filter."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min >= opts.band_stop_max:
+            build_log.error("'--band-stop-min' must be lower than '--band-stop-max'.")
+            retval["return_code"] = 1
+
+    elif opts.motion_filter_type == "lp":
+        if not opts.band_stop_max:
+            build_log.error(
+                "Please set '--band-stop-max' if you want to apply the 'lp' motion filter."
+            )
+            retval["return_code"] = 1
+
+        if opts.band_stop_min:
+            build_log.warning("'--band-stop-min' is ignored when '--motion-filter-type' is 'lp'.")
+
+    elif opts.band_stop_min or opts.band_stop_max:
+        build_log.warning(
+            "'--band-stop-min' and '--band-stop-max' are ignored if '--motion-filter-type' "
+            "is not set."
+        )
+
+    if retval["return_code"] == 1:
+        return retval
+
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
 
@@ -637,21 +688,6 @@ def build_workflow(opts, retval):
     retval["fmri_dir"] = str(fmri_dir)
     retval["output_dir"] = str(output_dir)
     retval["work_dir"] = str(work_dir)
-
-    if output_dir == fmri_dir:
-        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
-        build_log.error(
-            "The selected output folder is the same as the input fmri input. "
-            "Please modify the output path "
-            f"(suggestion: {rec_path})."
-        )
-        retval["return_code"] = 1
-        return retval
-
-    if str(opts.analysis_level) != "participant":
-        build_log.error('Please select analysis level "participant"')
-        retval["return_code"] = 1
-        return retval
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
