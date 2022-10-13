@@ -313,7 +313,7 @@ If the filter type is set to "lp", then only ``band-stop-max`` must be defined.
         help="""\
 Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
 Motion filtering is only performed if ``motion-filter-type`` is not None.
-This parameter is only used if ``motion-filter-type`` is set to "notch"`.
+This parameter is only used if ``motion-filter-type`` is set to "notch".
 This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-max``.
 
 .. list-table:: Recommended values, based on participant age

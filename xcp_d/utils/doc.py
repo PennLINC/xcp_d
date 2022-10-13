@@ -143,10 +143,10 @@ motion_filter_order : :obj:`int`
 """
 
 docdict["band_stop_min"] = """
-band_stop_min : :obj:`float`
+band_stop_min : :obj:`float` or None
     Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
-    This parameter is only used if ``motion-filter-type`` is set to "notch"`.
+    This parameter is only used if ``motion-filter-type`` is set to "notch".
     This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_max``.
 
     Here is a list of recommended values, based on participant age:
@@ -166,7 +166,7 @@ band_stop_min : :obj:`float`
 """
 
 docdict["band_stop_max"] = """
-band_stop_max : :obj:`float`
+band_stop_max : :obj:`float` or None
     Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_min``.
