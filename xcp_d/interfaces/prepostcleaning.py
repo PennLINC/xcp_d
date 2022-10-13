@@ -181,11 +181,15 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     motion_filter_type = traits.Str(exists=False, mandatory=True)
     motion_filter_order = traits.Int(exists=False, mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
-    band_stop_min = traits.Float(
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
         exists=True,
         mandatory=True,
         desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
-    band_stop_max = traits.Float(
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
         exists=True,
         mandatory=True,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")

@@ -42,11 +42,11 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
                              mandatory=False,
                              default_value=0,
                              desc="Dummy time to drop")
-    TR = traits.Float(exit=True, mandatory=True, desc="Repetition Time")
+    TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
     motion_filter_type = traits.Float(exists=False, mandatory=False)
     motion_filter_order = traits.Int(exists=False, mandatory=False)
     head_radius = traits.Float(
-        exits=True,
+        exists=True,
         mandatory=False,
         default_value=50,
         desc="Head radius; recommended value is 40 for babies")
@@ -54,12 +54,16 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold2temp_mask = File(exists=False, mandatory=False, desc="Bold mask in T1W")
     template_mask = File(exists=False, mandatory=False, desc="Template mask")
     t1w_mask = File(exists=False, mandatory=False, desc="Mask in T1W")
-    band_stop_min = traits.Float(
-        exit=False,
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
+        exists=False,
         mandatory=False,
         desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
-    band_stop_max = traits.Float(
-        exit=False,
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
+        exists=False,
         mandatory=False,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
 
