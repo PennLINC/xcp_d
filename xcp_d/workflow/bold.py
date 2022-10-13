@@ -183,7 +183,7 @@ def init_boldpostprocess_wf(
 For each of the {num2words(n_runs)} BOLD series found per subject (across all
 tasks and sessions), the following post-processing was performed:
 """
-    initial_volumes_to_drop = 0
+
     if dummytime > 0:
         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
         workflow.__desc__ = workflow.__desc__ + f""" \
@@ -195,6 +195,7 @@ flagged as outliers and excluded from nuisance regression.
 """
 
     else:
+        initial_volumes_to_drop = 0
         workflow.__desc__ = workflow.__desc__ + f""" \
 before nuisance regression and filtering of the data, both the nuisance regressors and
 volumes were demean and detrended. Volumes with framewise-displacement greater than

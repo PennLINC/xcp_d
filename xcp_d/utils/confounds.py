@@ -122,14 +122,16 @@ def load_motion(
         The six motion regressors.
         The three rotations are listed first, then the three translations.
     """
-    # Pull out rot and trans values and concatenate them
-    rot_values = confounds_df[["rot_x", "rot_y", "rot_z"]]
-    trans_values = confounds_df[["trans_x", "trans_y", "trans_z"]]
-    motion_confounds = pd.concat([rot_values, trans_values], axis=1).to_numpy()
+    # Select the motion columns from the overall confounds DataFrame
+    motion_confounds_df = confounds_df[
+        ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
+    ]
 
     # Apply LP or notch filter
     if motion_filter_type == 'lp' or motion_filter_type == 'notch':
-        motion_confounds = motion_confounds.T
+        # TODO: Eliminate need for transpose. We control the filter function,
+        # so we can make it work on RxT data instead of TxR.
+        motion_confounds = motion_confounds_df.to_numpy().T
         motion_confounds = motion_regression_filter(
             data=motion_confounds,
             TR=TR,
@@ -138,8 +140,9 @@ def load_motion(
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds = motion_confounds.T  # Transpose motion confounds
-    return pd.DataFrame(motion_confounds)
+        motion_confounds = motion_confounds.T  # Transpose motion confounds back to RxT
+
+    return pd.DataFrame(data=motion_confounds, columns=motion_confounds_df.columns)
 
 
 def load_global_signal(confounds_df):
