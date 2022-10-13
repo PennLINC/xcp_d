@@ -205,7 +205,7 @@ def init_boldpostprocess_wf(
 
     fd_str = (
         f"{filter_str}framewise displacement was calculated using the formula from "
-        "@power_fd_dvars"
+        f"@power_fd_dvars, with a head radius of {head_radius} mm."
     )
 
     dummytime_str = ""
