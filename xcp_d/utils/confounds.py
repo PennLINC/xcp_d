@@ -103,12 +103,13 @@ def load_motion(confounds_df, TR, motion_filter_type, freqband, cutoff, motion_f
         If "lp" or "notch", that filtering will be done in this function.
         Otherwise, no filtering will be applied.
     freqband
-        This only has an impact is ``motion_filter_type`` is "lp" or "notch".
+        This only has an impact if ``motion_filter_type`` is "lp" or "notch".
     cutoff : float
         Frequency cutoff, in breaths-per-minute.
-        This only has an impact is ``motion_filter_type`` is "lp" or "notch".
+        Typically derived from freqband.
+        This only has an impact if ``motion_filter_type`` is "lp" or "notch".
     motion_filter_order : int, optional
-        This only has an impact is ``motion_filter_type`` is "lp" or "notch".
+        This only has an impact if ``motion_filter_type`` is "lp" or "notch".
         Default is 4.
 
     Returns
@@ -440,7 +441,7 @@ def motion_regression_filter(
         Filtering will only be performed if set to "lp" or "notch".
     freqband
     cutoff : float
-        The minimum frequency, in breaths-per-minute.
+        The minimum frequency, in breaths-per-minute. Typically derived from freqband.
     motion_filter_order : int, optional
         Default is 4.
 
