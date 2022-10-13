@@ -54,14 +54,14 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold2temp_mask = File(exists=False, mandatory=False, desc="Bold mask in T1W")
     template_mask = File(exists=False, mandatory=False, desc="Template mask")
     t1w_mask = File(exists=False, mandatory=False, desc="Mask in T1W")
-    low_freq = traits.Float(
+    band_stop_min = traits.Float(
         exit=False,
         mandatory=False,
-        desc='Low frequency for Notch filter in BPM')
-    high_freq = traits.Float(
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
+    band_stop_max = traits.Float(
         exit=False,
         mandatory=False,
-        desc='High frequency for Notch filter in BPM')
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
 
 
 class _QCPlotOutputSpec(TraitedSpec):

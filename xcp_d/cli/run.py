@@ -85,7 +85,7 @@ def get_parser():
     parser.add_argument(
         "analysis_level",
         action="store",
-        type=Path,
+        type=str,
         help='the analysis level for xcp_d, must be specified as "participant".',
     )
 
@@ -629,6 +629,8 @@ def build_workflow(opts, retval):
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
+
+    retval["return_code"] = 0
 
     # Check the validity of inputs
     if output_dir == fmri_dir:
