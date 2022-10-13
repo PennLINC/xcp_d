@@ -20,12 +20,12 @@ from xcp_d.workflow.connectivity import init_cifti_conts_wf, init_fcon_ts_wf
 def nifti_conn_test(data_dir):
     """Test the nifti workflow."""
     bold_file = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/func/sub-color"
+        data_dir, "fmriprep/sub-colornest001/ses-1/func/sub-color"
         "nest001_ses-1_task-rest_run-1_space-MNI152"
         "NLin2009cAsym_desc-preproc_bold.nii.gz"
     )
     bold_mask = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/func/"
+        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152"
         "NLin2009cAsym_desc-brain_mask.nii.gz"
     )
@@ -49,7 +49,7 @@ def nifti_conn_test(data_dir):
     fake_bold_file = filename
     # Let's define the inputs and create the node
     mni_to_t1w = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/anat"
+        data_dir, "fmriprep/sub-colornest001/ses-1/anat"
         "sub-colornest001_ses-1_rec-refaced_"
         "from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
     )
@@ -63,7 +63,7 @@ def nifti_conn_test(data_dir):
     )
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
     fcon_ts_wf.inputs.inputnode.ref_file = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/func"
+        data_dir, "fmriprep/sub-colornest001/ses-1/func"
         "sub-colornest001_ses-1_task-rest"
         "_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz"
     )
@@ -74,7 +74,7 @@ def nifti_conn_test(data_dir):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
     out_file = os.path.join(fcon_ts_wf.base_dir,
-                            "/fcons_ts_wf/sc47_connect", out_file)
+                            "fcons_ts_wf/sc47_connect", out_file)
     # Read that into a df
     df = pd.read_csv(out_file, header=None)
     # ... and then convert to an array
@@ -86,7 +86,7 @@ def nifti_conn_test(data_dir):
         if fnmatch.fnmatch(file, "*.nii.gz*"):
             atlas = file
     atlas = os.path.join(fcon_ts_wf.base_dir,
-                         "/fcons_ts_wf/apply_transform_schaefer_417", atlas)
+                         "fcons_ts_wf/apply_transform_schaefer_417/", atlas)
     atlas = nilearn.image.load_img(atlas)
     # Masking img
     masker = NiftiLabelsMasker(atlas, standardize=False)
@@ -105,7 +105,7 @@ def cifti_con_test(data_dir):
     """Test the cifti workflow - only correlation, not parcellation."""
     # Define bold file
     boldfile = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/func",
+        data_dir, "fmriprep/sub-colornest001/ses-1/func",
         "sub-colornest001_ses-1_task-rest_run-2_space-",
         "fsLR_den-91k_bold.dtseries.nii"
     )
@@ -136,11 +136,11 @@ def cifti_con_test(data_dir):
     cifti_conts_wf.inputs.inputnode.clean_cifti = fake_bold_file
     cifti_conts_wf.run()
     # Let's find the correct parcellated file
-    for file in os.listdir(cifti_conts_wf.base_dir + "/cifti_ts_con_wf/sc417parcel"):
+    for file in os.listdir(cifti_conts_wf.base_dir + "cifti_ts_con_wf/sc417parcel"):
         if fnmatch.fnmatch(file, "*dtseries*"):
             out_file = file
     out_file = os.path.join(cifti_conts_wf.base_dir,
-                            "/cifti_ts_con_wf/sc417parcel", out_file)
+                            "cifti_ts_con_wf/sc417parcel", out_file)
     # Let's read out the parcellated time series and get its corr coeff
     data = read_ndata(out_file)
     ground_truth = np.corrcoef(data)
@@ -149,7 +149,7 @@ def cifti_con_test(data_dir):
         if fnmatch.fnmatch(file, "*matrix*"):
             out_file = file
     out_file = os.path.join(cifti_conts_wf.base_dir,
-                            "/cifti_ts_con_wf/sc417corr", out_file)
+                            "cifti_ts_con_wf/sc417corr", out_file)
     # Read it out
     data = read_ndata(out_file)
     # Do the two match up?

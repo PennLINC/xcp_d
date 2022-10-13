@@ -23,12 +23,12 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     """
     # Get the file names
     bold_file = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/func/"
+        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym"
         "_desc-preproc_bold.nii.gz"
     )
     bold_mask = os.path.join(
-        data_dir, "/fmriprep/sub-colornest001/ses-1/func/"
+        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym"
         "_desc-brain_mask.nii.gz"
     )
@@ -51,7 +51,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.run()
     # Let's get the mean of the ALFF for later comparison
     original_alff = os.path.join(
-        tempdir, "/compute_alff_wf/alff_compt/sub-color"
+        tempdir, "compute_alff_wf/alff_compt/sub-color"
         "nest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
         "preproc_bold_alff.nii.gz"
     )
@@ -83,7 +83,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.inputs.inputnode.clean_bold = filename
     alff_compute_wf.run()
     # Let's get the new ALFF mean
-    new_alff = os.path.join(tempdir, "/compute_alff_wf/alff_compt/"
+    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/"
                             "editedfile_alff.nii.gz")
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
     # Now let's make sure ALFF has increased ...
@@ -99,12 +99,12 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     has changed in the expected direction.
     """
     bold_file = os.path.join(
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
+        data_dir + "fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-res"
         "t_run-2_space-fsLR_den-91k_bold.dtseries.nii"
     )
     bold_mask = os.path.join(
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
+        data_dir + "fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym"
         "_desc-brain_mask.nii.gz"
     )
@@ -127,7 +127,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.run()
     # Let's get the mean of the data for later comparison
     original_alff = os.path.join(
-        tempdir, "/compute_alff_wf/alff_compt/sub-color"
+        tempdir, "compute_alff_wf/alff_compt/sub-color"
         "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_"
         "bold_alff.dtseries.nii"
     )
@@ -158,7 +158,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.run()
     # Let's get the new ALFF mean
     new_alff = os.path.join(
-        tempdir, "/compute_alff_wf/alff_compt/editedfile_alff.dtseries.nii"
+        tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dtseries.nii"
     )
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
     # Now let's make sure ALFF has increased, as we added
