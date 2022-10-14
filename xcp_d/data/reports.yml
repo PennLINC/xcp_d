@@ -16,3 +16,41 @@ sections:
 - name: About
   reportlets:
   - bids: {datatype: figures, desc: about, suffix: bold}
+# - name: Executive Summary
+#   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+#   title: <sub>0</sub>_<task>0</task>_<space>0</space>_<run>0</run>
+#   reportlets:
+#   - bids:
+#       datatype: figures
+#       desc: brainplot
+#       extension: [.html]
+#       suffix: T1W
+#       title: Anatomical Data
+#       caption: T1W
+#       static: false
+#   - bids:
+#       datatype: figures
+#       desc: brainplot
+#       extension: [.html]
+#       suffix: T2W
+#       caption: T2W
+#       title: Anatomical Data
+#       static: false
+#   - bids:
+#       datatype: figures
+#       desc: bbregister
+#       extension: [.svg]
+#       suffix: bold
+#       caption: <sub>0</sub>_<task>0</task>_<space>0</space>_<run>0</run>
+#       title: Functional
+#       static: false
+#   - bids:
+#       datatype: figures
+#       desc: precarpetplot
+#       extension: [.svg]
+#       suffix: bold
+#   - bids:
+#       datatype: figures
+#       desc: postcarpetplot
+#       extension: [.svg]
+#       suffix: bold
