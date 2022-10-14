@@ -47,9 +47,9 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
         None,
         traits.Str,
         exists=False,
-        mandatory=False,
+        mandatory=True,
     )
-    motion_filter_order = traits.Int(exists=False, mandatory=False)
+    motion_filter_order = traits.Int(exists=False, mandatory=True)
     head_radius = traits.Float(
         exists=True,
         mandatory=False,
@@ -63,13 +63,13 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
         None,
         traits.Float,
         exists=False,
-        mandatory=False,
+        mandatory=True,
         desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
     band_stop_max = traits.Either(
         None,
         traits.Float,
         exists=False,
-        mandatory=False,
+        mandatory=True,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
 
 

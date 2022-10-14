@@ -133,7 +133,8 @@ def load_motion(
     ----------
     .. footbibliography::
     """
-    assert motion_filter_type in ("lp", "notch", None)
+    assert motion_filter_type in ("lp", "notch", None), motion_filter_type
+
     # Select the motion columns from the overall confounds DataFrame
     motion_confounds_df = confounds_df[
         ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]

@@ -334,8 +334,11 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             bold_file=bold_file,
             dummytime=dummytime,
             head_radius=head_radius,
+            motion_filter_type=motion_filter_type,
             band_stop_max=band_stop_max,
-            band_stop_min=band_stop_min),
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+        ),
         name="qc_report",
         mem_gb=mem_gbx['resampled'],
         n_procs=omp_nthreads)
