@@ -1,4 +1,5 @@
 """Tests for filtering methods."""
+import os.path as op
 import numpy as np
 import pytest
 
@@ -15,11 +16,12 @@ def data_files():
 
     We have converted the single-column CSV files provided to TXT files for easier I/O.
     """
+    data_path = op.abspath(op.join(op.dirname(__file__), "data"))
     data_files_ = {
-        "raw_data": "data/raw_data.txt",
-        "lowpass_filtered": "data/low_passed_MR_data.txt",
-        "notch_filtered": "data/notched_MR_data.txt",
-        "butterworth_filtered": "data/band_passed_bold_data.txt",
+        "raw_data": op.join(data_path, "raw_data.txt"),
+        "lowpass_filtered": op.join(data_path, "low_passed_MR_data.txt"),
+        "notch_filtered": op.join(data_path, "notched_MR_data.txt"),
+        "butterworth_filtered": op.join(data_path, "band_passed_bold_data.txt"),
     }
     return data_files_
 
