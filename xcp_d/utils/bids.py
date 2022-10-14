@@ -5,9 +5,6 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import fnmatch
-import json
-import os
 import warnings
 
 from bids import BIDSLayout
@@ -275,6 +272,9 @@ def extract_t1w_seg(subj_data):
     selected_t1w_seg_file : str
         Segmentation file.
     """
+    import fnmatch
+    import os
+
     selected_t1w_file, selected_t1w_seg_file = None, None
     for t1w_file in subj_data["t1w"]:
         t1w_filename = os.path.basename(t1w_file)
@@ -309,6 +309,7 @@ def write_dataset_description(fmri_dir, xcpd_dir):
         Path to the output xcp-d dataset.
     """
     import json
+    import os
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
@@ -352,6 +353,9 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
 def get_preproc_pipeline_info(input_type, fmri_dir):
     """Get preprocessing pipeline information from the dataset_description.json file."""
+    import json
+    import os
+
     info_dict = {}
 
     dataset_description = os.path.join(fmri_dir, "dataset_description.json")

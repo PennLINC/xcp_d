@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
-import glob as glob
 import os
 
 import nibabel as nb
@@ -9,7 +8,6 @@ import numpy as np
 from pkg_resources import resource_filename as pkgrf
 from scipy.signal import butter, detrend, filtfilt
 from sklearn.linear_model import LinearRegression
-from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
 
@@ -36,6 +34,11 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     transformfileT1W : list of str
         A list of paths to transform files for warping to T1w space.
     """
+    import glob
+    import os
+
+    from templateflow.api import get as get_template
+
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
     MNI6 = str(
@@ -177,7 +180,7 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
 
     Returns
     -------
-    transformfile : list of str
+    transform_list : list of str
         A list of paths to transform files.
     """
     import glob
@@ -197,52 +200,57 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
 
     # Transform to MNI9
+    transform_list = []
     if 'space-MNI152NLin6Asym' in file_base:
-        transformfile = [str(fMNI6)]
+        transform_list = [str(fMNI6)]
     elif 'space-MNI152NLin2009cAsym' in file_base:
-        transformfile = str(FSL2MNI9)
+        transform_list = [str(FSL2MNI9)]
     elif 'space-PNC' in file_base:
         #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
         #  get all the transform files together
-        transformfile = [str(t1w_to_pnc), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_pnc), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-NKI' in file_base:
         #  get the NKI transforms
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
         #  get all the transforms together
-        transformfile = [str(t1w_to_nki), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_nki), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-OASIS30ANTs' in file_base:
         #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_oasis), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_oasis), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-MNI152NLin6Sym' in file_base:
         #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_mni6c), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_mni6c), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-MNIInfant' in file_base:
         #  get the relevant transform, put all transforms together
         infant2mni9 = pkgrf('xcp_d',
                             'data/transform/infant_to_2009_Composite.h5')
-        transformfile = [str(infant2mni9), str(FSL2MNI9)]
+        transform_list = [str(infant2mni9), str(FSL2MNI9)]
     elif 'space-MNIPediatricAsym' in file_base:
         #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6cx = glob.glob(
             mnisf + 'from-T1w_to-MNIPediatricAsym*_mode-image_xfm.h5')[0]
-        transformfile = [str(t1w_to_mni6cx), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_mni6cx), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-T1w' in file_base:
         #  put all transforms together
-        transformfile = [str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-' not in file_base:
         #  put all transforms together
-        transformfile = [str(t1w_to_native), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_native), str(mni_to_t1w), str(FSL2MNI9)]
     else:
         print('space not supported')
-    return transformfile
+
+    if not transform_list:
+        raise Exception("Transforms not found.")
+
+    return transform_list
 
 
 def fwhm2sigma(fwhm):

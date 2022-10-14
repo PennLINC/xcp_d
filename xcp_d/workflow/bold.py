@@ -6,7 +6,7 @@ import os
 import nibabel as nb
 import numpy as np
 import sklearn
-from nipype import logging
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -58,7 +58,6 @@ def init_boldpostprocess_wf(
     output_dir,
     fd_thresh,
     n_runs,
-    mni_to_t1w,
     despike,
     layout=None,
     name='bold_postprocess_wf',
@@ -90,7 +89,6 @@ def init_boldpostprocess_wf(
                 output_dir=".",
                 fd_thresh=0.2,
                 n_runs=1,
-                mni_to_t1w="identity",
                 despike=False,
                 layout=None,
                 name='bold_postprocess_wf',
@@ -120,7 +118,6 @@ def init_boldpostprocess_wf(
         Directory in which to save xcp_d output
     %(fd_thresh)s
     n_runs
-    mni_to_t1w
     despike: bool
         If True, run 3dDespike from AFNI
     layout : BIDSLayout object
@@ -137,7 +134,7 @@ def init_boldpostprocess_wf(
         bold_mask from fmriprep
     custom_confounds
         custom regressors
-    mni_to_t1w
+    %(mni_to_t1w)s
         MNI to T1W ants Transformation file/h5
     t1w
     t1seg
@@ -246,6 +243,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 't1w',
                 't1seg',
                 'fmriprep_confounds_tsv',
+                't1w_to_native',
             ],
         ),
         name='inputnode',
@@ -254,9 +252,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     inputnode.inputs.bold_file = str(bold_file)
     inputnode.inputs.ref_file = str(ref_file)
     inputnode.inputs.bold_mask = str(mask_file)
-    inputnode.inputs.mni_to_t1w = str(mni_to_t1w)
     inputnode.inputs.custom_confounds = str(custom_confounds)
     inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
+    inputnode.inputs.t1w_to_native = _t12native(bold_file)
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -280,8 +278,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
-        mni_to_t1w=mni_to_t1w,
-        t1w_to_native=_t12native(bold_file),
         name="fcons_ts_wf",
         omp_nthreads=omp_nthreads,
     )
@@ -360,18 +356,43 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
         output_dir=output_dir,
-        mni_to_t1w=mni_to_t1w,
         omp_nthreads=omp_nthreads)
-    # get transform file for resampling and fcon
-    transformfile = get_transformfile(bold_file=bold_file,
-                                      mni_to_t1w=mni_to_t1w,
-                                      t1w_to_native=_t12native(bold_file))
-    t1w_mask = get_maskfiles(bold_file=bold_file, mni_to_t1w=mni_to_t1w)[1]
 
-    bold2MNI_trans, bold2T1w_trans = get_transformfilex(
-        bold_file=bold_file,
-        mni_to_t1w=mni_to_t1w,
-        t1w_to_native=_t12native(bold_file))
+    # get transform file for resampling and fcon
+    get_std2native_transform = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["transform_list"],
+            function=get_transformfile,
+        ),
+        name="get_std2native_transform",
+    )
+    get_t1w_mask = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w"],
+            output_names=["bold_mask", "t1w_mask"],
+            function=get_maskfiles,
+        ),
+        name="get_t1w_mask",
+    )
+    get_native2space_transforms = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["bold2MNI_trans", "bold2T1w_trans"],
+            function=get_transformfilex,
+        ),
+        name="get_native2space_transforms",
+    )
+
+    workflow.connect([
+        (inputnode, get_std2native_transform, [("bold_file", "bold_file"),
+                                               ("mni_to_t1w", "mni_to_t1w"),
+                                               ("t1w_to_native", "t1w_to_native")]),
+        (inputnode, get_t1w_mask, [("bold_file", "bold_file"), ("mni_to_t1w", "mni_to_t1w")]),
+        (inputnode, get_native2space_transforms, [("bold_file", "bold_file"),
+                                                  ("mni_to_t1w", "mni_to_t1w"),
+                                                  ("t1w_to_native", "t1w_to_native")]),
+    ])
 
     resample_parc = pe.Node(ApplyTransforms(
         dimension=3,
@@ -381,8 +402,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                          desc='carpet',
                          suffix='dseg',
                          extension=['.nii', '.nii.gz'])),
-        interpolation='MultiLabel',
-        transforms=transformfile),
+        interpolation='MultiLabel'),
         name='resample_parc',
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
@@ -390,12 +410,15 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     resample_bold2T1w = pe.Node(ApplyTransforms(
         dimension=3,
         input_image=mask_file,
-        reference_image=t1w_mask,
-        interpolation='NearestNeighbor',
-        transforms=bold2T1w_trans),
+        interpolation='NearestNeighbor'),
         name='bold2t1_trans',
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
+
+    workflow.connect([
+        (get_t1w_mask, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
+        (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
+    ])
 
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
@@ -406,18 +429,19 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                          desc='brain',
                          suffix='mask',
                          extension=['.nii', '.nii.gz'])),
-        interpolation='NearestNeighbor',
-        transforms=bold2MNI_trans),
+        interpolation='NearestNeighbor'),
         name='bold2mni_trans',
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
+    workflow.connect([
+        (get_native2space_transforms, resample_bold2MNI, [('bold2MNI_trans', 'transforms')]),
+    ])
+
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            bold_file=bold_file,
             dummytime=dummytime,
-            t1w_mask=t1w_mask,
             template_mask=str(
                 get_template(
                     'MNI152NLin2009cAsym',
@@ -437,6 +461,11 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads,
     )
+
+    workflow.connect([
+        (inputnode, qcreport, [("bold_file", "bold_file")]),
+        (get_t1w_mask, qcreport, [("t1w_mask", "t1w_mask")]),
+    ])
 
     # Remove TR first:
     if dummytime > 0:
@@ -519,7 +548,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # functional connect workflow
     workflow.connect([
         (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
-                                 ('ref_file', 'inputnode.ref_file')]),
+                                 ('ref_file', 'inputnode.ref_file'),
+                                 ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                                 ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
@@ -539,6 +570,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
+        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
         (resample_bold2T1w, qcreport, [('output_image', 'bold2T1w_mask')]),
         (resample_bold2MNI, qcreport, [('output_image', 'bold2temp_mask')]),
@@ -645,7 +677,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
                                           ('bold_file', 'inputnode.bold_file'),
-                                          ('bold_mask', 'inputnode.mask')]),
+                                          ('bold_mask', 'inputnode.mask'),
+                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
                                               ]),
         (filtering_wf, executivesummary_wf, [('filtered_file',
