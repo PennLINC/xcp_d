@@ -85,7 +85,7 @@ def get_parser():
     parser.add_argument(
         "analysis_level",
         action="store",
-        type=Path,
+        type=str,
         help='the analysis level for xcp_d, must be specified as "participant".',
     )
 
@@ -161,7 +161,7 @@ def get_parser():
         default=None,
         help=(
             "nipype plugin configuration file. for more information see "
-            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html",
+            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html"
         ),
     )
     g_perfm.add_argument(
@@ -294,30 +294,92 @@ def get_parser():
         "--motion-filter-type",
         action="store",
         type=str,
-        default="None",
+        default=None,
         choices=["lp", "notch"],
-        help=(
-            "type of band-stop filter to use for removing respiratory "
-            "artifact from motion regressors"
-        ),
+        help="""\
+Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+If not set, no filter will be applied.
+
+If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
+must be defined.
+If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
+"""
     )
     g_filter.add_argument(
         "--band-stop-min",
-        default=0,
+        default=None,
         type=float,
-        help=(
-            "lower frequency (bpm) for the band-stop motion filter. "
-            "see documentation for more details"
-        ),
+        metavar="BPM",
+        help="""\
+Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+Motion filtering is only performed if ``motion-filter-type`` is not None.
+If used with the "lp" ``motion-filter-type``, this parameter essentially corresponds to a
+low-pass filter (the maximum allowed frequency in the filtered data).
+This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-max``.
+
+.. list-table:: Recommended values, based on participant age
+    :align: left
+    :header-rows: 1
+    :stub-columns: 1
+
+    *   - Age Range (years)
+        - Recommended Value (bpm)
+    *   - < 1
+        - 30
+    *   - 1 - 2
+        - 25
+    *   - 2 - 6
+        - 20
+    *   - 6 - 12
+        - 15
+    *   - 12 - 18
+        - 12
+    *   - 19 - 65
+        - 12
+    *   - 65 - 80
+        - 12
+    *   - > 80
+        - 10
+
+When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-used value for
+this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
+"""
     )
     g_filter.add_argument(
         "--band-stop-max",
-        default=0,
+        default=None,
         type=float,
-        help=(
-            "upper frequency (bpm) for the band-stop motion filter. "
-            "see documentation for more details"
-        ),
+        metavar="BPM",
+        help="""\
+Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+Motion filtering is only performed if ``motion-filter-type`` is not None.
+This parameter is only used if ``motion-filter-type`` is set to "notch".
+This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-min``.
+
+.. list-table:: Recommended values, based on participant age
+    :align: left
+    :header-rows: 1
+    :stub-columns: 1
+
+    *   - Age Range (years)
+        - Recommended Value (bpm)
+    *   - < 1
+        - 60
+    *   - 1 - 2
+        - 50
+    *   - 2 - 6
+        - 35
+    *   - 6 - 12
+        - 25
+    *   - 12 - 18
+        - 20
+    *   - 19 - 65
+        - 18
+    *   - 65 - 80
+        - 28
+    *   - > 80
+        - 30
+"""
     )
     g_filter.add_argument(
         "--motion-filter-order",
@@ -573,6 +635,75 @@ def build_workflow(opts, retval):
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
 
+    retval["return_code"] = 0
+
+    # Check the validity of inputs
+    if output_dir == fmri_dir:
+        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
+        build_log.error(
+            "The selected output folder is the same as the input fmri input. "
+            "Please modify the output path "
+            f"(suggestion: {rec_path})."
+        )
+        retval["return_code"] = 1
+
+    if opts.analysis_level != "participant":
+        build_log.error('Please select analysis level "participant"')
+        retval["return_code"] = 1
+
+    # Bandpass filter parameters
+    if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf):
+        build_log.error(
+            f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
+            f"'--upper-bpf' ({opts.upper_bpf})."
+        )
+        retval["return_code"] = 1
+
+    # Motion filtering parameters
+    if opts.motion_filter_type == "notch":
+        if not (opts.band_stop_min and opts.band_stop_max):
+            build_log.error(
+                "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
+                "the 'notch' motion filter."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min >= opts.band_stop_max:
+            build_log.error(
+                f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
+                f"'--band-stop-max' ({opts.band_stop_max})."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min < 1 or opts.band_stop_max < 1:
+            build_log.warning(
+                f"Either '--band-stop-min' ({opts.band_stop_min}) or "
+                f"'--band-stop-max' ({opts.band_stop_max}) is suspiciously low. "
+                "Please remember that these values should be in breaths-per-minute."
+            )
+
+    elif opts.motion_filter_type == "lp":
+        if not opts.band_stop_min:
+            build_log.error(
+                "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min < 1:
+            build_log.warning(
+                f"'--band-stop-min' ({opts.band_stop_max}) is suspiciously low. "
+                "Please remember that this value should be in breaths-per-minute."
+            )
+
+        if opts.band_stop_max:
+            build_log.warning("'--band-stop-max' is ignored when '--motion-filter-type' is 'lp'.")
+
+    elif opts.band_stop_min or opts.band_stop_max:
+        build_log.warning(
+            "'--band-stop-min' and '--band-stop-max' are ignored if '--motion-filter-type' "
+            "is not set."
+        )
+
+    if retval["return_code"] == 1:
+        return retval
+
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
 
@@ -587,21 +718,6 @@ def build_workflow(opts, retval):
     retval["fmri_dir"] = str(fmri_dir)
     retval["output_dir"] = str(output_dir)
     retval["work_dir"] = str(work_dir)
-
-    if output_dir == fmri_dir:
-        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
-        build_log.error(
-            "The selected output folder is the same as the input fmri input. "
-            "Please modify the output path "
-            f"(suggestion: {rec_path})."
-        )
-        retval["return_code"] = 1
-        return retval
-
-    if str(opts.analysis_level) != "participant":
-        build_log.error('Please select analysis level "participant"')
-        retval["return_code"] = 1
-        return retval
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):

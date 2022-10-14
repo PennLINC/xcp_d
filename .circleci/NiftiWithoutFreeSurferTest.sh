@@ -34,4 +34,5 @@ XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 $XCPD_CMD \
     --despike  --head_radius 40 \
 	--smoothing 6  -f 100 -v -v \
+    --motion-filter-type lp --band-stop-min 6 \
     --nuissance-regressors 27P
