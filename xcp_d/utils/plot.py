@@ -343,14 +343,15 @@ def confoundplotx(time_series,
             minimum_value.append(min(time_series[c]))
 
             # Threshold fd at 0.1, 0.2 and 0.5 and plot
-            time_series_axis.axhline(y=1, color='lightgray', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=1, color='lightgray',
+                                     linestyle='-', linewidth=10, alpha=0.5)
             fda = time_series[c].copy()
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries > 0] = 1.05
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
 
-            time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.05, color='gray', linestyle='-', linewidth=10, alpha=0.5)
             fda[fda < 0.05] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.05] = 1.05
@@ -358,7 +359,8 @@ def confoundplotx(time_series,
             time_series_axis.plot(fda, '.', color='gray', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='gray', markersize=40)
 
-            time_series_axis.axhline(y=0.1, color='#66c2a5', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.1, color='#66c2a5',
+                                     linestyle='-', linewidth=10, alpha=0.5)
             fda[fda < 0.1] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.1] = 1.05
@@ -366,7 +368,8 @@ def confoundplotx(time_series,
             time_series_axis.plot(fda, '.', color='#66c2a5', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='#66c2a5', markersize=40)
 
-            time_series_axis.axhline(y=0.2, color='#fc8d62', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.2, color='#fc8d62',
+                                     linestyle='-', linewidth=10, alpha=0.5)
             fda[fda < 0.2] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.2] = 1.05
@@ -374,7 +377,8 @@ def confoundplotx(time_series,
             time_series_axis.plot(fda, '.', color='#fc8d62', markersize=40)
             time_series_axis.plot(FD_timeseries, '.', color='#fc8d62', markersize=40)
 
-            time_series_axis.axhline(y=0.5, color='#8da0cb', linestyle='-', linewidth=5)
+            time_series_axis.axhline(y=0.5, color='#8da0cb',
+                                     linestyle='-', linewidth=10, alpha=0.5)
             fda[fda < 0.5] = np.nan
             FD_timeseries = time_series[c].copy()
             FD_timeseries[FD_timeseries >= 0.5] = 1.05
@@ -421,7 +425,7 @@ def confoundplotx(time_series,
                                   fontsize=30)
     else:  # If no thresholding
         for c in columns:
-            time_series_axis.plot(time_series[c], label=c, linewidth=5)
+            time_series_axis.plot(time_series[c], label=c, linewidth=10, alpha=0.5)
             maximum_value.append(max(time_series[c]))
             minimum_value.append(min(time_series[c]))
 
@@ -939,7 +943,7 @@ def _carpet(func,
     ax0.set_yticks(tick_locs)
     ax0.set_yticklabels(labels,
                         fontdict={'fontsize': labelsize},
-                        rotation=90,
+                        rotation=0,
                         va='center')
     ax0.grid(False)
     ax0.spines["left"].set_visible(False)

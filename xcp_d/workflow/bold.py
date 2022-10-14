@@ -158,12 +158,17 @@ def init_boldpostprocess_wf(
     qc_file
         quality control files
     fd
+
+    References
+    ----------
+    .. footbibliography::
     """
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
     if TR is None:
         TR = layout.get_tr(bold_file)
+
     if not isinstance(TR, float):
         raise Exception(f"Unable to determine TR of {bold_file}")
 
@@ -176,36 +181,54 @@ def init_boldpostprocess_wf(
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = f"""
-For each of the {num2words(n_runs)} BOLD series found per subject (across all
-tasks and sessions), the following post-processing was performed:
-"""
+    filter_str = ""
+    if motion_filter_type:
+        if motion_filter_type == "notch":
+            filter_sub_str = (
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a notch filter, based on "
+                "@fair2020correction"
+            )
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute, "
+                "based on @fair2020correction and @gratton2020removal"
+            )
+
+        filter_str = (
+            f"the six translation and rotation head motion traces were {filter_sub_str}. "
+            "Next, "
+        )
+
+    fd_str = (
+        f"{filter_str}framewise displacement was calculated using the formula from "
+        f"@power_fd_dvars, with a head radius of {head_radius} mm."
+    )
+
+    dummytime_str = ""
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering of the data, the first
-{num2words(initial_volumes_to_drop)} were discarded, then both
-the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with
-framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
-flagged as outliers and excluded from nuisance regression.
-"""
+        dummytime_str = (
+            f"the first {num2words(initial_volumes_to_drop)} of both the BOLD data and nuisance "
+            "regressors were discarded, then "
+        )
 
-    else:
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering of the data, both the nuisance regressors and
-volumes were demean and detrended. Volumes with framewise-displacement greater than
-{fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
-and excluded from nuisance regression.
-"""
-
-    workflow.__desc__ = workflow.__desc__ + f""" \
-{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
-regressed from the BOLD data using linear regression - as implemented in Scikit-Learn
-{sklearn.__version__} [@scikit-learn].
+    workflow.__desc__ = f"""\
+For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
+the following post-processing was performed.
+First, {dummytime_str}{fd_str}.
+Volumes with framewise-displacement greater than {fd_thresh} mm
+[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
+regression.
+Before nuisance regression, but after censoring, the BOLD data were mean-centered and linearly
+detrended.
+{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
+These nuisance regressors were regressed from the BOLD data using linear regression -
+as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
 Residual timeseries from this regression were then band-pass filtered to retain signals within the
 {lower_bpf}-{upper_bpf} Hz frequency band.
- """
+"""
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
@@ -286,8 +309,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
         custom_confounds=custom_confounds,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         head_radius=head_radius,
@@ -429,8 +452,11 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 )
             ),
             head_radius=head_radius,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min),
+            motion_filter_type=motion_filter_type,
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+        ),
         name="qc_report",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads,
@@ -646,7 +672,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
-    # exexetive summary workflow
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),

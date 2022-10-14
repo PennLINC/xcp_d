@@ -144,6 +144,10 @@ def init_xcpd_wf(
     %(process_surfaces)s
     %(input_type)s
     %(name)s
+
+    References
+    ----------
+    .. footbibliography::
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
@@ -288,6 +292,10 @@ def init_subject_wf(
     %(subject_id)s
     %(input_type)s
     %(name)s
+
+    References
+    ----------
+    .. footbibliography::
     """
     layout, subj_data = collect_data(
         bids_dir=fmri_dir,
