@@ -4,7 +4,8 @@
 
 This is from niworkflows, a patch will be submitted.
 """
-import glob as glob
+import glob
+import os
 from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
@@ -154,11 +155,13 @@ def generate_reports(subject_list,
 
         from xcp_d.interfaces.layout_builder import LayoutBuilder
         for subject_label in subject_list:
-            brainplotfile = str(
-                glob.glob(
-                    str(Path(output_dir)) + '/xcp_d/sub-'
-                    + str(subject_label)
-                    + '/figures/*_desc-brainplot_T1w.html')[0])
+            brainplotfile = glob.glob(
+                os.path.join(
+                    output_dir,
+                    f'xcp_d/sub-{subject_label}',
+                    'figures/*_bold.svg',
+                ),
+            )[0]
             LayoutBuilder(html_path=str(Path(output_dir)) + '/xcp_d/',
                           subject_id=subject_label,
                           session_id=_getsesid(brainplotfile))

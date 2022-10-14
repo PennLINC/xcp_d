@@ -9,6 +9,7 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
+from nipype import Function
 from nipype import __version__ as nipype_ver
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -27,9 +28,10 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_customfile
-from xcp_d.workflow.anatomical import init_anatomical_wf
+from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
+from xcp_d.workflow.execsummary import init_brainsprite_wf
 
 
 @fill_doc
@@ -58,7 +60,7 @@ def init_xcpd_wf(
     work_dir,
     dummytime,
     fd_thresh,
-    func_only,
+    process_surfaces=False,
     input_type='fmriprep',
     name='xcpd_wf',
 ):
@@ -85,7 +87,7 @@ def init_xcpd_wf(
                 bandpass_filter=True,
                 fmri_dir=".",
                 omp_nthreads=1,
-                cifti=True,
+                cifti=False,
                 task_id="rest",
                 head_radius=50.,
                 params="36P",
@@ -97,7 +99,7 @@ def init_xcpd_wf(
                 work_dir=".",
                 dummytime=0,
                 fd_thresh=0.2,
-                func_only=False,
+                process_surfaces=False,
                 input_type='fmriprep',
                 name='xcpd_wf',
             )
@@ -139,6 +141,7 @@ def init_xcpd_wf(
         path to cusrtom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(process_surfaces)s
     %(input_type)s
     %(name)s
 
@@ -176,7 +179,7 @@ def init_xcpd_wf(
             dummytime=dummytime,
             custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
-            func_only=func_only,
+            process_surfaces=process_surfaces,
             input_type=input_type,
             name=f"single_subject_{subject_id}_wf",
         )
@@ -214,7 +217,7 @@ def init_subject_wf(
     task_id,
     smoothing,
     custom_confounds,
-    func_only,
+    process_surfaces,
     output_dir,
     input_type,
     name,
@@ -239,7 +242,7 @@ def init_subject_wf(
                 motion_filter_order=4,
                 fmri_dir=".",
                 omp_nthreads=1,
-                subject_id="sub-01",
+                subject_id="01",
                 cifti=False,
                 despike=False,
                 head_radius=50,
@@ -249,7 +252,7 @@ def init_subject_wf(
                 task_id="rest",
                 smoothing=6.,
                 custom_confounds=None,
-                func_only=False,
+                process_surfaces=False,
                 output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
@@ -285,6 +288,8 @@ def init_subject_wf(
         path to custom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
+    %(process_surfaces)s
+    %(subject_id)s
     %(input_type)s
     %(name)s
 
@@ -299,22 +304,18 @@ def init_subject_wf(
         bids_validate=False,
     )
 
-    mni_to_t1w, t1w_to_mni = select_registrationfile(subj_data=subj_data)
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
-    t1w, t1wseg = extract_t1w_seg(subj_data=subj_data)
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
     preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds', 'mni_to_t1w', 't1w', 't1seg']),
+        niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
         name='inputnode',
     )
     inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.t1w = t1w
-    inputnode.inputs.t1seg = t1wseg
-    inputnode.inputs.mni_to_t1w = mni_to_t1w
+    inputnode.inputs.subj_data = subj_data
 
     workflow = Workflow(name=name)
 
@@ -380,23 +381,71 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         run_without_submitting=True,
     )
 
-    if not func_only:
+    t1w_file_grabber = pe.Node(
+        Function(
+            input_names=["subj_data"],
+            output_names=["t1w", "t1seg"],
+            function=extract_t1w_seg,
+        ),
+        name="t1w_file_grabber",
+    )
+
+    transform_file_grabber = pe.Node(
+        Function(
+            input_names=["subj_data"],
+            output_names=["mni_to_t1w", "t1w_to_mni"],
+            function=select_registrationfile,
+        ),
+        name="transform_file_grabber",
+    )
+
+    t1w_wf = init_t1w_wf(
+        output_dir=output_dir,
+        input_type=input_type,
+        omp_nthreads=omp_nthreads,
+        mem_gb=5,  # RF: need to change memory size
+    )
+
+    workflow.connect([
+        (inputnode, t1w_file_grabber, [('subj_data', 'subj_data')]),
+        (inputnode, transform_file_grabber, [('subj_data', 'subj_data')]),
+        (t1w_file_grabber, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
+        (transform_file_grabber, t1w_wf, [('t1w_to_mni', 'inputnode.t1w_to_mni')]),
+    ])
+
+    # Plot the ribbon on the brain in a brainsprite figure
+    brainsprite_wf = init_brainsprite_wf(
+        layout=layout,
+        fmri_dir=fmri_dir,
+        subject_id=subject_id,
+        output_dir=output_dir,
+        input_type=input_type,
+        omp_nthreads=omp_nthreads,
+        mem_gb=5,
+    )
+
+    workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1w', 'inputnode.t1w'),
+                                                          ('t1seg', 'inputnode.t1seg')])])
+
+    if process_surfaces:
         anatomical_wf = init_anatomical_wf(
-            omp_nthreads=omp_nthreads,
+            layout=layout,
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            t1w_to_mni=t1w_to_mni,
             input_type=input_type,
-            mem_gb=5)  # RF: need to chnage memory size
+            omp_nthreads=omp_nthreads,
+            mem_gb=5,  # RF: need to change memory size
+        )
 
-        # send t1w and t1seg to anatomical workflow
         workflow.connect([
-            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                        ('t1seg', 'inputnode.t1seg')]),
+            (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                               ('t1seg', 'inputnode.t1seg')]),
         ])
 
     # loop over each bold run to be postprocessed
+    # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
+    # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
         custom_confounds_file = get_customfile(
             custom_confounds=custom_confounds,
@@ -424,19 +473,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dummytime=dummytime,
             fd_thresh=fd_thresh,
             output_dir=output_dir,
-            mni_to_t1w=mni_to_t1w,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
         workflow.connect(
             [
-                (
-                    inputnode, bold_postproc_wf,
-                    [
-                        ('t1w', 'inputnode.t1w'),
-                        ('t1seg', 'inputnode.t1seg'),
-                    ],
-                ),
+                (t1w_file_grabber, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
+                                                      ('t1seg', 'inputnode.t1seg')]),
+                (transform_file_grabber, bold_postproc_wf, [
+                    ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                ]),
             ],
         )
 
