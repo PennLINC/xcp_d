@@ -113,7 +113,7 @@ def load_motion(
         The confounds DataFrame from which to extract the six basic motion regressors.
     TR : float
         The repetition time of the associated scan.
-    motion_filter_type : {"lp", "notch", other}
+    motion_filter_type : {"lp", "notch", None}
         The filter type to use.
         If "lp" or "notch", that filtering will be done in this function.
         Otherwise, no filtering will be applied.
@@ -133,13 +133,14 @@ def load_motion(
     ----------
     .. footbibliography::
     """
+    assert motion_filter_type in ("lp", "notch", None)
     # Select the motion columns from the overall confounds DataFrame
     motion_confounds_df = confounds_df[
         ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
     ]
 
     # Apply LP or notch filter
-    if motion_filter_type == "lp" or motion_filter_type == "notch":
+    if motion_filter_type in ("lp", "notch"):
         # TODO: Eliminate need for transpose. We control the filter function,
         # so we can make it work on RxT data instead of TxR.
         motion_confounds = motion_confounds_df.to_numpy().T
@@ -479,12 +480,12 @@ def motion_regression_filter(
         Data to filter.
     TR : float
         Repetition time of the data.
-    motion_filter_type : {"lp", "notch", other}
+    motion_filter_type : {"lp", "notch"}
         The type of motion filter to apply.
         If "notch", the frequencies between ``band_stop_min`` and ``band_stop_max`` will be
         removed.
         If "lp", the frequencies above ``band_stop_min`` will be removed.
-        Filtering will only be performed if set to "lp" or "notch".
+        If not "notch" or "lp", an exception will be raised.
     %(band_stop_min)s
     %(band_stop_max)s
     motion_filter_order : int, optional
@@ -499,67 +500,66 @@ def motion_regression_filter(
     ----------
     .. footbibliography::
     """
+    assert motion_filter_type in ("lp", "notch")
+
     # casting all variables
     TR = float(TR)
     order = float(motion_filter_order)
 
     filtered_data = data.copy()
 
-    if motion_filter_type:
-        if motion_filter_type == "lp":  # low-pass filter
-            # Remove any frequencies above band_stop_min.
-            assert band_stop_min is not None
-            if band_stop_max:
-                warnings.warn("The parameter 'band_stop_max' will be ignored.")
+    sampling_frequency = 1.0 / TR
+    nyquist_frequency = sampling_frequency / 2.0
 
-            low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
-            fs = 1.0 / TR  # sampling frequency
-            fNy = fs / 2.0  # Nyquist frequency
-            # cutting frequency
-            fa = np.abs(
-                low_pass_freq_hertz - (np.floor((low_pass_freq_hertz + fNy) / fs)) * fs
-            )
-            # cutting frequency normalized between 0 and nyquist
-            Wn = np.amin(fa) / fNy  # cutoffs
-            filt_num = firwin(int(order) + 1, Wn, pass_zero="lowpass")  # create b_filt
-            filt_denom = 1.0
-            num_f_apply = 1  # num of times to apply
+    if motion_filter_type == "lp":  # low-pass filter
+        # Remove any frequencies above band_stop_min.
+        assert band_stop_min is not None
+        assert band_stop_min > 0
+        if band_stop_max:
+            warnings.warn("The parameter 'band_stop_max' will be ignored.")
 
-        elif motion_filter_type == "notch":  # notch filter
-            # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
-            assert band_stop_max is not None
-            assert band_stop_min is not None
-            assert band_stop_min < band_stop_max
+        low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
 
-            bandstop_band = np.array([band_stop_min, band_stop_max])  # bandwidth as an array
-            bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
-            sampling_frequency = 1.0 / TR
-            nyquist_frequency = sampling_frequency / 2.0  # nyquist frequency
-            cutting_frequency = np.abs(
-                bandstop_band_hz
-                - (
-                    np.floor(
-                        (bandstop_band_hz + nyquist_frequency) / sampling_frequency
-                    )
-                )
-                * sampling_frequency
-            )  # cutting frequency
+        # cutting frequency
+        cutting_frequency = np.abs(
+            low_pass_freq_hertz
+            - (np.floor((low_pass_freq_hertz + nyquist_frequency) / sampling_frequency))
+            * sampling_frequency
+        )
+        # cutting frequency normalized between 0 and nyquist
+        Wn = np.amin(cutting_frequency) / nyquist_frequency  # cutoffs
+        filt_num = firwin(int(order) + 1, Wn, pass_zero="lowpass")  # create b_filt
+        filt_denom = 1.0
+        num_f_apply = 1  # num of times to apply
 
-            # fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)
+    elif motion_filter_type == "notch":  # notch filter
+        # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
+        assert band_stop_max is not None
+        assert band_stop_min is not None
+        assert band_stop_max > 0
+        assert band_stop_min > 0
+        assert band_stop_min < band_stop_max
 
-            # normalize cutting frequency
-            W_notch = cutting_frequency / nyquist_frequency
-            Wn = np.mean(W_notch)
-            Wd = np.diff(W_notch)
-            bandwidth = np.abs(Wd)  # bandwidth
-            filt_num, filt_denom = iirnotch(Wn, Wn / bandwidth)  # create filter coefficients
-            num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
+        # bandwidth as an array
+        bandstop_band = np.array([band_stop_min, band_stop_max])
+        bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
+        cutting_frequencies = np.abs(
+            bandstop_band_hz
+            - (np.floor((bandstop_band_hz + nyquist_frequency) / sampling_frequency))
+            * sampling_frequency
+        )
 
-        for i_iter in range(num_f_apply):
-            for j_row in range(data.shape[0]):  # apply filters across columns
-                filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
+        # normalize cutting frequency
+        W_notch = cutting_frequencies / nyquist_frequency
+        Wn = np.mean(W_notch)
+        Wd = np.diff(W_notch)
+        bandwidth = np.abs(Wd)  # bandwidth
+        # create filter coefficients
+        filt_num, filt_denom = iirnotch(Wn, Wn / bandwidth)
+        num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
 
-    else:
-        raise ValueError("Why are you here?")
+    for i_iter in range(num_f_apply):
+        for j_row in range(data.shape[0]):  # apply filters across columns
+            filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
 
     return filtered_data
