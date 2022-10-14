@@ -24,12 +24,15 @@ def get_confounds_tsv(datafile):
     confounds_timeseries : str
         Associated confounds TSV file.
     """
-    if 'space' in os.path.basename(datafile):
-        confounds_timeseries = datafile.replace("_space-" + datafile.split("space-")[1],
-                                                "_desc-confounds_timeseries.tsv")
+    if "space" in os.path.basename(datafile):
+        confounds_timeseries = datafile.replace(
+            "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.tsv"
+        )
     else:
-        confounds_timeseries = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.tsv"
+        confounds_timeseries = (
+            datafile.split("_desc-preproc_bold.nii.gz")[0]
+            + "_desc-confounds_timeseries.tsv"
+        )
 
     return confounds_timeseries
 
@@ -49,22 +52,24 @@ def load_confound(datafile):
     confoundjs : dict
         Metadata from associated confounds JSON file.
     """
-    if 'space' in os.path.basename(datafile):
+    if "space" in os.path.basename(datafile):
         confounds_timeseries = datafile.replace(
-            "_space-" + datafile.split("space-")[1],
-            "_desc-confounds_timeseries.tsv")
+            "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.tsv"
+        )
         confounds_json = datafile.replace(
-            "_space-" + datafile.split("space-")[1],
-            "_desc-confounds_timeseries.json")
+            "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.json"
+        )
     else:
-        confounds_timeseries = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.tsv"
-        confounds_json = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0] + "_desc-confounds_timeseries.json"
+        confounds_timeseries = (
+            datafile.split("_desc-preproc_bold.nii.gz")[0]
+            + "_desc-confounds_timeseries.tsv"
+        )
+        confounds_json = (
+            datafile.split("_desc-preproc_bold.nii.gz")[0]
+            + "_desc-confounds_timeseries.json"
+        )
 
-    confoundpd = pd.read_csv(confounds_timeseries,
-                             delimiter="\t",
-                             encoding="utf-8")
+    confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
 
     confoundjs = readjson(confounds_json)
 
@@ -85,6 +90,7 @@ def readjson(jsonfile):
         Data loaded from the JSON file.
     """
     import json
+
     with open(jsonfile) as f:
         data = json.load(f)
     return data
@@ -133,7 +139,7 @@ def load_motion(
     ]
 
     # Apply LP or notch filter
-    if motion_filter_type == 'lp' or motion_filter_type == 'notch':
+    if motion_filter_type == "lp" or motion_filter_type == "notch":
         # TODO: Eliminate need for transpose. We control the filter function,
         # so we can make it work on RxT data instead of TxR.
         motion_confounds = motion_confounds_df.to_numpy().T
@@ -207,7 +213,7 @@ def load_cosine(confounds_df):
     """
     cosine = []
     for key in confounds_df.keys():  # Any colums with cosine
-        if 'cosine' in key:
+        if "cosine" in key:
             cosine.append(key)
     return confounds_df[cosine]
 
@@ -230,13 +236,13 @@ def load_acompcor(confounds_df, confoundjs):
     WM = []
     CSF = []
     for key, value in confoundjs.items():  # Use the confounds json
-        if 'comp_cor' in key and 't' not in key:
+        if "comp_cor" in key and "t" not in key:
             # Pull out variance explained for white matter masks that are retained
-            if value['Mask'] == 'WM' and value['Retained']:
-                WM.append([key, value['VarianceExplained']])
+            if value["Mask"] == "WM" and value["Retained"]:
+                WM.append([key, value["VarianceExplained"]])
             # Pull out variance explained for CSF masks that are retained
-            if value['Mask'] == 'CSF' and value['Retained']:
-                CSF.append([key, value['VarianceExplained']])
+            if value["Mask"] == "CSF" and value["Retained"]:
+                CSF.append([key, value["VarianceExplained"]])
     # Select the first five components and add them to the list
     csflist = []
     wmlist = []
@@ -291,11 +297,9 @@ def square_confound(confound):
 
 
 @fill_doc
-def load_confound_matrix(datafile,
-                         original_file,
-                         custom_confounds=None,
-                         confound_tsv=None,
-                         params='36P'):
+def load_confound_matrix(
+    datafile, original_file, custom_confounds=None, confound_tsv=None, params="36P"
+):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
@@ -319,13 +323,15 @@ def load_confound_matrix(datafile,
     confoundjson = load_confound(original_file)[1]
     confoundtsv = pd.read_table(confound_tsv)
 
-    if params == '24P':  # Get rot and trans values, as well as derivatives and square
+    if params == "24P":  # Get rot and trans values, as well as derivatives and square
         rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
         motion = pd.concat([rot_values, trans_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        confound = pd.concat([derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
-    elif params == '27P':  # Get rot and trans values, as well as derivatives, WM, CSF
+        confound = pd.concat(
+            [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
+        )
+    elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF
         # global signal and square
         rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
@@ -333,9 +339,16 @@ def load_confound_matrix(datafile,
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         whitematter_csf = load_wm_csf(confoundtsv)
         global_signal = load_global_signal(confoundtsv)
-        confound = pd.concat([derivative_rot_trans, square_confound(
-            derivative_rot_trans), whitematter_csf, global_signal], axis=1)
-    elif params == '36P':  # Get rot and trans values, as well as derivatives, WM, CSF,
+        confound = pd.concat(
+            [
+                derivative_rot_trans,
+                square_confound(derivative_rot_trans),
+                whitematter_csf,
+                global_signal,
+            ],
+            axis=1,
+        )
+    elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
         rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
@@ -343,50 +356,63 @@ def load_confound_matrix(datafile,
         motion = pd.concat([rot_values, trans_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         square_confounds = pd.concat(
-            [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
+            [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
+        )
         global_signal_whitematter_csf = pd.concat(
-            [load_wm_csf(confoundtsv),
-             load_global_signal(confoundtsv)], axis=1)
+            [load_wm_csf(confoundtsv), load_global_signal(confoundtsv)], axis=1
+        )
         global_signal_whitematter_csf_derivative = pd.concat(
-            [global_signal_whitematter_csf, derivative(global_signal_whitematter_csf)], axis=1)
-        confound = pd.concat([square_confounds, global_signal_whitematter_csf_derivative,
-                              square_confound(global_signal_whitematter_csf_derivative)], axis=1)
-    elif params == 'acompcor':  # Get the rot and trans values, their derivative,
+            [global_signal_whitematter_csf, derivative(global_signal_whitematter_csf)],
+            axis=1,
+        )
+        confound = pd.concat(
+            [
+                square_confounds,
+                global_signal_whitematter_csf_derivative,
+                square_confound(global_signal_whitematter_csf_derivative),
+            ],
+            axis=1,
+        )
+    elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
         rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
         motion = pd.concat([rot_values, trans_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        acompcor = load_acompcor(confounds_df=confoundtsv,
-                                 confoundjs=confoundjson)
+        acompcor = load_acompcor(confounds_df=confoundtsv, confoundjs=confoundjson)
         cosine = load_cosine(confoundtsv)
         confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
-    elif params == 'aroma':  # Get the WM, CSF, and aroma values
+    elif params == "aroma":  # Get the WM, CSF, and aroma values
         whitematter_csf = load_wm_csf(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
-    elif params == 'aroma_gsr':  # Get the WM, CSF, and aroma values, as well as global signal
+    elif (
+        params == "aroma_gsr"
+    ):  # Get the WM, CSF, and aroma values, as well as global signal
         whitematter_csf = load_wm_csf(confoundtsv)
         aroma = load_aroma(datafile=datafile)
         global_signal = load_global_signal(confoundtsv)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
-    elif params == 'acompcor_gsr':  # Get the rot and trans values, as well as their derivative,
+    elif (
+        params == "acompcor_gsr"
+    ):  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
         rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
         motion = pd.concat([rot_values, trans_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        acompcor = load_acompcor(confounds_df=confoundtsv,
-                                 confoundjs=confoundjson)
+        acompcor = load_acompcor(confounds_df=confoundtsv, confoundjs=confoundjson)
         global_signal = load_global_signal(confoundtsv)
         cosine = load_cosine(confoundtsv)
-        confound = pd.concat([derivative_rot_trans, acompcor, global_signal, cosine], axis=1)
-    elif params == 'custom':
+        confound = pd.concat(
+            [derivative_rot_trans, acompcor, global_signal, cosine], axis=1
+        )
+    elif params == "custom":
         # For custom confounds with no other confounds
-        confound = pd.read_table(custom_confounds, sep='\t', header=None)
-    if params != 'custom':  # For both custom and fMRIPrep confounds
+        confound = pd.read_table(custom_confounds, sep="\t", header=None)
+    if params != "custom":  # For both custom and fMRIPrep confounds
         if custom_confounds is not None:
-            custom = pd.read_table(custom_confounds, sep='\t', header=None)
+            custom = pd.read_table(custom_confounds, sep="\t", header=None)
             confound = pd.concat([confound, custom], axis=1)
 
     return confound
@@ -406,29 +432,29 @@ def load_aroma(datafile):
         The AROMA noise components.
     """
     #  Pull out aroma and melodic_ts files
-    if 'space' in os.path.basename(datafile):
-        aroma_noise = datafile.replace("_space-" + datafile.split("space-")[1],
-                                       "_AROMAnoiseICs.csv")
-        melodic_ts = datafile.replace("_space-" + datafile.split("space-")[1],
-                                      "_desc-MELODIC_mixing.tsv")
+    if "space" in os.path.basename(datafile):
+        aroma_noise = datafile.replace(
+            "_space-" + datafile.split("space-")[1], "_AROMAnoiseICs.csv"
+        )
+        melodic_ts = datafile.replace(
+            "_space-" + datafile.split("space-")[1], "_desc-MELODIC_mixing.tsv"
+        )
     else:
-        aroma_noise = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0] + "_AROMAnoiseICs.csv"
-        melodic_ts = datafile.split(
-            '_desc-preproc_bold.nii.gz')[0] + "_desc-MELODIC_mixing.tsv"
+        aroma_noise = (
+            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_AROMAnoiseICs.csv"
+        )
+        melodic_ts = (
+            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-MELODIC_mixing.tsv"
+        )
     # Load data
     aroma_noise = np.genfromtxt(
         aroma_noise,
-        delimiter=',',
+        delimiter=",",
     )
-    aroma_noise = [np.int(i) - 1
-                   for i in aroma_noise]  # change to 0-based index
+    aroma_noise = [np.int(i) - 1 for i in aroma_noise]  # change to 0-based index
 
     # Load in meloditc_ts
-    melodic = pd.read_csv(melodic_ts,
-                          header=None,
-                          delimiter="\t",
-                          encoding="utf-8")
+    melodic = pd.read_csv(melodic_ts, header=None, delimiter="\t", encoding="utf-8")
 
     # Drop aroma_noise from melodic_ts
     aroma = melodic.drop(aroma_noise, axis=1)
@@ -477,45 +503,63 @@ def motion_regression_filter(
     TR = float(TR)
     order = float(motion_filter_order)
 
+    filtered_data = data.copy()
+
     if motion_filter_type:
-        if motion_filter_type == 'lp':  # low-pass filter
+        if motion_filter_type == "lp":  # low-pass filter
             # Remove any frequencies above band_stop_min.
             assert band_stop_min is not None
             if band_stop_max:
                 warnings.warn("The parameter 'band_stop_max' will be ignored.")
 
             low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
-            fs = 1. / TR  # sampling frequency
-            fNy = fs / 2.  # Nyquist frequency
+            fs = 1.0 / TR  # sampling frequency
+            fNy = fs / 2.0  # Nyquist frequency
             # cutting frequency
-            fa = np.abs(low_pass_freq_hertz - (np.floor((low_pass_freq_hertz + fNy) / fs)) * fs)
+            fa = np.abs(
+                low_pass_freq_hertz - (np.floor((low_pass_freq_hertz + fNy) / fs)) * fs
+            )
             # cutting frequency normalized between 0 and nyquist
             Wn = np.amin(fa) / fNy  # cutoffs
-            b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')  # create b_filt
-            a_filt = 1.
+            filt_num = firwin(int(order) + 1, Wn, pass_zero="lowpass")  # create b_filt
+            filt_denom = 1.0
             num_f_apply = 1  # num of times to apply
 
-        elif motion_filter_type == 'notch':  # notch filter
+        elif motion_filter_type == "notch":  # notch filter
             # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
             assert band_stop_max is not None
             assert band_stop_min is not None
             assert band_stop_min < band_stop_max
 
-            fc_RR_bw = np.array([band_stop_min, band_stop_max])  # bandwidth as an array
-            rr = fc_RR_bw / 60  # change BPM to right time unit
-            fs = 1. / TR  # sampling frequency
-            fNy = fs / 2.  # nyquist frequency
-            fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)  # cutting frequency
-            W_notch = fa / fNy  # normalize cutting frequency
+            bandstop_band = np.array([band_stop_min, band_stop_max])  # bandwidth as an array
+            bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
+            sampling_frequency = 1.0 / TR
+            nyquist_frequency = sampling_frequency / 2.0  # nyquist frequency
+            cutting_frequency = np.abs(
+                bandstop_band_hz
+                - (
+                    np.floor(
+                        (bandstop_band_hz + nyquist_frequency) / sampling_frequency
+                    )
+                )
+                * sampling_frequency
+            )  # cutting frequency
+
+            # fa = np.abs(rr - (np.floor((rr + fNy) / fs)) * fs)
+
+            # normalize cutting frequency
+            W_notch = cutting_frequency / nyquist_frequency
             Wn = np.mean(W_notch)
             Wd = np.diff(W_notch)
-            bw = np.abs(Wd)  # bandwidth
-            b_filt, a_filt = iirnotch(Wn, Wn / bw)  # create filter coefficients
+            bandwidth = np.abs(Wd)  # bandwidth
+            filt_num, filt_denom = iirnotch(Wn, Wn / bandwidth)  # create filter coefficients
             num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
 
-        for ii in range(num_f_apply):
-            for jj in range(data.shape[0]):  # apply filters across columns
-                data[jj, :] = filtfilt(b_filt, a_filt, data[jj, :])
+        for i_iter in range(num_f_apply):
+            for j_row in range(data.shape[0]):  # apply filters across columns
+                filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
+
     else:
-        data = data
-    return data
+        raise ValueError("Why are you here?")
+
+    return filtered_data
