@@ -614,7 +614,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
-    # exexetive summary workflow
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
