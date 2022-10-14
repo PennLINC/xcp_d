@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Confound matrix selection based on Ciric et al. 2007."""
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -480,6 +481,8 @@ def motion_regression_filter(
         if motion_filter_type == 'lp':  # low-pass filter
             # Remove any frequencies above band_stop_min.
             assert band_stop_min is not None
+            if band_stop_max:
+                warnings.warn("The parameter 'band_stop_max' will be ignored.")
 
             low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
             fs = 1. / TR  # sampling frequency
@@ -491,6 +494,7 @@ def motion_regression_filter(
             b_filt = firwin(int(order) + 1, Wn, pass_zero='lowpass')  # create b_filt
             a_filt = 1.
             num_f_apply = 1  # num of times to apply
+
         elif motion_filter_type == 'notch':  # notch filter
             # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
             assert band_stop_max is not None
