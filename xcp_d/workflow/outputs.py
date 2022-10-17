@@ -88,6 +88,7 @@ def init_writederivatives_wf(
         reho right hemisphere
     reho_out
     fd
+    tmask
     """
     workflow = Workflow(name=name)
 
@@ -106,6 +107,7 @@ def init_writederivatives_wf(
                 "reho_rh",
                 "reho_out",
                 "fd",
+                "tmask",
             ],
         ),
         name="inputnode",
