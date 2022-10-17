@@ -20,13 +20,19 @@ def nifti_conn_test(data_dir, tmp_path_factory):
     """Test the nifti workflow."""
     bold_file = os.path.join(
         data_dir,
-        ("fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152"
-         "NLin2009cAsym_desc-preproc_bold.nii.gz")
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-1"
+            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+        )
     )
     bold_mask = os.path.join(
         data_dir,
-        ("fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152"
-         "NLin2009cAsym_desc-brain_mask.nii.gz")
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-1_"
+            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        )
     )
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -53,8 +59,10 @@ def nifti_conn_test(data_dir, tmp_path_factory):
     # Let's define the inputs and create the node
     mni_to_t1w = os.path.join(
         data_dir,
-        ("fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_"
-         "from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")
+        (
+            "fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_"
+            "from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
+        )
     )
     fcon_ts_wf = init_fcon_ts_wf(
         mem_gb=4,
@@ -67,8 +75,10 @@ def nifti_conn_test(data_dir, tmp_path_factory):
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
     fcon_ts_wf.inputs.inputnode.ref_file = os.path.join(
         data_dir,
-        ("fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest"
-         "_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz")
+        (
+            "fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest"
+            "_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz"
+        )
     )
     fcon_ts_wf.base_dir = tmp_path_factory.mktemp("fcon_nifti_test_2")
     fcon_ts_wf.run()
@@ -113,8 +123,10 @@ def cifti_con_test(data_dir, tmp_path_factory):
     # Define bold file
     boldfile = os.path.join(
         data_dir,
-        ("fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-",
-         "fsLR_den-91k_bold.dtseries.nii")
+        (
+            "fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-",
+            "fsLR_den-91k_bold.dtseries.nii"
+        )
     )
     # Generate fake signal
     bold_data = read_ndata(boldfile)

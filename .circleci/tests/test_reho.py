@@ -36,34 +36,45 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     tempdir = tmp_path_factory.mktemp("test_REHO_nifti")
     # Get the names of the files
     bold_file = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_"
-        "task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+        data_dir,
+        ("fmriprep/sub-colornest001/ses-1/func/"
+         "sub-colornest001_ses-1_"
+         "task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+         )
     )
     bold_mask = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_"
-        "task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_"
+            "task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        )
     )
+
     # Set up and run the ReHo wf in a tempdir
     reho_wf = init_3d_reho_wf(omp_nthreads=2, mem_gb=4)
     reho_wf.inputs.inputnode.bold_mask = bold_mask
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
     reho_wf.run()
+
     # Get the original mean of the ReHo for later comparison
     original_reho = os.path.join(
         reho_wf.base_dir,
         "afni_reho_wf/reho_3d/reho.nii.gz",)
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
     original_bold_data = read_ndata(bold_file, bold_mask)
+
     # Add some noise to the original data and write it out
     noisy_bold_data = _add_noise(original_bold_data)
     noisy_bold_file = os.path.join(tempdir, "test.nii.gz")
     write_ndata(noisy_bold_data, template=bold_file, mask=bold_mask, filename=noisy_bold_file)
+
     # Run ReHo again
+    assert os.path.isfile(noisy_bold_file)
     reho_wf.inputs.inputnode.clean_bold = noisy_bold_file
     reho_wf.run()
+
     # Has the new ReHo's mean decreased?
     new_reho = os.path.join(reho_wf.base_dir,
                             "afni_reho_wf/reho_3d/reho.nii.gz")
@@ -79,33 +90,45 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     Cifti image.
     """
     # Get the names of the files
+    tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
     bold_file = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_"
-        "task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_"
+            "task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
+        )
     )
+
     # Set up and run the ReHo wf in a tempdir
     reho_wf = init_surface_reho_wf(omp_nthreads=2, mem_gb=4)
-    tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
+
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
     reho_wf.run()
+
     # Get the original mean of the ReHo for later comparison
     original_reho = os.path.join(
-        tempdir, "surface_reho_wf/reho_lh/"
-        "correlation_matrix_"
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR"
-        "_den-91k_bold.dtseries.shape.gii"
+        tempdir,
+        (
+            "surface_reho_wf/reho_lh/correlation_matrix_"
+            "sub-colornest001_ses-1_task-rest_run-1_space-fsLR"
+            "_den-91k_bold.dtseries.shape.gii"
+        )
     )
     original_reho_mean = nb.load(original_reho).agg_data().mean()
     original_bold_data = read_ndata(bold_file)
+
     # Add some noise to the original data and write it out
     noisy_bold_data = _add_noise(original_bold_data)
     noisy_bold_file = os.path.join(tempdir, "test.dtseries.nii")
     write_ndata(noisy_bold_data, template=bold_file, filename=noisy_bold_file)
+
     # Run ReHo again
+    assert os.path.isfile(noisy_bold_file)
     reho_wf.inputs.inputnode.clean_bold = noisy_bold_file
     reho_wf.run()
+
     # Has the new ReHo's mean decreased?
     new_reho = os.path.join(
         tempdir,

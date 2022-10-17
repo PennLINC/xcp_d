@@ -22,12 +22,20 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     """
     # Get the file names
     bold_file = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-1"
+            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+        )
     )
     bold_mask = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-1_"
+            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        )
     )
 
     # Let's initialize the ALFF node
@@ -51,9 +59,12 @@ def test_nifti_alff(data_dir, tmp_path_factory):
 
     # Let's get the mean of the ALFF for later comparison
     original_alff = os.path.join(
-        tempdir, "compute_alff_wf/alff_compt/sub-color"
-        "nest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
-        "preproc_bold_alff.nii.gz"
+        tempdir,
+        (
+            "compute_alff_wf / alff_compt/"
+            "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
+            "preproc_bold_alff.nii.gz"
+        )
     )
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
@@ -89,8 +100,9 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean
-    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/"
-                            "editedfile_alff.nii.gz")
+    new_alff = os.path.join(
+        tempdir, "compute_alff_wf/alff_compt/editedfile_alff.nii.gz"
+    )
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
@@ -107,12 +119,19 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     has changed in the expected direction.
     """
     bold_file = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_bold.dtseries.nii"
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_bold.dtseries.nii"
+        )
     )
     bold_mask = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-1_"
+            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        )
     )
 
     # Let's initialize the ALFF node
@@ -136,9 +155,12 @@ def test_cifti_alff(data_dir, tmp_path_factory):
 
     # Let's get the mean of the data for later comparison
     original_alff = os.path.join(
-        tempdir, "compute_alff_wf/alff_compt/sub-color"
-        "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_"
-        "bold_alff.dtseries.nii"
+        tempdir,
+        (
+            "compute_alff_wf/alff_compt/sub-color"
+            "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_"
+            "bold_alff.dtseries.nii"
+        )
     )
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
