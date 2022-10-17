@@ -37,7 +37,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     maskfile = os.path.join(
         data_dir,
         (
-            "withoutfreesurfer/sub-01/func"
+            "withoutfreesurfer/sub-01/func/"
             "sub-01_task-mixedgamblestask_run-1_"
             "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
         )
@@ -104,7 +104,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
         (
             "fmriprep/sub-colornest001/ses-1/func/"
             "sub-colornest001_ses-1_task-rest_run-1_space-"
-            "fsLR_den-91k_bold.dtseries.nii",
+            "fsLR_den-91k_bold.dtseries.nii"
         )
     )
 
