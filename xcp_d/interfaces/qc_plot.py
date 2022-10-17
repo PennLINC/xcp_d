@@ -27,15 +27,25 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True, mandatory=True, desc="Raw bold file from fMRIPrep")
-    mask_file = File(exists=False, mandatory=False, desc="Mask file from nifti")
-    seg_file = File(exists=False, mandatory=False, desc="Seg file for nifti")
-    cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
-    tmask = File(exists=False, mandatory=False, desc="Temporal mask")
+    bold_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
+    )
+    tmask = File(exists=False, mandatory=False, desc="Temporal mask. Current unused.")
     dummytime = traits.Float(
-        exit=False, mandatory=False, default_value=0, desc="Dummy time to drop"
+        exists=False,
+        mandatory=False,
+        default_value=0,
+        desc="Dummy time to drop",
     )
     TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
+    head_radius = traits.Float(
+        exists=True,
+        mandatory=False,
+        default_value=50,
+        desc="Head radius; recommended value is 40 for babies",
+    )
     motion_filter_type = traits.Either(
         None,
         traits.Str,
@@ -43,16 +53,6 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
     )
     motion_filter_order = traits.Int(exists=False, mandatory=True)
-    head_radius = traits.Float(
-        exists=True,
-        mandatory=False,
-        default_value=50,
-        desc="Head radius; recommended value is 40 for babies",
-    )
-    bold2T1w_mask = File(exists=False, mandatory=False, desc="Bold mask in MNI")
-    bold2temp_mask = File(exists=False, mandatory=False, desc="Bold mask in T1W")
-    template_mask = File(exists=False, mandatory=False, desc="Template mask")
-    t1w_mask = File(exists=False, mandatory=False, desc="Mask in T1W")
     band_stop_min = traits.Either(
         None,
         traits.Float,
@@ -67,34 +67,22 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
+    fd_thresh = traits.Float(
+        exists=False,
+        mandatory=True,
+        desc="Framewise displacement threshold."
+    )
 
 
 class _CensoringPlotOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
-    raw_qcplot = File(exists=True, mandatory=True, desc="qc plot before regression")
-    clean_qcplot = File(exists=True, mandatory=True, desc="qc plot after regression")
+    out_file = File(exists=True, mandatory=True, desc="Censoring plot.")
 
 
 class CensoringPlot(SimpleInterface):
-    """Generate a quality control (QC) figure.
+    """Generate a censoring figure.
 
-    Examples
-    --------
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    computeqcwf = QCPlot()
-    computeqcwf.inputs.cleaned_file = datafile
-    computeqcwf.inputs.bold_file = rawbold
-    computeqcwf.inputs.TR = TR
-    computeqcwf.inputs.tmask = temporalmask
-    computeqcwf.inputs.mask_file = mask
-    computeqcwf.inputs.dummytime = dummytime
-    computeqcwf.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
+    This is a line plot showing both the raw and filtered framewise displacement time series,
+    with vertical lines/bands indicating volumes removed by the post-processing workflow.
     """
 
     input_spec = _CensoringPlotInputSpec
@@ -115,9 +103,7 @@ class CensoringPlot(SimpleInterface):
 
         fig, ax = plt.subplots(figsize=(16, 8))
 
-        time_array = np.arange(
-            0, self.inputs.TR * preproc_fd_timeseries.size, self.inputs.TR
-        )
+        time_array = np.arange(0, self.inputs.TR * preproc_fd_timeseries.size, self.inputs.TR)
 
         ax.plot(
             time_array,
@@ -125,14 +111,10 @@ class CensoringPlot(SimpleInterface):
             label="Raw Framewise Displacement",
             color="blue",
         )
-        ax.axhline(
-            self.inputs.fd_threshold, label="Outlier Threshold", color="gray", alpha=0.5
-        )
+        ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         if self.inputs.dummytime:
-            initial_volumes_to_drop = int(
-                np.ceil(self.inputs.dummytime / self.inputs.TR)
-            )
+            initial_volumes_to_drop = int(np.ceil(self.inputs.dummytime / self.inputs.TR))
             ax.axvspan(
                 0,
                 initial_volumes_to_drop,
@@ -140,6 +122,8 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
                 color="orange",
             )
+        else:
+            initial_volumes_to_drop = 0
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
@@ -156,25 +140,29 @@ class CensoringPlot(SimpleInterface):
                 head_radius=self.inputs.head_radius,
             )
 
-            tmask = filtered_fd_timeseries >= self.inputs.fd_threshold
-            tmask[:initial_volumes_to_drop] = False
-
             ax.plot(
                 time_array,
                 filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
                 color="red",
             )
+        else:
+            filtered_fd_timeseries = preproc_fd_timeseries.copy()
 
-            # Only plot censored volumes if any were flagged
-            if sum(tmask) > 0:
-                tmask_idx = np.where(tmask)[0]
-                for i_idx, idx in enumerate(tmask_idx):
-                    if i_idx == 0:
-                        label = "Censored Volumes"
-                    else:
-                        label = ""
-                    ax.axvline(idx * self.inputs.TR, label=label, alpha=0.5)
+        # NOTE: TS- Probably should replace with the actual tmask file.
+        tmask = filtered_fd_timeseries >= self.inputs.fd_thresh
+        tmask[:initial_volumes_to_drop] = False
+
+        # Only plot censored volumes if any were flagged
+        if sum(tmask) > 0:
+            tmask_idx = np.where(tmask)[0]
+            for i_idx, idx in enumerate(tmask_idx):
+                if i_idx == 0:
+                    label = "Censored Volumes"
+                else:
+                    label = ""
+
+                ax.axvline(idx * self.inputs.TR, label=label, alpha=0.5)
 
         ax.set_xlim(0, max(time_array))
         y_max = (
@@ -183,7 +171,7 @@ class CensoringPlot(SimpleInterface):
                     (
                         preproc_fd_timeseries,
                         filtered_fd_timeseries,
-                        [self.inputs.fd_threshold],
+                        [self.inputs.fd_thresh],
                     )
                 )
             )
@@ -191,18 +179,18 @@ class CensoringPlot(SimpleInterface):
         )
         ax.set_ylim(0, y_max)
         ax.set_xlabel("Time (seconds)", fontsize=20)
-        ax.set_ylabel("Millimeters", fontsize=20)
+        ax.set_ylabel("Movement (millimeters)", fontsize=20)
         ax.legend(fontsize=20)
         fig.tight_layout()
 
-        self._results["censoring_plot"] = fname_presuffix(
+        self._results["out_file"] = fname_presuffix(
             "censoring",
             suffix="_motion.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        fig.savefig(self._results["censoring_plot"])
+        fig.savefig(self._results["out_file"])
 
 
 class _QCPlotInputSpec(BaseInterfaceInputSpec):
@@ -212,7 +200,10 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
     tmask = File(exists=False, mandatory=False, desc="Temporal mask")
     dummytime = traits.Float(
-        exit=False, mandatory=False, default_value=0, desc="Dummy time to drop"
+        exists=False,
+        mandatory=False,
+        default_value=0,
+        desc="Dummy time to drop",
     )
     TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
     motion_filter_type = traits.Either(

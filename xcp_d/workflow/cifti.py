@@ -15,7 +15,7 @@ from num2words import num2words
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
-from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.concantenation import get_cifti_tr
@@ -330,7 +330,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            bold_file=bold_file,
             dummytime=dummytime,
             head_radius=head_radius,
             motion_filter_type=motion_filter_type,
@@ -341,6 +340,22 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name="qc_report",
         mem_gb=mem_gbx['resampled'],
         n_procs=omp_nthreads)
+
+    censor_report = pe.Node(
+        CensoringPlot(
+            TR=TR,
+            dummytime=dummytime,
+            head_radius=head_radius,
+            motion_filter_type=motion_filter_type,
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+            fd_thresh=fd_thresh,
+        ),
+        name="censor_report",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
 
     executivesummary_wf = init_execsummary_wf(
         TR=TR,
@@ -424,8 +439,11 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # qc report
     workflow.connect([
+        (inputnode, qcreport, [("bold_file", "bold_file")]),
+        (inputnode, censor_report, [("bold_file", "bold_file")]),
         (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
-        (censor_scrub, qcreport, [('tmask', 'tmask')]),
+        (censor_scrub, qcreport, [("tmask", "tmask")]),
+        (censor_scrub, censor_report, [('tmask', 'tmask')]),
         (qcreport, outputnode, [('qc_file', 'qc_file')])
     ])
 
@@ -483,6 +501,19 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name='ds_report_preprocessing',
         run_without_submitting=True)
 
+    ds_report_censoring = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            datatype="figures",
+            desc="censoring",
+            suffix="motion",
+            extension=".svg",
+        ),
+        name='ds_report_censoring',
+        run_without_submitting=False,
+    )
+
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
@@ -503,6 +534,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
+        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
