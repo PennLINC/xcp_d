@@ -29,17 +29,17 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     boldfile = os.path.join(
         data_dir,
         (
-            "withoutfreesurfer/sub-01/func",
+            "withoutfreesurfer/sub-01/func"
             "sub-01_task-mixedgamblestask_run-1"
-            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
+            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
         )
     )
     maskfile = os.path.join(
         data_dir,
         (
-            "withoutfreesurfer/sub-01/func",
+            "withoutfreesurfer/sub-01/func"
             "sub-01_task-mixedgamblestask_run-1_"
-            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz",
+            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
         )
     )
 

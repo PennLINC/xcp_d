@@ -61,7 +61,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     original_alff = os.path.join(
         tempdir,
         (
-            "compute_alff_wf / alff_compt/"
+            "compute_alff_wf/alff_compt/"
             "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
             "preproc_bold_alff.nii.gz"
         )
