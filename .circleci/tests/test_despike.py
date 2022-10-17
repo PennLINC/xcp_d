@@ -16,23 +16,23 @@ from xcp_d.utils.plot import _get_tr
 
 
 def test_nifti_despike(data_dir, tmp_path_factory):
-    """
-    Test Nifti despiking.
+    """Test Nifti despiking.
 
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
     # Read in the necessary inputs
     boldfile = os.path.join(
-        data_dir, "withoutfreesurfer/sub-01/func/"
-        "sub-01_task-mixedgamblestask_run-1_space-"
-        "MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+        data_dir,
+        "withoutfreesurfer/sub-01/func",
+        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
     )
     maskfile = os.path.join(
-        data_dir, "withoutfreesurfer/sub-01/func/"
-        "sub-01_task-mixedgamblestask_run-1_space-"
-        "MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+        data_dir,
+        "withoutfreesurfer/sub-01/func",
+        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz",
     )
+
     # Create some spikes in the second voxel
     file_data = read_ndata(boldfile, maskfile)
     voxel_data = file_data[2, :]  # a voxel across time
@@ -40,38 +40,47 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     voxel_data_std = np.std(voxel_data)
     voxel_data[2] = voxel_data_mean + 10 * voxel_data_std
     voxel_data[3] = voxel_data_mean - 10 * voxel_data_std
+
     # What's the min and max, i.e: the amplitude of the spikes created?
-    spiked_min = min(voxel_data)
-    spiked_max = max(voxel_data)
+    spiked_min = np.min(voxel_data)
+    spiked_max = np.max(voxel_data)
+
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
     tempdir = tmp_path_factory.mktemp("test_despike_nifti")
-    os.chdir(tempdir)
-    filename = "spikedfile.nii.gz"
+    spikedfile = os.path.join(tempdir, "spikedfile.nii.gz")
+    despiked_file = os.path.join(tempdir, "despikedfile.nii.gz")
     write_ndata(
         data_matrix=file_data,
         mask=maskfile,
         template=boldfile,
         TR=0.8,
-        filename=filename,
+        filename=spikedfile,
     )
-    spikedfile = filename
+
     # Let's despike the image and write it out to a temp file
-    tempdir = os.getcwd()
-    os.system("3dDespike -NEW -prefix " + tempdir + "/3dDespike.nii.gz " + spikedfile)
-    despiked_file = tempdir + "/3dDespike.nii.gz"
-    file_data = read_ndata(despiked_file, maskfile)
+    despike_nifti = Despike(outputtype="NIFTI_GZ", args="-NEW")
+    despike_nifti.inputs.in_file = spikedfile
+    despike_nifti.inputs.out_file = despiked_file
+    res = despike_nifti.run()
+
+    assert os.path.isfile(despiked_file)
+
+    file_data = read_ndata(res.outputs.out_file, maskfile)
     voxel_data = file_data[2, :]
+
     # What's the min and max of the despiked file?
-    despiked_min = min(voxel_data)
-    despiked_max = max(voxel_data)
+    despiked_min = np.min(voxel_data)
+    despiked_max = np.max(voxel_data)
+
     # Have the spikes been reduced?
     # i.e: has the minimum increased after despiking, and the maximum decreased?
     # Additionally, have the affines changed?
     assert spiked_min < despiked_min
     assert spiked_max > despiked_max
-    assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
+    # Are the affines the same before and after despiking?
+    assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
 def test_cifti_despike(data_dir, tmp_path_factory):
     """
