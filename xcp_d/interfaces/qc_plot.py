@@ -240,7 +240,7 @@ class QCPlot(SimpleInterface):
         mean_rms = np.mean(rmsd)
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
-        motionDVCorrInit = np.corrcoef(postproc_fd_timeseries, dvars_before_processing)[0][1]
+        motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
         motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
         rmsd_max_value = np.max(rmsd)
 
