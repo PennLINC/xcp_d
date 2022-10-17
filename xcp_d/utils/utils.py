@@ -488,3 +488,52 @@ def demean_detrend_data(data):
                         overwrite_data=False)  # Detrend data using linear method
 
     return detrended  # Subtract these predicted values from the demeaned data
+
+
+def denoise_with_nilearn(img, mask, confounds, low_pass, high_pass, TR, tmask, smoothing_fwhm):
+    import pandas as pd
+    from nilearn import image, signal, masking, maskers
+
+    sample_mask = pd.read_table(tmask).values
+
+    # Masker approach
+    masker = maskers.NiftiMasker(
+        mask_img=mask,
+        runs=None,
+        smoothing_fwhm=smoothing_fwhm,
+        standardize=False,
+        standardize_confounds=True,
+        detrend=True,
+        high_variance_confounds=False,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        t_r=TR,
+        target_affine=None,
+        target_shape=None,
+        mask_strategy=None,
+        mask_args=None,
+        dtype=None,
+        memory_level=1,
+        verbose=0,
+        reports=True,
+    )
+    clean_data = masker.fit_transform(X=img, confounds=confounds, sample_mask=sample_mask)
+    clean_img = masker.inverse_transform(clean_data)
+
+    # masking+nilearn.signal.clean approach
+    raw_data = masking.apply_mask(img, mask)
+    clean_data = signal.clean(
+        signals=raw_data,
+        detrend=True,
+        standardize=False,
+        sample_mask=sample_mask,
+        confounds=confounds,
+        standardize_confounds=True,
+        filter="butterworth",
+        low_pass=low_pass,
+        high_pass=high_pass,
+        t_r=TR,
+        ensure_finite=True,
+    )
+    clean_img = masking.unmask(clean_data, mask)
+    return clean_img
