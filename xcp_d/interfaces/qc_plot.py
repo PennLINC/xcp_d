@@ -129,6 +129,18 @@ class CensoringPlot(SimpleInterface):
             self.inputs.fd_threshold, label="Outlier Threshold", color="gray", alpha=0.5
         )
 
+        if self.inputs.dummytime:
+            initial_volumes_to_drop = int(
+                np.ceil(self.inputs.dummytime / self.inputs.TR)
+            )
+            ax.axvspan(
+                0,
+                initial_volumes_to_drop,
+                label="Dummy Volumes",
+                alpha=0.5,
+                color="orange",
+            )
+
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
             filtered_motion_df = load_motion(
@@ -164,18 +176,6 @@ class CensoringPlot(SimpleInterface):
                         label = ""
                     ax.axvline(idx * self.inputs.TR, label=label, alpha=0.5)
 
-        if self.inputs.dummytime:
-            initial_volumes_to_drop = int(
-                np.ceil(self.inputs.dummytime / self.inputs.TR)
-            )
-            ax.axvspan(
-                0,
-                initial_volumes_to_drop,
-                label="Dummy Volumes",
-                alpha=0.5,
-                color="orange",
-            )
-
         ax.set_xlim(0, max(time_array))
         y_max = (
             np.max(
@@ -197,7 +197,7 @@ class CensoringPlot(SimpleInterface):
 
         self._results["censoring_plot"] = fname_presuffix(
             "censoring",
-            suffix="_plot.svg",
+            suffix="_motion.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
@@ -291,35 +291,20 @@ class QCPlot(SimpleInterface):
             confound=preproc_motion_df,
             head_radius=self.inputs.head_radius,
         )
-
-        # Compute filtered framewise displacement to plot censoring
-        filtered_motion_df = load_motion(
-            confound_matrix.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=self.inputs.motion_filter_type,
-            motion_filter_order=self.inputs.motion_filter_order,
-            band_stop_min=self.inputs.band_stop_min,
-            band_stop_max=self.inputs.band_stop_max,
-        )
-        filtered_fd_timeseries = compute_fd(
-            confound=filtered_motion_df,
-            head_radius=self.inputs.head_radius,
-        )
+        postproc_fd_timeseries = preproc_fd_timeseries.copy()
 
         # Get rmsd
         rmsd = confound_matrix["rmsd"]
 
         if self.inputs.dummytime > 0:  # Calculate number of vols to drop if any
-            initial_volumes_to_drop = int(
-                np.ceil(self.inputs.dummytime / self.inputs.TR)
-            )
+            initial_volumes_to_drop = int(np.ceil(self.inputs.dummytime / self.inputs.TR))
         else:
             initial_volumes_to_drop = 0
 
-        # Drop volumes from fd_timeseries and rmsd df
+        # Drop volumes from time series
+        # NOTE: TS- Why drop dummy volumes in preprocessed plot?
         preproc_fd_timeseries = preproc_fd_timeseries[initial_volumes_to_drop:]
         postproc_fd_timeseries = postproc_fd_timeseries[initial_volumes_to_drop:]
-
         rmsd = rmsd[initial_volumes_to_drop:]
 
         if self.inputs.tmask:  # If a tmask is provided, find # vols censored
@@ -362,15 +347,16 @@ class QCPlot(SimpleInterface):
 
         # Get file names to write out & write data out
         if self.inputs.bold_file.endswith("nii.gz"):
-            temporary_file = (
-                os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]
-                + "/plot_niftix.nii.gz"
+            temporary_file = os.path.join(
+                os.path.split(os.path.abspath(self.inputs.cleaned_file))[0],
+                "plot_niftix.nii.gz",
             )
         else:
-            temporary_file = (
-                os.path.split(os.path.abspath(self.inputs.cleaned_file))[0]
-                + "/plot_ciftix.dtseries.nii"
+            temporary_file = os.path.join(
+                os.path.split(os.path.abspath(self.inputs.cleaned_file))[0],
+                "plot_ciftix.dtseries.nii",
             )
+
         write_ndata(
             data_matrix=raw_data_removed_TR,
             template=self.inputs.bold_file,
@@ -398,10 +384,10 @@ class QCPlot(SimpleInterface):
             bold_file_name_componentsox_inches="tight",
         )
 
-        # If censoring occurs
+        # If censoring occurs, censor the cleaned BOLD data and FD time series
         if num_censored_volumes > 0:
             # Apply temporal mask to time series
-            postproc_fd_timeseries = postproc_fd_timeseries[tmask == 0]
+            postproc_fd_timeseries = preproc_fd_timeseries[tmask == 0]
             rmsd = rmsd[tmask == 0]
             dvars_before_processing = dvars_before_processing[tmask == 0]
             dvars_after_processing = dvars_after_processing[tmask == 0]
@@ -437,29 +423,17 @@ class QCPlot(SimpleInterface):
         else:
             temporary_file = self.inputs.cleaned_file
 
-        confounds = pd.DataFrame(
+        postproc_confounds = pd.DataFrame(
             {
                 "FD": postproc_fd_timeseries,
                 "DVARS": dvars_after_processing,
             }
         )
 
-        mean_fd = np.mean(postproc_fd_timeseries)
-        mean_rms = np.mean(rmsd)
-        mean_dvars_before_processing = np.mean(dvars_before_processing)
-        mean_dvars_after_processing = np.mean(dvars_after_processing)
-        motionDVCorrInit = np.corrcoef(postproc_fd_timeseries, dvars_before_processing)[
-            0
-        ][1]
-        motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[
-            0
-        ][1]
-        rmsd_max_value = np.max(rmsd)
-
         postproc_fig = FMRIPlot(
             func_file=temporary_file,
             seg_file=self.inputs.seg_file,
-            data=confounds,
+            data=postproc_confounds,
             mask_file=self.inputs.mask_file,
         ).plot(labelsize=8)
 
@@ -467,6 +441,15 @@ class QCPlot(SimpleInterface):
             self._results["clean_qcplot"],
             bold_file_name_componentsox_inches="tight",
         )
+
+        # Calculate QC measures
+        mean_fd = np.mean(postproc_fd_timeseries)
+        mean_rms = np.mean(rmsd)
+        mean_dvars_before_processing = np.mean(dvars_before_processing)
+        mean_dvars_after_processing = np.mean(dvars_after_processing)
+        motionDVCorrInit = np.corrcoef(postproc_fd_timeseries, dvars_before_processing)[0][1]
+        motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
+        rmsd_max_value = np.max(rmsd)
 
         # A summary of all the values
         qc_values = {
@@ -480,21 +463,17 @@ class QCPlot(SimpleInterface):
             "motionDVCorrInit": [motionDVCorrInit],
             "motionDVCorrFinal": [motionDVCorrFinal],
         }
+
         # Get the different components in the bold file name
         # eg: ['sub-colornest001', 'ses-1'], etc.
         _, bold_file_name = os.path.split(self.inputs.bold_file)
         bold_file_name_components = bold_file_name.split("_")
-        # Initialize dictionary
+
+        # Fill out dictionary with entities from filename
         qc_dictionary = {}
-        for i in range(len(bold_file_name_components) - 1):
-            # Loop through and update the dictionary with the value of relevant components
-            qc_dictionary.update(
-                {
-                    bold_file_name_components[i]
-                    .split("-")[0]: bold_file_name_components[i]
-                    .split("-")[1]
-                }
-            )
+        for entity in bold_file_name_components[:-1]:
+            qc_dictionary.update({entity.split("-")[0]: entity.split("-")[1]})
+
         qc_dictionary.update(qc_values)
         if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
             # Compute quality of registration
