@@ -191,6 +191,7 @@ class CensoringPlot(SimpleInterface):
         )
 
         fig.savefig(self._results["out_file"])
+        return runtime
 
 
 class _QCPlotInputSpec(BaseInterfaceInputSpec):
