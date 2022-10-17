@@ -65,7 +65,7 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
     flagged by the temporal mask.
 
     NOTE: TS- Why are slice times being inferred from the number of volumes?
-    Am I missing somehting?
+    Am I missing something?
 
     Parameters
     ----------

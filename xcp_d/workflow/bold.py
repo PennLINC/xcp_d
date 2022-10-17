@@ -181,7 +181,7 @@ def init_boldpostprocess_wf(
 
     workflow = Workflow(name=name)
 
-    filter_str = ""
+    filter_str, filter_post_str = "", ""
     if motion_filter_type:
         if motion_filter_type == "notch":
             filter_sub_str = (
@@ -199,10 +199,14 @@ def init_boldpostprocess_wf(
             f"the six translation and rotation head motion traces were {filter_sub_str}. "
             "Next, "
         )
+        filter_post_str = (
+            "The filtered versions of the motion traces and framewise displacement were not used "
+            "for denoising."
+        )
 
     fd_str = (
         f"{filter_str}framewise displacement was calculated using the formula from "
-        f"@power_fd_dvars, with a head radius of {head_radius} mm."
+        f"@power_fd_dvars, with a head radius of {head_radius} mm"
     )
 
     dummytime_str = ""
@@ -214,19 +218,26 @@ def init_boldpostprocess_wf(
             "regressors were discarded, then "
         )
 
+    if despike:
+        despike_str = "despiked, mean-centered, and linearly detrended"
+    else:
+        despike_str = "mean-centered and linearly detrended"
+
     workflow.__desc__ = f"""\
 For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
 the following post-processing was performed.
-First, {dummytime_str}{fd_str}.
-Volumes with framewise-displacement greater than {fd_thresh} mm
-[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
-regression.
-Before nuisance regression, but after censoring, the BOLD data were mean-centered and linearly
-detrended.
+First, {dummytime_str}outlier detection was performed.
+In order to identify high-motion outlier volumes, {fd_str}.
+Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
+{fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
+{filter_post_str}
+Before nuisance regression, but after censoring, the BOLD data were {despike_str}.
 {stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
 These nuisance regressors were regressed from the BOLD data using linear regression -
 as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
-Residual timeseries from this regression were then band-pass filtered to retain signals within the
+Any volumes censored earlier in the workflow were then interpolated in the residual time series
+produced by the regression.
+The filled-out residual timeseries were then band-pass filtered to retain signals within the
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
