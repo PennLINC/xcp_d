@@ -108,7 +108,8 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     reho_wf.run()
     # Has the new ReHo's mean decreased?
     new_reho = os.path.join(
-        tempdir, "surface_reho_wf/reho_lh/correlation_matrix_test.dtseries.shape.gii"
+        tempdir,
+        "surface_reho_wf/reho_lh/correlation_matrix_test.dtseries.shape.gii",
     )
     new_reho_mean = nb.load(new_reho).agg_data().mean()
     assert new_reho_mean < original_reho_mean
