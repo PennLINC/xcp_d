@@ -8,7 +8,7 @@ import numpy as np
 import sklearn
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
-from nipype.interfaces.afni.preprocessing import Despike
+from nipype.interfaces.afni import Despike
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
