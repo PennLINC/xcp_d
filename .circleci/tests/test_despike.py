@@ -7,13 +7,15 @@ Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
 import os
-import numpy as np
+
 import nibabel as nb
-from nipype.pipeline import engine as pe
-from xcp_d.interfaces.regression import CiftiDespike
+import numpy as np
 from nipype.interfaces.afni import Despike
-from xcp_d.utils.write_save import read_ndata, write_ndata
+from nipype.pipeline import engine as pe
+
+from xcp_d.interfaces.regression import CiftiDespike
 from xcp_d.utils.plot import _get_tr
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def test_nifti_despike(data_dir, tmp_path_factory):
@@ -60,7 +62,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     )
 
     # Let's despike the image and write it out to a temp file
-    despike_nifti = pe.Node(Despike(outputtype="NIFTI_GZ", args="-NEW"), name='Despike')
+    despike_nifti = pe.Node(Despike(outputtype="NIFTI_GZ", args="-NEW"), name="Despike")
     despike_nifti.inputs.in_file = spikedfile
     despike_nifti.inputs.out_file = despiked_file
     res = despike_nifti.run()
@@ -83,6 +85,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     # Are the affines the same before and after despiking?
     assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
+
 def test_cifti_despike(data_dir, tmp_path_factory):
     """
     Test Cifti despiking.
@@ -91,9 +94,10 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     boldfile = os.path.join(
-        data_dir, "fmriprep/sub-colornest001/ses-1/func/"
+        data_dir,
+        "fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-"
-        "fsLR_den-91k_bold.dtseries.nii"
+        "fsLR_den-91k_bold.dtseries.nii",
     )
     # Let's add some noise
     file_data = read_ndata(boldfile)
@@ -109,14 +113,12 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     file_data[2, :] = voxel_data
     tempdir = tmp_path_factory.mktemp("test_despike_cifti")
     filename = os.path.join(tempdir, "test.dtseries.nii")
-    write_ndata(data_matrix=file_data, template=boldfile, TR=0.8,
-                filename=filename)
+    write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
     # Let's despike the data
     # Run the node the same way it's run in XCP
     in_file = os.path.join(tempdir, filename)
     TR = _get_tr(nb.load(filename))
-    despike3d = pe.Node(CiftiDespike(TR=TR), name="cifti_despike",
-                        mem_gb=4, n_procs=2)
+    despike3d = pe.Node(CiftiDespike(TR=TR), name="cifti_despike", mem_gb=4, n_procs=2)
     despike3d.inputs.in_file = in_file
     results = despike3d.run()
     # Let's write out the file and read it in as a matrix
