@@ -6,6 +6,7 @@ import os
 
 import nibabel as nb
 import nilearn
+from nilearn import image
 import numpy as np
 import pandas as pd
 from nilearn.input_data import NiftiLabelsMasker
@@ -13,7 +14,10 @@ from nilearn.input_data import NiftiLabelsMasker
 from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflow.connectivity import init_cifti_conts_wf, init_fcon_ts_wf
+from xcp_d.workflow.connectivity import (
+    init_nifti_functional_connectivity_wf,
+    init_cifti_functional_connectivity_wf
+)
 
 
 def nifti_conn_test(data_dir, tmp_path_factory):
@@ -64,15 +68,16 @@ def nifti_conn_test(data_dir, tmp_path_factory):
             "from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
         )
     )
-    fcon_ts_wf = init_fcon_ts_wf(
+
+    fcon_ts_wf = init_nifti_functional_connectivity_wf(
         mem_gb=4,
-        mni_to_t1w=mni_to_t1w,
-        t1w_to_native=_t12native(bold_file),
-        bold_file=bold_file,
         name="fcons_ts_wf",
         omp_nthreads=2,
     )
+    fcon_ts_wf.inputs.inputnode.mni_to_t1w = mni_to_t1w,
+    fcon_ts_wf.inputs.inputnode.t1w_to_native = _t12native(bold_file),
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
+    fcon_ts_wf.inputs.inputnode.bold_file = bold_file
     fcon_ts_wf.inputs.inputnode.ref_file = os.path.join(
         data_dir,
         (
@@ -124,7 +129,7 @@ def cifti_con_test(data_dir, tmp_path_factory):
     boldfile = os.path.join(
         data_dir,
         (
-            "fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-",
+            "fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-"
             "fsLR_den-91k_bold.dtseries.nii"
         )
     )
@@ -148,12 +153,12 @@ def cifti_con_test(data_dir, tmp_path_factory):
     fake_bold_file = filename
     # Create the node and a tempdir to write its results out to
     tmpdir = tmp_path_factory.mktemp("fcon_cifti_test_2")
-    cifti_conts_wf = init_cifti_conts_wf(
+    cifti_conts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=4, name="cifti_ts_con_wf", omp_nthreads=2
     )
     cifti_conts_wf.base_dir = tmpdir
     # Run the node
-    cifti_conts_wf.inputs.inputnode.clean_cifti = fake_bold_file
+    cifti_conts_wf.inputs.inputnode.clean_bold = fake_bold_file
     cifti_conts_wf.run()
     # Let's find the correct parcellated file
     for file in os.listdir(os.path.join(
