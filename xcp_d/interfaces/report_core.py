@@ -4,10 +4,13 @@
 
 This is from niworkflows, a patch will be submitted.
 """
-import glob as glob
+import glob
+import os
 from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
+
+from xcp_d.utils.concantenation import _getsesid
 
 
 class Report(_Report):
@@ -142,7 +145,7 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/dcanhcp'
             elif input_type == 'hcp':
                 fmri_dir = str(work_dir) + '/hcp/hcp'
-            from xcp_d.utils import concatenatebold
+            from xcp_d.utils.concantenation import concatenatebold
             print('Concatenating bold files ...')
             concatenatebold(subjlist=subject_list,
                             fmridir=str(fmri_dir),
@@ -152,29 +155,16 @@ def generate_reports(subject_list,
 
         from xcp_d.interfaces.layout_builder import LayoutBuilder
         for subject_label in subject_list:
-            brainplotfile = str(
-                glob.glob(
-                    str(Path(output_dir)) + '/xcp_d/sub-'
-                    + str(subject_label)
-                    + '/figures/*_desc-brainplot_T1w.html')[0])
+            brainplotfile = glob.glob(
+                os.path.join(
+                    output_dir,
+                    f'xcp_d/sub-{subject_label}',
+                    'figures/*_bold.svg',
+                ),
+            )[0]
             LayoutBuilder(html_path=str(Path(output_dir)) + '/xcp_d/',
                           subject_id=subject_label,
                           session_id=_getsesid(brainplotfile))
 
         print('Reports generated successfully')
     return errno
-
-
-def _getsesid(filename):
-    """Get session ID from filename."""
-    import os
-    ses_id = None
-    filex = os.path.basename(filename)
-
-    file_id = filex.split('_')
-    for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
-            break
-
-    return ses_id

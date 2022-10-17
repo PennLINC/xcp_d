@@ -1,12 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for post-processing CIFTI-format BOLD data.
-
-post processing the bold
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: init_ciftipostprocess_wf
-
-"""
+"""Workflows for post-processing CIFTI-format BOLD data."""
 import os
 
 import nibabel as nb
@@ -18,14 +12,16 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import DerivativesDataSink as BIDSDerivativesDataSink
+from xcp_d.utils.concantenation import get_cifti_tr
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
-from xcp_d.workflow.connectivity import init_cifti_conts_wf
+from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
@@ -34,28 +30,30 @@ from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_
 LOGGER = logging.getLogger('nipype.workflow')
 
 
-def init_ciftipostprocess_wf(cifti_file,
-                             lower_bpf,
-                             upper_bpf,
-                             bpf_order,
-                             motion_filter_type,
-                             motion_filter_order,
-                             bandpass_filter,
-                             band_stop_min,
-                             band_stop_max,
-                             smoothing,
-                             head_radius,
-                             params,
-                             output_dir,
-                             custom_confounds,
-                             omp_nthreads,
-                             dummytime,
-                             fd_thresh,
-                             mni_to_t1w,
-                             despike,
-                             num_cifti,
-                             layout=None,
-                             name='cifti_process_wf'):
+@fill_doc
+def init_ciftipostprocess_wf(
+    bold_file,
+    lower_bpf,
+    upper_bpf,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
+    bandpass_filter,
+    band_stop_min,
+    band_stop_max,
+    smoothing,
+    head_radius,
+    params,
+    output_dir,
+    custom_confounds,
+    omp_nthreads,
+    dummytime,
+    fd_thresh,
+    despike,
+    n_runs,
+    layout=None,
+    name='cifti_process_wf',
+):
     """Organize the cifti processing workflow.
 
     Workflow Graph
@@ -65,75 +63,68 @@ def init_ciftipostprocess_wf(cifti_file,
 
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
-                bold_file,
-                lower_bpf,
-                upper_bpf,
-                bpf_order,
-                motion_filter_type,
-                motion_filter_order,
-                band_stop_min,
-                band_stop_max,
-                despike,
-                smoothing,
-                head_radius,
-                params,
-                custom_confounds,
-                omp_nthreads,
-                dummytime,
-                output_dir,
-                fd_thresh,
-                num_cifti,
-                template='MNI152NLin2009cAsym',
+                bold_file="/path/to/cifti.dtseries.nii",
+                bandpass_filter=True,
+                lower_bpf=0.009,
+                upper_bpf=0.08,
+                bpf_order=2,
+                motion_filter_type=None,
+                motion_filter_order=4,
+                band_stop_min=0,
+                band_stop_max=0,
+                smoothing=6,
+                head_radius=50,
+                params="36P",
+                output_dir=".",
+                custom_confounds=None,
+                omp_nthreads=1,
+                dummytime=0,
+                fd_thresh=0.2,
+                despike=False,
+                n_runs=1,
                 layout=None,
-                name='cifti_postprocess_wf',)
+                name='cifti_postprocess_wf',
+            )
 
     Parameters
     ----------
-    bold_file: str
-        bold file for post processing
-    lower_bpf : float
-        Lower band pass filter
-    upper_bpf : float
-        Upper band pass filter
-    layout : BIDSLayout object
-        BIDS dataset layout
-    despike: bool
-        afni depsike
-    motion_filter_type: str
-        respiratory motion filter type: lp or notch
-    motion_filter_order: int
-        order for motion filter
-    band_stop_min: float
-        respiratory minimum frequency in breathe per minutes(bpm)
-    band_stop_max,: float
-        respiratory maximum frequency in breathe per minutes(bpm)
-    layout : BIDSLayout object
-        BIDS dataset layout
-    omp_nthreads : int
-        Maximum number of threads an individual process may use
-    output_dir : str
-        Directory in which to save xcp_d output
-    fd_thresh
-        Criterion for flagging framewise displacement outliers
-    head_radius : float
-        radius of the head for FD computation
-    params: str
-        nuissance regressors to be selected from fmriprep regressors
-    smoothing: float
-        smooth the derivatives output with kernel size (fwhm)
+    bold_file
+    %(bandpass_filter)s
+    %(lower_bpf)s
+    %(upper_bpf)s
+    %(bpf_order)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(smoothing)s
+    %(head_radius)s
+    %(params)s
+    %(output_dir)s
     custom_confounds: str
         path to cusrtom nuissance regressors
-    scrub: bool
-        remove the censored volumes
+    %(omp_nthreads)s
     dummytime: float
         the first few seconds to be removed before postprocessing
+    %(fd_thresh)s
+    despike: bool
+        afni depsike
+    n_runs
+    layout : BIDSLayout object
+        BIDS dataset layout
+    %(name)s
+        Default is 'cifti_postprocess_wf'.
 
     Inputs
     ------
-    cifti_file
+    bold_file
         CIFTI file
-    custom_conf
+    custom_confounds
         custom regressors
+    t1w
+    t1seg
+    %(mni_to_t1w)s
+    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -149,93 +140,121 @@ def init_ciftipostprocess_wf(cifti_file,
         reho left hemisphere
     reho_rh
         reho right hemisphere
-    sc217_ts
-        schaefer 200 timeseries
-    sc217_fc
-        schaefer 200 func matrices
-    sc417_ts
-        schaefer 400 timeseries
-    sc417_fc
-        schaefer 400 func matrices
-    gs360_ts
-        glasser 360 timeseries
-    gs360_fc
-        glasser 360  func matrices
-    gd333_ts
-        gordon 333 timeseries
-    gd333_fc
-        gordon 333 func matrices
+    %(atlas_names)s
+    %(timeseries)s
+    %(correlations)s
     qc_file
         quality control files
     tmask
         binary mask of frames with FD below specified threshold
-    """
-    workflow = Workflow(name=name)
-    workflow.__desc__ = f"""
-For each of the {num2words(num_cifti)} CIFTI runs found per subject (across all
-tasks and sessions), the following post-processing was performed:
-"""
 
-    TR = get_cifti_tr(cifti_file)
+    References
+    ----------
+    .. footbibliography::
+    """
+    TR = get_cifti_tr(bold_file)
     if TR is None:
-        metadata = layout.get_metadata(cifti_file)
+        metadata = layout.get_metadata(bold_file)
         TR = metadata['RepetitionTime']
+
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
-        confounds_tsv = get_confounds_tsv(cifti_file)
+        confounds_tsv = get_confounds_tsv(bold_file)
     except Exception:
-        raise Exception(f"Unable to find confounds file for {cifti_file}.")
+        raise Exception(f"Unable to find confounds file for {bold_file}.")
 
-    # TR = get_cifti_tr(cifti_file=cifti_file)
+    workflow = Workflow(name=name)
+
+    filter_str = ""
+    if motion_filter_type:
+        if motion_filter_type == "notch":
+            filter_sub_str = (
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a notch filter, based on "
+                "@fair2020correction"
+            )
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute, "
+                "based on @fair2020correction and @gratton2020removal"
+            )
+
+        filter_str = (
+            f"the six translation and rotation head motion traces were {filter_sub_str}. "
+            "Next, "
+        )
+
+    fd_str = (
+        f"{filter_str}framewise displacement was calculated using the formula from "
+        f"@power_fd_dvars, with a head radius of {head_radius} mm"
+    )
+
+    dummytime_str = ""
     initial_volumes_to_drop = 0
     if dummytime > 0:
-        initial_volumes_to_drop = int(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering of the data,  the first
-{num2words(initial_volumes_to_drop)} were discarded.
-Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
-with framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
-flagged as outliers and excluded from nuisance regression.
-"""
+        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
+        dummytime_str = (
+            f"the first {num2words(initial_volumes_to_drop)} of both the BOLD data and nuisance "
+            "regressors were discarded, then "
+        )
 
-    else:
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuissance regression and filtering,both the nuisance regressors and volumes were demeaned
-and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
-[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuissance
+    workflow.__desc__ = f"""\
+For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
+the following post-processing was performed.
+First, {dummytime_str}{fd_str}.
+Volumes with framewise-displacement greater than {fd_thresh} mm
+[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
 regression.
-"""
-
-    workflow.__desc__ = workflow.__desc__ + f""" \
-{stringforparams(params=params)} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].
+Before nuisance regression, but after censoring, the BOLD data were mean-centered and linearly
+detrended.
+{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
 These nuisance regressors were regressed from the BOLD data using linear regression -
 as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
 Residual timeseries from this regression were then band-pass filtered to retain signals within the
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['cifti_file', 'custom_confounds', 't1w', 't1seg', 'fmriprep_confounds_tsv']),
-        name='inputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold_file',
+                'custom_confounds',
+                't1w',
+                't1seg',
+                'mni_to_t1w',
+                'fmriprep_confounds_tsv',
+            ],
+        ),
+        name='inputnode',
+    )
 
-    inputnode.inputs.cifti_file = cifti_file
+    inputnode.inputs.bold_file = bold_file
     inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=[
-        'processed_bold', 'smoothed_bold', 'alff_out', 'smoothed_alff',
-        'reho_lh', 'reho_rh', 'sc117_ts', 'sc117_fc', 'sc217_ts', 'sc217_fc',
-        'sc317_ts', 'sc317_fc', 'sc517_ts', 'sc517_fc', 'sc517_ts', 'sc517_fc',
-        'sc617_ts', 'sc617_fc', 'sc717_ts', 'sc717_fc', 'sc817_ts', 'sc817_fc',
-        'sc917_ts', 'sc917_fc', 'sc1017_ts', 'sc1017_fc', 'gs360_ts',
-        'gs360_fc', 'gd333_ts', 'gd333_fc', 'ts50_ts', 'ts50_fc', 'qc_file',
-        'fd', 'tmask'
-    ]),
-        name='outputnode')
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'processed_bold',
+                'smoothed_bold',
+                'alff_out',
+                'smoothed_alff',
+                'reho_lh',
+                'reho_rh',
+                'atlas_names',
+                'timeseries',
+                'correlations',
+                'qc_file',
+                'fd',
+                'tmask',
+            ],
+        ),
+        name='outputnode',
+    )
 
-    mem_gbx = _create_mem_gb(cifti_file)
+    mem_gbx = _create_mem_gb(bold_file)
 
-    cifti_conts_wf = init_cifti_conts_wf(
+    fcon_ts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
         name='cifti_ts_con_wf',
         omp_nthreads=omp_nthreads)
@@ -257,7 +276,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
-        bold_file=cifti_file,
+        bold_file=bold_file,
         params=params,
         cifti=True,
         output_dir=output_dir,
@@ -270,8 +289,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
         custom_confounds=custom_confounds,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         head_radius=head_radius,
@@ -300,7 +319,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     regression_wf = pe.Node(
         Regress(TR=TR,
-                original_file=cifti_file),
+                original_file=bold_file),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -314,23 +333,26 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            bold_file=cifti_file,
+            bold_file=bold_file,
             dummytime=dummytime,
             head_radius=head_radius,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min),
+            motion_filter_type=motion_filter_type,
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+        ),
         name="qc_report",
         mem_gb=mem_gbx['resampled'],
         n_procs=omp_nthreads)
 
     executivesummary_wf = init_execsummary_wf(
         TR=TR,
-        bold_file=cifti_file,
+        bold_file=bold_file,
         layout=layout,
         output_dir=output_dir,
-        mni_to_t1w=mni_to_t1w,
         omp_nthreads=omp_nthreads,
-        mem_gb=mem_gbx['timeseries'])
+        mem_gb=mem_gbx['timeseries'],
+    )
 
     # Remove TR first:
     if dummytime > 0:
@@ -340,7 +362,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('cifti_file', 'bold_file')]),
+            (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
             (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
         workflow.connect([
@@ -353,7 +375,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         # Censor Scrub:
         workflow.connect([
             (inputnode, censor_scrub, [
-                ('cifti_file', 'in_file'),
+                ('bold_file', 'in_file'),
                 ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
             ])])
 
@@ -381,7 +403,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # interpolation workflow
     workflow.connect([
-        (inputnode, interpolate_wf, [('cifti_file', 'bold_file')]),
+        (inputnode, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
@@ -395,8 +417,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, cifti_conts_wf,
-                       [('filtered_file', 'inputnode.clean_cifti')])])
+    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
 
     # reho and alff
     workflow.connect([(filtering_wf, alff_compute_wf,
@@ -420,32 +441,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
         (reho_compute_wf, outputnode, [('outputnode.lh_reho', 'reho_lh'),
                                        ('outputnode.rh_reho', 'reho_rh')]),
-        (cifti_conts_wf, outputnode, [('outputnode.sc117_ts', 'sc117_ts'),
-                                      ('outputnode.sc117_fc', 'sc117_fc'),
-                                      ('outputnode.sc217_ts', 'sc217_ts'),
-                                      ('outputnode.sc217_fc', 'sc217_fc'),
-                                      ('outputnode.sc317_ts', 'sc317_ts'),
-                                      ('outputnode.sc317_fc', 'sc317_fc'),
-                                      ('outputnode.sc417_ts', 'sc417_ts'),
-                                      ('outputnode.sc417_fc', 'sc417_fc'),
-                                      ('outputnode.sc517_ts', 'sc517_ts'),
-                                      ('outputnode.sc517_fc', 'sc517_fc'),
-                                      ('outputnode.sc617_ts', 'sc617_ts'),
-                                      ('outputnode.sc617_fc', 'sc617_fc'),
-                                      ('outputnode.sc717_ts', 'sc717_ts'),
-                                      ('outputnode.sc717_fc', 'sc717_fc'),
-                                      ('outputnode.sc817_ts', 'sc817_ts'),
-                                      ('outputnode.sc817_fc', 'sc817_fc'),
-                                      ('outputnode.sc917_ts', 'sc917_ts'),
-                                      ('outputnode.sc917_fc', 'sc917_fc'),
-                                      ('outputnode.sc1017_ts', 'sc1017_ts'),
-                                      ('outputnode.sc1017_fc', 'sc1017_fc'),
-                                      ('outputnode.gs360_ts', 'gs360_ts'),
-                                      ('outputnode.gs360_fc', 'gs360_fc'),
-                                      ('outputnode.gd333_ts', 'gd333_ts'),
-                                      ('outputnode.gd333_fc', 'gd333_fc'),
-                                      ('outputnode.ts50_ts', 'ts50_ts'),
-                                      ('outputnode.ts50_fc', 'ts50_fc')])
+        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
+                                  ('outputnode.correlations', 'correlations'),
+                                  ('outputnode.timeseries', 'timeseries')]),
     ])
 
     # write derivatives
@@ -464,51 +462,28 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (reho_compute_wf, write_derivative_wf,
          [('outputnode.rh_reho', 'inputnode.reho_rh'),
           ('outputnode.lh_reho', 'inputnode.reho_lh')]),
-        (cifti_conts_wf, write_derivative_wf,
-         [('outputnode.sc117_ts', 'inputnode.sc117_ts'),
-          ('outputnode.sc117_fc', 'inputnode.sc117_fc'),
-          ('outputnode.sc217_ts', 'inputnode.sc217_ts'),
-          ('outputnode.sc217_fc', 'inputnode.sc217_fc'),
-          ('outputnode.sc317_ts', 'inputnode.sc317_ts'),
-          ('outputnode.sc317_fc', 'inputnode.sc317_fc'),
-          ('outputnode.sc417_ts', 'inputnode.sc417_ts'),
-          ('outputnode.sc417_fc', 'inputnode.sc417_fc'),
-          ('outputnode.sc517_ts', 'inputnode.sc517_ts'),
-          ('outputnode.sc517_fc', 'inputnode.sc517_fc'),
-          ('outputnode.sc617_ts', 'inputnode.sc617_ts'),
-          ('outputnode.sc617_fc', 'inputnode.sc617_fc'),
-          ('outputnode.sc717_ts', 'inputnode.sc717_ts'),
-          ('outputnode.sc717_fc', 'inputnode.sc717_fc'),
-          ('outputnode.sc817_ts', 'inputnode.sc817_ts'),
-          ('outputnode.sc817_fc', 'inputnode.sc817_fc'),
-          ('outputnode.sc917_ts', 'inputnode.sc917_ts'),
-          ('outputnode.sc917_fc', 'inputnode.sc917_fc'),
-          ('outputnode.sc1017_ts', 'inputnode.sc1017_ts'),
-          ('outputnode.sc1017_fc', 'inputnode.sc1017_fc'),
-          ('outputnode.gs360_ts', 'inputnode.gs360_ts'),
-          ('outputnode.gs360_fc', 'inputnode.gs360_fc'),
-          ('outputnode.gd333_ts', 'inputnode.gd333_ts'),
-          ('outputnode.gd333_fc', 'inputnode.gd333_fc'),
-          ('outputnode.ts50_ts', 'inputnode.ts50_ts'),
-          ('outputnode.ts50_fc', 'inputnode.ts50_fc')]),
+        (fcon_ts_wf, write_derivative_wf,
+            [('outputnode.atlas_names', 'inputnode.atlas_names'),
+             ('outputnode.correlations', 'inputnode.correlations'),
+             ('outputnode.timeseries', 'inputnode.timeseries')]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=cifti_file, TR=TR),
+    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
                             run_without_submitting=True)
 
     ds_report_qualitycontrol = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         desc='qualitycontrol',
-        source_file=cifti_file,
+        source_file=bold_file,
         datatype="figures"),
         name='ds_report_qualitycontrol',
         run_without_submitting=True)
 
     ds_report_preprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=cifti_file,
+        source_file=bold_file,
         desc='preprocessing',
         datatype="figures"),
         name='ds_report_preprocessing',
@@ -516,7 +491,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=cifti_file,
+        source_file=bold_file,
         desc='postprocessing',
         datatype="figures"),
         name='ds_report_postprocessing',
@@ -524,7 +499,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        source_file=cifti_file,
+        source_file=bold_file,
         desc='connectvityplot',
         datatype="figures"),
         name='ds_report_connectivity',
@@ -535,16 +510,15 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (cifti_conts_wf, ds_report_connectivity, [('outputnode.connectplot',
-                                                   "in_file")])
+        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
 
     # exexetive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
-                                          ('cifti_file', 'inputnode.bold_file')
-                                          ]),
+                                          ('bold_file', 'inputnode.bold_file'),
+                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
                                               ]),
         (filtering_wf, executivesummary_wf, [('filtered_file',
@@ -566,16 +540,3 @@ def _create_mem_gb(bold_fname):
     }
 
     return mem_gbz
-
-
-# RF: shouldn't be here
-class DerivativesDataSink(BIDSDerivativesDataSink):
-    """Defines the data sink for the workflow."""
-
-    out_path_base = 'xcp_d'
-
-
-def get_cifti_tr(cifti_file):
-    """Extract TR from CIFTI file."""
-    ciaxis = nb.load(cifti_file).header.get_axis(0)
-    return ciaxis.step

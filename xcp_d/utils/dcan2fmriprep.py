@@ -239,16 +239,6 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
         writejson(dcanjosn, out_dir + '/dataset_description.json')
 
 
-# def symlinkfiles(src, dest):
-# if os.path.islink(dest):
-# os.remove(dest)
-# os.symlink(src,dest)
-# else:
-# os.symlink(src,dest)
-
-# return dest
-
-
 def copyfileobj_example(src, dst):
     """Copy a file from source to dest.
 

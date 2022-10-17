@@ -1,9 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Quality control plotting interfaces.
-
-.. autofunction:: qc
-"""
+"""Quality control plotting interfaces."""
 import os
 
 import numpy as np
@@ -21,7 +18,7 @@ from xcp_d.utils.concantenation import compute_dvars
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
-from xcp_d.utils.plot import fMRIPlot
+from xcp_d.utils.plot import FMRIPlot
 from xcp_d.utils.qcmetrics import compute_registration_qc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -42,11 +39,16 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
                              mandatory=False,
                              default_value=0,
                              desc="Dummy time to drop")
-    TR = traits.Float(exit=True, mandatory=True, desc="Repetition Time")
-    motion_filter_type = traits.Float(exists=False, mandatory=False)
-    motion_filter_order = traits.Int(exists=False, mandatory=False)
+    TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        exists=False,
+        mandatory=True,
+    )
+    motion_filter_order = traits.Int(exists=False, mandatory=True)
     head_radius = traits.Float(
-        exits=True,
+        exists=True,
         mandatory=False,
         default_value=50,
         desc="Head radius; recommended value is 40 for babies")
@@ -54,23 +56,27 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold2temp_mask = File(exists=False, mandatory=False, desc="Bold mask in T1W")
     template_mask = File(exists=False, mandatory=False, desc="Template mask")
     t1w_mask = File(exists=False, mandatory=False, desc="Mask in T1W")
-    low_freq = traits.Float(
-        exit=False,
-        mandatory=False,
-        desc='Low frequency for Notch filter in BPM')
-    high_freq = traits.Float(
-        exit=False,
-        mandatory=False,
-        desc='High frequency for Notch filter in BPM')
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
+        exists=False,
+        mandatory=True,
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
+        exists=False,
+        mandatory=True,
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
 
 
 class _QCPlotOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, manadatory=True, desc="qc file in tsv")
+    qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True,
-                      manadatory=True,
+                      mandatory=True,
                       desc="qc plot before regression")
     clean_qcplot = File(exists=True,
-                        manadatory=True,
+                        mandatory=True,
                         desc="qc plot after regression")
 
 
@@ -107,7 +113,9 @@ class QCPlot(SimpleInterface):
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
-            freqband=[self.inputs.low_freq, self.inputs.high_freq])
+            band_stop_min=self.inputs.band_stop_min,
+            band_stop_max=self.inputs.band_stop_max,
+        )
         # Pull out motion confounds
         motion_df = pd.DataFrame(data=motion_conf.values,
                                  columns=[
@@ -173,7 +181,7 @@ class QCPlot(SimpleInterface):
 
         confounds = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_before_processing})
 
-        fig = fMRIPlot(func_file=temporary_file,
+        fig = FMRIPlot(func_file=temporary_file,
                        seg_file=self.inputs.seg_file,
                        data=confounds,
                        mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -215,7 +223,7 @@ class QCPlot(SimpleInterface):
                         filename=temporary_file,
                         TR=self.inputs.TR)
 
-            figure = fMRIPlot(func_file=temporary_file,
+            figure = FMRIPlot(func_file=temporary_file,
                               seg_file=self.inputs.seg_file,
                               data=confounds,
                               mask_file=self.inputs.mask_file).plot(labelsize=8)
@@ -234,7 +242,7 @@ class QCPlot(SimpleInterface):
                                              maskfile=self.inputs.mask_file)
             confounds = pd.DataFrame({'FD': fd_timeseries, 'DVARS': dvars_after_processing})
 
-            figure = fMRIPlot(func_file=self.inputs.cleaned_file,
+            figure = FMRIPlot(func_file=self.inputs.cleaned_file,
                               seg_file=self.inputs.seg_file,
                               data=confounds,
                               mask_file=self.inputs.mask_file).plot(labelsize=8)

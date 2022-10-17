@@ -178,22 +178,31 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
                                mandatory=False,
                                default_value=50,
                                desc="Head radius in mm ")
-    motion_filter_type = traits.Str(exists=False, mandatory=True)
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        exists=False,
+        mandatory=True,
+    )
     motion_filter_order = traits.Int(exists=False, mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
-    low_freq = traits.Float(
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
         exists=True,
         mandatory=True,
-        desc="Low frequency band for Notch filter in breaths per min (bpm)")
-    high_freq = traits.Float(
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
         exists=True,
         mandatory=True,
-        desc="High frequency band for Notch filter in breaths per min (bpm)")
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
 
 
 class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True,
-                         manadatory=True,
+                         mandatory=True,
                          desc="FD-censored bold file")
 
     fmriprep_confounds_censored = File(exists=True,
@@ -226,18 +235,15 @@ class CensorScrub(SimpleInterface):
 
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
-        motion_confounds = load_motion(
+        motion_df = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
-            freqband=[self.inputs.low_freq, self.inputs.high_freq],
-            cutoff=np.min([self.inputs.low_freq, self.inputs.high_freq]))
-        motion_df = pd.DataFrame(data=motion_confounds.values,
-                                 columns=[
-                                     "rot_x", "rot_y", "rot_z", "trans_x",
-                                     "trans_y", "trans_z"
-                                 ])
+            band_stop_min=self.inputs.band_stop_min,
+            band_stop_max=self.inputs.band_stop_max,
+        )
+
         fd_timeseries_uncensored = compute_fd(confound=motion_df,
                                               head_radius=self.inputs.head_radius)
 
@@ -320,11 +326,11 @@ class CensorScrub(SimpleInterface):
                                                index=False,
                                                header=True,
                                                sep="\t")
-        np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter=',')
+        np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter='\t')
         np.savetxt(self._results['fd_timeseries'],
                    fd_timeseries_uncensored,
                    fmt="%1.4f",
-                   delimiter=',')
+                   delimiter='\t')
         if self.inputs.custom_confounds:
             custom_confounds_tsv_censored.to_csv(self._results['custom_confounds_censored'],
                                                  index=False,
@@ -347,7 +353,7 @@ class _InterpolateInputSpec(BaseInterfaceInputSpec):
 
 class _InterpolateOutputSpec(TraitedSpec):
     bold_interpolated = File(exists=True,
-                             manadatory=True,
+                             mandatory=True,
                              desc=" fmriprep censored")
 
 

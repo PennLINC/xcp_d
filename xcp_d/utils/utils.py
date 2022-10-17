@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
-import glob as glob
 import os
 
+import nibabel as nb
 import numpy as np
 from pkg_resources import resource_filename as pkgrf
-from templateflow.api import get as get_template
+from scipy.signal import butter, detrend, filtfilt
+from sklearn.linear_model import LinearRegression
+
+from xcp_d.utils.doc import fill_doc
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
@@ -31,6 +34,11 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     transformfileT1W : list of str
         A list of paths to transform files for warping to T1w space.
     """
+    import glob
+    import os
+
+    from templateflow.api import get as get_template
+
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
     MNI6 = str(
@@ -172,9 +180,15 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
 
     Returns
     -------
-    transformfile : list of str
+    transform_list : list of str
         A list of paths to transform files.
     """
+    import glob
+    import os
+
+    from pkg_resources import resource_filename as pkgrf
+    from templateflow.api import get as get_template
+
     file_base = os.path.basename(str(bold_file))  # file base is the bold_name
 
     # get the correct template via templateflow/ pkgrf
@@ -186,52 +200,57 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
 
     # Transform to MNI9
+    transform_list = []
     if 'space-MNI152NLin6Asym' in file_base:
-        transformfile = [str(fMNI6)]
+        transform_list = [str(fMNI6)]
     elif 'space-MNI152NLin2009cAsym' in file_base:
-        transformfile = str(FSL2MNI9)
+        transform_list = [str(FSL2MNI9)]
     elif 'space-PNC' in file_base:
         #  get the PNC transforms
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
         #  get all the transform files together
-        transformfile = [str(t1w_to_pnc), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_pnc), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-NKI' in file_base:
         #  get the NKI transforms
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
         #  get all the transforms together
-        transformfile = [str(t1w_to_nki), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_nki), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-OASIS30ANTs' in file_base:
         #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_oasis), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_oasis), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-MNI152NLin6Sym' in file_base:
         #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
-        transformfile = [str(t1w_to_mni6c), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_mni6c), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-MNIInfant' in file_base:
         #  get the relevant transform, put all transforms together
         infant2mni9 = pkgrf('xcp_d',
                             'data/transform/infant_to_2009_Composite.h5')
-        transformfile = [str(infant2mni9), str(FSL2MNI9)]
+        transform_list = [str(infant2mni9), str(FSL2MNI9)]
     elif 'space-MNIPediatricAsym' in file_base:
         #  get the relevant transform, put all transforms together
         mnisf = mni_to_t1w.split('from-')[0]
         t1w_to_mni6cx = glob.glob(
             mnisf + 'from-T1w_to-MNIPediatricAsym*_mode-image_xfm.h5')[0]
-        transformfile = [str(t1w_to_mni6cx), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_mni6cx), str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-T1w' in file_base:
         #  put all transforms together
-        transformfile = [str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(mni_to_t1w), str(FSL2MNI9)]
     elif 'space-' not in file_base:
         #  put all transforms together
-        transformfile = [str(t1w_to_native), str(mni_to_t1w), str(FSL2MNI9)]
+        transform_list = [str(t1w_to_native), str(mni_to_t1w), str(FSL2MNI9)]
     else:
         print('space not supported')
-    return transformfile
+
+    if not transform_list:
+        raise Exception("Transforms not found.")
+
+    return transform_list
 
 
 def fwhm2sigma(fwhm):
@@ -250,13 +269,13 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
+@fill_doc
 def stringforparams(params):
     """Infer nuisance regression description from parameter set.
 
     Parameters
     ----------
-    params : {"custom", "24P", "27P", "36P", "aroma", "acompcor", "aroma_gsr", "acompcor_gsr"}
-        String indicating parameter set.
+    %(params)s
 
     Returns
     -------
@@ -340,3 +359,132 @@ def get_customfile(custom_confounds, bold_file):
     else:
         custom_file = None
     return custom_file
+
+
+def zscore_nifti(img, outputname, mask=None):
+    """Normalize (z-score) a NIFTI image.
+
+    Image and mask must be in the same space.
+    TODO: Use Nilearn for masking.
+
+    Parameters
+    ----------
+    img : str
+        Path to the NIFTI image to z-score.
+    outputname : str
+        Output filename.
+    mask : str or None, optional
+        Path to binary mask file. Default is None.
+
+    Returns
+    -------
+    outputname : str
+        Output filename. Same as the ``outputname`` parameter.
+    """
+    img = nb.load(img)
+
+    if mask:
+        # z-score the data
+        maskdata = nb.load(mask).get_fdata()
+        imgdata = img.get_fdata()
+        meandata = imgdata[maskdata > 0].mean()
+        stddata = imgdata[maskdata > 0].std()
+        zscore_fdata = (imgdata - meandata) / stddata
+        # values where the mask is less than 1 are set to 0
+        zscore_fdata[maskdata < 1] = 0
+    else:
+        # z-score the data
+        imgdata = img.get_fdata()
+        meandata = imgdata[np.abs(imgdata) > 0].mean()
+        stddata = imgdata[np.abs(imgdata) > 0].std()
+        zscore_fdata = (imgdata - meandata) / stddata
+
+    # turn image to nifti and write it out
+    dataout = nb.Nifti1Image(zscore_fdata,
+                             affine=img.affine,
+                             header=img.header)
+    dataout.to_filename(outputname)
+    return outputname
+
+
+def butter_bandpass(data, fs, lowpass, highpass, order=2):
+    """Apply a Butterworth bandpass filter to data.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Voxels/vertices by timepoints dimension.
+    fs : float
+        Sampling frequency. 1/TR(s).
+    lowpass : float
+        frequency
+    highpass : float
+        frequency
+    order : int
+        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+
+    Returns
+    -------
+    filtered_data : numpy.ndarray
+        The filtered data.
+    """
+    nyq = 0.5 * fs  # nyquist frequency
+
+    # normalize the cutoffs
+    lowcut = np.float(highpass) / nyq
+    highcut = np.float(lowpass) / nyq
+
+    b, a = butter(order / 2, [lowcut, highcut], btype='band')  # get filter coeff
+
+    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
+
+    # apply the filter, loop through columns of regressors
+    for ii in range(filtered_data.shape[0]):
+        filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
+                                        padlen=3 * (max(len(b), len(a)) - 1))
+
+    return filtered_data
+
+
+def linear_regression(data, confound):
+    """Perform linear regression with sklearn's LinearRegression.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        vertices by timepoints for bold file
+    confound : numpy.ndarray
+       nuisance regressors - vertices by timepoints for confounds matrix
+
+    Returns
+    -------
+    numpy.ndarray
+        residual matrix after regression
+    """
+    regression = LinearRegression(n_jobs=1)
+    regression.fit(confound.T, data.T)
+    y_predicted = regression.predict(confound.T)
+
+    return data - y_predicted.T
+
+
+def demean_detrend_data(data):
+    """Mean-center and remove linear trends over time from data.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        vertices by timepoints for bold file
+
+    Returns
+    -------
+    detrended : numpy.ndarray
+        demeaned and detrended data
+    """
+    demeaned = detrend(data, axis=- 1, type='constant', bp=0,
+                       overwrite_data=False)  # Demean data using "constant" detrend,
+    # which subtracts mean
+    detrended = detrend(demeaned, axis=- 1, type='linear', bp=0,
+                        overwrite_data=False)  # Detrend data using linear method
+
+    return detrended  # Subtract these predicted values from the demeaned data
