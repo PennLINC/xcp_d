@@ -33,9 +33,10 @@ XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
     --despike \
-    --fd-thresh 0.1 \
+    --dummytime 10 \
+    --fd-thresh 0.04 \
     --head_radius 40 \
-	--smoothing 6 \
+    --smoothing 6 \
     -v -v \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
     --warp-surfaces-native2std
