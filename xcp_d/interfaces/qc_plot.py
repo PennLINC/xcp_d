@@ -183,10 +183,13 @@ class QCPlot(SimpleInterface):
         )
 
         # If censoring occurs, censor the cleaned BOLD data and FD time series
+        # NOTE: TS- Why are we censoring these plots? This ignores/misrepresents the
+        # interpolation step.
         if num_censored_volumes > 0:
             # Apply temporal mask to time series
             postproc_fd_timeseries = preproc_fd_timeseries[tmask == 0]
             rmsd = rmsd[tmask == 0]
+            # NOTE: TS- Why mask DVARS before processing?
             dvars_before_processing = dvars_before_processing[tmask == 0]
             dvars_after_processing = dvars_after_processing[tmask == 0]
 
@@ -240,7 +243,8 @@ class QCPlot(SimpleInterface):
         mean_rms = np.mean(rmsd)
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
-        motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
+        # NOTE: TS- If we didn't mask DVARS before postproc, we'd use preproc_fd_timeseries here.
+        motionDVCorrInit = np.corrcoef(postproc_fd_timeseries, dvars_before_processing)[0][1]
         motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
         rmsd_max_value = np.max(rmsd)
 
