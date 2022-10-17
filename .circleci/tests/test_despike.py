@@ -25,6 +25,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     # Read in the necessary inputs
+    tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     boldfile = os.path.join(
         data_dir,
         "withoutfreesurfer/sub-01/func",
@@ -50,7 +51,6 @@ def test_nifti_despike(data_dir, tmp_path_factory):
 
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
-    tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     spikedfile = os.path.join(tempdir, "spikedfile.nii.gz")
     despiked_file = os.path.join(tempdir, "despikedfile.nii.gz")
     write_ndata(
@@ -99,6 +99,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
         "sub-colornest001_ses-1_task-rest_run-1_space-"
         "fsLR_den-91k_bold.dtseries.nii",
     )
+
     # Let's add some noise
     file_data = read_ndata(boldfile)
     voxel_data = file_data[2, :]  # a voxel across time
@@ -106,33 +107,40 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     voxel_data_std = np.std(voxel_data)
     voxel_data[2] = voxel_data_mean + 10 * voxel_data_std
     voxel_data[3] = voxel_data_mean - 10 * voxel_data_std
+
     # What's the maximum and minimum values of the data?
     spiked_max = max(voxel_data)
     spiked_min = min(voxel_data)
+
     # Let's write this out
     file_data[2, :] = voxel_data
     tempdir = tmp_path_factory.mktemp("test_despike_cifti")
     filename = os.path.join(tempdir, "test.dtseries.nii")
+
     write_ndata(data_matrix=file_data, template=boldfile, TR=0.8, filename=filename)
+
     # Let's despike the data
     # Run the node the same way it's run in XCP
-    in_file = os.path.join(tempdir, filename)
+    in_file = filename
     TR = _get_tr(nb.load(filename))
     despike3d = pe.Node(CiftiDespike(TR=TR), name="cifti_despike", mem_gb=4, n_procs=2)
     despike3d.inputs.in_file = in_file
     results = despike3d.run()
+
     # Let's write out the file and read it in as a matrix
     despiked_file = results.outputs.des_file
+    assert os.path.isfile(despiked_file)
     despiked_data = read_ndata(despiked_file)
+
     # What are the minimum and maximum values of the data?
     despiked_max = max(despiked_data[2, :])
     despiked_min = min(despiked_data[2, :])
+
     # Have the spikes been reduced?
     assert spiked_min < despiked_min
     assert spiked_max > despiked_max
+
     # Has the intent code changed?
     despiked_intent = nb.load(despiked_file).nifti_header.get_intent()
     original_intent = nb.load(boldfile).nifti_header.get_intent()
     assert despiked_intent[0] == original_intent[0]
-
-    return
