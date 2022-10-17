@@ -60,7 +60,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     )
 
     # Let's despike the image and write it out to a temp file
-    despike_nifti = DespikePatch(outputtype="NIFTI_GZ", args="-NEW")
+    despike_nifti = Despike(outputtype="NIFTI_GZ", args="-NEW")
     despike_nifti.inputs.in_file = spikedfile
     despike_nifti.inputs.out_file = despiked_file
     res = despike_nifti.run()
