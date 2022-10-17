@@ -11,6 +11,7 @@ import numpy as np
 import nibabel as nb
 from nipype.pipeline import engine as pe
 from xcp_d.interfaces.regression import CiftiDespike
+from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.utils.plot import _get_tr
 
@@ -59,7 +60,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     )
 
     # Let's despike the image and write it out to a temp file
-    despike_nifti = Despike(outputtype="NIFTI_GZ", args="-NEW")
+    despike_nifti = DespikePatch(outputtype="NIFTI_GZ", args="-NEW")
     despike_nifti.inputs.in_file = spikedfile
     despike_nifti.inputs.out_file = despiked_file
     res = despike_nifti.run()
