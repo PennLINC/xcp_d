@@ -148,22 +148,18 @@ class QCPlot(SimpleInterface):
         )[:, initial_volumes_to_drop:]
 
         # Get file names to write out & write data out
-        if self.inputs.bold_file.endswith("nii.gz"):
-            temporary_file = os.path.join(
-                os.path.split(os.path.abspath(self.inputs.cleaned_file))[0],
-                "plot_niftix.nii.gz",
-            )
-        else:
-            temporary_file = os.path.join(
-                os.path.split(os.path.abspath(self.inputs.cleaned_file))[0],
-                "plot_ciftix.dtseries.nii",
-            )
+        dropped_bold_file = fname_presuffix(
+            self.inputs.bold_file,
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True,
+        )
 
         write_ndata(
             data_matrix=raw_data_removed_TR,
             template=self.inputs.bold_file,
             mask=self.inputs.mask_file,
-            filename=temporary_file,
+            filename=dropped_bold_file,
             TR=self.inputs.TR,
         )
 
@@ -175,7 +171,7 @@ class QCPlot(SimpleInterface):
         )
 
         preproc_fig = FMRIPlot(
-            func_file=temporary_file,
+            func_file=dropped_bold_file,
             seg_file=self.inputs.seg_file,
             data=preproc_confounds,
             mask_file=self.inputs.mask_file,
@@ -202,23 +198,18 @@ class QCPlot(SimpleInterface):
             raw_data_censored = raw_data_removed_TR[:, tmask == 0]
 
             # Get temporary filename and write data out
-            if self.inputs.bold_file.endswith("nii.gz"):
-                # NOTE: Can't CIFTIs be gzipped too?
-                temporary_file = os.path.join(
-                    os.path.dirname(os.path.abspath(self.inputs.cleaned_file)),
-                    "plot_niftix1.nii.gz",
-                )
-            else:
-                temporary_file = os.path.join(
-                    os.path.dirname(os.path.abspath(self.inputs.cleaned_file)),
-                    "plot_ciftix1.dtseries.nii",
-                )
+            dropped_clean_file = fname_presuffix(
+                self.inputs.bold_file,
+                newpath=runtime.cwd,
+                suffix="_droppedClean",
+                use_ext=True,
+            )
 
             write_ndata(
                 data_matrix=raw_data_censored,
                 template=self.inputs.bold_file,
                 mask=self.inputs.mask_file,
-                filename=temporary_file,
+                filename=dropped_clean_file,
                 TR=self.inputs.TR,
             )
 
