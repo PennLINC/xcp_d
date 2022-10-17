@@ -8,6 +8,7 @@ import numpy as np
 import sklearn
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
+from nipype.interfaces.afni.preprocessing import Despike
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
@@ -20,7 +21,6 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import (
@@ -503,18 +503,20 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         # and data, and different from temporal censoring. It can be added to the
         # command line arguments with --despike.
 
-        despike3d = pe.Node(DespikePatch(
-            outputtype='NIFTI_GZ',
-            args='-NEW'),
+        despike3d = pe.Node(
+            Despike(
+                outputtype="NIFTI_GZ",
+                args="-NEW",
+            ),
             name="despike3d",
-            mem_gb=mem_gbx['timeseries'],
-            n_procs=omp_nthreads)
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
 
         workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
         # Censor Scrub:
         workflow.connect([
-            (despike3d, regression_wf, [
-                ('out_file', 'in_file')]),
+            (despike3d, regression_wf, [('out_file', 'in_file')]),
             (inputnode, regression_wf, [('bold_mask', 'mask')]),
             (censor_scrub, regression_wf,
              [('fmriprep_confounds_censored', 'confounds'),
