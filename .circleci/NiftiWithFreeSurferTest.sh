@@ -33,6 +33,7 @@ XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
     --despike \
+    --fd-thresh 0.1 \
     --head_radius 40 \
 	--smoothing 6 \
     -v -v \
