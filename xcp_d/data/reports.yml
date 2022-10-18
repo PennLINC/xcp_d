@@ -6,21 +6,21 @@ sections:
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
+  - bids: {datatype: figures, desc: qualitycontrol, suffix: bold}
   - bids: {datatype: figures, desc: bbregister, suffix: bold}
     caption: bbregister was used to coregister functional and anatomical MRI data.
     subtitle: Alignment of functional and anatomical MRI data (surface driven)
     static: false
   - bids: {datatype: figures, desc: boldref, suffix: bold}
     subtitle: The BOLD reference image
-  - bids: {datatype: figures, desc: qualitycontrol, suffix: bold}
   - bids: {datatype: figures, desc: preprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
-             and then a carpet plot for the time series of each voxel/vertex’s time series of activity.
-    subtitle: Carpet Plot before Postprocessing
+             and then a carpet plot for the time series of each voxel/vertex's time series of activity.
+    subtitle: Carpet Plot Before Postprocessing
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
-            and then a carpet plot for the time series of each voxel/vertex’s time series of activity..
-    subtitle: Carpet Plot after postprocessing
+            and then a carpet plot for the time series of each voxel/vertex's time series of activity..
+    subtitle: Carpet Plot After Postprocessing
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
     caption: This plot shows heatmaps from ROI-to-ROI correlations from four atlases.
     subtitle: Correlation Heatmaps from Four Atlases
