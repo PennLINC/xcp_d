@@ -490,9 +490,52 @@ def demean_detrend_data(data):
     return detrended  # Subtract these predicted values from the demeaned data
 
 
+def extract_timeseries(
+    img,
+    atlas_file,
+    labels_file,
+    confounds,
+    low_pass,
+    high_pass,
+    TR,
+    tmask,
+):
+    import pandas as pd
+    from nilearn import maskers
+
+    sample_mask = pd.read_table(tmask).values
+    labels = pd.read_table(labels_file)["labels"]
+
+    # Masker approach
+    masker = maskers.NiftiLabelsMasker(
+        labels_img=atlas_file,
+        labels=labels,
+        runs=None,
+        smoothing_fwhm=None,
+        standardize=False,
+        standardize_confounds=True,
+        detrend=True,
+        high_variance_confounds=False,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        t_r=TR,
+        target_affine=None,
+        target_shape=None,
+        mask_strategy=None,
+        mask_args=None,
+        dtype=None,
+        memory_level=1,
+        verbose=0,
+        reports=True,
+    )
+    clean_time_series = masker.fit_transform(X=img, confounds=confounds, sample_mask=sample_mask)
+    clean_time_series = pd.DataFrame(data=clean_time_series, columns=labels)
+    return clean_time_series
+
+
 def denoise_with_nilearn(img, mask, confounds, low_pass, high_pass, TR, tmask, smoothing_fwhm):
     import pandas as pd
-    from nilearn import image, signal, masking, maskers
+    from nilearn import signal, masking, maskers
 
     sample_mask = pd.read_table(tmask).values
 
@@ -518,6 +561,8 @@ def denoise_with_nilearn(img, mask, confounds, low_pass, high_pass, TR, tmask, s
         reports=True,
     )
     clean_data = masker.fit_transform(X=img, confounds=confounds, sample_mask=sample_mask)
+    # This assumes that inverse_transform doesn't try to reverse any of the
+    # preprocessing done by the masker.
     clean_img = masker.inverse_transform(clean_data)
 
     # masking+nilearn.signal.clean approach
