@@ -483,7 +483,7 @@ def plot_svgx(rawdata,
     TR : float, optional
         repetition times
     fd :
-        framewise displacement
+        framewise displacement in a TSV file.
     unprocessed_filename :
         output file svg before processing
     processed_filename :
@@ -523,7 +523,9 @@ def plot_svgx(rawdata,
         'Post all': residual_dvars_data
     })
 
-    FD_timeseries = pd.DataFrame({'FD': np.loadtxt(fd)})
+    FD_timeseries = pd.DataFrame({
+        'FD': pd.read_table(fd)["framewise_displacement"].values,
+    })
 
     # The mean and standard deviation of raw data
     unprocessed_data_timeseries = pd.DataFrame({
