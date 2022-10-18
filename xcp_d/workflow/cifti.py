@@ -243,7 +243,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 'timeseries',
                 'correlations',
                 'qc_file',
-                'fd'
+                'fd',
+                'tmask',
             ],
         ),
         name='outputnode',
@@ -427,7 +428,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     workflow.connect([
         (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
+        (censor_scrub, outputnode, [('fd_timeseries', 'fd'),
+                                    ('tmas', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
@@ -444,8 +446,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('fd_timeseries', 'inputnode.fd'),
+                                             ('tmask', 'inputnode.tmask')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
