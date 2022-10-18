@@ -100,9 +100,9 @@ def readjson(jsonfile):
 def load_motion(
     confounds_df,
     TR,
-    motion_filter_type,
-    band_stop_min,
-    band_stop_max,
+    motion_filter_type=None,
+    band_stop_min=None,
+    band_stop_max=None,
     motion_filter_order=4,
 ):
     """Load the six basic motion regressors (three rotations, three translations).
