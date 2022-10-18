@@ -500,13 +500,32 @@ def extract_timeseries(
     TR,
     tmask,
 ):
+    """Use Nilearn NiftiLabelsMasker to extract atlas time series from BOLD data.
+
+    Parameters
+    ----------
+    img : str or niimg
+    atlas_file : str
+    labels_file : str
+    confounds : pandas.DataFrame
+    low_pass : float
+    high_pass : float
+    TR : float
+    tmask : str
+
+    Returns
+    -------
+    clean_time_series : :obj:`pandas.DataFrame` of shape (T, R)
+        T = time. R = region.
+    """
     import pandas as pd
     from nilearn import maskers
 
     sample_mask = pd.read_table(tmask).values
+
+    # TODO: Standardize the atlas metadata format.
     labels = pd.read_table(labels_file)["labels"]
 
-    # Masker approach
     masker = maskers.NiftiLabelsMasker(
         labels_img=atlas_file,
         labels=labels,
@@ -533,40 +552,64 @@ def extract_timeseries(
     return clean_time_series
 
 
-def denoise_with_nilearn(img, mask, confounds, low_pass, high_pass, TR, tmask, smoothing_fwhm):
+def denoise_with_nilearn(
+    img,
+    mask,
+    confounds,
+    low_pass,
+    high_pass,
+    TR,
+    tmask,
+    smoothing_fwhm,
+):
+    """Denoise fMRI data with Nilearn.
+
+    Parameters
+    ----------
+    img : str or niimg
+    mask : str
+    confounds : pandas.DataFrame
+    low_pass : float
+    high_pass : float
+    TR : float
+    tmask : str
+    smoothing_fwhm : float
+    """
     import pandas as pd
-    from nilearn import signal, masking, maskers
+    from nilearn import masking, signal
 
     sample_mask = pd.read_table(tmask).values
 
-    # Masker approach
-    masker = maskers.NiftiMasker(
-        mask_img=mask,
-        runs=None,
-        smoothing_fwhm=smoothing_fwhm,
-        standardize=False,
-        standardize_confounds=True,
-        detrend=True,
-        high_variance_confounds=False,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        t_r=TR,
-        target_affine=None,
-        target_shape=None,
-        mask_strategy=None,
-        mask_args=None,
-        dtype=None,
-        memory_level=1,
-        verbose=0,
-        reports=True,
-    )
-    clean_data = masker.fit_transform(X=img, confounds=confounds, sample_mask=sample_mask)
-    # This assumes that inverse_transform doesn't try to reverse any of the
-    # preprocessing done by the masker.
-    clean_img = masker.inverse_transform(clean_data)
-
-    # masking+nilearn.signal.clean approach
     raw_data = masking.apply_mask(img, mask)
+    clean_data = _denoise_with_nilearn(
+        raw_data,
+        confounds,
+        low_pass,
+        high_pass,
+        TR,
+        tmask,
+        smoothing_fwhm,
+    )
+
+    clean_img = masking.unmask(clean_data, mask)
+
+    return clean_img
+
+
+def _denoise_with_nilearn(
+    raw_data,
+    confounds,
+    low_pass,
+    high_pass,
+    TR,
+    tmask,
+    smoothing_fwhm,
+):
+    import pandas as pd
+    from nilearn import signal
+
+    sample_mask = pd.read_table(tmask).values
+
     clean_data = signal.clean(
         signals=raw_data,
         detrend=True,
@@ -580,5 +623,5 @@ def denoise_with_nilearn(img, mask, confounds, low_pass, high_pass, TR, tmask, s
         t_r=TR,
         ensure_finite=True,
     )
-    clean_img = masking.unmask(clean_data, mask)
-    return clean_img
+
+    return clean_data
