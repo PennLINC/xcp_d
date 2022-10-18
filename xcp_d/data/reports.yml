@@ -9,6 +9,7 @@ sections:
   - bids: {datatype: figures, desc: bbregister, suffix: bold}
     caption: bbregister was used to coregister functional and anatomical MRI data.
     subtitle: Alignment of functional and anatomical MRI data (surface driven)
+    static: false
   - bids: {datatype: figures, desc: boldref, suffix: bold}
     subtitle: The BOLD reference image
   - bids: {datatype: figures, desc: qualitycontrol, suffix: bold}
