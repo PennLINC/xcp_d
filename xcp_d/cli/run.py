@@ -51,7 +51,7 @@ class DeprecatedStoreAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.1.6. "
+            f"Argument '{option_string}' is deprecated and will be removed in version 0.3.0. "
             "Please use '--nuisance-regressors' or '-p'."
         )
         setattr(namespace, self.dest, values)
@@ -216,7 +216,7 @@ def get_parser():
         help=(
             "Nuisance parameters to be selected, other options include 24P and 36P acompcor and "
             "aroma, see Ciric etal 2007. "
-            "This parameter is deprecated and will be removed in version 0.1.6. "
+            "This parameter is deprecated and will be removed in version 0.3.0. "
             'Please use "-p" or "--nuisance-regressors".'
         ),
     )
@@ -255,13 +255,29 @@ def get_parser():
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
-    g_filter.add_argument(
+
+    bandpass_filter_params = g_filter.add_mutually_exclusive_group()
+    bandpass_filter_params.add_argument(
         "--bandpass_filter",
-        action="store",
-        default=True,
+        dest="bandpass_filter",
+        action=DeprecatedStoreAction,
         type=bool,
-        help="butterworth bandpass filter the data",
+        help=(
+            "Whether to Butterworth bandpass filter the data or not. "
+            "This parameter is deprecated and will be removed in version 0.3.0. "
+            "Bandpass filtering is performed by default, and if you with to disable it, "
+            'please use "--disable-bandpass-filter".'
+        ),
     )
+    bandpass_filter_params.add_argument(
+        "--disable-bandpass-filter",
+        "--disable_bandpass_filter",
+        dest="bandpass_filter",
+        action="store_false",
+        default=True,
+        help="Disable bandpass filtering.",
+    )
+
     g_filter.add_argument(
         "--lower-bpf",
         action="store",
