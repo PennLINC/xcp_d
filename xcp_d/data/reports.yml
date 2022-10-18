@@ -1,9 +1,19 @@
 package: xcp_d
 sections:
+- name: Summary
+  reportlets:
+  - bids: {datatype: figures, desc: summary, suffix: bold}
+- name: Functional
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+  reportlets:
+  - bids: {datatype: figures, desc: bbregister, suffix: bold}
+    caption: bbregister was used to coregister functional and anatomical MRI data.
+    subtitle: Alignment of functional and anatomical MRI data (surface driven)
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
-  - bids: {datatype: figures, desc: summary, suffix: bold}
+  - bids: {datatype: figures, desc: boldref, suffix: bold}
+    subtitle: The BOLD reference image
   - bids: {datatype: figures, desc: qualitycontrol, suffix: bold}
   - bids: {datatype: figures, desc: preprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
