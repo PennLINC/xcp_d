@@ -429,7 +429,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     workflow.connect([
         (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('fd_timeseries', 'fd'),
-                                    ('tmas', 'tmask')]),
+                                    ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
