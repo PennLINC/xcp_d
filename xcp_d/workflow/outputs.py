@@ -126,7 +126,7 @@ def init_writederivatives_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["atlas", "den", "res", "space", "desc"],
-            suffix="tmask",
+            suffix="outliers",
             extension=".tsv",
             source_file=bold_file,
         ),
