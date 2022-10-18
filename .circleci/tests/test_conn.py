@@ -20,7 +20,8 @@ from xcp_d.workflow.connectivity import (
 )
 
 
-def nifti_conn_test(data_dir, tmp_path_factory):
+def test_nifti_conn(data_dir, tmp_path_factory):
+    data_dir = '/Users/kahinim/Desktop/xcp_test/data'
     """Test the nifti workflow."""
     bold_file = os.path.join(
         data_dir,
@@ -123,7 +124,8 @@ def nifti_conn_test(data_dir, tmp_path_factory):
     assert np.allclose(xcp_array, ground_truth, atol=0.01)
 
 
-def cifti_con_test(data_dir, tmp_path_factory):
+def test_cifti_conn(data_dir, tmp_path_factory):
+    data_dir = '/Users/kahinim/Desktop/xcp_test/data'
     """Test the cifti workflow - only correlation, not parcellation."""
     # Define bold file
     boldfile = os.path.join(
