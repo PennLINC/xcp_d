@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -89,6 +90,8 @@ class CensoringPlot(SimpleInterface):
     output_spec = _CensoringPlotOutputSpec
 
     def _run_interface(self, runtime):
+        palette = sns.color_palette("colorblind", 4)
+
         # Load confound matrix and load motion with motion filtering
         confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
         preproc_motion_df = load_motion(
@@ -109,7 +112,7 @@ class CensoringPlot(SimpleInterface):
             time_array,
             preproc_fd_timeseries,
             label="Raw Framewise Displacement",
-            color="blue",
+            color=palette[0],
         )
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
@@ -120,7 +123,7 @@ class CensoringPlot(SimpleInterface):
                 initial_volumes_to_drop,
                 label="Dummy Volumes",
                 alpha=0.5,
-                color="orange",
+                color=palette[1],
             )
         else:
             initial_volumes_to_drop = 0
@@ -144,7 +147,7 @@ class CensoringPlot(SimpleInterface):
                 time_array,
                 filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
-                color="red",
+                color=palette[2],
             )
         else:
             filtered_fd_timeseries = preproc_fd_timeseries.copy()
@@ -162,7 +165,7 @@ class CensoringPlot(SimpleInterface):
                 else:
                     label = ""
 
-                ax.axvline(idx * self.inputs.TR, label=label, alpha=0.5)
+                ax.axvline(idx * self.inputs.TR, label=label, color=palette[3], alpha=0.5)
 
         ax.set_xlim(0, max(time_array))
         y_max = (
