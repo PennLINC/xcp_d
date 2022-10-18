@@ -256,7 +256,7 @@ class CensorScrub(SimpleInterface):
 
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_tsv_uncensored = pd.read_table(
-            self.inputs.fmriprep_confounds_file
+            self.inputs.fmriprep_confounds_file,
         )
         motion_df = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
@@ -268,25 +268,30 @@ class CensorScrub(SimpleInterface):
         )
 
         fd_timeseries_uncensored = compute_fd(
-            confound=motion_df, head_radius=self.inputs.head_radius
+            confound=motion_df,
+            head_radius=self.inputs.head_radius,
         )
 
         # Read in custom confounds file (if any) and bold file to be censored
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
         if self.inputs.custom_confounds:
             custom_confounds_tsv_uncensored = pd.read_csv(
-                self.inputs.custom_confounds, header=None
+                self.inputs.custom_confounds,
+                header=None,
             )
+
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
         tmask = generate_mask(
-            fd_res=fd_timeseries_uncensored, fd_thresh=self.inputs.fd_thresh
+            fd_res=fd_timeseries_uncensored,
+            fd_thresh=self.inputs.fd_thresh,
         )
         if np.sum(tmask) > 0:  # If any FD values exceed the threshold
             if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
                 bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
             else:
                 bold_file_censored = bold_file_uncensored[tmask == 0, :]
+
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.drop(
                 fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)]
             )
@@ -300,15 +305,16 @@ class CensorScrub(SimpleInterface):
             if self.inputs.custom_confounds:
                 custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
 
-        #  Turn censored bold into nifti image
+        # Turn censored bold into image
         if nb.load(self.inputs.in_file).ndim > 2:
+            # If it's a Nifti image
             bold_file_censored = nb.Nifti1Image(
                 bold_file_censored,
                 affine=nb.load(self.inputs.in_file).affine,
                 header=nb.load(self.inputs.in_file).header,
             )
         else:
-            # If it's a Cifti Image:
+            # If it's a Cifti image
             original_image = nb.load(self.inputs.in_file)
             time_axis, brain_model_axis = [
                 original_image.header.get_axis(i) for i in range(original_image.ndim)
@@ -329,7 +335,10 @@ class CensorScrub(SimpleInterface):
 
         # get the output
         self._results["bold_censored"] = fname_presuffix(
-            self.inputs.in_file, suffix="_censored", newpath=runtime.cwd, use_ext=True
+            self.inputs.in_file,
+            suffix="_censored",
+            newpath=runtime.cwd,
+            use_ext=True,
         )
         self._results["fmriprep_confounds_censored"] = fname_presuffix(
             self.inputs.in_file,
@@ -344,15 +353,16 @@ class CensorScrub(SimpleInterface):
                 newpath=runtime.cwd,
                 use_ext=False,
             )
+
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
-            suffix="_outliers.tsv",
+            suffix="_desc-fd_outliers.tsv",
             newpath=runtime.cwd,
             use_ext=False,
         )
         self._results["fd_timeseries"] = fname_presuffix(
             self.inputs.in_file,
-            suffix="_fd_timeseries.tsv",
+            suffix="_desc-fd_motion.tsv",
             newpath=runtime.cwd,
             use_ext=False,
         )
@@ -365,20 +375,33 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
-        np.savetxt(self._results["tmask"], tmask, fmt="%d", delimiter="\t")
-        np.savetxt(
-            self._results["fd_timeseries"],
-            fd_timeseries_uncensored,
-            fmt="%1.4f",
-            delimiter="\t",
+        outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
+        outliers_df.to_csv(
+            self._results["tmask"],
+            index=False,
+            header=True,
+            sep="\t",
         )
+
+        motion_df = pd.DataFrame(
+            data=fd_timeseries_uncensored,
+            columns=["framewise_displacement"],
+        )
+        motion_df.to_csv(
+            self._results["fd_timeseries"],
+            index=False,
+            header=True,
+            sep="\t",
+        )
+
         if self.inputs.custom_confounds:
+            # Assuming input is tab separated!
             custom_confounds_tsv_censored.to_csv(
                 self._results["custom_confounds_censored"],
                 index=False,
                 header=False,
                 sep="\t",
-            )  # Assuming input is tab separated!
+            )
         return runtime
 
 
@@ -418,26 +441,37 @@ class Interpolate(SimpleInterface):
         bold_data = read_ndata(datafile=self.inputs.in_file,
                                maskfile=self.inputs.mask_file)
 
-        tmask = np.loadtxt(self.inputs.tmask)
+        tmask_df = pd.read_table(self.inputs.tmask)
+        tmask_arr = tmask_df["framewise_displacement"].values
+
         # check if any volumes were censored - if they were,
         # put 0s in their place.
-        if bold_data.shape[1] != len(tmask):
-            data_with_zeros = np.zeros([bold_data.shape[0], len(tmask)])
-            data_with_zeros[:, tmask == 0] = bold_data
+        if bold_data.shape[1] != len(tmask_arr):
+            data_with_zeros = np.zeros([bold_data.shape[0], len(tmask_arr)])
+            data_with_zeros[:, tmask_arr == 0] = bold_data
         else:
             data_with_zeros = bold_data
+
         # interpolate the data using scipy's interpolation functionality
-        interpolated_data = interpolate_masked_data(bold_data=data_with_zeros,
-                                                    tmask=tmask,
-                                                    TR=self.inputs.TR)
+        interpolated_data = interpolate_masked_data(
+            bold_data=data_with_zeros,
+            tmask=tmask_arr,
+            TR=self.inputs.TR,
+        )
+
         # save out results
         self._results['bold_interpolated'] = fname_presuffix(
-            self.inputs.in_file, newpath=os.getcwd(), use_ext=True)
+            self.inputs.in_file,
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
 
-        write_ndata(data_matrix=interpolated_data,
-                    template=self.inputs.bold_file,
-                    mask=self.inputs.mask_file,
-                    TR=self.inputs.TR,
-                    filename=self._results['bold_interpolated'])
+        write_ndata(
+            data_matrix=interpolated_data,
+            template=self.inputs.bold_file,
+            mask=self.inputs.mask_file,
+            TR=self.inputs.TR,
+            filename=self._results['bold_interpolated'],
+        )
 
         return runtime
