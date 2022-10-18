@@ -20,7 +20,6 @@ sections:
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
             and then a carpet plot for the time series of each voxel/vertex’s time series of activity..
     subtitle: Carpet Plot after postprocessing
-  reportlets:
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
     caption: This plot shows heatmaps from ROI-to-ROI correlations from four atlases.
     subtitle: Correlation Heatmaps from Four Atlases
