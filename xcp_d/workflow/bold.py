@@ -237,7 +237,7 @@ These nuisance regressors were regressed from the BOLD data using linear regress
 as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
 Any volumes censored earlier in the workflow were then interpolated in the residual time series
 produced by the regression.
-The filled-out residual timeseries were then band-pass filtered to retain signals within the
+The interpolated timeseries were then band-pass filtered to retain signals within the
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
