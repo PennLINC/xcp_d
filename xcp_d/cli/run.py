@@ -258,6 +258,13 @@ def get_parser():
 
     bandpass_filter_params = g_filter.add_mutually_exclusive_group()
     bandpass_filter_params.add_argument(
+        "--disable-bandpass-filter",
+        "--disable_bandpass_filter",
+        dest="bandpass_filter",
+        action="store_false",
+        help="Disable bandpass filtering.",
+    )
+    bandpass_filter_params.add_argument(
         "--bandpass_filter",
         dest="bandpass_filter",
         action=DeprecatedStoreAction,
@@ -268,14 +275,6 @@ def get_parser():
             "Bandpass filtering is performed by default, and if you with to disable it, "
             'please use "--disable-bandpass-filter".'
         ),
-    )
-    bandpass_filter_params.add_argument(
-        "--disable-bandpass-filter",
-        "--disable_bandpass_filter",
-        dest="bandpass_filter",
-        action="store_false",
-        default=True,
-        help="Disable bandpass filtering.",
     )
 
     g_filter.add_argument(
