@@ -172,7 +172,7 @@ def init_execsummary_wf(omp_nthreads,
     t1seg
     regressed_data
     residual_data
-    fd
+    filtered_motion
     rawdata
     mask
     %(mni_to_t1w)s
@@ -180,7 +180,14 @@ def init_execsummary_wf(omp_nthreads,
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=[
-        't1w', 't1seg', 'regressed_data', 'residual_data', 'fd', 'rawdata', 'mask', 'mni_to_t1w'
+        't1w',
+        't1seg',
+        'regressed_data',
+        'residual_data',
+        'filtered_motion',
+        'rawdata',
+        'mask',
+        'mni_to_t1w',
     ]),
         name='inputnode')
     inputnode.inputs.bold_file = bold_file
@@ -283,7 +290,8 @@ def init_execsummary_wf(omp_nthreads,
     # Connect all the workflows
     workflow.connect([
         (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [('fd', 'fd'), ('regressed_data', 'regressed_data'),
+        (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
+                                   ('regressed_data', 'regressed_data'),
                                    ('residual_data', 'residual_data'), ('mask', 'mask'),
                                    ('bold_file', 'rawdata')]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
