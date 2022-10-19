@@ -88,6 +88,7 @@ def init_writederivatives_wf(
         reho right hemisphere
     reho_out
     fd
+    tmask
     """
     workflow = Workflow(name=name)
 
@@ -106,6 +107,7 @@ def init_writederivatives_wf(
                 "reho_rh",
                 "reho_out",
                 "fd",
+                "tmask",
             ],
         ),
         name="inputnode",
@@ -119,6 +121,24 @@ def init_writederivatives_wf(
         'dummy vols': int(np.ceil(dummytime / TR))
     }
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
+
+    write_derivative_tmask_wf = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["atlas", "den", "res", "space", "desc"],
+            suffix="outliers",
+            extension=".tsv",
+            source_file=bold_file,
+        ),
+        name="write_derivative_tmask_wf",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+
+    workflow.connect([
+        (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')]),
+    ])
+
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
         write_derivative_cleandata_wf = pe.Node(

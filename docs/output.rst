@@ -96,10 +96,12 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
       The ``desc-framewisedisplacement_motion.tsv`` is a tab-delimited file with one column: "framewise_displacement".
 
