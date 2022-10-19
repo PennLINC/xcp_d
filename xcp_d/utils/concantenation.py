@@ -176,7 +176,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     datafile = [
         '_motion.tsv',  # Must come first to set motion_suffix
         '_desc-denoised_bold.nii.gz',
-        '_desc-denoisedSmoothed_bold.nii.gz'
+        '_desc-denoisedSmoothed_bold.nii.gz',
         '_atlas-Glasser_timeseries.tsv',
         '_atlas-Gordon_timeseries.tsv',
         '_atlas-Schaefer117_timeseries.tsv',
@@ -227,7 +227,6 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
         res = denoised_task_files[0]
         resid = res.split('run-')[1].partition('_')[-1]
-        raise Exception(f"{res}\n{resid}")
 
         preproc_base_search_pattern = (
             os.path.basename(res.split('run-')[0]) + '*' + resid.partition('_desc')[0]
@@ -263,8 +262,6 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 outfile = concatenated_file_base + file_pattern
 
             if file_pattern.endswith('tsv'):
-                if not len(found_files):
-                    raise Exception(file_search_base + file_pattern)
                 concatenate_tsv_files(found_files, outfile)
 
             if file_pattern.endswith('_motion.tsv'):
