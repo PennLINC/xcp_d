@@ -552,9 +552,10 @@ def extract_timeseries(
     return clean_time_series
 
 
-def denoise_with_nilearn(
+def denoise_nifti_with_nilearn(
     img,
     mask,
+    out_file,
     confounds,
     low_pass,
     high_pass,
@@ -575,10 +576,7 @@ def denoise_with_nilearn(
     tmask : str
     smoothing_fwhm : float
     """
-    import pandas as pd
-    from nilearn import masking, signal
-
-    sample_mask = pd.read_table(tmask).values
+    from nilearn import masking
 
     raw_data = masking.apply_mask(img, mask)
     clean_data = _denoise_with_nilearn(
@@ -591,9 +589,42 @@ def denoise_with_nilearn(
         smoothing_fwhm,
     )
 
+    # This ignores TR
     clean_img = masking.unmask(clean_data, mask)
 
-    return clean_img
+    clean_img.to_filename(out_file)
+
+
+def denoise_cifti_with_nilearn(
+    cifti_file,
+    out_file,
+    confounds,
+    low_pass,
+    high_pass,
+    TR,
+    tmask,
+    smoothing_fwhm,
+):
+    from xcp_d.utils.write_save import read_ndata, write_ndata
+
+    raw_data = read_ndata(cifti_file)
+
+    # Transpose from SxT (xcpd order) to TxS (nilearn order)
+    raw_data = raw_data.T
+
+    clean_data = _denoise_with_nilearn(
+        raw_data,
+        confounds,
+        low_pass,
+        high_pass,
+        TR,
+        tmask,
+        smoothing_fwhm,
+    )
+
+    # Transpose from TxS (nilearn order) to SxT (xcpd order)
+    clean_data = clean_data.T
+    write_ndata(clean_data, cifti_file, out_file)
 
 
 def _denoise_with_nilearn(
@@ -605,10 +636,17 @@ def _denoise_with_nilearn(
     tmask,
     smoothing_fwhm,
 ):
+    """This step does the following.
+
+    Linearly detrend, but not mean-center, the BOLD data.
+    Regress out confounds from BOLD data.
+    Use list of outliers to censor BOLD data during regression.
+    Temporally filter BOLD data.
+    """
     import pandas as pd
     from nilearn import signal
 
-    sample_mask = pd.read_table(tmask).values
+    sample_mask = pd.read_table(tmask)["framewise_displacement"].values
 
     clean_data = signal.clean(
         signals=raw_data,
