@@ -40,23 +40,35 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
     work_dir : str
         The working directory.
     """
-    outdir = outputdir
-    fmr = glob.glob(f'{str(outdir)}/*{subjlist[0]}/*func/*_desc-denoised*bold*nii*')[0]
+    # Ensure each subject ID starts with sub-
+    subjlist = [_prefix(subject) for subject in subjlist]
+    search_pattern = os.path.join(
+        outputdir,
+        subjlist[0],
+        "**/func/*_desc-denoised*bold*nii*",
+    )
+    fmr = glob.glob(search_pattern, recursive=True)
+    if len(fmr) == 0:
+        raise ValueError(f"No files detected in {search_pattern}.")
 
-    cifti = False if fmr.endswith('nii.gz') else True
+    cifti = False if fmr[0].endswith('nii.gz') else True
     concat_func = concatenate_cifti if cifti else concatenate_nifti
     fname_pattern = ".dtseries.nii" if cifti else ".nii.gz"
 
     for subject in subjlist:
-        # get seission if there
+        # get session if there
         session_folders = glob.glob(
-            f'{str(outdir)}/{_prefix(subject)}/*/func/*_desc-denoised*bold*{fname_pattern}'
+            os.path.join(
+                outputdir,
+                subject,
+                f'ses-*/func/*_desc-denoised*bold*{fname_pattern}',
+            )
         )
         if len(session_folders):
             session_ids = sorted(list(set([_getsesid(sf) for sf in session_folders])))
             for session in session_ids:
                 concat_func(
-                    subid=_prefix(subject),
+                    subid=subject,
                     fmridir=fmridir,
                     outputdir=outputdir,
                     ses=session,
@@ -64,7 +76,7 @@ def concatenatebold(subjlist, fmridir, outputdir, work_dir):
                 )
         else:
             concat_func(
-                subid=_prefix(subject),
+                subid=subject,
                 fmridir=fmridir,
                 outputdir=outputdir,
                 work_dir=work_dir,
