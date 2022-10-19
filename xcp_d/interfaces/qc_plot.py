@@ -282,8 +282,9 @@ class QCPlot(SimpleInterface):
         rmsd = rmsd[initial_volumes_to_drop:]
 
         if self.inputs.tmask:  # If a tmask is provided, find # vols censored
-            tmask = np.loadtxt(self.inputs.tmask)
-            num_censored_volumes = np.sum(tmask)
+            tmask_df = pd.read_table(self.inputs.tmask)
+            tmask_arr = tmask_df["framewise_displacement"]
+            num_censored_volumes = np.sum(tmask_arr)
         else:
             num_censored_volumes = 0
 
@@ -359,18 +360,18 @@ class QCPlot(SimpleInterface):
         # interpolation step.
         if num_censored_volumes > 0:
             # Apply temporal mask to time series
-            postproc_fd_timeseries = preproc_fd_timeseries[tmask == 0]
-            rmsd = rmsd[tmask == 0]
+            postproc_fd_timeseries = preproc_fd_timeseries[tmask_arr == 0]
+            rmsd = rmsd[tmask_arr == 0]
             # NOTE: TS- Why mask DVARS before processing?
-            dvars_before_processing = dvars_before_processing[tmask == 0]
-            dvars_after_processing = dvars_after_processing[tmask == 0]
+            dvars_before_processing = dvars_before_processing[tmask_arr == 0]
+            dvars_after_processing = dvars_after_processing[tmask_arr == 0]
 
             # Apply temporal mask to data
             raw_data_removed_TR = read_ndata(
                 datafile=self.inputs.cleaned_file,
                 maskfile=self.inputs.mask_file,
             )
-            raw_data_censored = raw_data_removed_TR[:, tmask == 0]
+            raw_data_censored = raw_data_removed_TR[:, tmask_arr == 0]
 
             # Get temporary filename and write data out
             dropped_clean_file = fname_presuffix(
