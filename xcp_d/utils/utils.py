@@ -517,11 +517,13 @@ def extract_timeseries(
     -------
     clean_time_series : :obj:`pandas.DataFrame` of shape (T, R)
         T = time. R = region.
+
+    Notes
+    -----
+    Currently doesn't leverage masker's denoising capabilities.
     """
     import pandas as pd
     from nilearn import maskers
-
-    sample_mask = pd.read_table(tmask).values
 
     # TODO: Standardize the atlas metadata format.
     labels = pd.read_table(labels_file)["labels"]
@@ -532,11 +534,11 @@ def extract_timeseries(
         runs=None,
         smoothing_fwhm=None,
         standardize=False,
-        standardize_confounds=True,
-        detrend=True,
+        standardize_confounds=False,
+        detrend=False,
         high_variance_confounds=False,
-        low_pass=low_pass,
-        high_pass=high_pass,
+        low_pass=None,
+        high_pass=None,
         t_r=TR,
         target_affine=None,
         target_shape=None,
@@ -545,9 +547,9 @@ def extract_timeseries(
         dtype=None,
         memory_level=1,
         verbose=0,
-        reports=True,
+        reports=False,
     )
-    clean_time_series = masker.fit_transform(X=img, confounds=confounds, sample_mask=sample_mask)
+    clean_time_series = masker.fit_transform(X=img, confounds=None, sample_mask=None)
     clean_time_series = pd.DataFrame(data=clean_time_series, columns=labels)
     return clean_time_series
 
