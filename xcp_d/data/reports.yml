@@ -3,6 +3,17 @@ sections:
 - name: Summary
   reportlets:
   - bids: {datatype: figures, desc: summary, suffix: bold}
+- name: Anatomical Data
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+  reportlets:
+  - bids:
+      datatype: figures
+      desc: brainplot
+      extension: [.html]
+      suffix: T1W
+    title: White Matter and Pial Ribbons
+    caption: This panel is an interactive figure rendering the white matter and pial surfaces on the T1w image.
+    static: false
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
