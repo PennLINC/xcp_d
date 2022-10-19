@@ -390,7 +390,7 @@ class QCPlot(SimpleInterface):
             )
 
         else:
-            temporary_file = self.inputs.cleaned_file
+            dropped_clean_file = self.inputs.cleaned_file
 
         postproc_confounds = pd.DataFrame(
             {
@@ -400,7 +400,7 @@ class QCPlot(SimpleInterface):
         )
 
         postproc_fig = FMRIPlot(
-            func_file=temporary_file,
+            func_file=dropped_clean_file,
             seg_file=self.inputs.seg_file,
             data=postproc_confounds,
             mask_file=self.inputs.mask_file,

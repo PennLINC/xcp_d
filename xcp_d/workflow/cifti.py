@@ -536,7 +536,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
-        desc='connectvityplot',
+        desc='connectivityplot',
         datatype="figures"),
         name='ds_report_connectivity',
         run_without_submitting=True)
