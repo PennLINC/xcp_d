@@ -193,7 +193,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     """
     # files to be concatenated
     datafile = [
-        '_motion.tsv',  # Must come first to set motion_suffix
+        '_desc-filtered_motion.tsv',  # Must come first to set motion_suffix
         '_desc-denoised_bold.nii.gz',
         '_desc-denoisedSmoothed_bold.nii.gz',
         '_atlas-Glasser_timeseries.tsv',
@@ -259,7 +259,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             # This is a hack to work around the fact that the motion file may have a desc
             # entity or not.
-            motion_suffix = "_motion.tsv"
+            motion_suffix = "_desc-filtered_motion.tsv"
             if file_pattern.endswith("_motion.tsv"):
                 # Remove space entity from filenames, because motion files don't have it.
                 mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
@@ -271,7 +271,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
                 found_files = natsorted(glob.glob(mot_file_search_base + file_pattern))
                 if not len(found_files):
-                    motion_suffix = "_desc-filtered_motion.tsv"
+                    motion_suffix = "_motion.tsv"
                     found_files = natsorted(
                         glob.glob(f"{mot_file_search_base}{motion_suffix}"),
                     )
@@ -409,7 +409,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         Working directory, if available. Default is None.
     """
     datafile = [
-        '_motion.tsv',  # Must come first to set motion_suffix
+        '_desc-filtered_motion.tsv',  # Must come first to set motion_suffix
         '_desc-denoised_bold.dtseries.nii',
         '_desc-denoisedSmoothed_bold.dtseries.nii',
         '_atlas-Glasser_den-91k_timeseries.ptseries.nii',
@@ -476,19 +476,25 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
             # This is a hack to work around the fact that the motion file may have a desc
             # entity or not.
-            motion_suffix = "_motion.tsv"
+            motion_suffix = "_desc-filtered_motion.tsv"
             if file_pattern.endswith("_motion.tsv"):
-                # Remove space entity from filenames, because motion files don't have it.
+                # Remove space and den entities from filenames, because motion files don't have it.
                 mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
+                mot_file_search_base = re.sub("den-[a-zA-Z0-9]+", "", mot_file_search_base)
                 mot_concatenated_file_base = re.sub(
                     "_space-[a-zA-Z0-9]+",
                     "",
                     concatenated_file_base,
                 )
+                mot_concatenated_file_base = re.sub(
+                    "_den-[a-zA-Z0-9]+",
+                    "",
+                    mot_concatenated_file_base,
+                )
 
                 found_files = natsorted(glob.glob(mot_file_search_base + file_pattern))
                 if not len(found_files):
-                    motion_suffix = "_desc-filtered_motion.tsv"
+                    motion_suffix = "_motion.tsv"
                     found_files = natsorted(
                         glob.glob(f"{mot_file_search_base}{motion_suffix}"),
                     )
@@ -508,15 +514,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 combinefile = " -cifti ".join(found_files)
                 os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
-            if file_pattern.endswith('motion.tsv'):
-                found_files = natsorted(
-                    glob.glob(
-                        res.split('run-')[0] + '*run*' + file_pattern
-                    )
-                )
-                concatenated_file_base = concatenated_file_base.split('_den-91k')[0]
-                outfile = concatenated_file_base + file_pattern
-                concatenate_tsv_files(found_files, outfile)
+            if file_pattern.endswith('_motion.tsv'):
                 name = f"{concatenated_file_base}{file_pattern.split('.')[0]}-DCAN.hdf5"
                 make_dcan_df(found_files, name)
 
