@@ -10,7 +10,6 @@ import tempfile
 from pathlib import Path
 
 import h5py
-import nibabel as nb
 import numpy as np
 import pandas as pd
 from natsort import natsorted
@@ -18,7 +17,7 @@ from nilearn.image import concat_imgs
 from nipype.interfaces.ants import ApplyTransforms
 from templateflow.api import get as get_template
 
-from xcp_d.utils.plot import plot_svgx
+from xcp_d.utils.plot import _get_tr, plot_svgx
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_transformfile
 from xcp_d.utils.write_save import read_ndata
@@ -127,9 +126,9 @@ def make_dcan_df(fds_files, name):
     )
 
     if os.path.isfile(cifti_file):
-        TR = nb.load(cifti_file).header.get_axis(0).step
+        TR = _get_tr(cifti_file)
     elif os.path.isfile(nifti_file):
-        TR = nb.load(nifti_file).header.get_zooms()[-1]
+        TR = _get_tr(nifti_file)
     else:
         raise Exception(
             f"One or more files not found:\n\t{fds_files[0]}\n\t{cifti_file}\n\t{nifti_file}"
@@ -325,7 +324,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
         )[0]
 
         segfile = get_segfile(preproc_files[0])
-        TR = nb.load(preproc_files[0]).header.get_zooms()[-1]
+        TR = _get_tr(preproc_files[0])
 
         rawdata = os.path.join(tempfile.mkdtemp(), 'rawdata.nii.gz')
 
@@ -496,8 +495,12 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 if not len(found_files):
                     motion_suffix = "_motion.tsv"
                     found_files = natsorted(
-                        glob.glob(f"{mot_file_search_base}{motion_suffix}"),
+                        glob.glob(f"{mot_file_search_base}{motion_suffix}")
                     )
+                    if not len(found_files):
+                        raise FileNotFoundError(
+                            f"Files not found: {mot_file_search_base}{motion_suffix}"
+                        )
 
                 outfile = mot_concatenated_file_base + motion_suffix
             else:
@@ -535,7 +538,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             dvar = compute_dvars(read_ndata(f))
             dvar[0] = np.mean(dvar)
             raw_dvars.append(dvar)
-        TR = get_cifti_tr(preproc_files[0])
+
+        TR = _get_tr(preproc_files[0])
         rawdata = os.path.join(tempfile.mkdtemp(), 'den-91k_bold.dtseries.nii')
         combinefile = " -cifti ".join(preproc_files)
         os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' + combinefile)
@@ -690,23 +694,6 @@ def concatenate_tsv_files(tsv_files, fileout):
         data = [pd.read_table(tsv_file) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
         data.to_csv(fileout, sep="\t", index=False)
-
-
-def get_cifti_tr(cifti_file):
-    """Extract repetition time from a CIFTI file.
-
-    Parameters
-    ----------
-    cifti_file : str
-        The CIFTI file from which to extract TR.
-
-    Returns
-    -------
-    float
-        The TR of the CIFTI file.
-    """
-    ciaxis = nb.load(cifti_file).header.get_axis(0)
-    return ciaxis.step
 
 
 def _getsesid(filename):
