@@ -456,7 +456,7 @@ def confoundplotx(time_series,
 def plot_svgx(rawdata,
               regressed_data,
               residual_data,
-              fd,
+              filtered_motion,
               unprocessed_filename,
               processed_filename,
               mask=None,
@@ -482,8 +482,8 @@ def plot_svgx(rawdata,
         3 tissues seg_data files
     TR : float, optional
         repetition times
-    fd :
-        framewise displacement in a TSV file.
+    filtered_motion :
+       Filtered motion parameters, including framewise displacement, in a TSV file.
     unprocessed_filename :
         output file svg before processing
     processed_filename :
@@ -527,7 +527,7 @@ def plot_svgx(rawdata,
     })
 
     FD_timeseries = pd.DataFrame({
-        'FD': pd.read_table(fd)["framewise_displacement"].values,
+        'FD': pd.read_table(filtered_motion)["framewise_displacement"].values,
     })
 
     # The mean and standard deviation of raw data
