@@ -158,8 +158,6 @@ def init_boldpostprocess_wf(
     qc_file
         quality control files
     fd
-    tmask
-        binary mask of frames with FD below specified threshold
 
     References
     ----------

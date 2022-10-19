@@ -145,8 +145,6 @@ def init_ciftipostprocess_wf(
     %(correlations)s
     qc_file
         quality control files
-    tmask
-        binary mask of frames with FD below specified threshold
 
     References
     ----------
