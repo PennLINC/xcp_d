@@ -227,7 +227,7 @@ class _CensorScrubOutputSpec(TraitedSpec):
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
     )
-    fd_timeseries = File(
+    filtered_motion = File(
         exists=True,
         mandatory=True,
         desc=(
@@ -271,6 +271,7 @@ class CensorScrub(SimpleInterface):
             confound=motion_df,
             head_radius=self.inputs.head_radius,
         )
+        motion_df["framewise_displacement"] = fd_timeseries_uncensored
 
         # Read in custom confounds file (if any) and bold file to be censored
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
@@ -360,9 +361,9 @@ class CensorScrub(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results["fd_timeseries"] = fname_presuffix(
+        self._results["filtered_motion"] = fname_presuffix(
             self.inputs.in_file,
-            suffix="_desc-fd_motion.tsv",
+            suffix="_desc-filtered_motion.tsv",
             newpath=runtime.cwd,
             use_ext=False,
         )
@@ -383,12 +384,8 @@ class CensorScrub(SimpleInterface):
             sep="\t",
         )
 
-        motion_df = pd.DataFrame(
-            data=fd_timeseries_uncensored,
-            columns=["framewise_displacement"],
-        )
         motion_df.to_csv(
-            self._results["fd_timeseries"],
+            self._results["filtered_motion"],
             index=False,
             header=True,
             sep="\t",
