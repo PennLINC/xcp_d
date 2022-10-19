@@ -1,14 +1,30 @@
 package: xcp_d
 sections:
+- name: Summary
+  reportlets:
+  - bids: {datatype: figures, desc: summary, suffix: bold}
+- name: Anatomical Data
+  reportlets:
+  - bids:
+      datatype: figures
+      desc: brainplot
+      extension: [.html]
+      suffix: T1w
+    title: White Matter and Pial Ribbons
+    caption: This panel is an interactive figure rendering the white matter and pial surfaces on the T1w image.
+    static: false
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
-  - bids: {datatype: figures, desc: summary, suffix: bold}
   - bids: {datatype: figures, desc: qualitycontrol, suffix: bold}
+  - bids: {datatype: figures, desc: bbregister, suffix: bold}
+    caption: bbregister was used to coregister functional and anatomical MRI data.
+    subtitle: Alignment of functional and anatomical MRI data (surface driven)
+    static: false
   - bids: {datatype: figures, desc: preprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
              and then a carpet plot for the time series of each voxel/vertex's time series of activity.
-    subtitle: Carpet Plot before Postprocessing
+    subtitle: Carpet Plot Before Postprocessing
   - bids: {datatype: figures, desc: censoring, suffix: motion}
     caption:  Framewise displacement (FD) is used to flag high-motion volumes,
               which are then censored as part of the denoising procedure.
@@ -18,8 +34,11 @@ sections:
     subtitle: Framwise Displacement and Censored Volumes
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
-            and then a carpet plot for the time series of each voxel/vertex's time series of activity.
-    subtitle: Carpet Plot after postprocessing
+            and then a carpet plot for the time series of each voxel/vertex's time series of activity..
+    subtitle: Carpet Plot After Postprocessing
+  - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
+    caption: This plot shows heatmaps from ROI-to-ROI correlations from four atlases.
+    subtitle: Correlation Heatmaps from Four Atlases
 - name: About
   reportlets:
   - bids: {datatype: figures, desc: about, suffix: bold}
