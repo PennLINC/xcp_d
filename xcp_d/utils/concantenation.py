@@ -518,6 +518,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
             if file_pattern.endswith('_motion.tsv'):
+                concatenate_tsv_files(found_files, outfile)
+
                 name = f"{concatenated_file_base}{file_pattern.split('.')[0]}-DCAN.hdf5"
                 make_dcan_df(found_files, name)
 
