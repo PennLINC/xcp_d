@@ -242,9 +242,10 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             # entity or not.
             motion_suffix = "_motion.tsv"
             if file_pattern.endswith("_motion.tsv"):
+                # Remove space entity from filenames, because motion files don't have it.
                 mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
                 mot_concatenated_file_base = re.sub(
-                    "space-[a-zA-Z0-9]+",
+                    "_space-[a-zA-Z0-9]+",
                     "",
                     concatenated_file_base,
                 )
@@ -458,9 +459,10 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             # entity or not.
             motion_suffix = "_motion.tsv"
             if file_pattern.endswith("_motion.tsv"):
+                # Remove space entity from filenames, because motion files don't have it.
                 mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
                 mot_concatenated_file_base = re.sub(
-                    "space-[a-zA-Z0-9]+",
+                    "_space-[a-zA-Z0-9]+",
                     "",
                     concatenated_file_base,
                 )
