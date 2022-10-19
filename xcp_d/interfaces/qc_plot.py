@@ -283,7 +283,7 @@ class QCPlot(SimpleInterface):
 
         if self.inputs.tmask:  # If a tmask is provided, find # vols censored
             tmask_df = pd.read_table(self.inputs.tmask)
-            tmask_arr = tmask_df["framewise_displacement"]
+            tmask_arr = tmask_df["framewise_displacement"].values
             num_censored_volumes = np.sum(tmask_arr)
         else:
             num_censored_volumes = 0
