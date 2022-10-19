@@ -31,66 +31,66 @@ Processing Steps
     a custom confound timeseries can be added as described below in :ref:`usage_custom_confounds`.
     If you are passing custom confound regressors, and you want none of the regressors here, the option will be ``custom``.
 
-   .. list-table:: Confound
+    .. list-table:: Confound
 
-    * - Pipelines
-      - Six Motion Estimates
-      - White Matter
-      - CSF
-      - Global Signal
-      - ACompCor
-      - AROMA
-    * - 24P
-      - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-      -
-      -
-      -
-      -
-      -
-    * - 27P
-      - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-      - X
-      - X
-      - X
-      -
-      -
-    * - 36P
-      - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-      - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-      - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-      - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-      -
-      -
-    * - acompcor_gsr
-      -  X, dX
-      -
-      -
-      - X
-      - 10 com, 5WM,5CSF
-      -
-    * - acompcor
-      - X, dX
-      -
-      -
-      -
-      - 10 com, 5WM,5CSF
-      -
-    * - aroma_gsr
-      - X, dX
-      - X
-      - X
-      - X
-      -
-      - X
-    * - aroma
-      - X, dX
-      - X
-      - X
-      -
-      -
-      - X
+      * - Pipelines
+        - Six Motion Estimates
+        - White Matter
+        - CSF
+        - Global Signal
+        - ACompCor
+        - AROMA
+      * - 24P
+        - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+        -
+        -
+        -
+        -
+        -
+      * - 27P
+        - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+        - X
+        - X
+        - X
+        -
+        -
+      * - 36P
+        - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+        - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+        - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+        - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+        -
+        -
+      * - acompcor_gsr
+        -  X, dX
+        -
+        -
+        - X
+        - 10 com, 5WM,5CSF
+        -
+      * - acompcor
+        - X, dX
+        -
+        -
+        -
+        - 10 com, 5WM,5CSF
+        -
+      * - aroma_gsr
+        - X, dX
+        - X
+        - X
+        - X
+        -
+        - X
+      * - aroma
+        - X, dX
+        - X
+        - X
+        -
+        -
+        - X
 
-    For more information about confound regresssors selection, please refer to :footcite:t:`benchmarkp`.
+    For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
 
     After the selection of confound regressors,
     the respiratory effects can optionally be filtered out from the motion estimates with band-stop or low-pass filtering to improve fMRI data quality.
