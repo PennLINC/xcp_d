@@ -6,6 +6,7 @@ import os
 import tempfile
 
 import numpy as np
+import pandas as pd
 from scipy.fftpack import fft
 
 from xcp_d.interfaces.prepostcleaning import Interpolate
@@ -86,7 +87,11 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
     tmask[48] = 1
     tmask[20] = 1
     tmask[100] = 1
-    np.savetxt(tmask_file, tmask)
+    tmask_df = pd.DataFrame(
+        data=tmask,
+        columns=["framewise_displacement"],
+    )
+    tmask_df.to_csv(tmask_file, index=False, sep="\t")
 
     interpolation = Interpolate()
     interpolation.inputs.tmask = tmask_file
@@ -187,16 +192,21 @@ def test_interpolate_nifti(data_dir):
 
     # Start testing interpolation - feed in input
     # Let's create a fake tmask...
+    tmask_file = "tmask.tsv"
     tmask = np.zeros(N)
     tmask[3] = 1
     tmask[12] = 1
     tmask[10] = 1
     tmask[6] = 1
     tmask[8] = 1
-    np.savetxt("tmask.tsv", tmask)
+    tmask_df = pd.DataFrame(
+        data=tmask,
+        columns=["framewise_displacement"],
+    )
+    tmask_df.to_csv(tmask_file, index=False, sep="\t")
 
     interpolation = Interpolate()
-    interpolation.inputs.tmask = "tmask.tsv"
+    interpolation.inputs.tmask = tmask_file
     interpolation.inputs.in_file = "noisy_file.nii.gz"
     interpolation.inputs.bold_file = boldfile
     interpolation.inputs.TR = TR

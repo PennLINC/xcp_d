@@ -2,7 +2,7 @@
 
 cat << DOC
 
-Run PyTests 
+Run PyTests
 ===========
 
 Run the suite of pytests easily on a local machine or on circleci
@@ -15,7 +15,7 @@ run_pytest_cmd () {
   workdir="$3"
 
   # Defines a call to pytest that works on circleci OR for a local
-  # test that uses 
+  # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
     PYTEST_RUN="pytest --data_dir=${data_dir} --output_dir=${output_dir} --working_dir=${workdir} tests"
@@ -39,7 +39,7 @@ run_pytest_cmd () {
     cwd_mount="-v ${PWD}/tests:/rundir:rw"
     PYTEST_RUN="docker run --rm -ti -u $(id -u) -w /rundir --entrypoint pytest "
     PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cwd_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} "
-    PYTEST_RUN+="--data_dir=/bids-input --output_dir=/out participant --working_dir=/work /rundir"
+    PYTEST_RUN+="--data_dir=/bids-input --output_dir=/out --working_dir=/work /rundir/"
 
   fi
 
@@ -69,4 +69,6 @@ BIDS_INPUT_DIR=${TESTDIR}/data
 PYTEST_CMD=$(run_pytest_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 # Run it!
+echo ${PYTEST_CMD}
+
 ${PYTEST_CMD}

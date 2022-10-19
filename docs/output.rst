@@ -103,6 +103,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
+      The ``desc-framewisedisplacement_motion.tsv`` is a tab-delimited file with one column: "framewise_displacement".
+
    e. DCAN style scrubbing file.
       This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps.
       At each step the following variables are present::

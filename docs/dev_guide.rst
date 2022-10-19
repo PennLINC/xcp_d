@@ -32,6 +32,7 @@ In order to run the tests locally, you must do the following:
         ln -s /path/to/xcp_d/.circleci/NiftiWithFreeSurferTest.sh /path/to/testing/folder/NiftiWithFreeSurferTest.sh
         ln -s /path/to/xcp_d/.circleci/NiftiWithoutFreeSurferTest.sh /path/to/testing/folder/NiftiWithoutFreeSurferTest.sh
         ln -s /path/to/xcp_d/.circleci/RunPyTests.sh /path/to/testing/folder/RunPyTests.sh
+        ln -s /path/to/xcp_d/.circleci/tests /path/to/testing/folder
 
 #.  Create a ``local_xcpd_path.txt`` file within your new testing folder.
     This file should contain the path to your local clone of the ``xcp_d`` repository.
