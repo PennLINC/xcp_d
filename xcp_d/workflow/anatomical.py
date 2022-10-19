@@ -1477,5 +1477,18 @@ def init_anatomical_wf(
                 "No FreeSurfer derivatives detected. "
                 "Surface transformation will not be performed."
             )
+            # The inputnode needs to be connected to *something* to be added to the workflow.
+            # This "nothingnode" exists just to allow the inputnode to connect to something.
+            # TODO: Should we maybe raise an Exception instead?
+            nothingnode = pe.Node(
+                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+                name="nothingnode",
+            )
+            workflow.connect(
+                [
+                    (inputnode, nothingnode, [("t1w", "t1w")]),
+                    (inputnode, nothingnode, [("t1seg", "t1seg")]),
+                ]
+            )
 
     return workflow

@@ -26,6 +26,13 @@ sections:
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
              and then a carpet plot for the time series of each voxel/vertex's time series of activity.
     subtitle: Carpet Plot Before Postprocessing
+  - bids: {datatype: figures, desc: censoring, suffix: motion}
+    caption:  Framewise displacement (FD) is used to flag high-motion volumes,
+              which are then censored as part of the denoising procedure.
+              If motion filtering is requested, then the six translation and rotation motion
+              parameters are filtered to remove respiratory effects before FD is calculated
+              and outlier volumes are identified.
+    subtitle: Framwise Displacement and Censored Volumes
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
             and then a carpet plot for the time series of each voxel/vertex's time series of activity..

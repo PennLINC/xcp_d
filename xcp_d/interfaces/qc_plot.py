@@ -3,8 +3,10 @@
 """Quality control plotting interfaces."""
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -22,7 +24,177 @@ from xcp_d.utils.plot import FMRIPlot
 from xcp_d.utils.qcmetrics import compute_registration_qc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
+
+
+class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
+    bold_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
+    )
+    tmask = File(exists=False, mandatory=False, desc="Temporal mask. Current unused.")
+    dummytime = traits.Float(
+        exists=False,
+        mandatory=False,
+        default_value=0,
+        desc="Dummy time to drop",
+    )
+    TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
+    head_radius = traits.Float(
+        exists=True,
+        mandatory=False,
+        default_value=50,
+        desc="Head radius; recommended value is 40 for babies",
+    )
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        exists=False,
+        mandatory=True,
+    )
+    motion_filter_order = traits.Int(exists=False, mandatory=True)
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
+        exists=False,
+        mandatory=True,
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
+        exists=False,
+        mandatory=True,
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
+    fd_thresh = traits.Float(
+        exists=False,
+        mandatory=True,
+        desc="Framewise displacement threshold."
+    )
+
+
+class _CensoringPlotOutputSpec(TraitedSpec):
+    out_file = File(exists=True, mandatory=True, desc="Censoring plot.")
+
+
+class CensoringPlot(SimpleInterface):
+    """Generate a censoring figure.
+
+    This is a line plot showing both the raw and filtered framewise displacement time series,
+    with vertical lines/bands indicating volumes removed by the post-processing workflow.
+    """
+
+    input_spec = _CensoringPlotInputSpec
+    output_spec = _CensoringPlotOutputSpec
+
+    def _run_interface(self, runtime):
+        palette = sns.color_palette("colorblind", 4)
+
+        # Load confound matrix and load motion with motion filtering
+        confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
+        preproc_motion_df = load_motion(
+            confound_matrix.copy(),
+            TR=self.inputs.TR,
+            motion_filter_type=None,
+        )
+        preproc_fd_timeseries = compute_fd(
+            confound=preproc_motion_df,
+            head_radius=self.inputs.head_radius,
+        )
+
+        fig, ax = plt.subplots(figsize=(16, 8))
+
+        time_array = np.arange(0, self.inputs.TR * preproc_fd_timeseries.size, self.inputs.TR)
+
+        ax.plot(
+            time_array,
+            preproc_fd_timeseries,
+            label="Raw Framewise Displacement",
+            color=palette[0],
+        )
+        ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
+
+        if self.inputs.dummytime:
+            initial_volumes_to_drop = int(np.ceil(self.inputs.dummytime / self.inputs.TR))
+            ax.axvspan(
+                0,
+                initial_volumes_to_drop,
+                label="Dummy Volumes",
+                alpha=0.5,
+                color=palette[1],
+            )
+        else:
+            initial_volumes_to_drop = 0
+
+        # Compute filtered framewise displacement to plot censoring
+        if self.inputs.motion_filter_type:
+            filtered_motion_df = load_motion(
+                confound_matrix.copy(),
+                TR=self.inputs.TR,
+                motion_filter_type=self.inputs.motion_filter_type,
+                motion_filter_order=self.inputs.motion_filter_order,
+                band_stop_min=self.inputs.band_stop_min,
+                band_stop_max=self.inputs.band_stop_max,
+            )
+            filtered_fd_timeseries = compute_fd(
+                confound=filtered_motion_df,
+                head_radius=self.inputs.head_radius,
+            )
+
+            ax.plot(
+                time_array,
+                filtered_fd_timeseries,
+                label="Filtered Framewise Displacement",
+                color=palette[2],
+            )
+        else:
+            filtered_fd_timeseries = preproc_fd_timeseries.copy()
+
+        # NOTE: TS- Probably should replace with the actual tmask file.
+        tmask = filtered_fd_timeseries >= self.inputs.fd_thresh
+        tmask[:initial_volumes_to_drop] = False
+
+        # Only plot censored volumes if any were flagged
+        if sum(tmask) > 0:
+            tmask_idx = np.where(tmask)[0]
+            for i_idx, idx in enumerate(tmask_idx):
+                if i_idx == 0:
+                    label = "Censored Volumes"
+                else:
+                    label = ""
+
+                ax.axvline(idx * self.inputs.TR, label=label, color=palette[3], alpha=0.5)
+
+        ax.set_xlim(0, max(time_array))
+        y_max = (
+            np.max(
+                np.hstack(
+                    (
+                        preproc_fd_timeseries,
+                        filtered_fd_timeseries,
+                        [self.inputs.fd_thresh],
+                    )
+                )
+            )
+            * 1.5
+        )
+        ax.set_ylim(0, y_max)
+        ax.set_xlabel("Time (seconds)", fontsize=20)
+        ax.set_ylabel("Movement (millimeters)", fontsize=20)
+        ax.legend(fontsize=20)
+        fig.tight_layout()
+
+        self._results["out_file"] = fname_presuffix(
+            "censoring",
+            suffix="_motion.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        fig.savefig(self._results["out_file"])
+        return runtime
 
 
 class _QCPlotInputSpec(BaseInterfaceInputSpec):
