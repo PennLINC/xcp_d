@@ -507,8 +507,8 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                 outfile = concatenated_file_base + file_pattern
 
             if file_pattern.endswith('ptseries.nii'):
-                concatenated_file_base = concatenated_file_base.split('_den-91k')[0]
-                outfile = concatenated_file_base + file_pattern
+                temp_concatenated_file_base = concatenated_file_base.split('_den-91k')[0]
+                outfile = temp_concatenated_file_base + file_pattern
                 found_files = natsorted(
                     glob.glob(
                         res.split('run-')[0] + '*run*' + file_pattern
