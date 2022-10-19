@@ -479,7 +479,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             if file_pattern.endswith("_motion.tsv"):
                 # Remove space and den entities from filenames, because motion files don't have it.
                 mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
-                mot_file_search_base = re.sub("den-[a-zA-Z0-9]+", "", mot_file_search_base)
+                mot_file_search_base = re.sub("_den-[a-zA-Z0-9]+", "", mot_file_search_base)
                 mot_concatenated_file_base = re.sub(
                     "_space-[a-zA-Z0-9]+",
                     "",
