@@ -112,11 +112,18 @@ def make_dcan_df(fds_files, name):
     remaining frames
     """
     print('making dcan')
+    # Temporary workaround for differently-named motion files until we have a BIDS-ish
+    # filename construction function
+    if "desc-filtered" in fds_files[0]:
+        split_str = "_desc-filtered"
+    else:
+        split_str = "_motion"
+
     cifti_file = (
-        fds_files[0].split('_motion')[0] + '_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
+        fds_files[0].split(split_str)[0] + '_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
     )
     nifti_file = (
-        fds_files[0].split('_motion')[0] + '_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz'
+        fds_files[0].split(split_str)[0] + '_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz'
     )
 
     if os.path.isfile(cifti_file):
