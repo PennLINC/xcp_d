@@ -483,7 +483,7 @@ def plot_svgx(rawdata,
     TR : float, optional
         repetition times
     fd :
-        framewise displacement
+        framewise displacement in a TSV file.
     unprocessed_filename :
         output file svg before processing
     processed_filename :
@@ -512,9 +512,12 @@ def plot_svgx(rawdata,
 
     # Remove first N deleted from raw_data so it's same length as censored files
     if len(raw_dvars_data) > len(residual_dvars_data):
+        # TODO: Should this be [-len(residual_dvars_data):] ?
+        # ... Seems to grab first N, not last N.
         raw_dvars_data = raw_dvars_data[0:len(residual_dvars_data)]
         raw_data = raw_data[:, 0:len(residual_dvars_data)]
-        # regressed_dvars_data = raw_dvars_data #TODO: Check if this is needed
+        # TODO: Figure out how to slice the regressed DVARS instead of just overwriting it
+        regressed_dvars_data = raw_dvars_data
 
     # Create dataframes for the bold_data DVARS, FD
     DVARS_timeseries = pd.DataFrame({
@@ -523,7 +526,9 @@ def plot_svgx(rawdata,
         'Post all': residual_dvars_data
     })
 
-    FD_timeseries = pd.DataFrame({'FD': np.loadtxt(fd)})
+    FD_timeseries = pd.DataFrame({
+        'FD': pd.read_table(fd)["framewise_displacement"].values,
+    })
 
     # The mean and standard deviation of raw data
     unprocessed_data_timeseries = pd.DataFrame({
