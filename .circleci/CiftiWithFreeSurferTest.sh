@@ -36,4 +36,5 @@ $XCPD_CMD \
 	--smoothing 6 -v -v \
     --motion-filter-type lp --band-stop-min 6 \
     --warp-surfaces-native2std \
-    --cifti
+    --cifti \
+    --combineruns
