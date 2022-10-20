@@ -73,7 +73,6 @@ class Regress(SimpleInterface):
         if self.inputs.custom_confounds and exists(self.inputs.custom_confounds):
             confound = load_confound_matrix(
                 original_file=self.inputs.original_file,
-                datafile=self.inputs.in_file,
                 custom_confounds=self.inputs.custom_confounds,
                 confound_tsv=self.inputs.confounds,
                 params=self.inputs.params,
@@ -81,10 +80,10 @@ class Regress(SimpleInterface):
         else:  # No custom confounds
             confound = load_confound_matrix(
                 original_file=self.inputs.original_file,
-                datafile=self.inputs.in_file,
                 confound_tsv=self.inputs.confounds,
                 params=self.inputs.params,
             )
+
         # for testing, let's write out the confounds file:
         confounds_file_output_name = fname_presuffix(
             self.inputs.confounds,
