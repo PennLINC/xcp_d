@@ -653,6 +653,7 @@ def main():
             run_uuid=run_uuid,
             combineruns=opts.combineruns,
             input_type=opts.input_type,
+            cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
         )

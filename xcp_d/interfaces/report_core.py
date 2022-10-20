@@ -84,6 +84,7 @@ def generate_reports(subject_list,
                      work_dir,
                      output_dir,
                      run_uuid,
+                     cifti=False,
                      config=None,
                      packagename=None,
                      combineruns=False,
@@ -147,10 +148,13 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/hcp/hcp'
             from xcp_d.utils.concantenation import concatenate_bold as concatenatebold
             print('Concatenating bold files ...')
-            concatenatebold(subjlist=subject_list,
-                            fmridir=str(fmri_dir),
-                            outputdir=Path(str(output_dir)) / 'xcp_d/',
-                            work_dir=work_dir)
+            concatenatebold(
+                subjects=subject_list,
+                fmridir=str(fmri_dir),
+                outputdir=str(Path(str(output_dir)) / 'xcp_d/'),
+                work_dir=work_dir,
+                cifti=cifti,
+            )
             print('Concatenation complete!')
 
         from xcp_d.interfaces.layout_builder import LayoutBuilder

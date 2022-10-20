@@ -49,11 +49,18 @@ def concatenate_niimgs(files, out_file):
         os.system('wb_command -cifti-merge ' + out_file + ' -cifti ' + combinefile)
 
 
-def concatenate_bold(fmridir, outputdir, work_dir, subjects):
+def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
     """I still need preproc_files, brain mask, segfile, TR."""
     # NOTE: The config has no effect when derivatives is True :(
     layout = BIDSLayout(outputdir, validate=False, derivatives=True)
     layout_fmriprep = BIDSLayout(fmridir, validate=False, derivatives=True)
+
+    if cifti:
+        tsv_extensions = [".ptseries.nii"]
+        img_extensions = [".dtseries.nii"]
+    else:
+        tsv_extensions = [".tsv"]
+        img_extensions = [".nii.gz"]
 
     for subject in subjects:
         if subject.startswith("sub-"):
@@ -72,7 +79,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
             tasks = layout.get_tasks(
                 desc="denoised",
                 suffix="bold",
-                extension=[".nii.gz", ".dtseries.nii"],
+                extension=img_extensions,
                 **base_entities,
             )
             for task in tasks:
@@ -115,7 +122,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
                 output_spaces = layout.get_spaces(
                     desc="denoised",
                     suffix="bold",
-                    extension=[".nii.gz", ".dtseries.nii"],
+                    extension=img_extensions,
                     **task_entities,
                 )
 
@@ -123,23 +130,26 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
                     space_entities = task_entities[:]
                     space_entities["space"] = space
 
-                    # Mask file
-                    mask_files = layout_fmriprep.get(
-                        desc=["brain"],
-                        suffix="mask",
-                        extension=[".nii.gz"],
-                        **space_entities,
-                    )
-                    if len(mask_files) != 1:
-                        raise ValueError(f"Too many files found: {mask_files}")
+                    if cifti:
+                        # Mask file
+                        mask_files = layout_fmriprep.get(
+                            desc=["brain"],
+                            suffix="mask",
+                            extension=[".nii.gz"],
+                            **space_entities,
+                        )
+                        if len(mask_files) != 1:
+                            raise ValueError(f"Too many files found: {mask_files}")
 
-                    mask = mask_files[0].path
+                        mask = mask_files[0].path
+                    else:
+                        mask = None
 
                     # Preprocessed BOLD files
                     preproc_files = layout_fmriprep.get(
                         desc=["preproc", None],
                         suffix="bold",
-                        extension=[".nii.gz", ".dtseries.nii"],
+                        extension=img_extensions,
                         **space_entities,
                     )
                     concat_preproc_file = os.path.join(tempfile.mkdtemp(), "rawdata.nii.gz")
@@ -161,7 +171,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
                     bold_files = layout.get(
                         desc="denoised",
                         suffix="bold",
-                        extension=[".nii.gz", ".dtseries.nii"],
+                        extension=img_extensions,
                         **space_entities,
                     )
                     concat_bold_file = _get_concat_name(layout, bold_files[0])
@@ -179,7 +189,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
                     smooth_bold_files = layout.get(
                         desc="denoisedSmoothed",
                         suffix="bold",
-                        extension=[".nii.gz", ".dtseries.nii"],
+                        extension=img_extensions,
                         **space_entities,
                     )
                     if len(smooth_bold_files):
@@ -261,14 +271,14 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
                     # Now timeseries files
                     atlases = layout.get_atlases(
                         suffix="timeseries",
-                        extension=[".tsv", ".ptseries.nii"],
+                        extension=tsv_extensions,
                         **space_entities,
                     )
                     for atlas in atlases:
                         atlas_timeseries_files = layout.get(
                             atlas=atlas,
                             suffix="timeseries",
-                            extension=[".tsv", ".ptseries.nii"],
+                            extension=tsv_extensions,
                             **space_entities,
                         )
                         concat_file = _get_concat_name(layout, atlas_timeseries_files[0])
