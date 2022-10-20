@@ -305,18 +305,20 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                                    TR=TR,
                                                    name="write_derivative_wf")
 
-    censor_scrub = pe.Node(CensorScrub(
-        TR=TR,
-        custom_confounds=custom_confounds,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        head_radius=head_radius,
-        fd_thresh=fd_thresh),
+    censor_scrub = pe.Node(
+        CensorScrub(
+            TR=TR,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            head_radius=head_radius,
+            fd_thresh=fd_thresh,
+        ),
         name='censoring',
         mem_gb=mem_gbx['timeseries'],
-        omp_nthreads=omp_nthreads)
+        omp_nthreads=omp_nthreads,
+    )
 
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
@@ -343,6 +345,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads,
     )
+    regression_wf.inputs.high_pass = lower_bpf
+    regression_wf.inputs.low_pass = upper_bpf
+    regression_wf.inputs.TR = TR
 
     executivesummary_wf = init_execsummary_wf(
         TR=TR,
@@ -464,9 +469,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # A node to hold outputs from either rm_dummytime or inputnode
     bold_holder_node = pe.Node(
         niu.IdentityInterface(
-            fields=['bold_file'],
+            fields=["bold_file", "fmriprep_confounds_tsv", "custom_confounds"],
         ),
-        name='inputnode',
+        name="bold_holder_node",
     )
 
     # Remove TR first:
@@ -485,17 +490,23 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         workflow.connect([
             (rm_dummytime, censor_scrub, [
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
-                ('custom_confounds_dropped', 'custom_confounds'),
             ]),
-            (rm_dummytime, bold_holder_node, [("bold_file", "bold_file")]),
+            (rm_dummytime, bold_holder_node, [
+                ("bold_file", "bold_file"),
+                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_tsv"),
+                ("custom_confounds_dropped", "custom_confounds"),
+            ]),
         ])
 
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-                                       ('custom_confounds', 'custom_confounds')]),
-            (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (inputnode, bold_holder_node, [
+                ("bold_file", "bold_file"),
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
+                ("custom_confounds", "custom_confounds"),
+            ]),
         ])
 
     # The BOLD file is just used for filenames
@@ -518,11 +529,17 @@ Residual timeseries from this regression were then band-pass filtered to retain 
             n_procs=omp_nthreads)
 
         workflow.connect([(bold_holder_node, despike3d, [('bold_file', 'in_file')]),
-                          (despike3d, regression_wf, [('out_file', 'in_file')])])
+                          (despike3d, regression_wf, [('out_file', 'bold_file')])])
 
     else:  # If we don't despike
         # regression workflow
         workflow.connect([(bold_holder_node, regression_wf, [('bold_file', 'bold_file')])])
+
+    # Gotta support custom confounds too
+    # Also gotta select the confounds
+    workflow.connect([
+        (bold_holder_node, regression_wf, [('fmriprep_confounds_tsv', 'confounds')]),
+    ])
 
     workflow.connect([
         (inputnode, regression_wf, [('bold_mask', 'mask_file')]),

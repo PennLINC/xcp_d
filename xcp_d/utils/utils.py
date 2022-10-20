@@ -577,6 +577,8 @@ def denoise_nifti_with_nilearn(
     """
     from nilearn import masking
 
+    from xcp_d.utils.utils import _denoise_with_nilearn
+
     out_file = "desc-denoised_bold.nii.gz"
 
     raw_data = masking.apply_mask(bold_file, mask_file)
@@ -603,6 +605,7 @@ def denoise_cifti_with_nilearn(
     TR,
     tmask,
 ):
+    from xcp_d.utils.utils import _denoise_with_nilearn
     from xcp_d.utils.write_save import read_ndata, write_ndata
 
     out_file = "desc-denoised_bold.nii.gz"
