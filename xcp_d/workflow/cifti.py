@@ -18,8 +18,8 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -150,7 +150,7 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    TR = get_cifti_tr(bold_file)
+    TR = _get_tr(bold_file)
     if TR is None:
         metadata = layout.get_metadata(bold_file)
         TR = metadata['RepetitionTime']

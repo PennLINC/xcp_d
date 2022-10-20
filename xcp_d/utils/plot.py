@@ -1053,6 +1053,9 @@ def _get_tr(img):
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """
+    if isinstance(img, str):
+        img = nb.load(img)
+
     try:
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
