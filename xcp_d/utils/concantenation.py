@@ -170,6 +170,33 @@ def make_dcan_df(fds_files, name):
             dtype='float')
 
 
+def _get_motion_file(bold_file):
+    path, bold_filename = os.path.split(bold_file)
+    # Remove space entity from filenames, because motion files don't have it.
+    ENTITIES_TO_REMOVE = ["space", "den"]
+    motion_file_base = bold_filename
+    for etr in ENTITIES_TO_REMOVE:
+        # NOTE: This wouldn't work on sub bc there's no leading underscore.
+        motion_file_base = re.sub(f"_{etr}-[a-zA-Z0-9]+", "", motion_file_base)
+
+    # Remove the last entity (desc), suffix, and extension
+    motion_file_base = motion_file_base.split("_desc-")[0]
+
+    # Add the path back in
+    motion_file_base = os.path.join(path, motion_file_base)
+
+    # This is a hack to work around the fact that the motion file may have a desc
+    # entity or not.
+    motion_file = motion_file_base + "_desc-filtered_motion.tsv"
+    if not os.path.isfile(motion_file):
+        motion_file = motion_file_base + "_motion.tsv"
+
+    if not os.path.isfile(motion_file):
+        raise ValueError(f"File not found: {motion_file}")
+
+    return motion_file
+
+
 def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     """Concatenate NIFTI files along the time dimension.
 
@@ -192,7 +219,6 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
     """
     # files to be concatenated
     datafile = [
-        '_desc-filtered_motion.tsv',  # Must come first to set motion_suffix
         '_outliers.tsv',
         '_desc-denoised_bold.nii.gz',
         '_desc-denoisedSmoothed_bold.nii.gz',
@@ -230,20 +256,32 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
     # do for each task
     for task in tasklist:
+        # Select unsmoothed denoised BOLD files
         denoised_task_files = natsorted(
-            fnmatch.filter(
-                all_func_files,
-                f'*_task-{task}*_desc-denoised*bold*.nii.gz',
-            )
-        )
-        denoised_task_files_unsmoothed_only = natsorted(
-            [f for f in denoised_task_files if "denoisedSmoothed" not in f]
+            fnmatch.filter(all_func_files, f'*_task-{task}*_desc-denoised_bold.nii.gz')
         )
 
-        # denoised_task_files may be in different space like native or MNI or T1w
+        # TODO: Make this robust to different output spaces.
+        # Currently, different spaces will be treated like different runs.
         if len(denoised_task_files) == 0:
             # If no files found for this task, move on to the next task.
             continue
+        elif len(denoised_task_files) == 1:
+            # If only one file is found, there's only one run.
+            # In this case we just need to make the DCAN HDF5 file from the filtered motion file.
+            motion_file = _get_motion_file(denoised_task_files[0])
+
+            dcan_df_name = f"{'.'.join(motion_file.split('.')[:-1])}-DCAN.hdf5"
+            make_dcan_df(motion_file, dcan_df_name)
+            continue
+        else:
+            # If multiple runs of motion files are found, concatenate them and make the HDF5.
+            motion_files = [_get_motion_file(f) for f in denoised_task_files]
+            concat_motion_file = re.sub("_run-[0-9]+", "", motion_files[0])
+            concatenate_tsv_files(motion_files, concat_motion_file)
+
+            dcan_df_name = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+            make_dcan_df(motion_file, dcan_df_name)
 
         regressed_dvars = []
 
@@ -259,37 +297,10 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
         for file_pattern in datafile:
             found_files = natsorted(glob.glob(file_search_base + file_pattern))
-
-            # This is a hack to work around the fact that the motion file may have a desc
-            # entity or not.
-            motion_suffix = "_desc-filtered_motion.tsv"
-            if file_pattern.endswith("_motion.tsv"):
-                # Remove space entity from filenames, because motion files don't have it.
-                mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
-                mot_concatenated_file_base = re.sub(
-                    "_space-[a-zA-Z0-9]+",
-                    "",
-                    concatenated_file_base,
-                )
-
-                found_files = natsorted(glob.glob(mot_file_search_base + file_pattern))
-                if not len(found_files):
-                    motion_suffix = "_motion.tsv"
-                    found_files = natsorted(
-                        glob.glob(f"{mot_file_search_base}{motion_suffix}"),
-                    )
-
-                assert len(found_files), f"{mot_file_search_base}{motion_suffix}"
-                outfile = mot_concatenated_file_base + motion_suffix
-            else:
-                outfile = concatenated_file_base + file_pattern
+            outfile = concatenated_file_base + file_pattern
 
             if file_pattern.endswith('tsv'):
                 concatenate_tsv_files(found_files, outfile)
-
-            if file_pattern.endswith('_motion.tsv'):
-                name = f"{concatenated_file_base}{file_pattern.split('.')[0]}-DCAN.hdf5"
-                make_dcan_df(found_files, name)
 
             elif file_pattern.endswith('nii.gz'):
                 mask = natsorted(
@@ -309,6 +320,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                     dvar[0] = np.mean(dvar)
                     regressed_dvars.append(dvar)
 
+        # Preprocessed BOLD files from fMRIPrep
         preproc_files = natsorted(
             glob.glob(
                 os.path.join(
@@ -353,7 +365,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             rawdata=rawdata,
             regressed_data=f'{concatenated_file_base}_desc-denoised_bold.nii.gz',
             residual_data=f'{concatenated_file_base}_desc-denoised_bold.nii.gz',
-            filtered_motion=f'{mot_concatenated_file_base}{motion_suffix}',
+            filtered_motion=concat_motion_file,
             raw_dvars=raw_dvars,
             regressed_dvars=regressed_dvars,
             filtered_dvars=regressed_dvars,
@@ -375,9 +387,7 @@ def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             f'{concatenated_filename_base}__desc-boldref_bold.svg',
         )
 
-        preproc_file_base = os.path.basename(preproc_files[0]).split(
-            '_desc-preproc_bold.nii.gz'
-        )[0]
+        preproc_file_base = os.path.basename(preproc_files[0]).split('_desc-')[0]
         bb1reg = os.path.join(
             figures_dir,
             f'{preproc_file_base}_desc-bbregister_bold.svg',
@@ -453,16 +463,35 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
     # do for each task
     for task in tasklist:
+        # Select unsmoothed denoised BOLD files
         denoised_task_files = natsorted(
             fnmatch.filter(
                 all_func_files,
-                f'*{task}*run*den-91k_desc-denoised*bold.dtseries.nii',
-            ),
+                f'*_task-{task}*den-91k_desc-denoised_bold.dtseries.nii',
+            )
         )
 
+        # TODO: Make this robust to different output spaces.
+        # Currently, different spaces will be treated like different runs.
         if len(denoised_task_files) == 0:
             # If no files found for this task, move on to the next task.
             continue
+        elif len(denoised_task_files) == 1:
+            # If only one file is found, there's only one run.
+            # In this case we just need to make the DCAN HDF5 file from the filtered motion file.
+            motion_file = _get_motion_file(denoised_task_files[0])
+
+            dcan_df_name = f"{'.'.join(motion_file.split('.')[:-1])}-DCAN.hdf5"
+            make_dcan_df(motion_file, dcan_df_name)
+            continue
+        else:
+            # If multiple runs of motion files are found, concatenate them and make the HDF5.
+            motion_files = [_get_motion_file(f) for f in denoised_task_files]
+            concat_motion_file = re.sub("_run-[0-9]+", "", motion_files[0])
+            concatenate_tsv_files(motion_files, concat_motion_file)
+
+            dcan_df_name = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+            make_dcan_df(motion_file, dcan_df_name)
 
         regressed_dvars = []
         res = denoised_task_files[0]
@@ -477,39 +506,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
 
         for file_pattern in datafile:
             found_files = natsorted(glob.glob(file_search_base + file_pattern))
-
-            # This is a hack to work around the fact that the motion file may have a desc
-            # entity or not.
-            motion_suffix = "_desc-filtered_motion.tsv"
-            if file_pattern.endswith("_motion.tsv"):
-                # Remove space and den entities from filenames, because motion files don't have it.
-                mot_file_search_base = re.sub("space-[a-zA-Z0-9]+", "", file_search_base)
-                mot_file_search_base = re.sub("_den-[a-zA-Z0-9]+", "", mot_file_search_base)
-                mot_concatenated_file_base = re.sub(
-                    "_space-[a-zA-Z0-9]+",
-                    "",
-                    concatenated_file_base,
-                )
-                mot_concatenated_file_base = re.sub(
-                    "_den-[a-zA-Z0-9]+",
-                    "",
-                    mot_concatenated_file_base,
-                )
-
-                found_files = natsorted(glob.glob(mot_file_search_base + file_pattern))
-                if not len(found_files):
-                    motion_suffix = "_motion.tsv"
-                    found_files = natsorted(
-                        glob.glob(f"{mot_file_search_base}{motion_suffix}")
-                    )
-                    if not len(found_files):
-                        raise FileNotFoundError(
-                            f"Files not found: {mot_file_search_base}{motion_suffix}"
-                        )
-
-                outfile = mot_concatenated_file_base + motion_suffix
-            else:
-                outfile = concatenated_file_base + file_pattern
+            outfile = concatenated_file_base + file_pattern
 
             if file_pattern.endswith('ptseries.nii'):
                 temp_concatenated_file_base = concatenated_file_base.split('_den-91k')[0]
@@ -519,16 +516,11 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         res.split('run-')[0] + '*run*' + file_pattern
                     )
                 )
+                outfile = re.sub("_run-[0-9]+", "", found_files[0])
                 combinefile = " -cifti ".join(found_files)
                 os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
 
-            if file_pattern.endswith('_motion.tsv'):
-                concatenate_tsv_files(found_files, outfile)
-
-                name = f"{concatenated_file_base}{file_pattern.split('.')[0]}-DCAN.hdf5"
-                make_dcan_df(found_files, name)
-
-            if file_pattern.endswith('dtseries.nii'):
+            elif file_pattern.endswith('dtseries.nii'):
                 found_files = natsorted(glob.glob(file_search_base + file_pattern))
                 combinefile = " -cifti ".join(found_files)
                 os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
@@ -540,6 +532,7 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
                         regressed_dvars.append(dvar)
 
         raw_dvars = []
+        # Preprocessed BOLD files from fMRIPrep
         preproc_files = natsorted(glob.glob(os.path.join(func_dir, preproc_base_search_pattern)))
         for f in preproc_files:
             dvar = compute_dvars(read_ndata(f))
@@ -566,14 +559,15 @@ def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
             rawdata=rawdata,
             regressed_data=f'{concatenated_file_base}_desc-denoised_bold.dtseries.nii',
             residual_data=f'{concatenated_file_base}_desc-denoised_bold.dtseries.nii',
-            filtered_motion=f'{mot_concatenated_file_base}{motion_suffix}',
+            filtered_motion=concat_motion_file,
             raw_dvars=raw_dvars,
             regressed_dvars=regressed_dvars,
             filtered_dvars=regressed_dvars,
             processed_filename=postcarpet,
             unprocessed_filename=precarpet,
             TR=TR,
-            work_dir=work_dir)
+            work_dir=work_dir,
+        )
 
         # link or copy bb svgs
         preproc_file_base = os.path.basename(preproc_files[0]).split(
