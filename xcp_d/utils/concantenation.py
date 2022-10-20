@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for concatenating scans across runs."""
-import fnmatch
 import glob
 import os
 import re
@@ -13,8 +12,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pandas as pd
-from bids.layout import BIDSLayout, Config
-from natsort import natsorted
+from bids.layout import BIDSLayout
 from nilearn.image import concat_imgs
 from nipype.interfaces.ants import ApplyTransforms
 from pkg_resources import resource_filename as _pkgres
@@ -27,74 +25,6 @@ from xcp_d.utils.write_save import read_ndata
 
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
 path_patterns = _pybids_spec["default_path_patterns"]
-
-
-def concatenatebold(subjlist, fmridir, outputdir, work_dir):
-    """Concatenate BOLD files along time dimension.
-
-    This function does not return anything, but it writes out the concatenated file.
-
-    Parameters
-    ----------
-    subjlist : list of str
-        List of subject identifiers.
-    fmridir : str
-        Path to the input directory (e.g., fMRIPrep derivatives dataset).
-    outputdir : str
-        Path to the output directory (i.e., xcp_d derivatives dataset).
-    work_dir : str
-        The working directory.
-    """
-    cfg = Config(
-        "xcpd",
-        entities=_pybids_spec["entities"],
-        default_path_patterns=path_patterns,
-    )
-    layout = BIDSLayout(outputdir, validate=False, derivatives=True, config=cfg)
-
-    # Ensure each subject ID starts with sub-
-    subjlist = [_prefix(subject) for subject in subjlist]
-    search_pattern = os.path.join(
-        outputdir,
-        subjlist[0],
-        "**/func/*_desc-denoised*bold*nii*",
-    )
-    fmr = glob.glob(search_pattern, recursive=True)
-    if len(fmr) == 0:
-        raise ValueError(f"No files detected in {search_pattern}.")
-
-    cifti = False if fmr[0].endswith('nii.gz') else True
-    concat_func = concatenate_cifti if cifti else concatenate_nifti
-    fname_pattern = ".dtseries.nii" if cifti else ".nii.gz"
-
-    for subject in subjlist:
-        # get session if there
-        session_folders = glob.glob(
-            os.path.join(
-                outputdir,
-                subject,
-                f'ses-*/func/*_desc-denoised*bold*{fname_pattern}',
-            )
-        )
-        if len(session_folders):
-            session_ids = sorted(list(set([_getsesid(sf) for sf in session_folders])))
-            for session in session_ids:
-                concat_func(
-                    subid=subject,
-                    fmridir=fmridir,
-                    outputdir=outputdir,
-                    ses=session,
-                    work_dir=work_dir,
-                    layout=layout,
-                )
-        else:
-            concat_func(
-                subid=subject,
-                fmridir=fmridir,
-                outputdir=outputdir,
-                work_dir=work_dir,
-                layout=layout,
-            )
 
 
 def _get_concat_name(layout, in_file):
@@ -110,6 +40,7 @@ def _get_concat_name(layout, in_file):
 
 
 def concatenate_niimgs(files, out_file):
+    """Concatenate niimgs."""
     if files[0].extension == ".nii.gz":
         concat_preproc_img = concat_imgs([f.path for f in files])
         concat_preproc_img.to_filename(out_file)
@@ -119,7 +50,7 @@ def concatenate_niimgs(files, out_file):
 
 
 def concatenate_bold(fmridir, outputdir, work_dir, subjects):
-    """I still need preproc_files, brain mask, segfile, TR"""
+    """I still need preproc_files, brain mask, segfile, TR."""
     # NOTE: The config has no effect when derivatives is True :(
     layout = BIDSLayout(outputdir, validate=False, derivatives=True)
     layout_fmriprep = BIDSLayout(fmridir, validate=False, derivatives=True)
@@ -346,7 +277,9 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects):
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
                             concatenate_niimgs(atlas_timeseries_files, concat_file)
                         else:
-                            raise ValueError(f"Unknown extension for {atlas_timeseries_files[0].path}")
+                            raise ValueError(
+                                f"Unknown extension for {atlas_timeseries_files[0].path}"
+                            )
 
 
 def make_dcan_df(fds_files, name):
@@ -462,403 +395,6 @@ def _get_motion_file(bold_file):
         raise ValueError(f"File not found: {motion_file}")
 
     return motion_file
-
-
-def concatenate_nifti(subid, fmridir, outputdir, ses=None, work_dir=None):
-    """Concatenate NIFTI files along the time dimension.
-
-    This function doesn't return anything, but it writes out the concatenated file.
-
-    TODO: Make file search more general and leverage pybids
-
-    Parameters
-    ----------
-    subid : str
-        Subject identifier.
-    fmridir : str
-        Path to the input directory (e.g., fMRIPrep derivatives dataset).
-    outputdir : str
-        Path to the output directory (i.e., xcp_d derivatives dataset).
-    ses : str or None, optional
-        Session identifier, if applicable. Default is None.
-    work_dir : str or None, optional
-        Working directory, if available. Default is None.
-    """
-    # files to be concatenated
-    datafile = [
-        '_outliers.tsv',
-        '_desc-denoised_bold.nii.gz',
-        '_desc-denoisedSmoothed_bold.nii.gz',
-        '_atlas-Glasser_timeseries.tsv',
-        '_atlas-Gordon_timeseries.tsv',
-        '_atlas-Schaefer117_timeseries.tsv',
-        '_atlas-Schaefer617_timeseries.tsv',
-        '_atlas-Schaefer217_timeseries.tsv',
-        '_atlas-Schaefer717_timeseries.tsv',
-        '_atlas-Schaefer317_timeseries.tsv',
-        '_atlas-Schaefer817_timeseries.tsv',
-        '_atlas-Schaefer417_timeseries.tsv',
-        '_atlas-Schaefer917_timeseries.tsv',
-        '_atlas-Schaefer517_timeseries.tsv',
-        '_atlas-Schaefer1017_timeseries.tsv',
-        '_atlas-subcortical_timeseries.tsv',
-    ]
-
-    if ses is None:
-        all_func_files = glob.glob(os.path.join(outputdir, subid, 'func', '*'))
-        func_dir = os.path.join(fmridir, subid, 'func')
-        figures_dir = os.path.join(outputdir, subid, 'figures')
-    else:
-        all_func_files = glob.glob(os.path.join(outputdir, subid, f'ses-{ses}', 'func', '*'))
-        func_dir = os.path.join(fmridir, subid, f'ses-{ses}', 'func')
-        figures_dir = os.path.join(outputdir, subid , 'figures')
-
-    # extract the task list
-    denoised_bold_files = fnmatch.filter(all_func_files, '*_desc-denoised_bold.nii.gz')
-    tasklist = [
-        denoised_bold_file.split('task-')[-1].split('_')[0]
-        for denoised_bold_file in denoised_bold_files
-    ]
-    tasklist = sorted(list(set(tasklist)))
-
-    # do for each task
-    for task in tasklist:
-        # Select unsmoothed denoised BOLD files
-        denoised_task_files = natsorted(
-            fnmatch.filter(all_func_files, f'*_task-{task}_*desc-denoised_bold.nii.gz')
-        )
-
-        # TODO: Make this robust to different output spaces.
-        # Currently, different spaces will be treated like different runs.
-        if len(denoised_task_files) == 0:
-            # If no files found for this task, move on to the next task.
-            continue
-        elif len(denoised_task_files) == 1:
-            # If only one file is found, there's only one run.
-            # In this case we just need to make the DCAN HDF5 file from the filtered motion file.
-            motion_file = _get_motion_file(denoised_task_files[0])
-
-            dcan_df_name = f"{'.'.join(motion_file.split('.')[:-1])}-DCAN.hdf5"
-            make_dcan_df(motion_file, dcan_df_name)
-            continue
-        else:
-            # If multiple runs of motion files are found, concatenate them and make the HDF5.
-            motion_files = [_get_motion_file(f) for f in denoised_task_files]
-            concat_motion_file = re.sub("_run-[0-9]+", "", motion_files[0])
-            concatenate_tsv_files(motion_files, concat_motion_file)
-
-            dcan_df_name = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
-            make_dcan_df(motion_file, dcan_df_name)
-
-        regressed_dvars = []
-
-        res = denoised_task_files[0]
-        resid = res.split('run-')[1].partition('_')[-1]
-
-        preproc_base_search_pattern = (
-            os.path.basename(res.split('run-')[0]) + '*' + resid.partition('_desc')[0]
-        )
-        file_search_base = res.split('run-')[0] + '*run*' + resid.partition('_desc')[0]
-        concatenated_file_base = res.split('run-')[0] + resid.partition('_desc')[0]
-        concatenated_filename_base = os.path.basename(concatenated_file_base)
-
-        for file_pattern in datafile:
-            found_files = natsorted(glob.glob(file_search_base + file_pattern))
-            outfile = concatenated_file_base + file_pattern
-
-            if file_pattern.endswith('tsv'):
-                concatenate_tsv_files(found_files, outfile)
-
-            elif file_pattern.endswith('nii.gz'):
-                mask = natsorted(
-                    glob.glob(
-                        os.path.join(
-                            func_dir,
-                            f'{preproc_base_search_pattern}*_desc-brain_mask.nii.gz',
-                        ),
-                    ),
-                )[0]
-
-                combine_img = concat_imgs(found_files)
-                combine_img.to_filename(outfile)
-
-                for found_file in found_files:
-                    dvar = compute_dvars(read_ndata(found_file, mask))
-                    dvar[0] = np.mean(dvar)
-                    regressed_dvars.append(dvar)
-
-        # Preprocessed BOLD files from fMRIPrep
-        preproc_files = natsorted(
-            glob.glob(
-                os.path.join(
-                    func_dir,
-                    f'{preproc_base_search_pattern}*_desc-preproc_bold.nii.gz',
-                ),
-            ),
-        )
-
-        mask = natsorted(
-            glob.glob(
-                os.path.join(
-                    func_dir,
-                    f'{preproc_base_search_pattern}*_desc-brain_mask.nii.gz',
-                ),
-            ),
-        )[0]
-
-        segfile = get_segfile(preproc_files[0])
-        TR = _get_tr(preproc_files[0])
-
-        rawdata = os.path.join(tempfile.mkdtemp(), 'rawdata.nii.gz')
-
-        combine_img = concat_imgs(preproc_files)
-        combine_img.to_filename(rawdata)
-
-        precarpet = os.path.join(
-            figures_dir,
-            f'{concatenated_filename_base}_desc-precarpetplot_bold.svg',
-        )
-        postcarpet = os.path.join(
-            figures_dir,
-            f'{concatenated_filename_base}_desc-postcarpetplot_bold.svg',
-        )
-        raw_dvars = []
-        for f in preproc_files:
-            dvar = compute_dvars(read_ndata(f, mask))
-            dvar[0] = np.mean(dvar)
-            raw_dvars.append(dvar)
-
-        plot_svgx(
-            rawdata=rawdata,
-            regressed_data=f'{concatenated_file_base}_desc-denoised_bold.nii.gz',
-            residual_data=f'{concatenated_file_base}_desc-denoised_bold.nii.gz',
-            filtered_motion=concat_motion_file,
-            raw_dvars=raw_dvars,
-            regressed_dvars=regressed_dvars,
-            filtered_dvars=regressed_dvars,
-            processed_filename=postcarpet,
-            unprocessed_filename=precarpet,
-            mask=mask,
-            seg_data=segfile,
-            TR=TR,
-            work_dir=work_dir,
-        )
-
-        # link or copy bb svgs
-        gboldbbreg = os.path.join(
-            figures_dir,
-            f'{concatenated_filename_base}_desc-bbregister_bold.svg',
-        )
-        bboldref = os.path.join(
-            figures_dir,
-            f'{concatenated_filename_base}_desc-boldref_bold.svg',
-        )
-
-        preproc_file_base = os.path.basename(preproc_files[0]).split('_desc-')[0]
-        bb1reg = os.path.join(
-            figures_dir,
-            f'{preproc_file_base}_desc-bbregister_bold.svg',
-        )
-        bb1ref = os.path.join(
-            figures_dir,
-            f'{preproc_file_base}_desc-boldref_bold.svg',
-        )
-
-        shutil.copy(bb1reg, gboldbbreg)
-        shutil.copy(bb1ref, bboldref)
-
-
-def concatenate_cifti(subid, fmridir, outputdir, ses=None, work_dir=None):
-    """Concatenate CIFTI files along the time dimension.
-
-    This function doesn't return anything, but it writes out the concatenated file.
-
-    TODO: Make file search more general and leverage pybids
-
-    Parameters
-    ----------
-    subid : str
-        Subject identifier.
-    fmridir : str
-        Path to the input directory (e.g., fMRIPrep derivatives dataset).
-    outputdir : str
-        Path to the output directory (i.e., xcp_d derivatives dataset).
-    ses : str or None, optional
-        Session identifier, if applicable. Default is None.
-    work_dir : str or None, optional
-        Working directory, if available. Default is None.
-    """
-    datafile = [
-        '_outliers.tsv',
-        '_desc-denoised_bold.dtseries.nii',
-        '_desc-denoisedSmoothed_bold.dtseries.nii',
-        '_atlas-Glasser_den-91k_timeseries.ptseries.nii',
-        '_atlas-Gordon_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer117_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer217_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer317_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer417_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer517_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer617_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer717_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer817_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer917_den-91k_timeseries.ptseries.nii',
-        '_atlas-Schaefer1017_den-91k_timeseries.ptseries.nii',
-        '_atlas-subcortical_den-91k_timeseries.ptseries.nii',
-    ]
-
-    if ses is None:
-        all_func_files = glob.glob(os.path.join(outputdir, subid, 'func', '*'))
-        func_dir = os.path.join(fmridir, subid, 'func')
-        figures_dir = os.path.join(outputdir, subid, 'figures')
-    else:
-        all_func_files = glob.glob(os.path.join(outputdir, subid, f'ses-{ses}', 'func', '*'))
-        func_dir = os.path.join(fmridir, subid, f'ses-{ses}', 'func')
-        figures_dir = os.path.join(outputdir, subid , 'figures')
-
-    # extract the task list
-    denoised_bold_files = fnmatch.filter(all_func_files, '*_desc-denoised_bold.dtseries.nii')
-    tasklist = [
-        denoised_bold_file.split('task-')[-1].split('_')[0]
-        for denoised_bold_file in denoised_bold_files
-    ]
-    tasklist = sorted(list(set(tasklist)))
-
-    # Concatenate each task separately
-    for task in tasklist:
-        # Select unsmoothed denoised BOLD files
-        denoised_task_files = natsorted(
-            fnmatch.filter(all_func_files, f'*_task-{task}_*desc-denoised_bold.dtseries.nii')
-        )
-
-        # TODO: Make this robust to different output spaces.
-        # Currently, different spaces will be treated like different runs.
-        if len(denoised_task_files) == 0:
-            # If no files found for this task, move on to the next task.
-            continue
-        elif len(denoised_task_files) == 1:
-            # If only one file is found, there's only one run.
-            # In this case we just need to make the DCAN HDF5 file from the filtered motion file.
-            motion_file = _get_motion_file(denoised_task_files[0])
-
-            dcan_df_name = f"{'.'.join(motion_file.split('.')[:-1])}-DCAN.hdf5"
-            make_dcan_df([motion_file], dcan_df_name)
-            continue
-
-        # If multiple runs of motion files are found, concatenate them and make the HDF5.
-        motion_files = [_get_motion_file(f) for f in denoised_task_files]
-
-        concat_motion_file = os.path.join(
-            os.path.dirname(motion_files[0]),
-            re.sub("_run-[0-9]+", "", os.path.basename(motion_files[0])),
-        )
-        concatenate_tsv_files(motion_files, concat_motion_file)
-
-        dcan_df_name = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
-        make_dcan_df(motion_files, dcan_df_name)
-
-        # Remove run entity from BOLD filename to get concatenated version
-        concat_denoised_task_file = os.path.join(
-            os.path.dirname(denoised_task_files[0]),
-            re.sub("_run-[0-9]+", "", os.path.basename(denoised_task_files[0])),
-        )
-
-        bold_filename = os.path.basename(denoised_task_files[0])
-        bold_filename_before_run = bold_filename.split('run-')[0]
-        bold_filename_after_run = bold_filename.split('run-')[1].partition('_')[-1]
-
-        preproc_base_search_pattern = (
-            bold_filename_before_run + '*run*_den-91k_bold.dtseries.nii'
-        )
-        file_search_base = (
-            bold_filename_before_run + 'run-*' + bold_filename_after_run.partition('_desc')[0]
-        )
-
-        for file_pattern in datafile:
-            found_files = natsorted(glob.glob(file_search_base + file_pattern))
-            found_file_dir, found_file_base = os.path.split(found_files[0])
-
-            # Remove run entity from first filename to get concatenated filename
-            outfile = os.path.join(found_file_dir, re.sub("_run-[0-9]+", "", found_file_base))
-
-            if file_pattern.endswith('ptseries.nii'):
-                combinefile = " -cifti ".join(found_files)
-                os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
-
-            elif file_pattern.endswith('dtseries.nii'):
-                combinefile = " -cifti ".join(found_files)
-                os.system('wb_command -cifti-merge ' + outfile + ' -cifti ' + combinefile)
-
-                # Calculate DVARS from the unsmoothed, denoised BOLD data
-                if file_pattern.endswith('_desc-denoised_bold.dtseries.nii'):
-                    regressed_dvars = []
-                    for denoised_bold_file in found_files:
-                        dvar = compute_dvars(read_ndata(denoised_bold_file))
-                        dvar[0] = np.mean(dvar)
-                        regressed_dvars.append(dvar)
-
-        raw_dvars = []
-        # Preprocessed BOLD files from fMRIPrep
-        preproc_files = natsorted(glob.glob(os.path.join(func_dir, preproc_base_search_pattern)))
-        for f in preproc_files:
-            dvar = compute_dvars(read_ndata(f))
-            dvar[0] = np.mean(dvar)
-            raw_dvars.append(dvar)
-
-        TR = _get_tr(preproc_files[0])
-        rawdata = os.path.join(tempfile.mkdtemp(), 'den-91k_bold.dtseries.nii')
-        combinefile = " -cifti ".join(preproc_files)
-        os.system('wb_command -cifti-merge ' + rawdata + ' -cifti ' + combinefile)
-
-        concat_preproc_base_name = os.path.basename(concat_denoised_task_file).split("_desc-")[0]
-        precarpet = os.path.join(
-            figures_dir,
-            f'{concat_preproc_base_name}_desc-precarpetplot_bold.svg',
-        )
-        postcarpet = os.path.join(
-            figures_dir,
-            f'{concat_preproc_base_name}_desc-postcarpetplot_bold.svg',
-        )
-
-        raw_dvars = np.array(raw_dvars).flatten()
-        regressed_dvars = np.array(regressed_dvars).flatten()
-        plot_svgx(
-            rawdata=rawdata,
-            regressed_data=concat_denoised_task_file,
-            residual_data=concat_denoised_task_file,
-            filtered_motion=concat_motion_file,
-            raw_dvars=raw_dvars,
-            regressed_dvars=regressed_dvars,
-            filtered_dvars=regressed_dvars,
-            processed_filename=postcarpet,
-            unprocessed_filename=precarpet,
-            TR=TR,
-            work_dir=work_dir,
-        )
-
-        # link or copy bb svgs
-        preproc_file_base = os.path.basename(preproc_files[0]).split(
-            '_den-91k_bold.dtseries.nii'
-        )[0]
-        gboldbbreg = os.path.join(
-            figures_dir,
-            f'{concatenated_filename_base}_desc-bbregister_bold.svg',
-        )
-        bboldref = os.path.join(
-            figures_dir,
-            f'{concatenated_filename_base}_desc-boldref_bold.svg',
-        )
-        bb1reg = os.path.join(
-            figures_dir,
-            f'{preproc_file_base}_desc-bbregister_bold.svg',
-        )
-        bb1ref = os.path.join(
-            figures_dir,
-            f'{preproc_file_base}_desc-boldref_bold.svg',
-        )
-
-        shutil.copy(bb1reg, gboldbbreg)
-        shutil.copy(bb1ref, bboldref)
 
 
 def get_segfile(bold_file):
