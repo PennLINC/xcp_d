@@ -578,7 +578,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # residual smoothing
     workflow.connect([
-        (regression_wf, resdsmoothing_wf, [('filtered_file', 'inputnode.bold_file')]),
+        (regression_wf, resdsmoothing_wf, [('out_file', 'inputnode.bold_file')]),
     ])
 
     # functional connect workflow
@@ -587,21 +587,21 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                  ('ref_file', 'inputnode.ref_file'),
                                  ('mni_to_t1w', 'inputnode.mni_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
-        (regression_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
+        (regression_wf, fcon_ts_wf, [('out_file', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
     workflow.connect([
         (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
         (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (regression_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
-        (regression_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (regression_wf, alff_compute_wf, [('out_file', 'inputnode.clean_bold')]),
+        (regression_wf, reho_compute_wf, [('out_file', 'inputnode.clean_bold')]),
     ])
 
     # qc report
     workflow.connect([
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
-        (regression_wf, qcreport, [('filtered_file', 'cleaned_file')]),
+        (regression_wf, qcreport, [('out_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
         (censor_scrub, censor_report, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
@@ -614,7 +614,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # write  to the outputnode, may be use in future
     workflow.connect([
-        (regression_wf, outputnode, [('filtered_file', 'processed_bold')]),
+        (regression_wf, outputnode, [('out_file', 'processed_bold')]),
         (censor_scrub, outputnode, [('filtered_motion', 'filtered_motion'),
                                     ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
@@ -630,7 +630,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # write derivatives
     workflow.connect([
-        (regression_wf, write_derivative_wf, [('filtered_file', 'inputnode.processed_bold')]),
+        (regression_wf, write_derivative_wf, [('out_file', 'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
@@ -727,7 +727,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                           ('bold_file', 'inputnode.bold_file'),
                                           ('bold_mask', 'inputnode.mask'),
                                           ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
-        (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.residual_data')]),
+        (regression_wf, executivesummary_wf, [('out_file', 'inputnode.residual_data')]),
         (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion')]),
     ])
 
