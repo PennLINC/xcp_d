@@ -555,32 +555,31 @@ def extract_timeseries(
 
 
 def denoise_nifti_with_nilearn(
-    img,
-    mask,
-    out_file,
+    bold_file,
+    mask_file,
     confounds,
     low_pass,
     high_pass,
     TR,
     tmask,
-    smoothing_fwhm,
 ):
     """Denoise fMRI data with Nilearn.
 
     Parameters
     ----------
-    img : str or niimg
-    mask : str
+    bold_file : str or niimg
+    mask_file : str
     confounds : pandas.DataFrame
     low_pass : float
     high_pass : float
     TR : float
     tmask : str
-    smoothing_fwhm : float
     """
     from nilearn import masking
 
-    raw_data = masking.apply_mask(img, mask)
+    out_file = "desc-denoised_bold.nii.gz"
+
+    raw_data = masking.apply_mask(bold_file, mask_file)
     clean_data = _denoise_with_nilearn(
         raw_data,
         confounds,
@@ -588,26 +587,25 @@ def denoise_nifti_with_nilearn(
         high_pass,
         TR,
         tmask,
-        smoothing_fwhm,
     )
 
     # This ignores TR
-    clean_img = masking.unmask(clean_data, mask)
+    clean_img = masking.unmask(clean_data, mask_file)
 
     clean_img.to_filename(out_file)
 
 
 def denoise_cifti_with_nilearn(
     cifti_file,
-    out_file,
     confounds,
     low_pass,
     high_pass,
     TR,
     tmask,
-    smoothing_fwhm,
 ):
     from xcp_d.utils.write_save import read_ndata, write_ndata
+
+    out_file = "desc-denoised_bold.nii.gz"
 
     raw_data = read_ndata(cifti_file)
 
@@ -621,7 +619,6 @@ def denoise_cifti_with_nilearn(
         high_pass,
         TR,
         tmask,
-        smoothing_fwhm,
     )
 
     # Transpose from TxS (nilearn order) to SxT (xcpd order)
@@ -636,7 +633,6 @@ def _denoise_with_nilearn(
     high_pass,
     TR,
     tmask,
-    smoothing_fwhm,
 ):
     """This step does the following.
 
