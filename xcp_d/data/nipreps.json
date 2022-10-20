@@ -136,7 +136,7 @@
     },
     {
       "name": "measure",
-      "pattern": "measure-([a-zA-Z0-9]+)"
+      "pattern": "[_/\\\\]measure-([a-zA-Z0-9]+)"
     }
   ],
   "default_path_patterns": [
