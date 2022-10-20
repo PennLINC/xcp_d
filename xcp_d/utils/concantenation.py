@@ -130,7 +130,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     space_entities = task_entities.copy()
                     space_entities["space"] = space
 
-                    if cifti:
+                    if not cifti:
                         # Mask file
                         mask_files = layout_fmriprep.get(
                             desc=["brain"],
