@@ -300,14 +300,12 @@ def square_confound(confound):
 
 @fill_doc
 def load_confound_matrix(
-    datafile, original_file, custom_confounds=None, confound_tsv=None, params="36P"
+    original_file, custom_confounds=None, confound_tsv=None, params="36P"
 ):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
     ----------
-    datafile : str
-        BOLD file whose confounds we want.
     original_file :
        File used to find confounds json.
     custom_confounds : str or None, optional
