@@ -558,8 +558,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # write derivatives
     workflow.connect([
-        (regression_wf, write_derivative_wf, [('filtered_file',
-                                               'inputnode.processed_bold')]),
+        (regression_wf, write_derivative_wf, [('filtered_file', 'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('fd_timeseries', 'inputnode.fd')]),
