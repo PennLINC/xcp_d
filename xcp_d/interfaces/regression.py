@@ -29,6 +29,8 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         desc="The fMRIPrep confounds tsv after censoring")
+    # TODO: Use Enum maybe?
+    params = traits.Str(exists=True, mandatory=True, desc="Parameter set to use.")
     TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
     mask = File(exists=False, mandatory=False, desc="Brain mask for nifti files")
     original_file = traits.Str(exists=True, mandatory=False,
@@ -69,14 +71,20 @@ class Regress(SimpleInterface):
         # Get the confound matrix
         # Do we have custom confounds?
         if self.inputs.custom_confounds and exists(self.inputs.custom_confounds):
-            confound = load_confound_matrix(original_file=self.inputs.original_file,
-                                            datafile=self.inputs.in_file,
-                                            custom_confounds=self.inputs.custom_confounds,
-                                            confound_tsv=self.inputs.confounds)
+            confound = load_confound_matrix(
+                original_file=self.inputs.original_file,
+                datafile=self.inputs.in_file,
+                custom_confounds=self.inputs.custom_confounds,
+                confound_tsv=self.inputs.confounds,
+                params=self.inputs.params,
+            )
         else:  # No custom confounds
-            confound = load_confound_matrix(original_file=self.inputs.original_file,
-                                            datafile=self.inputs.in_file,
-                                            confound_tsv=self.inputs.confounds)
+            confound = load_confound_matrix(
+                original_file=self.inputs.original_file,
+                datafile=self.inputs.in_file,
+                confound_tsv=self.inputs.confounds,
+                params=self.inputs.params,
+            )
         # for testing, let's write out the confounds file:
         confounds_file_output_name = fname_presuffix(
             self.inputs.confounds,
