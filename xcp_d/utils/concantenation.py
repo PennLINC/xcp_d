@@ -158,7 +158,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     # Calculate DVARS from preprocessed BOLD
                     raw_dvars = []
                     for preproc_file in preproc_files:
-                        dvar = compute_dvars(read_ndata(preproc_file, mask))
+                        dvar = compute_dvars(read_ndata(preproc_file.path, mask))
                         dvar[0] = np.mean(dvar)
                         raw_dvars.append(dvar)
                     raw_dvars = np.concatenate(raw_dvars)
@@ -180,7 +180,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     # Calculate DVARS from denoised BOLD
                     regressed_dvars = []
                     for bold_file in bold_files:
-                        dvar = compute_dvars(read_ndata(bold_file, mask))
+                        dvar = compute_dvars(read_ndata(bold_file.path, mask))
                         dvar[0] = np.mean(dvar)
                         regressed_dvars.append(dvar)
                     regressed_dvars = np.concatenate(regressed_dvars)
