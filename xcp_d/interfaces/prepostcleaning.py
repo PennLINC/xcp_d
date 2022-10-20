@@ -168,11 +168,11 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
-        desc="fMRIPrep confounds tsv after removing dummy time, if any")
-    head_radius = traits.Float(exists=True,
-                               mandatory=False,
-                               default_value=50,
-                               desc="Head radius in mm ")
+        desc="fMRIPrep confounds tsv after removing dummy time, if any",
+    )
+    head_radius = traits.Float(
+        exists=True, mandatory=False, default_value=50, desc="Head radius in mm "
+    )
     motion_filter_type = traits.Either(
         None,
         traits.Str,
@@ -186,19 +186,28 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         traits.Float,
         exists=True,
         mandatory=True,
-        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
     band_stop_max = traits.Either(
         None,
         traits.Float,
         exists=True,
         mandatory=True,
-        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).")
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
 
 
 class _CensorScrubOutputSpec(TraitedSpec):
     tmask = File(exists=True, mandatory=True,
                  desc="Temporal mask; all values above fd_thresh set to 1")
-    fd_timeseries = File(exists=True, mandatory=True, desc="Framewise displacement timeseries")
+    filtered_motion = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Framewise displacement timeseries. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
 
 
 class CensorScrub(SimpleInterface):
@@ -219,7 +228,9 @@ class CensorScrub(SimpleInterface):
     def _run_interface(self, runtime):
 
         # Read in fmriprep confounds tsv to calculate FD
-        fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
+        fmriprep_confounds_tsv_uncensored = pd.read_table(
+            self.inputs.fmriprep_confounds_file,
+        )
         motion_df = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
@@ -229,30 +240,46 @@ class CensorScrub(SimpleInterface):
             band_stop_max=self.inputs.band_stop_max,
         )
 
-        fd_timeseries_uncensored = compute_fd(confound=motion_df,
-                                              head_radius=self.inputs.head_radius)
+        fd_timeseries_uncensored = compute_fd(
+            confound=motion_df,
+            head_radius=self.inputs.head_radius,
+        )
+        motion_df["framewise_displacement"] = fd_timeseries_uncensored
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
-        tmask = generate_mask(fd_res=fd_timeseries_uncensored,
-                              fd_thresh=self.inputs.fd_thresh)
+        tmask = generate_mask(
+            fd_res=fd_timeseries_uncensored,
+            fd_thresh=self.inputs.fd_thresh,
+        )
 
-        # get the output
-        self._results['tmask'] = fname_presuffix(self.inputs.in_file,
-                                                 suffix='_temporal_mask.tsv',
-                                                 newpath=os.getcwd(),
-                                                 use_ext=False)
-        self._results['fd_timeseries'] = fname_presuffix(
+        self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
-            suffix='_fd_timeseries.tsv',
-            newpath=os.getcwd(),
-            use_ext=False)
+            suffix="_desc-fd_outliers.tsv",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        self._results["filtered_motion"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_desc-filtered_motion.tsv",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
 
-        np.savetxt(self._results['tmask'], tmask, fmt="%d", delimiter='\t')
-        np.savetxt(self._results['fd_timeseries'],
-                   fd_timeseries_uncensored,
-                   fmt="%1.4f",
-                   delimiter='\t')
+        outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
+        outliers_df.to_csv(
+            self._results["tmask"],
+            index=False,
+            header=True,
+            sep="\t",
+        )
+
+        motion_df.to_csv(
+            self._results["filtered_motion"],
+            index=False,
+            header=True,
+            sep="\t",
+        )
 
         return runtime
 
@@ -293,26 +320,37 @@ class Interpolate(SimpleInterface):
         bold_data = read_ndata(datafile=self.inputs.in_file,
                                maskfile=self.inputs.mask_file)
 
-        tmask = np.loadtxt(self.inputs.tmask)
+        tmask_df = pd.read_table(self.inputs.tmask)
+        tmask_arr = tmask_df["framewise_displacement"].values
+
         # check if any volumes were censored - if they were,
         # put 0s in their place.
-        if bold_data.shape[1] != len(tmask):
-            data_with_zeros = np.zeros([bold_data.shape[0], len(tmask)])
-            data_with_zeros[:, tmask == 0] = bold_data
+        if bold_data.shape[1] != len(tmask_arr):
+            data_with_zeros = np.zeros([bold_data.shape[0], len(tmask_arr)])
+            data_with_zeros[:, tmask_arr == 0] = bold_data
         else:
             data_with_zeros = bold_data
+
         # interpolate the data using scipy's interpolation functionality
-        interpolated_data = interpolate_masked_data(bold_data=data_with_zeros,
-                                                    tmask=tmask,
-                                                    TR=self.inputs.TR)
+        interpolated_data = interpolate_masked_data(
+            bold_data=data_with_zeros,
+            tmask=tmask_arr,
+            TR=self.inputs.TR,
+        )
+
         # save out results
         self._results['bold_interpolated'] = fname_presuffix(
-            self.inputs.in_file, newpath=os.getcwd(), use_ext=True)
+            self.inputs.in_file,
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
 
-        write_ndata(data_matrix=interpolated_data,
-                    template=self.inputs.bold_file,
-                    mask=self.inputs.mask_file,
-                    TR=self.inputs.TR,
-                    filename=self._results['bold_interpolated'])
+        write_ndata(
+            data_matrix=interpolated_data,
+            template=self.inputs.bold_file,
+            mask=self.inputs.mask_file,
+            TR=self.inputs.TR,
+            filename=self._results['bold_interpolated'],
+        )
 
         return runtime

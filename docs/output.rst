@@ -95,12 +95,17 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
+      The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;
+      one for each of the six filtered motion parameters, as well as "framewise_displacement".
+      If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
 
    e. DCAN style scrubbing file.
       This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps.
