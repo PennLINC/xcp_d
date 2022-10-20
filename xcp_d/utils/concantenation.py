@@ -498,14 +498,14 @@ def concatenate_tsv_files(tsv_files, fileout):
         Path to the file that will be written out.
     """
     # TODO: Support headers in timeseries files
-    if tsv_files[0].endswith("timeseries.tsv"):
+    if tsv_files[0].path.endswith("timeseries.tsv"):
         # timeseries files have no header
-        data = [np.loadtxt(tsv_file, delimiter="\t") for tsv_file in tsv_files]
+        data = [np.loadtxt(tsv_file.path, delimiter="\t") for tsv_file in tsv_files]
         data = np.vstack(data)
         np.savetxt(fileout, data, fmt='%.5f', delimiter='\t')
     else:
         # other tsv files have a header
-        data = [pd.read_table(tsv_file) for tsv_file in tsv_files]
+        data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
         data.to_csv(fileout, sep="\t", index=False)
 
