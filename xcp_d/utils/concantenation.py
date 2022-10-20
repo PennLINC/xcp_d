@@ -83,7 +83,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                 **base_entities,
             )
             for task in tasks:
-                task_entities = base_entities[:]
+                task_entities = base_entities.copy()
                 task_entities["task"] = task
 
                 motion_files = layout.get(
@@ -127,7 +127,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                 )
 
                 for space in output_spaces:
-                    space_entities = task_entities[:]
+                    space_entities = task_entities.copy()
                     space_entities["space"] = space
 
                     if cifti:
