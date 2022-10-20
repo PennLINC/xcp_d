@@ -452,7 +452,7 @@ def confoundplotx(time_series,
 def plot_svgx(rawdata,
               regressed_data,
               residual_data,
-              fd,
+              filtered_motion,
               unprocessed_filename,
               processed_filename,
               mask=None,
@@ -478,8 +478,8 @@ def plot_svgx(rawdata,
         3 tissues seg_data files
     TR : float, optional
         repetition times
-    fd :
-        framewise displacement in a TSV file.
+    filtered_motion :
+       Filtered motion parameters, including framewise displacement, in a TSV file.
     unprocessed_filename :
         output file svg before processing
     processed_filename :
@@ -523,7 +523,7 @@ def plot_svgx(rawdata,
     })
 
     FD_timeseries = pd.DataFrame({
-        'FD': pd.read_table(fd)["framewise_displacement"].values,
+        'FD': pd.read_table(filtered_motion)["framewise_displacement"].values,
     })
 
     # The mean and standard deviation of raw data
@@ -1049,6 +1049,9 @@ def _get_tr(img):
     ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
     2.0
     """
+    if isinstance(img, str):
+        img = nb.load(img)
+
     try:
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti

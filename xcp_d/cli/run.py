@@ -51,7 +51,7 @@ class DeprecatedStoreAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.1.6. "
+            f"Argument '{option_string}' is deprecated and will be removed in version 0.3.0. "
             "Please use '--nuisance-regressors' or '-p'."
         )
         setattr(namespace, self.dest, values)
@@ -215,9 +215,9 @@ def get_parser():
         type=str,
         help=(
             "Nuisance parameters to be selected, other options include 24P and 36P acompcor and "
-            "aroma, see Ciric etal 2007. "
-            "This parameter is deprecated and will be removed in version 0.1.6. "
-            'Please use "-p" or "--nuisance-regressors".'
+            "aroma. See Ciric et. al (2007) for more information about regression strategies. "
+            "This parameter is deprecated and will be removed in version 0.3.0. "
+            "Please use ``-p`` or ``--nuisance-regressors``."
         ),
     )
     nuisance_params.add_argument(
@@ -236,7 +236,7 @@ def get_parser():
             "custom",
         ],
         type=str,
-        help="Nuisance parameters to be selected. See Ciric etal 2007.",
+        help="Nuisance parameters to be selected. See Ciric et. al (2007).",
     )
     g_param.add_argument(
         "-c",
@@ -255,13 +255,28 @@ def get_parser():
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
-    g_filter.add_argument(
-        "--bandpass_filter",
-        action="store",
-        default=True,
-        type=bool,
-        help="butterworth bandpass filter the data",
+
+    bandpass_filter_params = g_filter.add_mutually_exclusive_group()
+    bandpass_filter_params.add_argument(
+        "--disable-bandpass-filter",
+        "--disable_bandpass_filter",
+        dest="bandpass_filter",
+        action="store_false",
+        help="Disable bandpass filtering.",
     )
+    bandpass_filter_params.add_argument(
+        "--bandpass_filter",
+        dest="bandpass_filter",
+        action=DeprecatedStoreAction,
+        type=bool,
+        help=(
+            "Whether to Butterworth bandpass filter the data or not. "
+            "This parameter is deprecated and will be removed in version 0.3.0. "
+            "Bandpass filtering is performed by default, and if you wish to disable it, "
+            "please use `--disable-bandpass-filter``."
+        ),
+    )
+
     g_filter.add_argument(
         "--lower-bpf",
         action="store",

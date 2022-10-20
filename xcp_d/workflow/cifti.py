@@ -18,8 +18,8 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -150,7 +150,7 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    TR = get_cifti_tr(bold_file)
+    TR = _get_tr(bold_file)
     if TR is None:
         metadata = layout.get_metadata(bold_file)
         TR = metadata['RepetitionTime']
@@ -254,7 +254,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 'timeseries',
                 'correlations',
                 'qc_file',
-                'fd',
+                'filtered_motion',
                 'tmask',
             ],
         ),
@@ -292,8 +292,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         dummytime=dummytime,
         lowpass=upper_bpf,
         highpass=lower_bpf,
+        motion_filter_type=motion_filter_type,
         TR=TR,
-        name="write_derivative_wf")
+        name="write_derivative_wf",
+    )
 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
@@ -327,8 +329,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        Regress(TR=TR,
-                original_file=bold_file),
+        Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -457,7 +458,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     workflow.connect([
         (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('fd_timeseries', 'fd'),
+        (censor_scrub, outputnode, [('filtered_motion', 'filtered_motion'),
                                     ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
@@ -475,7 +476,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('fd_timeseries', 'inputnode.fd'),
+        (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
                                              ('tmask', 'inputnode.tmask')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
@@ -558,8 +559,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                               ]),
         (filtering_wf, executivesummary_wf, [('filtered_file',
                                               'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+        (censor_scrub, executivesummary_wf, [('filtered_motion',
+                                              'inputnode.filtered_motion')]),
     ])
 
     return workflow
