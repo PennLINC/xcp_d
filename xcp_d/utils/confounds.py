@@ -386,13 +386,13 @@ def load_confound_matrix(
         confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
     elif params == "aroma":  # Get the WM, CSF, and aroma values
         whitematter_csf = load_wm_csf(confoundtsv)
-        aroma = load_aroma(datafile=datafile)
+        aroma = load_aroma(datafile=original_file)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
     elif (
         params == "aroma_gsr"
     ):  # Get the WM, CSF, and aroma values, as well as global signal
         whitematter_csf = load_wm_csf(confoundtsv)
-        aroma = load_aroma(datafile=datafile)
+        aroma = load_aroma(datafile=original_file)
         global_signal = load_global_signal(confoundtsv)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
     elif (
