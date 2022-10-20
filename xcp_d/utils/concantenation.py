@@ -139,7 +139,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                             **space_entities,
                         )
                         if len(mask_files) != 1:
-                            raise ValueError(f"Too many files found: {mask_files}")
+                            print(f"Too many files found: {mask_files}")
 
                         mask = mask_files[0].path
                     else:
