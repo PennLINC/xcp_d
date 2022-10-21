@@ -261,11 +261,11 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     in_fig_entities["desc"] = "bbregister"
                     bbreg_fig_in = layout_fmriprep.get(
                         **in_fig_entities,
-                    )
+                    )[0].path
                     in_fig_entities["desc"] = "boldref"
                     boldref_fig_in = layout_fmriprep.get(
                         **in_fig_entities,
-                    )
+                    )[0].path
 
                     out_fig_entities = bold_files[0].get_entities()
                     out_fig_entities = _sanitize_entities(out_fig_entities)
