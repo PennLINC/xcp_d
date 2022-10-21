@@ -206,7 +206,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     carpet_entities = bold_files[0].get_entities()
                     carpet_entities["run"] = None
                     carpet_entities["datatype"] = "figures"
-                    carpet_entities["description"] = "precarpetplot"
+                    carpet_entities["desc"] = "precarpetplot"
                     carpet_entities["extension"] = ".svg"
                     precarpet = layout.build_path(
                         carpet_entities,
@@ -214,7 +214,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         strict=False,
                         validate=False,
                     )
-                    carpet_entities["description"] = "postcarpetplot"
+                    carpet_entities["desc"] = "postcarpetplot"
                     postcarpet = layout.build_path(
                         carpet_entities,
                         path_patterns=path_patterns,
@@ -254,7 +254,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
 
                     out_fig_entities = bold_files[0].get_entities()
                     out_fig_entities["run"] = None
-                    out_fig_entities["description"] = "bbregister"
+                    out_fig_entities["desc"] = "bbregister"
                     out_fig_entities["datatype"] = "figures"
                     out_fig_entities["extension"] = ".svg"
                     bbreg_fig_out = layout.build_path(
@@ -263,7 +263,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         strict=False,
                         validate=False,
                     )
-                    out_fig_entities["description"] = "boldref"
+                    out_fig_entities["desc"] = "boldref"
                     boldref_fig_out = layout.build_path(
                         out_fig_entities,
                         path_patterns=path_patterns,
