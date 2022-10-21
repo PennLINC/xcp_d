@@ -248,7 +248,7 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
         print('space not supported')
 
     if not transform_list:
-        raise Exception("Transforms not found.")
+        raise Exception(f"Transforms not found for {file_base}")
 
     return transform_list
 
