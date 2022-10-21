@@ -137,7 +137,10 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         extension=img_extensions,
                         **space_entities,
                     )
-                    concat_preproc_file = os.path.join(tempfile.mkdtemp(), "rawdata.nii.gz")
+                    concat_preproc_file = os.path.join(
+                        tempfile.mkdtemp(),
+                        f"rawdata{preproc_files[0].extension}",
+                    )
                     concatenate_niimgs(preproc_files, concat_preproc_file)
 
                     if not cifti:
@@ -148,7 +151,9 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                             extension=[".nii.gz"],
                             **space_entities,
                         )
-                        if len(mask_files) != 1:
+                        if len(mask_files) == 0:
+                            raise ValueError(f"No mask files found for {preproc_files[0].path}")
+                        elif len(mask_files) != 1:
                             print(f"Too many files found: {mask_files}")
 
                         mask = mask_files[0].path
@@ -212,7 +217,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     carpet_entities["description"] = "postcarpetplot"
                     postcarpet = layout.build_path(
                         carpet_entities,
-                        path_patterns=path_patterns,
+                        pathtrewq_patterns=path_patterns,
                         strict=False,
                         validate=False,
                     )
