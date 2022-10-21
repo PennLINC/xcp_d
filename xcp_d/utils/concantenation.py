@@ -198,9 +198,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         concatenate_niimgs(smooth_bold_files, concat_file)
 
                     # Carpet plots
-                    carpet_entities = bold_files[0].entities
-                    print(type(carpet_entities))
-                    print(carpet_entities)
+                    carpet_entities = dict(bold_files[0].entities)
                     carpet_entities["run"] = None
                     carpet_entities["datatype"] = "figures"
                     carpet_entities["description"] = "precarpetplot"
@@ -237,7 +235,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     )
 
                     # link or copy bb svgs
-                    in_fig_entities = preproc_files[0].entities
+                    in_fig_entities = dict(preproc_files[0].entities)
                     in_fig_entities["datatype"] = "figures"
                     in_fig_entities["extension"] = ".svg"
                     bbreg_fig_in = layout_fmriprep.get(
@@ -249,7 +247,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         **in_fig_entities,
                     )
 
-                    out_fig_entities = bold_files[0].entities
+                    out_fig_entities = dict(bold_files[0].entities)
                     out_fig_entities["run"] = None
                     out_fig_entities["description"] = "bbregister"
                     out_fig_entities["datatype"] = "figures"
