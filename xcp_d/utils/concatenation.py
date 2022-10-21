@@ -26,38 +26,6 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def _get_concat_name(layout, in_file):
-    in_file_entities = in_file.get_entities()
-    in_file_entities["run"] = None
-    concat_file = layout.build_path(
-        in_file_entities,
-        path_patterns=path_patterns,
-        strict=False,
-        validate=False,
-    )
-    return concat_file
-
-
-def _sanitize_entities(dict_):
-    """Ensure "description" isn't in dictionary keys."""
-    dict_ = dict_.copy()
-    if "description" in dict_.keys():
-        dict_["desc"] = dict_["description"]
-        del dict_["description"]
-
-    return dict_
-
-
-def _concatenate_niimgs(files, out_file):
-    """Concatenate niimgs."""
-    if files[0].extension == ".nii.gz":
-        concat_preproc_img = concat_imgs([f.path for f in files])
-        concat_preproc_img.to_filename(out_file)
-    else:
-        combinefile = " -cifti ".join([f.path for f in files])
-        os.system('wb_command -cifti-merge ' + out_file + ' -cifti ' + combinefile)
-
-
 def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
     """Concatenate derivatives."""
     # NOTE: The config has no effect when derivatives is True :(
@@ -105,14 +73,20 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     continue
                 elif len(motion_files) == 1:
                     # Make DCAN HDF5 file from single motion file
-                    dcan_df_file = f"{'.'.join(motion_files[0].split('.')[:-1])}-DCAN.hdf5"
+                    dcan_df_file = (
+                        f"{'.'.join(motion_files[0].split('.')[:-1])}-DCAN.hdf5"
+                    )
                     make_dcan_df([motion_files[0].path], dcan_df_file)
                     continue
 
                 # Make DCAN HDF5 file
                 concat_motion_file = _get_concat_name(layout, motion_files[0])
-                dcan_df_file = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
-                make_dcan_df([motion_file.path for motion_file in motion_files], dcan_df_file)
+                dcan_df_file = (
+                    f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+                )
+                make_dcan_df(
+                    [motion_file.path for motion_file in motion_files], dcan_df_file
+                )
 
                 # Concatenate motion files
                 concatenate_tsv_files(motion_files, concat_motion_file)
@@ -161,7 +135,9 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                             **space_entities,
                         )
                         if len(mask_files) == 0:
-                            raise ValueError(f"No mask files found for {preproc_files[0].path}")
+                            raise ValueError(
+                                f"No mask files found for {preproc_files[0].path}"
+                            )
                         elif len(mask_files) != 1:
                             print(f"Too many files found: {mask_files}")
 
@@ -293,7 +269,9 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                             extension=tsv_extensions,
                             **space_entities,
                         )
-                        concat_file = _get_concat_name(layout, atlas_timeseries_files[0])
+                        concat_file = _get_concat_name(
+                            layout, atlas_timeseries_files[0]
+                        )
                         if atlas_timeseries_files[0].extension == ".tsv":
                             concatenate_tsv_files(atlas_timeseries_files, concat_file)
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
@@ -332,7 +310,7 @@ def make_dcan_df(fds_files, name):
     remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
     remaining frames
     """
-    print('making dcan')
+    print("making dcan")
     # Temporary workaround for differently-named motion files until we have a BIDS-ish
     # filename construction function
     if "desc-filtered" in fds_files[0]:
@@ -341,10 +319,12 @@ def make_dcan_df(fds_files, name):
         split_str = "_motion"
 
     cifti_file = (
-        fds_files[0].split(split_str)[0] + '_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
+        fds_files[0].split(split_str)[0]
+        + "_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     )
     nifti_file = (
-        fds_files[0].split(split_str)[0] + '_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz'
+        fds_files[0].split(split_str)[0]
+        + "_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz"
     )
 
     if os.path.isfile(cifti_file):
@@ -365,58 +345,33 @@ def make_dcan_df(fds_files, name):
     dcan = h5py.File(name, "w")
     for thresh in np.linspace(0, 1, 101):
         thresh = np.around(thresh, 2)
-        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip",
-                            data=0,
-                            dtype='float')
-        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/binary_mask",
-                            data=(fd > thresh).astype(int),
-                            dtype='float')
-        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/threshold",
-                            data=thresh,
-                            dtype='float')
+        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip", data=0, dtype="float")
         dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/total_frame_count",
-            data=len(fd),
-            dtype='float')
+            f"/dcan_motion/fd_{thresh}/binary_mask",
+            data=(fd > thresh).astype(int),
+            dtype="float",
+        )
+        dcan.create_dataset(
+            f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float"
+        )
+        dcan.create_dataset(
+            f"/dcan_motion/fd_{thresh}/total_frame_count", data=len(fd), dtype="float"
+        )
         dcan.create_dataset(
             f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
             data=len(fd[fd <= thresh]),
-            dtype='float')
+            dtype="float",
+        )
         dcan.create_dataset(
             f"/dcan_motion/fd_{thresh}/remaining_seconds",
             data=len(fd[fd <= thresh]) * TR,
-            dtype='float')
+            dtype="float",
+        )
         dcan.create_dataset(
             f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
             data=(fd[fd <= thresh]).mean(),
-            dtype='float')
-
-
-def _get_motion_file(bold_file):
-    path, bold_filename = os.path.split(bold_file)
-    # Remove space entity from filenames, because motion files don't have it.
-    ENTITIES_TO_REMOVE = ["space", "den"]
-    motion_file_base = bold_filename
-    for etr in ENTITIES_TO_REMOVE:
-        # NOTE: This wouldn't work on sub bc there's no leading underscore.
-        motion_file_base = re.sub(f"_{etr}-[a-zA-Z0-9]+", "", motion_file_base)
-
-    # Remove the last entity (desc), suffix, and extension
-    motion_file_base = motion_file_base.split("_desc-")[0]
-
-    # Add the path back in
-    motion_file_base = os.path.join(path, motion_file_base)
-
-    # This is a hack to work around the fact that the motion file may have a desc
-    # entity or not.
-    motion_file = motion_file_base + "_desc-filtered_motion.tsv"
-    if not os.path.isfile(motion_file):
-        motion_file = motion_file_base + "_motion.tsv"
-
-    if not os.path.isfile(motion_file):
-        raise ValueError(f"File not found: {motion_file}")
-
-    return motion_file
+            dtype="float",
+        )
 
 
 def concatenate_tsv_files(tsv_files, fileout):
@@ -436,9 +391,41 @@ def concatenate_tsv_files(tsv_files, fileout):
         # timeseries files have no header
         data = [np.loadtxt(tsv_file.path, delimiter="\t") for tsv_file in tsv_files]
         data = np.vstack(data)
-        np.savetxt(fileout, data, fmt='%.5f', delimiter='\t')
+        np.savetxt(fileout, data, fmt="%.5f", delimiter="\t")
     else:
         # other tsv files have a header
         data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
         data.to_csv(fileout, sep="\t", index=False)
+
+
+def _get_concat_name(layout, in_file):
+    in_file_entities = in_file.get_entities()
+    in_file_entities["run"] = None
+    concat_file = layout.build_path(
+        in_file_entities,
+        path_patterns=path_patterns,
+        strict=False,
+        validate=False,
+    )
+    return concat_file
+
+
+def _sanitize_entities(dict_):
+    """Ensure "description" isn't in dictionary keys."""
+    dict_ = dict_.copy()
+    if "description" in dict_.keys():
+        dict_["desc"] = dict_["description"]
+        del dict_["description"]
+
+    return dict_
+
+
+def _concatenate_niimgs(files, out_file):
+    """Concatenate niimgs."""
+    if files[0].extension == ".nii.gz":
+        concat_preproc_img = concat_imgs([f.path for f in files])
+        concat_preproc_img.to_filename(out_file)
+    else:
+        combinefile = " -cifti ".join([f.path for f in files])
+        os.system("wb_command -cifti-merge " + out_file + " -cifti " + combinefile)
