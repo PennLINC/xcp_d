@@ -25,9 +25,32 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
-    """Concatenate derivatives."""
+def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
+    """Concatenate derivatives.
+
+    This function does a lot more than concatenate derivatives.
+    It also makes DCAN QC files, creates figures, and copies figures from the preprocessed
+    dataset to the post-processed dataset.
+
+    TODO: Move concatenation to *inside* main workflow.
+    That way we can feed files in directly instead of searching for them,
+    and we can pass the already-initialized fMRIPrep BIDSLayout.
+
+    Parameters
+    ----------
+    fmridir : str
+        Path to preprocessed derivatives (not xcpd post-processed derivatives).
+    outputdir : str
+        Path to location of xcpd derivatives.
+    work_dir : str
+        Working directory.
+    subjects : list of str
+        List of subjects to run concatenation on.
+    cifti : bool
+        Whether xcpd was run on CIFTI files or not.
+    """
     # NOTE: The config has no effect when derivatives is True :(
+    # At least for pybids ~0.15.1
     layout = BIDSLayout(outputdir, validate=False, derivatives=True)
     layout_fmriprep = BIDSLayout(fmridir, validate=False, derivatives=True)
 
@@ -75,16 +98,38 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     dcan_df_file = (
                         f"{'.'.join(motion_files[0].split('.')[:-1])}-DCAN.hdf5"
                     )
-                    make_dcan_df([motion_files[0].path], dcan_df_file)
+
+                    # Get TR from one of the preproc files
+                    preproc_files = layout_fmriprep.get(
+                        desc=["preproc", None],
+                        suffix="bold",
+                        extension=img_extensions,
+                        **task_entities,
+                    )
+                    TR = _get_tr(preproc_files[0].path)
+
+                    make_dcan_df([motion_files[0].path], dcan_df_file, TR)
                     continue
 
-                # Make DCAN HDF5 file
+                # Make DCAN HDF5 file from multiple motion files
                 concat_motion_file = _get_concat_name(layout, motion_files[0])
                 dcan_df_file = (
                     f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
                 )
+
+                # Get TR from one of the preproc files
+                preproc_files = layout_fmriprep.get(
+                    desc=["preproc", None],
+                    suffix="bold",
+                    extension=img_extensions,
+                    **task_entities,
+                )
+                TR = _get_tr(preproc_files[0].path)
+
                 make_dcan_df(
-                    [motion_file.path for motion_file in motion_files], dcan_df_file
+                    [motion_file.path for motion_file in motion_files],
+                    dcan_df_file,
+                    TR,
                 )
 
                 # Concatenate motion files
@@ -281,7 +326,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                             )
 
 
-def make_dcan_df(fds_files, name):
+def make_dcan_df(fds_files, name, TR):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
@@ -290,6 +335,8 @@ def make_dcan_df(fds_files, name):
         List of files from which to extract information.
     name : str
         Name of the HDF5-format file to be created.
+    TR : float
+        Repetition time.
 
     Notes
     -----
@@ -310,67 +357,43 @@ def make_dcan_df(fds_files, name):
     remaining frames
     """
     print("making dcan")
-    # Temporary workaround for differently-named motion files until we have a BIDS-ish
-    # filename construction function
-    if "desc-filtered" in fds_files[0]:
-        split_str = "_desc-filtered"
-    else:
-        split_str = "_motion"
-
-    cifti_file = (
-        fds_files[0].split(split_str)[0]
-        + "_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
-    )
-    nifti_file = (
-        fds_files[0].split(split_str)[0]
-        + "_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz"
-    )
-
-    if os.path.isfile(cifti_file):
-        TR = _get_tr(cifti_file)
-    elif os.path.isfile(nifti_file):
-        TR = _get_tr(nifti_file)
-    else:
-        raise Exception(
-            f"One or more files not found:\n\t{fds_files[0]}\n\t{cifti_file}\n\t{nifti_file}"
-        )
 
     # Load filtered framewise_displacement values from files and concatenate
     filtered_motion_dfs = [pd.read_table(fds_file) for fds_file in fds_files]
     filtered_motion_df = pd.concat(filtered_motion_dfs, axis=0)
     fd = filtered_motion_df["framewise_displacement"].values
 
-    # NOTE: TS- Maybe close the file object or nest in a with statement?
-    dcan = h5py.File(name, "w")
-    for thresh in np.linspace(0, 1, 101):
-        thresh = np.around(thresh, 2)
-        dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip", data=0, dtype="float")
-        dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/binary_mask",
-            data=(fd > thresh).astype(int),
-            dtype="float",
-        )
-        dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float"
-        )
-        dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/total_frame_count", data=len(fd), dtype="float"
-        )
-        dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
-            data=len(fd[fd <= thresh]),
-            dtype="float",
-        )
-        dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/remaining_seconds",
-            data=len(fd[fd <= thresh]) * TR,
-            dtype="float",
-        )
-        dcan.create_dataset(
-            f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
-            data=(fd[fd <= thresh]).mean(),
-            dtype="float",
-        )
+    with h5py.File(name, "w") as dcan:
+        for thresh in np.linspace(0, 1, 101):
+            thresh = np.around(thresh, 2)
+
+            dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip", data=0, dtype="float")
+            dcan.create_dataset(
+                f"/dcan_motion/fd_{thresh}/binary_mask",
+                data=(fd > thresh).astype(int),
+                dtype="float",
+            )
+            dcan.create_dataset(
+                f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float"
+            )
+            dcan.create_dataset(
+                f"/dcan_motion/fd_{thresh}/total_frame_count", data=len(fd), dtype="float"
+            )
+            dcan.create_dataset(
+                f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
+                data=len(fd[fd <= thresh]),
+                dtype="float",
+            )
+            dcan.create_dataset(
+                f"/dcan_motion/fd_{thresh}/remaining_seconds",
+                data=len(fd[fd <= thresh]) * TR,
+                dtype="float",
+            )
+            dcan.create_dataset(
+                f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
+                data=(fd[fd <= thresh]).mean(),
+                dtype="float",
+            )
 
 
 def concatenate_tsv_files(tsv_files, fileout):
@@ -399,6 +422,7 @@ def concatenate_tsv_files(tsv_files, fileout):
 
 
 def _get_concat_name(layout, in_file):
+    """Drop run entity from filename to get concatenated version."""
     in_file_entities = in_file.get_entities()
     in_file_entities["run"] = None
     concat_file = layout.build_path(
