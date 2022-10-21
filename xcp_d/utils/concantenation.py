@@ -39,6 +39,16 @@ def _get_concat_name(layout, in_file):
     return concat_file
 
 
+def _sanitize_entities(dict_):
+    """Ensure "description" isn't in dictionary keys."""
+    dict_ = dict_.copy()
+    if "description" in dict_.keys():
+        dict_["desc"] = dict_["description"]
+        del dict_["description"]
+
+    return dict_
+
+
 def concatenate_niimgs(files, out_file):
     """Concatenate niimgs."""
     if files[0].extension == ".nii.gz":
@@ -204,6 +214,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
 
                     # Carpet plots
                     carpet_entities = bold_files[0].get_entities()
+                    carpet_entities = _sanitize_entities(carpet_entities)
                     carpet_entities["run"] = None
                     carpet_entities["datatype"] = "figures"
                     carpet_entities["desc"] = "precarpetplot"
@@ -241,8 +252,10 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
 
                     # link or copy bb svgs
                     in_fig_entities = preproc_files[0].get_entities()
+                    in_fig_entities = _sanitize_entities(in_fig_entities)
                     in_fig_entities["datatype"] = "figures"
                     in_fig_entities["extension"] = ".svg"
+
                     bbreg_fig_in = layout_fmriprep.get(
                         desc="bbregister",
                         **in_fig_entities,
@@ -253,6 +266,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     )
 
                     out_fig_entities = bold_files[0].get_entities()
+                    out_fig_entities = _sanitize_entities(out_fig_entities)
                     out_fig_entities["run"] = None
                     out_fig_entities["desc"] = "bbregister"
                     out_fig_entities["datatype"] = "figures"
