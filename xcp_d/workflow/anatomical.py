@@ -32,7 +32,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.concantenation import _getsesid
+from xcp_d.utils.bids import _getsesid
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger('nipype.workflow')

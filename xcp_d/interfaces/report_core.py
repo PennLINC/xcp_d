@@ -10,7 +10,8 @@ from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
 
-from xcp_d.utils.concantenation import _getsesid
+from xcp_d.interfaces.layout_builder import LayoutBuilder
+from xcp_d.utils.bids import _getsesid
 
 
 class Report(_Report):
@@ -142,13 +143,14 @@ def generate_reports(subject_list,
     else:
         # concate cifi and nifti here for multiple runs
         if combineruns:
+            from xcp_d.utils.concantenation import concatenate_derivatives
+
             if input_type == 'dcan':
                 fmri_dir = str(work_dir) + '/dcanhcp'
             elif input_type == 'hcp':
                 fmri_dir = str(work_dir) + '/hcp/hcp'
-            from xcp_d.utils.concantenation import concatenate_bold as concatenatebold
             print('Concatenating bold files ...')
-            concatenatebold(
+            concatenate_derivatives(
                 subjects=subject_list,
                 fmridir=str(fmri_dir),
                 outputdir=str(Path(str(output_dir)) / 'xcp_d/'),
@@ -157,7 +159,6 @@ def generate_reports(subject_list,
             )
             print('Concatenation complete!')
 
-        from xcp_d.interfaces.layout_builder import LayoutBuilder
         for subject_label in subject_list:
             brainplotfile = glob.glob(
                 os.path.join(

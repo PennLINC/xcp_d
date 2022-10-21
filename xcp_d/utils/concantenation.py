@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for concatenating scans across runs."""
-import glob
 import os
 import re
 import shutil
@@ -15,13 +14,11 @@ import pandas as pd
 from bids.layout import BIDSLayout
 from nilearn.image import concat_imgs
 from nipype import logging
-from nipype.interfaces.ants import ApplyTransforms
 from pkg_resources import resource_filename as _pkgres
-from templateflow.api import get as get_template
 
 from xcp_d.utils.plot import _get_tr, plot_svgx
 from xcp_d.utils.qcmetrics import compute_dvars
-from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils.utils import get_segfile
 from xcp_d.utils.write_save import read_ndata
 
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
@@ -51,7 +48,7 @@ def _sanitize_entities(dict_):
     return dict_
 
 
-def concatenate_niimgs(files, out_file):
+def _concatenate_niimgs(files, out_file):
     """Concatenate niimgs."""
     if files[0].extension == ".nii.gz":
         concat_preproc_img = concat_imgs([f.path for f in files])
@@ -62,7 +59,7 @@ def concatenate_niimgs(files, out_file):
 
 
 def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
-    """I still need preproc_files, brain mask, segfile, TR."""
+    """Concatenate derivatives."""
     # NOTE: The config has no effect when derivatives is True :(
     layout = BIDSLayout(outputdir, validate=False, derivatives=True)
     layout_fmriprep = BIDSLayout(fmridir, validate=False, derivatives=True)
@@ -153,7 +150,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         tempfile.mkdtemp(),
                         f"rawdata{preproc_files[0].extension}",
                     )
-                    concatenate_niimgs(preproc_files, concat_preproc_file)
+                    _concatenate_niimgs(preproc_files, concat_preproc_file)
 
                     if not cifti:
                         # Mask file
@@ -193,7 +190,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         **space_entities,
                     )
                     concat_bold_file = _get_concat_name(layout, bold_files[0])
-                    concatenate_niimgs(bold_files, concat_bold_file)
+                    _concatenate_niimgs(bold_files, concat_bold_file)
 
                     # Calculate DVARS from denoised BOLD
                     regressed_dvars = []
@@ -212,7 +209,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     )
                     if len(smooth_bold_files):
                         concat_file = _get_concat_name(layout, smooth_bold_files[0])
-                        concatenate_niimgs(smooth_bold_files, concat_file)
+                        _concatenate_niimgs(smooth_bold_files, concat_file)
 
                     # Carpet plots
                     carpet_entities = bold_files[0].get_entities()
@@ -300,7 +297,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         if atlas_timeseries_files[0].extension == ".tsv":
                             concatenate_tsv_files(atlas_timeseries_files, concat_file)
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
-                            concatenate_niimgs(atlas_timeseries_files, concat_file)
+                            _concatenate_niimgs(atlas_timeseries_files, concat_file)
                         else:
                             raise ValueError(
                                 f"Unknown extension for {atlas_timeseries_files[0].path}"
@@ -422,84 +419,6 @@ def _get_motion_file(bold_file):
     return motion_file
 
 
-def get_segfile(bold_file):
-    """Select the segmentation file associated with a given BOLD file.
-
-    This function identifies the appropriate MNI-space discrete segmentation file for carpet
-    plots, then applies the necessary transforms to warp the file into BOLD reference space.
-    The warped segmentation file will be written to a temporary file and its path returned.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the BOLD file.
-
-    Returns
-    -------
-    segfile : str
-        The associated segmentation file.
-    """
-    # get transform files
-    dd = Path(os.path.dirname(bold_file))
-    anatdir = str(dd.parent) + '/anat'
-
-    if Path(anatdir).is_dir():
-        mni_to_t1 = glob.glob(
-            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-    else:
-        anatdir = str(dd.parent.parent) + '/anat'
-        mni_to_t1 = glob.glob(
-            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
-
-    transformfilex = get_transformfile(bold_file=bold_file,
-                                       mni_to_t1w=mni_to_t1,
-                                       t1w_to_native=_t12native(bold_file))
-
-    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
-
-    segfile = tempfile.mkdtemp() + 'segfile.nii.gz'
-    carpet = str(
-        get_template('MNI152NLin2009cAsym',
-                     resolution=1,
-                     desc='carpet',
-                     suffix='dseg',
-                     extension=['.nii', '.nii.gz']))
-
-    # seg_data file to bold space
-    at = ApplyTransforms()
-    at.inputs.dimension = 3
-    at.inputs.input_image = carpet
-    at.inputs.reference_image = boldref
-    at.inputs.output_image = segfile
-    at.inputs.interpolation = 'MultiLabel'
-    at.inputs.transforms = transformfilex
-    os.system(at.cmdline)
-
-    return segfile
-
-
-def _t12native(fname):
-    """Select T1w-to-scanner transform associated with a given BOLD file.
-
-    TODO: Update names and refactor
-
-    Parameters
-    ----------
-    fname : str
-        The BOLD file from which to identify the transform.
-
-    Returns
-    -------
-    t12ref : str
-        Path to the T1w-to-scanner transform.
-    """
-    directx = os.path.dirname(fname)
-    filename = os.path.basename(fname)
-    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
-    return t12ref
-
-
 def concatenate_tsv_files(tsv_files, fileout):
     """Concatenate framewise displacement time series across files.
 
@@ -523,47 +442,3 @@ def concatenate_tsv_files(tsv_files, fileout):
         data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
         data.to_csv(fileout, sep="\t", index=False)
-
-
-def _getsesid(filename):
-    """Get session id from filename if available.
-
-    Parameters
-    ----------
-    filename : str
-        The BIDS filename from which to extract the session ID.
-
-    Returns
-    -------
-    ses_id : str or None
-        The session ID in the filename.
-        If the file does not have a session entity, ``None`` will be returned.
-    """
-    ses_id = None
-    base_filename = os.path.basename(filename)
-
-    file_id = base_filename.split('_')
-    for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
-            break
-
-    return ses_id
-
-
-def _prefix(subid):
-    """Extract or compile subject entity from subject ID.
-
-    Parameters
-    ----------
-    subid : str
-        A subject ID (e.g., 'sub-XX' or just 'XX').
-
-    Returns
-    -------
-    str
-        Subject entity (e.g., 'sub-XX').
-    """
-    if subid.startswith('sub-'):
-        return subid
-    return '-'.join(('sub', subid))

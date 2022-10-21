@@ -21,9 +21,9 @@ from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import (
+    _t12native,
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
