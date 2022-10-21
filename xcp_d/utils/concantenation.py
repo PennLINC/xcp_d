@@ -217,7 +217,7 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     carpet_entities["description"] = "postcarpetplot"
                     postcarpet = layout.build_path(
                         carpet_entities,
-                        pathtrewq_patterns=path_patterns,
+                        path_patterns=path_patterns,
                         strict=False,
                         validate=False,
                     )
