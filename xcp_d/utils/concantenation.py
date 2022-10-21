@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout
 from nilearn.image import concat_imgs
+from nipype import logging
 from nipype.interfaces.ants import ApplyTransforms
 from pkg_resources import resource_filename as _pkgres
 from templateflow.api import get as get_template
@@ -25,6 +26,7 @@ from xcp_d.utils.write_save import read_ndata
 
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
 path_patterns = _pybids_spec["default_path_patterns"]
+LOGGER = logging.getLogger("nipype.interface")
 
 
 def _get_concat_name(layout, in_file):
@@ -258,39 +260,48 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     in_fig_entities["datatype"] = "figures"
                     in_fig_entities["extension"] = ".svg"
 
-                    in_fig_entities["desc"] = "bbregister"
-                    bbreg_fig_in = layout_fmriprep.get(
-                        **in_fig_entities,
-                    )[0].path
-                    in_fig_entities["desc"] = "boldref"
-                    boldref_fig_in = layout_fmriprep.get(
-                        **in_fig_entities,
-                    )[0].path
-
                     out_fig_entities = bold_files[0].get_entities()
                     out_fig_entities = _sanitize_entities(out_fig_entities)
                     out_fig_entities["run"] = None
                     out_fig_entities["datatype"] = "figures"
                     out_fig_entities["extension"] = ".svg"
 
-                    out_fig_entities["desc"] = "bbregister"
-                    bbreg_fig_out = layout.build_path(
-                        out_fig_entities,
-                        path_patterns=path_patterns,
-                        strict=False,
-                        validate=False,
+                    in_fig_entities["desc"] = "bbregister"
+                    bbreg_fig_in = layout_fmriprep.get(
+                        **in_fig_entities,
                     )
+                    if len(bbreg_fig_in) == 0:
+                        LOGGER.warning(f"No files found for {in_fig_entities}")
+                    else:
+                        bbreg_fig_in = bbreg_fig_in[0].path
 
-                    out_fig_entities["desc"] = "boldref"
-                    boldref_fig_out = layout.build_path(
-                        out_fig_entities,
-                        path_patterns=path_patterns,
-                        strict=False,
-                        validate=False,
+                        out_fig_entities["desc"] = "bbregister"
+                        bbreg_fig_out = layout.build_path(
+                            out_fig_entities,
+                            path_patterns=path_patterns,
+                            strict=False,
+                            validate=False,
+                        )
+                        shutil.copy(bbreg_fig_in, bbreg_fig_out)
+
+                    in_fig_entities["desc"] = "boldref"
+                    boldref_fig_in = layout_fmriprep.get(
+                        **in_fig_entities,
                     )
+                    if len(boldref_fig_in) == 0:
+                        LOGGER.warning(f"No files found for {in_fig_entities}")
+                    else:
+                        boldref_fig_in = boldref_fig_in[0].path
 
-                    shutil.copy(bbreg_fig_in, bbreg_fig_out)
-                    shutil.copy(boldref_fig_in, boldref_fig_out)
+                        out_fig_entities["desc"] = "boldref"
+                        boldref_fig_out = layout.build_path(
+                            out_fig_entities,
+                            path_patterns=path_patterns,
+                            strict=False,
+                            validate=False,
+                        )
+
+                        shutil.copy(boldref_fig_in, boldref_fig_out)
 
                     # Now timeseries files
                     atlases = layout.get_atlases(
