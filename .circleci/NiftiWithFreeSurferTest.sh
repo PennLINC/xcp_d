@@ -39,5 +39,4 @@ $XCPD_CMD \
     --smoothing 6 \
     -v -v \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
-    --warp-surfaces-native2std \
-    --combineruns
+    --warp-surfaces-native2std
