@@ -257,51 +257,31 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     # link or copy bb svgs
                     in_fig_entities = preproc_files[0].get_entities()
                     in_fig_entities = _sanitize_entities(in_fig_entities)
+                    in_fig_entities["space"] = None
+                    in_fig_entities["res"] = None
+                    in_fig_entities["den"] = None
+                    in_fig_entities["run"] = [None, 1]  # grab first run
                     in_fig_entities["datatype"] = "figures"
                     in_fig_entities["extension"] = ".svg"
 
-                    out_fig_entities = bold_files[0].get_entities()
-                    out_fig_entities = _sanitize_entities(out_fig_entities)
-                    out_fig_entities["run"] = None
-                    out_fig_entities["datatype"] = "figures"
-                    out_fig_entities["extension"] = ".svg"
+                    for desc in ["bbregister", "boldref"]:
+                        in_fig_entities["desc"] = "bbregister"
+                        fig_in = layout_fmriprep.get(**in_fig_entities)
+                        if len(fig_in) == 0:
+                            LOGGER.warning(f"No files found for {in_fig_entities}")
+                        else:
+                            fig_in = fig_in[0].path
 
-                    in_fig_entities["desc"] = "bbregister"
-                    bbreg_fig_in = layout_fmriprep.get(
-                        **in_fig_entities,
-                    )
-                    if len(bbreg_fig_in) == 0:
-                        LOGGER.warning(f"No files found for {in_fig_entities}")
-                    else:
-                        bbreg_fig_in = bbreg_fig_in[0].path
-
-                        out_fig_entities["desc"] = "bbregister"
-                        bbreg_fig_out = layout.build_path(
-                            out_fig_entities,
-                            path_patterns=path_patterns,
-                            strict=False,
-                            validate=False,
-                        )
-                        shutil.copy(bbreg_fig_in, bbreg_fig_out)
-
-                    in_fig_entities["desc"] = "boldref"
-                    boldref_fig_in = layout_fmriprep.get(
-                        **in_fig_entities,
-                    )
-                    if len(boldref_fig_in) == 0:
-                        LOGGER.warning(f"No files found for {in_fig_entities}")
-                    else:
-                        boldref_fig_in = boldref_fig_in[0].path
-
-                        out_fig_entities["desc"] = "boldref"
-                        boldref_fig_out = layout.build_path(
-                            out_fig_entities,
-                            path_patterns=path_patterns,
-                            strict=False,
-                            validate=False,
-                        )
-
-                        shutil.copy(boldref_fig_in, boldref_fig_out)
+                            out_fig_entities = in_fig_entities.copy()
+                            out_fig_entities["run"] = None
+                            out_fig_entities["desc"] = "bbregister"
+                            fig_out = layout.build_path(
+                                out_fig_entities,
+                                path_patterns=path_patterns,
+                                strict=False,
+                                validate=False,
+                            )
+                            shutil.copy(fig_in, fig_out)
 
                     # Now timeseries files
                     atlases = layout.get_atlases(
