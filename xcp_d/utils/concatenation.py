@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for concatenating scans across runs."""
 import os
-import re
 import shutil
 import tempfile
 from json import loads
