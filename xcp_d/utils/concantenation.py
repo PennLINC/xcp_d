@@ -130,6 +130,16 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                     space_entities = task_entities.copy()
                     space_entities["space"] = space
 
+                    # Preprocessed BOLD files
+                    preproc_files = layout_fmriprep.get(
+                        desc=["preproc", None],
+                        suffix="bold",
+                        extension=img_extensions,
+                        **space_entities,
+                    )
+                    concat_preproc_file = os.path.join(tempfile.mkdtemp(), "rawdata.nii.gz")
+                    concatenate_niimgs(preproc_files, concat_preproc_file)
+
                     if not cifti:
                         # Mask file
                         mask_files = layout_fmriprep.get(
@@ -142,18 +152,11 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                             print(f"Too many files found: {mask_files}")
 
                         mask = mask_files[0].path
+                        # TODO: Use layout_fmriprep for this
+                        segfile = get_segfile(preproc_files[0].path)
                     else:
                         mask = None
-
-                    # Preprocessed BOLD files
-                    preproc_files = layout_fmriprep.get(
-                        desc=["preproc", None],
-                        suffix="bold",
-                        extension=img_extensions,
-                        **space_entities,
-                    )
-                    concat_preproc_file = os.path.join(tempfile.mkdtemp(), "rawdata.nii.gz")
-                    concatenate_niimgs(preproc_files, concat_preproc_file)
+                        segfile = None
 
                     # Calculate DVARS from preprocessed BOLD
                     raw_dvars = []
@@ -163,8 +166,6 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
                         raw_dvars.append(dvar)
                     raw_dvars = np.concatenate(raw_dvars)
 
-                    # TODO: Use layout_fmriprep for this
-                    segfile = get_segfile(preproc_files[0].path)
                     TR = _get_tr(preproc_files[0].path)
 
                     # Denoised BOLD files
@@ -198,6 +199,8 @@ def concatenate_bold(fmridir, outputdir, work_dir, subjects, cifti):
 
                     # Carpet plots
                     carpet_entities = bold_files[0].entities
+                    print(type(carpet_entities))
+                    print(carpet_entities)
                     carpet_entities["run"] = None
                     carpet_entities["datatype"] = "figures"
                     carpet_entities["description"] = "precarpetplot"
