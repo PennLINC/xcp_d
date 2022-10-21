@@ -143,7 +143,7 @@ def generate_reports(subject_list,
     else:
         # concate cifi and nifti here for multiple runs
         if combineruns:
-            from xcp_d.utils.concantenation import concatenate_derivatives
+            from xcp_d.utils.concatenation import concatenate_derivatives
 
             if input_type == 'dcan':
                 fmri_dir = str(work_dir) + '/dcanhcp'
