@@ -111,12 +111,6 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
                     make_dcan_df([motion_files[0].path], dcan_df_file, TR)
                     continue
 
-                # Make DCAN HDF5 file from multiple motion files
-                concat_motion_file = _get_concat_name(layout, motion_files[0])
-                dcan_df_file = (
-                    f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
-                )
-
                 # Get TR from one of the preproc files
                 preproc_files = layout_fmriprep.get(
                     desc=["preproc", None],
@@ -126,14 +120,18 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
                 )
                 TR = _get_tr(preproc_files[0].path)
 
-                make_dcan_df(
-                    [motion_file.path for motion_file in motion_files],
-                    dcan_df_file,
-                    TR,
-                )
+                # Make DCAN HDF5 file for each of the motion files
+                for motion_file in motion_files:
+                    dcan_df_file = f"{'.'.join(motion_file.path.split('.')[:-1])}-DCAN.hdf5"
+                    make_dcan_df(motion_file.path, dcan_df_file, TR)
 
                 # Concatenate motion files
+                concat_motion_file = _get_concat_name(layout, motion_files[0])
                 concatenate_tsv_files(motion_files, concat_motion_file)
+
+                # Make DCAN HDF5 file from concatenated motion file
+                concat_dcan_df_file = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+                make_dcan_df(concat_motion_file, concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
                 outlier_files = layout.get(
