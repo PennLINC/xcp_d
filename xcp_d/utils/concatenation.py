@@ -123,7 +123,7 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
                 # Make DCAN HDF5 file for each of the motion files
                 for motion_file in motion_files:
                     dcan_df_file = f"{'.'.join(motion_file.path.split('.')[:-1])}-DCAN.hdf5"
-                    make_dcan_df(motion_file.path, dcan_df_file, TR)
+                    make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
                 concat_motion_file = _get_concat_name(layout, motion_files[0])
@@ -131,7 +131,7 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
 
                 # Make DCAN HDF5 file from concatenated motion file
                 concat_dcan_df_file = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
-                make_dcan_df(concat_motion_file, concat_dcan_df_file, TR)
+                make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
                 outlier_files = layout.get(
