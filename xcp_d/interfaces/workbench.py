@@ -879,8 +879,8 @@ class CiftiSeparateVolumeAll(WBCommand):
       -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
     """
 
-    input_spec = _CiftiSeparateMetricInputSpec
-    output_spec = _CiftiSeparateMetricOutputSpec
+    input_spec = _CiftiSeparateVolumeAllInputSpec
+    output_spec = _CiftiSeparateVolumeAllOutputSpec
     _cmd = "wb_command  -cifti-separate "
 
 
