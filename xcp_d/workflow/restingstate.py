@@ -216,22 +216,28 @@ For each hemisphere, regional homogeneity (ReHo) was computed using surface-base
 the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighbor
 vertices to yield ReHo.
 """
-    inputnode = pe.Node(niu.IdentityInterface(fields=['clean_bold']),
-                        name='inputnode')
-    outputnode = pe.Node(niu.IdentityInterface(fields=['lh_reho', 'rh_reho']),
-                         name='outputnode')
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['clean_bold']),
+        name='inputnode',
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=['reho_out']),
+        name='outputnode',
+    )
 
     # Extract left and right hemispheres via Connectome Workbench
-    lh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_LEFT',
-                                          direction="COLUMN"),
-                      name="separate_lh",
-                      mem_gb=mem_gb,
-                      n_procs=omp_nthreads)
-    rh_surf = pe.Node(CiftiSeparateMetric(metric='CORTEX_RIGHT',
-                                          direction="COLUMN"),
-                      name="separate_rh",
-                      mem_gb=mem_gb,
-                      n_procs=omp_nthreads)
+    lh_surf = pe.Node(
+        CiftiSeparateMetric(metric='CORTEX_LEFT', direction="COLUMN"),
+        name="separate_lh",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    rh_surf = pe.Node(
+        CiftiSeparateMetric(metric='CORTEX_RIGHT', direction="COLUMN"),
+        name="separate_rh",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
     subcortical_nifti = pe.Node(
         CiftiSeparateVolumeAll(direction="COLUMN"),
         name="separate_subcortical",
