@@ -260,11 +260,13 @@ vertices to yield ReHo.
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHo(neighborhood='vertices', outputtype="NIFTI_GZ"),
+        ReHo(neighborhood='vertices'),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
+    # set output filename to prevent long filenames
+    subcortical_reho.inputs.out_file = "reho.nii.gz"
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
