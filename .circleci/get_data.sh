@@ -168,6 +168,23 @@ get_bids_data() {
         echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
+      dataset_dir="$TEST_DATA_DIR/nibabies"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} data to $dataset_dir"
+
+        ${WGET} \
+          -O nibabies.tar.xz \
+        "https://upenn.box.com/shared/static/a4evzxqynozyeyxl1l807kr17oqfufsq.xz"
+        tar xvfJ nibabies.tar.xz -C $TEST_DATA_DIR
+        rm nibabies.tar.xz
+
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
+
+
     # colornest subject who also has freesurfer data (in a different archive)
     elif [[ ${DS} = fmriprep_colornest ]]
     then
