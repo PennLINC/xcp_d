@@ -160,7 +160,7 @@ get_bids_data() {
 
         ${WGET} \
           -O withoutfs_sub01.tar.xz \
-        "https://upenn.box.com/shared/static/4eq4hdefriqhhuyeqswxmkhno0gtezli.xz"
+        "https://upenn.box.com/shared/static/yuywkmlru36tgpy2va47uqudu0fdpgy7.xz"
         tar xvfJ withoutfs_sub01.tar.xz -C $TEST_DATA_DIR
         rm withoutfs_sub01.tar.xz
 
@@ -196,7 +196,7 @@ get_bids_data() {
 
         ${WGET} \
           -O withfs_fmriprep_colornest001.tar.xz \
-          "https://upenn.box.com/shared/static/xxmty7kbg3umifu4l1z6e5tg8ha7hjxx.xz"
+          "https://upenn.box.com/shared/static/i3ulccnfr53f0la2eo5s1ijz273hw80u.xz"
         tar xvfJ withfs_fmriprep_colornest001.tar.xz -C $TEST_DATA_DIR
         rm withfs_fmriprep_colornest001.tar.xz
 
@@ -214,7 +214,7 @@ get_bids_data() {
 
         ${WGET} \
           -O withfs_fs_colornest001.tar.xz \
-          "https://upenn.box.com/shared/static/ej43w925h5cozsizuamnh7bjtdevi61b.xz"
+          "https://upenn.box.com/shared/static/dnyhbeckak62ar1kfllm012q5wwbej55.xz"
         tar xvfJ withfs_fs_colornest001.tar.xz -C $TEST_DATA_DIR
         rm withfs_fs_colornest001.tar.xz
 
