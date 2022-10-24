@@ -260,7 +260,7 @@ vertices to yield ReHo.
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHo(neighborhood='vertices'),
+        ReHo(neighborhood='vertices', outputtype="NIFTI_GZ"),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
