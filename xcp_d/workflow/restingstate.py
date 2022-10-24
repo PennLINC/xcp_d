@@ -177,7 +177,7 @@ def init_cifti_reho_wf(
     omp_nthreads,
     name="cifti_reho_wf",
 ):
-    """Compute ReHo from surface (CIFTI) data.
+    """Compute ReHo from surface+volumetric (CIFTI) data.
 
     Workflow Graph
         .. workflow::
