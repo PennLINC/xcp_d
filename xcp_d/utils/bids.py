@@ -147,9 +147,18 @@ def collect_data(
     """
     layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
 
+    NIFTI_SPACES = [
+        "MNI152NLin6Asym",
+        "MNI152NLin2009cAsym",
+        "MNIInfant",
+    ]
+    CIFTI_SPACES = [
+        "fsLR",
+    ]
+
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
-        "boldfile": {"datatype": "func", "suffix": "bold"},
+        "bold": {"datatype": "func", "suffix": "bold"},
         "t1w": {"datatype": "anat", "suffix": "T1w"},
         "seg_data": {"datatype": "anat", "suffix": "dseg"},
         "pial": {"datatype": "anat", "suffix": "pial"},
@@ -163,8 +172,10 @@ def collect_data(
         queries[acq].update(entities)
 
     if task:
-        # queries["preproc_bold"]["task"] = task
-        queries["boldfile"]["task"] = task
+        queries["bold"]["task"] = task
+
+    for space in allowed_spaces:
+        bold_data = layout.get()
 
     subj_data = {
         dtype: sorted(
@@ -177,10 +188,6 @@ def collect_data(
         )
         for dtype, query in queries.items()
     }
-
-    # reg_file = select_registrationfile(subj_data,template=template)
-
-    # bold_file= select_cifti_bold(subj_data)
 
     return layout, subj_data
 
