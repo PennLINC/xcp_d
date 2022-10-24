@@ -42,7 +42,7 @@ jobs:
           command: |
             cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_without_freesurfer\]' )" != "" ]]; then
-              echo "Skipping nifti_without_freeurfer build"
+              echo "Skipping nifti_without_freesurfer build"
               circleci step halt
             fi
       - run: *runinstall
@@ -255,6 +255,17 @@ workflows:
             tags:
               only: /.*/
 
+        - nibabies:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
       - nifti_without_freesurfer:
           requires:
             - build
@@ -281,6 +292,7 @@ workflows:
           requires:
             - nifti_with_freesurfer
             - nifti_without_freesurfer
+            - nibabies
             - cifti_with_freesurfer
             - pytests
           filters:
