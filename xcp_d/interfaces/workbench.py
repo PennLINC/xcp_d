@@ -816,3 +816,139 @@ class CiftiSeparateMetric(WBCommand):
     input_spec = _CiftiSeparateMetricInputSpec
     output_spec = _CiftiSeparateMetricOutputSpec
     _cmd = "wb_command  -cifti-separate "
+
+
+class _CiftiSeparateVolumeAllInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSeparateVolumeAll command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The input dense series",
+    )
+    direction = traits.Enum(
+        "ROW",
+        "COLUMN",
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="which dimension to smooth along, ROW or COLUMN",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="%s_volumetric_data.nii.gz",
+        keep_extension=False,
+        argstr="-volume-all %s -crop",
+        position=2,
+        desc="The gifti output, iether left and right",
+    )
+    label_file = File(
+        name_source=["in_file"],
+        name_template="%s_labels.nii.gz",
+        keep_extension=False,
+        argstr="-label %s",
+        position=3,
+        desc="",
+    )
+
+
+class _CiftiSeparateVolumeAllOutputSpec(TraitedSpec):
+    """Output specification for the CiftiSeparateVolumeAll command."""
+
+    label_file = File(exists=True, desc="NIFTI file with labels.")
+    out_file = File(exists=True, desc="NIFTI file with volumetric data.")
+
+
+class CiftiSeparateVolumeAll(WBCommand):
+    """Extract volumetric data from CIFTI file (.dtseries).
+
+    Other structures can also be extracted.
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,
+
+    Examples
+    --------
+    >>> ciftiseparate = CiftiSeparateVolumeAll()
+    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
+    >>> ciftiseparate.inputs.direction = 'COLUMN'
+    >>> ciftiseparate.cmdline
+    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii'  COLUMN \
+      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    """
+
+    input_spec = _CiftiSeparateMetricInputSpec
+    output_spec = _CiftiSeparateMetricOutputSpec
+    _cmd = "wb_command  -cifti-separate "
+
+
+class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSeparateVolumeAll command."""
+
+    out_file = File(
+        name_source=["volume_data"],
+        name_template="%s_combined.dscalar.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=0,
+        desc="The CIFTI output.",
+    )
+    left_metric = File(
+        exists=True,
+        mandatory=True,
+        argstr="-left-metric %s",
+        position=1,
+        desc="The input dense series",
+    )
+    right_metric = File(
+        exists=True,
+        mandatory=True,
+        argstr="-right-metric %s",
+        position=2,
+        desc="The input dense series",
+    )
+    volume_data = File(
+        exists=True,
+        mandatory=True,
+        argstr="-volume %s",
+        position=3,
+        desc="The input dense series",
+    )
+    structure_label_volume = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=4,
+        desc="",
+    )
+
+
+class _CiftiCreateDenseScalarOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCreateDenseScalar command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCreateDenseScalar(WBCommand):
+    """Extract volumetric data from CIFTI file (.dtseries).
+
+    Other structures can also be extracted.
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,
+
+    Examples
+    --------
+    >>> ciftiseparate = CiftiCreateDenseScalar()
+    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
+    >>> ciftiseparate.inputs.direction = 'COLUMN'
+    >>> ciftiseparate.cmdline
+    wb_command -cifti-create-dense-scalar 'sub-01XX_task-rest.dtseries.nii' \
+      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    """
+
+    input_spec = _CiftiSeparateMetricInputSpec
+    output_spec = _CiftiSeparateMetricOutputSpec
+    _cmd = "wb_command -cifti-create-dense-scalar"

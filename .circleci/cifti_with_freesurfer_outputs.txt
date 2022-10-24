@@ -53,9 +53,8 @@ xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-f
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_atlas-Schaefer917_den-91k_timeseries.ptseries.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_atlas-subcortical_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_atlas-subcortical_den-91k_timeseries.ptseries.nii
-xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-32k_hemi-L_reho.shape.gii
-xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-32k_hemi-R_reho.shape.gii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_alff.dscalar.nii
+xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_reho.dscalar.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_desc-smooth_alff.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
@@ -91,9 +90,8 @@ xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-f
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_atlas-Schaefer917_den-91k_timeseries.ptseries.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_atlas-subcortical_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_atlas-subcortical_den-91k_timeseries.ptseries.nii
-xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-32k_hemi-L_reho.shape.gii
-xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-32k_hemi-R_reho.shape.gii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_alff.dscalar.nii
+xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_reho.dscalar.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_desc-smooth_alff.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii

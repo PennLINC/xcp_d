@@ -8,8 +8,12 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
-from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
-from xcp_d.interfaces.workbench import CiftiSeparateMetric
+from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, ReHoNamePatch, SurfaceReHo
+from xcp_d.interfaces.workbench import (
+    CiftiCreateDenseScalar,
+    CiftiSeparateMetric,
+    CiftiSeparateVolumeAll,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
 
@@ -196,10 +200,8 @@ def init_surface_reho_wf(
 
     Outputs
     -------
-    lh_reho
-        left hemisphere surface reho
-    rh_reho
-        right hemisphere surface reho
+    reho_out
+        ReHo in a CIFTI file.
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -225,23 +227,54 @@ vertices to yield ReHo.
                       name="separate_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
+    subcortical_nifti = pe.Node(
+        CiftiSeparateVolumeAll(direction="COLUMN"),
+        name="separate_subcortical",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
     # Calculate the reho by hemipshere
-    lh_reho = pe.Node(SurfaceReHo(surf_hemi='L'),
-                      name="reho_lh",
-                      mem_gb=mem_gb,
-                      n_procs=omp_nthreads)
-    rh_reho = pe.Node(SurfaceReHo(surf_hemi='R'),
-                      name="reho_rh",
-                      mem_gb=mem_gb,
-                      n_procs=omp_nthreads)
+    lh_reho = pe.Node(
+        SurfaceReHo(surf_hemi='L'),
+        name="reho_lh",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    rh_reho = pe.Node(
+        SurfaceReHo(surf_hemi='R'),
+        name="reho_rh",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    subcortical_reho = pe.Node(
+        ReHoNamePatch(neighborhood='vertices'),
+        name="reho_subcortical",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # Merge the surfaces and subcortical structures back into a CIFTI
+    merge_cifti = pe.Node(
+        CiftiCreateDenseScalar(),
+        name="merge_cifti",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
     # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
         (inputnode, rh_surf, [('clean_bold', 'in_file')]),
+        (inputnode, subcortical_nifti, [('clean_bold', 'in_file')]),
         (lh_surf, lh_reho, [('out_file', 'surf_bold')]),
         (rh_surf, rh_reho, [('out_file', 'surf_bold')]),
-        (lh_reho, outputnode, [('surf_gii', 'lh_reho')]),
-        (rh_reho, outputnode, [('surf_gii', 'rh_reho')]),
+        (subcortical_nifti, subcortical_reho, [('out_file', 'in_file')]),
+        (subcortical_nifti, merge_cifti, ['label_file', 'structure_label_volume']),
+        (lh_reho, merge_cifti, ['surf_gii', 'left_metric']),
+        (rh_reho, merge_cifti, ['surf_gii', 'right_metric']),
+        (subcortical_reho, merge_cifti, ['out_file', 'volume_data']),
+        (merge_cifti, outputnode, [('out_file', 'reho_out')])
     ])
 
     return workflow
@@ -297,7 +330,6 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     outputnode = pe.Node(
         niu.IdentityInterface(fields=['reho_out', 'rehohtml']),
         name='outputnode')
-    from xcp_d.interfaces.resting_state import ReHoNamePatch
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),
