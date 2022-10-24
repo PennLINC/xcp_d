@@ -784,7 +784,7 @@ class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
         keep_extension=True,
         argstr=" %s",
         position=3,
-        desc="The gifti output, iether left and right",
+        desc="The gifti output, either left and right",
     )
 
 
@@ -842,7 +842,7 @@ class _CiftiSeparateVolumeAllInputSpec(CommandLineInputSpec):
         keep_extension=False,
         argstr="-volume-all %s -crop",
         position=2,
-        desc="The gifti output, iether left and right",
+        desc="The NIFTI output.",
     )
     label_file = File(
         name_source=["in_file"],
@@ -850,7 +850,7 @@ class _CiftiSeparateVolumeAllInputSpec(CommandLineInputSpec):
         keep_extension=False,
         argstr="-label %s",
         position=3,
-        desc="",
+        desc="A discrete segmentation NIFTI output.",
     )
 
 
@@ -871,12 +871,14 @@ class CiftiSeparateVolumeAll(WBCommand):
     Examples
     --------
     >>> ciftiseparate = CiftiSeparateVolumeAll()
-    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
-    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
+    >>> ciftiseparate.inputs.in_file = 'sub-01_task-rest.dtseries.nii'
+    >>> ciftiseparate.inputs.out_file = 'sub_01_task-rest_volumetric_data.nii.gz'
+    >>> ciftiseparate.inputs.label_file = 'sub_01_task-rest_labels.nii.gz'
     >>> ciftiseparate.inputs.direction = 'COLUMN'
     >>> ciftiseparate.cmdline
-    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii'  COLUMN \
-      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii' COLUMN \
+        -volume-all 'sub_01_task-rest_volumetric_data.nii.gz' \
+        -label 'sub_01_task-rest_labels.nii.gz'
     """
 
     input_spec = _CiftiSeparateVolumeAllInputSpec
@@ -900,28 +902,28 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
         mandatory=True,
         argstr="-left-metric %s",
         position=1,
-        desc="The input dense series",
+        desc="The input surface data from the left hemisphere.",
     )
     right_metric = File(
         exists=True,
         mandatory=True,
         argstr="-right-metric %s",
         position=2,
-        desc="The input dense series",
+        desc="The input surface data from the right hemisphere.",
     )
     volume_data = File(
         exists=True,
         mandatory=True,
         argstr="-volume %s",
         position=3,
-        desc="The input dense series",
+        desc="The input volumetric data.",
     )
     structure_label_volume = File(
         exists=True,
         mandatory=True,
         argstr="%s",
         position=4,
-        desc="",
+        desc="A label file indicating the structure of each voxel in volume_data.",
     )
 
 
@@ -940,13 +942,17 @@ class CiftiCreateDenseScalar(WBCommand):
 
     Examples
     --------
-    >>> ciftiseparate = CiftiCreateDenseScalar()
-    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
-    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
-    >>> ciftiseparate.inputs.direction = 'COLUMN'
-    >>> ciftiseparate.cmdline
-    wb_command -cifti-create-dense-scalar 'sub-01XX_task-rest.dtseries.nii' \
-      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
+    >>> cifticreatedensescalar = CiftiCreateDenseScalar()
+    >>> cifticreatedensescalar.inputs.out_file = 'sub_01_task-rest.dscalar.nii'
+    >>> cifticreatedensescalar.inputs.left_metric = 'sub_01_task-rest_hemi-L.func.gii'
+    >>> cifticreatedensescalar.inputs.left_metric = 'sub_01_task-rest_hemi-R.func.gii'
+    >>> cifticreatedensescalar.inputs.volume_data = 'sub_01_task-rest_subcortical.nii.gz'
+    >>> cifticreatedensescalar.inputs.structure_label_volume = 'sub_01_task-rest_labels.nii.gz'
+    >>> cifticreatedensescalar.cmdline
+    wb_command -cifti-create-dense-scalar 'sub_01_task-rest.dscalar.nii' \
+        -left-metric 'sub_01_task-rest_hemi-L.func.gii' \
+        -right-metric 'sub_01_task-rest_hemi-R.func.gii' \
+        -volume-data 'sub_01_task-rest_subcortical.nii.gz' 'sub_01_task-rest_labels.nii.gz'
     """
 
     input_spec = _CiftiCreateDenseScalarInputSpec
