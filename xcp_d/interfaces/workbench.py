@@ -949,6 +949,6 @@ class CiftiCreateDenseScalar(WBCommand):
       -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
     """
 
-    input_spec = _CiftiSeparateMetricInputSpec
-    output_spec = _CiftiSeparateMetricOutputSpec
+    input_spec = _CiftiCreateDenseScalarInputSpec
+    output_spec = _CiftiCreateDenseScalarOutputSpec
     _cmd = "wb_command -cifti-create-dense-scalar"
