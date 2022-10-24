@@ -66,8 +66,12 @@ params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \
 """
 
 docdict["input_type"] = """
-input_type : {"fmriprep", "dcan", "hcp"}
-    The format of the BIDS derivatives.
+input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
+    The format of the incoming preprocessed BIDS derivatives.
+    DCAN- and HCP-format derivatives will automatically be converted to a more
+    BIDS-compliant format.
+    fMRIPrep and Nibabies derivatives are assumed to be roughly equivalent in terms of
+    file organization and naming.
 """
 
 docdict["smoothing"] = """
@@ -104,6 +108,47 @@ lower_bpf : :obj:`float`
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
+"""
+
+docdict["upper_bpf"] = """
+upper_bpf : :obj:`float`
+    Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
+    The bandpass filter is applied to the fMRI data after post-processing and denoising.
+    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
+    This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
+"""
+
+docdict["bpf_order"] = """
+bpf_order : :obj:`int`
+    Number of filter coefficients for Butterworth bandpass filter.
+    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
+    This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
+"""
+
+docdict["motion_filter_type"] = """
+motion_filter_type : {None, "lp", "notch"}
+    Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+    If None, no filter will be applied.
+
+    If the filter type is set to "notch", then both ``band_stop_min`` and ``band_stop_max``
+    must be defined.
+    If the filter type is set to "lp", then only ``band_stop_max`` must be defined.
+"""
+
+docdict["motion_filter_order"] = """
+motion_filter_order : :obj:`int`
+    Number of filter coefficients for the band-stop filter, for filtering motion regressors.
+    Motion filtering is only performed if ``motion_filter_type`` is not None.
+    This parameter is used in conjunction with ``band_stop_max`` and ``band_stop_min``.
+"""
+
+docdict["band_stop_min"] = """
+band_stop_min : :obj:`float` or None
+    Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    Motion filtering is only performed if ``motion_filter_type`` is not None.
+    If used with the "lp" ``motion_filter_type``, this parameter essentially corresponds to a
+    low-pass filter (the maximum allowed frequency in the filtered data).
+    This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_max``.
 
     Here is a list of recommended values, based on participant age:
 
@@ -119,14 +164,17 @@ lower_bpf : :obj:`float`
     65 - 80           12
     > 80              10
     ================= =================
+
+    When ``motion_filter_type`` is set to "lp" (low-pass filter), another commonly-used value for
+    this parameter is 6 BPM (equivalent to 0.1 Hertz), based on :footcite:t:`gratton2020removal`.
 """
 
-docdict["upper_bpf"] = """
-upper_bpf : :obj:`float`
-    Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
-    The bandpass filter is applied to the fMRI data after post-processing and denoising.
-    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
+docdict["band_stop_max"] = """
+band_stop_max : :obj:`float` or None
+    Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    Motion filtering is only performed if ``motion_filter_type`` is not None.
+    This parameter is only used if ``motion-filter-type`` is set to "notch".
+    This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_min``.
 
     Here is a list of recommended values, based on participant age:
 
@@ -142,40 +190,6 @@ upper_bpf : :obj:`float`
     65 - 80           28
     > 80              30
     ================= =================
-"""
-
-docdict["bpf_order"] = """
-bpf_order : :obj:`int`
-    Number of filter coefficients for Butterworth bandpass filter.
-    Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
-"""
-
-docdict["motion_filter_type"] = """
-motion_filter_type : {None, "lp", "notch"}
-    Type of band-stop filter to use for removing respiratory artifact from motion regressors.
-    If None, no filter will be applied.
-"""
-
-docdict["motion_filter_order"] = """
-motion_filter_order : :obj:`int`
-    Number of filter coefficients for the band-stop filter, for filtering motion regressors.
-    Motion filtering is only performed if ``motion_filter_type`` is not None.
-    This parameter is used in conjunction with ``band_stop_max`` and ``band_stop_min``.
-"""
-
-docdict["band_stop_min"] = """
-band_stop_min : :obj:`float`
-    Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
-    Motion filtering is only performed if ``motion_filter_type`` is not None.
-    This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_max``.
-"""
-
-docdict["band_stop_max"] = """
-band_stop_max : :obj:`float`
-    Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
-    Motion filtering is only performed if ``motion_filter_type`` is not None.
-    This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_min``.
 """
 
 docdict["name"] = """
@@ -207,6 +221,54 @@ timeseries : :obj:`list` of :obj:`str`
 docdict["correlations"] = """
 correlations : :obj:`list` of :obj:`str`
     List of paths to atlas-specific ROI-to-ROI correlation files.
+"""
+
+docdict["process_surfaces"] = """
+process_surfaces : :obj:`bool`, optional
+    If True, a workflow will be run to warp native-space (fsnative) reconstructed cortical
+    surfaces (surf.gii files) produced by Freesurfer into standard (fsLR) space.
+    These surface files are primarily used for visual quality control.
+    By default, this workflow is disabled.
+
+    .. list-table:: The surface files that are generated by the workflow
+        :align: left
+        :header-rows: 1
+        :stub-columns: 1
+
+        * - Filename
+          - Description
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
+          - The gray matter / pial matter border.
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
+          - The smoothed gray matter / white matter border for the cortex.
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii``
+          - The midpoints between wm and pial surfaces.
+            This is derived from the FreeSurfer graymid
+            (``mris_expand`` with distance=0.5 applied to the WM surfs).
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_inflated.surf.gii``
+          - An inflation of the midthickness surface (useful for visualization).
+            This file is only created if the input type is "hcp" or "dcan".
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii``
+          - The midpoints between wm and pial surfaces.
+            This is created by averaging the coordinates from the wm and pial surfaces.
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii``
+          - An inflation of the midthickness surface (useful for visualization).
+            This is derived from the HCP midthickness file.
+            This file is only created if the input type is "fmriprep" or "nibabies".
+        * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii``
+          - A very-inflated midthicknesss surface (also for visualization).
+            This is derived from the HCP midthickness file.
+            This file is only created if the input type is "fmriprep" or "nibabies".
+"""
+
+docdict["subject_id"] = """
+subject_id : :obj:`str`
+    The participant ID. This SHOULD NOT include the ``sub-`` prefix.
+"""
+
+docdict["layout"] = """
+layout : :obj:`bids.layout.BIDSLayout`
+    BIDSLayout indexing the ingested (e.g., fMRIPrep-format) derivatives.
 """
 
 docdict_indented = {}

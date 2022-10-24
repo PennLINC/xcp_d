@@ -2,10 +2,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
 import fnmatch
+import glob
 import os
 import shutil
 from pathlib import Path
 
+from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
@@ -20,7 +22,6 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
-from xcp_d.interfaces.surfplotting import BrainPlotx, RibbontoStatmap
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -31,65 +32,60 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import collect_data
 from xcp_d.utils.concantenation import _getsesid
 from xcp_d.utils.doc import fill_doc
 
+LOGGER = logging.getLogger('nipype.workflow')
+
 
 @fill_doc
-def init_anatomical_wf(
-    omp_nthreads,
-    fmri_dir,
-    subject_id,
+def init_t1w_wf(
     output_dir,
-    t1w_to_mni,
     input_type,
+    omp_nthreads,
     mem_gb,
-    name="anatomical_wf",
+    name="t1w_wf",
 ):
-    """Convert surfaces from native to standard fslr-32k space and resample T1w seg to MNI.
+    """Copy T1w and segmentation to the derivative directory.
+
+    If necessary, this workflow will also warp the images to standard space.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_anatomical_wf
-            wf = init_anatomical_wf(
-                omp_nthreads=1,
-                fmri_dir=".",
-                subject_id="sub-01",
+            from xcp_d.workflow.anatomical import init_t1w_wf
+            wf = init_t1w_wf(
                 output_dir=".",
-                t1w_to_mni="identity",
                 input_type="fmriprep",
+                omp_nthreads=1,
                 mem_gb=0.1,
-                name="anatomical_wf",
+                name="t1w_wf",
             )
 
     Parameters
     ----------
-    %(omp_nthreads)s
-    %(fmri_dir)s
-    subject_id : str
-        subject id
     %(output_dir)s
-    %(t1w_to_mni)s
     %(input_type)s
+    %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
-        Default is "anatomical_wf".
+        Default is "t1w_wf".
 
     Inputs
     ------
     t1w : str
         Path to the T1w file.
-    t1w_seg : str
+    t1seg : str
         Path to the T1w segmentation file.
+    %(t1w_to_mni)s
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode"
+        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+        name="inputnode",
     )
 
     # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
@@ -101,42 +97,178 @@ def init_anatomical_wf(
     #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
     #     )
     # )
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir, participant_label=subject_id, bids_validate=False
-    )
 
-    if input_type == "dcan" or input_type == "hcp":
-        ds_t1wmni_wf = pe.Node(
+    if input_type in ("dcan", "hcp"):
+        ds_t1wmni = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                desc="preproc",
-                suffix="T1w",
                 extension=".nii.gz",
             ),
-            name="ds_t1wmni_wf",
+            name="ds_t1wmni",
             run_without_submitting=False,
         )
 
-        ds_t1wseg_wf = pe.Node(
+        ds_t1wseg = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                suffix="dseg",
                 extension=".nii.gz",
             ),
-            name="ds_t1wseg_wf",
+            name="ds_t1wseg",
             run_without_submitting=False,
         )
+
         workflow.connect(
             [
-                (inputnode, ds_t1wmni_wf, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg_wf, [("t1seg", "in_file")]),
-                (inputnode, ds_t1wmni_wf, [("t1w", "source_file")]),
-                (inputnode, ds_t1wseg_wf, [("t1w", "source_file")]),
+                (inputnode, ds_t1wmni, [("t1w", "in_file")]),
+                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+            ]
+        )
+    else:
+        # #TM: need to replace MNI92FSL xfm with the correct
+        # xfm from the MNI output space of fMRIPrep/NiBabies
+        # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
+        # to MNI152NLin6Asym.
+        t1w_transform = pe.Node(
+            ApplyTransformsx(
+                num_threads=2,
+                reference_image=mnitemplate,
+                interpolation="LanczosWindowedSinc",
+                input_image_type=3,
+                dimension=3,
+            ),
+            name="t1w_transform",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        seg_transform = pe.Node(
+            ApplyTransformsx(
+                num_threads=2,
+                reference_image=mnitemplate,
+                interpolation="MultiLabel",
+                input_image_type=3,
+                dimension=3,
+            ),
+            name="seg_transform",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        ds_t1wmni = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space="MNI152NLin6Asym",
+                extension=".nii.gz",
+            ),
+            name="ds_t1wmni",
+            run_without_submitting=False,
+        )
+
+        ds_t1wseg = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space="MNI152NLin6Asym",
+                extension=".nii.gz",
+            ),
+            name="ds_t1wseg",
+            run_without_submitting=False,
+        )
+
+        workflow.connect(
+            [
+                (inputnode, t1w_transform, [("t1w", "input_image"),
+                                            ("t1w_to_mni", "transforms")]),
+                (inputnode, seg_transform, [("t1seg", "input_image"),
+                                            ("t1w_to_mni", "transforms")]),
+                (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
+                (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
             ]
         )
 
+    workflow.connect(
+        [
+            (inputnode, ds_t1wmni, [("t1w", "source_file")]),
+            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
+        ]
+    )
+
+    return workflow
+
+
+@fill_doc
+def init_anatomical_wf(
+    layout,
+    fmri_dir,
+    subject_id,
+    output_dir,
+    input_type,
+    omp_nthreads,
+    mem_gb,
+    name="anatomical_wf",
+):
+    """Transform surfaces from native to standard fsLR-32k space.
+
+    For the ``hcp`` and ``dcan`` preprocessing workflows,
+    the fsLR-32k space surfaces already exist, and will simply be copied to the output directory.
+
+    For other preprocessing workflows, the native space surfaces are present in the Freesurfer
+    directory (if Freesurfer was run), and must be transformed to standard space.
+    If Freesurfer derivatives are not available, then a warning will be raised and
+    no output files will be generated.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_anatomical_wf
+            wf = init_anatomical_wf(
+                layout=None,
+                omp_nthreads=1,
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                input_type="fmriprep",
+                mem_gb=0.1,
+                name="anatomical_wf",
+            )
+
+    Parameters
+    ----------
+    %(layout)s
+    %(fmri_dir)s
+    %(subject_id)s
+    %(output_dir)s
+    %(input_type)s
+    %(omp_nthreads)s
+    %(mem_gb)s
+    %(name)s
+        Default is "anatomical_wf".
+
+    Inputs
+    ------
+    t1w : str
+        Path to the T1w file.
+    t1seg : str
+        Path to the T1w segmentation file.
+
+    Notes
+    -----
+    If "hcp" or "dcan" input type, pre-generated surface files will be collected from the
+    converted preprocessed derivatives.
+    However, these derivatives do not include HCP-style surfaces.
+
+    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from the
+    associated Freesurfer directory (if available), and warped to fsLR space.
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
+
+    mnitemplate = get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
+
+    if input_type in ("dcan", "hcp"):
+        # TODO: Replace with layout.get call(s). No reason to search through a list of strings.
         all_files = list(layout.get_files())
         L_inflated_surf = fnmatch.filter(
             all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
@@ -163,14 +295,10 @@ def init_anatomical_wf(
             all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii"
         )[0]
 
-        ribbon = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*desc-ribbon.nii.gz"
-        )[0]
-
-        ses_id = _getsesid(ribbon)
-        anatdir = output_dir + "/xcp_d/sub-" + subject_id + "/ses-" + ses_id + "/anat"
-        if not os.path.exists(anatdir):
-            os.makedirs(anatdir)
+        # All of the converted dcan and hcp files should have a session entity/folder
+        ses_id = _getsesid(R_wm_surf)
+        anatdir = os.path.join(output_dir, "xcp_d", f"sub-{subject_id}", f"ses-{ses_id}", "anat")
+        os.makedirs(anatdir, exist_ok=True)
 
         surf = [
             L_inflated_surf,
@@ -186,113 +314,11 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
-        ribbon2statmap_wf = pe.Node(
-            RibbontoStatmap(ribbon=ribbon),
-            name="ribbon2statmap",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        brainspritex_wf = pe.Node(
-            BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
-        )
-
-        ds_brainspriteplot_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                check_hdr=False,
-                dismiss_entities=["desc"],
-                desc="brainplot",
-                datatype="figures",
-            ),
-            name="brainspriteplot",
-            run_without_submitting=True,
-        )
-
-        workflow.connect(
-            [
-                (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                (inputnode, brainspritex_wf, [("t1w", "template")]),
-                (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-                (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
-            ]
-        )
-
     else:
         all_files = list(layout.get_files())
 
-        # #TM: need to replace MNI92FSL xfm with the correct
-        # xfm from the MNI output space of fMRIPrep/NiBabies
-        # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
-        # to MNI152NLin6Asym.
-        t1w_transform_wf = pe.Node(
-            ApplyTransformsx(
-                num_threads=2,
-                reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
-                transforms=t1w_to_mni,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-            ),
-            name="t1w_transform",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        seg_transform_wf = pe.Node(
-            ApplyTransformsx(
-                num_threads=2,
-                reference_image=mnitemplate,
-                # transforms=[str(t1w_to_mni), str(MNI92FSL)],
-                transforms=t1w_to_mni,
-                interpolation="MultiLabel",
-                input_image_type=3,
-                dimension=3,
-            ),
-            name="seg_transform",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        ds_t1wmni_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                desc="preproc",
-                suffix="T1w",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wmni_wf",
-            run_without_submitting=False,
-        )
-
-        ds_t1wseg_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                suffix="dseg",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wseg_wf",
-            run_without_submitting=False,
-        )
-
-        workflow.connect(
-            [
-                (inputnode, t1w_transform_wf, [("t1w", "input_image")]),
-                (inputnode, seg_transform_wf, [("t1seg", "input_image")]),
-                (t1w_transform_wf, ds_t1wmni_wf, [("output_image", "in_file")]),
-                (seg_transform_wf, ds_t1wseg_wf, [("output_image", "in_file")]),
-                (inputnode, ds_t1wmni_wf, [("t1w", "source_file")]),
-                (inputnode, ds_t1wseg_wf, [("t1w", "source_file")]),
-            ]
-        )
-
         # verify freesurfer directory
-
         p = Path(fmri_dir)
-        import glob as glob
 
         freesurfer_paths = glob.glob(
             str(p.parent) + "/freesurfer*"
@@ -1446,78 +1472,22 @@ def init_anatomical_wf(
                 ]
             )
 
-            ribbon = str(freesurfer_path) + "/" + subid + "/mri/ribbon.mgz"
-
-            t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/orig.mgz"
-
-            # nibabies outputs do not  have ori.mgz, ori is the same as norm.mgz
-            if not Path(t1w_mgz).is_file():
-                t1w_mgz = str(freesurfer_path) + "/" + subid + "/mri/norm.mgz"
-
-            ribbon2statmap_wf = pe.Node(
-                RibbontoStatmap(ribbon=ribbon),
-                name="ribbon2statmap",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # brainplot
-            brainspritex_wf = pe.Node(
-                BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
-            )
-
-            ds_brainspriteplot_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    dismiss_entities=["desc"],
-                    desc="brainplot",
-                    datatype="figures",
-                ),
-                name="brainspriteplot",
-            )
-
-            workflow.connect(
-                [
-                    # (pial2vol_wf,addwmpial_wf,[('out_file','in_file')]),
-                    # (wm2vol_wf,addwmpial_wf,[('out_file','operand_files')]),
-                    (inputnode, brainspritex_wf, [("t1w", "template")]),
-                    (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                    (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-                    (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
-                ]
-            )
-
         else:
-            ribbon2statmap_wf = pe.Node(
-                RibbontoStatmap(),
-                name="ribbon2statmap",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
+            LOGGER.warning(
+                "No FreeSurfer derivatives detected. "
+                "Surface transformation will not be performed."
             )
-            brainspritex_wf = pe.Node(
-                BrainPlotx(), name="brainsprite", mem_gb=mem_gb, n_procs=omp_nthreads
+            # The inputnode needs to be connected to *something* to be added to the workflow.
+            # This "nothingnode" exists just to allow the inputnode to connect to something.
+            # TODO: Should we maybe raise an Exception instead?
+            nothingnode = pe.Node(
+                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+                name="nothingnode",
             )
-            ds_brainspriteplot_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    dismiss_entities=[
-                        "desc",
-                    ],
-                    desc="brainplot",
-                    datatype="figures",
-                ),
-                name="brainspriteplot",
-            )
-
             workflow.connect(
                 [
-                    (inputnode, brainspritex_wf, [("t1w", "template")]),
-                    (inputnode, ribbon2statmap_wf, [("t1seg", "ribbon")]),
-                    (ribbon2statmap_wf, brainspritex_wf, [("out_file", "in_file")]),
-                    (brainspritex_wf, ds_brainspriteplot_wf, [("out_html", "in_file")]),
-                    (inputnode, ds_brainspriteplot_wf, [("t1w", "source_file")]),
+                    (inputnode, nothingnode, [("t1w", "t1w")]),
+                    (inputnode, nothingnode, [("t1seg", "t1seg")]),
                 ]
             )
 

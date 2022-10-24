@@ -159,7 +159,11 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
                           mandatory=True,
                           desc="Data after regression")
     residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
-    fd = File(exists=True, mandatory=True, desc="Framewise displacement")
+    filtered_motion = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with filtered motion parameters.",
+    )
     mask = File(exists=False, mandatory=False, desc="Bold mask")
     seg_data = File(exists=False, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
@@ -205,7 +209,7 @@ class PlotSVGData(SimpleInterface):
                 residual_data=self.inputs.residual_data,
                 TR=self.inputs.TR,
                 mask=self.inputs.mask,
-                fd=self.inputs.fd,
+                filtered_motion=self.inputs.filtered_motion,
                 seg_data=self.inputs.seg_data,
                 processed_filename=self._results['after_process'],
                 unprocessed_filename=self._results['before_process'])
@@ -225,7 +229,7 @@ class _RibbontoStatmapOutputSpec(TraitedSpec):
 
 
 class RibbontoStatmap(SimpleInterface):
-    """Plot of fd, dvars, carpet plots of bold data before and after regression/filtering."""
+    """Convert cortical ribbon to stat map."""
 
     input_spec = _RibbontoStatmapInputSpec
     output_spec = _RibbontoStatmapOutputSpec

@@ -17,7 +17,7 @@ from templateflow.api import get as get_template
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
-from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
@@ -56,7 +56,6 @@ def init_boldpostprocess_wf(
     output_dir,
     fd_thresh,
     n_runs,
-    mni_to_t1w,
     despike,
     layout=None,
     name='bold_postprocess_wf',
@@ -86,7 +85,6 @@ def init_boldpostprocess_wf(
                 output_dir=".",
                 fd_thresh=0.2,
                 n_runs=1,
-                mni_to_t1w="identity",
                 despike=False,
                 layout=None,
                 name='bold_postprocess_wf',
@@ -112,7 +110,6 @@ def init_boldpostprocess_wf(
         Directory in which to save xcp_d output
     %(fd_thresh)s
     n_runs
-    mni_to_t1w
     despike: bool
         If True, run 3dDespike from AFNI
     layout : BIDSLayout object
@@ -130,7 +127,7 @@ def init_boldpostprocess_wf(
     custom_confounds
         custom regressors
     confounds_file
-    mni_to_t1w
+    %(mni_to_t1w)s
         MNI to T1W ants Transformation file/h5
     t1w
     t1seg
@@ -153,48 +150,82 @@ def init_boldpostprocess_wf(
     %(correlations)s
     qc_file
         quality control files
-    fd
+    filtered_motion
+
+    References
+    ----------
+    .. footbibliography::
     """
     # Ensure that we know the TR
     metadata = layout.get_metadata(bold_file)
     TR = metadata['RepetitionTime']
     if TR is None:
         TR = layout.get_tr(bold_file)
+
     if not isinstance(TR, float):
         raise Exception(f"Unable to determine TR of {bold_file}")
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = f"""
-For each of the {num2words(n_runs)} BOLD series found per subject (across all
-tasks and sessions), the following post-processing was performed:
-"""
+    filter_str, filter_post_str = "", ""
+    if motion_filter_type:
+        if motion_filter_type == "notch":
+            filter_sub_str = (
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a notch filter, based on "
+                "@fair2020correction"
+            )
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute, "
+                "based on @fair2020correction and @gratton2020removal"
+            )
+
+        filter_str = (
+            f"the six translation and rotation head motion traces were {filter_sub_str}. "
+            "Next, "
+        )
+        filter_post_str = (
+            "The filtered versions of the motion traces and framewise displacement were not used "
+            "for denoising."
+        )
+
+    fd_str = (
+        f"{filter_str}framewise displacement was calculated using the formula from "
+        f"@power_fd_dvars, with a head radius of {head_radius} mm"
+    )
+
+    dummytime_str = ""
     initial_volumes_to_drop = 0
     if dummytime > 0:
         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering of the data, the first
-{num2words(initial_volumes_to_drop)} were discarded, then both
-the nuisance regressors and volumes were demeaned and detrended. Furthermore, volumes with
-framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
-flagged as outliers and excluded from nuisance regression.
-"""
+        dummytime_str = (
+            f"the first {num2words(initial_volumes_to_drop)} of both the BOLD data and nuisance "
+            "regressors were discarded, then "
+        )
 
+    if despike:
+        despike_str = "despiked, mean-centered, and linearly detrended"
     else:
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering of the data, both the nuisance regressors and
-volumes were demean and detrended. Volumes with framewise-displacement greater than
-{fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were flagged as outliers
-and excluded from nuisance regression.
-"""
+        despike_str = "mean-centered and linearly detrended"
 
-    workflow.__desc__ = workflow.__desc__ + f""" \
-{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013]. These nuisance regressors were
-regressed from the BOLD data using linear regression - as implemented in Scikit-Learn
-{sklearn.__version__} [@scikit-learn].
-Residual timeseries from this regression were then band-pass filtered to retain signals within the
+    workflow.__desc__ = f"""\
+For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
+the following post-processing was performed.
+First, {dummytime_str}outlier detection was performed.
+In order to identify high-motion outlier volumes, {fd_str}.
+Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
+{fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
+{filter_post_str}
+Before nuisance regression, but after censoring, the BOLD data were {despike_str}.
+{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
+These nuisance regressors were regressed from the BOLD data using linear regression -
+as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
+Any volumes censored earlier in the workflow were then interpolated in the residual time series
+produced by the regression.
+The interpolated timeseries were then band-pass filtered to retain signals within the
 {lower_bpf}-{upper_bpf} Hz frequency band.
- """
+"""
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -207,6 +238,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 't1w',
                 't1seg',
                 'fmriprep_confounds_tsv',
+                't1w_to_native',
             ],
         ),
         name='inputnode',
@@ -222,6 +254,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     )
 
     workflow.connect([(inputnode, get_ref_mask_node, [("bold_file", "fname")])])
+    # TODO: Fix
+    inputnode.inputs.t1w_to_native = _t12native(bold_file)
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -235,7 +269,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 'timeseries',
                 'correlations',
                 'qc_file',
-                'fd',
+                'filtered_motion',
+                'tmask',
             ],
         ),
         name='outputnode',
@@ -245,8 +280,6 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
-        mni_to_t1w=mni_to_t1w,
-        t1w_to_native=_t12native(bold_file),
         name="fcons_ts_wf",
         omp_nthreads=omp_nthreads,
     )
@@ -264,22 +297,25 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                       name="afni_reho_wf",
                                       omp_nthreads=omp_nthreads)
 
-    write_derivative_wf = init_writederivatives_wf(smoothing=smoothing,
-                                                   bold_file=bold_file,
-                                                   params=params,
-                                                   cifti=None,
-                                                   output_dir=output_dir,
-                                                   dummytime=dummytime,
-                                                   lowpass=upper_bpf,
-                                                   highpass=lower_bpf,
-                                                   TR=TR,
-                                                   name="write_derivative_wf")
+    write_derivative_wf = init_writederivatives_wf(
+        smoothing=smoothing,
+        bold_file=bold_file,
+        params=params,
+        cifti=None,
+        output_dir=output_dir,
+        dummytime=dummytime,
+        lowpass=upper_bpf,
+        highpass=lower_bpf,
+        motion_filter_type=motion_filter_type,
+        TR=TR,
+        name="write_derivative_wf",
+    )
 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
         custom_confounds=custom_confounds,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         head_radius=head_radius,
@@ -307,8 +343,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        Regress(TR=TR,
-                original_file=bold_file),
+        Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -325,18 +360,43 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
         output_dir=output_dir,
-        mni_to_t1w=mni_to_t1w,
         omp_nthreads=omp_nthreads)
-    # get transform file for resampling and fcon
-    transformfile = get_transformfile(bold_file=bold_file,
-                                      mni_to_t1w=mni_to_t1w,
-                                      t1w_to_native=_t12native(bold_file))
-    t1w_mask = get_maskfiles(bold_file=bold_file, mni_to_t1w=mni_to_t1w)[1]
 
-    bold2MNI_trans, bold2T1w_trans = get_transformfilex(
-        bold_file=bold_file,
-        mni_to_t1w=mni_to_t1w,
-        t1w_to_native=_t12native(bold_file))
+    # get transform file for resampling and fcon
+    get_std2native_transform = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["transform_list"],
+            function=get_transformfile,
+        ),
+        name="get_std2native_transform",
+    )
+    get_t1w_mask = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w"],
+            output_names=["bold_mask", "t1w_mask"],
+            function=get_maskfiles,
+        ),
+        name="get_t1w_mask",
+    )
+    get_native2space_transforms = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["bold2MNI_trans", "bold2T1w_trans"],
+            function=get_transformfilex,
+        ),
+        name="get_native2space_transforms",
+    )
+
+    workflow.connect([
+        (inputnode, get_std2native_transform, [("bold_file", "bold_file"),
+                                               ("mni_to_t1w", "mni_to_t1w"),
+                                               ("t1w_to_native", "t1w_to_native")]),
+        (inputnode, get_t1w_mask, [("bold_file", "bold_file"), ("mni_to_t1w", "mni_to_t1w")]),
+        (inputnode, get_native2space_transforms, [("bold_file", "bold_file"),
+                                                  ("mni_to_t1w", "mni_to_t1w"),
+                                                  ("t1w_to_native", "t1w_to_native")]),
+    ])
 
     resample_parc = pe.Node(ApplyTransforms(
         dimension=3,
@@ -346,8 +406,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                          desc='carpet',
                          suffix='dseg',
                          extension=['.nii', '.nii.gz'])),
-        interpolation='MultiLabel',
-        transforms=transformfile),
+        interpolation='MultiLabel'),
         name='resample_parc',
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
@@ -355,12 +414,15 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     resample_bold2T1w = pe.Node(ApplyTransforms(
         dimension=3,
         input_image=mask_file,
-        reference_image=t1w_mask,
-        interpolation='NearestNeighbor',
-        transforms=bold2T1w_trans),
+        interpolation='NearestNeighbor'),
         name='bold2t1_trans',
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
+
+    workflow.connect([
+        (get_t1w_mask, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
+        (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
+    ])
 
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
@@ -371,18 +433,35 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                          desc='brain',
                          suffix='mask',
                          extension=['.nii', '.nii.gz'])),
-        interpolation='NearestNeighbor',
-        transforms=bold2MNI_trans),
+        interpolation='NearestNeighbor'),
         name='bold2mni_trans',
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
+    workflow.connect([
+        (get_native2space_transforms, resample_bold2MNI, [('bold2MNI_trans', 'transforms')]),
+    ])
+
+    censor_report = pe.Node(
+        CensoringPlot(
+            TR=TR,
+            dummytime=dummytime,
+            head_radius=head_radius,
+            motion_filter_type=motion_filter_type,
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+            fd_thresh=fd_thresh,
+        ),
+        name="censor_report",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
+
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            bold_file=bold_file,
             dummytime=dummytime,
-            t1w_mask=t1w_mask,
             template_mask=str(
                 get_template(
                     'MNI152NLin2009cAsym',
@@ -393,12 +472,20 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 )
             ),
             head_radius=head_radius,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min),
+        ),
         name="qc_report",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads,
     )
+
+    workflow.connect([
+        (inputnode, qcreport, [("bold_file", "bold_file")]),
+        (get_t1w_mask, qcreport, [("t1w_mask", "t1w_mask")]),
+    ])
+
+    workflow.connect([
+        (inputnode, censor_report, [("bold_file", "bold_file")]),
+    ])
 
     # Remove TR first:
     if dummytime > 0:
@@ -481,7 +568,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # functional connect workflow
     workflow.connect([
         (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
-                                 ('ref_file', 'inputnode.ref_file')]),
+                                 ('ref_file', 'inputnode.ref_file'),
+                                 ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                                 ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
@@ -500,7 +589,9 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (inputnode, qcreport, [('bold_mask', 'mask_file')]),
         (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [('tmask', 'tmask')]),
+        (censor_scrub, censor_report, [('tmask', 'tmask')]),
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
+        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
         (resample_bold2T1w, qcreport, [('output_image', 'bold2T1w_mask')]),
         (resample_bold2MNI, qcreport, [('output_image', 'bold2temp_mask')]),
@@ -510,7 +601,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     # write  to the outputnode, may be use in future
     workflow.connect([
         (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
+        (censor_scrub, outputnode, [('filtered_motion', 'filtered_motion'),
+                                    ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
@@ -528,8 +620,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
+                                             ('tmask', 'inputnode.tmask')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
@@ -562,18 +654,31 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name='ds_report_preprocessing',
         run_without_submitting=False)
 
+    ds_report_censoring = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            datatype="figures",
+            desc="censoring",
+            suffix="motion",
+            extension=".svg",
+        ),
+        name='ds_report_censoring',
+        run_without_submitting=False,
+    )
+
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
         desc='postprocessing',
         datatype="figures"),
         name='ds_report_postprocessing',
-        un_without_submitting=False)
+        run_without_submitting=False)
 
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
-        desc='connectvityplot',
+        desc='connectivityplot',
         datatype="figures"),
         name='ds_report_connectivity',
         run_without_submitting=False)
@@ -596,24 +701,23 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
+        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
         (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
     ])
 
-    # exexetive summary workflow
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
                                           ('bold_file', 'inputnode.bold_file'),
-                                          ('bold_mask', 'inputnode.mask')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
-                                              ]),
-        (filtering_wf, executivesummary_wf, [('filtered_file',
-                                              'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+                                          ('bold_mask', 'inputnode.mask'),
+                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
+        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')]),
+        (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.residual_data')]),
+        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion')]),
     ])
 
     return workflow

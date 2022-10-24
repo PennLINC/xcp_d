@@ -181,7 +181,7 @@ def compute_dvars(datat):
     Parameters
     ----------
     datat : numpy.ndarray
-        The data matrix fromw hich to calculate DVARS.
+        The data matrix from which to calculate DVARS.
         Ordered as vertices by timepoints.
 
     Returns

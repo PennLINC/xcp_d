@@ -51,7 +51,7 @@ class DeprecatedStoreAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.1.6. "
+            f"Argument '{option_string}' is deprecated and will be removed in version 0.3.0. "
             "Please use '--nuisance-regressors' or '-p'."
         )
         setattr(namespace, self.dest, values)
@@ -85,19 +85,12 @@ def get_parser():
     parser.add_argument(
         "analysis_level",
         action="store",
-        type=Path,
+        type=str,
         help='the analysis level for xcp_d, must be specified as "participant".',
     )
 
     # optional arguments
     parser.add_argument("--version", action="version", version=verstr)
-
-    parser.add_argument(
-        "--func-only",
-        action="store_true",
-        default=False,
-        help="Run the functional post-processing workflows only.",
-    )
 
     g_bidx = parser.add_argument_group("Options for filtering BIDS queries")
     g_bidx.add_argument(
@@ -161,7 +154,7 @@ def get_parser():
         default=None,
         help=(
             "nipype plugin configuration file. for more information see "
-            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html",
+            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html"
         ),
     )
     g_perfm.add_argument(
@@ -177,10 +170,14 @@ def get_parser():
     g_outputoption.add_argument(
         "--input-type",
         required=False,
-        default="fmriprep",
-        type=str,
-        choices=["fmriprep", "dcan", "hcp"],
-        help="fMRIPprep/nibabies are default structures, DCAN and HCP are optional",
+        default='fmriprep',
+        choices=['fmriprep', 'dcan', 'hpc', 'nibabies'],
+        help=(
+            "The pipeline used to generate the preprocessed derivatives. "
+            "The default pipeline is 'fmriprep'. "
+            "The 'dcan', 'hcp', and 'nibabies' pipelines are also supported. "
+            "'nibabies' assumes the same structure as 'fmriprep'."
+        ),
     )
 
     g_param = parser.add_argument_group("Parameters for postprocessing")
@@ -218,9 +215,9 @@ def get_parser():
         type=str,
         help=(
             "Nuisance parameters to be selected, other options include 24P and 36P acompcor and "
-            "aroma, see Ciric etal 2007. "
-            "This parameter is deprecated and will be removed in version 0.1.6. "
-            'Please use "-p" or "--nuisance-regressors".'
+            "aroma. See Ciric et. al (2007) for more information about regression strategies. "
+            "This parameter is deprecated and will be removed in version 0.3.0. "
+            "Please use ``-p`` or ``--nuisance-regressors``."
         ),
     )
     nuisance_params.add_argument(
@@ -239,7 +236,7 @@ def get_parser():
             "custom",
         ],
         type=str,
-        help="Nuisance parameters to be selected. See Ciric etal 2007.",
+        help="Nuisance parameters to be selected. See Ciric et. al (2007).",
     )
     g_param.add_argument(
         "-c",
@@ -258,13 +255,28 @@ def get_parser():
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
-    g_filter.add_argument(
-        "--bandpass_filter",
-        action="store",
-        default=True,
-        type=bool,
-        help="butterworth bandpass filter the data",
+
+    bandpass_filter_params = g_filter.add_mutually_exclusive_group()
+    bandpass_filter_params.add_argument(
+        "--disable-bandpass-filter",
+        "--disable_bandpass_filter",
+        dest="bandpass_filter",
+        action="store_false",
+        help="Disable bandpass filtering.",
     )
+    bandpass_filter_params.add_argument(
+        "--bandpass_filter",
+        dest="bandpass_filter",
+        action=DeprecatedStoreAction,
+        type=bool,
+        help=(
+            "Whether to Butterworth bandpass filter the data or not. "
+            "This parameter is deprecated and will be removed in version 0.3.0. "
+            "Bandpass filtering is performed by default, and if you wish to disable it, "
+            "please use `--disable-bandpass-filter``."
+        ),
+    )
+
     g_filter.add_argument(
         "--lower-bpf",
         action="store",
@@ -290,30 +302,92 @@ def get_parser():
         "--motion-filter-type",
         action="store",
         type=str,
-        default="None",
+        default=None,
         choices=["lp", "notch"],
-        help=(
-            "type of band-stop filter to use for removing respiratory "
-            "artifact from motion regressors"
-        ),
+        help="""\
+Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+If not set, no filter will be applied.
+
+If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
+must be defined.
+If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
+"""
     )
     g_filter.add_argument(
         "--band-stop-min",
-        default=0,
+        default=None,
         type=float,
-        help=(
-            "lower frequency (bpm) for the band-stop motion filter. "
-            "see documentation for more details"
-        ),
+        metavar="BPM",
+        help="""\
+Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+Motion filtering is only performed if ``motion-filter-type`` is not None.
+If used with the "lp" ``motion-filter-type``, this parameter essentially corresponds to a
+low-pass filter (the maximum allowed frequency in the filtered data).
+This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-max``.
+
+.. list-table:: Recommended values, based on participant age
+    :align: left
+    :header-rows: 1
+    :stub-columns: 1
+
+    *   - Age Range (years)
+        - Recommended Value (bpm)
+    *   - < 1
+        - 30
+    *   - 1 - 2
+        - 25
+    *   - 2 - 6
+        - 20
+    *   - 6 - 12
+        - 15
+    *   - 12 - 18
+        - 12
+    *   - 19 - 65
+        - 12
+    *   - 65 - 80
+        - 12
+    *   - > 80
+        - 10
+
+When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-used value for
+this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
+"""
     )
     g_filter.add_argument(
         "--band-stop-max",
-        default=0,
+        default=None,
         type=float,
-        help=(
-            "upper frequency (bpm) for the band-stop motion filter. "
-            "see documentation for more details"
-        ),
+        metavar="BPM",
+        help="""\
+Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+Motion filtering is only performed if ``motion-filter-type`` is not None.
+This parameter is only used if ``motion-filter-type`` is set to "notch".
+This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-min``.
+
+.. list-table:: Recommended values, based on participant age
+    :align: left
+    :header-rows: 1
+    :stub-columns: 1
+
+    *   - Age Range (years)
+        - Recommended Value (bpm)
+    *   - < 1
+        - 60
+    *   - 1 - 2
+        - 50
+    *   - 2 - 6
+        - 35
+    *   - 6 - 12
+        - 25
+    *   - 12 - 18
+        - 20
+    *   - 19 - 65
+        - 18
+    *   - 65 - 80
+        - 28
+    *   - > 80
+        - 30
+"""
     )
     g_filter.add_argument(
         "--motion-filter-order",
@@ -370,6 +444,50 @@ def get_parser():
         action="store_true",
         default=False,
         help="Opt-out of sending tracking information",
+    )
+
+    g_experimental = parser.add_argument_group('Experimental options')
+    g_experimental.add_argument(
+        '--warp-surfaces-native2std',
+        action='store_true',
+        dest="process_surfaces",
+        default=False,
+        help="""\
+If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
+surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
+These surface files are primarily used for visual quality assessment.
+By default, this workflow is disabled.
+
+.. list-table:: The surface files that are generated by the workflow
+    :align: left
+    :header-rows: 1
+    :stub-columns: 1
+
+    * - Filename
+      - Description
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
+      - The gray matter / pial matter border.
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
+      - The smoothed gray matter / white matter border for the cortex.
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii``
+      - The midpoints between wm and pial surfaces.
+        This is derived from the FreeSurfer graymid
+        (``mris_expand`` with distance=0.5 applied to the WM surfs).
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_inflated.surf.gii``
+      - An inflation of the midthickness surface (useful for visualization).
+        This file is only created if the input type is "hcp" or "dcan".
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii``
+      - The midpoints between wm and pial surfaces.
+        This is created by averaging the coordinates from the wm and pial surfaces.
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii``
+      - An inflation of the midthickness surface (useful for visualization).
+        This is derived from the HCP midthickness file.
+        This file is only created if the input type is "fmriprep" or "nibabies".
+    * - ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii``
+      - A very-inflated midthicknesss surface (also for visualization).
+        This is derived from the HCP midthickness file.
+        This file is only created if the input type is "fmriprep" or "nibabies".
+"""
     )
 
     return parser
@@ -569,21 +687,9 @@ def build_workflow(opts, retval):
     output_dir = opts.output_dir.resolve()
     work_dir = opts.work_dir.resolve()
 
-    if opts.clean_workdir:
-        from niworkflows.utils.misc import clean_directory
+    retval["return_code"] = 0
 
-        build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
-        if not clean_directory(work_dir):
-            build_log.warning(
-                f"Could not clear all contents of working directory: {work_dir}"
-            )
-
-    retval["return_code"] = 1
-    retval["workflow"] = None
-    retval["fmri_dir"] = str(fmri_dir)
-    retval["output_dir"] = str(output_dir)
-    retval["work_dir"] = str(work_dir)
-
+    # Check the validity of inputs
     if output_dir == fmri_dir:
         rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
         build_log.error(
@@ -592,12 +698,76 @@ def build_workflow(opts, retval):
             f"(suggestion: {rec_path})."
         )
         retval["return_code"] = 1
-        return retval
 
-    if str(opts.analysis_level) != "participant":
+    if opts.analysis_level != "participant":
         build_log.error('Please select analysis level "participant"')
         retval["return_code"] = 1
+
+    # Bandpass filter parameters
+    if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf):
+        build_log.error(
+            f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
+            f"'--upper-bpf' ({opts.upper_bpf})."
+        )
+        retval["return_code"] = 1
+
+    # Motion filtering parameters
+    if opts.motion_filter_type == "notch":
+        if not (opts.band_stop_min and opts.band_stop_max):
+            build_log.error(
+                "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
+                "the 'notch' motion filter."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min >= opts.band_stop_max:
+            build_log.error(
+                f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
+                f"'--band-stop-max' ({opts.band_stop_max})."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min < 1 or opts.band_stop_max < 1:
+            build_log.warning(
+                f"Either '--band-stop-min' ({opts.band_stop_min}) or "
+                f"'--band-stop-max' ({opts.band_stop_max}) is suspiciously low. "
+                "Please remember that these values should be in breaths-per-minute."
+            )
+
+    elif opts.motion_filter_type == "lp":
+        if not opts.band_stop_min:
+            build_log.error(
+                "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
+            )
+            retval["return_code"] = 1
+        elif opts.band_stop_min < 1:
+            build_log.warning(
+                f"'--band-stop-min' ({opts.band_stop_max}) is suspiciously low. "
+                "Please remember that this value should be in breaths-per-minute."
+            )
+
+        if opts.band_stop_max:
+            build_log.warning("'--band-stop-max' is ignored when '--motion-filter-type' is 'lp'.")
+
+    elif opts.band_stop_min or opts.band_stop_max:
+        build_log.warning(
+            "'--band-stop-min' and '--band-stop-max' are ignored if '--motion-filter-type' "
+            "is not set."
+        )
+
+    if retval["return_code"] == 1:
         return retval
+
+    if opts.clean_workdir:
+        from niworkflows.utils.misc import clean_directory
+
+        build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
+        if not clean_directory(work_dir):
+            build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
+
+    retval["return_code"] = 1
+    retval["workflow"] = None
+    retval["fmri_dir"] = str(fmri_dir)
+    retval["output_dir"] = str(output_dir)
+    retval["work_dir"] = str(work_dir)
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
@@ -605,10 +775,17 @@ def build_workflow(opts, retval):
 
         if not opts.cifti:
             build_log.warning(
-                f"With input_type {opts.input_type}, cifti processing will be enabled "
-                "automatically."
+                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
+                "enabled automatically."
             )
             opts.cifti = True
+
+        if not opts.process_surfaces:
+            build_log.warning(
+                f"With input_type {opts.input_type}, surface processing "
+                "(--warp-surfaces-native2std) will be enabled automatically."
+            )
+            opts.process_surfaces = True
 
         if opts.input_type == "dcan":
             from xcp_d.utils.dcan2fmriprep import dcan2fmriprep as convert_to_fmriprep
@@ -632,14 +809,19 @@ def build_workflow(opts, retval):
 
         fmri_dir = converted_fmri_dir
 
+    if opts.process_surfaces and not opts.cifti:
+        build_log.warning(
+            "With current settings, structural surfaces will be warped to standard space, "
+            "but BOLD postprocessing will be performed on volumetric data. "
+            "This is not recommended."
+        )
+
     # Set up some instrumental utilities
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval["run_uuid"] = run_uuid
 
     layout = BIDSLayout(str(fmri_dir), validate=False, derivatives=True)
-    subject_list = collect_participants(
-        layout, participant_label=opts.participant_label
-    )
+    subject_list = collect_participants(layout, participant_label=opts.participant_label)
     retval["subject_list"] = subject_list
 
     # Load base plugin_settings from file if --use-plugin
@@ -753,7 +935,7 @@ Running xcp_d version {__version__}:
         custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
-        func_only=opts.func_only,
+        process_surfaces=opts.process_surfaces,
         input_type=opts.input_type,
         name="xcpd_wf",
     )
@@ -791,5 +973,5 @@ Running xcp_d version {__version__}:
 if __name__ == "__main__":
     raise RuntimeError(
         "xcp_d/cli/run.py should not be run directly;\n"
-        "Please `pip install` xcp_d and use the `xcp_d` command"
+        "Please use the `xcp_d` command-line interface."
     )

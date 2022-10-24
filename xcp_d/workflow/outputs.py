@@ -15,6 +15,7 @@ def init_writederivatives_wf(
     bold_file,
     lowpass,
     highpass,
+    motion_filter_type,
     smoothing,
     params,
     cifti,
@@ -52,6 +53,7 @@ def init_writederivatives_wf(
         low pass filter
     highpass : float
         high pass filter
+    %(motion_filter_type)s
     %(smoothing)s
     %(params)s
     %(cifti)s
@@ -87,7 +89,8 @@ def init_writederivatives_wf(
     reho_rh
         reho right hemisphere
     reho_out
-    fd
+    filtered_motion
+    tmask
     """
     workflow = Workflow(name=name)
 
@@ -105,7 +108,8 @@ def init_writederivatives_wf(
                 "reho_lh",
                 "reho_rh",
                 "reho_out",
-                "fd",
+                "filtered_motion",
+                "tmask",
             ],
         ),
         name="inputnode",
@@ -119,6 +123,39 @@ def init_writederivatives_wf(
         'dummy vols': int(np.ceil(dummytime / TR))
     }
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
+
+    write_derivative_tmask_wf = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["atlas", "den", "res", "space", "desc"],
+            suffix="outliers",
+            extension=".tsv",
+            source_file=bold_file,
+        ),
+        name="write_derivative_tmask_wf",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+
+    ds_filtered_motion = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["atlas", "den", "res", "space", "desc"],
+            desc="filtered" if motion_filter_type else None,
+            suffix="motion",
+            extension='.tsv',
+        ),
+        name='ds_filtered_motion',
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+
+    workflow.connect([
+        (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')]),
+        (inputnode, ds_filtered_motion, [('filtered_motion', 'in_file')]),
+    ])
+
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
         write_derivative_cleandata_wf = pe.Node(
@@ -200,20 +237,6 @@ def init_writederivatives_wf(
                 compression=True,
             ),
             name='write_derivative_reho_wf',
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
-        write_derivative_fd_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                dismiss_entities=["atlas", "res", "space"],
-                desc='framewisedisplacement',
-                suffix="motion",
-                extension='.tsv',
-            ),
-            name='write_derivative_fd_wf',
             run_without_submitting=True,
             mem_gb=1,
         )
@@ -362,20 +385,6 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        write_derivative_fd_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                dismiss_entities=["atlas", "den", "res", "space"],
-                desc='framewisedisplacement',
-                suffix="motion",
-                extension='.tsv',
-            ),
-            name='write_derivative_fd_wf',
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
         workflow.connect([
             (inputnode, write_derivative_reholh_wf, [('reho_lh', 'in_file')]),
             (inputnode, write_derivative_rehorh_wf, [('reho_rh', 'in_file')]),
@@ -422,7 +431,6 @@ def init_writederivatives_wf(
         (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
         (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
         (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
-        (inputnode, write_derivative_fd_wf, [('fd', 'in_file')]),
     ])
 
     if smoothing:

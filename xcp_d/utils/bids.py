@@ -5,8 +5,6 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import fnmatch
-import os
 import warnings
 
 from bids import BIDSLayout
@@ -274,6 +272,9 @@ def extract_t1w_seg(subj_data):
     selected_t1w_seg_file : str
         Segmentation file.
     """
+    import fnmatch
+    import os
+
     selected_t1w_file, selected_t1w_seg_file = None, None
     for t1w_file in subj_data["t1w"]:
         t1w_filename = os.path.basename(t1w_file)
@@ -308,6 +309,7 @@ def write_dataset_description(fmri_dir, xcpd_dir):
         Path to the output xcp-d dataset.
     """
     import json
+    import os
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
@@ -347,3 +349,33 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     else:
         with open(xcpd_dset_description, "w") as fo:
             json.dump(dset_desc, fo, indent=4, sort_keys=True)
+
+
+def get_preproc_pipeline_info(input_type, fmri_dir):
+    """Get preprocessing pipeline information from the dataset_description.json file."""
+    import json
+    import os
+
+    info_dict = {}
+
+    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description):
+        with open(dataset_description) as f:
+            dataset_dict = json.load(f)
+
+        info_dict["version"] = dataset_dict['GeneratedBy'][0]['Version']
+    else:
+        info_dict["version"] = "unknown"
+
+    if input_type == "fmriprep":
+        info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
+    elif input_type == "dcan":
+        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
+    elif input_type == "hcp":
+        info_dict["references"] = "[@hcppipelines]"
+    elif input_type == "nibabies":
+        info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
+    else:
+        raise ValueError(f"Unsupported input_type '{input_type}'")
+
+    return info_dict

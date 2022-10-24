@@ -15,11 +15,11 @@ from num2words import num2words
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
-from xcp_d.interfaces.qc_plot import QCPlot
+from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.concantenation import get_cifti_tr
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -47,7 +47,6 @@ def init_ciftipostprocess_wf(
     omp_nthreads,
     dummytime,
     fd_thresh,
-    mni_to_t1w,
     despike,
     n_runs,
     layout=None,
@@ -77,7 +76,6 @@ def init_ciftipostprocess_wf(
                 omp_nthreads=1,
                 dummytime=0,
                 fd_thresh=0.2,
-                mni_to_t1w="identity",
                 despike=False,
                 n_runs=1,
                 layout=None,
@@ -102,7 +100,6 @@ def init_ciftipostprocess_wf(
     dummytime: float
         the first few seconds to be removed before postprocessing
     %(fd_thresh)s
-    %(mni_to_t1w)s
     despike: bool
         afni depsike
     n_runs
@@ -119,6 +116,7 @@ def init_ciftipostprocess_wf(
         custom regressors
     t1w
     t1seg
+    %(mni_to_t1w)s
     fmriprep_confounds_tsv
 
     Outputs
@@ -140,17 +138,16 @@ def init_ciftipostprocess_wf(
     %(correlations)s
     qc_file
         quality control files
-    """
-    workflow = Workflow(name=name)
-    workflow.__desc__ = f"""
-For each of the {num2words(n_runs)} CIFTI runs found per subject (across all
-tasks and sessions), the following post-processing was performed:
-"""
 
-    TR = get_cifti_tr(bold_file)
+    References
+    ----------
+    .. footbibliography::
+    """
+    TR = _get_tr(bold_file)
     if TR is None:
         metadata = layout.get_metadata(bold_file)
         TR = metadata['RepetitionTime']
+
     # Confounds file is necessary: ensure we can find it
     from xcp_d.utils.confounds import get_confounds_tsv
     try:
@@ -158,31 +155,65 @@ tasks and sessions), the following post-processing was performed:
     except Exception:
         raise Exception(f"Unable to find confounds file for {bold_file}.")
 
-    # TR = get_cifti_tr(cifti_file=bold_file)
+    workflow = Workflow(name=name)
+
+    filter_str, filter_post_str = "", ""
+    if motion_filter_type:
+        if motion_filter_type == "notch":
+            filter_sub_str = (
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a notch filter, based on "
+                "@fair2020correction"
+            )
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute, "
+                "based on @fair2020correction and @gratton2020removal"
+            )
+
+        filter_str = (
+            f"the six translation and rotation head motion traces were {filter_sub_str}. "
+            "Next, "
+        )
+        filter_post_str = (
+            "The filtered versions of the motion traces and framewise displacement were not used "
+            "for denoising."
+        )
+
+    fd_str = (
+        f"{filter_str}framewise displacement was calculated using the formula from "
+        f"@power_fd_dvars, with a head radius of {head_radius} mm"
+    )
+
+    dummytime_str = ""
     initial_volumes_to_drop = 0
     if dummytime > 0:
-        initial_volumes_to_drop = int(np.floor(dummytime / TR))
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering of the data,  the first
-{num2words(initial_volumes_to_drop)} were discarded.
-Both the nuisance regressors and volumes were demean and detrended. Furthermore, any volumes
-with framewise-displacement greater than {fd_thresh} mm [@power_fd_dvars;@satterthwaite_2013] were
-flagged as outliers and excluded from nuisance regression.
-"""
+        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
+        dummytime_str = (
+            f"the first {num2words(initial_volumes_to_drop)} of both the BOLD data and nuisance "
+            "regressors were discarded, then "
+        )
 
+    if despike:
+        despike_str = "despiked, mean-centered, and linearly detrended"
     else:
-        workflow.__desc__ = workflow.__desc__ + f""" \
-before nuisance regression and filtering,both the nuisance regressors and volumes were demeaned
-and detrended. Volumes with framewise-displacement greater than {fd_thresh} mm
-[@power_fd_dvars;@satterthwaite_2013] were flagged as outliers and excluded from nuisance
-regression.
-"""
+        despike_str = "mean-centered and linearly detrended"
 
-    workflow.__desc__ = workflow.__desc__ + f""" \
-{stringforparams(params=params)} [@mitigating_2018;@benchmarkp;@satterthwaite_2013].
+    workflow.__desc__ = f"""\
+For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
+the following post-processing was performed.
+First, {dummytime_str}outlier detection was performed.
+In order to identify high-motion outlier volumes, {fd_str}.
+Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
+{fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
+{filter_post_str}
+Before nuisance regression, but after censoring, the BOLD data were {despike_str}.
+{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
 These nuisance regressors were regressed from the BOLD data using linear regression -
 as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
-Residual timeseries from this regression were then band-pass filtered to retain signals within the
+Any volumes censored earlier in the workflow were then interpolated in the residual time series
+produced by the regression.
+The interpolated timeseries were then band-pass filtered to retain signals within the
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
@@ -193,6 +224,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 'custom_confounds',
                 't1w',
                 't1seg',
+                'mni_to_t1w',
                 'fmriprep_confounds_tsv',
             ],
         ),
@@ -214,7 +246,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                 'timeseries',
                 'correlations',
                 'qc_file',
-                'fd'
+                'filtered_motion',
+                'tmask',
             ],
         ),
         name='outputnode',
@@ -251,14 +284,16 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         dummytime=dummytime,
         lowpass=upper_bpf,
         highpass=lower_bpf,
+        motion_filter_type=motion_filter_type,
         TR=TR,
-        name="write_derivative_wf")
+        name="write_derivative_wf",
+    )
 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
         custom_confounds=custom_confounds,
-        low_freq=band_stop_max,
-        high_freq=band_stop_min,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         head_radius=head_radius,
@@ -286,8 +321,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        Regress(TR=TR,
-                original_file=bold_file),
+        Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -301,23 +335,37 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            bold_file=bold_file,
             dummytime=dummytime,
             head_radius=head_radius,
-            low_freq=band_stop_max,
-            high_freq=band_stop_min),
+        ),
         name="qc_report",
         mem_gb=mem_gbx['resampled'],
         n_procs=omp_nthreads)
+
+    censor_report = pe.Node(
+        CensoringPlot(
+            TR=TR,
+            dummytime=dummytime,
+            head_radius=head_radius,
+            motion_filter_type=motion_filter_type,
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+            fd_thresh=fd_thresh,
+        ),
+        name="censor_report",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
 
     executivesummary_wf = init_execsummary_wf(
         TR=TR,
         bold_file=bold_file,
         layout=layout,
         output_dir=output_dir,
-        mni_to_t1w=mni_to_t1w,
         omp_nthreads=omp_nthreads,
-        mem_gb=mem_gbx['timeseries'])
+        mem_gb=mem_gbx['timeseries'],
+    )
 
     # Remove TR first:
     if dummytime > 0:
@@ -392,14 +440,18 @@ Residual timeseries from this regression were then band-pass filtered to retain 
 
     # qc report
     workflow.connect([
+        (inputnode, qcreport, [("bold_file", "bold_file")]),
+        (inputnode, censor_report, [("bold_file", "bold_file")]),
         (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
-        (censor_scrub, qcreport, [('tmask', 'tmask')]),
+        (censor_scrub, qcreport, [("tmask", "tmask")]),
+        (censor_scrub, censor_report, [('tmask', 'tmask')]),
         (qcreport, outputnode, [('qc_file', 'qc_file')])
     ])
 
     workflow.connect([
         (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('fd_timeseries', 'fd')]),
+        (censor_scrub, outputnode, [('filtered_motion', 'filtered_motion'),
+                                    ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
@@ -416,8 +468,8 @@ Residual timeseries from this regression were then band-pass filtered to retain 
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
                                                   'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+        (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
+                                             ('tmask', 'inputnode.tmask')]),
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
@@ -451,6 +503,19 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         name='ds_report_preprocessing',
         run_without_submitting=True)
 
+    ds_report_censoring = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            datatype="figures",
+            desc="censoring",
+            suffix="motion",
+            extension=".svg",
+        ),
+        name='ds_report_censoring',
+        run_without_submitting=False,
+    )
+
     ds_report_postprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
@@ -462,7 +527,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     ds_report_connectivity = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
-        desc='connectvityplot',
+        desc='connectivityplot',
         datatype="figures"),
         name='ds_report_connectivity',
         run_without_submitting=True)
@@ -471,6 +536,7 @@ Residual timeseries from this regression were then band-pass filtered to retain 
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
+        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
@@ -479,14 +545,14 @@ Residual timeseries from this regression were then band-pass filtered to retain 
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
-                                          ('bold_file', 'inputnode.bold_file')
-                                          ]),
+                                          ('bold_file', 'inputnode.bold_file'),
+                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
                                               ]),
         (filtering_wf, executivesummary_wf, [('filtered_file',
                                               'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('fd_timeseries',
-                                              'inputnode.fd')]),
+        (censor_scrub, executivesummary_wf, [('filtered_motion',
+                                              'inputnode.filtered_motion')]),
     ])
 
     return workflow

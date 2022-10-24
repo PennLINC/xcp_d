@@ -9,9 +9,10 @@ xcp_d/sub-01
 xcp_d/sub-01.html
 xcp_d/sub-01/anat
 xcp_d/sub-01/anat/sub-01_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-xcp_d/sub-01/anat/sub-01_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
+xcp_d/sub-01/anat/sub-01_space-MNI152NLin6Asym_dseg.nii.gz
 xcp_d/sub-01/func
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-framewisedisplacement_motion.tsv
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.tsv
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_outliers.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_atlas-Gordon_measure-pearsoncorrelation_conmat.tsv
@@ -49,7 +50,8 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_d
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-framewisedisplacement_motion.tsv
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.tsv
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_outliers.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_atlas-Gordon_measure-pearsoncorrelation_conmat.tsv

@@ -31,12 +31,13 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
        xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
        xcp_d/sub-<label>.html
 
-2. Anatomical outputs: Anatomical outputs conists of anatomical preprocessed T1w/T2w and segmentation images in MNI spaces::
+2. Anatomical outputs: Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI spaces::
 
         xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_desc-preproc_dseg.nii.gz
+        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
 
-   If there are gifti files in fMRIPrep output, the gifti files are resampled to standard space::
+   If the ``--warp-surfaces-native2std`` option is selected, and reconstructed surfaces are available in the preprocessed dataset,
+   then these surfaces will be warped to fsLR space at 32k density::
 
         xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
         xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
@@ -94,12 +95,17 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_desc-framewisedisplacement_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
 
+      The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;
+      one for each of the six filtered motion parameters, as well as "framewise_displacement".
+      If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
 
    e. DCAN style scrubbing file.
       This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps.
