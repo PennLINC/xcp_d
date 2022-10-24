@@ -255,7 +255,7 @@ workflows:
             tags:
               only: /.*/
 
-        - nibabies:
+      - nibabies:
           requires:
             - build
           filters:
