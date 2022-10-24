@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for calculating resting state-specific metrics."""
 from nipype.interfaces import utility as niu
+from nipype.interfaces.afni.utils import ReHo
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -259,7 +260,7 @@ vertices to yield ReHo.
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHoNamePatch(neighborhood='vertices'),
+        ReHo(neighborhood='vertices'),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
