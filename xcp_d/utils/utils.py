@@ -5,7 +5,6 @@ import os
 
 import nibabel as nb
 import numpy as np
-from pkg_resources import resource_filename as pkgrf
 from scipy.signal import butter, detrend, filtfilt
 from sklearn.linear_model import LinearRegression
 
@@ -38,6 +37,7 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     import os
 
     from templateflow.api import get as get_template
+    from pkg_resources import resource_filename as pkgrf
 
     # get file basename, anatdir and list all transforms in anatdir
     file_base = os.path.basename(str(bold_file))
