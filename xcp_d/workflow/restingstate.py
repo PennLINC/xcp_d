@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for calculating resting state-specific metrics."""
 from nipype.interfaces import utility as niu
-from nipype.interfaces.afni.utils import ReHo
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -173,10 +172,10 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 
 @fill_doc
-def init_surface_reho_wf(
+def init_cifti_reho_wf(
     mem_gb,
     omp_nthreads,
-    name="surface_reho_wf",
+    name="cifti_reho_wf",
 ):
     """Compute ReHo from surface (CIFTI) data.
 
@@ -185,11 +184,11 @@ def init_surface_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.restingstate import init_surface_reho_wf
-            wf = init_surface_reho_wf(
+            from xcp_d.workflow.restingstate import init_cifti_reho_wf
+            wf = init_cifti_reho_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="surface_reho_wf",
+                name="cifti_reho_wf",
             )
 
     Parameters
@@ -197,7 +196,7 @@ def init_surface_reho_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "surface_reho_wf".
+        Default is "cifti_reho_wf".
 
     Inputs
     ------
@@ -213,9 +212,11 @@ def init_surface_reho_wf(
     workflow.__desc__ = """
 
 For each hemisphere, regional homogeneity (ReHo) was computed using surface-based
-*2dReHo* [@surface_reho]. Specifically, for each vertex on the surface,
-the Kendall's coefficient of concordance (KCC) was computed  with nearest-neighbor
-vertices to yield ReHo.
+*2dReHo* [@surface_reho].
+Specifically, for each vertex on the surface, the Kendall's coefficient of concordance (KCC)
+was computed with nearest-neighbor vertices to yield ReHo.
+For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using
+*3dReHo* in AFNI [@afni].
 """
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['clean_bold']),
@@ -260,13 +261,11 @@ vertices to yield ReHo.
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHo(neighborhood='vertices'),
+        ReHoNamePatch(neighborhood='vertices'),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-    # set output filename to prevent long filenames
-    subcortical_reho.inputs.out_file = "reho.nii.gz"
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
@@ -295,10 +294,10 @@ vertices to yield ReHo.
 
 
 @fill_doc
-def init_3d_reho_wf(
+def init_nifti_reho_wf(
     mem_gb,
     omp_nthreads,
-    name="afni_reho_wf",
+    name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
 
@@ -307,11 +306,11 @@ def init_3d_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.restingstate import init_3d_reho_wf
-            wf = init_3d_reho_wf(
+            from xcp_d.workflow.restingstate import init_nifti_reho_wf
+            wf = init_nifti_reho_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="afni_reho_wf",
+                name="nifti_reho_wf",
             )
 
     Parameters
@@ -319,7 +318,7 @@ def init_3d_reho_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "afni_reho_wf".
+        Default is "nifti_reho_wf".
 
     Inputs
     ------

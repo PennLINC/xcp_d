@@ -5,7 +5,7 @@ import nibabel as nb
 import numpy as np
 
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflow.restingstate import init_3d_reho_wf, init_surface_reho_wf
+from xcp_d.workflow.restingstate import init_nifti_reho_wf, init_cifti_reho_wf
 
 
 def _add_noise(image):
@@ -52,7 +52,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     )
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = init_3d_reho_wf(omp_nthreads=2, mem_gb=4)
+    reho_wf = init_nifti_reho_wf(omp_nthreads=2, mem_gb=4)
     reho_wf.inputs.inputnode.bold_mask = bold_mask
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
@@ -61,7 +61,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     # Get the original mean of the ReHo for later comparison
     original_reho = os.path.join(
         reho_wf.base_dir,
-        "afni_reho_wf/reho_3d/reho.nii.gz",)
+        "nifti_reho_wf/reho_3d/reho.nii.gz",)
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
     original_bold_data = read_ndata(bold_file, bold_mask)
 
@@ -77,7 +77,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
 
     # Has the new ReHo's mean decreased?
     new_reho = os.path.join(reho_wf.base_dir,
-                            "afni_reho_wf/reho_3d/reho.nii.gz")
+                            "nifti_reho_wf/reho_3d/reho.nii.gz")
     new_reho_mean = nb.load(new_reho).get_fdata().mean()
     assert new_reho_mean < original_reho_mean
 
@@ -101,7 +101,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     )
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = init_surface_reho_wf(omp_nthreads=2, mem_gb=4)
+    reho_wf = init_cifti_reho_wf(omp_nthreads=2, mem_gb=4)
 
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
@@ -111,7 +111,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     original_reho = os.path.join(
         tempdir,
         (
-            "surface_reho_wf/reho_lh/correlation_matrix_"
+            "cifti_reho_wf/reho_lh/correlation_matrix_"
             "sub-colornest001_ses-1_task-rest_run-1_space-fsLR"
             "_den-91k_bold.dtseries.shape.gii"
         )
@@ -132,7 +132,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     # Has the new ReHo's mean decreased?
     new_reho = os.path.join(
         tempdir,
-        "surface_reho_wf/reho_lh/correlation_matrix_test.dtseries.shape.gii",
+        "cifti_reho_wf/reho_lh/correlation_matrix_test.dtseries.shape.gii",
     )
     new_reho_mean = nb.load(new_reho).agg_data().mean()
     assert new_reho_mean < original_reho_mean

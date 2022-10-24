@@ -25,7 +25,7 @@ from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_wf
+from xcp_d.workflow.restingstate import init_compute_alff_wf, init_cifti_reho_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -277,9 +277,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="compute_alff_wf",
         omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_surface_reho_wf(
+    reho_compute_wf = init_cifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
-        name="surface_reho_wf",
+        name="cifti_reho_wf",
         omp_nthreads=omp_nthreads)
 
     write_derivative_wf = init_writederivatives_wf(
