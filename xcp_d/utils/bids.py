@@ -129,6 +129,7 @@ def collect_data(
     task=None,
     bids_validate=False,
     bids_filters=None,
+    cifti=False,
 ):
     """Collect data from a BIDS dataset.
 
@@ -147,6 +148,11 @@ def collect_data(
     """
     layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
 
+    if cifti:
+        bold_extensions = [".dtseries.nii"]
+    else:
+        bold_extensions = [".nii.gz"]
+
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
         "boldfile": {"datatype": "func", "suffix": "bold"},
@@ -163,7 +169,6 @@ def collect_data(
         queries[acq].update(entities)
 
     if task:
-        # queries["preproc_bold"]["task"] = task
         queries["boldfile"]["task"] = task
 
     subj_data = {
@@ -178,9 +183,13 @@ def collect_data(
         for dtype, query in queries.items()
     }
 
-    # reg_file = select_registrationfile(subj_data,template=template)
-
-    # bold_file= select_cifti_bold(subj_data)
+    # overwrite boldfile with requested extensions
+    subj_data["boldfile"] = layout.get(
+        return_type="file",
+        subject=participant_label,
+        extension=bold_extensions,
+        **queries["boldfile"],
+    )
 
     return layout, subj_data
 
@@ -228,34 +237,6 @@ def select_registrationfile(subj_data):
     # print(mni_to_t1w)
 
     return mni_to_t1w, t1w_to_mni
-
-
-def select_cifti_bold(subj_data):
-    """Split list of preprocessed fMRI files into bold (volumetric) and cifti.
-
-    Parameters
-    ----------
-    subj_data
-
-    Returns
-    -------
-    bold_file : list of str
-        List of paths to preprocessed BOLD files.
-    cifti_file : list of str
-        List of paths to preprocessed BOLD CIFTI files.
-    """
-    boldfile = subj_data["boldfile"]
-    bold_files = []
-    cifti_files = []
-
-    for file_ in boldfile:
-        if "preproc_bold" in file_:
-            bold_files.append(file_)
-
-        elif "bold.dtseries.nii" in file_:
-            cifti_files.append(file_)
-
-    return bold_files, cifti_files
 
 
 def extract_t1w_seg(subj_data):

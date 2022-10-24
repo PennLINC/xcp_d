@@ -25,11 +25,11 @@ def get_confounds_tsv(datafile):
         Associated confounds TSV file.
     """
     if "space" in os.path.basename(datafile):
-        confounds_timeseries = datafile.replace(
+        confounds_file = datafile.replace(
             "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.tsv"
         )
     else:
-        confounds_timeseries = (
+        confounds_file = (
             datafile.split("_desc-preproc_bold.nii.gz")[0]
             + "_desc-confounds_timeseries.tsv"
         )

@@ -6,7 +6,7 @@ import os
 import nibabel as nb
 import numpy as np
 import sklearn
-from nipype import logging
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -18,6 +18,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.confounds import get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.utils import stringforparams
@@ -117,7 +118,6 @@ def init_ciftipostprocess_wf(
     t1w
     t1seg
     %(mni_to_t1w)s
-    fmriprep_confounds_tsv
 
     Outputs
     -------
@@ -147,13 +147,6 @@ def init_ciftipostprocess_wf(
     if TR is None:
         metadata = layout.get_metadata(bold_file)
         TR = metadata['RepetitionTime']
-
-    # Confounds file is necessary: ensure we can find it
-    from xcp_d.utils.confounds import get_confounds_tsv
-    try:
-        confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception:
-        raise Exception(f"Unable to find confounds file for {bold_file}.")
 
     workflow = Workflow(name=name)
 
@@ -225,13 +218,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 't1w',
                 't1seg',
                 'mni_to_t1w',
-                'fmriprep_confounds_tsv',
             ],
         ),
         name='inputnode',
     )
-
-    inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -254,6 +244,18 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     mem_gbx = _create_mem_gb(bold_file)
+
+    confounds_file_grabber = pe.Node(
+        Function(
+            input_names=["datafile"],
+            output_names=["fmriprep_confounds_file"],
+            function=get_confounds_tsv,
+        )
+    )
+
+    workflow.connect([
+        (inputnode, confounds_file_grabber, [('bold_file', 'datafile')]),
+    ])
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
@@ -374,7 +376,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             name="remove_dummy_time",
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
-            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (confounds_file_grabber, rm_dummytime, [
+                ('fmriprep_confounds_file', 'fmriprep_confounds_file'),
+            ]),
             (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
             (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
 
@@ -387,10 +391,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [
-                ('bold_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-            ])])
+            (inputnode, censor_scrub, [('bold_file', 'in_file')]),
+            (confounds_file_grabber, censor_scrub, [
+                ('fmriprep_confounds_file', 'fmriprep_confounds_file'),
+            ]),
+        ])
 
     if despike:  # If we despike
         despike3d = pe.Node(CiftiDespike(TR=TR),

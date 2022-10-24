@@ -15,10 +15,6 @@ import numpy as np
 import scipy
 import templateflow
 from nipype import Function, logging
-from nipype import __version__ as nipype_ver
-from nipype.interfaces import utility as niu
-from nipype.pipeline import engine as pe
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.__about__ import __version__
 from xcp_d.interfaces.bids import DerivativesDataSink
@@ -27,7 +23,6 @@ from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
     get_preproc_pipeline_info,
-    select_cifti_bold,
     select_registrationfile,
     write_dataset_description,
 )
@@ -305,26 +300,6 @@ def init_subject_wf(
     ----------
     .. footbibliography::
     """
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir,
-        participant_label=subject_id,
-        task=task_id,
-        bids_validate=False,
-    )
-
-    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
-
-    # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
-        name='inputnode',
-    )
-    inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.subj_data = subj_data
-
     workflow = Workflow(name=name)
 
     info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
@@ -357,17 +332,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 #### References
 
 """
+
     layout, subj_data = collect_data(
         bids_dir=fmri_dir,
         participant_label=subject_id,
         task=task_id,
         bids_validate=False,
+        cifti=cifti,
     )
 
-    # determine the appropriate post-processing workflow and inputs
+    # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+    preproc_files = subj_data["boldfile"]
 
     if not preproc_files:
         LOGGER.error(
@@ -375,7 +351,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             f"Available data: {pprint.pformat(subj_data)}")
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds']),
+        niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
         name='inputnode',
     )
     inputnode.inputs.custom_confounds = custom_confounds
@@ -399,21 +375,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ),
         name="transform_file_grabber",
     )
-
-    if not func_only:
-        anatomical_wf = init_anatomical_wf(
-            omp_nthreads=omp_nthreads,
-            fmri_dir=fmri_dir,
-            subject_id=subject_id,
-            output_dir=output_dir,
-            input_type=input_type,
-            mem_gb=5)  # RF: need to chnage memory size
-
-        # send t1w and t1seg to anatomical workflow
-        workflow.connect([
-            (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                               ('t1seg', 'inputnode.t1seg')]),
-        ])
 
     # Split workflow across BOLD files
     datasource = pe.Node(
@@ -485,7 +446,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
 
     summary = pe.Node(
-        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        SubjectSummary(subject_id=subject_id, bold=preproc_files),
         name='summary',
     )
 
@@ -497,7 +458,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=preproc_nifti_files[0],
+            source_file=preproc_files[0],
             desc='summary',
             datatype="figures",
         ),
