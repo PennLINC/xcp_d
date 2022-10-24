@@ -281,11 +281,11 @@ vertices to yield ReHo.
         (lh_surf, lh_reho, [('out_file', 'surf_bold')]),
         (rh_surf, rh_reho, [('out_file', 'surf_bold')]),
         (subcortical_nifti, subcortical_reho, [('out_file', 'in_file')]),
-        (subcortical_nifti, merge_cifti, ['label_file', 'structure_label_volume']),
-        (lh_reho, merge_cifti, ['surf_gii', 'left_metric']),
-        (rh_reho, merge_cifti, ['surf_gii', 'right_metric']),
-        (subcortical_reho, merge_cifti, ['out_file', 'volume_data']),
-        (merge_cifti, outputnode, [('out_file', 'reho_out')])
+        (subcortical_nifti, merge_cifti, [('label_file', 'structure_label_volume')]),
+        (lh_reho, merge_cifti, [('surf_gii', 'left_metric')]),
+        (rh_reho, merge_cifti, [('surf_gii', 'right_metric')]),
+        (subcortical_reho, merge_cifti, [('out_file', 'volume_data')]),
+        (merge_cifti, outputnode, [('out_file', 'reho_out')]),
     ])
 
     return workflow
