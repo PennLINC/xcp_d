@@ -33,7 +33,7 @@ from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.restingstate import init_nifti_reho_wf, init_compute_alff_wf
+from xcp_d.workflow.restingstate import init_compute_alff_wf, init_nifti_reho_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
