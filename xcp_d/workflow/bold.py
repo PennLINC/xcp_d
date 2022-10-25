@@ -23,6 +23,7 @@ from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.utils import (
     get_maskfiles,
     get_transformfile,
@@ -243,6 +244,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
+    #TODO: Fix non-binary mask bug in Nibabel 22.1.3
+    mask_file = check_binary_mask(mask_file)
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[

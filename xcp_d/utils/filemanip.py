@@ -20,6 +20,8 @@ from hashlib import md5
 from pathlib import Path
 from time import sleep, time
 
+import nibabel as nb
+import numpy as np
 import simplejson as json
 from nipype import __version__ as version
 from nipype import config, logging
@@ -28,6 +30,33 @@ from nipype.utils.misc import is_container
 fmlogger = logging.getLogger("nipype.utils")
 
 related_filetype_sets = [(".hdr", ".img", ".mat"), (".nii", ".mat"), (".BRIK", ".HEAD")]
+
+#TODO: Fix non-binary mask bug in Nibabel 22.1.3
+
+
+def check_binary_mask(mask_file):
+    """Check if the mask is binary."""
+    is_binary = 1
+    if len(np.unique(nb.load(mask_file).get_fdata())) > 2:
+        is_binary = 0
+    if not is_binary:
+        fmlogger.warning("Your mask is not binary!")
+        bin_img = binarize_img(mask_file)
+        out_file = os.path.abspath("binarized_mask.nii.gz")
+        bin_img.to_filename(out_file)
+    else:
+        out_file = mask_file
+
+    return out_file
+
+
+def binarize_img(mask_file):
+    """Binarize mask file."""
+    img = nb.load(mask_file)
+    data = img.get_fdata()
+    data = (data > 0).astype(int)
+    new_img = nb.Nifti1Image(data, img.affine, header=img.header)
+    return new_img
 
 
 def _resolve_with_filenotfound(path, **kwargs):
