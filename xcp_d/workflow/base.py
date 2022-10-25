@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
 import os
-import pprint
 import sys
 from copy import deepcopy
 
@@ -24,7 +23,6 @@ from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
     get_preproc_pipeline_info,
-    select_cifti_bold,
     select_registrationfile,
     write_dataset_description,
 )
@@ -309,11 +307,9 @@ def init_subject_wf(
         cifti=cifti,
     )
 
-    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
-
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+    preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
@@ -356,7 +352,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 """
 
     summary = pe.Node(
-        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        SubjectSummary(subject_id=subject_id, bold=preproc_files),
         name='summary',
     )
 
@@ -368,7 +364,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=preproc_nifti_files[0],
+            source_file=preproc_files[0],
             desc='summary',
             datatype="figures",
         ),
