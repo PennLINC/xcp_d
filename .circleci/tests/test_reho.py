@@ -118,10 +118,10 @@ def test_cifti_reho(data_dir, tmp_path_factory):
         "merge_cifti",
         "reho_combined.dscalar.nii",
     )
-    original_reho_mean = nb.load(original_reho).agg_data().mean()
-    original_bold_data = read_ndata(orig_bold_file)
+    original_reho_mean = nb.load(original_reho).get_fdata().mean()
 
     # Add some noise to the original data and write it out
+    original_bold_data = read_ndata(orig_bold_file)
     noisy_bold_data = _add_noise(original_bold_data)
     noisy_bold_file = os.path.join(tempdir, "noisy.dtseries.nii")
     write_ndata(noisy_bold_data, template=orig_bold_file, filename=noisy_bold_file)
@@ -139,5 +139,5 @@ def test_cifti_reho(data_dir, tmp_path_factory):
         "merge_cifti",
         "reho_combined.dscalar.nii",
     )
-    noisy_reho_mean = nb.load(noisy_reho).agg_data().mean()
+    noisy_reho_mean = nb.load(noisy_reho).get_fdata().mean()
     assert noisy_reho_mean < original_reho_mean
