@@ -7,10 +7,6 @@ Test XCP-D on nifti data with FreeSurfer
 
 Testing regular volumetric outputs from fmriprep
 
-Inputs:
--------
-
-
 DOC
 
 set +e

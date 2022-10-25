@@ -7,10 +7,6 @@ Test XCP-D on Nibabies data
 
 Testing regular volumetric outputs from Nibabies
 
-Inputs:
--------
-
- - qsiprep multi shell results with anatomical outputs (data/qsiprep_with_anat)
 
 DOC
 

@@ -7,11 +7,6 @@ Test XCP-D on nifti data without FreeSurfer
 
 Testing regular volumetric outputs from fmriprep
 
-Inputs:
--------
-
- - qsiprep multi shell results with anatomical outputs (data/qsiprep_with_anat)
-
 DOC
 
 set +e

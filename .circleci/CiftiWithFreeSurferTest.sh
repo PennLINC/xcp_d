@@ -7,9 +7,6 @@ Test XCP-D on cifti data with FreeSurfer
 
 Testing cifti outputs from fmriprep
 
-Inputs:
--------
-
 
 DOC
 
