@@ -18,10 +18,10 @@ def test_RemoveTR_nifti(data_dir):
     """Test RemoveTR() for NIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithoutfreesurfer/fmriprep")
-    boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
+                            "data/fmriprep/fmriprep")
+    boldfile = data_dir + "sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
+    confounds_file = data_dir + "sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
 
     # Find the original number of volumes acc. to nifti & confounds timeseries
@@ -152,11 +152,11 @@ def test_RemoveTR_cifti(data_dir):
 
 
 # def test_fd_interface_nifti_custom(data_dir):  # Checking results
-#     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
+#     boldfile = data_dir + "sub-01/func/" \
 #         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-#     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
+#     confounds_file = data_dir + "sub-01/func/" \
 #         "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
-#     custom_confounds_tsv = data_dir + "/withoutfreesurfer/sub-01/func/customnifti.tsv"
+#     custom_confounds_tsv = data_dir + "sub-01/func/customnifti.tsv"
 #     # Run workflow
 #     remvtr = RemoveTR()
 #     remvtr.inputs.bold_file = boldfile

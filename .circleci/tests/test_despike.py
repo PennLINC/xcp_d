@@ -26,12 +26,12 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     """
     # Read in the necessary inputs
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithoutfreesurfer/fmriprep")
+                            "data/fmriprep/fmriprep")
     tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     boldfile = os.path.join(
         data_dir,
         (
-            "withoutfreesurfer/sub-01/func/"
+            "/sub-01/func/"
             "sub-01_task-mixedgamblestask_run-1"
             "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
         )
@@ -39,7 +39,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     maskfile = os.path.join(
         data_dir,
         (
-            "withoutfreesurfer/sub-01/func/"
+            "/sub-01/func/"
             "sub-01_task-mixedgamblestask_run-1_"
             "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
         )
@@ -102,7 +102,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer")  
+                            "data/fmriprepwithfreesurfer")
     boldfile = os.path.join(
         data_dir,
         (
