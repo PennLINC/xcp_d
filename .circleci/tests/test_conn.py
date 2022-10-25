@@ -22,7 +22,7 @@ from xcp_d.workflow.connectivity import (
 def test_nifti_conn(data_dir, tmp_path_factory):
     """Test the nifti workflow."""
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer/fmriprep")
+                            "data/fmriprepwithfreesurfer")
     bold_file = os.path.join(
         data_dir,
         (
@@ -129,7 +129,7 @@ def test_cifti_conn(data_dir, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
     # Define bold file
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer/fmriprep")    
+                            "data/fmriprepwithfreesurfer")    
     boldfile = os.path.join(
         data_dir,
         (

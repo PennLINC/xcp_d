@@ -102,7 +102,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer/fmriprep")  
+                            "data/fmriprepwithfreesurfer")  
     boldfile = os.path.join(
         data_dir,
         (
