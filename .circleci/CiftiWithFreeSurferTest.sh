@@ -35,3 +35,4 @@ $XCPD_CMD \
     --warp-surfaces-native2std \
     --cifti \
     --combineruns
+echo $XCPD_CMD

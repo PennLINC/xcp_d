@@ -23,10 +23,12 @@ TESTNAME=nifti_without_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithoutfreesurfer/withoutfreesurfer
+BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithoutfreesurfer/fmriprep
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
     --despike  --head_radius 40 \
     --smoothing 6  -f 100 -v -v \
     --nuissance-regressors 27P
+
+echo $XCPD_CMD

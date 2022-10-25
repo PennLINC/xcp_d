@@ -31,3 +31,5 @@ $XCPD_CMD \
     --despike  --head_radius 40 \
     --smoothing 6  -f 100 -v -v \
     --nuissance-regressors 27P --input-type nibabies
+    
+echo $XCPD_CMD
