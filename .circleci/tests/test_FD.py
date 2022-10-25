@@ -11,7 +11,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub
 def test_fd_interface_cifti(data_dir):
     """Check results."""
     data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer/fmriprep") 
+                            "data/fmriprepwithfreesurfer/fmriprep") 
     boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
     confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
@@ -61,7 +61,7 @@ def test_fd_interface_cifti(data_dir):
 def test_fd_interface_nifti(data_dir):
     """Check results."""
     data_dir = os.path.join(data_dir,
-                            "fmriprepwithoutfreesurfer/fmriprep")
+                            "data/fmriprepwithoutfreesurfer/fmriprep")
     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \

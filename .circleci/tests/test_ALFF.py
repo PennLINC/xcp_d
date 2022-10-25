@@ -22,7 +22,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     """
     # Get the file names
     data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer/fmriprep")
+                            "data/fmriprepwithfreesurfer/fmriprep")
     bold_file = os.path.join(
         data_dir,
         (
@@ -121,7 +121,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     has changed in the expected direction.
     """
     data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer/fmriprep")    
+                            "data/fmriprepwithfreesurfer/fmriprep")    
     bold_file = os.path.join(
         data_dir,
         (
