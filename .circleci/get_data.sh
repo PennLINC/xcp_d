@@ -52,7 +52,7 @@ run_xcpd_cmd () {
   # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir}/fmriprep ${output_dir} participant -w ${workdir}"
+    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
@@ -76,6 +76,8 @@ run_xcpd_cmd () {
     bids_mount="-v ${bids_parent_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
+
+    
     XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
 
   fi
