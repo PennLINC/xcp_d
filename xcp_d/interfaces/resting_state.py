@@ -24,6 +24,7 @@ from nipype.interfaces.base import (
     SimpleInterface,
     TraitedSpec,
     traits,
+    traits_extension,
 )
 from pkg_resources import resource_filename as pkgrf
 
@@ -253,7 +254,7 @@ class ReHoNamePatch(SimpleInterface):
         in_file = os.path.join(runtime.cwd, "inset.nii.gz")
         shutil.copyfile(self.inputs.in_file, in_file)
 
-        if os.path.isfile(self.inputs.mask_file):
+        if traits_extension.isdefined(self.inputs.mask_file):
             mask_file = os.path.join(runtime.cwd, "mask.nii.gz")
             shutil.copyfile(self.inputs.mask_file, mask_file)
             mask_cmd = f"-mask {mask_file}"
