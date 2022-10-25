@@ -5,6 +5,7 @@ This file is an example of running pytests either locally or on circleci.
 Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
+import os
 import os.path as op
 
 import nibabel as nb
@@ -13,19 +14,11 @@ import pandas as pd
 from xcp_d.interfaces.prepostcleaning import RemoveTR
 
 
-def test_data_availability(data_dir, working_dir, output_dir):
-    """Make sure that we have access to all the testing data."""
-    assert op.exists(output_dir)
-    assert op.exists(working_dir)
-    assert op.exists(data_dir)
-    boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    assert op.exists(boldfile)
-
-
 def test_RemoveTR_nifti(data_dir):
     """Test RemoveTR() for NIFTI input data."""
     # Define inputs
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithoutfreesurfer/fmriprep")
     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
@@ -77,6 +70,8 @@ def test_RemoveTR_nifti(data_dir):
 def test_RemoveTR_cifti(data_dir):
     """Test RemoveTR() for CIFTI input data."""
     # Define inputs
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer/fmriprep")
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
     confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \

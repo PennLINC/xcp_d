@@ -9,6 +9,8 @@ from xcp_d.utils import write_save
 def test_read_ndata(data_dir):
     """Test write_save.read_ndata."""
     # Try to load a gifti
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer/fmriprep")
     gifti_file = os.path.join(
         data_dir,
         "fmriprep/sub-colornest001/ses-1/func",
@@ -50,6 +52,8 @@ def test_read_ndata(data_dir):
 
 def test_write_ndata(data_dir, tmp_path_factory):
     """Test write_save.write_ndata."""
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer/fmriprep")
     tmpdir = tmp_path_factory.mktemp("test_write_ndata")
 
     cifti_file = os.path.join(

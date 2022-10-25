@@ -21,6 +21,8 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     has increased.
     """
     # Get the file names
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer/fmriprep")
     bold_file = os.path.join(
         data_dir,
         (
@@ -118,6 +120,8 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     and confirm the ALFF after addition to lower frequencies
     has changed in the expected direction.
     """
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer/fmriprep")    
     bold_file = os.path.join(
         data_dir,
         (
