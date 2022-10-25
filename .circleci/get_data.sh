@@ -67,7 +67,9 @@ run_xcpd_cmd () {
     fi
 
     # Otherwise we're going to use docker from the outside
-    bids_mount="-v ${bids_dir}:/bids-input:ro"
+    bids_parent_dir="$(dirname "$bids_dir")"  # get parent directory
+    bids_folder_name="$(basename "$bids_dir")"  # get folder name
+    bids_mount="-v ${bids_parent_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
     XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/fmriprep /out participant -w /work"
