@@ -11,6 +11,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
+from nilearn import plotting as plott
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
@@ -770,7 +771,7 @@ def plot_carpet(
 ):
     """Plot an image representation of voxel intensities across time.
 
-    This is also know. as the "carpet plot" or "Power plot".
+    This is also known as the "carpet plot" or "Power plot".
     See Jonathan Power Neuroimage 2017 Jul 1; 154:150-158.
 
     Parameters
@@ -1061,3 +1062,32 @@ def _get_tr(img):
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
     raise RuntimeError("Could not extract TR - unknown data structure type")
+
+
+def plot_reho_mosaic_volumetric(reho, template):
+    """Plot Reho mosaic plot for Niftis."""
+    output_file = 'test.nii.gz'
+    plott.plot_stat_map(reho,
+                        bg_img=template,
+                        display_mode='z',
+                        cut_coords=8,
+                        output_file=output_file)
+    return
+
+
+def plot_alff_mosaic_volumetric(alff, template):
+    """Plot ALFF mosaic plot for Niftis."""
+    output_file = 'test.nii.gz'
+    plott.plot_stat_map(alff,
+                        bg_img=template,
+                        display_mode='z',
+                        cut_coords=8,
+                        output_file=output_file)
+    return
+
+
+
+# def plot_reho_mosaic_surface():
+#     return
+# def plot_alff_mosaic_surface(): 
+#     return
