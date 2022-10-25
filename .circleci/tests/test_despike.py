@@ -26,7 +26,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     """
     # Read in the necessary inputs
     data_dir = os.path.join(data_dir,
-                            "data/fmriprep/fmriprep")
+                            "data/fmriprepwithoutfreesurfer/fmriprep/")
     tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     boldfile = os.path.join(
         data_dir,
