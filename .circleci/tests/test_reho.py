@@ -149,6 +149,5 @@ def test_cifti_reho(data_dir, tmp_path_factory):
         "outputnode",
         "correlation_matrix_noisy.dtseries.dscalar.nii",
     )
-    as
     noisy_reho_mean = nb.load(noisy_reho).agg_data().mean()
     assert noisy_reho_mean < original_reho_mean
