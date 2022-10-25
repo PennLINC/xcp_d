@@ -63,7 +63,7 @@ TESTNAME=run_pytest
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/*fmriprep*/fmriprep
+BIDS_INPUT_DIR=${TESTDIR}
 
 # build the pytest command so it works both ways
 PYTEST_CMD=$(run_pytest_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
