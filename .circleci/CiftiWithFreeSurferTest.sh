@@ -28,7 +28,7 @@ TESTNAME=cifti_with_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/data/fmriprep
+BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithfreesurfer
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \

@@ -52,7 +52,7 @@ run_xcpd_cmd () {
   # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
+    XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir}/fmriprep ${output_dir} participant -w ${workdir}"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
@@ -70,7 +70,7 @@ run_xcpd_cmd () {
     bids_mount="-v ${bids_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
-    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input /out participant -w /work"
+    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/fmriprep /out participant -w /work"
 
   fi
   echo "${XCPD_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"
@@ -152,7 +152,7 @@ get_bids_data() {
     # without freesurfer, sub-01
     if [[ ${DS} = sub01 ]]
     then
-      dataset_dir="$TEST_DATA_DIR/withoutfreesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithoutfreesurfer/fmriprep"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
@@ -188,7 +188,7 @@ get_bids_data() {
     # colornest subject who also has freesurfer data (in a different archive)
     elif [[ ${DS} = fmriprep_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/fmriprep"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/fmriprep"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
@@ -206,7 +206,7 @@ get_bids_data() {
 
     elif [[ ${DS} = freesurfer_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/freesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
