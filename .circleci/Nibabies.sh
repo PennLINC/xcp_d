@@ -18,7 +18,7 @@ set +e
 source ./get_data.sh
 TESTDIR=${PWD}
 get_config_data ${TESTDIR}
-get_bids_data ${TESTDIR} sub01
+get_bids_data ${TESTDIR} nibabies
 
 CFG=${TESTDIR}/data/nipype.cfg
 export FS_LICENSE=${TESTDIR}/data/license.txt
