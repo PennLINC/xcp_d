@@ -115,19 +115,9 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     original_reho = os.path.join(
         tempdir,
         "orig_reho_wf",
-        "outputnode",
-        "correlation_matrix_original.dtseries.dscalar.nii",
+        "merge_cifti",
+        "reho_combined.dscalar.nii",
     )
-    if not os.path.isfile(original_reho):
-        raise FileNotFoundError(
-            os.listdir(
-                os.path.join(
-                    tempdir,
-                    "orig_reho_wf",
-                    "outputnode",
-                ),
-            )
-        )
     original_reho_mean = nb.load(original_reho).agg_data().mean()
     original_bold_data = read_ndata(orig_bold_file)
 
@@ -146,8 +136,8 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     noisy_reho = os.path.join(
         tempdir,
         "noisy_reho_wf",
-        "outputnode",
-        "correlation_matrix_noisy.dtseries.dscalar.nii",
+        "merge_cifti",
+        "reho_combined.dscalar.nii",
     )
     noisy_reho_mean = nb.load(noisy_reho).agg_data().mean()
     assert noisy_reho_mean < original_reho_mean
