@@ -96,7 +96,7 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
                 elif len(motion_files) == 1:
                     # Make DCAN HDF5 file from single motion file
                     dcan_df_file = (
-                        f"{'.'.join(motion_files[0].split('.')[:-1])}-DCAN.hdf5"
+                        f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
                     )
 
                     # Get TR from one of the preproc files
