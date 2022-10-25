@@ -129,6 +129,7 @@ def collect_data(
     task=None,
     bids_validate=False,
     bids_filters=None,
+    cifti=False,
 ):
     """Collect data from a BIDS dataset.
 
@@ -154,7 +155,15 @@ def collect_data(
     ]
     CIFTI_SPACES = [
         "fsLR",
+        "fsaverage",
     ]
+    allowed_spaces = CIFTI_SPACES if cifti else NIFTI_SPACES
+
+    bold_extensions = ".dtseries.nii" if cifti else ".nii.gz"
+    extensions = {
+        "bold": bold_extensions,
+        "other": ["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
+    }
 
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
@@ -174,15 +183,23 @@ def collect_data(
     if task:
         queries["bold"]["task"] = task
 
-    for space in allowed_spaces:
-        bold_data = layout.get()
+    # This ignores res and den
+    if "space" not in queries["bold"]:
+        for space in allowed_spaces:
+            bold_data = layout.get(
+                space=space,
+                **queries["bold"],
+            )
+            if bold_data:
+                queries["bold"]["space"] = space
+                break
 
     subj_data = {
         dtype: sorted(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
+                extension=extensions["bold" if dtype == "bold" else "other"],
                 **query,
             )
         )

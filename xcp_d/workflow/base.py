@@ -302,6 +302,7 @@ def init_subject_wf(
         participant_label=subject_id,
         task=task_id,
         bids_validate=False,
+        cifti=cifti,
     )
 
     preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
