@@ -31,7 +31,7 @@ fmlogger = logging.getLogger("nipype.utils")
 
 related_filetype_sets = [(".hdr", ".img", ".mat"), (".nii", ".mat"), (".BRIK", ".HEAD")]
 
-#TODO: Fix non-binary mask bug in Nibabel 22.1.3
+# TODO: Fix non-binary mask bug in Nibabel 22.1.3
 
 
 def check_binary_mask(mask_file):

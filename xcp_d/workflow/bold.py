@@ -244,7 +244,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
-    #TODO: Fix non-binary mask bug in Nibabel 22.1.3
     mask_file = check_binary_mask(mask_file)
 
     inputnode = pe.Node(
