@@ -40,7 +40,7 @@ def check_binary_mask(mask_file):
     if len(np.unique(nb.load(mask_file).get_fdata())) > 2:
         is_binary = 0
     if not is_binary:
-        fmlogger.warning("Your mask is not binary!")
+        fmlogger.warning("Mask is being binarized.")
         bin_img = binarize_img(mask_file)
         out_file = os.path.abspath("binarized_mask.nii.gz")
         bin_img.to_filename(out_file)

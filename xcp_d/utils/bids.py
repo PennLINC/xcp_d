@@ -129,6 +129,7 @@ def collect_data(
     task=None,
     bids_validate=False,
     bids_filters=None,
+    cifti=False,
 ):
     """Collect data from a BIDS dataset.
 
@@ -145,11 +146,33 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
+    layout = BIDSLayout(
+        str(bids_dir),
+        validate=bids_validate,
+        derivatives=True,
+        config=["bids", "derivatives"],
+    )
+
+    NIFTI_SPACES = [
+        "MNI152NLin6Asym",
+        "MNI152NLin2009cAsym",
+        "MNIInfant",
+    ]
+    CIFTI_SPACES = [
+        "fsLR",
+        "fsaverage",
+    ]
+    allowed_spaces = CIFTI_SPACES if cifti else NIFTI_SPACES
+
+    bold_extensions = ".dtseries.nii" if cifti else ".nii.gz"
+    extensions = {
+        "bold": bold_extensions,
+        "other": ["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
+    }
 
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
-        "boldfile": {"datatype": "func", "suffix": "bold"},
+        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         "t1w": {"datatype": "anat", "suffix": "T1w"},
         "seg_data": {"datatype": "anat", "suffix": "dseg"},
         "pial": {"datatype": "anat", "suffix": "pial"},
@@ -163,24 +186,30 @@ def collect_data(
         queries[acq].update(entities)
 
     if task:
-        # queries["preproc_bold"]["task"] = task
-        queries["boldfile"]["task"] = task
+        queries["bold"]["task"] = task
+
+    # This ignores res and den
+    if "space" not in queries["bold"]:
+        for space in allowed_spaces:
+            bold_data = layout.get(
+                space=space,
+                **queries["bold"],
+            )
+            if bold_data:
+                queries["bold"]["space"] = space
+                break
 
     subj_data = {
         dtype: sorted(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
+                extension=extensions["bold" if dtype == "bold" else "other"],
                 **query,
             )
         )
         for dtype, query in queries.items()
     }
-
-    # reg_file = select_registrationfile(subj_data,template=template)
-
-    # bold_file= select_cifti_bold(subj_data)
 
     return layout, subj_data
 
@@ -244,7 +273,7 @@ def select_cifti_bold(subj_data):
     cifti_file : list of str
         List of paths to preprocessed BOLD CIFTI files.
     """
-    boldfile = subj_data["boldfile"]
+    boldfile = subj_data["bold"]
     bold_files = []
     cifti_files = []
 

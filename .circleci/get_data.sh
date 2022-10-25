@@ -168,7 +168,7 @@ get_bids_data() {
         echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
-      dataset_dir="$TEST_DATA_DIR/nibabies"
+      dataset_dir="$TEST_DATA_DIR/nibabies_test_data"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
