@@ -74,8 +74,7 @@ def get_parser():
         "fmri_dir",
         action="store",
         type=Path,
-        help="the root folder of a preprocessed fMRI output. If available, freesurfer outputs"
-        "should be added to this root folder, with the directory name containing 'freesurfer'",
+        help="the root folder of a preprocessed fMRI output.",
     )
     parser.add_argument(
         "output_dir",
