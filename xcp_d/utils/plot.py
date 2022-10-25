@@ -1084,10 +1084,3 @@ def plot_alff_mosaic_volumetric(alff, template):
                         cut_coords=8,
                         output_file=output_file)
     return
-
-
-
-# def plot_reho_mosaic_surface():
-#     return
-# def plot_alff_mosaic_surface(): 
-#     return
