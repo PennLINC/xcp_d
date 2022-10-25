@@ -146,7 +146,12 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
+    layout = BIDSLayout(
+        str(bids_dir),
+        validate=bids_validate,
+        derivatives=True,
+        config=["bids", "derivatives"],
+    )
 
     NIFTI_SPACES = [
         "MNI152NLin6Asym",
@@ -167,7 +172,7 @@ def collect_data(
 
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
-        "bold": {"datatype": "func", "suffix": "bold"},
+        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         "t1w": {"datatype": "anat", "suffix": "T1w"},
         "seg_data": {"datatype": "anat", "suffix": "dseg"},
         "pial": {"datatype": "anat", "suffix": "pial"},
@@ -268,7 +273,7 @@ def select_cifti_bold(subj_data):
     cifti_file : list of str
         List of paths to preprocessed BOLD CIFTI files.
     """
-    boldfile = subj_data["boldfile"]
+    boldfile = subj_data["bold"]
     bold_files = []
     cifti_files = []
 

@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
 import os
+import pprint
 import sys
 from copy import deepcopy
 
@@ -11,6 +12,7 @@ import scipy
 import templateflow
 from nipype import Function
 from nipype import __version__ as nipype_ver
+from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -32,6 +34,8 @@ from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 from xcp_d.workflow.execsummary import init_brainsprite_wf
+
+LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
@@ -151,7 +155,7 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print(f"Begin the {name} workflow")
+    LOGGER.info(f"Beginning the {name} workflow")
 
     write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
 
