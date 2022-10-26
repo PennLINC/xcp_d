@@ -547,24 +547,6 @@ filename_to_list = ensure_list
 list_to_filename = simplify_list
 
 
-def loadcrash(infile):
-    """Load pickled Nipype crashfile.
-
-    Parameters
-    ----------
-    infile : str
-        Path to the pickle file to load.
-
-    Returns
-    -------
-    Contents of the pickled crashfile.
-    """
-    if infile.endswith("pkl") or infile.endswith("pklz"):
-        return loadpkl(infile)
-    else:
-        raise ValueError("Only pickled crashfiles are supported")
-
-
 def loadpkl(infile):
     """Load a zipped or plain cPickled file."""
     infile = Path(infile)
