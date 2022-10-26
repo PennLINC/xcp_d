@@ -81,44 +81,6 @@ class BrainPlotx(SimpleInterface):
         return runtime
 
 
-class _RegPlotInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="brain file")
-    overlay = File(exists=True, mandatory=True, desc="overlay ")
-    n_cuts = traits.Int(default_value=3, desc="number of cuts")
-
-
-class _RegPlotOutputSpec(TraitedSpec):
-    out_file = File(exists=True, mandatory=True, desc="svg file")
-
-
-class RegPlot(SimpleInterface):
-    """A registration plot.
-
-    Warning
-    -------
-    This class may have been abandoned.
-    """
-
-    input_spec = _RegPlotInputSpec
-    output_spec = _RegPlotOutputSpec
-
-    def _run_interface(self, runtime):
-
-        self._results['out_file'] = fname_presuffix('reg_plot_',
-                                                    suffix='file.svg',
-                                                    newpath=runtime.cwd,
-                                                    use_ext=False)
-
-        self._results['out_file'] = get_regplot(
-            brain=self.inputs.in_file,
-            overlay=self.inputs.overlay,
-            cuts=self.inputs.n_cuts,
-            order=("x", "y", "z"),
-            out_file=self._results['out_file'])
-
-        return runtime
-
-
 class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True, mandatory=True, desc="Raw data")
     regressed_data = File(exists=True,
