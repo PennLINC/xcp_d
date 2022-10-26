@@ -3,11 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Miscellaneous file manipulation functions."""
 import contextlib
-import errno
 import glob
 import gzip
 import hashlib
-import locale
 import os
 import os.path as op
 import pickle
@@ -15,7 +13,6 @@ import posixpath
 import re
 import shutil
 import subprocess as sp
-import sys
 from hashlib import md5
 from pathlib import Path
 from time import sleep, time
