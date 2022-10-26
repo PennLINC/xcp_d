@@ -623,28 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-rst_levels = ["=", "-", "~", "+"]
-
-
-def write_rst_header(header, level=0):
-    """Convert a string to a restructuredText header.
-
-    Parameters
-    ----------
-    header : str
-        String to reformat.
-    level : int, optional
-        The heading level.
-        Default is 0.
-
-    Returns
-    -------
-    str
-        A restructuredText-format header string.
-    """
-    return "\n".join((header, "".join([rst_levels[level] for _ in header]))) + "\n\n"
-
-
 def write_rst_list(items, prefix=""):
     """Convert a list to a restructuredText string.
 
