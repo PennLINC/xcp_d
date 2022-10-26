@@ -154,22 +154,18 @@ def collect_data(
         config=["bids", "derivatives"],
     )
 
-    NIFTI_SPACES = [
-        "MNI152NLin6Asym",
-        "MNI152NLin2009cAsym",
-        "MNIInfant",
-    ]
-    CIFTI_SPACES = [
-        "fsLR",
-        "fsaverage",
-    ]
-    allowed_spaces = CIFTI_SPACES if cifti else NIFTI_SPACES
-
-    bold_extensions = ".dtseries.nii" if cifti else ".nii.gz"
-    extensions = {
-        "bold": bold_extensions,
-        "other": ["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
+    PREFERRED_SPACES = {
+        False: [
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+            "MNIInfant",
+        ],
+        True: [
+            "fsLR",
+            "fsaverage",
+        ],
     }
+    allowed_spaces = PREFERRED_SPACES[cifti]
 
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
@@ -186,10 +182,22 @@ def collect_data(
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
 
+    # Override the default allowed extensions for BOLD data so we don't accidentally
+    # collect both surface and volumetric files.
+    # Don't override if already set by the bids filters.
+    if "extension" not in queries["bold"].keys():
+        queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
+
+    # Set valid extensions for the file types.
+    # Don't override if already set by the bids filters or for BOLD data.
+    for acq, entities in queries.items():
+        if "extension" not in queries[acq].keys():
+            queries[acq]["extension"] = ["nii", "nii.gz", "dtseries.nii", "h5", "gii"]
+
     if task:
         queries["bold"]["task"] = task
 
-    # This ignores res and den
+    # Select the best available space
     if "space" not in queries["bold"]:
         for space in allowed_spaces:
             bold_data = layout.get(
@@ -200,12 +208,26 @@ def collect_data(
                 queries["bold"]["space"] = space
                 break
 
+    if not bold_data:
+        allowed_space_str = ", ".join(allowed_spaces)
+        raise ValueError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+
+    # Grab the first (and presumably best) density and resolution if there are multiple.
+    # This probably works well for resolution (1 typically means 1x1x1,
+    # 2 typically means 2x2x2, etc.), but probably doesn't work well for density.
+    resolutions = bold_data[0].get_resolutions()
+    densities = bold_data[0].get_densities()
+    if len(resolutions) > 1:
+        queries["bold"]["resolution"] = resolutions[0]
+
+    if len(densities) > 1:
+        queries["bold"]["density"] = densities[0]
+
     subj_data = {
         dtype: sorted(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=extensions["bold" if dtype == "bold" else "other"],
                 **query,
             )
         )
