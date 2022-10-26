@@ -10,8 +10,6 @@ import nibabel as nb
 import numpy as np
 from nipype.interfaces.ants import ApplyTransforms
 from pkg_resources import resource_filename as pkgrf
-from scipy.signal import butter, detrend, filtfilt
-from sklearn.linear_model import LinearRegression
 from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
@@ -493,89 +491,6 @@ def zscore_nifti(img, outputname, mask=None):
                              header=img.header)
     dataout.to_filename(outputname)
     return outputname
-
-
-def butter_bandpass(data, fs, lowpass, highpass, order=2):
-    """Apply a Butterworth bandpass filter to data.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        Voxels/vertices by timepoints dimension.
-    fs : float
-        Sampling frequency. 1/TR(s).
-    lowpass : float
-        frequency
-    highpass : float
-        frequency
-    order : int
-        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
-
-    Returns
-    -------
-    filtered_data : numpy.ndarray
-        The filtered data.
-    """
-    nyq = 0.5 * fs  # nyquist frequency
-
-    # normalize the cutoffs
-    lowcut = np.float(highpass) / nyq
-    highcut = np.float(lowpass) / nyq
-
-    b, a = butter(order / 2, [lowcut, highcut], btype='band')  # get filter coeff
-
-    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
-
-    # apply the filter, loop through columns of regressors
-    for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
-                                        padlen=3 * (max(len(b), len(a)) - 1))
-
-    return filtered_data
-
-
-def linear_regression(data, confound):
-    """Perform linear regression with sklearn's LinearRegression.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-    confound : numpy.ndarray
-       nuisance regressors - vertices by timepoints for confounds matrix
-
-    Returns
-    -------
-    numpy.ndarray
-        residual matrix after regression
-    """
-    regression = LinearRegression(n_jobs=1)
-    regression.fit(confound.T, data.T)
-    y_predicted = regression.predict(confound.T)
-
-    return data - y_predicted.T
-
-
-def demean_detrend_data(data):
-    """Mean-center and remove linear trends over time from data.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-
-    Returns
-    -------
-    detrended : numpy.ndarray
-        demeaned and detrended data
-    """
-    demeaned = detrend(data, axis=- 1, type='constant', bp=0,
-                       overwrite_data=False)  # Demean data using "constant" detrend,
-    # which subtracts mean
-    detrended = detrend(demeaned, axis=- 1, type='linear', bp=0,
-                        overwrite_data=False)  # Detrend data using linear method
-
-    return detrended  # Subtract these predicted values from the demeaned data
 
 
 def extract_timeseries(img, atlas_file, labels_file, TR):

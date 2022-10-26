@@ -4,7 +4,6 @@ import os.path as op
 import numpy as np
 import pytest
 
-from xcp_d.interfaces.filtering import butter_bandpass
 from xcp_d.utils.confounds import motion_regression_filter
 
 
@@ -76,20 +75,3 @@ def test_motion_filtering_notch(data_files):
         motion_filter_order=2,
     )
     assert np.allclose(notch_data_test, notch_data_true, atol=1e-1)
-
-
-def test_bandpass_filtering(data_files):
-    """Run Butterworth on toy data, compare to results that have been verified."""
-    raw_data = np.loadtxt(data_files["raw_data"])
-    butterworth_data_true = np.loadtxt(data_files["butterworth_filtered"])
-    raw_data = raw_data[None, :]  # add singleton row dimension
-
-    # Confirm the butterworth filter runs with reasonable parameters
-    butterworth_data_test = butter_bandpass(
-        raw_data,
-        fs=1 / 0.8,
-        highpass=0.009,
-        lowpass=0.080,
-        order=2,
-    )
-    assert np.allclose(butterworth_data_test, butterworth_data_true, atol=1e-4)
