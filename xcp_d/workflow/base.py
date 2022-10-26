@@ -502,10 +502,3 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             workflow.get_node(node).interface.out_path_base = 'xcp_d'
 
     return workflow
-
-
-def _pop(inlist):
-    """Make a list of lists into a list."""
-    if isinstance(inlist, (list, tuple)):
-        return inlist[0]
-    return inlist
