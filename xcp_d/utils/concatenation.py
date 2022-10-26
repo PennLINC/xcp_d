@@ -10,7 +10,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pandas as pd
-from bids.layout_xcpd import BIDSLayout
+from bids.layout import BIDSLayout
 from nilearn.image import concat_imgs
 from nipype import logging
 from pkg_resources import resource_filename as _pkgres
