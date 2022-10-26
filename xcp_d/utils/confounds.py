@@ -306,8 +306,8 @@ def load_confound_matrix(
 
     Parameters
     ----------
-    original_file :
-       File used to find confounds json.
+    original_file : str
+        File used to find confounds json.
     %(params)s
     custom_confounds : str or None, optional
         Custom confounds TSV if there is one. Default is None.

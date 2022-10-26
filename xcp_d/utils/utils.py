@@ -790,7 +790,6 @@ def consolidate_confounds(
     if fmriprep_confounds_file and custom_confounds_file:
         confounds_df = load_confound_matrix(
             original_file=namesource,
-            datafile=namesource,
             custom_confounds=custom_confounds_file,
             confound_tsv=fmriprep_confounds_file,
             params=params,
@@ -798,7 +797,6 @@ def consolidate_confounds(
     else:  # No custom confounds
         confounds_df = load_confound_matrix(
             original_file=namesource,
-            datafile=namesource,
             confound_tsv=fmriprep_confounds_file,
             params=params,
         )
