@@ -16,7 +16,7 @@ from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
 from xcp_d.utils.qcmetrics import compute_dvars
-from xcp_d.utils.write_save import read_ndata, scalex, write_ndata
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def _decimate_data(data, seg_data, size):
