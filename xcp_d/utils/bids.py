@@ -291,7 +291,7 @@ def extract_t1w_seg(subj_data):
             selected_t1w_seg_file = t1w_seg_file
 
     if not selected_t1w_file:
-        raise ValueError("No segmentation file found.")
+        raise ValueError("No T1w file found.")
 
     if not selected_t1w_seg_file:
         raise ValueError("No segmentation file found.")
