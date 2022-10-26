@@ -160,14 +160,6 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
     return op.join(pth, prefix + fname + suffix + ext)
 
 
-def fnames_presuffix(fnames, prefix="", suffix="", newpath=None, use_ext=True):
-    """Call fname_presuffix for a list of files."""
-    f2 = []
-    for fname in fnames:
-        f2.append(fname_presuffix(fname, prefix, suffix, newpath, use_ext))
-    return f2
-
-
 def hash_rename(filename, hashvalue):
     """Rename a file given original filename and hash, and set path to output_directory."""
     path, name, ext = split_filename(filename)
