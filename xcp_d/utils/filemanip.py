@@ -160,18 +160,6 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
     return op.join(pth, prefix + fname + suffix + ext)
 
 
-def check_forhash(filename):
-    """Check if file has a hash in its filename."""
-    if isinstance(filename, list):
-        filename = filename[0]
-    path, name = op.split(filename)
-    if re.search(r"(_0x[a-z0-9]{32})", name):
-        hashvalue = re.findall(r"(_0x[a-z0-9]{32})", name)
-        return True, hashvalue
-    else:
-        return False, None
-
-
 def hash_infile(afile, chunk_len=8192, crypto=hashlib.md5, raise_notfound=False):
     """Compute hash of a file using 'crypto' module.
 
