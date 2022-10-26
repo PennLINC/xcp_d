@@ -646,32 +646,6 @@ def which(cmd, env=None, pathext=None):
     return None
 
 
-def get_dependencies(name, environ):
-    """Return library dependencies of a dynamically linked executable.
-
-    Uses otool on darwin, ldd on linux. Currently doesn't support windows.
-    """
-    command = None
-    if sys.platform == "darwin":
-        command = f"otool -L `which {name}`"
-    elif "linux" in sys.platform:
-        command = f"ldd `which {name}`"
-    else:
-        return f"Platform {sys.platform} not supported"
-
-    deps = None
-    try:
-        proc = sp.Popen(
-            command, stdout=sp.PIPE, stderr=sp.PIPE, shell=True, env=environ
-        )
-        o, e = proc.communicate()
-        deps = o.rstrip()
-    except Exception as ex:
-        deps = f"{command!r} failed"
-        fmlogger.warning(f"Could not get dependencies of {name}s. Error:\n{ex}")
-    return deps
-
-
 def canonicalize_env(env):
     """Convert any unicode entries for Windows only.
 
