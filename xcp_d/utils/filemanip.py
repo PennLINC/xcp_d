@@ -623,26 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def crash2txt(filename, record):
-    """Write out plain text crash file.
-
-    Parameters
-    ----------
-    filename : str
-        Output filename.
-    record
-        The record to write to the file.
-    """
-    with open(filename, "w") as fp:
-        if "node" in record:
-            node = record["node"]
-            fp.write(f"Node: {node.fullname}\n")
-            fp.write(f"Working directory: {node.output_dir()}\n")
-            fp.write("\n")
-            fp.write(f"Node inputs:\n{node.inputs}\n")
-        fp.write("".join(record["traceback"]))
-
-
 def read_stream(stream, logger=None, encoding=None):
     """Robustly read a stream, sending a warning to a logger if some decoding error was raised.
 
