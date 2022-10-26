@@ -10,7 +10,6 @@ from nipype.interfaces.base import (
     File,
     InputMultiPath,
     OutputMultiPath,
-    SEMLikeCommandLine,
     TraitedSpec,
     isdefined,
     traits,

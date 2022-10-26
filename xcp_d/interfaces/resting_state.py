@@ -12,12 +12,7 @@ import tempita
 from brainsprite import viewer_substitute
 from nipype import logging
 from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
-from nipype.interfaces.afni.utils import (
-    ReHoInputSpec,
-    ReHoOutputSpec,
-    UnifizeInputSpec,
-    UnifizeOutputSpec,
-)
+from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
