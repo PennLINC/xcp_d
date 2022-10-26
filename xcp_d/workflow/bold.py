@@ -515,7 +515,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ],
             output_names=["out_file"],
             function=consolidate_confounds,
-        )
+        ),
+        name="consolidate_confounds_node",
     )
     consolidate_confounds_node.inputs.params = params
 
