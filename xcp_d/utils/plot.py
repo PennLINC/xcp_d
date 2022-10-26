@@ -967,26 +967,6 @@ def _carpet(func,
     return (ax0, ax1, ax2), grid_specification
 
 
-def display_cb(grid_spec_ts):
-    """Set settings for colorbar display."""
-    grid_specification = mgs.GridSpecFromSubplotSpec(1,
-                                                     2,
-                                                     subplot_spec=grid_spec_ts,
-                                                     width_ratios=[1, 100],
-                                                     wspace=0.0)
-    data = scalex(np.random.rand(40), -600, 600)
-    ax2 = plt.subplot(grid_specification[1])
-    PCM = ax2.scatter(data, data, cmap="gray", c=data)
-    cbar = plt.colorbar(PCM, orientation="horizontal", shrink=1, fraction=12)
-    for t in cbar.ax.get_xticklabels():
-        t.set_fontsize(20)
-
-    ax2.set_ylim([-700, -690])
-    plt.axis('off')
-
-    return ax2, grid_specification
-
-
 def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
