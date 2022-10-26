@@ -369,7 +369,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     denoise_bold.inputs.high_pass = lower_bpf
     denoise_bold.inputs.low_pass = upper_bpf
     denoise_bold.inputs.TR = TR
-    denoise_bold.inputs.params = params
 
     executivesummary_wf = init_execsummary_wf(
         TR=TR,

@@ -578,16 +578,7 @@ def demean_detrend_data(data):
     return detrended  # Subtract these predicted values from the demeaned data
 
 
-def extract_timeseries(
-    img,
-    atlas_file,
-    labels_file,
-    confounds,
-    low_pass,
-    high_pass,
-    TR,
-    tmask,
-):
+def extract_timeseries(img, atlas_file, labels_file, TR):
     """Use Nilearn NiftiLabelsMasker to extract atlas time series from BOLD data.
 
     Parameters
@@ -595,11 +586,7 @@ def extract_timeseries(
     img : str or niimg
     atlas_file : str
     labels_file : str
-    confounds : pandas.DataFrame
-    low_pass : float
-    high_pass : float
     TR : float
-    tmask : str
 
     Returns
     -------
@@ -647,11 +634,9 @@ def denoise_nifti_with_nilearn(
     mask_file,
     confounds_file,
     censoring_file,
-    namesource,
     low_pass,
     high_pass,
     TR,
-    params,
 ):
     """Denoise fMRI data with Nilearn.
 
@@ -695,11 +680,9 @@ def denoise_nifti_with_nilearn(
         raw_data=raw_data,
         confounds_file=confounds_file,
         censoring_file=censoring_file,
-        namesource=namesource,
         low_pass=low_pass,
         high_pass=high_pass,
         TR=TR,
-        params=params,
     )
 
     clean_img = masker.inverse_transform(clean_data)
@@ -712,11 +695,9 @@ def denoise_cifti_with_nilearn(
     cifti_file,
     confounds_file,
     censoring_file,
-    namesource,
     low_pass,
     high_pass,
     TR,
-    params,
 ):
     """Denoise a CIFTI file with Nilearn.
 
@@ -738,11 +719,9 @@ def denoise_cifti_with_nilearn(
         raw_data=raw_data,
         confounds_file=confounds_file,
         censoring_file=censoring_file,
-        namesource=namesource,
         low_pass=low_pass,
         high_pass=high_pass,
         TR=TR,
-        params=params,
     )
 
     # Transpose from TxS (nilearn order) to SxT (xcpd order)
@@ -757,11 +736,9 @@ def _denoise_with_nilearn(
     raw_data,
     confounds_file,
     censoring_file,
-    namesource,
     low_pass,
     high_pass,
     TR,
-    params,
 ):
     """Denoise an array with Nilearn.
 
