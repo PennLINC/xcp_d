@@ -225,7 +225,6 @@ get_bids_data() {
           -O withfs_fs_colornest001.tar.xz \
           "https://upenn.box.com/shared/static/dnyhbeckak62ar1kfllm012q5wwbej55.xz"
         tar xvfJ withfs_fs_colornest001.tar.xz -C $TEST_DATA_DIR
-        mkdir fmriprepwithfreesurfer
         mv freesurfer fmriprepwithfreesurfer/freesurfer
         rm withfs_fs_colornest001.tar.xz
 
