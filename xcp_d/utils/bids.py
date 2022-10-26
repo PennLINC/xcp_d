@@ -279,11 +279,15 @@ def extract_t1w_seg(subj_data):
     selected_t1w_file, selected_t1w_seg_file = None, None
     for t1w_file in subj_data["t1w"]:
         t1w_filename = os.path.basename(t1w_file)
+        # Select the native T1w-space preprocessed T1w file (i.e., no "space" entity).
         if not fnmatch.fnmatch(t1w_filename, "*_space-*"):
             selected_t1w_file = t1w_file
 
     for t1w_seg_file in subj_data["seg_data"]:
         t1w_seg_filename = os.path.basename(t1w_seg_file)
+        # Select the native T1w-space segmentation file (i.e., no "space" entity).
+        # Also don't want aseg in the segmentation file name.
+        # TODO: Use BIDSLayout for this.
         if not (
             fnmatch.fnmatch(t1w_seg_filename, "*_space-*")
             or fnmatch.fnmatch(t1w_seg_filename, "*aseg*")
