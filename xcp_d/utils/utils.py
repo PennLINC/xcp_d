@@ -557,13 +557,12 @@ def extract_timeseries(
 def denoise_nifti_with_nilearn(
     bold_file,
     mask_file,
-    fmriprep_confounds_file,
-    custom_confounds_file,
+    confounds_file,
+    censoring_file,
+    namesource,
     low_pass,
     high_pass,
     TR,
-    tmask,
-    namesource,
     params,
 ):
     """Denoise fMRI data with Nilearn.
@@ -578,10 +577,148 @@ def denoise_nifti_with_nilearn(
     TR : float
     tmask : str
     """
-    from nilearn import masking
+    import os
+
+    from nilearn import maskers
+
+    from xcp_d.utils.utils import _denoise_with_nilearn
+
+    out_file = os.path.abspath("desc-denoised_bold.nii.gz")
+
+    # Use a NiftiMasker instead of apply_mask to retain TR in the image header.
+    # Note that this doesn't use any of the masker's denoising capabilities.
+    masker = maskers.NiftiMasker(
+        mask_img=mask_file,
+        runs=None,
+        smoothing_fwhm=None,
+        standardize=False,
+        standardize_confounds=False,  # non-default
+        detrend=False,
+        high_variance_confounds=False,
+        low_pass=None,
+        high_pass=None,
+        t_r=None,
+        target_affine=None,
+        target_shape=None,
+    )
+    raw_data = masker.fit_transform(bold_file)
+
+    clean_data = _denoise_with_nilearn(
+        raw_data=raw_data,
+        confounds_file=confounds_file,
+        censoring_file=censoring_file,
+        namesource=namesource,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+        params=params,
+    )
+
+    clean_img = masker.inverse_transform(clean_data)
+
+    clean_img.to_filename(out_file)
+    return out_file
+
+
+def denoise_cifti_with_nilearn(
+    cifti_file,
+    confounds_file,
+    censoring_file,
+    namesource,
+    low_pass,
+    high_pass,
+    TR,
+    params,
+):
+    """Denoise a CIFTI file with Nilearn.
+
+    The CIFTI file must be read into an array before Nilearn can be called.
+    """
+    import os
+
+    from xcp_d.utils.utils import _denoise_with_nilearn
+    from xcp_d.utils.write_save import read_ndata, write_ndata
+
+    out_file = os.path.abspath("desc-denoised_bold.nii.gz")
+
+    raw_data = read_ndata(cifti_file)
+
+    # Transpose from SxT (xcpd order) to TxS (nilearn order)
+    raw_data = raw_data.T
+
+    clean_data = _denoise_with_nilearn(
+        raw_data=raw_data,
+        confounds_file=confounds_file,
+        censoring_file=censoring_file,
+        namesource=namesource,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+        params=params,
+    )
+
+    # Transpose from TxS (nilearn order) to SxT (xcpd order)
+    clean_data = clean_data.T
+
+    write_ndata(clean_data, cifti_file, out_file)
+
+    return out_file
+
+
+def _denoise_with_nilearn(
+    raw_data,
+    confounds_file,
+    censoring_file,
+    namesource,
+    low_pass,
+    high_pass,
+    TR,
+    params,
+):
+    """Denoise an array with Nilearn.
+
+    This step does the following.
+
+    Linearly detrend, but don't mean-center, the BOLD data.
+    Regress out confounds from BOLD data.
+    Use list of outliers to censor BOLD data during regression.
+    Temporally filter BOLD data.
+    """
+    import pandas as pd
+    from nilearn import signal
+
+    confounds_df = pd.read_table(confounds_file)
+    sample_mask = pd.read_table(censoring_file)["framewise_displacement"].values
+
+    clean_data = signal.clean(
+        signals=raw_data,
+        detrend=True,
+        standardize=False,
+        sample_mask=sample_mask,
+        confounds=confounds_df,
+        standardize_confounds=True,
+        filter="butterworth",
+        low_pass=low_pass,
+        high_pass=high_pass,
+        t_r=TR,
+        ensure_finite=True,
+    )
+
+    return clean_data
+
+
+def consolidate_confounds(
+    fmriprep_confounds_file,
+    custom_confounds_file,
+    namesource,
+    params,
+):
+    """Combine confounds files into a single TSV."""
+    import os
 
     from xcp_d.utils.confounds import load_confound_matrix
-    from xcp_d.utils.utils import _denoise_with_nilearn
+
+    out_file = os.path.abspath("confounds.tsv")
 
     if fmriprep_confounds_file and custom_confounds_file:
         confounds_df = load_confound_matrix(
@@ -599,88 +736,6 @@ def denoise_nifti_with_nilearn(
             params=params,
         )
 
-    out_file = "desc-denoised_bold.nii.gz"
+    confounds_df.to_csv(out_file, sep="\t", index=False)
 
-    raw_data = masking.apply_mask(bold_file, mask_file)
-    clean_data = _denoise_with_nilearn(
-        raw_data,
-        confounds_df,
-        low_pass,
-        high_pass,
-        TR,
-        tmask,
-    )
-
-    # This ignores TR
-    clean_img = masking.unmask(clean_data, mask_file)
-
-    clean_img.to_filename(out_file)
-
-
-def denoise_cifti_with_nilearn(
-    cifti_file,
-    confounds,
-    low_pass,
-    high_pass,
-    TR,
-    tmask,
-):
-    from xcp_d.utils.utils import _denoise_with_nilearn
-    from xcp_d.utils.write_save import read_ndata, write_ndata
-
-    out_file = "desc-denoised_bold.nii.gz"
-
-    raw_data = read_ndata(cifti_file)
-
-    # Transpose from SxT (xcpd order) to TxS (nilearn order)
-    raw_data = raw_data.T
-
-    clean_data = _denoise_with_nilearn(
-        raw_data,
-        confounds,
-        low_pass,
-        high_pass,
-        TR,
-        tmask,
-    )
-
-    # Transpose from TxS (nilearn order) to SxT (xcpd order)
-    clean_data = clean_data.T
-    write_ndata(clean_data, cifti_file, out_file)
-
-
-def _denoise_with_nilearn(
-    raw_data,
-    confounds,
-    low_pass,
-    high_pass,
-    TR,
-    tmask,
-):
-    """This step does the following.
-
-    Linearly detrend, but not mean-center, the BOLD data.
-    Regress out confounds from BOLD data.
-    Use list of outliers to censor BOLD data during regression.
-    Temporally filter BOLD data.
-    """
-    import pandas as pd
-    from nilearn import signal
-
-    sample_mask = pd.read_table(tmask)["framewise_displacement"].values
-
-    clean_data = signal.clean(
-        signals=raw_data,
-        detrend=True,
-        standardize=False,
-        sample_mask=sample_mask,
-        confounds=confounds,
-        standardize_confounds=True,
-        filter="butterworth",
-        low_pass=low_pass,
-        high_pass=high_pass,
-        t_r=TR,
-        ensure_finite=True,
-    )
-
-    return clean_data
+    return out_file
