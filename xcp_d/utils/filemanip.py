@@ -709,29 +709,6 @@ def indirectory(path):
         os.chdir(cwd)
 
 
-def find_files(seek_dir, pattern):
-    """Find all files within the directory specified that match the glob-style pattern.
-
-    Parameters
-    ----------
-    seek_dir : str
-        Directory to be searched.
-    pattern : str
-        Unix shell pattern for finding files.
-
-    Returns
-    -------
-    paths : list of str
-        List of relative paths of copied files (may be empty).
-    """
-    paths = []
-    glob_pattern = os.path.join(seek_dir, pattern)
-    for found_file in glob.glob(glob_pattern):
-        paths.append(found_file)
-
-    return paths
-
-
 def find_and_copy_files(seek_dir, pattern, output_dir):
     """Find all files within the directory specified that match the glob-style pattern.
 
