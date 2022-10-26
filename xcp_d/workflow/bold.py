@@ -244,6 +244,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
+    # TODO: This is a workaround for a bug in nibabies.
+    # Once https://github.com/nipreps/nibabies/issues/245 is resolved
+    # and a new release is made, remove this.
     mask_file = check_binary_mask(mask_file)
 
     inputnode = pe.Node(
