@@ -24,10 +24,9 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
-    
     # Read in the necessary inputs
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithoutfreesurfer/fmriprep/")
+                            "fmriprepwithoutfreesurfer/fmriprep/")
     tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     boldfile = os.path.join(
         data_dir,
@@ -103,7 +102,7 @@ def test_cifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer")
+                            "fmriprepwithfreesurfer")
     boldfile = os.path.join(
         data_dir,
         (

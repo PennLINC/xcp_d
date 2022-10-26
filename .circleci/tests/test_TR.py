@@ -18,7 +18,7 @@ def test_RemoveTR_nifti(data_dir):
     """Test RemoveTR() for NIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithoutfreesurfer/fmriprep/")
+                            "fmriprepwithoutfreesurfer/fmriprep/")
     boldfile = data_dir + "sub-01/func/" \
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     confounds_file = data_dir + "sub-01/func/" \
@@ -71,7 +71,7 @@ def test_RemoveTR_cifti(data_dir):
     """Test RemoveTR() for CIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer")
+                            "fmriprepwithfreesurfer")
     boldfile = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
     confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \

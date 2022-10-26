@@ -34,7 +34,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     Nifti image.
     """
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer")      
+                            "fmriprepwithfreesurfer")
     tempdir = tmp_path_factory.mktemp("test_REHO_nifti")
     # Get the names of the files
     bold_file = os.path.join(
@@ -93,7 +93,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     """
     # Get the names of the files
     data_dir = os.path.join(data_dir,
-                            "data/fmriprepwithfreesurfer")  
+                            "fmriprepwithfreesurfer")
     tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
     bold_file = os.path.join(
         data_dir,
