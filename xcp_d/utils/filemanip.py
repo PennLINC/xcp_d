@@ -742,40 +742,6 @@ def find_and_copy_files(seek_dir, pattern, output_dir):
     return rel_paths
 
 
-def find_and_copy_file(seek_dir, pattern, output_dir):
-    """Find a single file within seek_dir, using the pattern.
-
-    If found, copies the file to the output_dir.
-
-    Parameters
-    ----------
-    seek_dir : str
-        Directory to be searched.
-    pattern : str
-        Unix shell pattern for finding files.
-    output_dir : str
-        Directory to which to copy the file.
-
-    Returns
-    -------
-    rel_path : str
-        Relative path to copied file, or None.
-    """
-    found_path = find_one_file(seek_dir, pattern)
-
-    if found_path:
-        # TODO: change name to BIDS name?
-        # Copy the file to output_dir.
-        filename = os.path.basename(found_path)
-        rel_path = os.path.relpath(os.path.join(output_dir, filename),
-                                   os.getcwd())
-        shutil.copyfile(found_path, rel_path)
-        return rel_path
-
-    else:
-        return None
-
-
 def find_one_file(seek_dir, pattern):
     """Find a single file within seek_dir, using the pattern.
 
