@@ -24,6 +24,7 @@ from nipype.interfaces.base import (
     SimpleInterface,
     TraitedSpec,
     traits,
+    traits_extension,
 )
 from pkg_resources import resource_filename as pkgrf
 
@@ -248,13 +249,20 @@ class ReHoNamePatch(SimpleInterface):
     output_spec = ReHoOutputSpec
 
     def _run_interface(self, runtime):
-        outfile = runtime.cwd + "/reho.nii.gz"
-        shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
-        shutil.copyfile(self.inputs.mask_file, runtime.cwd + "/mask.nii.gz")
-        os.system(
-            "3dReHo -inset inset.nii.gz -mask mask.nii.gz -nneigh 27 -prefix reho.nii.gz"
-        )
-        self._results['out_file'] = outfile
+        out_file = os.path.join(runtime.cwd, "reho.nii.gz")
+
+        in_file = os.path.join(runtime.cwd, "inset.nii.gz")
+        shutil.copyfile(self.inputs.in_file, in_file)
+
+        if traits_extension.isdefined(self.inputs.mask_file):
+            mask_file = os.path.join(runtime.cwd, "mask.nii.gz")
+            shutil.copyfile(self.inputs.mask_file, mask_file)
+            mask_cmd = f"-mask {mask_file}"
+        else:
+            mask_cmd = ""
+
+        os.system(f"3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}")
+        self._results["out_file"] = out_file
 
 
 class DespikePatch(SimpleInterface):
