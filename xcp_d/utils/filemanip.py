@@ -160,13 +160,6 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
     return op.join(pth, prefix + fname + suffix + ext)
 
 
-def hash_rename(filename, hashvalue):
-    """Rename a file given original filename and hash, and set path to output_directory."""
-    path, name, ext = split_filename(filename)
-    newfilename = "".join((name, "_0x", hashvalue, ext))
-    return op.join(path, newfilename)
-
-
 def check_forhash(filename):
     """Check if file has a hash in its filename."""
     if isinstance(filename, list):
