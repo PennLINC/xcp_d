@@ -623,44 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def savepkl(filename, record, versioning=False):
-    """Save a record to a pickle file.
-
-    Parameters
-    ----------
-    filename : str
-        The file in which to save the record.
-    record
-        The information to save to the file.
-    versioning : bool, optional
-        Whether to save the nipype version in the file as well or not.
-        Default is False.
-    """
-    from io import BytesIO
-
-    with BytesIO() as f:
-        if versioning:
-            metadata = json.dumps({"version": version})
-            f.write(metadata.encode("utf-8"))
-            f.write("\n".encode("utf-8"))
-        pickle.dump(record, f)
-        content = f.getvalue()
-
-    pkl_open = gzip.open if filename.endswith(".pklz") else open
-    tmpfile = filename + ".tmp"
-    with pkl_open(tmpfile, "wb") as pkl_file:
-        pkl_file.write(content)
-    for _ in range(5):
-        try:
-            os.rename(tmpfile, filename)
-            break
-        except FileNotFoundError as e:
-            fmlogger.debug(str(e))
-            sleep(2)
-        else:
-            raise FileNotFoundError
-
-
 rst_levels = ["=", "-", "~", "+"]
 
 
