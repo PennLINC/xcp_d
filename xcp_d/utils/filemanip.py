@@ -547,24 +547,6 @@ filename_to_list = ensure_list
 list_to_filename = simplify_list
 
 
-def load_json(filename):
-    """Load data from a json file.
-
-    Parameters
-    ----------
-    filename : str
-        Filename to load data from.
-
-    Returns
-    -------
-    data : dict
-        The loaded data.
-    """
-    with open(filename, "r") as fp:
-        data = json.load(fp)
-    return data
-
-
 def loadcrash(infile):
     """Load pickled Nipype crashfile.
 
