@@ -40,23 +40,6 @@ def _resolve_with_filenotfound(path, **kwargs):
         raise FileNotFoundError(str(path))
 
 
-def path_resolve(path, strict=False):
-    """Resolve a path."""
-    try:
-        return _resolve_with_filenotfound(path, strict=strict)
-    except TypeError:  # PY35
-        pass
-
-    path = path.absolute()
-    if strict or path.exists():
-        return _resolve_with_filenotfound(path)
-
-    # This is a hacky shortcut, using path.absolute() unmodified
-    # In cases where the existing part of the path contains a
-    # symlink, different results will be produced
-    return path
-
-
 def split_filename(fname):
     """Split a filename into parts: path, base filename and extension.
 
