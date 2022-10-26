@@ -24,6 +24,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
+    
     # Read in the necessary inputs
     data_dir = os.path.join(data_dir,
                             "data/fmriprepwithoutfreesurfer/fmriprep/")
@@ -31,7 +32,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     boldfile = os.path.join(
         data_dir,
         (
-            "/sub-01/func/"
+            "sub-01/func/"
             "sub-01_task-mixedgamblestask_run-1"
             "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
         )
@@ -39,7 +40,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     maskfile = os.path.join(
         data_dir,
         (
-            "/sub-01/func/"
+            "sub-01/func/"
             "sub-01_task-mixedgamblestask_run-1_"
             "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
         )
