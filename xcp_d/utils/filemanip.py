@@ -547,21 +547,6 @@ filename_to_list = ensure_list
 list_to_filename = simplify_list
 
 
-def save_json(filename, data):
-    """Save data to a json file.
-
-    Parameters
-    ----------
-    filename : str
-        Filename to save data in.
-    data : dict
-        Dictionary to save in json file.
-    """
-    mode = "w"
-    with open(filename, mode) as fp:
-        json.dump(data, fp, sort_keys=True, indent=4)
-
-
 def load_json(filename):
     """Load data from a json file.
 
