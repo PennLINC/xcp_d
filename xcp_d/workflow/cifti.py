@@ -25,7 +25,7 @@ from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.restingstate import init_compute_alff_wf, init_surface_reho_wf
+from xcp_d.workflow.restingstate import init_cifti_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -248,8 +248,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 'smoothed_bold',
                 'alff_out',
                 'smoothed_alff',
-                'reho_lh',
-                'reho_rh',
+                'reho_out',
                 'atlas_names',
                 'timeseries',
                 'correlations',
@@ -278,9 +277,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="compute_alff_wf",
         omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_surface_reho_wf(
+    reho_compute_wf = init_cifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
-        name="surface_reho_wf",
+        name="cifti_reho_wf",
         omp_nthreads=omp_nthreads)
 
     write_derivative_wf = init_writederivatives_wf(
@@ -329,8 +328,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads)
 
     regression_wf = pe.Node(
-        Regress(TR=TR,
-                original_file=bold_file),
+        Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
@@ -464,8 +462,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
         (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
-        (reho_compute_wf, outputnode, [('outputnode.lh_reho', 'reho_lh'),
-                                       ('outputnode.rh_reho', 'reho_rh')]),
+        (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
         (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
                                   ('outputnode.correlations', 'correlations'),
                                   ('outputnode.timeseries', 'timeseries')]),
@@ -482,9 +479,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (alff_compute_wf, write_derivative_wf,
          [('outputnode.alff_out', 'inputnode.alff_out'),
           ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
-        (reho_compute_wf, write_derivative_wf,
-         [('outputnode.rh_reho', 'inputnode.reho_rh'),
-          ('outputnode.lh_reho', 'inputnode.reho_lh')]),
+        (reho_compute_wf, write_derivative_wf, [
+            ('outputnode.reho_out', 'inputnode.reho_out')
+        ]),
         (fcon_ts_wf, write_derivative_wf,
             [('outputnode.atlas_names', 'inputnode.atlas_names'),
              ('outputnode.correlations', 'inputnode.correlations'),

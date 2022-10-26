@@ -19,9 +19,9 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import (
+    _t12native,
     consolidate_confounds,
     denoise_nifti_with_nilearn,
     get_maskfiles,
@@ -33,7 +33,7 @@ from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
+from xcp_d.workflow.restingstate import init_compute_alff_wf, init_nifti_reho_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -303,9 +303,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                            name="compute_alff_wf",
                                            omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],
-                                      name="afni_reho_wf",
-                                      omp_nthreads=omp_nthreads)
+    reho_compute_wf = init_nifti_reho_wf(
+        mem_gb=mem_gbx['timeseries'],
+        name="nifti_reho_wf",
+        omp_nthreads=omp_nthreads,
+    )
 
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,

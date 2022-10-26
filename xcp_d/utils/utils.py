@@ -1,15 +1,103 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
+import glob
 import os
+import tempfile
+from pathlib import Path
 
 import nibabel as nb
 import numpy as np
+from nipype.interfaces.ants import ApplyTransforms
 from pkg_resources import resource_filename as pkgrf
 from scipy.signal import butter, detrend, filtfilt
 from sklearn.linear_model import LinearRegression
+from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
+
+
+def _t12native(fname):
+    """Select T1w-to-scanner transform associated with a given BOLD file.
+
+    TODO: Update names and refactor
+
+    Parameters
+    ----------
+    fname : str
+        The BOLD file from which to identify the transform.
+
+    Returns
+    -------
+    t12ref : str
+        Path to the T1w-to-scanner transform.
+    """
+    directx = os.path.dirname(fname)
+    filename = os.path.basename(fname)
+    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
+    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
+    return t12ref
+
+
+def get_segfile(bold_file):
+    """Select the segmentation file associated with a given BOLD file.
+
+    This function identifies the appropriate MNI-space discrete segmentation file for carpet
+    plots, then applies the necessary transforms to warp the file into BOLD reference space.
+    The warped segmentation file will be written to a temporary file and its path returned.
+
+    Parameters
+    ----------
+    bold_file : str
+        Path to the BOLD file.
+
+    Returns
+    -------
+    segfile : str
+        The associated segmentation file.
+    """
+    # get transform files
+    dd = Path(os.path.dirname(bold_file))
+    anatdir = str(dd.parent) + '/anat'
+
+    if Path(anatdir).is_dir():
+        mni_to_t1 = glob.glob(
+            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+    else:
+        anatdir = str(dd.parent.parent) + '/anat'
+        mni_to_t1 = glob.glob(
+            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+
+    transformfilex = get_transformfile(
+        bold_file=bold_file,
+        mni_to_t1w=mni_to_t1,
+        t1w_to_native=_t12native(bold_file),
+    )
+
+    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
+
+    segfile = tempfile.mkdtemp() + 'segfile.nii.gz'
+    carpet = str(
+        get_template(
+            'MNI152NLin2009cAsym',
+            resolution=1,
+            desc='carpet',
+            suffix='dseg',
+            extension=['.nii', '.nii.gz'],
+        ),
+    )
+
+    # seg_data file to bold space
+    at = ApplyTransforms()
+    at.inputs.dimension = 3
+    at.inputs.input_image = carpet
+    at.inputs.reference_image = boldref
+    at.inputs.output_image = segfile
+    at.inputs.interpolation = 'MultiLabel'
+    at.inputs.transforms = transformfilex
+    os.system(at.cmdline)
+
+    return segfile
 
 
 def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
@@ -248,7 +336,7 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
         print('space not supported')
 
     if not transform_list:
-        raise Exception("Transforms not found.")
+        raise Exception(f"Transforms not found for {file_base}")
 
     return transform_list
 
