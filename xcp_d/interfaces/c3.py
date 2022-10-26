@@ -21,50 +21,6 @@ from xcp_d.utils.filemanip import split_filename
 iflogger = logging.getLogger("interface")
 
 
-class _C3dAffineToolInputSpec(CommandLineInputSpec):
-    """Input specification for C3dAffineTool."""
-
-    reference_file = File(exists=True, argstr="-ref %s", position=1)
-    source_file = File(exists=True, argstr="-src %s", position=2)
-    transform_file = File(exists=True, argstr="%s", position=3)
-    itk_transform = traits.Either(
-        traits.Bool,
-        File(),
-        hash_files=False,
-        desc="Export ITK transform.",
-        argstr="-oitk %s",
-        position=5,
-    )
-    fsl2ras = traits.Bool(argstr="-fsl2ras", position=4)
-
-
-class _C3dAffineToolOutputSpec(TraitedSpec):
-    """Output specification for C3dAffineTool."""
-
-    itk_transform = File(exists=True)
-
-
-class C3dAffineTool(SEMLikeCommandLine):
-    """Convert FSL-style affine registration into ANTS-compatible itk format.
-
-    Examples
-    --------
-    >>> from nipype.interfaces.c3 import C3dAffineTool
-    >>> c3 = C3dAffineTool()
-    >>> c3.inputs.source_file = 'cmatrix.mat'
-    >>> c3.inputs.itk_transform = 'affine.txt'
-    >>> c3.inputs.fsl2ras = True
-    >>> c3.cmdline
-    'c3d_affine_tool -src cmatrix.mat -fsl2ras -oitk affine.txt'
-    """
-
-    input_spec = _C3dAffineToolInputSpec
-    output_spec = _C3dAffineToolOutputSpec
-
-    _cmd = "c3d_affine_tool"
-    _outputs_filenames = {"itk_transform": "affine.txt"}
-
-
 class _C3dInputSpec(CommandLineInputSpec):
     """Input specification for C3d."""
 
