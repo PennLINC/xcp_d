@@ -8,16 +8,10 @@
 import os
 import shutil
 
-import tempita
-from brainsprite import viewer_substitute
+from nilearn.plotting import view_img
 from nipype import logging
 from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
-from nipype.interfaces.afni.utils import (
-    ReHoInputSpec,
-    ReHoOutputSpec,
-    UnifizeInputSpec,
-    UnifizeOutputSpec,
-)
+from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -26,7 +20,6 @@ from nipype.interfaces.base import (
     traits,
     traits_extension,
 )
-from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
@@ -197,23 +190,16 @@ class BrainPlot(SimpleInterface):
         z_score_nifti = zscore_nifti(img=self.inputs.in_file,
                                      mask=self.inputs.mask_file,
                                      outputname=z_score_nifti)
-        #  get the right template
-        temptlatehtml = pkgrf('xcp_d',
-                              'data/transform/brainsprite_template.html')
-        # adjust settings for viewing in HTML
-        bsprite = viewer_substitute(threshold=0,
-                                    opacity=0.5,
-                                    title="zcore",
-                                    cut_coords=[0, 0, 0])
 
-        bsprite.fit(z_score_nifti, bg_img=None)
+        html_view = view_img(
+            stat_map_img=z_score_nifti,
+            threshold=0,
+            opacity=0.5,
+            cut_coords=[0, 0, 0],
+            title="zscore",
+            bg_img=None,
+        )
 
-        template = tempita.Template.from_filename(temptlatehtml,
-                                                  encoding="utf-8")
-        viewer = bsprite.transform(template,
-                                   javascript='js',
-                                   html='html',
-                                   library='bsprite')
         # write the html out
         self._results['nifti_html'] = fname_presuffix(
             'zscore_nifti_',
@@ -222,7 +208,7 @@ class BrainPlot(SimpleInterface):
             use_ext=False,
         )
 
-        viewer.save_as_html(self._results['nifti_html'])
+        html_view.save_as_html(self._results['nifti_html'])
         return runtime
 
 
@@ -289,28 +275,4 @@ class DespikePatch(SimpleInterface):
         outfile = runtime.cwd + "/3despike.nii.gz"
         shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
         os.system("3dDespike -NEW -prefix  3despike.nii.gz inset.nii.gz")
-        self._results['out_file'] = outfile
-
-
-class ContrastEnhancement(SimpleInterface):
-    """Perform contrast enhancement with AFNI.
-
-    3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
-    """
-
-    _cmd = "3dUnifize"
-    input_spec = UnifizeInputSpec
-    output_spec = UnifizeOutputSpec
-
-    def _run_interface(self, runtime):
-        outfile = runtime.cwd + "/3dunfixed.nii.gz"
-
-        if self.inputs.in_file.endswith(".nii.gz"):
-            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
-        else:
-            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.mgz")
-            os.system("mri_convert inset.mgz inset.nii.gz")
-
-        os.system(
-            "3dUnifize -T2  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")
         self._results['out_file'] = outfile

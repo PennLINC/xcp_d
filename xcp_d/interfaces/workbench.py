@@ -15,60 +15,6 @@ from xcp_d.utils.filemanip import fname_presuffix
 iflogger = logging.getLogger("nipype.interface")
 
 
-class _ConvertWarpfieldInputSpec(CommandLineInputSpec):
-    """Input specification for ConvertWarpfield."""
-
-    fromwhat = traits.Str(
-        mandatory=True,
-        argstr="-from-%s ",
-        position=0,
-        desc="world, itk, or fnirt",
-    )
-
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        argstr="%s ",
-        position=1,
-        desc="The input file",
-    )
-
-    towhat = traits.Str(
-        mandatory=True,
-        argstr="-to-%s ",
-        position=2,
-        desc="world, itk, or fnirt",
-    )
-
-    out_file = traits.File(
-        argstr="%s",
-        name_source="in_file",
-        name_template="%s_converted.nii.gz",
-        keep_extension=False,
-        position=3,
-    )
-
-    source_volume = File(
-        argstr="%s ",
-        position=4,
-        desc="fnirt source volume",
-    )
-
-
-class _ConvertWarpfieldOutputSpec(TraitedSpec):
-    """Output specification for ConvertWarpfield."""
-
-    out_file = File(exists=True, desc="output file")
-
-
-class ConvertWarpfield(WBCommand):
-    """Interface for wb_command's -convert-warpfield command."""
-
-    input_spec = _ConvertWarpfieldInputSpec
-    output_spec = _ConvertWarpfieldOutputSpec
-    _cmd = "wb_command -convert-warpfield "
-
-
 class _ConvertAffineInputSpec(CommandLineInputSpec):
     """Input specification for ConvertAffine."""
 
