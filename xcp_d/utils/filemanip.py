@@ -623,27 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def write_rst_list(items, prefix=""):
-    """Convert a list to a restructuredText string.
-
-    Parameters
-    ----------
-    items : list
-        List to reformat.
-    prefix : str, optional
-        Default is "".
-
-    Returns
-    -------
-    str
-        A restructuredText-format string with the information from ``items``.
-    """
-    out = []
-    for item in ensure_list(items):
-        out.append(f"{prefix} {str(item)}")
-    return "\n".join(out) + "\n\n"
-
-
 def write_rst_dict(info, prefix=""):
     """Convert a dictionary to a restructuredText string.
 
