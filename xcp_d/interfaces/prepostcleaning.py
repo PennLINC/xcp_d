@@ -162,17 +162,31 @@ class RemoveTR(SimpleInterface):
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
-    fd_thresh = traits.Float(exists=True, mandatory=False, default_value=0.2,
-                             desc="Framewise displacement"
-                             "threshold. All values above this will be dropped.")
+    fd_thresh = traits.Float(
+        exists=True,
+        mandatory=False,
+        default_value=0.2,
+        desc="Framewise displacement threshold. All values above this will be dropped.",
+    )
+    initial_volumes_to_drop = traits.Either(
+        traits.Int,
+        "auto",
+        exists=False,
+        mandatory=True,
+        desc="Number of volumes to remove from the beginning of the BOLD run.",
+    )
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
-        desc="fMRIPrep confounds tsv after removing dummy time, if any",
+        desc="fMRIPrep confounds tsv.",
     )
     head_radius = traits.Float(
-        exists=True, mandatory=False, default_value=50, desc="Head radius in mm "
+        exists=True,
+        mandatory=False,
+        default_value=50,
+        desc="Head radius in mm.",
     )
+    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     motion_filter_type = traits.Either(
         None,
         traits.Str,
@@ -180,7 +194,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
     )
     motion_filter_order = traits.Int(exists=False, mandatory=True)
-    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     band_stop_min = traits.Either(
         None,
         traits.Float,
@@ -228,11 +241,35 @@ class CensorScrub(SimpleInterface):
     def _run_interface(self, runtime):
 
         # Read in fmriprep confounds tsv to calculate FD
-        fmriprep_confounds_tsv_uncensored = pd.read_table(
-            self.inputs.fmriprep_confounds_file,
-        )
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        initial_volumes_to_drop = self.inputs.initial_volumes_to_drop
+
+        if initial_volumes_to_drop == "auto":
+            nss_cols = [
+                c for c in fmriprep_confounds_df.columns
+                if c.startswith("non_steady_state_outlier")
+            ]
+            initial_volumes_df = fmriprep_confounds_df[nss_cols]
+        else:
+            initial_volumes_columns = [f"dummy_volume{i}" for i in range(initial_volumes_to_drop)]
+            initial_volumes_array = np.vstack(
+                (
+                    np.eye(initial_volumes_to_drop),
+                    np.zeros(
+                        (
+                            fmriprep_confounds_df.shape[0] - initial_volumes_to_drop,
+                            initial_volumes_to_drop,
+                        ),
+                    ),
+                ),
+            )
+            initial_volumes_df = pd.DataFrame(
+                data=initial_volumes_array,
+                columns=initial_volumes_columns,
+            )
+
         motion_df = load_motion(
-            fmriprep_confounds_tsv_uncensored.copy(),
+            fmriprep_confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
@@ -240,18 +277,40 @@ class CensorScrub(SimpleInterface):
             band_stop_max=self.inputs.band_stop_max,
         )
 
-        fd_timeseries_uncensored = compute_fd(
+        fd_timeseries = compute_fd(
             confound=motion_df,
             head_radius=self.inputs.head_radius,
         )
-        motion_df["framewise_displacement"] = fd_timeseries_uncensored
+        motion_df["framewise_displacement"] = fd_timeseries
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
         tmask = generate_mask(
-            fd_res=fd_timeseries_uncensored,
+            fd_res=fd_timeseries,
             fd_thresh=self.inputs.fd_thresh,
         )
+        tmask_idx = np.where(tmask)[0]
+        one_hot_outliers_columns = [
+            f"framewise_displacement_outlier{i}" for i in range(tmask_idx.size)
+        ]
+        one_hot_outliers = np.zeros((tmask_idx.size, tmask_idx.max() + 1))
+        one_hot_outliers[np.arange(tmask_idx.size), tmask_idx] = 1
+        one_hot_outliers = np.vstack(
+            (
+                one_hot_outliers,
+                np.zeros(
+                    (
+                        fmriprep_confounds_df.shape[0] - tmask_idx.max(),
+                        one_hot_outliers.shape[1],
+                    ),
+                )
+            )
+        )
+        one_hot_outliers_df = pd.DataFrame(
+            data=one_hot_outliers,
+            columns=one_hot_outliers_columns,
+        )
+        outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
 
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
@@ -266,7 +325,6 @@ class CensorScrub(SimpleInterface):
             use_ext=False,
         )
 
-        outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
         outliers_df.to_csv(
             self._results["tmask"],
             index=False,

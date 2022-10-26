@@ -15,7 +15,7 @@ from num2words import num2words
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.prepostcleaning import CensorScrub, RemoveTR
+from xcp_d.interfaces.prepostcleaning import CensorScrub
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
@@ -523,40 +523,15 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, censor_report, [("bold_file", "bold_file")]),
     ])
 
-    # Remove TR first:
-    if dummytime > 0:
-        rm_dummytime = pe.Node(
-            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
-                     custom_confounds=custom_confounds),
-            name="remove_dummy_time",
-            mem_gb=0.1 * mem_gbx['timeseries'])
-
-        workflow.connect([
-            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
-            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
-
-        workflow.connect([
-            (rm_dummytime, censor_scrub, [
-                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
-            ]),
-            (rm_dummytime, bold_holder_node, [
-                ("bold_file", "bold_file"),
-                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_tsv"),
-                ("custom_confounds_dropped", "custom_confounds"),
-            ]),
-        ])
-
-    else:  # No need to remove TR
-        # Censor Scrub:
-        workflow.connect([
-            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, bold_holder_node, [
-                ("bold_file", "bold_file"),
-                ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
-                ("custom_confounds", "custom_confounds"),
-            ]),
-        ])
+    # Censor Scrub:
+    workflow.connect([
+        (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+        (inputnode, bold_holder_node, [
+            ("bold_file", "bold_file"),
+            ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
+            ("custom_confounds", "custom_confounds"),
+        ]),
+    ])
 
     # The BOLD file is just used for filenames
     workflow.connect([(inputnode, censor_scrub, [('bold_file', 'in_file')])])
