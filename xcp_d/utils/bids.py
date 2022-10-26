@@ -5,6 +5,7 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import os
 import warnings
 
 from bids import BIDSLayout
@@ -379,3 +380,47 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         raise ValueError(f"Unsupported input_type '{input_type}'")
 
     return info_dict
+
+
+def _add_subject_prefix(subid):
+    """Extract or compile subject entity from subject ID.
+
+    Parameters
+    ----------
+    subid : str
+        A subject ID (e.g., 'sub-XX' or just 'XX').
+
+    Returns
+    -------
+    str
+        Subject entity (e.g., 'sub-XX').
+    """
+    if subid.startswith('sub-'):
+        return subid
+    return '-'.join(('sub', subid))
+
+
+def _getsesid(filename):
+    """Get session id from filename if available.
+
+    Parameters
+    ----------
+    filename : str
+        The BIDS filename from which to extract the session ID.
+
+    Returns
+    -------
+    ses_id : str or None
+        The session ID in the filename.
+        If the file does not have a session entity, ``None`` will be returned.
+    """
+    ses_id = None
+    base_filename = os.path.basename(filename)
+
+    file_id = base_filename.split('_')
+    for k in file_id:
+        if 'ses' in k:
+            ses_id = k.split('-')[1]
+            break
+
+    return ses_id
