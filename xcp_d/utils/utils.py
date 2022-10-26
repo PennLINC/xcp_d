@@ -557,11 +557,14 @@ def extract_timeseries(
 def denoise_nifti_with_nilearn(
     bold_file,
     mask_file,
-    confounds,
+    fmriprep_confounds_file,
+    custom_confounds_file,
     low_pass,
     high_pass,
     TR,
     tmask,
+    namesource,
+    params,
 ):
     """Denoise fMRI data with Nilearn.
 
@@ -577,14 +580,31 @@ def denoise_nifti_with_nilearn(
     """
     from nilearn import masking
 
+    from xcp_d.utils.confounds import load_confound_matrix
     from xcp_d.utils.utils import _denoise_with_nilearn
+
+    if fmriprep_confounds_file and custom_confounds_file:
+        confounds_df = load_confound_matrix(
+            original_file=namesource,
+            datafile=namesource,
+            custom_confounds=custom_confounds_file,
+            confound_tsv=fmriprep_confounds_file,
+            params=params,
+        )
+    else:  # No custom confounds
+        confounds_df = load_confound_matrix(
+            original_file=namesource,
+            datafile=namesource,
+            confound_tsv=fmriprep_confounds_file,
+            params=params,
+        )
 
     out_file = "desc-denoised_bold.nii.gz"
 
     raw_data = masking.apply_mask(bold_file, mask_file)
     clean_data = _denoise_with_nilearn(
         raw_data,
-        confounds,
+        confounds_df,
         low_pass,
         high_pass,
         TR,
