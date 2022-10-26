@@ -51,39 +51,6 @@ def plotimage(img, out_file):
     return out_file
 
 
-def plot_svg(fdata, fd, dvars, filename, TR=1):
-    """Plot carpetplot with FD and DVARS, and save to file.
-
-    Parameters
-    ----------
-    fdata : str
-        The functional data file to plot.
-    fd : numpy.ndarray
-        Framewise displacement
-    dvars : numpy.ndarray
-        DVARS
-    filename : str
-        The SVG file to save the figure to.
-    TR : float, optional
-        Repetion time in seconds. Default is 1.
-    """
-    sns.set_style('whitegrid')
-    fig = plt.figure(constrained_layout=False, figsize=(30, 15))
-    grid = mgs.GridSpec(3,
-                        1,
-                        wspace=0.0,
-                        hspace=0.05,
-                        height_ratios=[1] * (3 - 1) + [5])
-    confoundplot(fd, grid[0], TR=TR, color='b', name='FD')
-    confoundplot(dvars, grid[1], TR=TR, color='r', name='DVARS')
-    plot_carpet(
-        func=fdata,
-        subplot=grid[-1],
-        TR=TR,
-    )
-    fig.savefig(filename, bbox_inches="tight", pad_inches=None)
-
-
 def confoundplot(time_series,
                  grid_spec_ts,
                  gs_dist=None,
