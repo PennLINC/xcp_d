@@ -967,27 +967,6 @@ def _carpet(func,
     return (ax0, ax1, ax2), grid_specification
 
 
-def plot_text(imgdata, grid_spec_ts):
-    """Get the correct text for each plot."""
-    grid_specification = mgs.GridSpecFromSubplotSpec(1,
-                                                     2,
-                                                     subplot_spec=grid_spec_ts,
-                                                     width_ratios=[1, 100],
-                                                     wspace=0.0)
-    if imgdata.endswith('nii.gz'):  # Nifti
-        label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
-    else:  # Cifti
-        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
-
-    text_kwargs = dict(ha='center', va='center', fontsize=50)
-
-    ax2 = plt.subplot(grid_specification[1])
-    ax2.text(0.5, 0.1, label, **text_kwargs)
-    plt.axis('off')
-
-    return ax2, grid_specification
-
-
 def display_cb(grid_spec_ts):
     """Set settings for colorbar display."""
     grid_specification = mgs.GridSpecFromSubplotSpec(1,
