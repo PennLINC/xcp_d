@@ -623,50 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def emptydirs(path, noexist_ok=False):
-    """Empty an existing directory, without deleting it.
-
-    Do not raise error if the path does not exist and noexist_ok is True.
-
-    Parameters
-    ----------
-    path : str
-        directory that should be empty
-    noexist_ok : bool, optional
-        Default is False.
-    """
-    fmlogger.debug("Removing contents of %s", path)
-
-    if noexist_ok and not op.exists(path):
-        return True
-
-    if op.isfile(path):
-        raise OSError(f'path "{path}" should be a directory')
-
-    try:
-        shutil.rmtree(path)
-    except OSError as ex:
-        elcont = [
-            Path(root) / file
-            for root, _, files in os.walk(path)
-            for file in files
-            if not file.startswith(".nfs")
-        ]
-        if ex.errno in [errno.ENOTEMPTY, errno.EBUSY] and not elcont:
-            fmlogger.warning(
-                "An exception was raised trying to remove old %s, but the path"
-                " seems empty. Is it an NFS mount?. Passing the exception.",
-                path,
-            )
-        elif ex.errno == errno.ENOTEMPTY and elcont:
-            fmlogger.debug("Folder %s contents (%d items).", path, len(elcont))
-            raise ex
-        else:
-            raise ex
-
-    os.makedirs(path, exist_ok=True)
-
-
 def silentrm(filename):
     """Delete a file without raising an exception if it fails.
 
