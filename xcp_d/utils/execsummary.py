@@ -6,11 +6,8 @@ from uuid import uuid4
 import nibabel as nb
 import nilearn.image as nlimage
 import numpy as np
-import tempita
-from brainsprite import viewer_substitute
-from nilearn.plotting import plot_anat
+from nilearn.plotting import plot_anat, view_img
 from niworkflows.viz.utils import compose_view, extract_svg, robust_set_limits
-from pkg_resources import resource_filename as pkgrf
 from skimage import measure
 from svgutils.transform import fromstring
 
@@ -129,23 +126,18 @@ def plot_registrationx(
 
 def generate_brain_sprite(template_image, stat_map, out_file):
     """Generate a brainsprite HTML file."""
-    file_template = pkgrf("xcp_d", 'data/transform/brainsprite_template.html')
-    template = tempita.Template.from_filename(file_template, encoding="utf-8")
+    html_view = view_img(
+        stat_map_img=stat_map,
+        cmap='hsv',
+        symmetric_cmap=False,
+        black_bg=True,
+        vmin=-1,
+        vmax=3,
+        colorbar=False,
+        bg_img=template_image,
+    )
 
-    bsprite = viewer_substitute(cmap='hsv',
-                                symmetric_cmap=False,
-                                black_bg=True,
-                                vmin=-1,
-                                vmax=3,
-                                value=False,
-                                colorbar=False)
-    bsprite.fit(stat_map_img=stat_map, bg_img=template_image)
-
-    viewer = bsprite.transform(template=template,
-                               javascript='js',
-                               html='html',
-                               library='bsprite')
-    viewer.save_as_html(out_file)
+    html_view.save_as_html(out_file)
 
     return out_file
 
