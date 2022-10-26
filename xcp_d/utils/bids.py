@@ -215,14 +215,8 @@ def collect_data(
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
     # 2 typically means 2x2x2, etc.), but probably doesn't work well for density.
-    resolutions = layout.get_resolutions(
-        space=space,
-        **queries["bold"],
-    )
-    densities = layout.get_densities(
-        space=space,
-        **queries["bold"],
-    )
+    resolutions = layout.get_res(**queries["bold"])
+    densities = layout.get_den(**queries["bold"])
     if len(resolutions) > 1:
         queries["bold"]["resolution"] = resolutions[0]
 
