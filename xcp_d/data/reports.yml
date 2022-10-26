@@ -39,6 +39,12 @@ sections:
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
     caption: This plot shows heatmaps from ROI-to-ROI correlations from four atlases.
     subtitle: Correlation Heatmaps from Four Atlases
+  - bids: {datatype: figures, desc: afniplot, suffix: bold}
+    caption: ALFF!
+    subtitle: ALFF!
+  - bids: {datatype: figures, desc: rehoplot, suffix: bold}
+    caption: Regional Homogeneity
+    subtitle: Regional Homogeneity
 - name: About
   reportlets:
   - bids: {datatype: figures, desc: about, suffix: bold}
