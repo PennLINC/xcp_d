@@ -68,11 +68,7 @@ run_xcpd_cmd () {
 
     # Otherwise we're going to use docker from the outside
     bids_parent_dir="$(dirname "$bids_dir")"  # get parent directory
-    if [[ ${DS} = nibabies ]]; then
-      bids_folder_name="nibabies"  # get folder name
-    else
-      bids_folder_name="fmriprep"
-    fi
+    bids_folder_name="$(basename "$bids_dir")"
     bids_mount="-v ${bids_parent_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
