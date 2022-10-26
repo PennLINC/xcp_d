@@ -11,12 +11,7 @@ import shutil
 from nilearn.plotting import view_img
 from nipype import logging
 from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
-from nipype.interfaces.afni.utils import (
-    ReHoInputSpec,
-    ReHoOutputSpec,
-    UnifizeInputSpec,
-    UnifizeOutputSpec,
-)
+from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -280,28 +275,4 @@ class DespikePatch(SimpleInterface):
         outfile = runtime.cwd + "/3despike.nii.gz"
         shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
         os.system("3dDespike -NEW -prefix  3despike.nii.gz inset.nii.gz")
-        self._results['out_file'] = outfile
-
-
-class ContrastEnhancement(SimpleInterface):
-    """Perform contrast enhancement with AFNI.
-
-    3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
-    """
-
-    _cmd = "3dUnifize"
-    input_spec = UnifizeInputSpec
-    output_spec = UnifizeOutputSpec
-
-    def _run_interface(self, runtime):
-        outfile = runtime.cwd + "/3dunfixed.nii.gz"
-
-        if self.inputs.in_file.endswith(".nii.gz"):
-            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
-        else:
-            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.mgz")
-            os.system("mri_convert inset.mgz inset.nii.gz")
-
-        os.system(
-            "3dUnifize -T2  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")
         self._results['out_file'] = outfile
