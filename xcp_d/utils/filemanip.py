@@ -623,30 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def silentrm(filename):
-    """Delete a file without raising an exception if it fails.
-
-    Equivalent to ``rm -f``, returns ``False`` if the file did not exist.
-
-    Parameters
-    ----------
-    filename : str
-        file to be deleted
-
-    Returns
-    -------
-    bool
-        True if the file was successfully deleted, else False.
-    """
-    try:
-        os.remove(filename)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        return False
-    return True
-
-
 def which(cmd, env=None, pathext=None):
     """Return the path to an executable which would be run if the given cmd was called.
 
