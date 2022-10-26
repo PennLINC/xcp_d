@@ -623,27 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def write_rst_dict(info, prefix=""):
-    """Convert a dictionary to a restructuredText string.
-
-    Parameters
-    ----------
-    info : dict
-        Dictionary to reformat.
-    prefix : str, optional
-        Default is "".
-
-    Returns
-    -------
-    str
-        A restructuredText-format string with the information from ``info``.
-    """
-    out = []
-    for key, value in sorted(info.items()):
-        out.append(f"{prefix}* {key} : {str(value)}")
-    return "\n".join(out) + "\n\n"
-
-
 def dist_is_editable(dist):
     """Check if distribution is an editable install.
 
