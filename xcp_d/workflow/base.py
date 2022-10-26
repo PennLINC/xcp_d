@@ -45,7 +45,6 @@ def init_xcpd_wf(
     motion_filter_order,
     band_stop_min,
     band_stop_max,
-    bandpass_filter,
     fmri_dir,
     omp_nthreads,
     cifti,
@@ -84,7 +83,6 @@ def init_xcpd_wf(
                 motion_filter_order=4,
                 band_stop_min=0.,
                 band_stop_max=0.,
-                bandpass_filter=True,
                 fmri_dir=".",
                 omp_nthreads=1,
                 cifti=False,
@@ -108,7 +106,6 @@ def init_xcpd_wf(
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
         BIDS dataset layout
-    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     despike: bool
@@ -165,7 +162,6 @@ def init_xcpd_wf(
             motion_filter_order=motion_filter_order,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
-            bandpass_filter=bandpass_filter,
             fmri_dir=fmri_dir,
             omp_nthreads=omp_nthreads,
             subject_id=subject_id,
@@ -202,7 +198,6 @@ def init_subject_wf(
     bpf_order,
     motion_filter_order,
     motion_filter_type,
-    bandpass_filter,
     band_stop_min,
     band_stop_max,
     fmri_dir,
@@ -232,7 +227,6 @@ def init_subject_wf(
             from xcp_d.workflow.base import init_subject_wf
             wf = init_subject_wf(
                 layout=None,
-                bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
                 bpf_order=2,
@@ -262,7 +256,6 @@ def init_subject_wf(
     ----------
     layout : BIDSLayout object
         BIDS dataset layout
-    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     despike: bool
@@ -461,7 +454,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             motion_filter_order=motion_filter_order,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
-            bandpass_filter=bandpass_filter,
             smoothing=smoothing,
             params=params,
             head_radius=head_radius,

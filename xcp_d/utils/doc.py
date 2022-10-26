@@ -99,11 +99,12 @@ docdict["bandpass_filter"] = """
 bandpass_filter : :obj:`bool`
     If True, a Butterworth bandpass filter will be applied to the fMRI data after interpolation,
     but before regression.
-    If False, bandpass filtering will not be performed.
+    If False, ``lower_bpf`` and ``upper_bpf`` will be set to None and bandpass filtering will not
+    be performed.
 """
 
 docdict["lower_bpf"] = """
-lower_bpf : :obj:`float`
+lower_bpf : :obj:`float` or None
     Lower cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
@@ -111,7 +112,7 @@ lower_bpf : :obj:`float`
 """
 
 docdict["upper_bpf"] = """
-upper_bpf : :obj:`float`
+upper_bpf : :obj:`float` or None
     Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.

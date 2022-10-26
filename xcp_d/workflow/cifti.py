@@ -38,7 +38,6 @@ def init_ciftipostprocess_wf(
     bpf_order,
     motion_filter_type,
     motion_filter_order,
-    bandpass_filter,
     band_stop_min,
     band_stop_max,
     smoothing,
@@ -64,7 +63,6 @@ def init_ciftipostprocess_wf(
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
             wf = init_ciftipostprocess_wf(
                 bold_file="/path/to/cifti.dtseries.nii",
-                bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
                 bpf_order=2,
@@ -89,7 +87,6 @@ def init_ciftipostprocess_wf(
     Parameters
     ----------
     bold_file
-    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     %(bpf_order)s
@@ -321,8 +318,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
-            filter_order=bpf_order,
-            bandpass_filter=bandpass_filter),
+            filter_order=bpf_order),
         name="filtering_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)

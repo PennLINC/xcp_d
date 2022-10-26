@@ -711,6 +711,12 @@ def build_workflow(opts, retval):
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
         retval["return_code"] = 1
+    elif not opts.bandpass_filter:
+        build_log.debug(
+            "Bandpass filtering is disabled. Setting lower_bpf and upper_bpf to None."
+        )
+        opts.lower_bpf = None
+        opts.upper_bpf = None
 
     # Motion filtering parameters
     if opts.motion_filter_type == "notch":
@@ -918,7 +924,6 @@ Running xcp_d version {__version__}:
         lower_bpf=opts.lower_bpf,
         upper_bpf=opts.upper_bpf,
         bpf_order=opts.bpf_order,
-        bandpass_filter=opts.bandpass_filter,
         motion_filter_type=opts.motion_filter_type,
         motion_filter_order=opts.motion_filter_order,
         band_stop_min=opts.band_stop_min,

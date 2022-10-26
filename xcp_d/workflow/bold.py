@@ -45,7 +45,6 @@ def init_boldpostprocess_wf(
     bpf_order,
     motion_filter_type,
     motion_filter_order,
-    bandpass_filter,
     band_stop_min,
     band_stop_max,
     smoothing,
@@ -76,7 +75,6 @@ def init_boldpostprocess_wf(
                 bpf_order=2,
                 motion_filter_type=None,
                 motion_filter_order=4,
-                bandpass_filter=True,
                 band_stop_min=0.,
                 band_stop_max=0.,
                 smoothing=6,
@@ -96,7 +94,6 @@ def init_boldpostprocess_wf(
 
     Parameters
     ----------
-    %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
     %(bpf_order)s
