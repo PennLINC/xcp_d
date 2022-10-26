@@ -623,30 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def dist_is_editable(dist):
-    """Check if distribution is an editable install.
-
-    Parameters
-    ----------
-    dist : str
-        Package name.
-
-    Returns
-    -------
-    bool
-        True if the distribution is an editable install, or False if not.
-
-    Notes
-    -----
-    Borrowed from `pip`'s' API.
-    """
-    for path_item in sys.path:
-        egg_link = op.join(path_item, dist + ".egg-link")
-        if op.isfile(egg_link):
-            return True
-    return False
-
-
 def emptydirs(path, noexist_ok=False):
     """Empty an existing directory, without deleting it.
 
