@@ -623,35 +623,6 @@ the same Nipype version from the generated pkl."""
     return unpkl
 
 
-def read_stream(stream, logger=None, encoding=None):
-    """Robustly read a stream, sending a warning to a logger if some decoding error was raised.
-
-    Parameters
-    ----------
-    stream
-    logger
-    encoding
-
-    Returns
-    -------
-    list of str
-        The stream, split by line.
-
-    Examples
-    --------
-    >>> read_stream(bytearray([65, 0xc7, 65, 10, 66]))  # doctest: +ELLIPSIS
-    ['A...A', 'B']
-    """
-    default_encoding = encoding or locale.getdefaultlocale()[1] or "UTF-8"
-    logger = logger or fmlogger
-    try:
-        out = stream.decode(default_encoding)
-    except UnicodeDecodeError as err:
-        out = stream.decode(default_encoding, errors="replace")
-        logger.warning("Error decoding string: %s", err)
-    return out.splitlines()
-
-
 def savepkl(filename, record, versioning=False):
     """Save a record to a pickle file.
 
