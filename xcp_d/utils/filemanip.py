@@ -547,18 +547,6 @@ filename_to_list = ensure_list
 list_to_filename = simplify_list
 
 
-def check_depends(targets, dependencies):
-    """Return True if all targets exist and are newer than all dependencies.
-
-    An OSError will be raised if there are missing dependencies.
-    """
-    tgts = ensure_list(targets)
-    deps = ensure_list(dependencies)
-    return all(map(op.exists, tgts)) and min(map(op.getmtime, tgts)) > max(
-        list(map(op.getmtime, deps)) + [0]
-    )
-
-
 def save_json(filename, data):
     """Save data to a json file.
 
