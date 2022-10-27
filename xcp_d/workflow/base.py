@@ -11,6 +11,7 @@ import scipy
 import templateflow
 from nipype import Function
 from nipype import __version__ as nipype_ver
+from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -22,7 +23,6 @@ from xcp_d.utils.bids import (
     collect_data,
     extract_t1w_seg,
     get_preproc_pipeline_info,
-    select_cifti_bold,
     select_registrationfile,
     write_dataset_description,
 )
@@ -32,6 +32,8 @@ from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 from xcp_d.workflow.execsummary import init_brainsprite_wf
+
+LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
@@ -151,7 +153,7 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print(f"Begin the {name} workflow")
+    LOGGER.info(f"Beginning the {name} workflow")
 
     write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
 
@@ -302,13 +304,12 @@ def init_subject_wf(
         participant_label=subject_id,
         task=task_id,
         bids_validate=False,
+        cifti=cifti,
     )
-
-    preproc_nifti_files, preproc_cifti_files = select_cifti_bold(subj_data=subj_data)
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = preproc_cifti_files if cifti else preproc_nifti_files
+    preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
@@ -351,7 +352,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 """
 
     summary = pe.Node(
-        SubjectSummary(subject_id=subject_id, bold=preproc_nifti_files),
+        SubjectSummary(subject_id=subject_id, bold=preproc_files),
         name='summary',
     )
 
@@ -363,7 +364,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=preproc_nifti_files[0],
+            source_file=preproc_files[0],
             desc='summary',
             datatype="figures",
         ),
