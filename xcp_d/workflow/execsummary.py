@@ -31,7 +31,6 @@ def init_brainsprite_wf(
     layout,
     fmri_dir,
     subject_id,
-
     output_dir,
     input_type,
     mem_gb,
