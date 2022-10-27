@@ -14,6 +14,7 @@ import subprocess as sp
 from hashlib import md5
 
 import nibabel as nb
+import numpy as np
 from nipype import config, logging
 from nipype.utils.misc import is_container
 
