@@ -147,19 +147,10 @@ class CensorScrub(SimpleInterface):
         one_hot_outliers_columns = [
             f"framewise_displacement_outlier{i}" for i in range(tmask_idx.size)
         ]
-        one_hot_outliers = np.zeros((tmask_idx.size, tmask_idx.max() + 1))
-        one_hot_outliers[np.arange(tmask_idx.size), tmask_idx] = 1
-        one_hot_outliers = np.vstack(
-            (
-                one_hot_outliers,
-                np.zeros(
-                    (
-                        fmriprep_confounds_df.shape[0] - tmask_idx.max(),
-                        one_hot_outliers.shape[1],
-                    ),
-                )
-            )
-        )
+        one_hot_outliers = np.zeros((fmriprep_confounds_df.shape[0], tmask_idx.size), int)
+        for i_idx, idx in enumerate(tmask_idx):
+            one_hot_outliers[idx, i_idx] = 1
+
         one_hot_outliers_df = pd.DataFrame(
             data=one_hot_outliers,
             columns=one_hot_outliers_columns,
