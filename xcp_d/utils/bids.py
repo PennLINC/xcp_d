@@ -154,22 +154,18 @@ def collect_data(
         config=["bids", "derivatives"],
     )
 
-    NIFTI_SPACES = [
-        "MNI152NLin6Asym",
-        "MNI152NLin2009cAsym",
-        "MNIInfant",
-    ]
-    CIFTI_SPACES = [
-        "fsLR",
-        "fsaverage",
-    ]
-    allowed_spaces = CIFTI_SPACES if cifti else NIFTI_SPACES
-
-    bold_extensions = ".dtseries.nii" if cifti else ".nii.gz"
-    extensions = {
-        "bold": bold_extensions,
-        "other": ["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
+    # TODO: Add and test fsaverage.
+    PREFERRED_SPACES = {
+        False: [
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+            "MNIInfant",
+        ],
+        True: [
+            "fsLR",
+        ],
     }
+    allowed_spaces = PREFERRED_SPACES[cifti]
 
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
@@ -186,10 +182,23 @@ def collect_data(
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
 
+    # Override the default allowed extensions for BOLD data so we don't accidentally
+    # collect both surface and volumetric files.
+    # Don't override if already set by the bids filters.
+    if "extension" not in queries["bold"].keys():
+        queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
+
+    # Set valid extensions for the file types.
+    # Don't override if already set by the bids filters or for BOLD data.
+    for acq, entities in queries.items():
+        if "extension" not in queries[acq].keys():
+            queries[acq]["extension"] = ["nii", "nii.gz", "dtseries.nii", "h5", "gii"]
+
     if task:
         queries["bold"]["task"] = task
 
-    # This ignores res and den
+    # Select the best available space
+    
     if "space" not in queries["bold"]:
         for space in allowed_spaces:
             bold_data = layout.get(
@@ -205,7 +214,6 @@ def collect_data(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=extensions["bold" if dtype == "bold" else "other"],
                 **query,
             )
         )
@@ -258,35 +266,6 @@ def select_registrationfile(subj_data):
     # print(mni_to_t1w)
 
     return mni_to_t1w, t1w_to_mni
-
-
-def select_cifti_bold(subj_data):
-    """Split list of preprocessed fMRI files into bold (volumetric) and cifti.
-
-    Parameters
-    ----------
-    subj_data
-
-    Returns
-    -------
-    bold_file : list of str
-        List of paths to preprocessed BOLD files.
-    cifti_file : list of str
-        List of paths to preprocessed BOLD CIFTI files.
-    """
-    boldfile = subj_data["bold"]
-    bold_files = []
-    cifti_files = []
-
-    for file_ in boldfile:
-        if "preproc_bold" in file_:
-            bold_files.append(file_)
-
-        elif "bold.dtseries.nii" in file_:
-            cifti_files.append(file_)
-
-    return bold_files, cifti_files
-
 
 def extract_t1w_seg(subj_data):
     """Select preprocessed T1w and segmentation files.
