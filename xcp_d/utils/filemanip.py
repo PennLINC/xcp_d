@@ -13,6 +13,7 @@ import shutil
 import subprocess as sp
 from hashlib import md5
 
+import nibabel as nb
 from nipype import config, logging
 from nipype.utils.misc import is_container
 
