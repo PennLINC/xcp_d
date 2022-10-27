@@ -1063,24 +1063,12 @@ def _get_tr(img):
         return img.header.get_zooms()[-1]
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
-
-def plot_reho_mosaic_volumetric(reho, template):
-    """Plot Reho mosaic plot for Niftis."""
-    output_file = 'test.nii.gz'
-    plott.plot_stat_map(reho,
-                        bg_img=template,
-                        display_mode='z',
-                        cut_coords=8,
-                        output_file=output_file)
-    return
-
-
-def plot_alff_mosaic_volumetric(alff, template):
-    """Plot ALFF mosaic plot for Niftis."""
-    output_file = 'test.nii.gz'
+def plot_mosaic_volumetric(alff, template):
+    """Plot ALFF/ReHo mosaic plot for Niftis."""
+    output_file = 'test.svg'
     plott.plot_stat_map(alff,
                         bg_img=template,
                         display_mode='z',
                         cut_coords=8,
                         output_file=output_file)
-    return
+
