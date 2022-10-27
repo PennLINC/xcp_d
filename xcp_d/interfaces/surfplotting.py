@@ -129,8 +129,8 @@ class PlotSVGData(SimpleInterface):
 
         self._results['before_process'], self._results[
             'after_process'] = plot_svgx(
-                tmask = self.inputs.tmask, 
-                dummyvols = self.inputs.dummyvols,
+                tmask=self.inputs.tmask,
+                dummyvols=self.inputs.dummyvols,
                 rawdata=self.inputs.rawdata,
                 regressed_data=self.inputs.regressed_data,
                 residual_data=self.inputs.residual_data,
