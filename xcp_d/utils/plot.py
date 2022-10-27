@@ -1064,14 +1064,13 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def plot_mosaic_volumetric(alff, template):
+def plot_alff_reho_volumetric(filename, template):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
-    output_file = 'test.svg'
-    plott.plot_stat_map(alff,
+    figure = plott.plot_stat_map(filename,
                         bg_img=template,
                         display_mode='z',
-                        cut_coords=8,
-                        output_file=output_file)
+                        cut_coords=8)
+    return figure
 
 
 def surf_data_from_cifti(data, axis, surf_name):
@@ -1094,7 +1093,7 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_images(func, rh, lh):
+def plot_alff_reho_surface(func, rh, lh):
     """Plot ReHo and ALFF for ciftis on surface."""
     cifti = nb.load(func)
     cifti_data = cifti.get_fdata()

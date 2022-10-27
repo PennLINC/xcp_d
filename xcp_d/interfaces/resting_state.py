@@ -89,6 +89,7 @@ class SurfaceReHo(SimpleInterface):
                   template=self.inputs.surf_bold,
                   filename=self._results['surf_gii'],
                   hemi=self.inputs.surf_hemi)
+        
         return runtime
 
 
@@ -166,64 +167,6 @@ class ComputeALFF(SimpleInterface):
                     mask=self.inputs.mask)
 
         return runtime
-
-
-class _BrainPlotInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="alff or reho")
-    mask_file = File(exists=True, mandatory=True, desc="mask file ")
-
-
-class _BrainPlotOutputSpec(TraitedSpec):
-    nifti_html = File(exists=True, mandatory=True, desc="zscore html")
-
-
-class BrainPlot(SimpleInterface):
-    """Create a brainsprite figure from a NIFTI file.
-
-    The image will first be normalized (z-scored) before the figure is generated.
-    """
-
-    input_spec = _BrainPlotInputSpec
-    output_spec = _BrainPlotOutputSpec
-
-    def _run_interface(self, runtime):
-
-        # create a file name
-        z_score_nifti = os.path.split(os.path.abspath(
-            self.inputs.in_file))[0] + '/zscore.nii.gz'
-
-        # create a nifti with z-scores
-        z_score_nifti = zscore_nifti(img=self.inputs.in_file,
-                                     mask=self.inputs.mask_file,
-                                     outputname=z_score_nifti)
-        #  get the right template
-        temptlatehtml = pkgrf('xcp_d',
-                              'data/transform/brainsprite_template.html')
-        # adjust settings for viewing in HTML
-        bsprite = viewer_substitute(threshold=0,
-                                    opacity=0.5,
-                                    title="zcore",
-                                    cut_coords=[0, 0, 0])
-
-        bsprite.fit(z_score_nifti, bg_img=None)
-
-        template = tempita.Template.from_filename(temptlatehtml,
-                                                  encoding="utf-8")
-        viewer = bsprite.transform(template,
-                                   javascript='js',
-                                   html='html',
-                                   library='bsprite')
-        # write the html out
-        self._results['nifti_html'] = fname_presuffix(
-            'zscore_nifti_',
-            suffix='stat.html',
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-
-        viewer.save_as_html(self._results['nifti_html'])
-        return runtime
-
 
 class ReHoNamePatch(SimpleInterface):
     """Compute ReHo for a given neighbourhood, based on a local neighborhood of that voxel.

@@ -8,10 +8,11 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
-from xcp_d.interfaces.resting_state import BrainPlot, ComputeALFF, SurfaceReHo
+from xcp_d.interfaces.resting_state import ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.workbench import CiftiSeparateMetric
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
+from xcp_d.utils.plot import plot_alff_reho_volumetric, surf_data_from_cifti, plot_alff_reho_surface
 
 
 @fill_doc
@@ -97,11 +98,9 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          mem_gb=mem_gb,
                          name='alff_compt',
                          n_procs=omp_nthreads)
-    # create a node for the Nifti HTML
-    brain_plot = pe.Node(BrainPlot(),
-                         mem_gb=mem_gb,
-                         name='brain_plot',
-                         n_procs=omp_nthreads)
+    # create nifti html
+    plot_alff_reho_volumetric()
+
 
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
@@ -234,6 +233,7 @@ vertices to yield ReHo.
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
+
     # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
@@ -305,10 +305,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
     # Get the HTML
-    brain_plot = pe.Node(BrainPlot(),
-                         mem_gb=mem_gb,
-                         name='brain_plot',
-                         n_procs=omp_nthreads)
+
     # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),
