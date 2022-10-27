@@ -154,7 +154,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 )
 
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
-                concatenate_tsv_files(outlier_files, concat_outlier_file)
+                outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
