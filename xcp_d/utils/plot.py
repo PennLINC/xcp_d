@@ -423,6 +423,8 @@ def confoundplotx(time_series,
 def plot_svgx(rawdata,
               regressed_data,
               residual_data,
+              tmask,
+              dummyvols,
               filtered_motion,
               unprocessed_filename,
               processed_filename,
@@ -445,6 +447,10 @@ def plot_svgx(rawdata,
         nifti or cifti after regression and filtering
     mask :
         mask for nifti if available
+    tmask :
+       temporal censoring mask
+    dummyvols :
+        initial number of volumes to drop
     seg_data :
         3 tissues seg_data files
     TR : float, optional
@@ -457,16 +463,29 @@ def plot_svgx(rawdata,
         output file svg after processing
     """
     # Compute dvars correctly if not already done
-    if type(raw_dvars) != np.ndarray:
-        raw_dvars = compute_dvars(read_ndata(datafile=rawdata, maskfile=mask))
-    if type(regressed_dvars) != np.ndarray:
-        regressed_dvars = compute_dvars(read_ndata(datafile=regressed_data, maskfile=mask))
-    if type(filtered_dvars) != np.ndarray:
-        filtered_dvars = compute_dvars(read_ndata(datafile=residual_data,
-                                                  maskfile=mask))
-    # For ease of reference later
     residual_data_file = residual_data
     raw_data_file = rawdata
+    raw_data = read_ndata(datafile=rawdata, maskfile=mask)
+    regressed_data = read_ndata(datafile=regressed_data, maskfile=mask)
+    filtered_data = read_ndata(datafile=residual_data, maskfile=mask)
+    tmask_df = pd.read_table(tmask)
+    tmask_arr = tmask_df["framewise_displacement"].values
+    tmask_bool = ~tmask_arr.astype(bool)
+    # Let's remove dummy time from the raw_data if needed
+    if dummyvols > 1:
+        raw_data = raw_data[dummyvols:]
+    # Let's censor the interpolated data and raw_data:
+    if sum(tmask_arr) > 0:
+        raw_data = raw_data[:, tmask_bool]
+        filtered_data = filtered_data[:, tmask_bool]
+
+    if type(raw_dvars) != np.ndarray:
+        raw_dvars = compute_dvars(raw_data)
+    if type(regressed_dvars) != np.ndarray:
+        regressed_dvars = compute_dvars(regressed_data)
+    if type(filtered_dvars) != np.ndarray:
+        filtered_dvars = compute_dvars(filtered_data)
+    # For ease of reference later
 
     # Formatting & setting of files
     sns.set_style('whitegrid')

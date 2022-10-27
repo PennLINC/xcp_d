@@ -151,6 +151,7 @@ def init_execsummary_wf(omp_nthreads,
                         bold_file,
                         output_dir,
                         TR,
+                        dummyvols,
                         mem_gb,
                         layout,
                         name='execsummary_wf'):
@@ -165,6 +166,7 @@ def init_execsummary_wf(omp_nthreads,
     %(mem_gb)s
     layout
     %(name)s
+    dummyvols
 
     Inputs
     ------
@@ -173,6 +175,7 @@ def init_execsummary_wf(omp_nthreads,
     regressed_data
     residual_data
     filtered_motion
+    tmask
     rawdata
     mask
     %(mni_to_t1w)s
@@ -185,13 +188,13 @@ def init_execsummary_wf(omp_nthreads,
         'regressed_data',
         'residual_data',
         'filtered_motion',
+        'tmask',
         'rawdata',
         'mask',
         'mni_to_t1w',
     ]),
         name='inputnode')
     inputnode.inputs.bold_file = bold_file
-
     # Get bb_registration_file prefix from fmriprep
     all_files = list(layout.get_files())
     current_bold_file = os.path.basename(bold_file)
@@ -250,7 +253,7 @@ def init_execsummary_wf(omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads)
 
     # Plot the SVG files
-    plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file),
+    plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummyvols),
                            name='plot_svgx_wf',
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
@@ -293,7 +296,7 @@ def init_execsummary_wf(omp_nthreads,
         (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
                                    ('regressed_data', 'regressed_data'),
                                    ('residual_data', 'residual_data'), ('mask', 'mask'),
-                                   ('bold_file', 'rawdata')]),
+                                   ('bold_file', 'rawdata'), ('tmask', 'tmask')]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
