@@ -623,7 +623,7 @@ def denoise_cifti_with_nilearn(
     from xcp_d.utils.utils import _denoise_with_nilearn
     from xcp_d.utils.write_save import read_ndata, write_ndata
 
-    out_file = os.path.abspath("desc-denoised_bold.nii.gz")
+    out_file = os.path.abspath("desc-denoised_bold.dtseries.nii")
 
     raw_data = read_ndata(bold_file)
 
@@ -671,10 +671,6 @@ def _denoise_with_nilearn(
 
     sample_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
     sample_mask = np.where(~sample_mask_bool)[0]
-
-    print(f"raw_data: {raw_data.shape}")
-    print(f"sample_mask: {sample_mask}")
-    print(f"confounds_df: {confounds_df.shape}")
 
     clean_data = signal.clean(
         signals=raw_data,
