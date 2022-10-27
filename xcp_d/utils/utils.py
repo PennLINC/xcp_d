@@ -607,7 +607,7 @@ def denoise_nifti_with_nilearn(
 
 
 def denoise_cifti_with_nilearn(
-    cifti_file,
+    bold_file,
     confounds_file,
     censoring_file,
     low_pass,
@@ -625,7 +625,7 @@ def denoise_cifti_with_nilearn(
 
     out_file = os.path.abspath("desc-denoised_bold.nii.gz")
 
-    raw_data = read_ndata(cifti_file)
+    raw_data = read_ndata(bold_file)
 
     # Transpose from SxT (xcpd order) to TxS (nilearn order)
     raw_data = raw_data.T
@@ -642,7 +642,7 @@ def denoise_cifti_with_nilearn(
     # Transpose from TxS (nilearn order) to SxT (xcpd order)
     clean_data = clean_data.T
 
-    write_ndata(clean_data, cifti_file, out_file)
+    write_ndata(clean_data, template=bold_file, filename=out_file, TR=TR)
 
     return out_file
 
@@ -701,6 +701,10 @@ def consolidate_confounds(
     from xcp_d.utils.confounds import load_confound_matrix
 
     out_file = os.path.abspath("confounds.tsv")
+
+    # It looks like nipype is passing this along as "None".
+    if custom_confounds_file == "None":
+        custom_confounds_file = None
 
     if fmriprep_confounds_file and custom_confounds_file:
         confounds_df = load_confound_matrix(

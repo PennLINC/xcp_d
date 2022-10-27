@@ -329,6 +329,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             motion_filter_order=motion_filter_order,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
+            initial_volumes_to_drop=initial_volumes_to_drop,
         ),
         name='censoring',
         mem_gb=mem_gbx['timeseries'],
@@ -347,14 +348,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             input_names=[
                 "bold_file",
                 "mask_file",
-                "fmriprep_confounds_file",
-                "custom_confounds_file",
+                "confounds_file",
                 "censoring_file",
-                "namesource",
                 "low_pass",
                 "high_pass",
                 "TR",
-                "params",
             ],
             output_names=["out_file"],
             function=denoise_nifti_with_nilearn,
@@ -567,7 +565,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('custom_confounds', 'custom_confounds_file'),
         ]),
-        (consolidate_confounds_node, denoise_bold, [('confounds', 'confounds')]),
+        (consolidate_confounds_node, denoise_bold, [('confounds', 'confounds_file')]),
     ])
 
     workflow.connect([

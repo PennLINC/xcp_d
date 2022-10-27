@@ -296,18 +296,21 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="write_derivative_wf",
     )
 
-    censor_scrub = pe.Node(CensorScrub(
-        TR=TR,
-        custom_confounds=custom_confounds,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        head_radius=head_radius,
-        fd_thresh=fd_thresh),
+    censor_scrub = pe.Node(
+        CensorScrub(
+            TR=TR,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            head_radius=head_radius,
+            fd_thresh=fd_thresh,
+            initial_volumes_to_drop=initial_volumes_to_drop,
+        ),
         name='censoring',
         mem_gb=mem_gbx['timeseries'],
-        omp_nthreads=omp_nthreads)
+        omp_nthreads=omp_nthreads,
+    )
 
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
@@ -320,14 +323,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         Function(
             input_names=[
                 "bold_file",
-                "fmriprep_confounds_file",
-                "custom_confounds_file",
+                "confounds_file",
                 "censoring_file",
-                "namesource",
                 "low_pass",
                 "high_pass",
                 "TR",
-                "params",
             ],
             output_names=["out_file"],
             function=denoise_cifti_with_nilearn,
@@ -421,12 +421,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     workflow.connect([
         (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
-        (inputnode, denoise_bold, [('bold_mask', 'mask_file')]),
         (bold_holder_node, consolidate_confounds_node, [
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('custom_confounds', 'custom_confounds_file'),
         ]),
-        (consolidate_confounds_node, denoise_bold, [('confounds', 'confounds')]),
+        (consolidate_confounds_node, denoise_bold, [('confounds', 'confounds_file')]),
     ])
 
     workflow.connect([
