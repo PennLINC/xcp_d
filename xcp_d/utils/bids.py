@@ -198,7 +198,6 @@ def collect_data(
         queries["bold"]["task"] = task
 
     # Select the best available space
-    
     if "space" not in queries["bold"]:
         for space in allowed_spaces:
             bold_data = layout.get(
@@ -266,6 +265,7 @@ def select_registrationfile(subj_data):
     # print(mni_to_t1w)
 
     return mni_to_t1w, t1w_to_mni
+
 
 def extract_t1w_seg(subj_data):
     """Select preprocessed T1w and segmentation files.
