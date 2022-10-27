@@ -5,6 +5,7 @@
 xcp_d preprocessing workflow
 ============================
 """
+import argparse
 import gc
 import logging
 import os
@@ -42,19 +43,46 @@ def check_deps(workflow):
     )
 
 
-class DeprecatedStoreAction(Action):
+def _int_or_auto(string, is_parser=True):
+    """Check if argument is an integer >= 0 or the string "auto"."""
+    if string == "auto":
+        return string
+
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        intarg = int(string)
+    except ValueError:
+        msg = "Argument must be a nonnegative integer or 'auto'."
+        raise error(msg)
+
+    if intarg < 0:
+        raise error("Int argument must be nonnegative.")
+    return intarg
+
+
+class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 
     Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
     """
 
+    __version__ = ""
+
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.3.0. "
-            "Please use '--nuisance-regressors' or '-p'."
+            f"Argument '{option_string}' is deprecated and will be removed in version "
+            f"{self.__version__}. "
         )
         setattr(namespace, self.dest, values)
+
+
+class _DeprecatedStoreAction030(_DeprecatedStoreAction):
+    __version__ = "0.3.0"
+
+
+class _DeprecatedStoreAction040(_DeprecatedStoreAction):
+    __version__ = "0.4.0"
 
 
 def get_parser():
@@ -199,7 +227,7 @@ def get_parser():
     nuisance_params.add_argument(
         "--nuissance-regressors",
         dest="nuisance_regressors",
-        action=DeprecatedStoreAction,
+        action=_DeprecatedStoreAction030,
         required=False,
         default="36P",
         choices=[
@@ -246,12 +274,32 @@ def get_parser():
         type=Path,
         help="Custom confound to be added to nuisance regressors.",
     )
-    g_param.add_argument(
+
+    dummyvols = g_param.add_mutually_exclusive_group()
+    dummyvols.add_argument(
         "-d",
         "--dummytime",
-        default=0,
+        default=None,
         type=float,
-        help="first volume in seconds to be removed or skipped before postprocessing",
+        action=_DeprecatedStoreAction040,
+        help=(
+            "Number of seconds to remove from the beginning of each run. "
+            "This value will be rounded up to the nearest TR. "
+            "This parameter is deprecated and will be removed in version 0.4.0. "
+            "Please use ``--dummy-scans``."
+        ),
+    )
+    dummyvols.add_argument(
+        "--dummy-scans",
+        dest="dummy_scans",
+        default=0,
+        type=_int_or_auto,
+        metavar="{{auto,INT}}",
+        help=(
+            "Number of volumes to remove from the beginning of each run. "
+            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "preprocessing derivatives' confounds file."
+        ),
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
@@ -267,7 +315,7 @@ def get_parser():
     bandpass_filter_params.add_argument(
         "--bandpass_filter",
         dest="bandpass_filter",
-        action=DeprecatedStoreAction,
+        action=_DeprecatedStoreAction030,
         type=bool,
         help=(
             "Whether to Butterworth bandpass filter the data or not. "
@@ -935,6 +983,7 @@ Running xcp_d version {__version__}:
         head_radius=opts.head_radius,
         custom_confounds=opts.custom_confounds,
         dummytime=opts.dummytime,
+        dummy_scans=opts.dummy_scans,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
         input_type=opts.input_type,

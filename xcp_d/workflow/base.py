@@ -61,6 +61,7 @@ def init_xcpd_wf(
     output_dir,
     work_dir,
     dummytime,
+    dummy_scans,
     fd_thresh,
     process_surfaces=False,
     input_type='fmriprep',
@@ -99,7 +100,8 @@ def init_xcpd_wf(
                 custom_confounds=None,
                 output_dir=".",
                 work_dir=".",
-                dummytime=0,
+                dummytime=None,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 process_surfaces=False,
                 input_type='fmriprep',
@@ -179,6 +181,7 @@ def init_xcpd_wf(
             smoothing=smoothing,
             output_dir=output_dir,
             dummytime=dummytime,
+            dummy_scans=dummy_scans,
             custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
@@ -215,6 +218,7 @@ def init_subject_wf(
     head_radius,
     params,
     dummytime,
+    dummy_scans,
     fd_thresh,
     task_id,
     smoothing,
@@ -249,7 +253,8 @@ def init_subject_wf(
                 despike=False,
                 head_radius=50,
                 params="36P",
-                dummytime=0,
+                dummytime=None,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 task_id="rest",
                 smoothing=6.,
@@ -289,7 +294,11 @@ def init_subject_wf(
     custom_confounds: str
         path to custom nuisance regressors
     dummytime: float
-        the first vols in seconds to be removed before postprocessing
+        the first vols in seconds to be removed before postprocessing.
+        Deprecated in favor of dummy_scans.
+        This parameter will only take effect if ``dummy_scans`` is 0 and
+        ``dummytime`` is not None.
+    dummy_scans : int or "auto"
     %(process_surfaces)s
     %(subject_id)s
     %(input_type)s
@@ -472,6 +481,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             layout=layout,
             despike=despike,
             dummytime=dummytime,
+            dummy_scans=dummy_scans,
             fd_thresh=fd_thresh,
             output_dir=output_dir,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",

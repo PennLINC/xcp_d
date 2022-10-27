@@ -48,6 +48,7 @@ def init_ciftipostprocess_wf(
     custom_confounds,
     omp_nthreads,
     dummytime,
+    dummy_scans,
     fd_thresh,
     despike,
     n_runs,
@@ -78,7 +79,8 @@ def init_ciftipostprocess_wf(
                 output_dir=".",
                 custom_confounds=None,
                 omp_nthreads=1,
-                dummytime=0,
+                dummytime=None,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 despike=False,
                 n_runs=1,
@@ -192,12 +194,18 @@ def init_ciftipostprocess_wf(
         f"@power_fd_dvars, with a head radius of {head_radius} mm"
     )
 
-    dummytime_str = ""
-    initial_volumes_to_drop = 0
-    if dummytime > 0:
-        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-        dummytime_str = (
-            f"the first {num2words(initial_volumes_to_drop)} of both the BOLD data and nuisance "
+    if dummy_scans == 0 and dummytime is not None:
+        dummy_scans = int(np.ceil(dummytime / TR))
+
+    dummy_scans_str = ""
+    if dummy_scans == "auto":
+        dummy_scans_str = (
+            "non-steady-state volumes were extracted from the preprocessed confounds "
+            "and were discarded from both the BOLD data and nuisance regressors, then"
+        )
+    elif dummy_scans > 0:
+        dummy_scans_str = (
+            f"the first {num2words(dummy_scans)} of both the BOLD data and nuisance "
             "regressors were discarded, then "
         )
 
@@ -209,7 +217,7 @@ def init_ciftipostprocess_wf(
     workflow.__desc__ = f"""\
 For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
 the following post-processing was performed.
-First, {dummytime_str}outlier detection was performed.
+First, {dummy_scans_str}outlier detection was performed.
 In order to identify high-motion outlier volumes, {fd_str}.
 Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
 {fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
@@ -375,9 +383,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     # Remove TR first:
-    if dummytime > 0:
+    if dummy_scans:
         rm_dummytime = pe.Node(
-            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
+            RemoveTR(initial_volumes_to_drop=dummy_scans),
             name="remove_dummy_time",
             mem_gb=0.1 * mem_gbx['timeseries'])
         workflow.connect([
