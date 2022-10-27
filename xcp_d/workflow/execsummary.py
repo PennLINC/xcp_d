@@ -154,7 +154,6 @@ def init_execsummary_wf(omp_nthreads,
                         TR,
                         mem_gb,
                         layout,
-                        dummyvols,
                         name='execsummary_wf'):
     """Generate an executive summary.
 
@@ -197,7 +196,6 @@ def init_execsummary_wf(omp_nthreads,
     ]),
         name='inputnode')
     inputnode.inputs.bold_file = bold_file
-
     # Get bb_registration_file prefix from fmriprep
     all_files = list(layout.get_files())
     current_bold_file = os.path.basename(bold_file)
@@ -258,7 +256,6 @@ def init_execsummary_wf(omp_nthreads,
     # Plot the SVG files
     plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file),
                            name='plot_svgx_wf',
-                           tmask=inputnode.inputs.tmask,
                            dummyvols=inputnode.inputs.dummyvols,
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
@@ -301,7 +298,7 @@ def init_execsummary_wf(omp_nthreads,
         (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
                                    ('regressed_data', 'regressed_data'),
                                    ('residual_data', 'residual_data'), ('mask', 'mask'),
-                                   ('bold_file', 'rawdata')]),
+                                   ('bold_file', 'rawdata'), ('tmask', 'tmask')]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
