@@ -1063,6 +1063,7 @@ def _get_tr(img):
         return img.header.get_zooms()[-1]
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
+
 def plot_mosaic_volumetric(alff, template):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
     output_file = 'test.svg'
@@ -1072,3 +1073,87 @@ def plot_mosaic_volumetric(alff, template):
                         cut_coords=8,
                         output_file=output_file)
 
+
+def surf_data_from_cifti(data, axis, surf_name):
+    """From https://neurostars.org/t/separate-cifti-by-structure-in-python/17301/2.
+
+    https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/we-nibabel-markiewicz/NiBabel.ipynb
+    """
+    assert isinstance(axis, nb.cifti2.BrainModelAxis)
+    for name, data_indices, model in axis.iter_structures():
+        # Iterates over volumetric and surface structures
+        if name == surf_name:  # Just looking for a surface
+            data = data.T[data_indices]
+            # Assume brainmodels axis is last, move it to front
+            vtx_indices = model.vertex
+            # Generally 1-N, except medial wall vertices
+            surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype)
+            surf_data[vtx_indices] = data
+            return surf_data
+
+    raise ValueError(f"No structure named {surf_name}")
+
+
+def plot_images(func, rh, lh):
+    """Plot ReHo and ALFF for ciftis on surface."""
+    cifti = nb.load(func)
+    cifti_data = cifti.get_fdata()
+    cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
+
+    fig, axes = plt.subplots(figsize=(16, 16), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
+
+    lh_surf_data = surf_data_from_cifti(
+        cifti_data,
+        cifti_axes[1],
+        'CIFTI_STRUCTURE_CORTEX_LEFT',
+    )
+    rh_surf_data = surf_data_from_cifti(
+        cifti_data,
+        cifti_axes[1],
+        'CIFTI_STRUCTURE_CORTEX_RIGHT',
+    )
+    plott.plot_surf_stat_map(
+        lh,
+        lh_surf_data,
+        hemi="left",
+        view="lateral",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[0, 0],
+        figure=fig,
+    )
+    plott.plot_surf_stat_map(
+        lh,
+        lh_surf_data,
+        hemi="left",
+        view="medial",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[1, 0],
+        figure=fig,
+    )
+    plott.plot_surf_stat_map(
+        rh,
+        rh_surf_data,
+        hemi="right",
+        view="lateral",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[0, 1],
+        figure=fig,
+    )
+    plott.plot_surf_stat_map(
+        rh,
+        rh_surf_data,
+        hemi="right",
+        view="medial",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[1, 1],
+        figure=fig,
+    )
+    axes[0, 0].set_title("Left Hemisphere", fontsize=40)
+    axes[0, 1].set_title("Right Hemisphere", fontsize=40)
+    fig.tight_layout()
+    final_figure = fig
+    return final_figure
