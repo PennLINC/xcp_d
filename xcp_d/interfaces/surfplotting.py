@@ -91,7 +91,7 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=False, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
-    dummyvols = traits.Float(default_value=0, desc="Dummy volumes to drop")
+    dummyvols = traits.Int(default_value=0, desc="Dummy volumes to drop")
 
 
 class _PlotSVGDataOutputSpec(TraitedSpec):
