@@ -106,7 +106,7 @@ def init_brainsprite_wf(
 
         # for fmriprep and nibabies versions before XXXX,
         # the freesurfer dir was placed at the same level as the main derivatives
-        freesurfer_paths = [fp for fp in fmri_path.parent.glob("freesurfer*") if fp.is_dir()]
+        freesurfer_paths = [fp for fp in fmri_path.parent.glob("*freesurfer*") if fp.is_dir()]
         if len(freesurfer_paths) == 0:
             # for later versions, the freesurfer dir is placed in sourcedata
             # within the main derivatives folder

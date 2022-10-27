@@ -7,10 +7,6 @@ Test XCP-D on nifti data with FreeSurfer
 
 Testing regular volumetric outputs from fmriprep
 
-Inputs:
--------
-
-
 DOC
 
 set +e
@@ -28,7 +24,7 @@ TESTNAME=nifti_with_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/data/fmriprep
+BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithfreesurfer/fmriprep
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
@@ -39,3 +35,5 @@ $XCPD_CMD \
     -v -v \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
     --warp-surfaces-native2std
+
+echo $XCPD_CMD

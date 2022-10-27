@@ -321,7 +321,7 @@ def init_anatomical_wf(
         p = Path(fmri_dir)
 
         freesurfer_paths = glob.glob(
-            str(p.parent) + "/freesurfer*"
+            str(p.parent) + "/*freesurfer*"
         )  # for fmriprep and nibabies
         if len(freesurfer_paths) == 0:
             freesurfer_paths = glob.glob(

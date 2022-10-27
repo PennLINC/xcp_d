@@ -32,6 +32,8 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     Confirm that ReHo decreases after adding noise to a
     Nifti image.
     """
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer")
     tempdir = tmp_path_factory.mktemp("test_REHO_nifti")
     # Get the names of the files
     bold_file = os.path.join(
@@ -94,6 +96,8 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     Cifti image.
     """
     # Get the names of the files
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer")
     tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
     source_file = os.path.join(
         data_dir,
