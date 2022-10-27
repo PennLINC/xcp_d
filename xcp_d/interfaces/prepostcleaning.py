@@ -4,6 +4,7 @@ import os
 import nibabel as nb
 import numpy as np
 import pandas as pd
+from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -16,6 +17,8 @@ from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
 from xcp_d.utils.write_save import read_ndata, write_ndata
+
+LOGGER = logging.getLogger("nipype.interface")
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
@@ -86,6 +89,9 @@ class RemoveTR(SimpleInterface):
             if volumes_to_drop:
                 volumes_to_drop = volumes_to_drop[-1] + 1
             else:
+                LOGGER.warning(
+                    f"No non-steady-state outliers found in {self.inputs.fmriprep_confounds_file}"
+                )
                 volumes_to_drop = 0
 
         # Check if we need to do anything
