@@ -565,7 +565,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('custom_confounds', 'custom_confounds_file'),
         ]),
-        (consolidate_confounds_node, denoise_bold, [('confounds', 'confounds_file')]),
+        (consolidate_confounds_node, denoise_bold, [('out_file', 'confounds_file')]),
     ])
 
     workflow.connect([
