@@ -154,6 +154,7 @@ def collect_data(
         config=["bids", "derivatives"],
     )
 
+    # TODO: Add and test fsaverage.
     PREFERRED_SPACES = {
         False: [
             "MNI152NLin6Asym",
@@ -162,7 +163,6 @@ def collect_data(
         ],
         True: [
             "fsLR",
-            "fsaverage",
         ],
     }
     allowed_spaces = PREFERRED_SPACES[cifti]
