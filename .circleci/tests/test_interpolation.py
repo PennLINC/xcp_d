@@ -20,6 +20,8 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
 
     # CIFTI - ORIGINAL SIGNAL
     # Feed in inputs
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer")
     boldfile = os.path.join(
         data_dir,
         "fmriprep/sub-colornest001/ses-1/func",
@@ -124,6 +126,8 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
 
 def test_interpolate_nifti(data_dir):
     """Check results - first must censor file."""
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer")
     boldfile = (
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"

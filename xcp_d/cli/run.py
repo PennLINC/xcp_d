@@ -74,7 +74,7 @@ def get_parser():
         "fmri_dir",
         action="store",
         type=Path,
-        help="the root folder of a preprocessed fMRI output .",
+        help="the root folder of a preprocessed fMRI output.",
     )
     parser.add_argument(
         "output_dir",

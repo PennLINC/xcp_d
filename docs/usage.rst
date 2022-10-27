@@ -61,14 +61,14 @@ A Docker container can be created using the following command:
 
 .. code-block:: bash
 
-    docker run --rm -it \
-        -v /fmriprepdata:/in/ \
-        -v /tmp/wkdir:/wkdir/ \
-        -v /tmp:/scrth/ \
-        -v /tmp/xcpd_ciftiF/:/out. \
-        pennlinc/xcp_d:latest \
-        /in/ /out/ participant \
-        --cifti --despike --head_radius 40 -w wkdir --smoothing 6
+   docker run --rm -it \
+      -v /dset/derivatives/fmriprep:/fmriprep:ro \
+      -v /tmp/wkdir:/work:rw \
+      -v /dset/derivatives:/out:rw \
+      -v /dset/derivatives/freesurfer:/freesurfer:ro \  # Necessary for fMRIPrep versions <22.0.2
+      pennlinc/xcp_d:latest \
+      /fmriprep /out participant \
+      --cifti --despike --head_radius 40 -w /work --smoothing 6
 
 .. _run_singularity:
 
