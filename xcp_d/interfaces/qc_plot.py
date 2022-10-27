@@ -360,11 +360,11 @@ class QCPlot(SimpleInterface):
             dvars_after_processing = dvars_after_processing[tmask_arr == 0]
 
             # Apply temporal mask to data
-            raw_data_removed_TR = read_ndata(
+            cleaned_data = read_ndata(
                 datafile=self.inputs.cleaned_file,
                 maskfile=self.inputs.mask_file,
             )
-            raw_data_censored = raw_data_removed_TR[:, tmask_arr == 0]
+            raw_data_censored = cleaned_data[:, tmask_arr == 0]
 
             # Get temporary filename and write data out
             dropped_clean_file = fname_presuffix(
@@ -421,7 +421,7 @@ class QCPlot(SimpleInterface):
             "relMaxRMSMotion": [rmsd_max_value],
             "meanDVInit": [mean_dvars_before_processing],
             "meanDVFinal": [mean_dvars_after_processing],
-            "num_censored_volumes": [num_censored_volumes],
+            "num_censored_volumes": [num_censored_volumes - initial_volumes_to_drop],
             "nVolsRemoved": [initial_volumes_to_drop],
             "motionDVCorrInit": [motionDVCorrInit],
             "motionDVCorrFinal": [motionDVCorrFinal],
