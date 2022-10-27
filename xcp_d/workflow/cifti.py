@@ -420,7 +420,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                             n_procs=omp_nthreads)
 
         workflow.connect([(bold_holder_node, despike3d, [('bold_file', 'in_file')]),
-                          (despike3d, denoise_bold, [('out_file', 'bold_file')])])
+                          (despike3d, denoise_bold, [('des_file', 'bold_file')])])
 
     else:  # If we don't despike
         # regression workflow
