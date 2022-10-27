@@ -240,6 +240,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
+    inputnode.inputs.custom_confounds = custom_confounds
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -401,10 +402,16 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # Censor Scrub:
     workflow.connect([
-        (inputnode, censor_scrub, [
-            ('bold_file', 'in_file'),
-            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-        ])])
+        (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+        (inputnode, bold_holder_node, [
+            ("bold_file", "bold_file"),
+            ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
+            ("custom_confounds", "custom_confounds"),
+        ]),
+    ])
+
+    # The BOLD file is just used for filenames
+    workflow.connect([(inputnode, censor_scrub, [('bold_file', 'in_file')])])
 
     if despike:  # If we despike
         despike3d = pe.Node(CiftiDespike(TR=TR),
