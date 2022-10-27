@@ -166,6 +166,8 @@ class CensorScrub(SimpleInterface):
                 data=one_hot_outliers,
                 columns=one_hot_outliers_columns,
             )
+        else:
+            one_hot_outliers_df = pd.DataFrame()
 
         if one_hot_outliers_df.empty and initial_volumes_df.empty:
             outliers_df = None
