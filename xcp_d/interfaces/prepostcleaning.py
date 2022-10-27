@@ -108,12 +108,13 @@ class CensorScrub(SimpleInterface):
             initial_volumes_columns = [f"dummy_volume{i}" for i in range(initial_volumes_to_drop)]
             initial_volumes_array = np.vstack(
                 (
-                    np.eye(initial_volumes_to_drop),
+                    np.eye(initial_volumes_to_drop, dtype=int),
                     np.zeros(
                         (
                             fmriprep_confounds_df.shape[0] - initial_volumes_to_drop,
                             initial_volumes_to_drop,
                         ),
+                        dtype=int,
                     ),
                 ),
             )
@@ -144,18 +145,24 @@ class CensorScrub(SimpleInterface):
             fd_thresh=self.inputs.fd_thresh,
         )
         tmask_idx = np.where(tmask)[0]
-        one_hot_outliers_columns = [
-            f"framewise_displacement_outlier{i}" for i in range(tmask_idx.size)
-        ]
-        one_hot_outliers = np.zeros((fmriprep_confounds_df.shape[0], tmask_idx.size), int)
-        for i_idx, idx in enumerate(tmask_idx):
-            one_hot_outliers[idx, i_idx] = 1
+        if tmask_idx.size:
+            one_hot_outliers_columns = [
+                f"framewise_displacement_outlier{i}" for i in range(tmask_idx.size)
+            ]
+            one_hot_outliers = np.zeros(
+                (fmriprep_confounds_df.shape[0], tmask_idx.size),
+                dtype=int,
+            )
+            for i_idx, idx in enumerate(tmask_idx):
+                one_hot_outliers[idx, i_idx] = 1
 
-        one_hot_outliers_df = pd.DataFrame(
-            data=one_hot_outliers,
-            columns=one_hot_outliers_columns,
-        )
-        outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
+            one_hot_outliers_df = pd.DataFrame(
+                data=one_hot_outliers,
+                columns=one_hot_outliers_columns,
+            )
+            outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
+        else:
+            outliers_df = initial_volumes_df
 
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
