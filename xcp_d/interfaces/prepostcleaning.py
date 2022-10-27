@@ -167,16 +167,16 @@ class CensorScrub(SimpleInterface):
                 columns=one_hot_outliers_columns,
             )
 
-        if tmask_idx.size and initial_volumes_df:
-            outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
-        elif tmask_idx.size:
-            outliers_df = one_hot_outliers_df
-        elif initial_volumes_df:
-            outliers_df = initial_volumes_df
-        else:
+        if one_hot_outliers_df.empty and initial_volumes_df.empty:
             outliers_df = None
+        elif one_hot_outliers_df.empty:
+            outliers_df = initial_volumes_df
+        elif initial_volumes_df.empty:
+            outliers_df = one_hot_outliers_df
+        else:
+            outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
 
-        if outliers_df:
+        if outliers_df is not None:
             self._results["tmask"] = fname_presuffix(
                 self.inputs.in_file,
                 suffix="_desc-fd_outliers.tsv",
