@@ -65,8 +65,13 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
 
 
 class _CensorScrubOutputSpec(TraitedSpec):
-    tmask = File(exists=True, mandatory=True,
-                 desc="Temporal mask; all values above fd_thresh set to 1")
+    tmask = traits.Either(
+        None,
+        File,
+        exists=True,
+        mandatory=True,
+        desc="Temporal mask; all values above fd_thresh set to 1",
+    )
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -98,6 +103,7 @@ class CensorScrub(SimpleInterface):
         fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         initial_volumes_to_drop = self.inputs.initial_volumes_to_drop
 
+        initial_volumes_df = None
         if initial_volumes_to_drop == "auto":
             nss_cols = [
                 c for c in fmriprep_confounds_df.columns
@@ -105,7 +111,7 @@ class CensorScrub(SimpleInterface):
             ]
             initial_volumes_df = fmriprep_confounds_df[nss_cols]
         else:
-            initial_volumes_columns = [f"dummy_volume{i}" for i in range(initial_volumes_to_drop)]
+            initial_volumes_columns = [f"dummy_volume_{i}" for i in range(initial_volumes_to_drop)]
             initial_volumes_array = np.vstack(
                 (
                     np.eye(initial_volumes_to_drop, dtype=int),
@@ -147,7 +153,7 @@ class CensorScrub(SimpleInterface):
         tmask_idx = np.where(tmask)[0]
         if tmask_idx.size:
             one_hot_outliers_columns = [
-                f"framewise_displacement_outlier{i}" for i in range(tmask_idx.size)
+                f"framewise_displacement_outlier_{i}" for i in range(tmask_idx.size)
             ]
             one_hot_outliers = np.zeros(
                 (fmriprep_confounds_df.shape[0], tmask_idx.size),
@@ -160,28 +166,37 @@ class CensorScrub(SimpleInterface):
                 data=one_hot_outliers,
                 columns=one_hot_outliers_columns,
             )
-            outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
-        else:
-            outliers_df = initial_volumes_df
 
-        self._results["tmask"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_desc-fd_outliers.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
+        if tmask_idx.size and initial_volumes_df:
+            outliers_df = pd.concat((initial_volumes_df, one_hot_outliers_df), axis=1)
+        elif tmask_idx.size:
+            outliers_df = one_hot_outliers_df
+        elif initial_volumes_df:
+            outliers_df = initial_volumes_df
+        else:
+            outliers_df = None
+
+        if outliers_df:
+            self._results["tmask"] = fname_presuffix(
+                self.inputs.in_file,
+                suffix="_desc-fd_outliers.tsv",
+                newpath=runtime.cwd,
+                use_ext=False,
+            )
+            outliers_df.to_csv(
+                self._results["tmask"],
+                index=False,
+                header=True,
+                sep="\t",
+            )
+        else:
+            self._results["tmask"] = None
+
         self._results["filtered_motion"] = fname_presuffix(
             self.inputs.in_file,
             suffix="_desc-filtered_motion.tsv",
             newpath=runtime.cwd,
             use_ext=False,
-        )
-
-        outliers_df.to_csv(
-            self._results["tmask"],
-            index=False,
-            header=True,
-            sep="\t",
         )
 
         motion_df.to_csv(

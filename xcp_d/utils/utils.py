@@ -668,9 +668,14 @@ def _denoise_with_nilearn(
     from nilearn import signal
 
     confounds_df = pd.read_table(confounds_file)
-    # The censoring file uses one-hot encoding
-    sample_mask_bool = np.any(pd.read_table(censoring_file).values, axis=1)
-    sample_mask = np.where(sample_mask_bool)[0]
+
+    # Nipype seems to change None to "None"
+    if censoring_file != "None":
+        # The censoring file uses one-hot encoding
+        sample_mask_bool = np.any(pd.read_table(censoring_file).values, axis=1)
+        sample_mask = np.where(sample_mask_bool)[0]
+    else:
+        sample_mask = None
 
     clean_data = signal.clean(
         signals=raw_data,
