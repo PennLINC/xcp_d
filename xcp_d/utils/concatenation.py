@@ -25,7 +25,7 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def concatenate_derivatives(dummytime, TR, fmridir, outputdir, work_dir, subjects, cifti):
+def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, cifti):
     """Concatenate derivatives.
 
     This function does a lot more than concatenate derivatives.
@@ -40,8 +40,6 @@ def concatenate_derivatives(dummytime, TR, fmridir, outputdir, work_dir, subject
     ----------
     dummytime: float
         Amount of time to drop from the beginning of the scan
-    TR: float
-        Repetition
     fmridir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
     outputdir : str
@@ -57,10 +55,6 @@ def concatenate_derivatives(dummytime, TR, fmridir, outputdir, work_dir, subject
     # At least for pybids ~0.15.1
     layout = BIDSLayout(outputdir, validate=False, derivatives=True)
     layout_fmriprep = BIDSLayout(fmridir, validate=False, derivatives=True)
-
-    initial_volumes_to_drop = 0
-    if dummytime > 0:
-        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
 
     if cifti:
         tsv_extensions = [".ptseries.nii"]
@@ -261,6 +255,9 @@ def concatenate_derivatives(dummytime, TR, fmridir, outputdir, work_dir, subject
                     )
 
                     # Build figures
+                    initial_volumes_to_drop = 0
+                    if dummytime > 0:
+                        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
                     plot_svgx(
                         dummyvols=initial_volumes_to_drop,
                         tmask=outfile,
@@ -428,6 +425,7 @@ def concatenate_tsv_files(tsv_files, fileout):
         data = pd.concat(data, axis=0)
         data.to_csv(fileout, sep="\t", index=False)
     return fileout
+
 
 def _get_concat_name(layout, in_file):
     """Drop run entity from filename to get concatenated version."""
