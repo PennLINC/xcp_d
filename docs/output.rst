@@ -87,9 +87,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_alff.nii.gz
 
         # Cifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-32k_hemi-L_reho.func.gii
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-32k_hemi-R_reho.func.gii
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_alff.dtseries.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_reho.dscalar.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_alff.dscalar.nii
 
    d. Other outputs include quality control and framewise  displacement::
 

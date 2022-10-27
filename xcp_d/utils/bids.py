@@ -5,6 +5,7 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import os
 import warnings
 
 from bids import BIDSLayout
@@ -307,11 +308,15 @@ def extract_t1w_seg(subj_data):
     selected_t1w_file, selected_t1w_seg_file = None, None
     for t1w_file in subj_data["t1w"]:
         t1w_filename = os.path.basename(t1w_file)
+        # Select the native T1w-space preprocessed T1w file (i.e., no "space" entity).
         if not fnmatch.fnmatch(t1w_filename, "*_space-*"):
             selected_t1w_file = t1w_file
 
     for t1w_seg_file in subj_data["seg_data"]:
         t1w_seg_filename = os.path.basename(t1w_seg_file)
+        # Select the native T1w-space segmentation file (i.e., no "space" entity).
+        # Also don't want aseg in the segmentation file name.
+        # TODO: Use BIDSLayout for this.
         if not (
             fnmatch.fnmatch(t1w_seg_filename, "*_space-*")
             or fnmatch.fnmatch(t1w_seg_filename, "*aseg*")
@@ -319,7 +324,7 @@ def extract_t1w_seg(subj_data):
             selected_t1w_seg_file = t1w_seg_file
 
     if not selected_t1w_file:
-        raise ValueError("No segmentation file found.")
+        raise ValueError("No T1w file found.")
 
     if not selected_t1w_seg_file:
         raise ValueError("No segmentation file found.")
@@ -408,3 +413,47 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         raise ValueError(f"Unsupported input_type '{input_type}'")
 
     return info_dict
+
+
+def _add_subject_prefix(subid):
+    """Extract or compile subject entity from subject ID.
+
+    Parameters
+    ----------
+    subid : str
+        A subject ID (e.g., 'sub-XX' or just 'XX').
+
+    Returns
+    -------
+    str
+        Subject entity (e.g., 'sub-XX').
+    """
+    if subid.startswith('sub-'):
+        return subid
+    return '-'.join(('sub', subid))
+
+
+def _getsesid(filename):
+    """Get session id from filename if available.
+
+    Parameters
+    ----------
+    filename : str
+        The BIDS filename from which to extract the session ID.
+
+    Returns
+    -------
+    ses_id : str or None
+        The session ID in the filename.
+        If the file does not have a session entity, ``None`` will be returned.
+    """
+    ses_id = None
+    base_filename = os.path.basename(filename)
+
+    file_id = base_filename.split('_')
+    for k in file_id:
+        if 'ses' in k:
+            ses_id = k.split('-')[1]
+            break
+
+    return ses_id

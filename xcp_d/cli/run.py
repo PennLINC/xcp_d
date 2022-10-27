@@ -653,6 +653,7 @@ def main():
             run_uuid=run_uuid,
             combineruns=opts.combineruns,
             input_type=opts.input_type,
+            cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
         )
@@ -771,7 +772,7 @@ def build_workflow(opts, retval):
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
-        from xcp_d.workflow.base import _prefix
+        from xcp_d.utils.bids import _add_subject_prefix
 
         if not opts.cifti:
             build_log.warning(
@@ -802,7 +803,7 @@ def build_workflow(opts, retval):
                 convert_to_fmriprep(
                     fmri_dir,
                     outdir=converted_fmri_dir,
-                    sub_id=_prefix(str(subject_id)),
+                    sub_id=_add_subject_prefix(str(subject_id)),
                 )
         else:
             convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)

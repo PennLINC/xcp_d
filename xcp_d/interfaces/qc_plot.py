@@ -16,12 +16,11 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.concantenation import compute_dvars
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plot import FMRIPlot
-from xcp_d.utils.qcmetrics import compute_registration_qc
+from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
