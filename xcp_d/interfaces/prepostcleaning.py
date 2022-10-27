@@ -73,12 +73,28 @@ class RemoveTR(SimpleInterface):
 
     def _run_interface(self, runtime):
         volumes_to_drop = self.inputs.initial_volumes_to_drop
+
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        if volumes_to_drop == "auto":
+            nss_cols = [
+                c for c in fmriprep_confounds_df.columns
+                if c.startswith("non_steady_state_outlier")
+            ]
+            initial_volumes_df = fmriprep_confounds_df[nss_cols]
+            volumes_to_drop = np.any(initial_volumes_df.to_numpy(), axis=1)
+            volumes_to_drop = np.where(volumes_to_drop)[0]
+            if volumes_to_drop:
+                volumes_to_drop = volumes_to_drop[-1] + 1
+            else:
+                volumes_to_drop = 0
+
         # Check if we need to do anything
-        if self.inputs.initial_volumes_to_drop == 0:
+        if volumes_to_drop == 0:
             # write the output out
             self._results['bold_file_dropped_TR'] = self.inputs.bold_file
-            self._results['fmriprep_confounds_file_dropped'
-                          '_TR'] = self.inputs.fmriprep_confounds_file
+            self._results['fmriprep_confounds_file_dropped_TR'] = (
+                self.inputs.fmriprep_confounds_file
+            )
             return runtime
 
         # get the file names to output to
@@ -99,17 +115,20 @@ class RemoveTR(SimpleInterface):
 
         # If it's a Cifti Image:
         if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...]   # time series is the first element
+            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
             time_axis, brain_model_axis = [
-                bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
+                bold_image.header.get_axis(i) for i in range(bold_image.ndim)
+            ]
             new_total_volumes = dropped_data.shape[0]
             dropped_time_axis = time_axis[:new_total_volumes]
             dropped_header = nb.cifti2.Cifti2Header.from_axes(
-                (dropped_time_axis, brain_model_axis))
+                (dropped_time_axis, brain_model_axis),
+            )
             dropped_image = nb.Cifti2Image(
                 dropped_data,
                 header=dropped_header,
-                nifti_header=bold_image.nifti_header)
+                nifti_header=bold_image.nifti_header,
+            )
 
         # If it's a Nifti Image:
         else:
@@ -117,22 +136,25 @@ class RemoveTR(SimpleInterface):
             dropped_image = nb.Nifti1Image(
                 dropped_data,
                 affine=bold_image.affine,
-                header=bold_image.header)
+                header=bold_image.header,
+            )
 
         # Write the file
         dropped_image.to_filename(dropped_bold_file)
 
         # Drop the first N rows from the pandas dataframe
-        confounds_df = pd.read_csv(self.inputs.fmriprep_confounds_file, sep="\t")
-        dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
+        dropped_confounds_df = fmriprep_confounds_df.drop(np.arange(volumes_to_drop))
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
             if os.path.exists(self.inputs.custom_confounds):
                 custom_confounds_tsv_undropped = pd.read_table(
-                    self.inputs.custom_confounds, header=None)
+                    self.inputs.custom_confounds,
+                    header=None,
+                )
                 custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
-                    np.arange(volumes_to_drop))
+                    np.arange(volumes_to_drop),
+                )
             else:
                 print("No custom confounds were found or had their volumes dropped")
         else:
@@ -140,22 +162,24 @@ class RemoveTR(SimpleInterface):
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
+
         # Write to output node
         self._results['bold_file_dropped_TR'] = dropped_bold_file
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
 
-        if self.inputs.custom_confounds:
-            if os.path.exists(self.inputs.custom_confounds):
-                self._results['custom_confounds_dropped'] = fname_presuffix(
-                    self.inputs.bold_file,
-                    suffix='_custom_confounds_dropped.tsv',
-                    newpath=os.getcwd(),
-                    use_ext=False)
+        if self.inputs.custom_confounds and os.path.isfile(self.inputs.custom_confounds):
+            self._results['custom_confounds_dropped'] = fname_presuffix(
+                self.inputs.bold_file,
+                suffix='_custom_confounds_dropped.tsv',
+                newpath=os.getcwd(),
+                use_ext=False)
 
-                custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
-                                                    index=False,
-                                                    header=False,
-                                                    sep="\t")  # Assuming input is tab separated!
+            custom_confounds_tsv_dropped.to_csv(
+                self._results['custom_confounds_dropped'],
+                index=False,
+                header=False,
+                sep="\t",  # Assuming input is tab separated!
+            )
 
         return runtime
 
