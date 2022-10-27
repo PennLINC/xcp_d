@@ -31,6 +31,7 @@ def init_brainsprite_wf(
     layout,
     fmri_dir,
     subject_id,
+
     output_dir,
     input_type,
     mem_gb,
@@ -153,6 +154,7 @@ def init_execsummary_wf(omp_nthreads,
                         TR,
                         mem_gb,
                         layout,
+                        dummyvols,
                         name='execsummary_wf'):
     """Generate an executive summary.
 
@@ -165,6 +167,7 @@ def init_execsummary_wf(omp_nthreads,
     %(mem_gb)s
     layout
     %(name)s
+    dummyvols
 
     Inputs
     ------
@@ -173,6 +176,7 @@ def init_execsummary_wf(omp_nthreads,
     regressed_data
     residual_data
     filtered_motion
+    tmask
     rawdata
     mask
     %(mni_to_t1w)s
@@ -185,6 +189,7 @@ def init_execsummary_wf(omp_nthreads,
         'regressed_data',
         'residual_data',
         'filtered_motion',
+        'tmask'
         'rawdata',
         'mask',
         'mni_to_t1w',
@@ -293,7 +298,8 @@ def init_execsummary_wf(omp_nthreads,
         (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
                                    ('regressed_data', 'regressed_data'),
                                    ('residual_data', 'residual_data'), ('mask', 'mask'),
-                                   ('bold_file', 'rawdata')]),
+                                   ('bold_file', 'rawdata'), ('tmask', 'tmask'),
+                                   ('dummyvols', 'dummyvols')]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
