@@ -274,12 +274,6 @@ class QCPlot(SimpleInterface):
         else:
             initial_volumes_to_drop = 0
 
-        # Drop volumes from time series
-        # NOTE: TS- Why drop dummy volumes in preprocessed plot?
-        preproc_fd_timeseries = preproc_fd_timeseries[initial_volumes_to_drop:]
-        postproc_fd_timeseries = postproc_fd_timeseries[initial_volumes_to_drop:]
-        rmsd = rmsd[initial_volumes_to_drop:]
-
         if self.inputs.tmask:  # If a tmask is provided, find # vols censored
             tmask_df = pd.read_table(self.inputs.tmask)
             tmask_arr = tmask_df["framewise_displacement"].values
@@ -292,7 +286,7 @@ class QCPlot(SimpleInterface):
             read_ndata(
                 datafile=self.inputs.bold_file,
                 maskfile=self.inputs.mask_file,
-            )[:, initial_volumes_to_drop:],
+            ),
         )
         dvars_after_processing = compute_dvars(
             read_ndata(
@@ -317,7 +311,7 @@ class QCPlot(SimpleInterface):
         raw_data_removed_TR = read_ndata(
             datafile=self.inputs.bold_file,
             maskfile=self.inputs.mask_file,
-        )[:, initial_volumes_to_drop:]
+        )
 
         # Get file names to write out & write data out
         dropped_bold_file = fname_presuffix(
