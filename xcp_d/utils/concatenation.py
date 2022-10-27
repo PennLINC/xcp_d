@@ -52,9 +52,19 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
         Whether xcpd was run on CIFTI files or not.
     """
     # NOTE: The config has no effect when derivatives is True :(
-    # At least for pybids ~0.15.1
-    layout = BIDSLayout(outputdir, validate=False, derivatives=True)
-    layout_fmriprep = BIDSLayout(fmridir, validate=False, derivatives=True)
+    # At least for pybids ~0.15.1.
+    # TODO: Find a way to support the xcpd config file in the BIDSLayout.
+    layout_xcpd = BIDSLayout(
+        outputdir,
+        validate=False,
+        derivatives=True,
+    )
+    layout_fmriprep = BIDSLayout(
+        fmridir,
+        validate=False,
+        derivatives=True,
+        config=["bids", "derivatives"],
+    )
 
     if cifti:
         tsv_extensions = [".ptseries.nii"]
@@ -67,7 +77,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
         if subject.startswith("sub-"):
             subject = subject[4:]
 
-        sessions = layout.get_sessions(subject=subject)
+        sessions = layout_xcpd.get_sessions(subject=subject)
         if not sessions:
             sessions = [None]
 
@@ -77,7 +87,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 "session": session,
                 "datatype": "func",
             }
-            tasks = layout.get_tasks(
+            tasks = layout_xcpd.get_tasks(
                 desc="denoised",
                 suffix="bold",
                 extension=img_extensions,
@@ -87,7 +97,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 task_entities = base_entities.copy()
                 task_entities["task"] = task
 
-                motion_files = layout.get(
+                motion_files = layout_xcpd.get(
                     desc=["filtered", None],
                     suffix="motion",
                     extension=".tsv",
@@ -128,7 +138,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
-                concat_motion_file = _get_concat_name(layout, motion_files[0])
+                concat_motion_file = _get_concat_name(layout_xcpd, motion_files[0])
                 concatenate_tsv_files(motion_files, concat_motion_file)
 
                 # Make DCAN HDF5 file from concatenated motion file
@@ -136,17 +146,18 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
-                outlier_files = layout.get(
+                outlier_files = layout_xcpd.get(
                     desc=None,
                     suffix="outliers",
                     extension=".tsv",
                     **task_entities,
                 )
-                concat_outlier_file = _get_concat_name(layout, outlier_files[0])
-                outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
+
+                concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
+                concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
-                output_spaces = layout.get_spaces(
+                output_spaces = layout_xcpd.get_spaces(
                     desc="denoised",
                     suffix="bold",
                     extension=img_extensions,
@@ -203,13 +214,13 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     TR = _get_tr(preproc_files[0].path)
 
                     # Denoised BOLD files
-                    bold_files = layout.get(
+                    bold_files = layout_xcpd.get(
                         desc="denoised",
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
                     )
-                    concat_bold_file = _get_concat_name(layout, bold_files[0])
+                    concat_bold_file = _get_concat_name(layout_xcpd, bold_files[0])
                     _concatenate_niimgs(bold_files, concat_bold_file)
 
                     # Calculate DVARS from denoised BOLD
@@ -221,14 +232,14 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     regressed_dvars = np.concatenate(regressed_dvars)
 
                     # Concatenate smoothed BOLD files if they exist
-                    smooth_bold_files = layout.get(
+                    smooth_bold_files = layout_xcpd.get(
                         desc="denoisedSmoothed",
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
                     )
                     if len(smooth_bold_files):
-                        concat_file = _get_concat_name(layout, smooth_bold_files[0])
+                        concat_file = _get_concat_name(layout_xcpd, smooth_bold_files[0])
                         _concatenate_niimgs(smooth_bold_files, concat_file)
 
                     # Carpet plots
@@ -239,7 +250,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     carpet_entities["extension"] = ".svg"
 
                     carpet_entities["desc"] = "precarpetplot"
-                    precarpet = layout.build_path(
+                    precarpet = layout_xcpd.build_path(
                         carpet_entities,
                         path_patterns=path_patterns,
                         strict=False,
@@ -247,7 +258,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     )
 
                     carpet_entities["desc"] = "postcarpetplot"
-                    postcarpet = layout.build_path(
+                    postcarpet = layout_xcpd.build_path(
                         carpet_entities,
                         path_patterns=path_patterns,
                         strict=False,
@@ -297,7 +308,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             out_fig_entities = in_fig_entities.copy()
                             out_fig_entities["run"] = None
                             out_fig_entities["desc"] = "bbregister"
-                            fig_out = layout.build_path(
+                            fig_out = layout_xcpd.build_path(
                                 out_fig_entities,
                                 path_patterns=path_patterns,
                                 strict=False,
@@ -306,20 +317,20 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             shutil.copy(fig_in, fig_out)
 
                     # Now timeseries files
-                    atlases = layout.get_atlases(
+                    atlases = layout_xcpd.get_atlases(
                         suffix="timeseries",
                         extension=tsv_extensions,
                         **space_entities,
                     )
                     for atlas in atlases:
-                        atlas_timeseries_files = layout.get(
+                        atlas_timeseries_files = layout_xcpd.get(
                             atlas=atlas,
                             suffix="timeseries",
                             extension=tsv_extensions,
                             **space_entities,
                         )
                         concat_file = _get_concat_name(
-                            layout, atlas_timeseries_files[0]
+                            layout_xcpd, atlas_timeseries_files[0]
                         )
                         if atlas_timeseries_files[0].extension == ".tsv":
                             concatenate_tsv_files(atlas_timeseries_files, concat_file)
@@ -427,11 +438,11 @@ def concatenate_tsv_files(tsv_files, fileout):
     return fileout
 
 
-def _get_concat_name(layout, in_file):
+def _get_concat_name(layout_xcpd, in_file):
     """Drop run entity from filename to get concatenated version."""
     in_file_entities = in_file.get_entities()
     in_file_entities["run"] = None
-    concat_file = layout.build_path(
+    concat_file = layout_xcpd.build_path(
         in_file_entities,
         path_patterns=path_patterns,
         strict=False,
