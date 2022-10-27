@@ -467,7 +467,7 @@ def plot_svgx(rawdata,
     raw_data_file = rawdata
     raw_data = read_ndata(datafile=rawdata, maskfile=mask)
     regressed_data = read_ndata(datafile=regressed_data, maskfile=mask)
-    filtered_data = read_ndata(datafile=regressed_data, maskfile=mask)
+    filtered_data = read_ndata(datafile=residual_data, maskfile=mask)
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
