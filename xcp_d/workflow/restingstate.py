@@ -350,8 +350,8 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
                       ])
-    reho_html = plot_alff_reho_volumetric(func=compute_reho.outputs.out_file,
-                                          filename=compute_reho.outputs.out_file)
+    reho_html = plot_alff_reho_volumetric(filename=compute_reho.outputs.out_file,
+                                          output_path='reho.svg')
     outputnode.outputs.rehohtml = reho_html
 
     return workflow
