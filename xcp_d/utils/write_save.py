@@ -141,33 +141,6 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     return filename
 
 
-def edit_ciftinifti(in_file, out_file, datax):
-    """Create a fake nifti file from cifti.
-
-    Parameters
-    ----------
-    in_file : str
-        cifti file. .dstreries etc
-    out_file : str
-        output fake nifti file
-    datax : numpy.ndarray
-        data matrix with vertices by timepoints dimension
-
-    Returns
-    -------
-    out_file : str
-        The output filename.
-    """
-    thdata = nb.load(in_file)
-    dataxx = thdata.get_fdata()
-    dd = dataxx[:, :, :, 0:datax.shape[1]]
-    dataimg = nb.Nifti1Image(dataobj=dd,
-                             affine=thdata.affine,
-                             header=thdata.header)
-    dataimg.to_filename(out_file)
-    return out_file
-
-
 def run_shell(cmd, env=os.environ):
     """Run shell in python.
 

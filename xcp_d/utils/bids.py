@@ -5,6 +5,7 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import os
 import warnings
 
 from bids import BIDSLayout
@@ -146,16 +147,29 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
+    layout = BIDSLayout(
+        str(bids_dir),
+        validate=bids_validate,
+        derivatives=True,
+        config=["bids", "derivatives"],
+    )
 
-    if cifti:
-        bold_extensions = [".dtseries.nii"]
-    else:
-        bold_extensions = [".nii.gz"]
+    # TODO: Add and test fsaverage.
+    PREFERRED_SPACES = {
+        False: [
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+            "MNIInfant",
+        ],
+        True: [
+            "fsLR",
+        ],
+    }
+    allowed_spaces = PREFERRED_SPACES[cifti]
 
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
-        "boldfile": {"datatype": "func", "suffix": "bold"},
+        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         "t1w": {"datatype": "anat", "suffix": "T1w"},
         "seg_data": {"datatype": "anat", "suffix": "dseg"},
         "pial": {"datatype": "anat", "suffix": "pial"},
@@ -168,28 +182,42 @@ def collect_data(
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
 
+    # Override the default allowed extensions for BOLD data so we don't accidentally
+    # collect both surface and volumetric files.
+    # Don't override if already set by the bids filters.
+    if "extension" not in queries["bold"].keys():
+        queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
+
+    # Set valid extensions for the file types.
+    # Don't override if already set by the bids filters or for BOLD data.
+    for acq, entities in queries.items():
+        if "extension" not in queries[acq].keys():
+            queries[acq]["extension"] = ["nii", "nii.gz", "dtseries.nii", "h5", "gii"]
+
     if task:
-        queries["boldfile"]["task"] = task
+        queries["bold"]["task"] = task
+
+    # Select the best available space
+    if "space" not in queries["bold"]:
+        for space in allowed_spaces:
+            bold_data = layout.get(
+                space=space,
+                **queries["bold"],
+            )
+            if bold_data:
+                queries["bold"]["space"] = space
+                break
 
     subj_data = {
         dtype: sorted(
             layout.get(
                 return_type="file",
                 subject=participant_label,
-                extension=["nii", "nii.gz", "dtseries.nii", "h5", "gii"],
                 **query,
             )
         )
         for dtype, query in queries.items()
     }
-
-    # overwrite boldfile with requested extensions
-    subj_data["boldfile"] = layout.get(
-        return_type="file",
-        subject=participant_label,
-        extension=bold_extensions,
-        **queries["boldfile"],
-    )
 
     return layout, subj_data
 
@@ -259,11 +287,15 @@ def extract_t1w_seg(subj_data):
     selected_t1w_file, selected_t1w_seg_file = None, None
     for t1w_file in subj_data["t1w"]:
         t1w_filename = os.path.basename(t1w_file)
+        # Select the native T1w-space preprocessed T1w file (i.e., no "space" entity).
         if not fnmatch.fnmatch(t1w_filename, "*_space-*"):
             selected_t1w_file = t1w_file
 
     for t1w_seg_file in subj_data["seg_data"]:
         t1w_seg_filename = os.path.basename(t1w_seg_file)
+        # Select the native T1w-space segmentation file (i.e., no "space" entity).
+        # Also don't want aseg in the segmentation file name.
+        # TODO: Use BIDSLayout for this.
         if not (
             fnmatch.fnmatch(t1w_seg_filename, "*_space-*")
             or fnmatch.fnmatch(t1w_seg_filename, "*aseg*")
@@ -271,7 +303,7 @@ def extract_t1w_seg(subj_data):
             selected_t1w_seg_file = t1w_seg_file
 
     if not selected_t1w_file:
-        raise ValueError("No segmentation file found.")
+        raise ValueError("No T1w file found.")
 
     if not selected_t1w_seg_file:
         raise ValueError("No segmentation file found.")
@@ -360,3 +392,47 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         raise ValueError(f"Unsupported input_type '{input_type}'")
 
     return info_dict
+
+
+def _add_subject_prefix(subid):
+    """Extract or compile subject entity from subject ID.
+
+    Parameters
+    ----------
+    subid : str
+        A subject ID (e.g., 'sub-XX' or just 'XX').
+
+    Returns
+    -------
+    str
+        Subject entity (e.g., 'sub-XX').
+    """
+    if subid.startswith('sub-'):
+        return subid
+    return '-'.join(('sub', subid))
+
+
+def _getsesid(filename):
+    """Get session id from filename if available.
+
+    Parameters
+    ----------
+    filename : str
+        The BIDS filename from which to extract the session ID.
+
+    Returns
+    -------
+    ses_id : str or None
+        The session ID in the filename.
+        If the file does not have a session entity, ``None`` will be returned.
+    """
+    ses_id = None
+    base_filename = os.path.basename(filename)
+
+    file_id = base_filename.split('_')
+    for k in file_id:
+        if 'ses' in k:
+            ses_id = k.split('-')[1]
+            break
+
+    return ses_id

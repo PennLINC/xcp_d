@@ -251,13 +251,6 @@ def copyfileobj_example(src, dst):
         shutil.copyfile(src, dst)
 
 
-def symlinkfiles(source, dest):
-    """Symlink source file to dest file."""
-    # Beware, this example does not handle any edge cases!
-    with open(source, 'rb') as src, open(dest, 'wb') as dst:
-        copyfileobj_example(src, dst)
-
-
 def extractreg(mask, nifti):
     """Extract mean signal within mask from NIFTI."""
     masker = NiftiMasker(mask_img=mask)

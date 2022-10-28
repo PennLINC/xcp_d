@@ -67,10 +67,14 @@ run_xcpd_cmd () {
     fi
 
     # Otherwise we're going to use docker from the outside
-    bids_mount="-v ${bids_dir}:/bids-input:ro"
+    bids_parent_dir="$(dirname "$bids_dir")"  # get parent directory
+    bids_folder_name="$(basename "$bids_dir")"
+    bids_mount="-v ${bids_parent_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
-    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input /out participant -w /work"
+
+    
+    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
 
   fi
   echo "${XCPD_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"
@@ -152,7 +156,7 @@ get_bids_data() {
     # without freesurfer, sub-01
     if [[ ${DS} = sub01 ]]
     then
-      dataset_dir="$TEST_DATA_DIR/withoutfreesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithoutfreesurfer/fmriprep"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
@@ -160,18 +164,38 @@ get_bids_data() {
 
         ${WGET} \
           -O withoutfs_sub01.tar.xz \
-        "https://upenn.box.com/shared/static/4eq4hdefriqhhuyeqswxmkhno0gtezli.xz"
+        "https://upenn.box.com/shared/static/yuywkmlru36tgpy2va47uqudu0fdpgy7.xz"
         tar xvfJ withoutfs_sub01.tar.xz -C $TEST_DATA_DIR
+        mkdir fmriprepwithoutfreesurfer
+        mv withoutfreesurfer fmriprepwithoutfreesurfer/fmriprep
         rm withoutfs_sub01.tar.xz
+      else
+        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
+      fi
+
+    elif [[ ${DS} = nibabies ]]
+    then
+      dataset_dir="$TEST_DATA_DIR/nibabies_test_data"
+      # Do not re-download if the folder exists
+      if [ ! -d $dataset_dir ]
+      then
+        echo "Downloading ${DS} data to $dataset_dir"
+
+        ${WGET} \
+          -O nibabies.tar.xz \
+        "https://upenn.box.com/shared/static/a4evzxqynozyeyxl1l807kr17oqfufsq.xz"
+        tar xvfJ nibabies.tar.xz -C $TEST_DATA_DIR
+        rm nibabies.tar.xz
 
       else
         echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
+
     # colornest subject who also has freesurfer data (in a different archive)
     elif [[ ${DS} = fmriprep_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/fmriprep"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/fmriprep"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
@@ -179,8 +203,10 @@ get_bids_data() {
 
         ${WGET} \
           -O withfs_fmriprep_colornest001.tar.xz \
-          "https://upenn.box.com/shared/static/xxmty7kbg3umifu4l1z6e5tg8ha7hjxx.xz"
+          "https://upenn.box.com/shared/static/i3ulccnfr53f0la2eo5s1ijz273hw80u.xz"
         tar xvfJ withfs_fmriprep_colornest001.tar.xz -C $TEST_DATA_DIR
+        mkdir fmriprepwithfreesurfer
+        mv fmriprep fmriprepwithfreesurfer/fmriprep
         rm withfs_fmriprep_colornest001.tar.xz
 
       else
@@ -189,7 +215,7 @@ get_bids_data() {
 
     elif [[ ${DS} = freesurfer_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/freesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer/freesurfer"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
@@ -197,8 +223,9 @@ get_bids_data() {
 
         ${WGET} \
           -O withfs_fs_colornest001.tar.xz \
-          "https://upenn.box.com/shared/static/ej43w925h5cozsizuamnh7bjtdevi61b.xz"
+          "https://upenn.box.com/shared/static/dnyhbeckak62ar1kfllm012q5wwbej55.xz"
         tar xvfJ withfs_fs_colornest001.tar.xz -C $TEST_DATA_DIR
+        mv freesurfer fmriprepwithfreesurfer/freesurfer
         rm withfs_fs_colornest001.tar.xz
 
       else

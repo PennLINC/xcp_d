@@ -154,7 +154,7 @@ def init_xcpd_wf(
     """
     xcpd_wf = Workflow(name='xcpd_wf')
     xcpd_wf.base_dir = work_dir
-    print(f"Begin the {name} workflow")
+    LOGGER.info(f"Beginning the {name} workflow")
 
     write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
 
@@ -300,6 +300,7 @@ def init_subject_wf(
     ----------
     .. footbibliography::
     """
+
     workflow = Workflow(name=name)
 
     info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
@@ -343,7 +344,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
-    preproc_files = subj_data["boldfile"]
+    preproc_files = subj_data["bold"]
 
     if not preproc_files:
         LOGGER.error(
@@ -597,10 +598,3 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             workflow.get_node(node).interface.out_path_base = 'xcp_d'
 
     return workflow
-
-
-def _pop(inlist):
-    """Make a list of lists into a list."""
-    if isinstance(inlist, (list, tuple)):
-        return inlist[0]
-    return inlist

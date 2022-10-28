@@ -15,7 +15,7 @@ runinstall: &runinstall
       git checkout $CIRCLE_BRANCH
       echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
       echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
-      pip install . --progress-bar off
+      pip install .[tests] --progress-bar off
 
       # Write the config file
       mkdir ~/.nipype
@@ -42,7 +42,7 @@ jobs:
           command: |
             cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_without_freesurfer\]' )" != "" ]]; then
-              echo "Skipping nifti_without_freeurfer build"
+              echo "Skipping nifti_without_freesurfer build"
               circleci step halt
             fi
       - run: *runinstall
@@ -91,6 +91,37 @@ jobs:
             CHECK_OUTPUTS_FILE="nifti_with_freesurfer_outputs.txt"
             find /src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/nifti_with_freesurfer/test/outputs.out
             diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_with_freesurfer/test/outputs.out)
+            exit $?
+
+
+  nibabies:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nibabies\]' )" != "" ]]; then
+              echo "Skipping nibabies build"
+              circleci step halt
+            fi
+      - run: *runinstall
+      - run:
+          name: Run full xcp_d on nibabies
+          no_output_timeout: 1h
+          command: |
+            cd /src/xcp_d/.circleci
+            bash Nibabies.sh
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/
+      - run:
+          name: Check outputs of xcp_d run
+          command: |
+            mkdir -p /tmp/nibabies/test
+            CHECK_OUTPUTS_FILE="nibabies_outputs.txt"
+            find /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nibabies/derivatives/++ | grep -v sourcedata | sort > /tmp/nibabies/test/outputs.out
+            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nibabies/test/outputs.out)
             exit $?
 
   cifti_with_freesurfer:
@@ -232,6 +263,17 @@ workflows:
             tags:
               only: /.*/
 
+      - nibabies:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
       - nifti_without_freesurfer:
           requires:
             - build
@@ -258,6 +300,7 @@ workflows:
           requires:
             - nifti_with_freesurfer
             - nifti_without_freesurfer
+            - nibabies
             - cifti_with_freesurfer
             - pytests
           filters:

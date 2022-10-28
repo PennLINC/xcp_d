@@ -16,7 +16,7 @@ from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
 from xcp_d.utils.qcmetrics import compute_dvars
-from xcp_d.utils.write_save import read_ndata, scalex, write_ndata
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def _decimate_data(data, seg_data, size):
@@ -49,39 +49,6 @@ def plotimage(img, out_file):
     plot_anat(img, draw_cross=False, figure=fig)
     fig.savefig(out_file, bbox_inches="tight", pad_inches=None)
     return out_file
-
-
-def plot_svg(fdata, fd, dvars, filename, TR=1):
-    """Plot carpetplot with FD and DVARS, and save to file.
-
-    Parameters
-    ----------
-    fdata : str
-        The functional data file to plot.
-    fd : numpy.ndarray
-        Framewise displacement
-    dvars : numpy.ndarray
-        DVARS
-    filename : str
-        The SVG file to save the figure to.
-    TR : float, optional
-        Repetion time in seconds. Default is 1.
-    """
-    sns.set_style('whitegrid')
-    fig = plt.figure(constrained_layout=False, figsize=(30, 15))
-    grid = mgs.GridSpec(3,
-                        1,
-                        wspace=0.0,
-                        hspace=0.05,
-                        height_ratios=[1] * (3 - 1) + [5])
-    confoundplot(fd, grid[0], TR=TR, color='b', name='FD')
-    confoundplot(dvars, grid[1], TR=TR, color='r', name='DVARS')
-    plot_carpet(
-        func=fdata,
-        subplot=grid[-1],
-        TR=TR,
-    )
-    fig.savefig(filename, bbox_inches="tight", pad_inches=None)
 
 
 def confoundplot(time_series,
@@ -456,6 +423,8 @@ def confoundplotx(time_series,
 def plot_svgx(rawdata,
               regressed_data,
               residual_data,
+              tmask,
+              dummyvols,
               filtered_motion,
               unprocessed_filename,
               processed_filename,
@@ -478,6 +447,10 @@ def plot_svgx(rawdata,
         nifti or cifti after regression and filtering
     mask :
         mask for nifti if available
+    tmask :
+       temporal censoring mask
+    dummyvols :
+        initial number of volumes to drop
     seg_data :
         3 tissues seg_data files
     TR : float, optional
@@ -490,16 +463,29 @@ def plot_svgx(rawdata,
         output file svg after processing
     """
     # Compute dvars correctly if not already done
-    if type(raw_dvars) != np.ndarray:
-        raw_dvars = compute_dvars(read_ndata(datafile=rawdata, maskfile=mask))
-    if type(regressed_dvars) != np.ndarray:
-        regressed_dvars = compute_dvars(read_ndata(datafile=regressed_data, maskfile=mask))
-    if type(filtered_dvars) != np.ndarray:
-        filtered_dvars = compute_dvars(read_ndata(datafile=residual_data,
-                                                  maskfile=mask))
-    # For ease of reference later
     residual_data_file = residual_data
     raw_data_file = rawdata
+    raw_data = read_ndata(datafile=rawdata, maskfile=mask)
+    regressed_data = read_ndata(datafile=regressed_data, maskfile=mask)
+    filtered_data = read_ndata(datafile=residual_data, maskfile=mask)
+    tmask_df = pd.read_table(tmask)
+    tmask_arr = tmask_df["framewise_displacement"].values
+    tmask_bool = ~tmask_arr.astype(bool)
+    # Let's remove dummy time from the raw_data if needed
+    if dummyvols > 1:
+        raw_data = raw_data[dummyvols:]
+    # Let's censor the interpolated data and raw_data:
+    if sum(tmask_arr) > 0:
+        raw_data = raw_data[:, tmask_bool]
+        filtered_data = filtered_data[:, tmask_bool]
+
+    if type(raw_dvars) != np.ndarray:
+        raw_dvars = compute_dvars(raw_data)
+    if type(regressed_dvars) != np.ndarray:
+        regressed_dvars = compute_dvars(regressed_data)
+    if type(filtered_dvars) != np.ndarray:
+        filtered_dvars = compute_dvars(filtered_data)
+    # For ease of reference later
 
     # Formatting & setting of files
     sns.set_style('whitegrid')
@@ -998,47 +984,6 @@ def _carpet(func,
         return output_file
 
     return (ax0, ax1, ax2), grid_specification
-
-
-def plot_text(imgdata, grid_spec_ts):
-    """Get the correct text for each plot."""
-    grid_specification = mgs.GridSpecFromSubplotSpec(1,
-                                                     2,
-                                                     subplot_spec=grid_spec_ts,
-                                                     width_ratios=[1, 100],
-                                                     wspace=0.0)
-    if imgdata.endswith('nii.gz'):  # Nifti
-        label = "Blue: Cortical GM, Orange: Subcortical GM, Green: Cerebellum, Red: CSF and WM"
-    else:  # Cifti
-        label = "Blue: Left Cortex, Cyan: Right Cortex,Orange: Subcortical, Green: Cerebellum"
-
-    text_kwargs = dict(ha='center', va='center', fontsize=50)
-
-    ax2 = plt.subplot(grid_specification[1])
-    ax2.text(0.5, 0.1, label, **text_kwargs)
-    plt.axis('off')
-
-    return ax2, grid_specification
-
-
-def display_cb(grid_spec_ts):
-    """Set settings for colorbar display."""
-    grid_specification = mgs.GridSpecFromSubplotSpec(1,
-                                                     2,
-                                                     subplot_spec=grid_spec_ts,
-                                                     width_ratios=[1, 100],
-                                                     wspace=0.0)
-    data = scalex(np.random.rand(40), -600, 600)
-    ax2 = plt.subplot(grid_specification[1])
-    PCM = ax2.scatter(data, data, cmap="gray", c=data)
-    cbar = plt.colorbar(PCM, orientation="horizontal", shrink=1, fraction=12)
-    for t in cbar.ax.get_xticklabels():
-        t.set_fontsize(20)
-
-    ax2.set_ylim([-700, -690])
-    plt.axis('off')
-
-    return ax2, grid_specification
 
 
 def _get_tr(img):
