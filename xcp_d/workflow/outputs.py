@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for collecting and saving xcp_d outputs."""
-import numpy as np
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -106,6 +105,7 @@ def init_writederivatives_wf(
                 "reho_out",
                 "filtered_motion",
                 "tmask",
+                "dummyvols"
             ],
         ),
         name="inputnode",
@@ -116,7 +116,6 @@ def init_writederivatives_wf(
         'RepetitionTime': TR,
         'Freq Band': [highpass, lowpass],
         'nuisance parameters': params,
-        'dummy vols': int(np.ceil(dummytime / TR))
     }
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
 
@@ -167,6 +166,7 @@ def init_writederivatives_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
+        workflow.connect(inputnode, write_derivative_cleandata_wf, "dummyvols", "dummy vols")
 
         write_derivative_alff_wf = pe.Node(
             DerivativesDataSink(
