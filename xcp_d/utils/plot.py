@@ -1052,10 +1052,10 @@ def plot_alff_reho_surface(func, output_path):
     if density is None:
         density = "32k"
     rh = str(
-        get_template(template="fsLR", hemi="L", density=density, suffix="sphere")
+        get_template(template="fsLR", hemi="L", density=density, suffix="midthickness")
     )
     lh = str(
-        get_template(template="fsLR", hemi="R", density=density, suffix="sphere")
+        get_template(template="fsLR", hemi="R", density=density, suffix="midthickness")
     )
     cifti = nb.load(func)
     cifti_data = cifti.get_fdata()
