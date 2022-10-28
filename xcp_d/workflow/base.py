@@ -21,9 +21,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
-    extract_t1w_seg,
     get_preproc_pipeline_info,
-    select_registrationfile,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
@@ -382,15 +380,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         run_without_submitting=True,
     )
 
-    t1w_file_grabber = pe.Node(
-        Function(
-            input_names=["subj_data"],
-            output_names=["t1w", "t1seg"],
-            function=extract_t1w_seg,
-        ),
-        name="t1w_file_grabber",
-    )
-
     transform_file_grabber = pe.Node(
         Function(
             input_names=["subj_data"],
@@ -408,9 +397,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     workflow.connect([
-        (inputnode, t1w_file_grabber, [('subj_data', 'subj_data')]),
         (inputnode, transform_file_grabber, [('subj_data', 'subj_data')]),
-        (t1w_file_grabber, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
+        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
         (transform_file_grabber, t1w_wf, [('t1w_to_mni', 'inputnode.t1w_to_mni')]),
     ])
 

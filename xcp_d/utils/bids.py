@@ -125,56 +125,6 @@ def collect_participants(
     return found_label
 
 
-def collect_data_related_to_bold(layout, bold_file, t1w_file=None, cifti=False):
-    bids_file = layout.get_file(bold_file)
-    subj_data, metadata = {}, {}
-    subj_data["confounds"] = layout.get_nearest(
-        bids_file.path,
-        strict=False,
-        desc="confounds",
-        suffix="timeseries",
-        extension=".tsv",
-    )
-    metadata["bold_metadata"] = layout.get_metadata(bold_file)
-    # Ensure that we know the TR
-    if "RepetitionTime" not in metadata["bold_metadata"].keys():
-        metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
-
-    if not cifti:
-        # t1w_file = layout.get_file(t1w_file)
-        subj_data["boldref"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            suffix="boldref",
-        )
-        subj_data["boldmask"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            desc="brain",
-            suffix="mask",
-        )
-        subj_data["t1w_to_native_xform"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            **{"from": "T1w"},  # "from" is protected Python kw
-            to="scanner",
-            suffix="xfm",
-        )
-        # subj_data["t1w_mask"] = layout.get_nearest(
-        #     t1w_file.path
-        # )
-
-    for k, v in subj_data.items():
-        if v is None:
-            raise FileNotFoundError(f"No {k} file found for {bids_file.path}")
-
-        metadata[f"{k}_metadata"] = layout.get_metadata(v)
-
-    subj_data.update(metadata)
-
-    return subj_data
-
-
 def collect_data(
     bids_dir,
     participant_label,
@@ -257,6 +207,8 @@ def collect_data(
                 "suffix": "dseg",
                 "extension": ".nii.gz",
             },
+            # transform from T1w space to MNI space
+            # space entity will be set later
         })
 
     # Apply filters. These may override anything.
@@ -276,6 +228,10 @@ def collect_data(
             )
             if bold_data:
                 queries["bold"]["space"] = space
+                if not cifti:
+                    queries["mni_to_t1w_xform"]["from"] = space
+                    queries["t1w_to_mni_xform"]["to"] = space
+
                 break
 
     subj_data = {
@@ -292,94 +248,50 @@ def collect_data(
     return layout, subj_data
 
 
-def select_registrationfile(subj_data):
-    """Select a registration file from a derivatives dataset.
+def collect_run_data(layout, bold_file, cifti=False):
+    bids_file = layout.get_file(bold_file)
+    subj_data, metadata = {}, {}
+    subj_data["confounds"] = layout.get_nearest(
+        bids_file.path,
+        strict=False,
+        desc="confounds",
+        suffix="timeseries",
+        extension=".tsv",
+    )
+    metadata["bold_metadata"] = layout.get_metadata(bold_file)
+    # Ensure that we know the TR
+    if "RepetitionTime" not in metadata["bold_metadata"].keys():
+        metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    Parameters
-    ----------
-    subj_data : dict
-        Dictionary where keys are filetypes and values are filenames.
+    if not cifti:
+        subj_data["boldref"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            suffix="boldref",
+        )
+        subj_data["boldmask"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            desc="brain",
+            suffix="mask",
+        )
+        subj_data["t1w_to_native_xform"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            **{"from": "T1w"},  # "from" is protected Python kw
+            to="scanner",
+            suffix="xfm",
+        )
 
-    Returns
-    -------
-    mni_to_t1w : str
-        Path to the MNI-to-T1w transform file.
-    t1w_to_mni : str
-        Path to the T1w-to-MNI transform file.
-    """
-    regfile = subj_data["regfile"]
+    for k, v in subj_data.items():
+        if v is None:
+            raise FileNotFoundError(f"No {k} file found for {bids_file.path}")
 
-    # get the file with the template name
-    template1 = "MNI152NLin6Asym"  # default for fmriprep / nibabies with cifti output
-    template2 = "MNI152NLin2009cAsym"  # default template for fmriprep,dcan and hcp
-    template3 = "MNIInfant"  # nibabies
+        metadata[f"{k}_metadata"] = layout.get_metadata(v)
 
-    mni_to_t1w = None
-    t1w_to_mni = None
+    subj_data.update(metadata)
 
-    for j in regfile:
-        if (
-            "from-" + template1 in j
-            or ("from-" + template2 in j and mni_to_t1w is None)
-            or ("from-" + template3 in j and mni_to_t1w is None)
-        ):
-            mni_to_t1w = j
-        elif (
-            "to-" + template1 in j
-            or ("to-" + template2 in j and t1w_to_mni is None)
-            or ("to-" + template3 in j and t1w_to_mni is None)
-        ):
-            t1w_to_mni = j
-    # for validation, we need to check presence of MNI152NLin2009cAsym
-    # if not we use MNI152NLin2006cAsym for nibabies
-    # print(mni_to_t1w)
-
-    return mni_to_t1w, t1w_to_mni
-
-
-def extract_t1w_seg(subj_data):
-    """Select preprocessed T1w and segmentation files.
-
-    Parameters
-    ----------
-    subj_data : dict
-
-    Returns
-    -------
-    selected_t1w_file : str
-        Preprocessed T1-weighted file.
-    selected_t1w_seg_file : str
-        Segmentation file.
-    """
-    import fnmatch
-    import os
-
-    selected_t1w_file, selected_t1w_seg_file = None, None
-    for t1w_file in subj_data["t1w"]:
-        t1w_filename = os.path.basename(t1w_file)
-        # Select the native T1w-space preprocessed T1w file (i.e., no "space" entity).
-        if not fnmatch.fnmatch(t1w_filename, "*_space-*"):
-            selected_t1w_file = t1w_file
-
-    for t1w_seg_file in subj_data["seg_data"]:
-        t1w_seg_filename = os.path.basename(t1w_seg_file)
-        # Select the native T1w-space segmentation file (i.e., no "space" entity).
-        # Also don't want aseg in the segmentation file name.
-        # TODO: Use BIDSLayout for this.
-        if not (
-            fnmatch.fnmatch(t1w_seg_filename, "*_space-*")
-            or fnmatch.fnmatch(t1w_seg_filename, "*aseg*")
-        ):
-            selected_t1w_seg_file = t1w_seg_file
-
-    if not selected_t1w_file:
-        raise ValueError("No T1w file found.")
-
-    if not selected_t1w_seg_file:
-        raise ValueError("No segmentation file found.")
-
-    return selected_t1w_file, selected_t1w_seg_file
-
+    return subj_data
 
 def write_dataset_description(fmri_dir, xcpd_dir):
     """Write dataset_description.json file for derivatives.

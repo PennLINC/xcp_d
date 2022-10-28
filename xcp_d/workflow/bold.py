@@ -21,14 +21,10 @@ from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.utils.bids import collect_data_related_to_bold
+from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
-from xcp_d.utils.utils import (
-    get_transformfile,
-    get_transformfilex,
-    stringforparams,
-)
+from xcp_d.utils.utils import get_transformfile, get_transformfilex, stringforparams
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -171,7 +167,7 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_data_related_to_bold(layout, bold_file)
+    run_data = collect_run_data(layout, bold_file)
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
     # TODO: This is a workaround for a bug in nibabies.
