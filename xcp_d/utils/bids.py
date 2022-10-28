@@ -8,11 +8,10 @@ A PR will be submitted to niworkflows at some point.
 import os
 import warnings
 
+import nibabel as nb
 from bids import BIDSLayout
 from nipype import logging
 from packaging.version import Version
-
-from xcp_d.utils.plot import _get_tr
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -507,3 +506,25 @@ def _getsesid(filename):
             break
 
     return ses_id
+
+
+def _get_tr(img):
+    """Attempt to extract repetition time from NIfTI/CIFTI header.
+
+    Examples
+    --------
+    _get_tr(nb.load(Path(test_data) /
+    ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
+    2.2
+     _get_tr(nb.load(Path(test_data) /
+    ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
+    2.0
+    """
+    if isinstance(img, str):
+        img = nb.load(img)
+
+    try:
+        return img.header.matrix.get_index_map(0).series_step  # Get TR
+    except AttributeError:  # Error out if not in cifti
+        return img.header.get_zooms()[-1]
+    raise RuntimeError("Could not extract TR - unknown data structure type")

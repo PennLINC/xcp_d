@@ -7,7 +7,7 @@ import nibabel as nb
 
 from numpy.fft import fft, ifft
 
-from xcp_d.utils.plot import _get_tr
+from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflow.restingstate import init_compute_alff_wf
 

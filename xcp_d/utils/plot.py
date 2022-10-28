@@ -15,6 +15,7 @@ from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
+from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -984,25 +985,3 @@ def _carpet(func,
         return output_file
 
     return (ax0, ax1, ax2), grid_specification
-
-
-def _get_tr(img):
-    """Attempt to extract repetition time from NIfTI/CIFTI header.
-
-    Examples
-    --------
-    _get_tr(nb.load(Path(test_data) /
-    ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
-    2.2
-     _get_tr(nb.load(Path(test_data) /
-    ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
-    2.0
-    """
-    if isinstance(img, str):
-        img = nb.load(img)
-
-    try:
-        return img.header.matrix.get_index_map(0).series_step  # Get TR
-    except AttributeError:  # Error out if not in cifti
-        return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
