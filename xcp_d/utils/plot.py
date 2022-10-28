@@ -9,15 +9,14 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from bids.layout import parse_file_entities
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
 from nilearn import plotting as plott
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
-from nipype.interfaces import utility as niu
-from nipype.pipeline import engine as pe
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from templateflow.api import get as get_template
 
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
@@ -1012,9 +1011,13 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def plot_alff_reho_volumetric(filename, output_path):
+def plot_alff_reho_volumetric(output_path, filename):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
-    template = filename
+    space = str(parse_file_entities(filename)["space"])
+    resolution = str(parse_file_entities(filename)["res"])
+    template = str(
+        get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
+    )
     plott.plot_stat_map(filename,
                         bg_img=template,
                         display_mode='z',
@@ -1045,8 +1048,13 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 def plot_alff_reho_surface(func, output_path):
     """Plot ReHo and ALFF for ciftis on surface."""
-    rh = # get surface
-    lh = # get surface
+    density = str(parse_file_entities(func)["den"])
+    rh = str(
+        get_template(template="fsLR", hemi="L", density=density, suffix="sphere")
+    )
+    lh = str(
+        get_template(template="fsLR", hemi="R", density=density, suffix="sphere")
+    )
     cifti = nb.load(func)
     cifti_data = cifti.get_fdata()
     cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]

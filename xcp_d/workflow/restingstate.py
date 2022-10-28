@@ -6,7 +6,6 @@ from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
-
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.resting_state import (
     ComputeALFF,
@@ -107,7 +106,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          mem_gb=mem_gb,
                          name='alff_compt',
                          n_procs=omp_nthreads)
-                                         
+
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out'),
@@ -282,6 +281,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     reho_html = plot_alff_reho_surface(func=merge_cifti.outputs.out_file,
                                        output_path='reho.svg')
+
     outputnode.outputs.rehohtml = reho_html
 
     return workflow
@@ -350,9 +350,8 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
                       ])
-
     reho_html = plot_alff_reho_volumetric(func=compute_reho.outputs.out_file,
-                                          output_path='reho.svg')
+                                          filename=compute_reho.outputs.out_file)
     outputnode.outputs.rehohtml = reho_html
 
     return workflow

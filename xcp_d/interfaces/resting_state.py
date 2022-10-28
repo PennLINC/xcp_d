@@ -7,7 +7,6 @@
 """
 import os
 import shutil
-
 from nilearn.plotting import view_img
 from nipype import logging
 from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
@@ -101,6 +100,9 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     mask = File(exists=False,
                 mandatory=False,
                 desc=" brain mask for nifti file")
+    outputdir = File(exists=False,
+                     mandatory=False,
+                     desc="BIDS output directory")
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
@@ -160,10 +162,9 @@ class ComputeALFF(SimpleInterface):
                     template=self.inputs.in_file,
                     filename=self._results['alff_out'],
                     mask=self.inputs.mask)
-
         if self.inputs.in_file.endswith('.nii.gz'):
-            alff_HTML = plot_alff_reho_volumetric(self._results['alff_out'],
-                                                  output_path='alff.svg')
+            alff_HTML = plot_alff_reho_volumetric(output_path='alff.svg',
+                                                  filename=self._results['alff_out'])
         if self.inputs.in_file.endswith('.dtseries.nii'):
             alff_HTML = plot_alff_reho_surface(self._results['alff_out'],
                                                output_path='alff.svg')
