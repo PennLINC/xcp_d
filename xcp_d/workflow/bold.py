@@ -708,7 +708,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                                      datatype="figures"),
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)
-
+    ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                     source_file=bold_file,
+                                                     desc='alffplot',
+                                                     datatype="figures"),
+                                 name='ds_report_alffplot',
+                                 run_without_submitting=False)
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
@@ -717,6 +722,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (alff_compute_wf, ds_report_alffplot, [('outputnode.alffhtml', 'in_file')])
     ])
 
     # executive summary workflow

@@ -1012,21 +1012,15 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def plot_alff_reho_volumetric(filename):
+def plot_alff_reho_volumetric(filename, output_path):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
-    workflow = Workflow(name='plot_alff_reho_volumetric')
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['filename']),
-        name='inputnode')
-    inputnode.inputs.filename = filename
-    template = # get template
-    outfile_path = # figure out how to name
-    plott.plot_stat_map(inputnode.inputs.filename,
+    template = filename
+    plott.plot_stat_map(filename,
                         bg_img=template,
                         display_mode='z',
                         cut_coords=8,
-                        output_file=outfile_path)
-    return workflow
+                        output_file=output_path)
+    return output_path
 
 
 def surf_data_from_cifti(data, axis, surf_name):
@@ -1049,13 +1043,8 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_alff_reho_surface(func):
+def plot_alff_reho_surface(func, output_path):
     """Plot ReHo and ALFF for ciftis on surface."""
-    workflow = Workflow(name='plot_alff_reho_volumetric')
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['func']),
-        name='inputnode')
-    inputnode.inputs.func = func
     rh = # get surface
     lh = # get surface
     cifti = nb.load(func)
@@ -1117,7 +1106,6 @@ def plot_alff_reho_surface(func):
     axes[0, 0].set_title("Left Hemisphere", fontsize=40)
     axes[0, 1].set_title("Right Hemisphere", fontsize=40)
     fig.tight_layout()
-    outfile_path = # define
-    fig.savefig(outfile_path)
+    fig.savefig(output_path)
 
-    return workflow
+    return output_path
