@@ -234,6 +234,21 @@ def collect_data(
 
                 break
 
+    if not bold_data:
+        allowed_space_str = ", ".join(allowed_spaces)
+        raise ValueError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+
+    # Grab the first (and presumably best) density and resolution if there are multiple.
+    # This probably works well for resolution (1 typically means 1x1x1,
+    # 2 typically means 2x2x2, etc.), but probably doesn't work well for density.
+    resolutions = layout.get_res(**queries["bold"])
+    densities = layout.get_den(**queries["bold"])
+    if len(resolutions) > 1:
+        queries["bold"]["resolution"] = resolutions[0]
+
+    if len(densities) > 1:
+        queries["bold"]["density"] = densities[0]
+
     subj_data = {
         dtype: sorted(
             layout.get(
