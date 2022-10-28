@@ -12,7 +12,7 @@ from xcp_d.interfaces.resting_state import ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.workbench import CiftiSeparateMetric
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
-from xcp_d.utils.plot import plot_alff_reho_volumetric, surf_data_from_cifti, plot_alff_reho_surface
+from xcp_d.utils.plot import plot_alff_reho_volumetric, plot_alff_reho_surface
 
 
 @fill_doc
@@ -99,20 +99,28 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          name='alff_compt',
                          n_procs=omp_nthreads)
     # create nifti html
-    plot_alff_reho_volumetric()
+    plot_alff_nifti = pe.Node(plot_alff_reho_volumetric,
+                              mem_gb=mem_gb,
+                              name='alff_plot_nifti',
+                              n_procs=omp_nthreads)
 
+    plot_alff_cifti = pe.Node(plot_alff_reho_surface,
+                              mem_gb=mem_gb,
+                              name='alff_plot_cifti',
+                              n_procs=omp_nthreads)
 
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])])
 
-    if not cifti:  # if Nifti, get the HTML
+    if not cifti:  
         workflow.connect([
-            (alff_compt, brain_plot, [('alff_out', 'in_file')]),
-            (inputnode, brain_plot, [('bold_mask', 'mask_file')]),
-            (brain_plot, outputnode, [('nifti_html', 'alffhtml')]),
+            (alff_compt, plot_alff_nifti, [('alff_out', 'inputnode.filename')]),
         ])
-
+    else:
+        workflow.connect([
+            (alff_compt, plot_alff_cifti, [('alff_out', 'inputnode.func')]),
+        ])
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
             workflow.__desc__ = workflow.__desc__ + (
@@ -127,6 +135,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             )
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
+                (smooth_data, plot_alff_nifti, [('out_file', 'inputnode.filename')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_alff')])
             ])
 
@@ -155,6 +164,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                                   n_procs=omp_nthreads)
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
+                (alff_compt, plot_alff_cifti, [('alff_out', 'inputnode.func')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_alff')]),
             ])
 
@@ -233,11 +243,15 @@ vertices to yield ReHo.
                       name="reho_rh",
                       mem_gb=mem_gb,
                       n_procs=omp_nthreads)
-
+    plot_reho_cifti = pe.Node(plot_alff_reho_surface,
+                            mem_gb=mem_gb,
+                            name='reho_plot_cifti',
+                            n_procs=omp_nthreads)
     # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
         (inputnode, rh_surf, [('clean_bold', 'in_file')]),
+        (inputnode, rh_surf, [('clean_bold', 'in_file')])
         (lh_surf, lh_reho, [('out_file', 'surf_bold')]),
         (rh_surf, rh_reho, [('out_file', 'surf_bold')]),
         (lh_reho, outputnode, [('surf_gii', 'lh_reho')]),

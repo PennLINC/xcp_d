@@ -15,6 +15,9 @@ from nilearn import plotting as plott
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
+from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, scalex, write_ndata
@@ -1064,13 +1067,21 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def plot_alff_reho_volumetric(filename, template):
+def plot_alff_reho_volumetric(filename):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
-    figure = plott.plot_stat_map(filename,
+    workflow = Workflow(name='plot_alff_reho_volumetric')
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['filename']),
+        name='inputnode')
+    inputnode.inputs.filename = filename
+    template = # get template
+    outfile_path = # figure out how to name
+    plott.plot_stat_map(inputnode.inputs.filename,
                         bg_img=template,
                         display_mode='z',
-                        cut_coords=8)
-    return figure
+                        cut_coords=8,
+                        output_file=outfile_path)
+    return workflow
 
 
 def surf_data_from_cifti(data, axis, surf_name):
@@ -1093,8 +1104,15 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_alff_reho_surface(func, rh, lh):
+def plot_alff_reho_surface(func):
     """Plot ReHo and ALFF for ciftis on surface."""
+    workflow = Workflow(name='plot_alff_reho_volumetric')
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['func']),
+        name='inputnode')
+    inputnode.inputs.func = func
+    rh = # get surface
+    lh = # get surface
     cifti = nb.load(func)
     cifti_data = cifti.get_fdata()
     cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
@@ -1154,5 +1172,7 @@ def plot_alff_reho_surface(func, rh, lh):
     axes[0, 0].set_title("Left Hemisphere", fontsize=40)
     axes[0, 1].set_title("Right Hemisphere", fontsize=40)
     fig.tight_layout()
-    final_figure = fig
-    return final_figure
+    outfile_path = # define
+    fig.savefig(outfile_path)
+
+    return workflow
