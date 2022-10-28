@@ -81,6 +81,7 @@ def run_reports(
 
 
 def generate_reports(subject_list,
+                     dummytime,
                      fmri_dir,
                      work_dir,
                      output_dir,
@@ -151,6 +152,7 @@ def generate_reports(subject_list,
                 fmri_dir = str(work_dir) + '/hcp/hcp'
             print('Concatenating bold files ...')
             concatenate_derivatives(
+                dummytime=dummytime,
                 subjects=subject_list,
                 fmridir=str(fmri_dir),
                 outputdir=str(Path(str(output_dir)) / 'xcp_d/'),

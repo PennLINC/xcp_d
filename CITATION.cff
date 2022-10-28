@@ -23,6 +23,11 @@ authors:
     email: kahini.mehta@pennmedicine.upenn.edu
     affiliation: University of Pennsylvania
     orcid: 'https://orcid.org/0000-0001-9466-100X'
+  - given-names: Taylor
+    family-names: Salo
+    email: salot@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9813-3167'
   - given-names: Kristin
     family-names: Murtha
     affiliation: University of Pennsylvania
@@ -81,5 +86,5 @@ keywords:
   - BIDS-App
   - Neuroimaging
 license: BSD-3-Clause
-version: 0.1.3
-date-released: '2022-08-16'
+version: 0.2.0
+date-released: '2022-10-20'

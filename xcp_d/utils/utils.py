@@ -9,7 +9,6 @@ from pathlib import Path
 import nibabel as nb
 import numpy as np
 from nipype.interfaces.ants import ApplyTransforms
-from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
@@ -123,6 +122,7 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     import glob
     import os
 
+    from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
     # get file basename, anatdir and list all transforms in anatdir

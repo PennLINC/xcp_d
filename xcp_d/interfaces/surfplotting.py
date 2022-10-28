@@ -88,8 +88,10 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
         desc="TSV file with filtered motion parameters.",
     )
     mask = File(exists=False, mandatory=False, desc="Bold mask")
+    tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=False, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
+    dummyvols = traits.Float(default_value=0, desc="Dummy volumes to drop")
 
 
 class _PlotSVGDataOutputSpec(TraitedSpec):
@@ -127,6 +129,8 @@ class PlotSVGData(SimpleInterface):
 
         self._results['before_process'], self._results[
             'after_process'] = plot_svgx(
+                tmask=self.inputs.tmask,
+                dummyvols=self.inputs.dummyvols,
                 rawdata=self.inputs.rawdata,
                 regressed_data=self.inputs.regressed_data,
                 residual_data=self.inputs.residual_data,

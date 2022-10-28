@@ -7,11 +7,6 @@ Test XCP-D on nifti data without FreeSurfer
 
 Testing regular volumetric outputs from fmriprep
 
-Inputs:
--------
-
- - qsiprep multi shell results with anatomical outputs (data/qsiprep_with_anat)
-
 DOC
 
 set +e
@@ -28,7 +23,7 @@ TESTNAME=nifti_without_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/data/withoutfreesurfer
+BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithoutfreesurfer/fmriprep
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
@@ -39,3 +34,5 @@ $XCPD_CMD \
     -vv \
     --nuissance-regressors 27P \
     --disable-bandpass-filter  `# dataset is too short (16 vols) for filtering`
+
+echo $XCPD_CMD

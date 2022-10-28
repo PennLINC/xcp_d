@@ -5,18 +5,6 @@ This file is an example of running pytests either locally or on circleci.
 Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
-import os.path as op
-
-
-def test_data_availability(data_dir, working_dir, output_dir):
-    """Make sure that we have access to all the testing data."""
-    assert op.exists(output_dir)
-    assert op.exists(working_dir)
-    assert op.exists(data_dir)
-    boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
-        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    assert op.exists(boldfile)
-
 
 # Testing with CUSTOM CONFOUNDS
 # Note: I had to test this locally as I don't have the permissions to share the
@@ -50,11 +38,11 @@ def test_data_availability(data_dir, working_dir, output_dir):
 
 
 # def test_fd_interface_nifti_custom(data_dir):  # Checking results
-#     boldfile = data_dir + "/withoutfreesurfer/sub-01/func/" \
+#     boldfile = data_dir + "sub-01/func/" \
 #         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-#     confounds_file = data_dir + "/withoutfreesurfer/sub-01/func/" \
+#     confounds_file = data_dir + "sub-01/func/" \
 #         "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
-#     custom_confounds_tsv = data_dir + "/withoutfreesurfer/sub-01/func/customnifti.tsv"
+#     custom_confounds_tsv = data_dir + "sub-01/func/customnifti.tsv"
 #     # Run workflow
 #     remvtr = RemoveTR()
 #     remvtr.inputs.bold_file = boldfile

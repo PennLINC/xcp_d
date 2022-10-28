@@ -373,6 +373,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         layout=layout,
         output_dir=output_dir,
         omp_nthreads=omp_nthreads,
+        dummyvols=initial_volumes_to_drop,
         mem_gb=mem_gbx['timeseries'],
     )
 
@@ -562,7 +563,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                           ('bold_file', 'inputnode.bold_file'),
                                           ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
         (denoise_bold, executivesummary_wf, [('out_file', 'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion')]),
+        (denoise_bold, executivesummary_wf, [('out_file', 'inputnode.regressed_data')]),
+        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion'),
+                                             ('tmask', 'inputnode.tmask')]),
     ])
 
     return workflow
