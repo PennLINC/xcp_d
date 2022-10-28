@@ -166,7 +166,6 @@ def init_writederivatives_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
-        workflow.connect(inputnode, write_derivative_cleandata_wf, "dummyvols", "dummy vols")
 
         write_derivative_alff_wf = pe.Node(
             DerivativesDataSink(
