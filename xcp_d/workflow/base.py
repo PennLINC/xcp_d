@@ -9,7 +9,6 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
-from nipype import Function
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
