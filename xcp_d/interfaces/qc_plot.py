@@ -33,7 +33,7 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
     )
     tmask = File(exists=False, mandatory=False, desc="Temporal mask. Current unused.")
-    dummytime = traits.Float(
+    dummyvols = traits.Int(
         exists=False,
         mandatory=False,
         default_value=0,

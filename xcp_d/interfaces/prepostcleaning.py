@@ -25,10 +25,16 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
                      desc="Either cifti or nifti ")
-    initial_volumes_to_drop = traits.Int(mandatory=True,
-                                         desc="Number of volumes to drop from the beginning,"
-                                              "calculated in an earlier workflow from dummytime "
-                                              "and repetition time.")
+    initial_volumes_to_drop = traits.Either(
+        traits.Int,
+        "auto",
+        mandatory=True,
+        desc=(
+            "Number of volumes to drop from the beginning, "
+            "calculated in an earlier workflow from dummytime "
+            "and repetition time."
+        ),
+    )
     fmriprep_confounds_file = File(exists=True,
                                    mandatory=False,
                                    desc="fmriprep confounds tsv")
@@ -51,6 +57,8 @@ class _RemoveTROutputSpec(TraitedSpec):
     custom_confounds_dropped = File(exists=False,
                                     mandatory=False,
                                     desc="custom_confounds_tsv dropped")
+
+    dummyvols = traits.Int(desc="Number of volumes dropped.")
 
 
 class RemoveTR(SimpleInterface):
@@ -93,6 +101,8 @@ class RemoveTR(SimpleInterface):
                     f"No non-steady-state outliers found in {self.inputs.fmriprep_confounds_file}"
                 )
                 volumes_to_drop = 0
+
+        self._results["dummyvols"] = volumes_to_drop
 
         # Check if we need to do anything
         if volumes_to_drop == 0:
