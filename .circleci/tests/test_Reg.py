@@ -1,4 +1,6 @@
 """Tests for regression methods."""
+import os
+
 import numpy as np
 import pandas as pd
 import scipy
@@ -9,6 +11,8 @@ from xcp_d.utils.write_save import read_ndata
 
 def test_Reg_Nifti(data_dir):
     """Test NIFTI regression."""
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer")
     #  Specify inputs
     in_file = (
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
@@ -62,6 +66,8 @@ def test_Reg_Nifti(data_dir):
 def test_Reg_Cifti(data_dir):
     """Test CIFTI regression."""
     # Specify inputs
+    data_dir = os.path.join(data_dir,
+                            "fmriprepwithfreesurfer")
     in_file = (
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"

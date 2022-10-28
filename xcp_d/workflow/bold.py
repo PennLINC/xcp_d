@@ -21,9 +21,10 @@ from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.utils.concantenation import _t12native
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.utils import (
+    _t12native,
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
@@ -33,7 +34,7 @@ from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
-from xcp_d.workflow.restingstate import init_3d_reho_wf, init_compute_alff_wf
+from xcp_d.workflow.restingstate import init_compute_alff_wf, init_nifti_reho_wf
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -243,6 +244,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # get reference and mask
     mask_file, ref_file = _get_ref_mask(fname=bold_file)
+    # TODO: This is a workaround for a bug in nibabies.
+    # Once https://github.com/nipreps/nibabies/issues/245 is resolved
+    # and a new release is made, remove this.
+    mask_file = check_binary_mask(mask_file)
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -303,9 +309,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                            name="compute_alff_wf",
                                            omp_nthreads=omp_nthreads)
 
-    reho_compute_wf = init_3d_reho_wf(mem_gb=mem_gbx['timeseries'],
-                                      name="afni_reho_wf",
-                                      omp_nthreads=omp_nthreads)
+    reho_compute_wf = init_nifti_reho_wf(
+        mem_gb=mem_gbx['timeseries'],
+        name="nifti_reho_wf",
+        omp_nthreads=omp_nthreads,
+    )
 
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
@@ -370,6 +378,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
         output_dir=output_dir,
+        dummyvols=initial_volumes_to_drop,
         omp_nthreads=omp_nthreads)
 
     # get transform file for resampling and fcon
@@ -727,7 +736,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                           ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
         (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')]),
         (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion')]),
+        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion'),
+                                             ('tmask',
+                                              'inputnode.tmask')]),
     ])
 
     return workflow

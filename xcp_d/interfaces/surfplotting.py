@@ -11,12 +11,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.execsummary import (
-    generate_brain_sprite,
-    get_regplot,
-    ribbon_to_statmap,
-    surf2vol,
-)
+from xcp_d.utils.execsummary import generate_brain_sprite, ribbon_to_statmap
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plot import plot_svgx, plotimage
 
@@ -46,40 +41,6 @@ class PlotImage(SimpleInterface):
         self._results['out_file'] = plotimage(self.inputs.in_file,
                                               self._results['out_file'])
 
-        return runtime
-
-
-class _SurftoVolumeInputSpec(BaseInterfaceInputSpec):
-    template = File(exists=True, mandatory=True, desc="t1 image")
-    left_surf = File(exists=True, mandatory=True, desc="left hemipshere")
-    right_surf = File(exists=True, mandatory=True, desc="right hemipshere")
-    scale = traits.Int(default_value=1, desc="scale factor for the surface")
-
-
-class _SurftoVolumeOutputSpec(TraitedSpec):
-    out_file = File(exists=True, mandatory=True, desc=" t1image")
-
-
-class SurftoVolume(SimpleInterface):
-    """This class converts the freesurfer/gifti surface to volume using ras2vox transform."""
-
-    input_spec = _SurftoVolumeInputSpec
-    output_spec = _SurftoVolumeOutputSpec
-
-    def _run_interface(self, runtime):
-
-        self._results['out_file'] = fname_presuffix(
-            self.inputs.template,
-            suffix='mri_stats_map.nii.gz',
-            newpath=runtime.cwd,
-            use_ext=False)
-
-        self._results['out_file'] = surf2vol(
-            template=self.inputs.template,
-            left_surf=self.inputs.left_surf,
-            right_surf=self.inputs.right_surf,
-            scale=self.inputs.scale,
-            filename=self._results['out_file'])
         return runtime
 
 
@@ -115,44 +76,6 @@ class BrainPlotx(SimpleInterface):
         return runtime
 
 
-class _RegPlotInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="brain file")
-    overlay = File(exists=True, mandatory=True, desc="overlay ")
-    n_cuts = traits.Int(default_value=3, desc="number of cuts")
-
-
-class _RegPlotOutputSpec(TraitedSpec):
-    out_file = File(exists=True, mandatory=True, desc="svg file")
-
-
-class RegPlot(SimpleInterface):
-    """A registration plot.
-
-    Warning
-    -------
-    This class may have been abandoned.
-    """
-
-    input_spec = _RegPlotInputSpec
-    output_spec = _RegPlotOutputSpec
-
-    def _run_interface(self, runtime):
-
-        self._results['out_file'] = fname_presuffix('reg_plot_',
-                                                    suffix='file.svg',
-                                                    newpath=runtime.cwd,
-                                                    use_ext=False)
-
-        self._results['out_file'] = get_regplot(
-            brain=self.inputs.in_file,
-            overlay=self.inputs.overlay,
-            cuts=self.inputs.n_cuts,
-            order=("x", "y", "z"),
-            out_file=self._results['out_file'])
-
-        return runtime
-
-
 class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True, mandatory=True, desc="Raw data")
     regressed_data = File(exists=True,
@@ -165,8 +88,10 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
         desc="TSV file with filtered motion parameters.",
     )
     mask = File(exists=False, mandatory=False, desc="Bold mask")
+    tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=False, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
+    dummyvols = traits.Float(default_value=0, desc="Dummy volumes to drop")
 
 
 class _PlotSVGDataOutputSpec(TraitedSpec):
@@ -204,6 +129,8 @@ class PlotSVGData(SimpleInterface):
 
         self._results['before_process'], self._results[
             'after_process'] = plot_svgx(
+                tmask=self.inputs.tmask,
+                dummyvols=self.inputs.dummyvols,
                 rawdata=self.inputs.rawdata,
                 regressed_data=self.inputs.regressed_data,
                 residual_data=self.inputs.residual_data,
