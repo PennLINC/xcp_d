@@ -29,7 +29,9 @@ BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithfreesurfer/fmriprep
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
-    --despike --head_radius 40 \
+    --despike \
+    --head_radius 40 \
+    --dummy-vols 4 \
 	--smoothing 6 -v -v \
     --motion-filter-type lp --band-stop-min 6 \
     --warp-surfaces-native2std \
