@@ -84,10 +84,6 @@ def init_writederivatives_wf(
         alff niifti
     smoothed_alff
         smoothed alff
-    reho_lh
-        reho left hemisphere
-    reho_rh
-        reho right hemisphere
     reho_out
     filtered_motion
     tmask
@@ -283,7 +279,7 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 dismiss_entities=["den"],
                 desc='denoised',
-                density='91k',
+                den='91k',
                 extension='.dtseries.nii',
             ),
             name='write_derivative_cleandata_wf',
@@ -297,7 +293,7 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=['desc', 'den'],
-                density='91k',
+                den='91k',
                 suffix='alff',
                 extension='.dscalar.nii',
             ),
@@ -311,7 +307,7 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 source_file=bold_file,
                 dismiss_entities=['desc', 'den'],
-                density='91k',
+                den='91k',
                 suffix='qc',
                 extension='.csv',
             ),
@@ -326,7 +322,7 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=['desc', 'den'],
-                density='91k',
+                den='91k',
                 suffix="timeseries",
                 extension='.ptseries.nii',
             ),
@@ -342,7 +338,7 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=['desc', 'den'],
-                density='91k',
+                den='91k',
                 measure="pearsoncorrelation",
                 suffix='conmat',
                 extension='.pconn.nii',
@@ -353,41 +349,23 @@ def init_writederivatives_wf(
             iterfield=["atlas", "in_file"],
         )
 
-        write_derivative_reholh_wf = pe.Node(
+        write_derivative_reho_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=['desc', 'den'],
-                density='32k',
-                hemi='L',
+                den='91k',
                 suffix='reho',
-                extension='.shape.gii',
+                extension='.dscalar.nii',
             ),
-            name='write_derivative_reholh_wf',
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
-        write_derivative_rehorh_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                check_hdr=False,
-                dismiss_entities=['desc', 'den'],
-                density='32k',
-                hemi='R',
-                suffix='reho',
-                extension='.shape.gii',
-            ),
-            name='write_derivative_rehorh_wf',
+            name='write_derivative_reho_wf',
             run_without_submitting=True,
             mem_gb=1,
         )
 
         workflow.connect([
-            (inputnode, write_derivative_reholh_wf, [('reho_lh', 'in_file')]),
-            (inputnode, write_derivative_rehorh_wf, [('reho_rh', 'in_file')]),
+            (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
         ])
 
         if smoothing:  # If smoothed
@@ -398,7 +376,7 @@ def init_writederivatives_wf(
                     meta_dict=smoothed_data_dictionary,
                     source_file=bold_file,
                     dismiss_entities=["den"],
-                    density='91k',
+                    den='91k',
                     desc='denoisedSmoothed',
                     extension='.dtseries.nii',
                     check_hdr=False,
@@ -415,7 +393,7 @@ def init_writederivatives_wf(
                     source_file=bold_file,
                     dismiss_entities=["den"],
                     desc='smooth',
-                    density='91k',
+                    den='91k',
                     suffix='alff',
                     extension='.dscalar.nii',
                     check_hdr=False,

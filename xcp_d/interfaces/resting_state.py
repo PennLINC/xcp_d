@@ -8,24 +8,18 @@
 import os
 import shutil
 
-import tempita
-from brainsprite import viewer_substitute
+from nilearn.plotting import view_img
 from nipype import logging
 from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
-from nipype.interfaces.afni.utils import (
-    ReHoInputSpec,
-    ReHoOutputSpec,
-    UnifizeInputSpec,
-    UnifizeOutputSpec,
-)
+from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
     SimpleInterface,
     TraitedSpec,
     traits,
+    traits_extension,
 )
-from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
@@ -168,6 +162,57 @@ class ComputeALFF(SimpleInterface):
 
         return runtime
 
+
+class _BrainPlotInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc="alff or reho")
+    mask_file = File(exists=True, mandatory=True, desc="mask file ")
+
+
+class _BrainPlotOutputSpec(TraitedSpec):
+    nifti_html = File(exists=True, mandatory=True, desc="zscore html")
+
+
+class BrainPlot(SimpleInterface):
+    """Create a brainsprite figure from a NIFTI file.
+
+    The image will first be normalized (z-scored) before the figure is generated.
+    """
+
+    input_spec = _BrainPlotInputSpec
+    output_spec = _BrainPlotOutputSpec
+
+    def _run_interface(self, runtime):
+
+        # create a file name
+        z_score_nifti = os.path.split(os.path.abspath(
+            self.inputs.in_file))[0] + '/zscore.nii.gz'
+
+        # create a nifti with z-scores
+        z_score_nifti = zscore_nifti(img=self.inputs.in_file,
+                                     mask=self.inputs.mask_file,
+                                     outputname=z_score_nifti)
+
+        html_view = view_img(
+            stat_map_img=z_score_nifti,
+            threshold=0,
+            opacity=0.5,
+            cut_coords=[0, 0, 0],
+            title="zscore",
+            bg_img=None,
+        )
+
+        # write the html out
+        self._results['nifti_html'] = fname_presuffix(
+            'zscore_nifti_',
+            suffix='stat.html',
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        html_view.save_as_html(self._results['nifti_html'])
+        return runtime
+
+
 class ReHoNamePatch(SimpleInterface):
     """Compute ReHo for a given neighbourhood, based on a local neighborhood of that voxel.
 
@@ -191,13 +236,20 @@ class ReHoNamePatch(SimpleInterface):
     output_spec = ReHoOutputSpec
 
     def _run_interface(self, runtime):
-        outfile = runtime.cwd + "/reho.nii.gz"
-        shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
-        shutil.copyfile(self.inputs.mask_file, runtime.cwd + "/mask.nii.gz")
-        os.system(
-            "3dReHo -inset inset.nii.gz -mask mask.nii.gz -nneigh 27 -prefix reho.nii.gz"
-        )
-        self._results['out_file'] = outfile
+        out_file = os.path.join(runtime.cwd, "reho.nii.gz")
+
+        in_file = os.path.join(runtime.cwd, "inset.nii.gz")
+        shutil.copyfile(self.inputs.in_file, in_file)
+
+        if traits_extension.isdefined(self.inputs.mask_file):
+            mask_file = os.path.join(runtime.cwd, "mask.nii.gz")
+            shutil.copyfile(self.inputs.mask_file, mask_file)
+            mask_cmd = f"-mask {mask_file}"
+        else:
+            mask_cmd = ""
+
+        os.system(f"3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}")
+        self._results["out_file"] = out_file
 
 
 class DespikePatch(SimpleInterface):
@@ -224,28 +276,4 @@ class DespikePatch(SimpleInterface):
         outfile = runtime.cwd + "/3despike.nii.gz"
         shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
         os.system("3dDespike -NEW -prefix  3despike.nii.gz inset.nii.gz")
-        self._results['out_file'] = outfile
-
-
-class ContrastEnhancement(SimpleInterface):
-    """Perform contrast enhancement with AFNI.
-
-    3dUnifize  -input inputdat   -prefix  t1w_contras.nii.gz
-    """
-
-    _cmd = "3dUnifize"
-    input_spec = UnifizeInputSpec
-    output_spec = UnifizeOutputSpec
-
-    def _run_interface(self, runtime):
-        outfile = runtime.cwd + "/3dunfixed.nii.gz"
-
-        if self.inputs.in_file.endswith(".nii.gz"):
-            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.nii.gz")
-        else:
-            shutil.copyfile(self.inputs.in_file, runtime.cwd + "/inset.mgz")
-            os.system("mri_convert inset.mgz inset.nii.gz")
-
-        os.system(
-            "3dUnifize -T2  -input inset.nii.gz   -prefix  3dunfixed.nii.gz")
         self._results['out_file'] = outfile
