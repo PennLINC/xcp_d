@@ -309,12 +309,30 @@ def init_subject_wf(
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
     preproc_files = subj_data["bold"]
 
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
-        name='inputnode',
-    )
-    inputnode.inputs.custom_confounds = custom_confounds
-    inputnode.inputs.subj_data = subj_data
+    if cifti:
+        inputnode = pe.Node(
+            niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
+            name='inputnode',
+        )
+        inputnode.inputs.custom_confounds = custom_confounds
+        inputnode.inputs.subj_data = subj_data
+        inputnode.inputs.t1w = subj_data["t1w"]
+        inputnode.inputs.pial = subj_data["pial"]
+        inputnode.inputs.wm = subj_data["wm"]
+        inputnode.inputs.midthickness = subj_data["midthickness"]
+        inputnode.inputs.inflated = subj_data["inflated"]
+    else:
+        inputnode = pe.Node(
+            niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
+            name='inputnode',
+        )
+        inputnode.inputs.custom_confounds = custom_confounds
+        inputnode.inputs.subj_data = subj_data
+        inputnode.inputs.t1w = subj_data["t1w"]
+        inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
+        inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
+        inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
+        inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
 
     workflow = Workflow(name=name)
 
@@ -380,15 +398,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         run_without_submitting=True,
     )
 
-    transform_file_grabber = pe.Node(
-        Function(
-            input_names=["subj_data"],
-            output_names=["mni_to_t1w", "t1w_to_mni"],
-            function=select_registrationfile,
-        ),
-        name="transform_file_grabber",
-    )
-
     t1w_wf = init_t1w_wf(
         output_dir=output_dir,
         input_type=input_type,
@@ -397,9 +406,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     workflow.connect([
-        (inputnode, transform_file_grabber, [('subj_data', 'subj_data')]),
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
-        (transform_file_grabber, t1w_wf, [('t1w_to_mni', 'inputnode.t1w_to_mni')]),
+        (inputnode, t1w_wf, [('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])
 
     # Plot the ribbon on the brain in a brainsprite figure
@@ -413,8 +421,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,
     )
 
-    workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                          ('t1seg', 'inputnode.t1seg')])])
+    workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
+                                                   ('t1seg', 'inputnode.t1seg')])])
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
@@ -428,8 +436,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         )
 
         workflow.connect([
-            (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                               ('t1seg', 'inputnode.t1seg')]),
+            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                        ('t1seg', 'inputnode.t1seg')]),
         ])
 
     # loop over each bold run to be postprocessed
@@ -465,16 +473,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
-        workflow.connect(
-            [
-                (t1w_file_grabber, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
-                                                      ('t1seg', 'inputnode.t1seg'),
-                                                      ('t1w_mask', 'inputnode.t1w_mask')]),
-                (transform_file_grabber, bold_postproc_wf, [
-                    ('mni_to_t1w', 'inputnode.mni_to_t1w'),
-                ]),
-            ],
-        )
+        workflow.connect([
+            (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
+                                           ('t1seg', 'inputnode.t1seg'),
+                                           ('mni_to_t1w_xform', 'inputnode.mni_to_t1w')]),
+        ])
+        if not cifti:
+            workflow.connect([
+                (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
+            ])
 
     try:
         workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')

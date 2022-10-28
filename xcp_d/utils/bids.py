@@ -173,6 +173,23 @@ def collect_data(
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         # all registration files in the anat folder
         "regfile": {"datatype": "anat", "suffix": "xfm", "extension": [".h5", ".txt", ".mat"]},
+        # native T1w-space, preprocessed T1w file
+        "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
+        # native T1w-space dseg file, but not aseg or aparcaseg
+        "t1w_seg": {
+            "datatype": "anat",
+            "space": None,
+            "desc": None,
+            "suffix": "dseg",
+            "extension": ".nii.gz",
+        },
+        # transform from standard space to T1w space
+        # from entity will be set later
+        "mni_to_t1w_xform": {
+            "datatype": "anat",
+            "to": "T1w",
+            "suffix": "xfm",
+        },
     }
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
@@ -189,8 +206,6 @@ def collect_data(
     else:
         queries["bold"]["extension"] = ".nii.gz"
         queries.update({
-            # native T1w-space, preprocessed T1w file
-            "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
             # native T1w-space brain mask
             "t1w_mask": {
                 "datatype": "anat",
@@ -199,16 +214,13 @@ def collect_data(
                 "suffix": "mask",
                 "extension": ".nii.gz",
             },
-            # native T1w-space dseg file, but not aseg or aparcaseg
-            "t1w_seg": {
+            # transform from T1w space to standard space
+            # to entity will be set later
+            "t1w_to_mni_xform": {
                 "datatype": "anat",
-                "space": None,
-                "desc": None,
-                "suffix": "dseg",
-                "extension": ".nii.gz",
+                "from": "T1w",
+                "suffix": "xfm",
             },
-            # transform from T1w space to MNI space
-            # space entity will be set later
         })
 
     # Apply filters. These may override anything.
@@ -229,8 +241,8 @@ def collect_data(
             if bold_data:
                 queries["bold"]["space"] = space
                 if not cifti:
-                    queries["mni_to_t1w_xform"]["from"] = space
                     queries["t1w_to_mni_xform"]["to"] = space
+                    queries["mni_to_t1w_xform"]["from"] = space
 
                 break
 
@@ -307,6 +319,7 @@ def collect_run_data(layout, bold_file, cifti=False):
     subj_data.update(metadata)
 
     return subj_data
+
 
 def write_dataset_description(fmri_dir, xcpd_dir):
     """Write dataset_description.json file for derivatives.
