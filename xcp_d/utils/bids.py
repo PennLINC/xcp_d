@@ -209,31 +209,50 @@ def collect_data(
     allowed_spaces = PREFERRED_SPACES[cifti]
 
     queries = {
-        "regfile": {"datatype": "anat", "suffix": "xfm"},
+        # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
-        "t1w": {"datatype": "anat", "space": None, "suffix": "T1w"},
-        "seg_data": {"datatype": "anat", "space": None, "desc": None, "suffix": "dseg"},
-        "pial": {"datatype": "anat", "suffix": "pial"},
-        "wm": {"datatype": "anat", "suffix": "smoothwm"},
-        "midthickness": {"datatype": "anat", "suffix": "midthickness"},
-        "inflated": {"datatype": "anat", "suffix": "inflated"},
+        # all registration files in the anat folder
+        "regfile": {"datatype": "anat", "suffix": "xfm", "extension": [".h5", ".txt", ".mat"]},
     }
+    if cifti:
+        queries["bold"]["extension"] = ".dtseries.nii"
+        queries.update({
+            "pial": {"datatype": "anat", "suffix": "pial", "extension": ".surf.gii"},
+            "wm": {"datatype": "anat", "suffix": "smoothwm", "extension": ".surf.gii"},
+            "midthickness": {
+                "datatype": "anat",
+                "suffix": "midthickness",
+                "extension": ".surf.gii",
+            },
+            "inflated": {"datatype": "anat", "suffix": "inflated", "extension": ".surf.gii"},
+        })
+    else:
+        queries["bold"]["extension"] = ".nii.gz"
+        queries.update({
+            # native T1w-space, preprocessed T1w file
+            "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
+            # native T1w-space brain mask
+            "t1w_mask": {
+                "datatype": "anat",
+                "space": None,
+                "desc": "brain",
+                "suffix": "mask",
+                "extension": ".nii.gz",
+            },
+            # native T1w-space dseg file, but not aseg or aparcaseg
+            "t1w_seg": {
+                "datatype": "anat",
+                "space": None,
+                "desc": None,
+                "suffix": "dseg",
+                "extension": ".nii.gz",
+            },
+        })
 
+    # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
-
-    # Override the default allowed extensions for BOLD data so we don't accidentally
-    # collect both surface and volumetric files.
-    # Don't override if already set by the bids filters.
-    if "extension" not in queries["bold"].keys():
-        queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
-
-    # Set valid extensions for the file types.
-    # Don't override if already set by the bids filters or for BOLD data.
-    for acq, entities in queries.items():
-        if "extension" not in queries[acq].keys():
-            queries[acq]["extension"] = ["nii", "nii.gz", "dtseries.nii", "h5", "gii"]
 
     if task:
         queries["bold"]["task"] = task
