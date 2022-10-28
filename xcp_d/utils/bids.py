@@ -124,6 +124,47 @@ def collect_participants(
     return found_label
 
 
+def collect_data_related_to_bold(layout, bold_file, t1w_file=None, cifti=False):
+    bids_file = layout.get_file(bold_file)
+    subj_data = {}
+    subj_data["confounds"] = layout.get_nearest(
+        bids_file.path,
+        strict=False,
+        desc="confounds",
+        suffix="timeseries",
+        extension=".tsv",
+    )
+    if not cifti:
+        t1w_file = layout.get_file(t1w_file)
+        subj_data["boldref"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            suffix="boldref",
+        )
+        subj_data["boldmask"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            desc="brain",
+            suffix="mask",
+        )
+        subj_data["t1w_to_native_xform"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            **{"from": "T1w"},  # "from" is protected Python kw
+            to="scanner",
+            suffix="xfm",
+        )
+        subj_data["t1w_mask"] = layout.get_nearest(
+            t1w_file.path
+        )
+
+    for k, v in subj_data.items():
+        if v is None:
+            raise FileNotFoundError(f"No {k} file found for {bids_file.path}")
+
+    return subj_data
+
+
 def collect_data(
     bids_dir,
     participant_label,
@@ -170,8 +211,8 @@ def collect_data(
     queries = {
         "regfile": {"datatype": "anat", "suffix": "xfm"},
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
-        "t1w": {"datatype": "anat", "suffix": "T1w"},
-        "seg_data": {"datatype": "anat", "suffix": "dseg"},
+        "t1w": {"datatype": "anat", "space": None, "suffix": "T1w"},
+        "seg_data": {"datatype": "anat", "space": None, "desc": None, "suffix": "dseg"},
         "pial": {"datatype": "anat", "suffix": "pial"},
         "wm": {"datatype": "anat", "suffix": "smoothwm"},
         "midthickness": {"datatype": "anat", "suffix": "midthickness"},
