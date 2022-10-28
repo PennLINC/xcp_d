@@ -151,7 +151,7 @@ def init_execsummary_wf(omp_nthreads,
                         bold_file,
                         output_dir,
                         TR,
-                        dummyvols,
+                        dummy_scans,
                         mem_gb,
                         layout,
                         name='execsummary_wf'):
@@ -164,9 +164,9 @@ def init_execsummary_wf(omp_nthreads,
     %(output_dir)s
     TR
     %(mem_gb)s
+    dummy_scans
     layout
     %(name)s
-    dummyvols
 
     Inputs
     ------
@@ -253,7 +253,7 @@ def init_execsummary_wf(omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads)
 
     # Plot the SVG files
-    plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummyvols),
+    plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummy_scans),
                            name='plot_svgx_wf',
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)

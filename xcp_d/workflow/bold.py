@@ -385,8 +385,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         bold_file=bold_file,
         layout=layout,
         mem_gb=mem_gbx['timeseries'],
+        dummy_scans=dummy_scans,
         output_dir=output_dir,
-        dummyvols=initial_volumes_to_drop,
         omp_nthreads=omp_nthreads)
 
     # get transform file for resampling and fcon
