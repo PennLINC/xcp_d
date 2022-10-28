@@ -1048,7 +1048,9 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 def plot_alff_reho_surface(func, output_path):
     """Plot ReHo and ALFF for ciftis on surface."""
-    density = str(parse_file_entities(func)["den"])
+    density=str(parse_file_entities(func)["den"])
+    if density == None:
+        density = "32k"
     rh = str(
         get_template(template="fsLR", hemi="L", density=density, suffix="sphere")
     )
