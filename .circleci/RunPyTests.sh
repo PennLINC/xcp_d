@@ -18,7 +18,7 @@ run_pytest_cmd () {
   # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    PYTEST_RUN="pytest --data_dir=${data_dir} --output_dir=${output_dir} --working_dir=${workdir} tests"
+    PYTEST_RUN="pytest --data_dir=${data_dir}/data --output_dir=${output_dir} --working_dir=${workdir} tests"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
@@ -39,7 +39,7 @@ run_pytest_cmd () {
     cwd_mount="-v ${PWD}/tests:/rundir:rw"
     PYTEST_RUN="docker run --rm -ti -u $(id -u) -w /rundir --entrypoint pytest "
     PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cwd_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} "
-    PYTEST_RUN+="--data_dir=/bids-input --output_dir=/out --working_dir=/work /rundir/"
+    PYTEST_RUN+="--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /rundir/"
 
   fi
 
@@ -63,7 +63,7 @@ TESTNAME=run_pytest
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/data
+BIDS_INPUT_DIR=${TESTDIR}
 
 # build the pytest command so it works both ways
 PYTEST_CMD=$(run_pytest_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})

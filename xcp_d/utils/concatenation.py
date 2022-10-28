@@ -25,7 +25,7 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
+def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, cifti):
     """Concatenate derivatives.
 
     This function does a lot more than concatenate derivatives.
@@ -38,6 +38,8 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
 
     Parameters
     ----------
+    dummytime: float
+        Amount of time to drop from the beginning of the scan
     fmridir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
     outputdir : str
@@ -150,8 +152,9 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
                     extension=".tsv",
                     **task_entities,
                 )
+
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
-                concatenate_tsv_files(outlier_files, concat_outlier_file)
+                outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
@@ -263,7 +266,12 @@ def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti):
                     )
 
                     # Build figures
+                    initial_volumes_to_drop = 0
+                    if dummytime > 0:
+                        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
                     plot_svgx(
+                        dummyvols=initial_volumes_to_drop,
+                        tmask=outfile,
                         rawdata=concat_preproc_file,
                         regressed_data=concat_bold_file,
                         residual_data=concat_bold_file,
@@ -427,6 +435,7 @@ def concatenate_tsv_files(tsv_files, fileout):
         data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
         data.to_csv(fileout, sep="\t", index=False)
+    return fileout
 
 
 def _get_concat_name(layout_xcpd, in_file):

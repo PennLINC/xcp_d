@@ -102,7 +102,7 @@ def get_parser():
         "fmri_dir",
         action="store",
         type=Path,
-        help="the root folder of a preprocessed fMRI output .",
+        help="the root folder of a preprocessed fMRI output.",
     )
     parser.add_argument(
         "output_dir",
@@ -694,6 +694,7 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
+            dummytime=opts.dummytime,
             subject_list=subject_list,
             fmri_dir=fmri_dir,
             work_dir=work_dir,
