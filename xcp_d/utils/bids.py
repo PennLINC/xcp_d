@@ -12,6 +12,8 @@ from bids import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
+from xcp_d.utils.plot import _get_tr
+
 LOGGER = logging.getLogger("nipype.interface")
 
 
@@ -126,7 +128,7 @@ def collect_participants(
 
 def collect_data_related_to_bold(layout, bold_file, t1w_file=None, cifti=False):
     bids_file = layout.get_file(bold_file)
-    subj_data = {}
+    subj_data, metadata = {}, {}
     subj_data["confounds"] = layout.get_nearest(
         bids_file.path,
         strict=False,
@@ -134,8 +136,13 @@ def collect_data_related_to_bold(layout, bold_file, t1w_file=None, cifti=False):
         suffix="timeseries",
         extension=".tsv",
     )
+    metadata["bold_metadata"] = layout.get_metadata(bold_file)
+    # Ensure that we know the TR
+    if "RepetitionTime" not in metadata["bold_metadata"].keys():
+        metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
+
     if not cifti:
-        t1w_file = layout.get_file(t1w_file)
+        # t1w_file = layout.get_file(t1w_file)
         subj_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
@@ -154,13 +161,17 @@ def collect_data_related_to_bold(layout, bold_file, t1w_file=None, cifti=False):
             to="scanner",
             suffix="xfm",
         )
-        subj_data["t1w_mask"] = layout.get_nearest(
-            t1w_file.path
-        )
+        # subj_data["t1w_mask"] = layout.get_nearest(
+        #     t1w_file.path
+        # )
 
     for k, v in subj_data.items():
         if v is None:
             raise FileNotFoundError(f"No {k} file found for {bids_file.path}")
+
+        metadata[f"{k}_metadata"] = layout.get_metadata(v)
+
+    subj_data.update(metadata)
 
     return subj_data
 

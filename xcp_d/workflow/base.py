@@ -480,7 +480,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect(
             [
                 (t1w_file_grabber, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
-                                                      ('t1seg', 'inputnode.t1seg')]),
+                                                      ('t1seg', 'inputnode.t1seg'),
+                                                      ('t1w_mask', 'inputnode.t1w_mask')]),
                 (transform_file_grabber, bold_postproc_wf, [
                     ('mni_to_t1w', 'inputnode.mni_to_t1w'),
                 ]),
