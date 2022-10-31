@@ -586,7 +586,7 @@ def plot_svgx(rawdata,
     plt.cla()
     plt.clf()
     LOGGER.debug("Test 11")
-    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
+    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
