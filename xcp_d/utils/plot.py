@@ -1070,10 +1070,10 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     if density == "91k":
         density = "32k"
     rh = str(
-        get_template(template='fsLR', hemi="R", density="32k", extension=".surf.gii")[0]
+        get_template(template='fsLR', hemi="R", density="32k", suffix = "midthickness", extension=".surf.gii")[0]
     )
     lh = str(
-        get_template(template='fsLR', hemi="L", density="32k", extension=".surf.gii")[0]
+        get_template(template='fsLR', hemi="L", density="32k", suffix = "midthickness", extension=".surf.gii")[0]
     )
 
     cifti = nb.load(func)
