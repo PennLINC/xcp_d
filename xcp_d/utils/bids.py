@@ -173,8 +173,6 @@ def collect_data(
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
-        # all registration files in the anat folder
-        "regfile": {"datatype": "anat", "suffix": "xfm", "extension": [".h5", ".txt", ".mat"]},
         # native T1w-space, preprocessed T1w file
         "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
         # native T1w-space dseg file, but not aseg or aparcaseg
