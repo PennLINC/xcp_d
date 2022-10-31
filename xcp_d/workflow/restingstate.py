@@ -375,7 +375,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
                       (compute_reho, reho_plot, [('out_file', 'filename')]),
-                      (reho_plot, outputnode, [('output_path', 'rehohtml')]),
+                      (reho_plot, outputnode, [('output_path', 'rehosvg')]),
                       ])
 
     return workflow
