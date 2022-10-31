@@ -541,14 +541,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                      source_file=bold_file,
-                                                     desc='alffplot',
+                                                     desc='alffSurfacePlot',
                                                      datatype="figures"),
                                  name='ds_report_alffplot',
                                  run_without_submitting=False)
 
     ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                      source_file=bold_file,
-                                                     desc='rehoplot',
+                                                     desc='rehoSurfacePlot',
                                                      datatype="figures"),
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)

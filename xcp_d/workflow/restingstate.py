@@ -7,6 +7,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 from xcp_d.interfaces.nilearn import Smooth
+from nipype import Function
 from xcp_d.interfaces.resting_state import (
     ComputeALFF,
     ReHoNamePatch,
@@ -109,19 +110,23 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          n_procs=omp_nthreads)
 
     if not cifti:
-        alff_plot = pe.Node(plot_alff_reho_volumetric(output_path='alff.svg'),
-                            mem_gb=mem_gb,
-                            name='alff_plot_nifti',
-                            n_procs=omp_nthreads)
+        alff_plot = pe.Node(Function(
+                            input_names=["output_path", "filename"],
+                            output_names=["output_pathname"],
+                            function=plot_alff_reho_volumetric),
+                            name="alff_nifti_plot")
+        alff_plot.inputs.output_path = 'alff.svg'
     if cifti:
-        alff_plot = pe.Node(plot_alff_reho_surface(output_path='alff.svg'),
-                            mem_gb=mem_gb,
-                            name='alff_plot_cifti',
-                            n_procs=omp_nthreads)
+        alff_plot = pe.Node(Function(
+                            input_names=["output_path", "filename"],
+                            output_names=["output_pathname"],
+                            function=plot_alff_reho_surface),
+                            name="alff_cifti_plot")
+        alff_plot.inputs.output_path = 'alff.svg'
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
-                      (alff_compt, alff_plot, [('alff_out', 'inputnode.filename')]),
-                      (alff_plot, outputnode, [('outputnode.output_path', 'alffsvg')]),
+                      (alff_compt, alff_plot, [('alff_out', 'filename')]),
+                      (alff_plot, outputnode, [('output_path', 'alffsvg')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])
                       ])
 
@@ -276,11 +281,12 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
-    reho_plot = pe.Node(plot_alff_reho_surface(output_path='reho.svg'),
-                        mem_gb=mem_gb,
-                        name='reho_plot_cifti',
-                        n_procs=omp_nthreads)
+    reho_plot = pe.Node(Function(
+                        input_names=["output_path", "filename"],
+                        output_names=["output_pathname"],
+                        function=plot_alff_reho_surface),
+                        name="reho_cifti_plot")
+    reho_plot.inputs.output_path = "reho.svg"
     # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
@@ -294,8 +300,8 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (rh_reho, merge_cifti, [('surf_gii', 'right_metric')]),
         (subcortical_reho, merge_cifti, [('out_file', 'volume_data')]),
         (merge_cifti, outputnode, [('out_file', 'reho_out')]),
-        (merge_cifti, reho_plot, [('out_file', 'inputnode.filename')]),
-        (reho_plot, outputnode, [('outputnode.out_file', 'rehosvg')])
+        (merge_cifti, reho_plot, [('out_file', 'filename')]),
+        (reho_plot, outputnode, [('out_file', 'rehosvg')])
     ])
 
     return workflow
@@ -357,17 +363,19 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            name="reho_3d",
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
-    # Get the HTML
-    reho_plot = pe.Node(plot_alff_reho_surface(output_path='reho.svg'),
-                        mem_gb=mem_gb,
-                        name='reho_plot_cifti',
-                        n_procs=omp_nthreads)
+    # Get the SVG
+    reho_plot = pe.Node(Function(
+                        input_names=["output_path", "filename"],
+                        output_names=["output_pathname"],
+                        function=plot_alff_reho_volumetric),
+                        name="reho_nifti_plot")
+    reho_plot.inputs.output_path = "reho.svg"
     # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
-                      (compute_reho, reho_plot, [('out_file', 'inputnode.filename')]),
-                      (reho_plot, outputnode, [('outputnode.output_path', 'reho_out')]),
+                      (compute_reho, reho_plot, [('out_file', 'filename')]),
+                      (reho_plot, outputnode, [('output_path', 'rehohtml')]),
                       ])
 
     return workflow

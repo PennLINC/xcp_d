@@ -46,8 +46,6 @@ def _decimate_data(data, seg_data, size):
         data = data[:, ::t_dec]
     return data, seg_data
 
-#  TODO: Add workflow graphs for ALFF/REHO plot functions
-
 
 def plotimage(img, out_file):
     """Plot anatomical image and save to file."""
@@ -1016,27 +1014,20 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def plot_alff_reho_volumetric(output_path):
+def plot_alff_reho_volumetric(output_path, filename):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
-    workflow = Workflow(name='plot_alff_reho_nifti')
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['filename']),
-        name='inputnode')
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=['alffsvg']),
-        name='outputnode')
-    outputnode.outputs.alffsvg = output_path
-    space = str(parse_file_entities(inputnode.inputs.filename)["space"])
-    resolution = str(parse_file_entities(inputnode.inputs.filename)["res"])
+    space = str(parse_file_entities(filename)["space"])
+    resolution = str(parse_file_entities(filename)["res"])
     template = str(
         get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
     )
-    plott.plot_stat_map(inputnode.inputs.filename,
+    plott.plot_stat_map(filename,
                         bg_img=template,
                         display_mode='z',
                         cut_coords=8,
                         output_file=output_path)
-    return workflow
+    output_pathname = output_path
+    return output_pathname
 
 
 def surf_data_from_cifti(data, axis, surf_name):
@@ -1059,17 +1050,9 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_alff_reho_surface(output_path):
+def plot_alff_reho_surface(output_path, filename):
     """Plot ReHo and ALFF for ciftis on surface."""
-    workflow = Workflow(name='plot_alff_reho_nifti')
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=['filename']),
-        name='inputnode')
-    func = inputnode.inputs.filename
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=['alffsvg']),
-        name='outputnode')
-    outputnode.outputs.output_path = output_path
+    func = filename
     density = str(parse_file_entities(func)["den"])
     if density is None:
         density = "32k"
@@ -1139,5 +1122,5 @@ def plot_alff_reho_surface(output_path):
     axes[0, 1].set_title("Right Hemisphere", fontsize=40)
     fig.tight_layout()
     fig.savefig(output_path)
-
-    return workflow
+    output_pathname = output_path
+    return output_pathname
