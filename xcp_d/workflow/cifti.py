@@ -559,8 +559,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
-        (alff_compute_wf, ds_report_alffplot, [('outputnode.alffhtml', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehosvg', 'in_file')]),
+        (alff_compute_wf, ds_report_alffplot, [('outputnode.alffsvg', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
 

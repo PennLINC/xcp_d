@@ -6,6 +6,7 @@
 
 """
 import os
+
 import shutil
 from nilearn.plotting import view_img
 from nipype import logging
@@ -24,7 +25,7 @@ from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.utils import zscore_nifti
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
-from xcp_d.utils.plot import plot_alff_reho_volumetric, plot_alff_reho_surface
+
 LOGGER = logging.getLogger('nipype.interface')
 
 
@@ -107,7 +108,6 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
 
 class _ComputeALFFOutputSpec(TraitedSpec):
     alff_out = File(exists=True, mandatory=True, desc=" alff")
-    alff_HTML = File(exists=True, mandatory=True, desc=" alff")
 
 
 class ComputeALFF(SimpleInterface):
@@ -162,15 +162,6 @@ class ComputeALFF(SimpleInterface):
                     template=self.inputs.in_file,
                     filename=self._results['alff_out'],
                     mask=self.inputs.mask)
-        if self.inputs.in_file.endswith('.nii.gz'):
-            alff_HTML = plot_alff_reho_volumetric(output_path='alff.svg',
-                                                  filename=self._results['alff_out'])
-        if self.inputs.in_file.endswith('.dtseries.nii'):
-            alff_HTML = plot_alff_reho_surface(self._results['alff_out'],
-                                               output_path='alff.svg')
-
-        self._results['alff_HTML'] = alff_HTML
-
         return runtime
 
 
