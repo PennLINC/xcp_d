@@ -300,7 +300,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (subcortical_reho, merge_cifti, [('out_file', 'volume_data')]),
         (merge_cifti, outputnode, [('out_file', 'reho_out')]),
         (merge_cifti, reho_plot, [('out_file', 'filename')]),
-        (reho_plot, outputnode, [('out_file', 'rehosvg')])
+        (reho_plot, outputnode, [('output_path', 'rehosvg')])
     ])
 
     return workflow
