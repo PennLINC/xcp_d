@@ -57,6 +57,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.base_dir = tempdir
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
+    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.run()
 
     # Let's get the mean of the ALFF for later comparison
@@ -99,6 +100,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.base_dir = tempdir
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = filename
+    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean
@@ -155,6 +157,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.base_dir = tempdir
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
+    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.run()
 
     # Let's get the mean of the data for later comparison
@@ -196,6 +199,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.base_dir = tempdir
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = filename
+    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean

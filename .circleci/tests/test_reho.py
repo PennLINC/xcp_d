@@ -58,6 +58,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     reho_wf.inputs.inputnode.bold_mask = bold_mask
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
+    reho_wf.inputs.inputnode.bold_file = bold_file
     reho_wf.run()
 
     # Get the original mean of the ReHo for later comparison
@@ -81,6 +82,7 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     # Run ReHo again
     assert os.path.isfile(noisy_bold_file)
     reho_wf.inputs.inputnode.clean_bold = noisy_bold_file
+    reho_wf.inputs.inputnode.bold_file = bold_file
     reho_wf.run()
 
     # Has the new ReHo's mean decreased?
@@ -111,6 +113,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     # Set up and run the ReHo wf in a tempdir
     reho_wf = init_cifti_reho_wf(omp_nthreads=2, mem_gb=4, name="orig_reho_wf")
     reho_wf.base_dir = tempdir
+    reho_wf.inputs.inputnode.bold_file = orig_bold_file
     reho_wf.inputs.inputnode.clean_bold = orig_bold_file
     reho_wf.run()
 
@@ -135,6 +138,7 @@ def test_cifti_reho(data_dir, tmp_path_factory):
     # Create a new workflow
     reho_wf = init_cifti_reho_wf(omp_nthreads=2, mem_gb=4, name="noisy_reho_wf")
     reho_wf.base_dir = tempdir
+    reho_wf.inputs.inputnode.bold_file = orig_bold_file
     reho_wf.inputs.inputnode.clean_bold = noisy_bold_file
     reho_wf.run()
 
