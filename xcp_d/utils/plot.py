@@ -1,8 +1,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
-import tempfile
 import os
+import tempfile
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -1011,6 +1011,8 @@ def _get_tr(img):
 
 def plot_alff_reho_volumetric(output_path, filename, bold_file):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
+    import os
+
     from bids.layout import parse_file_entities
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
@@ -1054,6 +1056,8 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 def plot_alff_reho_surface(output_path, filename, bold_file):
     """Plot ReHo and ALFF for ciftis on surface."""
+    import os
+
     import matplotlib.pyplot as plt
     import nibabel as nb
     from bids.layout import parse_file_entities
