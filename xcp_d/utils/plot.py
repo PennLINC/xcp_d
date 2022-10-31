@@ -1060,16 +1060,15 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
 
-    from xcp_d.utils.plot import surf_data_from_cifti
-
     func = filename
+    space = parse_file_entities(bold_file)["space"]
     density = parse_file_entities(bold_file).get("den", "32k")
     rh = str(
-        get_template(template="fsLR", hemi="L", density=density,
+        get_template(template=space, hemi="L", density=density,
                      suffix="midthickness")
     )
     lh = str(
-        get_template(template="fsLR", hemi="R", density=density, suffix="midthickness")
+        get_template(template=space, hemi="R", density=density, suffix="midthickness")
     )
     cifti = nb.load(func)
     cifti_data = cifti.get_fdata()
