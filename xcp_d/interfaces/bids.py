@@ -132,6 +132,7 @@ class BaseDerivativesDataSink(SimpleInterface):
 
     def _run_interface(self, runtime):
         from bids.layout import parse_file_entities
+
         # Ready the output folder
         base_directory = runtime.cwd
         if isdefined(self.inputs.base_directory):
