@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
 import tempfile
+import os
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -1022,6 +1023,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     if isinstance(template_file, list):
         template_file = template_file[0]
     template = str(template_file)
+    output_path = os.path.join(os.getcwd(), output_path)
     plott.plot_stat_map(filename,
                         bg_img=template,
                         display_mode='z',
@@ -1074,7 +1076,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
     fig, axes = plt.subplots(figsize=(16, 16), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
-
+    output_path = os.path.join(os.getcwd(), output_path)
     lh_surf_data = surf_data_from_cifti(
         cifti_data,
         cifti_axes[1],
