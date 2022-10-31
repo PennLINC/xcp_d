@@ -12,7 +12,7 @@ from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiCo
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils.utils import get_std2bold_xforms
 
 
 @fill_doc
@@ -106,7 +106,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
             output_names=["transformfile"],
-            function=get_transformfile,
+            function=get_std2bold_xforms,
         ),
         name="get_transformfile_node",
     )
