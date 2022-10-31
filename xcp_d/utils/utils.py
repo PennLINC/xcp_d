@@ -100,7 +100,7 @@ def get_segfile(bold_file):
 
 
 def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
-    """Obtain the correct transform files in reverse order to transform to MNI space/T1W space.
+    """Obtain the correct transform files in reverse order to transform BOLD to MNI/T1W space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
@@ -111,7 +111,7 @@ def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
         The preprocessed BOLD file.
     mni_to_t1w : str
         The MNI-to-T1w transform file.
-        The ``from`` field should be the same space as the BOLD file is in.
+        The ``from`` field is assumed to be the same space as the BOLD file is in.
     t1w_to_native : str
         The T1w-to-native space transform file.
 
@@ -147,7 +147,7 @@ def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
 
     # Pull out the correct transforms based on bold_file name and string them together.
     if 'space-MNI152NLin2009cAsym' in file_base:
-        # All good.
+        # Data already in NLin2009c space.
         xforms_to_MNI = ["identity"]
         xforms_to_T1w = [mni_to_t1w]
 
@@ -160,14 +160,44 @@ def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
         # MNIInfant --> NLin2009c
         xforms_to_MNI = [pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5')]
         xforms_to_T1w = [mni_to_t1w]
+
+    elif 'space-T1w' in file_base:
+        # T1w --> ?? (extract from mni_to_t1w) --> NLin2009c
+        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
+        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+        mni_to_mni_xforms = str(
+            get_template(
+                template=base_mni_space,
+                mode='image',
+                suffix='xfm',
+                extension='.h5',
+                **{"from": "MNI152NLin6Asym"},
+            ),
+        )
+        xforms_to_MNI = [mni_to_mni_xforms, mni_to_t1w]
+        xforms_to_T1w = ["identity"]
+
+    elif 'space-' not in file_base:
+        # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> NLin2009c
+        # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
+        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+        mni_to_mni_xforms = str(
+            get_template(
+                template="MNI152NLin2009cAsym",
+                mode='image',
+                suffix='xfm',
+                extension='.h5',
+                **{"from": base_mni_space},
+            ),
+        )
+        xforms_to_MNI = [mni_to_mni_xforms, mni_to_t1w, t1w_to_native]
+        xforms_to_T1w = [t1w_to_native]
+
     else:
         found_space = re.findall("_space-([a-zA-Z0-9]+)_", file_base)
-        if not found_space:
-            space = "native"
-        else:
-            space = found_space[0]
+        space = found_space[0]
 
-        raise ValueError(f"Space {space} in {file_base} not supported.")
+        raise ValueError(f"Space '{space}' in {file_base} not supported.")
 
     return xforms_to_MNI, xforms_to_T1w
 
@@ -207,6 +237,7 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
         The preprocessed BOLD file.
     mni_to_t1w : str
         The MNI-to-T1w transform file.
+        The ``from`` field is assumed to be the same space as the BOLD file is in.
     t1w_to_native : str
         The T1w-to-native space transform file.
 
@@ -289,7 +320,7 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
     else:
         found_space = re.findall("_space-([a-zA-Z0-9]+)_", file_base)
         space = found_space[0]
-        raise ValueError(f"Space {space} in {file_base} not supported.")
+        raise ValueError(f"Space '{space}' in {file_base} not supported.")
 
     if not transform_list:
         raise Exception(f"Transforms not found for {file_base}")
