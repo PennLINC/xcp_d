@@ -1015,9 +1015,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     from templateflow.api import get as get_template
 
     space = parse_file_entities(bold_file)["space"]
-    cohort = None
-    if "infant" in space:
-        cohort = str(parse_file_entities(bold_file)["cohort"])
+    cohort = parse_file_entities(bold_file).get("cohort", None)
     resolution = parse_file_entities(bold_file).get("res", "1")
 
     template = str(
