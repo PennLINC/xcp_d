@@ -1066,10 +1066,6 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from xcp_d.utils.plot import surf_data_from_cifti
 
     func = filename
-    space = str(parse_file_entities(bold_file)["space"])
-    cohort = None
-    if "infant" in space:
-        cohort = str(parse_file_entities(bold_file)["cohort"])
     try:
         density = str(parse_file_entities(bold_file)["den"])
     except Exception:
