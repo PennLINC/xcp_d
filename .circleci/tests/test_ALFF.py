@@ -44,6 +44,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     TR = _get_tr(nb.load(bold_file))
     alff_compute_wf = init_compute_alff_wf(
         omp_nthreads=2,
+        bold_file=bold_file,
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
@@ -144,6 +145,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     TR = _get_tr(nb.load(bold_file))
     alff_compute_wf = init_compute_alff_wf(
         omp_nthreads=2,
+        bold_file=bold_file,
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
@@ -199,7 +201,6 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.base_dir = tempdir
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = filename
-    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean
