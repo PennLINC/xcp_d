@@ -1022,17 +1022,16 @@ def plot_alff_reho_volumetric(output_path):
     inputnode = pe.Node(
         niu.IdentityInterface(fields=['filename']),
         name='inputnode')
-    filename = inputnode.inputs.filename
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['alffsvg']),
         name='outputnode')
     outputnode.outputs.alffsvg = output_path
-    space = str(parse_file_entities(filename)["space"])
-    resolution = str(parse_file_entities(filename)["res"])
+    space = str(parse_file_entities(inputnode.inputs.filename)["space"])
+    resolution = str(parse_file_entities(inputnode.inputs.filename)["res"])
     template = str(
         get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
     )
-    plott.plot_stat_map(filename,
+    plott.plot_stat_map(inputnode.inputs.filename,
                         bg_img=template,
                         display_mode='z',
                         cut_coords=8,

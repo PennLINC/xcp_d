@@ -108,17 +108,16 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          name='alff_compt',
                          n_procs=omp_nthreads)
 
-    if inputnode.inputs.clean_bold.endswith('.nii.gz'):
+    if not cifti:
         alff_plot = pe.Node(plot_alff_reho_volumetric(output_path='alff.svg'),
                             mem_gb=mem_gb,
                             name='alff_plot_nifti',
                             n_procs=omp_nthreads)
-    if inputnode.inputs.clean_bold.endswith('.dtseries.nii'):
+    if cifti:
         alff_plot = pe.Node(plot_alff_reho_surface(output_path='alff.svg'),
                             mem_gb=mem_gb,
                             name='alff_plot_cifti',
                             n_procs=omp_nthreads)
-
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, alff_plot, [('alff_out', 'inputnode.filename')]),
