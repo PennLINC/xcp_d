@@ -616,6 +616,7 @@ def plot_svgx(rawdata,
                   ylabel='FD[mm]',
                   FD=True)
     LOGGER.debug("Test 16")
+    LOGGER.debug(unprocessed_filename)
     # Save out the before processing file
     unprocessed_figure.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
     LOGGER.debug("Test 17")
