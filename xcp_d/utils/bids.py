@@ -195,16 +195,6 @@ def collect_data(
     }
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
-        queries.update({
-            "pial": {"datatype": "anat", "suffix": "pial", "extension": ".surf.gii"},
-            "wm": {"datatype": "anat", "suffix": "smoothwm", "extension": ".surf.gii"},
-            "midthickness": {
-                "datatype": "anat",
-                "suffix": "midthickness",
-                "extension": ".surf.gii",
-            },
-            "inflated": {"datatype": "anat", "suffix": "inflated", "extension": ".surf.gii"},
-        })
     else:
         queries["bold"]["extension"] = ".nii.gz"
         queries.update({

@@ -316,10 +316,6 @@ def init_subject_wf(
         inputnode.inputs.custom_confounds = custom_confounds
         inputnode.inputs.subj_data = subj_data
         inputnode.inputs.t1w = subj_data["t1w"]
-        inputnode.inputs.pial = subj_data["pial"]
-        inputnode.inputs.wm = subj_data["wm"]
-        inputnode.inputs.midthickness = subj_data["midthickness"]
-        inputnode.inputs.inflated = subj_data["inflated"]
     else:
         inputnode = pe.Node(
             niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
