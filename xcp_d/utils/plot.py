@@ -1014,13 +1014,14 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
 
+    entities_to_use = ["cohort", "den", "res"]
     space = parse_file_entities(bold_file)["space"]
-    cohort = parse_file_entities(bold_file).get("cohort", None)
-    resolution = parse_file_entities(bold_file).get("res", "1")
-
-    template = str(
-        get_template(template=space, resolution=resolution, desc=None, cohort=cohort, suffix="T1w")
-    )
+    file_entities = parse_file_entities(bold_file)
+    entities_to_use = {f: file_entities[f] for f in file_entities if f in entities_to_use}
+    template_file = get_template(template=space, **entities_to_use, suffix = 'T1w', desc=None)
+    if isinstance(template_file, list):
+        template_file = template_file[0]
+    template = str(template_file)
     plott.plot_stat_map(filename,
                         bg_img=template,
                         display_mode='z',
