@@ -280,6 +280,23 @@ def collect_data(
 
 
 def collect_run_data(layout, bold_file, cifti=False):
+    """Collect data associated with a given BOLD file.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        The BIDSLayout object used to grab files from the dataset.
+    bold_file : :obj:`str`
+        Path to the BOLD file.
+    cifti : :obj:`bool`, optional
+        Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
+        Default is False.
+
+    Returns
+    -------
+    subj_data : :obj:`dict`
+        A dictionary of file types (e.g., "confounds") and associated filenames.
+    """
     bids_file = layout.get_file(bold_file)
     subj_data, metadata = {}, {}
     subj_data["confounds"] = layout.get_nearest(
