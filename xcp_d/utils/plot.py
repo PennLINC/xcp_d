@@ -1018,7 +1018,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     space = parse_file_entities(bold_file)["space"]
     file_entities = parse_file_entities(bold_file)
     entities_to_use = {f: file_entities[f] for f in file_entities if f in entities_to_use}
-    template_file = get_template(template=space, **entities_to_use, suffix = 'T1w', desc=None)
+    template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
     if isinstance(template_file, list):
         template_file = template_file[0]
     template = str(template_file)
