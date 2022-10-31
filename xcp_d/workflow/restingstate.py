@@ -111,7 +111,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     alff_plot = pe.Node(Function(
                         input_names=["output_path", "filename", "bold_file"],
                         output_names=["output_path"],
-                        function= plot_alff_reho_surface  if cifti else plot_alff_reho_volumetric),
+                        function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric),
                         name="alff_plot")
     alff_plot.inputs.output_path = 'alff.svg'
     alff_plot.inputs.bold_file = bold_file
