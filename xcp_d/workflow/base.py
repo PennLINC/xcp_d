@@ -405,7 +405,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     workflow.connect([
-        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
+        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1w_seg', 'inputnode.t1seg')]),
         (inputnode, t1w_wf, [('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])
 
@@ -421,7 +421,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                   ('t1seg', 'inputnode.t1seg')])])
+                                                   ('t1w_seg', 'inputnode.t1seg')])])
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
@@ -436,7 +436,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         workflow.connect([
             (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                        ('t1seg', 'inputnode.t1seg')]),
+                                        ('t1w_seg', 'inputnode.t1seg')]),
         ])
 
     # loop over each bold run to be postprocessed
@@ -474,7 +474,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         workflow.connect([
             (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
-                                           ('t1seg', 'inputnode.t1seg'),
+                                           ('t1w_seg', 'inputnode.t1seg'),
                                            ('mni_to_t1w_xform', 'inputnode.mni_to_t1w')]),
         ])
         if not cifti:
@@ -482,16 +482,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
             ])
 
-    try:
-        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
-                                                        ]),
-                          (about, ds_report_about, [('out_report', 'in_file')])])
-    except Exception as exc:
-        if cifti:
-            exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
-                " participants."
-            print(exc)
-            sys.exit()
+    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
+                      (about, ds_report_about, [('out_report', 'in_file')])])
 
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):

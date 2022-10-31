@@ -13,6 +13,8 @@ from bids import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
+from xcp_d.utils.filemanip import ensure_list
+
 LOGGER = logging.getLogger("nipype.interface")
 
 
@@ -245,6 +247,8 @@ def collect_data(
                     queries["mni_to_t1w_xform"]["from"] = space
 
                 break
+    else:
+        allowed_spaces = ensure_list(queries["bold"]["space"])
 
     if not bold_data:
         allowed_space_str = ", ".join(allowed_spaces)
