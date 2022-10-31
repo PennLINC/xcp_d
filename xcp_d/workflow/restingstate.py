@@ -68,8 +68,6 @@ def init_compute_alff_wf(
         high pass filter
     %(smoothing)s
     %(cifti)s
-    %(bold_file)s
-        Original bold file.
     %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".
@@ -80,6 +78,8 @@ def init_compute_alff_wf(
        residual and filtered
     bold_mask
        bold mask if bold is nifti
+    bold_file
+       original bold_file
 
     Outputs
     -------
@@ -212,13 +212,13 @@ def init_cifti_reho_wf(
     %(omp_nthreads)s
     %(name)s
         Default is "cifti_reho_wf".
-    %(bold_file)s
-        Original bold file.
 
     Inputs
     ------
     clean_bold
        residual and filtered, cifti
+    bold_file
+       original bold_file
 
     Outputs
     -------
@@ -324,7 +324,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 def init_nifti_reho_wf(
     mem_gb,
     omp_nthreads,
-    bold_file, 
+    bold_file,
     name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
@@ -348,14 +348,15 @@ def init_nifti_reho_wf(
     %(omp_nthreads)s
     %(name)s
         Default is "nifti_reho_wf".
-    %(bold_file)s
-        Original bold file.
+
     Inputs
     ------
     clean_bold
        residual and filtered, nifti
     bold_mask
        bold mask
+    bold_file
+       original bold_file
 
     Outputs
     -------
