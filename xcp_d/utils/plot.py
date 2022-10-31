@@ -1073,7 +1073,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     rh = str(
         get_template(template="fsLR", hemi="L", density=density,
-                     cohort=cohort, space=space, suffix="midthickness")
+                     suffix="midthickness")
     )
     lh = str(
         get_template(template="fsLR", hemi="R", density=density, suffix="midthickness")
