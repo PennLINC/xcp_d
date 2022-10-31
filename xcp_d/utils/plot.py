@@ -14,12 +14,9 @@ from matplotlib.colors import ListedColormap
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
-from nipype import logging
 
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
-
-LOGGER = logging.getLogger("nipype.utils")
 
 
 def _decimate_data(data, seg_data, size):
@@ -578,7 +575,7 @@ def plot_svgx(rawdata,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
                   FD=True)
-    LOGGER.debug(unprocessed_filename)
+
     # Save out the before processing file
     unprocessed_figure.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
 
