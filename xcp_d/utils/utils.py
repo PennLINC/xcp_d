@@ -30,6 +30,10 @@ def _t12native(fname):
     -------
     t12ref : str
         Path to the T1w-to-scanner transform.
+
+    Notes
+    -----
+    Only used in get_segfile, which should be removed ASAP.
     """
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
@@ -54,6 +58,10 @@ def get_segfile(bold_file):
     -------
     segfile : str
         The associated segmentation file.
+
+    Notes
+    -----
+    Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
     # get transform files
     dd = Path(os.path.dirname(bold_file))
