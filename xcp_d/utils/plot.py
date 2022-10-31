@@ -14,9 +14,12 @@ from matplotlib.colors import ListedColormap
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
+from nipype import logging
 
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def _decimate_data(data, seg_data, size):
@@ -462,42 +465,60 @@ def plot_svgx(rawdata,
     processed_filename :
         output file svg after processing
     """
+    LOGGER.debug("Test 1")
     # Compute dvars correctly if not already done
     residual_data_file = residual_data
     raw_data_file = rawdata
+    LOGGER.debug("Test 1a")
     raw_data = read_ndata(datafile=rawdata, maskfile=mask)
+    LOGGER.debug("Test 1b")
     regressed_data = read_ndata(datafile=regressed_data, maskfile=mask)
+    LOGGER.debug("Test 1c")
     filtered_data = read_ndata(datafile=residual_data, maskfile=mask)
+    LOGGER.debug("Test 2")
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
+
+    LOGGER.debug("Test 3")
     # Let's remove dummy time from the raw_data if needed
     if dummyvols > 1:
         raw_data = raw_data[dummyvols:]
+
+    LOGGER.debug("Test 4")
     # Let's censor the interpolated data and raw_data:
     if sum(tmask_arr) > 0:
         raw_data = raw_data[:, tmask_bool]
         filtered_data = filtered_data[:, tmask_bool]
 
+    LOGGER.debug("Test 5")
     if type(raw_dvars) != np.ndarray:
         raw_dvars = compute_dvars(raw_data)
+    LOGGER.debug("Test 5a")
     if type(regressed_dvars) != np.ndarray:
         regressed_dvars = compute_dvars(regressed_data)
+    LOGGER.debug("Test 5b")
     if type(filtered_dvars) != np.ndarray:
         filtered_dvars = compute_dvars(filtered_data)
+    LOGGER.debug("Test 5c")
     # For ease of reference later
 
     # Formatting & setting of files
+    LOGGER.debug("Test 6")
     sns.set_style('whitegrid')
     regressed_dvars_data = regressed_dvars
     residual_dvars_data = filtered_dvars
     raw_dvars_data = raw_dvars
     # Load files
+    LOGGER.debug("Test 6a")
     raw_data = read_ndata(datafile=raw_data_file, maskfile=mask)
+    LOGGER.debug("Test 6b")
     residual_data = read_ndata(datafile=residual_data_file, maskfile=mask)
+    LOGGER.debug("Test 6c")
 
     # Remove first N deleted from raw_data so it's same length as censored files
     if len(raw_dvars_data) > len(residual_dvars_data):
+        LOGGER.debug("Test 7")
         # TODO: Should this be [-len(residual_dvars_data):] ?
         # ... Seems to grab first N, not last N.
         raw_dvars_data = raw_dvars_data[0:len(residual_dvars_data)]
@@ -527,13 +548,17 @@ def plot_svgx(rawdata,
         'Std': np.nanstd(residual_data, axis=0)
     })
     if seg_data is not None:
+        LOGGER.debug("Test 8")
         atlaslabels = nb.load(seg_data).get_fdata()
     else:
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
+    LOGGER.debug("Test 9")
     scaled_raw_data = read_ndata(datafile=raw_data_file, maskfile=mask, scale=600)
+    LOGGER.debug("Test 9a")
     scaled_residual_data = read_ndata(datafile=residual_data_file, maskfile=mask, scale=600)
+    LOGGER.debug("Test 9b")
 
     # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
@@ -544,37 +569,45 @@ def plot_svgx(rawdata,
         scaledresdata = tempfile.mkdtemp() + '/filex_red.dtseries.nii'
 
     # Write out the scaled data
+    LOGGER.debug("Test 10")
     scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
                                 template=raw_data_file,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
+    LOGGER.debug("Test 10a")
     scaledresdata = write_ndata(data_matrix=scaled_residual_data,
                                 template=residual_data_file,
                                 filename=scaledresdata,
                                 mask=mask,
                                 TR=TR)
+    LOGGER.debug("Test 10b")
     # Plot the data and confounds, plus the carpet plot
     plt.cla()
     plt.clf()
+    LOGGER.debug("Test 11")
     unprocessed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
+    LOGGER.debug("Test 12")
     confoundplotx(time_series=DVARS_timeseries,
                   grid_spec_ts=grid[0],
                   TR=TR,
                   ylabel='DVARS',
                   hide_x=True)
+    LOGGER.debug("Test 13")
     confoundplotx(time_series=unprocessed_data_timeseries,
                   grid_spec_ts=grid[1], TR=TR, hide_x=True, ylabel='WB')
+    LOGGER.debug("Test 14")
     plot_carpet(func=scaledrawdata,
                 atlaslabels=atlaslabels,
                 TR=TR,
                 subplot=grid[3],
                 legend=False)
+    LOGGER.debug("Test 15")
     confoundplotx(time_series=FD_timeseries,
                   grid_spec_ts=grid[4],
                   TR=TR,
@@ -582,19 +615,23 @@ def plot_svgx(rawdata,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
                   FD=True)
+    LOGGER.debug("Test 16")
     # Save out the before processing file
     unprocessed_figure.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+    LOGGER.debug("Test 17")
 
     plt.cla()
     plt.clf()
 
     # Plot the data and confounds, plus the carpet plot
+    LOGGER.debug("Test 18")
     processed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
                         hspace=0.05,
                         height_ratios=[1, 1, 0.2, 2.5, 1])
+    LOGGER.debug("Test 19")
 
     confoundplotx(time_series=DVARS_timeseries,
                   grid_spec_ts=grid[0],
@@ -602,18 +639,21 @@ def plot_svgx(rawdata,
                   ylabel='DVARS',
                   hide_x=True,
                   work_dir=work_dir)
+    LOGGER.debug("Test 20")
     confoundplotx(time_series=processed_data_timeseries,
                   grid_spec_ts=grid[1],
                   TR=TR,
                   hide_x=True,
                   ylabel='WB',
                   work_dir=work_dir)
+    LOGGER.debug("Test 21")
 
     plot_carpet(func=scaledresdata,
                 atlaslabels=atlaslabels,
                 TR=TR,
                 subplot=grid[3],
                 legend=True)
+    LOGGER.debug("Test 22")
     confoundplotx(time_series=FD_timeseries,
                   grid_spec_ts=grid[4],
                   TR=TR,
@@ -622,7 +662,9 @@ def plot_svgx(rawdata,
                   ylabel='FD[mm]',
                   FD=True,
                   work_dir=work_dir)
+    LOGGER.debug("Test 23")
     processed_figure.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+    LOGGER.debug("Test 24")
     # Save out the after processing file
     return unprocessed_filename, processed_filename
 
