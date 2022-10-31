@@ -1018,7 +1018,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     try:
         resolution = str(parse_file_entities(bold_file)["res"])
     except Exception:
-        resolution = None
+        resolution = 1
 
     template = str(
         get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
@@ -1066,10 +1066,8 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     try:
         density = str(parse_file_entities(bold_file)["den"])
     except Exception:
-        density = None
-
-    if density is None:
         density = "32k"
+        
     rh = str(
         get_template(template="fsLR", hemi="L", density=density, suffix="midthickness")
     )
