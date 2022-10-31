@@ -626,7 +626,7 @@ def plot_svgx(rawdata,
 
     # Plot the data and confounds, plus the carpet plot
     LOGGER.debug("Test 18")
-    processed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
+    processed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
