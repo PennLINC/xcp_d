@@ -240,7 +240,7 @@ def collect_data(
 
     if not bold_data:
         allowed_space_str = ", ".join(allowed_spaces)
-        raise ValueError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+        raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -263,6 +263,14 @@ def collect_data(
         )
         for dtype, query in queries.items()
     }
+
+    for field, filenames in subj_data.items():
+        # All fields except the BOLD data should have a single file
+        if field != "bold" and isinstance(filenames, list):
+            if not filenames:
+                raise FileNotFoundError(f"No {field} found with query: {queries[field]}")
+
+            subj_data[field] = filenames[0]
 
     return layout, subj_data
 
