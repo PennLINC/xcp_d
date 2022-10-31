@@ -1054,9 +1054,13 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 def plot_alff_reho_surface(output_path, filename, bold_file):
     """Plot ReHo and ALFF for ciftis on surface."""
+    import matplotlib.pyplot as plt
+    import nibabel as nb
     from bids.layout import parse_file_entities
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
+
+    from xcp_d.utils.plot import surf_data_from_cifti
 
     func = filename
     try:
