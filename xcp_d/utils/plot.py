@@ -1010,12 +1010,12 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def plot_alff_reho_volumetric(output_path, filename):
+def plot_alff_reho_volumetric(output_path, filename, bold_file):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
     from bids.layout import parse_file_entities
 
-    space = str(parse_file_entities(filename)["space"])
-    resolution = str(parse_file_entities(filename)["res"])
+    space = str(parse_file_entities(bold_file)["space"])
+    resolution = str(parse_file_entities(bold_file)["res"])
     template = str(
         get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
     )
@@ -1048,12 +1048,12 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_alff_reho_surface(output_path, filename):
+def plot_alff_reho_surface(output_path, filename, bold_file):
     """Plot ReHo and ALFF for ciftis on surface."""
     from bids.layout import parse_file_entities
 
     func = filename
-    density = str(parse_file_entities(func)["den"])
+    density = str(parse_file_entities(bold_file)["den"])
     if density is None:
         density = "32k"
     rh = str(

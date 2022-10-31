@@ -28,6 +28,7 @@ from xcp_d.utils.plot import plot_alff_reho_surface, plot_alff_reho_volumetric
 @fill_doc
 def init_compute_alff_wf(
     mem_gb,
+    bold_file,
     TR,
     lowpass,
     highpass,
@@ -47,6 +48,7 @@ def init_compute_alff_wf(
             wf = init_compute_alff_wf(
                 mem_gb=0.1,
                 TR=2.,
+                bold_file = bold_file,
                 lowpass=6.,
                 highpass=60.,
                 smoothing=6,
@@ -66,6 +68,8 @@ def init_compute_alff_wf(
         high pass filter
     %(smoothing)s
     %(cifti)s
+    %(bold_file)s
+        Original bold file.
     %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".
@@ -111,18 +115,20 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
     if not cifti:
         alff_plot = pe.Node(Function(
-                            input_names=["output_path", "filename"],
+                            input_names=["output_path", "filename", "bold_file"],
                             output_names=["output_pathname"],
                             function=plot_alff_reho_volumetric),
                             name="alff_nifti_plot")
         alff_plot.inputs.output_path = 'alff.svg'
+        alff_plot.inputs.bold_file = bold_file
     if cifti:
         alff_plot = pe.Node(Function(
-                            input_names=["output_path", "filename"],
+                            input_names=["output_path", "filename", "bold_file"],
                             output_names=["output_pathname"],
                             function=plot_alff_reho_surface),
                             name="alff_cifti_plot")
         alff_plot.inputs.output_path = 'alff.svg'
+        alff_plot.inputs.bold_file = bold_file
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, alff_plot, [('alff_out', 'filename')]),
@@ -182,6 +188,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 def init_cifti_reho_wf(
     mem_gb,
     omp_nthreads,
+    bold_file,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -194,6 +201,7 @@ def init_cifti_reho_wf(
             from xcp_d.workflow.restingstate import init_cifti_reho_wf
             wf = init_cifti_reho_wf(
                 mem_gb=0.1,
+                bold_file = bold_file,
                 omp_nthreads=1,
                 name="cifti_reho_wf",
             )
@@ -204,6 +212,8 @@ def init_cifti_reho_wf(
     %(omp_nthreads)s
     %(name)s
         Default is "cifti_reho_wf".
+    %(bold_file)s
+        Original bold file.
 
     Inputs
     ------
@@ -282,11 +292,12 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         n_procs=omp_nthreads,
     )
     reho_plot = pe.Node(Function(
-                        input_names=["output_path", "filename"],
+                        input_names=["output_path", "filename", "bold_file"],
                         output_names=["output_pathname"],
                         function=plot_alff_reho_surface),
                         name="reho_cifti_plot")
     reho_plot.inputs.output_path = "reho.svg"
+    reho_plot.inputs.bold_file = bold_file
     # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
@@ -311,6 +322,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 def init_nifti_reho_wf(
     mem_gb,
     omp_nthreads,
+    bold_file, 
     name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
@@ -323,6 +335,7 @@ def init_nifti_reho_wf(
             from xcp_d.workflow.restingstate import init_nifti_reho_wf
             wf = init_nifti_reho_wf(
                 mem_gb=0.1,
+                bold_file = bold_file,
                 omp_nthreads=1,
                 name="nifti_reho_wf",
             )
@@ -333,7 +346,8 @@ def init_nifti_reho_wf(
     %(omp_nthreads)s
     %(name)s
         Default is "nifti_reho_wf".
-
+    %(bold_file)s
+        Original bold file.
     Inputs
     ------
     clean_bold
@@ -365,11 +379,12 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            n_procs=omp_nthreads)
     # Get the SVG
     reho_plot = pe.Node(Function(
-                        input_names=["output_path", "filename"],
+                        input_names=["output_path", "filename", "bold_file"],
                         output_names=["output_pathname"],
                         function=plot_alff_reho_volumetric),
                         name="reho_nifti_plot")
     reho_plot.inputs.output_path = "reho.svg"
+    reho_plot.inputs.bold_file = bold_file
     # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),

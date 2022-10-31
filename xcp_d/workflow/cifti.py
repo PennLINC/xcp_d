@@ -270,6 +270,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     alff_compute_wf = init_compute_alff_wf(
         mem_gb=mem_gbx['timeseries'],
         TR=TR,
+        bold_file = bold_file,
         lowpass=upper_bpf,
         highpass=lower_bpf,
         smoothing=smoothing,
@@ -279,6 +280,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     reho_compute_wf = init_cifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
+        bold_file = bold_file,
         name="cifti_reho_wf",
         omp_nthreads=omp_nthreads)
 
