@@ -88,7 +88,7 @@ def init_compute_alff_wf(
     smoothed_alff
         smoothed alff  output
     alffsvg
-        alff svg 
+        alff svg
     """
     workflow = Workflow(name=name)
 

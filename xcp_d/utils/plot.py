@@ -1015,7 +1015,11 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     from bids.layout import parse_file_entities
 
     space = str(parse_file_entities(bold_file)["space"])
-    resolution = str(parse_file_entities(bold_file)["res"])
+    try:
+        resolution = str(parse_file_entities(bold_file)["res"])
+    except Exception:
+        resolution = None
+
     template = str(
         get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
     )
@@ -1053,7 +1057,11 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from bids.layout import parse_file_entities
 
     func = filename
-    density = str(parse_file_entities(bold_file)["den"])
+    try:
+        density = str(parse_file_entities(bold_file)["den"])
+    except Exception:
+        density = None
+
     if density is None:
         density = "32k"
     rh = str(
