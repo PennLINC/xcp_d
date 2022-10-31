@@ -108,22 +108,13 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          name='alff_compt',
                          n_procs=omp_nthreads)
 
-    if not cifti:
-        alff_plot = pe.Node(Function(
-                            input_names=["output_path", "filename", "bold_file"],
-                            output_names=["output_path"],
-                            function=plot_alff_reho_volumetric),
-                            name="alff_nifti_plot")
-        alff_plot.inputs.output_path = 'alff.svg'
-        alff_plot.inputs.bold_file = bold_file
-    if cifti:
-        alff_plot = pe.Node(Function(
-                            input_names=["output_path", "filename", "bold_file"],
-                            output_names=["output_path"],
-                            function=plot_alff_reho_surface),
-                            name="alff_cifti_plot")
-        alff_plot.inputs.output_path = 'alff.svg'
-        alff_plot.inputs.bold_file = bold_file
+    alff_plot = pe.Node(Function(
+                        input_names=["output_path", "filename", "bold_file"],
+                        output_names=["output_path"],
+                        function= plot_alff_reho_surface  if cifti else plot_alff_reho_volumetric),
+                        name="alff_plot")
+    alff_plot.inputs.output_path = 'alff.svg'
+    alff_plot.inputs.bold_file = bold_file
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, alff_plot, [('alff_out', 'filename')]),
