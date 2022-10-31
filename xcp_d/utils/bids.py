@@ -190,28 +190,26 @@ def collect_data(
             "to": "T1w",
             "suffix": "xfm",
         },
+        # native T1w-space brain mask
+        "t1w_mask": {
+            "datatype": "anat",
+            "space": None,
+            "desc": "brain",
+            "suffix": "mask",
+            "extension": ".nii.gz",
+        },
+        # transform from T1w space to standard space
+        # to entity will be set later
+        "t1w_to_mni_xform": {
+            "datatype": "anat",
+            "from": "T1w",
+            "suffix": "xfm",
+        },
     }
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
         queries["bold"]["extension"] = ".nii.gz"
-        queries.update({
-            # native T1w-space brain mask
-            "t1w_mask": {
-                "datatype": "anat",
-                "space": None,
-                "desc": "brain",
-                "suffix": "mask",
-                "extension": ".nii.gz",
-            },
-            # transform from T1w space to standard space
-            # to entity will be set later
-            "t1w_to_mni_xform": {
-                "datatype": "anat",
-                "from": "T1w",
-                "suffix": "xfm",
-            },
-        })
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}

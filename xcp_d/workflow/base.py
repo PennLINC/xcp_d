@@ -308,42 +308,27 @@ def init_subject_wf(
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
     preproc_files = subj_data["bold"]
 
-    if cifti:
-        inputnode = pe.Node(
-            niu.IdentityInterface(
-                fields=[
-                    'custom_confounds',
-                    'subj_data',
-                    't1w',
-                    't1w_seg',
-                    'mni_to_t1w_xform',
-                ],
-            ),
-            name='inputnode',
-        )
-    else:
-        inputnode = pe.Node(
-            niu.IdentityInterface(
-                fields=[
-                    'custom_confounds',
-                    'subj_data',
-                    't1w',
-                    't1w_mask',
-                    't1w_seg',
-                    'mni_to_t1w_xform',
-                    't1w_to_mni_xform',
-                ],
-            ),
-            name='inputnode',
-        )
-        inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
-        inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
-
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "custom_confounds",
+                "subj_data",  # not currently used, but will be in future
+                "t1w",
+                "t1w_mask",  # not used by cifti workflow
+                "t1w_seg",
+                "mni_to_t1w_xform",
+                "t1w_to_mni_xform",
+            ],
+        ),
+        name='inputnode',
+    )
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
+    inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
     inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
+    inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
 
     workflow = Workflow(name=name)
 
@@ -417,8 +402,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     workflow.connect([
-        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1w_seg', 'inputnode.t1seg')]),
-        (inputnode, t1w_wf, [('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
+        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
+                             ('t1w_seg', 'inputnode.t1seg'),
+                             ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])
 
     # Plot the ribbon on the brain in a brainsprite figure
