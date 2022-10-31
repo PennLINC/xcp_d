@@ -410,7 +410,7 @@ def get_customfile(custom_confounds, bold_file):
 
     Parameters
     ----------
-    custom_confounds : str
+    custom_confounds : str or None
         The path to the custom confounds file.
         This shouldn't include the actual filename.
     bold_file : str
@@ -418,19 +418,23 @@ def get_customfile(custom_confounds, bold_file):
 
     Returns
     -------
-    custom_file : str
+    custom_file : str or None
         The custom confounds file associated with the BOLD file.
     """
-    if custom_confounds is not None:
-        confounds_timeseries = bold_file.replace(
-            "_space-" + bold_file.split("space-")[1],
-            "_desc-confounds_timeseries.tsv")
-        file_base = os.path.basename(
-            confounds_timeseries.split('-confounds_timeseries.tsv')[0])
-        custom_file = os.path.abspath(
-            str(custom_confounds) + '/' + file_base + '-custom_timeseries.tsv')
-    else:
-        custom_file = None
+    if custom_confounds is None:
+        return None
+
+    file_base = os.path.basename(bold_file).split("_space-")[0]
+
+    custom_file = os.path.abspath(
+        os.path.join(
+            custom_confounds,
+            f"{file_base}_desc-custom_timeseries.tsv",
+        ),
+    )
+    if not os.path.isfile(custom_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_file}")
+
     return custom_file
 
 
