@@ -1062,11 +1062,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from xcp_d.utils.plot import surf_data_from_cifti
 
     func = filename
-    try:
-        density = str(parse_file_entities(bold_file)["den"])
-    except Exception:
-        density = "32k"
-
+    density = parse_file_entities(bold_file).get("den", "32k")
     rh = str(
         get_template(template="fsLR", hemi="L", density=density,
                      suffix="midthickness")
