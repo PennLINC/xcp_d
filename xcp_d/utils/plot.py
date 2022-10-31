@@ -9,16 +9,12 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from bids.layout import parse_file_entities
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
 from nilearn import plotting as plott
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
-from nipype.interfaces import utility as niu
-from nipype.pipeline import engine as pe
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.utils.qcmetrics import compute_dvars
@@ -1016,6 +1012,8 @@ def _get_tr(img):
 
 def plot_alff_reho_volumetric(output_path, filename):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
+    from bids.layout import parse_file_entities
+
     space = str(parse_file_entities(filename)["space"])
     resolution = str(parse_file_entities(filename)["res"])
     template = str(
@@ -1052,6 +1050,8 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 def plot_alff_reho_surface(output_path, filename):
     """Plot ReHo and ALFF for ciftis on surface."""
+    from bids.layout import parse_file_entities
+
     func = filename
     density = str(parse_file_entities(func)["den"])
     if density is None:

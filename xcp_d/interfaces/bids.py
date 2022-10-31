@@ -6,7 +6,6 @@ from pathlib import Path
 
 import nibabel as nb
 import numpy as np
-from bids.layout import parse_file_entities
 from bids.layout.writing import build_path
 from bids.utils import listify
 from nipype import logging
@@ -132,6 +131,7 @@ class BaseDerivativesDataSink(SimpleInterface):
             setattr(self.inputs, k, inputs[k])
 
     def _run_interface(self, runtime):
+        from bids.layout import parse_file_entities
         # Ready the output folder
         base_directory = runtime.cwd
         if isdefined(self.inputs.base_directory):
