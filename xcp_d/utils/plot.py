@@ -1015,13 +1015,16 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     from templateflow.api import get as get_template
 
     space = str(parse_file_entities(bold_file)["space"])
+    cohort = None
+    if "infant" in space:
+        cohort = str(parse_file_entities(bold_file)["cohort"])
     try:
         resolution = str(parse_file_entities(bold_file)["res"])
     except Exception:
         resolution = 1
 
     template = str(
-        get_template(template=space, resolution=resolution, desc=None, suffix="T1w")
+        get_template(template=space, resolution=resolution, desc=None, cohort=cohort, suffix="T1w")
     )
     plott.plot_stat_map(filename,
                         bg_img=template,
@@ -1063,13 +1066,18 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from xcp_d.utils.plot import surf_data_from_cifti
 
     func = filename
+    space = str(parse_file_entities(bold_file)["space"])
+    cohort = None
+    if "infant" in space:
+        cohort = str(parse_file_entities(bold_file)["cohort"])
     try:
         density = str(parse_file_entities(bold_file)["den"])
     except Exception:
         density = "32k"
-        
+
     rh = str(
-        get_template(template="fsLR", hemi="L", density=density, suffix="midthickness")
+        get_template(template="fsLR", hemi="L", density=density,
+                     cohort=cohort, space=space, suffix="midthickness")
     )
     lh = str(
         get_template(template="fsLR", hemi="R", density=density, suffix="midthickness")
