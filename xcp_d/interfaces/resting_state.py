@@ -6,8 +6,8 @@
 
 """
 import os
-
 import shutil
+
 from nilearn.plotting import view_img
 from nipype import logging
 from nipype.interfaces.afni.preprocess import AFNICommandOutputSpec, DespikeInputSpec
