@@ -310,24 +310,40 @@ def init_subject_wf(
 
     if cifti:
         inputnode = pe.Node(
-            niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
+            niu.IdentityInterface(
+                fields=[
+                    'custom_confounds',
+                    'subj_data',
+                    't1w',
+                    't1w_seg',
+                    'mni_to_t1w_xform',
+                ],
+            ),
             name='inputnode',
         )
-        inputnode.inputs.custom_confounds = custom_confounds
-        inputnode.inputs.subj_data = subj_data
-        inputnode.inputs.t1w = subj_data["t1w"]
     else:
         inputnode = pe.Node(
-            niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
+            niu.IdentityInterface(
+                fields=[
+                    'custom_confounds',
+                    'subj_data',
+                    't1w',
+                    't1w_mask',
+                    't1w_seg',
+                    'mni_to_t1w_xform',
+                    't1w_to_mni_xform',
+                ],
+            ),
             name='inputnode',
         )
-        inputnode.inputs.custom_confounds = custom_confounds
-        inputnode.inputs.subj_data = subj_data
-        inputnode.inputs.t1w = subj_data["t1w"]
         inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
-        inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-        inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
         inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
+
+    inputnode.inputs.custom_confounds = custom_confounds
+    inputnode.inputs.subj_data = subj_data
+    inputnode.inputs.t1w = subj_data["t1w"]
+    inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
+    inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
 
     workflow = Workflow(name=name)
 
