@@ -87,8 +87,8 @@ def init_compute_alff_wf(
         alff output
     smoothed_alff
         smoothed alff  output
-    html
-        alff html for nifti
+    alffsvg
+        alff svg 
     """
     workflow = Workflow(name=name)
 
@@ -224,6 +224,8 @@ def init_cifti_reho_wf(
     -------
     reho_out
         ReHo in a CIFTI file.
+    rehosvg
+        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -359,6 +361,8 @@ def init_nifti_reho_wf(
     -------
     reho_out
         reho output
+    rehosvg
+        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
