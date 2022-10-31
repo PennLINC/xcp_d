@@ -116,7 +116,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     if not cifti:
         alff_plot = pe.Node(Function(
                             input_names=["output_path", "filename", "bold_file"],
-                            output_names=["output_pathname"],
+                            output_names=["output_path"],
                             function=plot_alff_reho_volumetric),
                             name="alff_nifti_plot")
         alff_plot.inputs.output_path = 'alff.svg'
@@ -124,7 +124,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     if cifti:
         alff_plot = pe.Node(Function(
                             input_names=["output_path", "filename", "bold_file"],
-                            output_names=["output_pathname"],
+                            output_names=["output_path"],
                             function=plot_alff_reho_surface),
                             name="alff_cifti_plot")
         alff_plot.inputs.output_path = 'alff.svg'
@@ -295,7 +295,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     )
     reho_plot = pe.Node(Function(
                         input_names=["output_path", "filename", "bold_file"],
-                        output_names=["output_pathname"],
+                        output_names=["output_path"],
                         function=plot_alff_reho_surface),
                         name="reho_cifti_plot")
     reho_plot.inputs.output_path = "reho.svg"
@@ -385,7 +385,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     # Get the SVG
     reho_plot = pe.Node(Function(
                         input_names=["output_path", "filename", "bold_file"],
-                        output_names=["output_pathname"],
+                        output_names=["output_path"],
                         function=plot_alff_reho_volumetric),
                         name="reho_nifti_plot")
     reho_plot.inputs.output_path = "reho.svg"

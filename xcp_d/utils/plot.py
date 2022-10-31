@@ -1014,14 +1014,11 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
 
-    space = str(parse_file_entities(bold_file)["space"])
+    space = parse_file_entities(bold_file)["space"]
     cohort = None
     if "infant" in space:
         cohort = str(parse_file_entities(bold_file)["cohort"])
-    try:
-        resolution = str(parse_file_entities(bold_file)["res"])
-    except Exception:
-        resolution = 1
+    resolution = parse_file_entities(bold_file).get("res", "1")
 
     template = str(
         get_template(template=space, resolution=resolution, desc=None, cohort=cohort, suffix="T1w")
@@ -1031,8 +1028,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
                         display_mode='z',
                         cut_coords=8,
                         output_file=output_path)
-    output_pathname = output_path
-    return output_pathname
+    return output_path
 
 
 def surf_data_from_cifti(data, axis, surf_name):
@@ -1138,5 +1134,4 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     axes[0, 1].set_title("Right Hemisphere", fontsize=40)
     fig.tight_layout()
     fig.savefig(output_path)
-    output_pathname = output_path
-    return output_pathname
+    return output_path
