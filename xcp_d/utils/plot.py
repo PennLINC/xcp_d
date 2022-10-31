@@ -11,11 +11,9 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
-from nilearn import plotting as plott
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
-from templateflow.api import get as get_template
 
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
@@ -1013,6 +1011,8 @@ def _get_tr(img):
 def plot_alff_reho_volumetric(output_path, filename, bold_file):
     """Plot ALFF/ReHo mosaic plot for Niftis."""
     from bids.layout import parse_file_entities
+    from nilearn import plotting as plott
+    from templateflow.api import get as get_template
 
     space = str(parse_file_entities(bold_file)["space"])
     try:
@@ -1055,6 +1055,8 @@ def surf_data_from_cifti(data, axis, surf_name):
 def plot_alff_reho_surface(output_path, filename, bold_file):
     """Plot ReHo and ALFF for ciftis on surface."""
     from bids.layout import parse_file_entities
+    from nilearn import plotting as plott
+    from templateflow.api import get as get_template
 
     func = filename
     try:
