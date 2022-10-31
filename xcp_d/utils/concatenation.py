@@ -286,6 +286,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     initial_volumes_to_drop = 0
                     if dummytime > 0:
                         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
+                    LOGGER.debug("Starting plot_svgx")
                     plot_svgx(
                         dummyvols=initial_volumes_to_drop,
                         tmask=outfile,
@@ -303,6 +304,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         TR=TR,
                         work_dir=work_dir,
                     )
+                    LOGGER.debug("plot_svgx done")
 
                     # link or copy bb svgs
                     in_fig_entities = preproc_files[0].get_entities()
