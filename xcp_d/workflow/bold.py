@@ -401,7 +401,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     get_native2space_transforms = pe.Node(
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            output_names=["bold_to_std_xforms", "bold_to_t1w_xforms"],
+            output_names=[
+                "bold_to_std_xforms",
+                "bold_to_std_xforms_itf",
+                "bold_to_t1w_xforms",
+                "bold_to_t1w_xforms_itf",
+            ],
             function=get_xforms_to_std_and_t1w,
         ),
         name="get_native2space_transforms",
@@ -443,7 +448,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     workflow.connect([
         (get_t1w_mask, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
-        (get_native2space_transforms, resample_bold2T1w, [('bold_to_t1w_xforms', 'transforms')]),
+        (get_native2space_transforms, resample_bold2T1w, [
+            ('bold_to_t1w_xforms', 'transforms'),
+            ("bold_to_t1w_xforms_itf", "invert_transform_flags"),
+        ]),
     ])
 
     resample_bold2MNI = pe.Node(
@@ -467,7 +475,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     workflow.connect([
-        (get_native2space_transforms, resample_bold2MNI, [('bold_to_std_xforms', 'transforms')]),
+        (get_native2space_transforms, resample_bold2MNI, [
+            ('bold_to_std_xforms', 'transforms'),
+            ("bold_to_std_xforms_itf", "invert_transform_flags"),
+        ]),
     ])
 
     censor_report = pe.Node(

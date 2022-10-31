@@ -100,7 +100,7 @@ def get_segfile(bold_file):
 
 
 def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
-    """Obtain the correct transform files in reverse order to transform BOLD to MNI/T1W space.
+    """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
@@ -112,15 +112,23 @@ def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
     mni_to_t1w : str
         The MNI-to-T1w transform file.
         The ``from`` field is assumed to be the same space as the BOLD file is in.
+    t1w_to_mni : str
     t1w_to_native : str
         The T1w-to-native space transform file.
+    native_to_t1w : str
 
     Returns
     -------
     xforms_to_MNI : list of str
         A list of paths to transform files for warping to MNI152NLin2009cAsym space.
+    xforms_to_MNI_itf : list of bool
+        A list of booleans indicating whether each transform in xforms_to_MNI indicating
+        if each should be inverted (True) or not (False).
     xforms_to_T1w : list of str
         A list of paths to transform files for warping to T1w space.
+    xforms_to_T1w_itf : list of bool
+        A list of booleans indicating whether each transform in xforms_to_T1w indicating
+        if each should be inverted (True) or not (False).
 
     Notes
     -----
@@ -133,73 +141,99 @@ def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
-    # get file basename, anatdir and list all transforms in anatdir
+    # Extract the space of the BOLD file
     file_base = os.path.basename(bold_file)
-    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-        get_template(
-            template='MNI152NLin2009cAsym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            **{"from": "MNI152NLin6Asym"},
-        ),
-    )
+    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
+    if not len(bold_space):
+        bold_space = "native"
+    else:
+        bold_space = bold_space[0]
+
+    if bold_space not in ("native", "T1w"):
+        if f"from-{bold_space}" not in mni_to_t1w:
+            raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
 
     # Pull out the correct transforms based on bold_file name and string them together.
-    if 'space-MNI152NLin2009cAsym' in file_base:
-        # Data already in NLin2009c space.
+    xforms_to_T1w = [mni_to_t1w]  # used for all spaces except T1w and native
+    xforms_to_MNI_itf = [False]
+    if bold_space == "MNI152NLin2009cAsym":
+        # Data already in MNI152NLin2009cAsym space.
         xforms_to_MNI = ["identity"]
-        xforms_to_T1w = [mni_to_t1w]
+        xforms_to_MNI_itf = [False]
 
-    elif 'space-MNI152NLin6Asym' in file_base:
-        # NLin6 --> NLin2009c
-        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        xforms_to_T1w = [MNI152NLin6Asym_to_MNI152NLin2009cAsym, mni_to_t1w]
-
-    elif 'space-MNIInfant' in file_base:
-        # MNIInfant --> NLin2009c
-        xforms_to_MNI = [pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5')]
-        xforms_to_T1w = [mni_to_t1w]
-
-    elif 'space-T1w' in file_base:
-        # T1w --> ?? (extract from mni_to_t1w) --> NLin2009c
-        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
-        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        mni_to_mni_xforms = str(
+    elif bold_space == "MNI152NLin6Asym":
+        # MNI152NLin6Asym --> MNI152NLin2009cAsym
+        MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
             get_template(
-                template=base_mni_space,
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
+                template="MNI152NLin2009cAsym",
+                mode="image",
+                suffix="xfm",
+                extension=".h5",
                 **{"from": "MNI152NLin6Asym"},
             ),
         )
-        xforms_to_MNI = [mni_to_mni_xforms, mni_to_t1w]
-        xforms_to_T1w = ["identity"]
+        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        xforms_to_MNI_itf = [False]
 
-    elif 'space-' not in file_base:
-        # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> NLin2009c
+    elif bold_space == "MNIInfant":
+        # MNIInfant --> MNI152NLin2009cAsym
+        MNIInfant_to_MNI152NLin2009cAsym = pkgrf(
+            "xcp_d",
+            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        )
+        xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
+        xforms_to_MNI_itf = [False]
+
+    elif bold_space == "T1w":
+        # T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
+        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
+        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+        if base_mni_space != "MNI152NLin2009cAsym":
+            mni_to_mni_xform = str(
+                get_template(
+                    template="MNI152NLin2009cAsym",
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": base_mni_space},
+                ),
+            )
+            xforms_to_MNI = [mni_to_mni_xform, mni_to_t1w]
+            xforms_to_MNI_itf = [False, True]
+        else:
+            xforms_to_MNI = [mni_to_t1w]
+            xforms_to_MNI_itf = [True]
+
+        xforms_to_T1w = ["identity"]
+        xforms_to_T1w_itf = [False]
+
+    elif bold_space == "native":
+        # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
         base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        mni_to_mni_xforms = str(
-            get_template(
-                template="MNI152NLin2009cAsym",
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
-                **{"from": base_mni_space},
-            ),
-        )
-        xforms_to_MNI = [mni_to_mni_xforms, mni_to_t1w, t1w_to_native]
+        if base_mni_space != "MNI152NLin2009cAsym":
+            mni_to_mni_xform = str(
+                get_template(
+                    template="MNI152NLin2009cAsym",
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": base_mni_space},
+                ),
+            )
+            xforms_to_MNI = [mni_to_mni_xform, mni_to_t1w, t1w_to_native]
+            xforms_to_MNI_itf = [False, True, True]
+        else:
+            xforms_to_MNI = [mni_to_t1w, t1w_to_native]
+            xforms_to_MNI_itf = [True, True]
+
         xforms_to_T1w = [t1w_to_native]
+        xforms_to_T1w_itf = [True]
 
     else:
-        found_space = re.findall("_space-([a-zA-Z0-9]+)_", file_base)
-        space = found_space[0]
+        raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
 
-        raise ValueError(f"Space '{space}' in {file_base} not supported.")
-
-    return xforms_to_MNI, xforms_to_T1w
+    return xforms_to_MNI, xforms_to_MNI_itf, xforms_to_T1w, xforms_to_T1w_itf
 
 
 def get_maskfiles(bold_file, mni_to_t1w):
@@ -258,72 +292,86 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
-    file_base = os.path.basename(bold_file)  # file base is the bold_name
+    # Extract the space of the BOLD file
+    file_base = os.path.basename(bold_file)
+    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
+    if not len(bold_space):
+        bold_space = "native"
+    else:
+        bold_space = bold_space[0]
+
+    if bold_space not in ("native", "T1w"):
+        if f"from-{bold_space}" not in mni_to_t1w:
+            raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
 
     # Load useful inter-template transforms from templateflow
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
         get_template(
-            template='MNI152NLin2009cAsym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
+            template="MNI152NLin2009cAsym",
+            mode="image",
+            suffix="xfm",
+            extension=".h5",
             **{"from": "MNI152NLin6Asym"},
         ),
     )
 
     # Find the appropriate transform(s)
-    if 'space-MNI152NLin6Asym' in file_base:
+    if bold_space == "MNI152NLin6Asym":
         # NLin6 --> NLin6 (identity)
         transform_list = ["identity"]
-    elif 'space-MNI152NLin2009cAsym' in file_base:
+
+    elif bold_space == "MNI152NLin2009cAsym":
         # NLin6 --> NLin2009c
         transform_list = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-    elif 'space-MNIInfant' in file_base:
+
+    elif bold_space == "MNIInfant":
         # NLin6 --> NLin2009c --> MNIInfant
-        MNI152Infant_to_MNI152NLin2009cAsym = pkgrf(
-            'xcp_d',
-            'data/transform/infant_to_2009_Composite.h5',
+        MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
+            "xcp_d",
+            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
         )
         transform_list = [
-            MNI152Infant_to_MNI152NLin2009cAsym,
+            MNI152NLin2009cAsym_to_MNI152Infant,
             MNI152NLin6Asym_to_MNI152NLin2009cAsym,
         ]
-    elif 'space-T1w' in file_base:
+
+    elif bold_space == "T1w":
         # NLin6 --> ?? (extract from mni_to_t1w) --> T1w (BOLD)
         base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        mni_to_mni_xforms = str(
-            get_template(
-                template=base_mni_space,
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
-                **{"from": "MNI152NLin6Asym"},
-            ),
-        )
+        if base_mni_space != "MNI152NLin6Asym":
+            mni_to_mni_xform = str(
+                get_template(
+                    template=base_mni_space,
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": "MNI152NLin6Asym"},
+                ),
+            )
+            transform_list = [mni_to_t1w, mni_to_mni_xform]
+        else:
+            transform_list = [mni_to_t1w]
 
-        transform_list = [mni_to_t1w, mni_to_mni_xforms]
-    elif 'space-' not in file_base:
+    elif bold_space == "native":
         # The BOLD data are in native space
         # NLin6 --> ?? (extract from mni_to_t1w) --> T1w --> native (BOLD)
         base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        mni_to_mni_xforms = str(
-            get_template(
-                template=base_mni_space,
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
-                **{"from": "MNI152NLin6Asym"},
-            ),
-        )
+        if base_mni_space != "MNI152NLin6Asym":
+            mni_to_mni_xform = str(
+                get_template(
+                    template=base_mni_space,
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": "MNI152NLin6Asym"},
+                ),
+            )
+            transform_list = [t1w_to_native, mni_to_t1w, mni_to_mni_xform]
+        else:
+            transform_list = [t1w_to_native, mni_to_t1w]
 
-        transform_list = [t1w_to_native, mni_to_t1w, mni_to_mni_xforms]
     else:
-        found_space = re.findall("_space-([a-zA-Z0-9]+)_", file_base)
-        space = found_space[0]
-        raise ValueError(f"Space '{space}' in {file_base} not supported.")
-
-    if not transform_list:
-        raise Exception(f"Transforms not found for {file_base}")
+        raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
 
     return transform_list
 
