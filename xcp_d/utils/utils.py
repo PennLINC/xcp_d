@@ -236,29 +236,6 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
     return transformfileMNI, transformfileT1W
 
 
-def get_maskfiles(bold_file, mni_to_t1w):
-    """Identify BOLD- and T1-resolution brain masks from files.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the preprocessed BOLD file.
-    mni_to_t1w : str
-        Path to the MNI-to-T1w transform file.
-
-    Returns
-    -------
-    boldmask : str
-        The path to the BOLD-resolution mask.
-    t1mask : str
-        The path to the T1-resolution mask.
-    """
-    boldmask = bold_file.split(
-        'desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
-    t1mask = mni_to_t1w.split('from-')[0] + 'desc-brain_mask.nii.gz'
-    return boldmask, t1mask
-
-
 def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     """Obtain transforms to warp atlases from MNI space to the same space as the bold file.
 
