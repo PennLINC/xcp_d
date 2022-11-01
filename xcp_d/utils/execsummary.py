@@ -19,6 +19,7 @@ def generate_brain_sprite(template_image, stat_map, out_file):
         vmax=3,
         colorbar=False,
         bg_img=template_image,
+        resampling_interpolation='nearest',
     )
 
     html_view.save_as_html(out_file)
@@ -45,8 +46,6 @@ def ribbon_to_statmap(ribbon, outfile):
     datawhite = _get_contour(white.get_fdata())
 
     datax = 2 * datapial + datawhite
-
-    datax = datax.astype(bool).astype(int)
 
     # save the output
     ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)
