@@ -271,7 +271,7 @@ def collect_data(
 
             subj_data[field] = filenames[0]
 
-    FUNC_LOGGER.debug(f"Collected data:\n{pprint.pformat(subj_data, indent=4, width=100)}")
+    FUNC_LOGGER.warning(f"Collected data:\n{pprint.pformat(subj_data, indent=4, width=100)}")
 
     return layout, subj_data
 
@@ -336,7 +336,7 @@ def collect_run_data(layout, bold_file, cifti=False):
 
     run_data.update(metadata)
 
-    FUNC_LOGGER.debug(
+    FUNC_LOGGER.warning(
         f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
     )
 
