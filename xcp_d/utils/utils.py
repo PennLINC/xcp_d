@@ -187,7 +187,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
         # T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
         if base_std_space != "MNI152NLin2009cAsym":
-            mni_to_mni_xform = str(
+            std_to_mni_xform = str(
                 get_template(
                     template="MNI152NLin2009cAsym",
                     mode="image",
@@ -196,7 +196,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
                     **{"from": base_std_space},
                 ),
             )
-            xforms_to_MNI = [mni_to_mni_xform, mni_to_t1w]
+            xforms_to_MNI = [std_to_mni_xform, mni_to_t1w]
             xforms_to_MNI_itf = [False, True]
         else:
             xforms_to_MNI = [mni_to_t1w]
@@ -209,7 +209,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
         # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
         if base_std_space != "MNI152NLin2009cAsym":
-            mni_to_mni_xform = str(
+            std_to_mni_xform = str(
                 get_template(
                     template="MNI152NLin2009cAsym",
                     mode="image",
@@ -218,7 +218,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
                     **{"from": base_std_space},
                 ),
             )
-            xforms_to_MNI = [mni_to_mni_xform, mni_to_t1w, t1w_to_native]
+            xforms_to_MNI = [std_to_mni_xform, mni_to_t1w, t1w_to_native]
             xforms_to_MNI_itf = [False, True, True]
         else:
             xforms_to_MNI = [mni_to_t1w, t1w_to_native]
