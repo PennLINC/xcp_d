@@ -1111,7 +1111,8 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     cifti_data = cifti.get_fdata()
     cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
-    fig, axes = plt.subplots(figsize=(8, 8), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
+    fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2,
+                             subplot_kw={'projection': '3d'})
     output_path = os.path.abspath(output_path)
     lh_surf_data = surf_data_from_cifti(
         cifti_data,
@@ -1175,8 +1176,8 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
         axes=axes[1, 1],
         figure=fig,
     )
-    axes[0, 0].set_title("Left Hemisphere", fontsize=40)
-    axes[0, 1].set_title("Right Hemisphere", fontsize=40)
+    axes[0, 0].set_title("Left Hemisphere", fontsize=10)
+    axes[0, 1].set_title("Right Hemisphere", fontsize=10)
     fig.tight_layout()
     fig.savefig(output_path)
     return output_path
