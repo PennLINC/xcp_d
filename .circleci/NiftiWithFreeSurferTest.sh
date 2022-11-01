@@ -32,7 +32,7 @@ $XCPD_CMD \
     --fd-thresh 0.04 \
     --head_radius 40 \
     --smoothing 6 \
-    -vvv \
+    -vv \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
     --warp-surfaces-native2std
 
