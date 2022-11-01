@@ -24,9 +24,7 @@ runinstall: &runinstall
       echo "poll_sleep_duration = 0.01" >> ${CFG}
       echo "hash_method = content" >> ${CFG}
 
-
 jobs:
-
   build:
     <<: *dockersetup
     steps:
@@ -41,11 +39,13 @@ jobs:
       - restore_cache:
           key: fmriprepwithfreesurfer-01
       - run:
-          TESTDIR="/src/xcp_d/.circleci"
-          cd ${TESTDIR}
-          source get_data.sh
-          get_bids_data ${TESTDIR} fmriprep_colornest
-          get_bids_data ${TESTDIR} freesurfer_colornest
+          name: Download fmriprepwithfreesurfer test data
+          command: |
+            TESTDIR="/src/xcp_d/.circleci"
+            cd ${TESTDIR}
+            source get_data.sh
+            get_bids_data ${TESTDIR} fmriprep_colornest
+            get_bids_data ${TESTDIR} freesurfer_colornest
       - save_cache:
           key: fmriprepwithfreesurfer-01
           paths:
@@ -59,10 +59,12 @@ jobs:
       - restore_cache:
           key: fmriprepwithoutfreesurfer-01
       - run:
-          TESTDIR="/src/xcp_d/.circleci"
-          cd ${TESTDIR}
-          source get_data.sh
-          get_bids_data ${TESTDIR} sub01
+          name: Download fmriprepwithoutfreesurfer test data
+          command: |
+            TESTDIR="/src/xcp_d/.circleci"
+            cd ${TESTDIR}
+            source get_data.sh
+            get_bids_data ${TESTDIR} sub01
       - save_cache:
           key: fmriprepwithoutfreesurfer-01
           paths:
@@ -76,10 +78,12 @@ jobs:
       - restore_cache:
           key: nibabies-01
       - run:
-          TESTDIR="/src/xcp_d/.circleci"
-          cd ${TESTDIR}
-          source get_data.sh
-          get_bids_data ${TESTDIR} nibabies
+          name: Download nibabies test data
+          command: |
+            TESTDIR="/src/xcp_d/.circleci"
+            cd ${TESTDIR}
+            source get_data.sh
+            get_bids_data ${TESTDIR} nibabies
       - save_cache:
           key: nibabies-01
           paths:
