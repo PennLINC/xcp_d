@@ -287,6 +287,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
         bold_file=bold_file,
+        bandpass_filter=bandpass_filter,
         params=params,
         cifti=True,
         output_dir=output_dir,
