@@ -83,7 +83,7 @@ def init_compute_alff_wf(
     smoothed_alff
         smoothed alff  output
     alffplot
-        alff png
+        alff svg
     """
     workflow = Workflow(name=name)
 
@@ -113,7 +113,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                         output_names=["output_path"],
                         function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric),
                         name="alff_plot")
-    alff_plot.inputs.output_path = 'alff.png'
+    alff_plot.inputs.output_path = 'alff.svg'
     alff_plot.inputs.bold_file = bold_file
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
@@ -211,7 +211,7 @@ def init_cifti_reho_wf(
     reho_out
         ReHo in a CIFTI file.
     rehoplot
-        ReHo png
+        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -284,7 +284,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
                         output_names=["output_path"],
                         function=plot_alff_reho_surface),
                         name="reho_cifti_plot")
-    reho_plot.inputs.output_path = "reho.png"
+    reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
     # Write out results
     workflow.connect([
@@ -349,7 +349,7 @@ def init_nifti_reho_wf(
     reho_out
         reho output
     rehoplot
-        ReHo png
+        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -368,13 +368,13 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            name="reho_3d",
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
-    # Get the png
+    # Get the svg
     reho_plot = pe.Node(Function(
                         input_names=["output_path", "filename", "bold_file"],
                         output_names=["output_path"],
                         function=plot_alff_reho_volumetric),
                         name="reho_nifti_plot")
-    reho_plot.inputs.output_path = "reho.png"
+    reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
     # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
