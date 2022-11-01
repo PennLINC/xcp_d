@@ -305,7 +305,9 @@ def init_subject_wf(
         cifti=cifti,
     )
 
-    LOGGER.debug(f"Collected data:\n{pprint.pformat(subj_data, indent=4, width=100)}")
+    LOGGER.debug("Collected data")
+    LOGGER.debug(f"Collected data: {pprint.pformat(subj_data, indent=4, width=100)}")
+    LOGGER.debug("Really collected data")
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
