@@ -262,7 +262,10 @@ def get_parser():
         "--disable_bandpass_filter",
         dest="bandpass_filter",
         action="store_false",
-        help="Disable bandpass filtering.",
+        help=(
+            "Disable bandpass filtering. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
+        ),
     )
     bandpass_filter_params.add_argument(
         "--bandpass_filter",
@@ -271,6 +274,7 @@ def get_parser():
         type=bool,
         help=(
             "Whether to Butterworth bandpass filter the data or not. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated. "
             "This parameter is deprecated and will be removed in version 0.3.0. "
             "Bandpass filtering is performed by default, and if you wish to disable it, "
             "please use `--disable-bandpass-filter``."
