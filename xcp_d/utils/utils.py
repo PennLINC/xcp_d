@@ -153,7 +153,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [mni_to_t1w]  # used for all spaces except T1w and native
-    xforms_to_MNI_itf = [False]
+    xforms_to_T1w_itf = [False]
     if bold_space == "MNI152NLin2009cAsym":
         # Data already in MNI152NLin2009cAsym space.
         xforms_to_MNI = ["identity"]
