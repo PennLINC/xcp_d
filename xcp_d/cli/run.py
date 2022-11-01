@@ -716,6 +716,8 @@ def build_workflow(opts, retval):
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
         retval["return_code"] = 1
+    elif not opts.bandpass_filter:
+        build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Motion filtering parameters
     if opts.motion_filter_type == "notch":
