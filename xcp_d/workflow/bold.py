@@ -27,7 +27,7 @@ from xcp_d.utils.utils import (
     _t12native,
     get_maskfiles,
     get_std2bold_xforms,
-    get_xforms_to_std_and_t1w,
+    get_bold2std_and_t1w_xforms,
     stringforparams,
 )
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
@@ -407,7 +407,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "bold_to_t1w_xforms",
                 "bold_to_t1w_xforms_itf",
             ],
-            function=get_xforms_to_std_and_t1w,
+            function=get_bold2std_and_t1w_xforms,
         ),
         name="get_native2space_transforms",
     )

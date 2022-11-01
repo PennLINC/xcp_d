@@ -99,7 +99,7 @@ def get_segfile(bold_file):
     return segfile
 
 
-def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
+def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -112,10 +112,8 @@ def get_xforms_to_std_and_t1w(bold_file, mni_to_t1w, t1w_to_native):
     mni_to_t1w : str
         The MNI-to-T1w transform file.
         The ``from`` field is assumed to be the same space as the BOLD file is in.
-    t1w_to_mni : str
     t1w_to_native : str
         The T1w-to-native space transform file.
-    native_to_t1w : str
 
     Returns
     -------
@@ -285,6 +283,9 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
     Used by get_segfile (to be removed), to resample dseg in init_boldpostprocess_wf for QCReport,
     to warp atlases to the same space as the BOLD data in init_nifti_functional_connectivity_wf,
     and to resample dseg to BOLD space for the executive summary plots.
+
+    Does not include inversion flag output because there is no need (yet).
+    Can easily be added in the future.
     """
     import os
     import re
@@ -300,9 +301,11 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
     else:
         bold_space = bold_space[0]
 
-    if bold_space not in ("native", "T1w"):
-        if f"from-{bold_space}" not in mni_to_t1w:
-            raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
+    # Check that the MNI-to-T1w xform is from the right space
+    if bold_space in ("native", "T1w"):
+        base_std_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+    elif f"from-{bold_space}" not in mni_to_t1w:
+        raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
 
     # Load useful inter-template transforms from templateflow
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
@@ -337,36 +340,34 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
 
     elif bold_space == "T1w":
         # NLin6 --> ?? (extract from mni_to_t1w) --> T1w (BOLD)
-        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        if base_mni_space != "MNI152NLin6Asym":
-            mni_to_mni_xform = str(
+        if base_std_space != "MNI152NLin6Asym":
+            mni_to_std_xform = str(
                 get_template(
-                    template=base_mni_space,
+                    template=base_std_space,
                     mode="image",
                     suffix="xfm",
                     extension=".h5",
                     **{"from": "MNI152NLin6Asym"},
                 ),
             )
-            transform_list = [mni_to_t1w, mni_to_mni_xform]
+            transform_list = [mni_to_t1w, mni_to_std_xform]
         else:
             transform_list = [mni_to_t1w]
 
     elif bold_space == "native":
         # The BOLD data are in native space
         # NLin6 --> ?? (extract from mni_to_t1w) --> T1w --> native (BOLD)
-        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        if base_mni_space != "MNI152NLin6Asym":
-            mni_to_mni_xform = str(
+        if base_std_space != "MNI152NLin6Asym":
+            mni_to_std_xform = str(
                 get_template(
-                    template=base_mni_space,
+                    template=base_std_space,
                     mode="image",
                     suffix="xfm",
                     extension=".h5",
                     **{"from": "MNI152NLin6Asym"},
                 ),
             )
-            transform_list = [t1w_to_native, mni_to_t1w, mni_to_mni_xform]
+            transform_list = [t1w_to_native, mni_to_t1w, mni_to_std_xform]
         else:
             transform_list = [t1w_to_native, mni_to_t1w]
 
