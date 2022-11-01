@@ -147,9 +147,10 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     else:
         bold_space = bold_space[0]
 
-    if bold_space not in ("native", "T1w"):
-        if f"from-{bold_space}" not in mni_to_t1w:
-            raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
+    if bold_space in ("native", "T1w"):
+        base_std_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+    elif f"from-{bold_space}" not in mni_to_t1w:
+        raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [mni_to_t1w]  # used for all spaces except T1w and native
@@ -185,15 +186,14 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     elif bold_space == "T1w":
         # T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
-        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        if base_mni_space != "MNI152NLin2009cAsym":
+        if base_std_space != "MNI152NLin2009cAsym":
             mni_to_mni_xform = str(
                 get_template(
                     template="MNI152NLin2009cAsym",
                     mode="image",
                     suffix="xfm",
                     extension=".h5",
-                    **{"from": base_mni_space},
+                    **{"from": base_std_space},
                 ),
             )
             xforms_to_MNI = [mni_to_mni_xform, mni_to_t1w]
@@ -208,15 +208,14 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     elif bold_space == "native":
         # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
-        base_mni_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
-        if base_mni_space != "MNI152NLin2009cAsym":
+        if base_std_space != "MNI152NLin2009cAsym":
             mni_to_mni_xform = str(
                 get_template(
                     template="MNI152NLin2009cAsym",
                     mode="image",
                     suffix="xfm",
                     extension=".h5",
-                    **{"from": base_mni_space},
+                    **{"from": base_std_space},
                 ),
             )
             xforms_to_MNI = [mni_to_mni_xform, mni_to_t1w, t1w_to_native]
