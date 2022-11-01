@@ -1010,7 +1010,24 @@ def _get_tr(img):
 
 
 def plot_alff_reho_volumetric(output_path, filename, bold_file):
-    """Plot ALFF/ReHo mosaic plot for Niftis."""
+    """
+    Plot ReHo and ALFF mosaics for niftis.
+
+    Parameters
+    ----------
+    output_path :
+        path to save svg plot
+    filename :
+        surface file
+    bold_file :
+        original input bold file
+
+    Returns
+    ----------
+    output_path:
+        path to svg plot
+
+    """
     import os
 
     from bids.layout import parse_file_entities
@@ -1028,7 +1045,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     output_path = os.path.abspath(output_path)
     plott.plot_stat_map(filename,
                         bg_img=template,
-                        display_mode='z',
+                        display_mode='mosaic',
                         cut_coords=8,
                         output_file=output_path)
     return output_path
@@ -1055,7 +1072,24 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 
 def plot_alff_reho_surface(output_path, filename, bold_file):
-    """Plot ReHo and ALFF for ciftis on surface."""
+    """
+    Plot ReHo and ALFF for ciftis on surface.
+
+    Parameters
+    ----------
+    output_path :
+        path to save svg plot
+    filename :
+        surface file
+    bold_file :
+        original input bold file
+
+    Returns
+    ----------
+    output_path:
+        path to svg plot
+
+    """
     import os
 
     import matplotlib.pyplot as plt
@@ -1065,7 +1099,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from templateflow.api import get as get_template
 
     from xcp_d.utils.plot import surf_data_from_cifti
-    func = filename
+
     density = parse_file_entities(bold_file).get("den", "32k")
     if density == "91k":
         density = "32k"
@@ -1078,7 +1112,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
                      suffix="midthickness", extension=".surf.gii")
     )
 
-    cifti = nb.load(func)
+    cifti = nb.load(filename)
     cifti_data = cifti.get_fdata()
     cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
