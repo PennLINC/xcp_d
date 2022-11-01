@@ -33,6 +33,58 @@ jobs:
       - checkout
       - run: *runinstall
 
+  download_data_fmriprepwithfreesurfer:
+    <<: *dockersetup
+    working_directory: /src/xcp_d/.circleci/
+    steps:
+      - checkout
+      - restore_cache:
+          key: fmriprepwithfreesurfer-01
+      - run:
+          TESTDIR="/src/xcp_d/.circleci"
+          cd ${TESTDIR}
+          source get_data.sh
+          get_bids_data ${TESTDIR} fmriprep_colornest
+          get_bids_data ${TESTDIR} freesurfer_colornest
+      - save_cache:
+          key: fmriprepwithfreesurfer-01
+          paths:
+              - /src/xcp_d/.circleci/data/fmriprepwithfreesurfer
+
+  download_data_fmriprepwithoutfreesurfer:
+    <<: *dockersetup
+    working_directory: /src/xcp_d/.circleci/
+    steps:
+      - checkout
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
+      - run:
+          TESTDIR="/src/xcp_d/.circleci"
+          cd ${TESTDIR}
+          source get_data.sh
+          get_bids_data ${TESTDIR} sub01
+      - save_cache:
+          key: fmriprepwithoutfreesurfer-01
+          paths:
+              - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
+
+  download_data_nibabies:
+    <<: *dockersetup
+    working_directory: /src/xcp_d/.circleci/
+    steps:
+      - checkout
+      - restore_cache:
+          key: nibabies-01
+      - run:
+          TESTDIR="/src/xcp_d/.circleci"
+          cd ${TESTDIR}
+          source get_data.sh
+          get_bids_data ${TESTDIR} nibabies
+      - save_cache:
+          key: nibabies-01
+          paths:
+              - /src/xcp_d/.circleci/data/nibabies_test_data
+
   nifti_without_freesurfer:
     <<: *dockersetup
     steps:
@@ -45,6 +97,8 @@ jobs:
               echo "Skipping nifti_without_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -75,6 +129,8 @@ jobs:
               echo "Skipping nifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithfreesurfer-01
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -93,7 +149,6 @@ jobs:
             diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_with_freesurfer/test/outputs.out)
             exit $?
 
-
   nibabies:
     <<: *dockersetup
     steps:
@@ -106,6 +161,8 @@ jobs:
               echo "Skipping nibabies build"
               circleci step halt
             fi
+      - restore_cache:
+          key: nibabies-01
       - run: *runinstall
       - run:
           name: Run full xcp_d on nibabies
@@ -136,8 +193,9 @@ jobs:
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithfreesurfer-01
       - run: *runinstall
-
       - run:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
@@ -167,8 +225,11 @@ jobs:
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithfreesurfer-01
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
-
       - run:
           name: Run pytest on the tests directory
           no_output_timeout: 1h
@@ -241,9 +302,22 @@ workflows:
             tags:
               only: /.*/
 
+      - download_data_fmriprepwithfreesurfer:
+          requires:
+            - build
+
+      - download_data_fmriprepwithoutfreesurfer:
+          requires:
+            - build
+
+      - download_data_nibabies:
+          requires:
+            - build
+
       - cifti_with_freesurfer:
           requires:
             - build
+            - download_data_fmriprepwithfreesurfer
           filters:
             branches:
               ignore:
@@ -255,6 +329,7 @@ workflows:
       - nifti_with_freesurfer:
           requires:
             - build
+            - download_data_fmriprepwithfreesurfer
           filters:
             branches:
               ignore:
@@ -266,6 +341,7 @@ workflows:
       - nibabies:
           requires:
             - build
+            - download_data_nibabies
           filters:
             branches:
               ignore:
@@ -277,6 +353,7 @@ workflows:
       - nifti_without_freesurfer:
           requires:
             - build
+            - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
               ignore:
@@ -288,6 +365,8 @@ workflows:
       - pytests:
           requires:
             - build
+            - download_data_fmriprepwithfreesurfer
+            - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
               ignore:
