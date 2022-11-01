@@ -73,7 +73,7 @@ run_xcpd_cmd () {
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
 
-    
+
     XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
 
   fi
@@ -215,7 +215,7 @@ get_bids_data() {
 
     elif [[ ${DS} = freesurfer_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer/freesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
