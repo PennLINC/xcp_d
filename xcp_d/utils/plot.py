@@ -1127,7 +1127,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
-        v_min=v_min, 
+        v_min=v_min,
         v_max=v_max,
         hemi="left",
         view="lateral",
@@ -1151,7 +1151,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     plott.plot_surf_stat_map(
         rh,
         rh_surf_data,
-        v_min=v_min, 
+        v_min=v_min,
         v_max=v_max,
         hemi="right",
         view="lateral",
@@ -1164,7 +1164,6 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
         rh,
         rh_surf_data,
         v_min=v_min,
-        
         v_max=v_max,
         hemi="right",
         view="medial",
