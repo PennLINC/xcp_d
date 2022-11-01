@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
 import os
+import pprint
 import sys
 from copy import deepcopy
 
@@ -303,6 +304,8 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
+
+    LOGGER.debug(f"Collected data:\n{pprint.pformat(subj_data, indent=4, width=100)}")
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf

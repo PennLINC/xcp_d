@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing CIFTI-format BOLD data."""
 import os
+import pprint
 
 import nibabel as nb
 import numpy as np
@@ -18,7 +19,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
@@ -150,17 +151,12 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    TR = _get_tr(bold_file)
-    if TR is None:
-        metadata = layout.get_metadata(bold_file)
-        TR = metadata['RepetitionTime']
+    run_data = collect_run_data(layout, bold_file)
+    LOGGER.debug(
+        f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
+    )
 
-    # Confounds file is necessary: ensure we can find it
-    from xcp_d.utils.confounds import get_confounds_tsv
-    try:
-        confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception:
-        raise Exception(f"Unable to find confounds file for {bold_file}.")
+    TR = run_data["bold_metadata"]["RepetitionTime"]
 
     workflow = Workflow(name=name)
 
@@ -239,7 +235,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
+    inputnode.inputs.custom_confounds = str(custom_confounds)
+    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
 
     outputnode = pe.Node(
         niu.IdentityInterface(

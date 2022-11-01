@@ -7,7 +7,6 @@ A PR will be submitted to niworkflows at some point.
 """
 import logging
 import os
-import pprint
 import warnings
 
 import nibabel as nb
@@ -271,8 +270,6 @@ def collect_data(
 
             subj_data[field] = filenames[0]
 
-    LOGGER.info(f"Collected data:\n{pprint.pformat(subj_data, indent=4, width=100)}")
-
     return layout, subj_data
 
 
@@ -335,10 +332,6 @@ def collect_run_data(layout, bold_file, cifti=False):
         metadata[f"{k}_metadata"] = layout.get_metadata(v)
 
     run_data.update(metadata)
-
-    LOGGER.info(
-        f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
-    )
 
     return run_data
 
