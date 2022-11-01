@@ -36,7 +36,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: fmriprepwithfreesurfer-01
+          key: fmriprepwithfreesurfer-00
       - run:
           name: Download fmriprepwithfreesurfer test data
           command: |
@@ -45,7 +45,7 @@ jobs:
             get_bids_data $PWD fmriprep_colornest
             get_bids_data $PWD freesurfer_colornest
       - save_cache:
-          key: fmriprepwithfreesurfer-01
+          key: fmriprepwithfreesurfer-00
           paths:
               - /src/xcp_d/.circleci/data/fmriprepwithfreesurfer
 
@@ -128,7 +128,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithfreesurfer-01
+          key: fmriprepwithfreesurfer-00
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -192,7 +192,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithfreesurfer-01
+          key: fmriprepwithfreesurfer-00
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -224,7 +224,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithfreesurfer-01
+          key: fmriprepwithfreesurfer-00
       - restore_cache:
           key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
