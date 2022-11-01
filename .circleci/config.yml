@@ -33,7 +33,6 @@ jobs:
 
   download_data_fmriprepwithfreesurfer:
     <<: *dockersetup
-    working_directory: /src/xcp_d/.circleci/
     steps:
       - checkout
       - restore_cache:
@@ -41,8 +40,7 @@ jobs:
       - run:
           name: Download fmriprepwithfreesurfer test data
           command: |
-            echo $PWD
-            echo `ls .`
+            cd /src/xcp_d/.circleci
             source get_data.sh
             get_bids_data $PWD fmriprep_colornest
             get_bids_data $PWD freesurfer_colornest
@@ -53,7 +51,6 @@ jobs:
 
   download_data_fmriprepwithoutfreesurfer:
     <<: *dockersetup
-    working_directory: /src/xcp_d/.circleci/
     steps:
       - checkout
       - restore_cache:
@@ -61,6 +58,7 @@ jobs:
       - run:
           name: Download fmriprepwithoutfreesurfer test data
           command: |
+            cd /src/xcp_d/.circleci
             source get_data.sh
             get_bids_data $PWD sub01
       - save_cache:
@@ -70,7 +68,6 @@ jobs:
 
   download_data_nibabies:
     <<: *dockersetup
-    working_directory: /src/xcp_d/.circleci/
     steps:
       - checkout
       - restore_cache:
@@ -78,6 +75,7 @@ jobs:
       - run:
           name: Download nibabies test data
           command: |
+            cd /src/xcp_d/.circleci
             source get_data.sh
             get_bids_data $PWD nibabies
       - save_cache:
