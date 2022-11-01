@@ -41,6 +41,8 @@ jobs:
       - run:
           name: Download fmriprepwithfreesurfer test data
           command: |
+            echo $PWD
+            echo `ls .`
             source get_data.sh
             get_bids_data $PWD fmriprep_colornest
             get_bids_data $PWD freesurfer_colornest
