@@ -52,6 +52,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
     cifti : bool
         Whether xcpd was run on CIFTI files or not.
     """
+    LOGGER.debug("Starting concatenation workflow.")
+
     # NOTE: The config has no effect when derivatives is True :(
     # At least for pybids ~0.15.1.
     # TODO: Find a way to support the xcpd config file in the BIDSLayout.
@@ -78,11 +80,15 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
         if subject.startswith("sub-"):
             subject = subject[4:]
 
+        LOGGER.debug(f"Concatenating subject {subject}")
+
         sessions = layout_xcpd.get_sessions(subject=subject)
         if not sessions:
             sessions = [None]
 
         for session in sessions:
+            LOGGER.debug(f"Concatenating session {session}")
+
             base_entities = {
                 "subject": subject,
                 "session": session,
@@ -95,6 +101,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 **base_entities,
             )
             for task in tasks:
+                LOGGER.debug(f"Concatenating task {task}")
+
                 task_entities = base_entities.copy()
                 task_entities["task"] = task
 
@@ -139,6 +147,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
+                LOGGER.debug("Concatenating motion files")
                 concat_motion_file = _get_concat_name(layout_xcpd, motion_files[0])
                 concatenate_tsv_files(motion_files, concat_motion_file)
 
@@ -147,6 +156,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
+                LOGGER.debug("Concatenating outlier files")
                 outlier_files = layout_xcpd.get(
                     desc=None,
                     suffix="outliers",
@@ -166,6 +176,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 )
 
                 for space in output_spaces:
+                    LOGGER.debug(f"Concatenating files in {space} space")
                     space_entities = task_entities.copy()
                     space_entities["space"] = space
 
@@ -180,6 +191,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         tempfile.mkdtemp(),
                         f"rawdata{preproc_files[0].extension}",
                     )
+                    LOGGER.debug(f"Concatenating preprocessed file: {concat_preproc_file}")
                     _concatenate_niimgs(preproc_files, concat_preproc_file)
 
                     if not cifti:
@@ -222,6 +234,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         **space_entities,
                     )
                     concat_bold_file = _get_concat_name(layout_xcpd, bold_files[0])
+                    LOGGER.debug(f"Concatenating postprocessed file: {concat_bold_file}")
                     _concatenate_niimgs(bold_files, concat_bold_file)
 
                     # Calculate DVARS from denoised BOLD
@@ -241,9 +254,13 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     )
                     if len(smooth_bold_files):
                         concat_file = _get_concat_name(layout_xcpd, smooth_bold_files[0])
+                        LOGGER.debug(
+                            f"Concatenating smoothed postprocessed file: {concat_file}"
+                        )
                         _concatenate_niimgs(smooth_bold_files, concat_file)
 
                     # Carpet plots
+                    LOGGER.debug("Generating carpet plots")
                     carpet_entities = bold_files[0].get_entities()
                     carpet_entities = _sanitize_entities(carpet_entities)
                     carpet_entities["run"] = None
@@ -270,6 +287,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     initial_volumes_to_drop = 0
                     if dummytime > 0:
                         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
+                    LOGGER.debug("Starting plot_svgx")
                     plot_svgx(
                         dummyvols=initial_volumes_to_drop,
                         tmask=outfile,
@@ -287,6 +305,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         TR=TR,
                         work_dir=work_dir,
                     )
+                    LOGGER.debug("plot_svgx done")
 
                     # link or copy bb svgs
                     in_fig_entities = preproc_files[0].get_entities()
@@ -324,6 +343,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         **space_entities,
                     )
                     for atlas in atlases:
+                        LOGGER.debug(f"Concatenating time series files for atlas {atlas}")
                         atlas_timeseries_files = layout_xcpd.get(
                             atlas=atlas,
                             suffix="timeseries",
@@ -373,7 +393,7 @@ def make_dcan_df(fds_files, name, TR):
     remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
     remaining frames
     """
-    print("making dcan")
+    LOGGER.debug(f"Generating DCAN file: {name}")
 
     # Load filtered framewise_displacement values from files and concatenate
     filtered_motion_dfs = [pd.read_table(fds_file) for fds_file in fds_files]
