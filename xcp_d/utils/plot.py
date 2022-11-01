@@ -1112,8 +1112,8 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     fig, axes = plt.subplots(figsize=(8, 8), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
     output_path = os.path.abspath(output_path)
-    v_max = nb.load(filename).get_fdata().max()
-    v_min = nb.load(filename).get_fdata().max()
+    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
     lh_surf_data = surf_data_from_cifti(
         cifti_data,
         cifti_axes[1],
