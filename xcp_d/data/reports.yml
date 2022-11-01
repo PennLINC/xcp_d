@@ -31,7 +31,7 @@ sections:
               If motion filtering is requested, then the six translation and rotation motion
               parameters are filtered to remove respiratory effects before FD is calculated
               and outlier volumes are identified.
-    subtitle: Framwise Displacement and Censored Volumes
+    subtitle: Framewise Displacement and Censored Volumes
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
             and then a carpet plot for the time series of each voxel/vertex's time series of activity..
