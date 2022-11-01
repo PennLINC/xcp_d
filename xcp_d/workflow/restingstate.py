@@ -82,7 +82,7 @@ def init_compute_alff_wf(
         alff output
     smoothed_alff
         smoothed alff  output
-    alffpng
+    alffplot
         alff png
     """
     workflow = Workflow(name=name)
@@ -98,7 +98,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['alff_out', 'smoothed_alff', 'alffpng']),
+        fields=['alff_out', 'smoothed_alff', 'alffplot']),
         name='outputnode')
 
     # compute alff
@@ -118,7 +118,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, alff_plot, [('alff_out', 'filename')]),
-                      (alff_plot, outputnode, [('output_path', 'alffpng')]),
+                      (alff_plot, outputnode, [('output_path', 'alffplot')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])
                       ])
 
@@ -210,7 +210,7 @@ def init_cifti_reho_wf(
     -------
     reho_out
         ReHo in a CIFTI file.
-    rehopng
+    rehoplot
         ReHo png
     """
     workflow = Workflow(name=name)
@@ -228,7 +228,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         name='inputnode',
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['reho_out', 'rehopng']),
+        niu.IdentityInterface(fields=['reho_out', 'rehoplot']),
         name='outputnode',
     )
 
@@ -300,7 +300,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (subcortical_reho, merge_cifti, [('out_file', 'volume_data')]),
         (merge_cifti, outputnode, [('out_file', 'reho_out')]),
         (merge_cifti, reho_plot, [('out_file', 'filename')]),
-        (reho_plot, outputnode, [('output_path', 'rehopng')])
+        (reho_plot, outputnode, [('output_path', 'rehoplot')])
     ])
 
     return workflow
@@ -348,7 +348,7 @@ def init_nifti_reho_wf(
     -------
     reho_out
         reho output
-    rehopng
+    rehoplot
         ReHo png
     """
     workflow = Workflow(name=name)
@@ -360,7 +360,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
         name='inputnode')
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['reho_out', 'rehopng']),
+        niu.IdentityInterface(fields=['reho_out', 'rehoplot']),
         name='outputnode')
 
     # Run AFNI'S 3DReHo on the data
@@ -381,7 +381,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
                       (compute_reho, reho_plot, [('out_file', 'filename')]),
-                      (reho_plot, outputnode, [('output_path', 'rehopng')]),
+                      (reho_plot, outputnode, [('output_path', 'rehoplot')]),
                       ])
 
     return workflow

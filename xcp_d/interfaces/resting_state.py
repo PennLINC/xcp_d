@@ -101,9 +101,6 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     mask = File(exists=False,
                 mandatory=False,
                 desc=" brain mask for nifti file")
-    outputdir = File(exists=False,
-                     mandatory=False,
-                     desc="BIDS output directory")
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
