@@ -472,9 +472,11 @@ def plot_svgx(rawdata,
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
+
     # Let's remove dummy time from the raw_data if needed
     if dummyvols > 1:
         raw_data = raw_data[dummyvols:]
+
     # Let's censor the interpolated data and raw_data:
     if sum(tmask_arr) > 0:
         raw_data = raw_data[:, tmask_bool]
@@ -496,15 +498,6 @@ def plot_svgx(rawdata,
     # Load files
     raw_data = read_ndata(datafile=raw_data_file, maskfile=mask)
     residual_data = read_ndata(datafile=residual_data_file, maskfile=mask)
-
-    # Remove first N deleted from raw_data so it's same length as censored files
-    if len(raw_dvars_data) > len(residual_dvars_data):
-        # TODO: Should this be [-len(residual_dvars_data):] ?
-        # ... Seems to grab first N, not last N.
-        raw_dvars_data = raw_dvars_data[0:len(residual_dvars_data)]
-        raw_data = raw_data[:, 0:len(residual_dvars_data)]
-        # TODO: Figure out how to slice the regressed DVARS instead of just overwriting it
-        regressed_dvars_data = raw_dvars_data
 
     # Create dataframes for the bold_data DVARS, FD
     DVARS_timeseries = pd.DataFrame({
@@ -558,7 +551,7 @@ def plot_svgx(rawdata,
     # Plot the data and confounds, plus the carpet plot
     plt.cla()
     plt.clf()
-    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
+    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
@@ -583,6 +576,7 @@ def plot_svgx(rawdata,
                   ylims=[0, 1],
                   ylabel='FD[mm]',
                   FD=True)
+
     # Save out the before processing file
     unprocessed_figure.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
 
@@ -590,7 +584,7 @@ def plot_svgx(rawdata,
     plt.clf()
 
     # Plot the data and confounds, plus the carpet plot
-    processed_figure = plt.figure(constrained_layout=True, figsize=(45, 60))
+    processed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5,
                         1,
                         wspace=0.0,
