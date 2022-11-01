@@ -1010,7 +1010,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     Parameters
     ----------
     output_path :
-        path to save svg plot
+        path to save plot
     filename :
         surface file
     bold_file :
@@ -1019,7 +1019,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     Returns
     ----------
     output_path:
-        path to svg plot
+        path to plot
 
     """
     import os
@@ -1072,7 +1072,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     Parameters
     ----------
     output_path :
-        path to save svg plot
+        path to save plot
     filename :
         surface file
     bold_file :
@@ -1081,7 +1081,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     Returns
     ----------
     output_path:
-        path to svg plot
+        path to plot
 
     """
     import os
