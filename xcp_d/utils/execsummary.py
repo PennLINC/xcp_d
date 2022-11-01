@@ -28,7 +28,7 @@ def generate_brain_sprite(template_image, stat_map, out_file):
 
 def ribbon_to_statmap(ribbon, outfile):
     """Convert a ribbon to a volumetric statistical map."""
-    # chek if the data is ribbon or seg_data files
+    # check if the data is ribbon or seg_data files
 
     ngbdata = nb.load(ribbon)
 
@@ -45,6 +45,8 @@ def ribbon_to_statmap(ribbon, outfile):
     datawhite = _get_contour(white.get_fdata())
 
     datax = 2 * datapial + datawhite
+
+    datax = datax.astype(bool).astype(int)
 
     # save the output
     ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)
@@ -66,21 +68,5 @@ def _get_contour(datax):
         for cx in con:
             conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])] = 1
         contour[:, :, i] = conx
-
-        # for xz plane
-        # for i in range(dims[1]):
-        # con = measure.find_contours(datax[:,i,:],fully_connected='low')
-        # conx =np.zeros_like(datax[:,i,:])
-        # for cx in con:
-        # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
-        # contour[:,i,:]= conx
-
-    # for yz plane
-    # for i in range(dims[2]):
-    # con = measure.find_contours(datax[:,:,i],fully_connected='low')
-    # conx =np.zeros_like(datax[:,:,i])
-    # for cx in con:
-    # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-    # contour[:,:,i]= conx
 
     return contour
