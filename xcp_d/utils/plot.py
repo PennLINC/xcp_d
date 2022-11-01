@@ -1088,6 +1088,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     import matplotlib.pyplot as plt
     import nibabel as nb
+    import numpy as np
     from bids.layout import parse_file_entities
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
@@ -1112,8 +1113,6 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     fig, axes = plt.subplots(figsize=(8, 8), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
     output_path = os.path.abspath(output_path)
-    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
     lh_surf_data = surf_data_from_cifti(
         cifti_data,
         cifti_axes[1],
@@ -1124,6 +1123,10 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
         cifti_axes[1],
         'CIFTI_STRUCTURE_CORTEX_RIGHT',
     )
+
+    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
