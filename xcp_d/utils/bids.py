@@ -6,6 +6,7 @@ Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
 import os
+import pprint
 import warnings
 
 import nibabel as nb
@@ -270,6 +271,8 @@ def collect_data(
 
             subj_data[field] = filenames[0]
 
+    LOGGER.debug(f"Collected data:\n{pprint.pformat(subj_data, indent=4, width=100)}")
+
     return layout, subj_data
 
 
@@ -288,12 +291,12 @@ def collect_run_data(layout, bold_file, cifti=False):
 
     Returns
     -------
-    subj_data : :obj:`dict`
+    run_data : :obj:`dict`
         A dictionary of file types (e.g., "confounds") and associated filenames.
     """
     bids_file = layout.get_file(bold_file)
-    subj_data, metadata = {}, {}
-    subj_data["confounds"] = layout.get_nearest(
+    run_data, metadata = {}, {}
+    run_data["confounds"] = layout.get_nearest(
         bids_file.path,
         strict=False,
         desc="confounds",
@@ -306,18 +309,18 @@ def collect_run_data(layout, bold_file, cifti=False):
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
     if not cifti:
-        subj_data["boldref"] = layout.get_nearest(
+        run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             suffix="boldref",
         )
-        subj_data["boldmask"] = layout.get_nearest(
+        run_data["boldmask"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             desc="brain",
             suffix="mask",
         )
-        subj_data["t1w_to_native_xform"] = layout.get_nearest(
+        run_data["t1w_to_native_xform"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             **{"from": "T1w"},  # "from" is protected Python kw
@@ -325,15 +328,19 @@ def collect_run_data(layout, bold_file, cifti=False):
             suffix="xfm",
         )
 
-    for k, v in subj_data.items():
+    for k, v in run_data.items():
         if v is None:
             raise FileNotFoundError(f"No {k} file found for {bids_file.path}")
 
         metadata[f"{k}_metadata"] = layout.get_metadata(v)
 
-    subj_data.update(metadata)
+    run_data.update(metadata)
 
-    return subj_data
+    LOGGER.debug(
+        f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
+    )
+
+    return run_data
 
 
 def write_dataset_description(fmri_dir, xcpd_dir):
