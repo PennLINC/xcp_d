@@ -41,11 +41,9 @@ jobs:
       - run:
           name: Download fmriprepwithfreesurfer test data
           command: |
-            TESTDIR="/src/xcp_d/.circleci"
-            cd ${TESTDIR}
             source get_data.sh
-            get_bids_data ${TESTDIR} fmriprep_colornest
-            get_bids_data ${TESTDIR} freesurfer_colornest
+            get_bids_data $PWD fmriprep_colornest
+            get_bids_data $PWD freesurfer_colornest
       - save_cache:
           key: fmriprepwithfreesurfer-01
           paths:
@@ -61,10 +59,8 @@ jobs:
       - run:
           name: Download fmriprepwithoutfreesurfer test data
           command: |
-            TESTDIR="/src/xcp_d/.circleci"
-            cd ${TESTDIR}
             source get_data.sh
-            get_bids_data ${TESTDIR} sub01
+            get_bids_data $PWD sub01
       - save_cache:
           key: fmriprepwithoutfreesurfer-01
           paths:
@@ -80,10 +76,8 @@ jobs:
       - run:
           name: Download nibabies test data
           command: |
-            TESTDIR="/src/xcp_d/.circleci"
-            cd ${TESTDIR}
             source get_data.sh
-            get_bids_data ${TESTDIR} nibabies
+            get_bids_data $PWD nibabies
       - save_cache:
           key: nibabies-01
           paths:
