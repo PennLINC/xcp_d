@@ -1110,7 +1110,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     cifti_data = cifti.get_fdata()
     cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
-    fig, axes = plt.subplots(figsize=(16, 16), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
+    fig, axes = plt.subplots(figsize=(8, 8), ncols=2, nrows=2, subplot_kw={'projection': '3d'})
     output_path = os.path.abspath(output_path)
     v_max = nb.load(filename).get_fdata().max()
     v_min = nb.load(filename).get_fdata().max()
@@ -1139,7 +1139,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
-        v_min=v_min, 
+        v_min=v_min,
         v_max=v_max,
         hemi="left",
         view="medial",
@@ -1163,7 +1163,8 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     plott.plot_surf_stat_map(
         rh,
         rh_surf_data,
-        v_min=v_min, 
+        v_min=v_min,
+        
         v_max=v_max,
         hemi="right",
         view="medial",
