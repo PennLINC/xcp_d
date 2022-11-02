@@ -129,6 +129,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     TR = _get_tr(preproc_files[0].path)
 
                     make_dcan_df([motion_files[0].path], dcan_df_file, TR)
+                    LOGGER.debug(f"Only one run found for {preproc_files[0].path}")
                     continue
 
                 # Get TR from one of the preproc files
@@ -146,7 +147,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
-                LOGGER.debug("Concatenating motion files")
+                LOGGER.debug(f"Concatenating motion files: {', '.join(motion_files)}")
                 concat_motion_file = _get_concat_name(layout_xcpd, motion_files[0])
                 concatenate_tsv_files(motion_files, concat_motion_file)
 
@@ -155,14 +156,13 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
-                LOGGER.debug("Concatenating outlier files")
                 outlier_files = layout_xcpd.get(
                     desc=None,
                     suffix="outliers",
                     extension=".tsv",
                     **task_entities,
                 )
-
+                LOGGER.debug(f"Concatenating outlier files: {', '.join(outlier_files)}")
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
                 outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
