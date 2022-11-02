@@ -560,7 +560,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         base_directory=output_dir,
         suffix='design',
         source_file=bold_file,
-        datatype="bold"),
+        datatype="func"),
         name='ds_report_confounds',
         run_without_submitting=False)
 
