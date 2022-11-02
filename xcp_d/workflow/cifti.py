@@ -557,12 +557,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='ds_report_connectivity',
         run_without_submitting=True)
 
-    ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                     source_file=bold_file,
-                                                     desc='alffSurfacePlot',
-                                                     datatype="figures"),
-                                 name='ds_report_alffplot',
-                                 run_without_submitting=False)
+    if bandpass_filter:
+        ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                         source_file=bold_file,
+                                                         desc='alffSurfacePlot',
+                                                         datatype="figures"),
+                                     name='ds_report_alffplot',
+                                     run_without_submitting=False)
 
     ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                      source_file=bold_file,
@@ -578,11 +579,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
-        (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
-
-    # exexetive summary workflow
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
+        ])
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
