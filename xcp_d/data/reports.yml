@@ -43,25 +43,25 @@ sections:
       datatype: figures
       desc: alffVolumetricPlot
       suffix: bold
-    caption: ALFF, or amplitude of low frequency fluctuations.
+    caption: ALFF, or amplitude of low frequency fluctuations. Overlaid on T1W image with same entities as the original image. 
     subtitle: ALFF
   - bids: 
       datatype: figures
       desc: rehoVolumetricPlot
       suffix: bold
-    caption: ReHo, or regional homogeneity.
+    caption: ReHo, or regional homogeneity. Overlaid on T1W image with same entities as the original image.
     subtitle: ReHo
   - bids:
       datatype: figures
       desc: alffSurfacePlot
       suffix: bold
-    caption: ALFF, or amplitude of low frequency fluctuations.
+    caption: ALFF, or amplitude of low frequency fluctuations. This plot is overlaid on midthickness surfaces and doesn't show subcortical voxels from the data.
     subtitle: ALFF
   - bids:
       datatype: figures
       desc: rehoSurfacePlot
       suffix: bold
-    caption: ReHo, or regional homogeneity.
+    caption: ReHo, or regional homogeneity. This plot is overlaid on midthickness surfaces and doesn't show subcortical voxels from the data.s
     subtitle: ReHo
 - name: About
   reportlets:
