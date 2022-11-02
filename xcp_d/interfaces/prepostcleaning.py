@@ -279,7 +279,7 @@ class CensorScrub(SimpleInterface):
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
         if self.inputs.custom_confounds:
             if os.path.exists(self.inputs.custom_confounds):
-                custom_confounds_tsv_uncensored = pd.read_csv(
+                custom_confounds_tsv_uncensored = pd.read_table(
                     self.inputs.custom_confounds,
                     header=None,
                 )
