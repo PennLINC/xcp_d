@@ -262,7 +262,10 @@ def get_parser():
         "--disable_bandpass_filter",
         dest="bandpass_filter",
         action="store_false",
-        help="Disable bandpass filtering.",
+        help=(
+            "Disable bandpass filtering. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
+        ),
     )
     bandpass_filter_params.add_argument(
         "--bandpass_filter",
@@ -271,6 +274,7 @@ def get_parser():
         type=bool,
         help=(
             "Whether to Butterworth bandpass filter the data or not. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated. "
             "This parameter is deprecated and will be removed in version 0.3.0. "
             "Bandpass filtering is performed by default, and if you wish to disable it, "
             "please use `--disable-bandpass-filter``."
@@ -497,8 +501,6 @@ def main():
     """Run the main workflow."""
     from multiprocessing import Manager, Process, set_start_method
 
-    from nipype import logging as nlogging
-
     set_start_method("forkserver")
     warnings.showwarning = _warn_redirect
     opts = get_parser().parse_args()
@@ -517,9 +519,6 @@ def main():
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     # Set logging
     logger.setLevel(log_level)
-    nlogging.getLogger("nipype.workflow").setLevel(log_level)
-    nlogging.getLogger("nipype.interface").setLevel(log_level)
-    nlogging.getLogger("nipype.utils").setLevel(log_level)
 
     # Call build_workflow(opts, retval)
     with Manager() as mgr:
@@ -683,7 +682,12 @@ def build_workflow(opts, retval):
     from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
 
+    log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
+
     build_log = nlogging.getLogger("nipype.workflow")
+    build_log.setLevel(log_level)
+    nlogging.getLogger("nipype.interface").setLevel(log_level)
+    nlogging.getLogger("nipype.utils").setLevel(log_level)
 
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
@@ -712,6 +716,8 @@ def build_workflow(opts, retval):
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
         retval["return_code"] = 1
+    elif not opts.bandpass_filter:
+        build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Motion filtering parameters
     if opts.motion_filter_type == "notch":
@@ -883,7 +889,13 @@ def build_workflow(opts, retval):
     # Nipype config (logs and execution)
     ncfg.update_config(
         {
-            "logging": {"log_directory": str(log_dir), "log_to_file": True},
+            "logging": {
+                "log_directory": str(log_dir),
+                "log_to_file": True,
+                "workflow_level": log_level,
+                "interface_level": log_level,
+                "utils_level": log_level,
+            },
             "execution": {
                 "crashdump_dir": str(log_dir),
                 "crashfile_format": "txt",

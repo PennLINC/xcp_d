@@ -18,8 +18,8 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.utils import stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -133,9 +133,9 @@ def init_ciftipostprocess_wf(
     smoothed_bold
         smoothed clean bold
     alff_out
-        alff niifti
+        ALFF file. Only generated if bandpass filtering is performed.
     smoothed_alff
-        smoothed alff
+        Smoothed ALFF file. Only generated if bandpass filtering is performed.
     reho_lh
         reho left hemisphere
     reho_rh
@@ -150,17 +150,9 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    TR = _get_tr(bold_file)
-    if TR is None:
-        metadata = layout.get_metadata(bold_file)
-        TR = metadata['RepetitionTime']
+    run_data = collect_run_data(layout, bold_file)
 
-    # Confounds file is necessary: ensure we can find it
-    from xcp_d.utils.confounds import get_confounds_tsv
-    try:
-        confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception:
-        raise Exception(f"Unable to find confounds file for {bold_file}.")
+    TR = run_data["bold_metadata"]["RepetitionTime"]
 
     workflow = Workflow(name=name)
 
@@ -239,7 +231,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
+    inputnode.inputs.custom_confounds = str(custom_confounds)
+    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -267,24 +260,29 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='cifti_ts_con_wf',
         omp_nthreads=omp_nthreads)
 
-    alff_compute_wf = init_compute_alff_wf(
-        mem_gb=mem_gbx['timeseries'],
-        TR=TR,
-        lowpass=upper_bpf,
-        highpass=lower_bpf,
-        smoothing=smoothing,
-        cifti=True,
-        name="compute_alff_wf",
-        omp_nthreads=omp_nthreads)
+    if bandpass_filter:
+        alff_compute_wf = init_compute_alff_wf(
+            mem_gb=mem_gbx['timeseries'],
+            TR=TR,
+            bold_file=bold_file,
+            lowpass=upper_bpf,
+            highpass=lower_bpf,
+            smoothing=smoothing,
+            cifti=True,
+            name="compute_alff_wf",
+            omp_nthreads=omp_nthreads,
+        )
 
     reho_compute_wf = init_cifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
+        bold_file=bold_file,
         name="cifti_reho_wf",
         omp_nthreads=omp_nthreads)
 
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
         bold_file=bold_file,
+        bandpass_filter=bandpass_filter,
         params=params,
         cifti=True,
         output_dir=output_dir,
@@ -441,10 +439,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
 
     # reho and alff
-    workflow.connect([(filtering_wf, alff_compute_wf,
-                       [('filtered_file', 'inputnode.clean_bold')]),
-                      (filtering_wf, reho_compute_wf,
-                       [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([
+        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+    ])
+
+    if bandpass_filter:
+        workflow.connect([
+            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        ])
 
     # qc report
     workflow.connect([
@@ -462,12 +464,16 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                     ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
-        (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
         (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
         (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
                                   ('outputnode.correlations', 'correlations'),
                                   ('outputnode.timeseries', 'timeseries')]),
     ])
+
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
+        ])
 
     # write derivatives
     workflow.connect([
@@ -477,9 +483,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
                                              ('tmask', 'inputnode.tmask')]),
-        (alff_compute_wf, write_derivative_wf,
-         [('outputnode.alff_out', 'inputnode.alff_out'),
-          ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
         (reho_compute_wf, write_derivative_wf, [
             ('outputnode.reho_out', 'inputnode.reho_out')
         ]),
@@ -489,6 +492,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
              ('outputnode.timeseries', 'inputnode.timeseries')]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
+
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, write_derivative_wf, [
+                ('outputnode.alff_out', 'inputnode.alff_out'),
+                ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
+            ]),
+        ])
 
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
@@ -539,16 +550,35 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='ds_report_connectivity',
         run_without_submitting=True)
 
+    if bandpass_filter:
+        ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                         source_file=bold_file,
+                                                         desc='alffSurfacePlot',
+                                                         datatype="figures"),
+                                     name='ds_report_alffplot',
+                                     run_without_submitting=False)
+
+    ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                     source_file=bold_file,
+                                                     desc='rehoSurfacePlot',
+                                                     datatype="figures"),
+                                 name='ds_report_rehoplot',
+                                 run_without_submitting=False)
+
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
-
-    # exexetive summary workflow
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
+        ])
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),

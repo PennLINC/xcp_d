@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from nilearn.input_data import NiftiLabelsMasker
 
-from xcp_d.utils.plot import _get_tr
+from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _t12native
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflow.connectivity import (

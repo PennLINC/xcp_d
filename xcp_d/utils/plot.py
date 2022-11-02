@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
+
 import tempfile
 
 import matplotlib.cm as cm
@@ -15,6 +16,7 @@ from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
+from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -750,7 +752,7 @@ def plot_carpet(
 ):
     """Plot an image representation of voxel intensities across time.
 
-    This is also know. as the "carpet plot" or "Power plot".
+    This is also known as the "carpet plot" or "Power plot".
     See Jonathan Power Neuroimage 2017 Jul 1; 154:150-158.
 
     Parameters
@@ -980,23 +982,181 @@ def _carpet(func,
     return (ax0, ax1, ax2), grid_specification
 
 
-def _get_tr(img):
-    """Attempt to extract repetition time from NIfTI/CIFTI header.
-
-    Examples
-    --------
-    _get_tr(nb.load(Path(test_data) /
-    ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
-    2.2
-     _get_tr(nb.load(Path(test_data) /
-    ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
-    2.0
+def plot_alff_reho_volumetric(output_path, filename, bold_file):
     """
-    if isinstance(img, str):
-        img = nb.load(img)
+    Plot ReHo and ALFF mosaics for niftis.
 
-    try:
-        return img.header.matrix.get_index_map(0).series_step  # Get TR
-    except AttributeError:  # Error out if not in cifti
-        return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
+    Parameters
+    ----------
+    output_path : :obj:`str`
+        path to save plot
+    filename : :obj:`str`
+        surface file
+    bold_file : :obj:`str`
+        original input bold file
+
+    Returns
+    ----------
+    output_path : :obj:`str`
+        path to plot
+
+    """
+    import os
+
+    from bids.layout import parse_file_entities
+    from nilearn import plotting as plott
+    from templateflow.api import get as get_template
+
+    entities_to_use = ["cohort", "den", "res"]
+    space = parse_file_entities(bold_file)["space"]
+    file_entities = parse_file_entities(bold_file)
+    entities_to_use = {f: file_entities[f] for f in file_entities if f in entities_to_use}
+    template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
+    if isinstance(template_file, list):
+        template_file = template_file[0]
+    template = str(template_file)
+    output_path = os.path.abspath(output_path)
+    plott.plot_stat_map(filename,
+                        bg_img=template,
+                        display_mode='mosaic',
+                        cut_coords=8,
+                        output_file=output_path)
+    return output_path
+
+
+def surf_data_from_cifti(data, axis, surf_name):
+    """From https://neurostars.org/t/separate-cifti-by-structure-in-python/17301/2.
+
+    https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/we-nibabel-markiewicz/NiBabel.ipynb
+    """
+    assert isinstance(axis, nb.cifti2.BrainModelAxis)
+    for name, data_indices, model in axis.iter_structures():
+        # Iterates over volumetric and surface structures
+        if name == surf_name:  # Just looking for a surface
+            data = data.T[data_indices]
+            # Assume brainmodels axis is last, move it to front
+            vtx_indices = model.vertex
+            # Generally 1-N, except medial wall vertices
+            surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype)
+            surf_data[vtx_indices] = data
+            return surf_data
+
+    raise ValueError(f"No structure named {surf_name}")
+
+
+def plot_alff_reho_surface(output_path, filename, bold_file):
+    """
+    Plot ReHo and ALFF for ciftis on surface.
+
+    Parameters
+    ----------
+    output_path : :obj:`str`
+        path to save plot
+    filename : :obj:`str`
+        surface file
+    bold_file : :obj:`str`
+        original input bold file
+
+    Returns
+    ----------
+    output_path : :obj:`str`
+        path to plot
+
+    """
+    import os
+
+    import matplotlib.pyplot as plt
+    import nibabel as nb
+    import numpy as np
+    from bids.layout import parse_file_entities
+    from nilearn import plotting as plott
+    from templateflow.api import get as get_template
+
+    from xcp_d.utils.plot import surf_data_from_cifti
+
+    density = parse_file_entities(bold_file).get("den", "32k")
+    if density == "91k":
+        density = "32k"
+    rh = str(
+        get_template(template='fsLR', hemi="R", density="32k",
+                     suffix="midthickness", extension=".surf.gii")
+    )
+    lh = str(
+        get_template(template='fsLR', hemi="L", density="32k",
+                     suffix="midthickness", extension=".surf.gii")
+    )
+
+    cifti = nb.load(filename)
+    cifti_data = cifti.get_fdata()
+    cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
+
+    fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2,
+                             subplot_kw={'projection': '3d'})
+    output_path = os.path.abspath(output_path)
+    lh_surf_data = surf_data_from_cifti(
+        cifti_data,
+        cifti_axes[1],
+        'CIFTI_STRUCTURE_CORTEX_LEFT',
+    )
+    rh_surf_data = surf_data_from_cifti(
+        cifti_data,
+        cifti_axes[1],
+        'CIFTI_STRUCTURE_CORTEX_RIGHT',
+    )
+
+    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+
+    plott.plot_surf_stat_map(
+        lh,
+        lh_surf_data,
+        v_min=v_min,
+        v_max=v_max,
+        hemi="left",
+        view="lateral",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[0, 0],
+        figure=fig,
+    )
+    plott.plot_surf_stat_map(
+        lh,
+        lh_surf_data,
+        v_min=v_min,
+        v_max=v_max,
+        hemi="left",
+        view="medial",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[1, 0],
+        figure=fig,
+    )
+    plott.plot_surf_stat_map(
+        rh,
+        rh_surf_data,
+        v_min=v_min,
+        v_max=v_max,
+        hemi="right",
+        view="lateral",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[0, 1],
+        figure=fig,
+    )
+    plott.plot_surf_stat_map(
+        rh,
+        rh_surf_data,
+        v_min=v_min,
+        v_max=v_max,
+        hemi="right",
+        view="medial",
+        engine="matplotlib",
+        colorbar=False,
+        axes=axes[1, 1],
+        figure=fig,
+    )
+    axes[0, 0].set_title("Left Hemisphere", fontsize=10)
+    axes[0, 1].set_title("Right Hemisphere", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(output_path)
+    return output_path

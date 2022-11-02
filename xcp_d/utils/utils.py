@@ -30,6 +30,10 @@ def _t12native(fname):
     -------
     t12ref : str
         Path to the T1w-to-scanner transform.
+
+    Notes
+    -----
+    Only used in get_segfile, which should be removed ASAP.
     """
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
@@ -54,6 +58,10 @@ def get_segfile(bold_file):
     -------
     segfile : str
         The associated segmentation file.
+
+    Notes
+    -----
+    Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
     # get transform files
     dd = Path(os.path.dirname(bold_file))
@@ -231,29 +239,6 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
         raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
 
     return xforms_to_MNI, xforms_to_MNI_itf, xforms_to_T1w, xforms_to_T1w_itf
-
-
-def get_maskfiles(bold_file, mni_to_t1w):
-    """Identify BOLD- and T1-resolution brain masks from files.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the preprocessed BOLD file.
-    mni_to_t1w : str
-        Path to the MNI-to-T1w transform file.
-
-    Returns
-    -------
-    boldmask : str
-        The path to the BOLD-resolution mask.
-    t1mask : str
-        The path to the T1-resolution mask.
-    """
-    boldmask = bold_file.split(
-        'desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
-    t1mask = mni_to_t1w.split('from-')[0] + 'desc-brain_mask.nii.gz'
-    return boldmask, t1mask
 
 
 def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
@@ -460,7 +445,7 @@ def get_customfile(custom_confounds, bold_file):
 
     Parameters
     ----------
-    custom_confounds : str
+    custom_confounds : str or None
         The path to the custom confounds file.
         This shouldn't include the actual filename.
     bold_file : str
@@ -468,19 +453,23 @@ def get_customfile(custom_confounds, bold_file):
 
     Returns
     -------
-    custom_file : str
+    custom_file : str or None
         The custom confounds file associated with the BOLD file.
     """
-    if custom_confounds is not None:
-        confounds_timeseries = bold_file.replace(
-            "_space-" + bold_file.split("space-")[1],
-            "_desc-confounds_timeseries.tsv")
-        file_base = os.path.basename(
-            confounds_timeseries.split('-confounds_timeseries.tsv')[0])
-        custom_file = os.path.abspath(
-            str(custom_confounds) + '/' + file_base + '-custom_timeseries.tsv')
-    else:
-        custom_file = None
+    if custom_confounds is None:
+        return None
+
+    file_base = os.path.basename(bold_file).split("_space-")[0]
+
+    custom_file = os.path.abspath(
+        os.path.join(
+            custom_confounds,
+            f"{file_base}_desc-custom_timeseries.tsv",
+        ),
+    )
+    if not os.path.isfile(custom_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_file}")
+
     return custom_file
 
 
