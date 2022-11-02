@@ -327,7 +327,8 @@ def collect_run_data(layout, bold_file, cifti=False):
         )
 
     LOGGER.debug(
-        f"Collected run data for {bold_file}:\n{yaml.dump(run_data, default_flow_style=False)}"
+        f"Collected run data for {bold_file}:\n"
+        f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
     )
 
     for k, v in run_data.items():

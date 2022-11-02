@@ -304,7 +304,7 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
-    LOGGER.debug(f"Collected data: {yaml.dump(subj_data, default_flow_style=False)}")
+    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
