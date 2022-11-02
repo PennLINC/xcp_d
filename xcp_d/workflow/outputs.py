@@ -86,6 +86,7 @@ def init_writederivatives_wf(
     smoothed_alff
         smoothed alff
     reho_out
+    confounds_file
     filtered_motion
     tmask
     """
@@ -96,6 +97,7 @@ def init_writederivatives_wf(
             fields=[
                 "atlas_names",
                 "timeseries",
+                "confounds_file",
                 "correlations",
                 "qc_file",
                 "processed_bold",
@@ -150,9 +152,23 @@ def init_writederivatives_wf(
         mem_gb=1,
     )
 
+    ds_confounds = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["space", "den", "res"],
+            datatype="func",          
+            suffix="design",
+            extension=".tsv",
+        ),
+        name="ds_confounds",
+        run_without_submitting=False,
+    )
+
     workflow.connect([
         (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')]),
         (inputnode, ds_filtered_motion, [('filtered_motion', 'in_file')]),
+        (inputnode, ds_confounds, [('confounds_file', 'in_file')])
     ])
 
     # Write out detivatives via DerivativesDataSink

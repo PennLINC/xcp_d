@@ -520,6 +520,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # write derivatives
     workflow.connect([
+        (consolidate_confounds_node, write_derivative_wf, [('out_file',
+                                                            'inputnode.confounds_file')]),
         (filtering_wf, write_derivative_wf, [('filtered_file',
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
@@ -555,14 +557,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         datatype="figures"),
         name='ds_report_qualitycontrol',
         run_without_submitting=True)
-
-    ds_report_confounds = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        suffix="design",
-        source_file=bold_file,
-        datatype="func"),
-        name='ds_report_confounds',
-        run_without_submitting=False)
 
     ds_report_preprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
@@ -622,7 +616,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (consolidate_confounds_node, ds_report_confounds, [('out_file', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
