@@ -387,14 +387,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
     consolidate_confounds_node.inputs.params = params
 
-    workflow.connect([
-        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
-        (bold_holder_node, consolidate_confounds_node, [
-            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-            ('custom_confounds', 'custom_confounds_file'),
-        ]),
-    ])
-
     regression_wf = pe.Node(
         Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
@@ -566,11 +558,21 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
                                        ('custom_confounds', 'custom_confounds'),
                                        ('bold_file', 'in_file')]),
-            (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
-            (censor_scrub, bold_holder_node, [
-                ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
-                ("custom_confounds_censored", "custom_confounds")]),
         ])
+    workflow.connect([
+        (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+        (censor_scrub, bold_holder_node, [
+            ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
+            ("custom_confounds_censored", "custom_confounds")]),
+    ])
+
+    workflow.connect([
+        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
+        (bold_holder_node, consolidate_confounds_node, [
+            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+            ('custom_confounds', 'custom_confounds_file'),
+        ]),
+    ])
 
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series
