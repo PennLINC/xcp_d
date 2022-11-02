@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for concatenating scans across runs."""
 import os
-import shutil
 import tempfile
 from json import loads
 from pathlib import Path
@@ -341,35 +340,6 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     )
                     LOGGER.debug("plot_svgx done")
 
-                    # link or copy bb svgs
-                    # NOTE: This seems to fail, but execsummary workflow handles these figures.
-                    in_fig_entities = preproc_files[0].get_entities()
-                    in_fig_entities = _sanitize_entities(in_fig_entities)
-                    in_fig_entities["res"] = None
-                    in_fig_entities["den"] = None
-                    in_fig_entities["run"] = [None, 1]  # grab first run
-                    in_fig_entities["datatype"] = "figures"
-                    in_fig_entities["extension"] = ".svg"
-
-                    for desc in ["bbregister", "boldref"]:
-                        in_fig_entities["desc"] = desc
-                        fig_in = layout_fmriprep.get(**in_fig_entities)
-                        if len(fig_in) == 0:
-                            LOGGER.warning(f"No files found for {in_fig_entities}")
-                        else:
-                            fig_in = fig_in[0].path
-
-                            out_fig_entities = in_fig_entities.copy()
-                            out_fig_entities["run"] = None
-                            out_fig_entities["desc"] = desc
-                            fig_out = layout_xcpd.build_path(
-                                out_fig_entities,
-                                path_patterns=path_patterns,
-                                strict=False,
-                                validate=False,
-                            )
-                            shutil.copy(fig_in, fig_out)
-
                     # Now timeseries files
                     atlases = layout_xcpd.get_atlases(
                         suffix="timeseries",
@@ -385,9 +355,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             extension=tsv_extensions,
                             **space_entities,
                         )
-                        concat_file = _get_concat_name(
-                            layout_xcpd, atlas_timeseries_files[0]
-                        )
+                        concat_file = _get_concat_name(layout_xcpd, atlas_timeseries_files[0])
                         if atlas_timeseries_files[0].extension == ".tsv":
                             concatenate_tsv_files(atlas_timeseries_files, concat_file)
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
