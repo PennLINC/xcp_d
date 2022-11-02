@@ -100,7 +100,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
           ALFF images will not be generated if bandpass filtering is disabled
           (e.g., with the ``--disable-bandpass-filtering`` parameter).
 
-   d. Other outputs include quality control, framewise  displacement and confounds files::
+   d. Other outputs include quality control, framewise displacement, and confounds files::
 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
