@@ -725,7 +725,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)
 
-
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
