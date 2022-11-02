@@ -152,7 +152,7 @@ def init_ciftipostprocess_wf(
     .. footbibliography::
     """
     run_data = collect_run_data(layout, bold_file)
-    LOGGER.info(
+    LOGGER.debug(
         f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
     )
 

@@ -304,7 +304,7 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
-    LOGGER.info(f"Collected data: {pprint.pformat(subj_data, indent=4, width=100)}")
+    LOGGER.debug(f"Collected data: {pprint.pformat(subj_data, indent=4, width=100)}")
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
