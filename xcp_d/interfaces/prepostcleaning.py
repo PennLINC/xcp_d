@@ -4,6 +4,7 @@ import os
 import nibabel as nb
 import numpy as np
 import pandas as pd
+from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -16,7 +17,6 @@ from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from nipype import logging
 
 LOGGER = logging.getLogger('nipype.interface')
 
