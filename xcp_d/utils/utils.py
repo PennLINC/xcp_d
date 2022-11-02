@@ -580,7 +580,7 @@ def demean_detrend_data(data):
 
 def consolidate_confounds(
     fmriprep_confounds_file,
-    custom_confounds_file,
+    custom_confounds_file=None,
     namesource,
     params,
 ):
