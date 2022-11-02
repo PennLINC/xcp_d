@@ -7,7 +7,7 @@ version: 2.1
 
 .fastdockersetup: &fastdockersetup
   docker:
-    - image: cimg/base:2022.04
+    - image: cimg/base:2022.11
   working_directory: /src/xcp_d
 
 runinstall: &runinstall
