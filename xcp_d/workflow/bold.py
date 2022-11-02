@@ -21,16 +21,11 @@ from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
-from xcp_d.utils.utils import (
-    _t12native,
-    consolidate_confounds,
-    get_maskfiles,
-    get_transformfile,
-    get_transformfilex,
-    stringforparams,
-)
+
+from xcp_d.utils.utils import get_transformfile, get_transformfilex, stringforparams
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -132,15 +127,23 @@ def init_boldpostprocess_wf(
         BOLD series NIfTI file
     ref_file
         Bold reference file from fmriprep
+        Loaded in this workflow.
     bold_mask
         bold_mask from fmriprep
+        Loaded in this workflow.
     custom_confounds
         custom regressors
     %(mni_to_t1w)s
         MNI to T1W ants Transformation file/h5
+        Fed from the subject workflow.
     t1w
+        Fed from the subject workflow.
     t1seg
+        Fed from the subject workflow.
+    t1w_mask
+        Fed from the subject workflow.
     fmriprep_confounds_tsv
+        Loaded in this workflow.
 
     Outputs
     -------
@@ -165,21 +168,14 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
-    # Ensure that we know the TR
-    metadata = layout.get_metadata(bold_file)
-    TR = metadata['RepetitionTime']
-    if TR is None:
-        TR = layout.get_tr(bold_file)
+    run_data = collect_run_data(layout, bold_file)
 
-    if not isinstance(TR, float):
-        raise Exception(f"Unable to determine TR of {bold_file}")
+    TR = run_data["bold_metadata"]["RepetitionTime"]
 
-    # Confounds file is necessary: ensure we can find it
-    from xcp_d.utils.confounds import get_confounds_tsv
-    try:
-        confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception:
-        raise Exception(f"Unable to find confounds file for {bold_file}.")
+    # TODO: This is a workaround for a bug in nibabies.
+    # Once https://github.com/nipreps/nibabies/issues/245 is resolved
+    # and a new release is made, remove this.
+    mask_file = check_binary_mask(run_data["boldmask"])
 
     workflow = Workflow(name=name)
 
@@ -243,13 +239,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 {lower_bpf}-{upper_bpf} Hz frequency band.
 """
 
-    # get reference and mask
-    mask_file, ref_file = _get_ref_mask(fname=bold_file)
-    # TODO: This is a workaround for a bug in nibabies.
-    # Once https://github.com/nipreps/nibabies/issues/245 is resolved
-    # and a new release is made, remove this.
-    mask_file = check_binary_mask(mask_file)
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -260,6 +249,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 'mni_to_t1w',
                 't1w',
                 't1seg',
+                't1w_mask',
                 'fmriprep_confounds_tsv',
                 't1w_to_native',
             ],
@@ -267,12 +257,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='inputnode',
     )
 
-    inputnode.inputs.bold_file = str(bold_file)
-    inputnode.inputs.ref_file = str(ref_file)
-    inputnode.inputs.bold_mask = str(mask_file)
+    inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.ref_file = run_data["boldref"]
+    inputnode.inputs.bold_mask = mask_file
     inputnode.inputs.custom_confounds = str(custom_confounds)
-    inputnode.inputs.fmriprep_confounds_tsv = str(confounds_tsv)
-    inputnode.inputs.t1w_to_native = _t12native(bold_file)
+    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
+    inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -419,14 +409,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         ),
         name="get_std2native_transform",
     )
-    get_t1w_mask = pe.Node(
-        Function(
-            input_names=["bold_file", "mni_to_t1w"],
-            output_names=["bold_mask", "t1w_mask"],
-            function=get_maskfiles,
-        ),
-        name="get_t1w_mask",
-    )
     get_native2space_transforms = pe.Node(
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
@@ -440,7 +422,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, get_std2native_transform, [("bold_file", "bold_file"),
                                                ("mni_to_t1w", "mni_to_t1w"),
                                                ("t1w_to_native", "t1w_to_native")]),
-        (inputnode, get_t1w_mask, [("bold_file", "bold_file"), ("mni_to_t1w", "mni_to_t1w")]),
         (inputnode, get_native2space_transforms, [("bold_file", "bold_file"),
                                                   ("mni_to_t1w", "mni_to_t1w"),
                                                   ("t1w_to_native", "t1w_to_native")]),
@@ -468,7 +449,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         mem_gb=mem_gbx['timeseries'])
 
     workflow.connect([
-        (get_t1w_mask, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
+        (inputnode, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
         (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
     ])
 
@@ -528,7 +509,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     workflow.connect([
         (inputnode, qcreport, [("bold_file", "bold_file")]),
-        (get_t1w_mask, qcreport, [("t1w_mask", "t1w_mask")]),
+        (inputnode, qcreport, [("t1w_mask", "t1w_mask")]),
     ])
 
     workflow.connect([
@@ -832,13 +813,3 @@ def _create_mem_gb(bold_fname):
         mem_gbz['resampled'] = 3
 
     return mem_gbz
-
-
-def _get_ref_mask(fname):
-    directx = os.path.dirname(fname)
-    filename = os.path.basename(fname)
-    filex = filename.split('preproc_bold.nii.gz')[0] + 'brain_mask.nii.gz'
-    filez = filename.split('_desc-preproc_bold.nii.gz')[0] + '_boldref.nii.gz'
-    mask = directx + '/' + filex
-    ref = directx + '/' + filez
-    return mask, ref
