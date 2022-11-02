@@ -314,7 +314,6 @@ workflows:
 
       - cifti_with_freesurfer:
           requires:
-            - build
             - download_data_fmriprepwithfreesurfer
           filters:
             branches:
@@ -326,7 +325,6 @@ workflows:
 
       - nifti_with_freesurfer:
           requires:
-            - build
             - download_data_fmriprepwithfreesurfer
           filters:
             branches:
@@ -338,7 +336,6 @@ workflows:
 
       - nibabies:
           requires:
-            - build
             - download_data_nibabies
           filters:
             branches:
@@ -350,7 +347,6 @@ workflows:
 
       - nifti_without_freesurfer:
           requires:
-            - build
             - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
@@ -362,7 +358,6 @@ workflows:
 
       - pytests:
           requires:
-            - build
             - download_data_fmriprepwithfreesurfer
             - download_data_fmriprepwithoutfreesurfer
           filters:
