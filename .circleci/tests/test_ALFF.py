@@ -44,6 +44,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     TR = _get_tr(nb.load(bold_file))
     alff_compute_wf = init_compute_alff_wf(
         omp_nthreads=2,
+        bold_file=bold_file,
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
@@ -142,6 +143,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     TR = _get_tr(nb.load(bold_file))
     alff_compute_wf = init_compute_alff_wf(
         omp_nthreads=2,
+        bold_file=bold_file,
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
