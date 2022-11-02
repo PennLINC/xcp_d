@@ -13,6 +13,7 @@ from xcp_d.utils.doc import fill_doc
 @fill_doc
 def init_writederivatives_wf(
     bold_file,
+    bandpass_filter,
     lowpass,
     highpass,
     motion_filter_type,
@@ -114,10 +115,12 @@ def init_writederivatives_wf(
     # Create dictionary of basic information
     cleaned_data_dictionary = {
         'RepetitionTime': TR,
-        'Freq Band': [highpass, lowpass],
         'nuisance parameters': params,
         'dummy vols': int(np.ceil(dummytime / TR))
     }
+    if bandpass_filter:
+        cleaned_data_dictionary['Freq Band'] = [highpass, lowpass]
+
     smoothed_data_dictionary = {'FWHM': smoothing}  # Separate dictionary for smoothing
 
     write_derivative_tmask_wf = pe.Node(
@@ -166,20 +169,6 @@ def init_writederivatives_wf(
             name='write_derivative_cleandata_wf',
             run_without_submitting=True,
             mem_gb=2,
-        )
-
-        write_derivative_alff_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                dismiss_entities=["desc"],
-                suffix="alff",
-                extension='.nii.gz',
-                compression=True,
-            ),
-            name='write_derivative_alff_wf',
-            run_without_submitting=True,
-            mem_gb=1,
         )
 
         write_derivative_qcfile_wf = pe.Node(
@@ -237,7 +226,20 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        workflow.connect([(inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')])])
+        if bandpass_filter:
+            write_derivative_alff_wf = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    source_file=bold_file,
+                    dismiss_entities=["desc"],
+                    suffix="alff",
+                    extension='.nii.gz',
+                    compression=True,
+                ),
+                name='write_derivative_alff_wf',
+                run_without_submitting=True,
+                mem_gb=1,
+            )
 
         if smoothing:  # if smoothed
             # Write out detivatives via DerivativesDataSink
@@ -255,20 +257,21 @@ def init_writederivatives_wf(
                 mem_gb=2,
             )
 
-            write_derivative_smoothalff_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    meta_dict=smoothed_data_dictionary,
-                    source_file=bold_file,
-                    desc='smooth',
-                    suffix="alff",
-                    extension='.nii.gz',
-                    compression=True,
-                ),
-                name='write_derivative_smoothalff_wf',
-                run_without_submitting=True,
-                mem_gb=1,
-            )
+            if bandpass_filter:
+                write_derivative_smoothalff_wf = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        meta_dict=smoothed_data_dictionary,
+                        source_file=bold_file,
+                        desc='smooth',
+                        suffix="alff",
+                        extension='.nii.gz',
+                        compression=True,
+                    ),
+                    name='write_derivative_smoothalff_wf',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                )
 
     else:  # For cifti files
         # Write out derivatives via DerivativesDataSink
@@ -285,21 +288,6 @@ def init_writederivatives_wf(
             name='write_derivative_cleandata_wf',
             run_without_submitting=True,
             mem_gb=2,
-        )
-
-        write_derivative_alff_wf = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                check_hdr=False,
-                dismiss_entities=['desc', 'den'],
-                den='91k',
-                suffix='alff',
-                extension='.dscalar.nii',
-            ),
-            name='write_derivative_alff_wf',
-            run_without_submitting=True,
-            mem_gb=1,
         )
 
         write_derivative_qcfile_wf = pe.Node(
@@ -364,9 +352,21 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        workflow.connect([
-            (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
-        ])
+        if bandpass_filter:
+            write_derivative_alff_wf = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    source_file=bold_file,
+                    check_hdr=False,
+                    dismiss_entities=['desc', 'den'],
+                    den='91k',
+                    suffix='alff',
+                    extension='.dscalar.nii',
+                ),
+                name='write_derivative_alff_wf',
+                run_without_submitting=True,
+                mem_gb=1,
+            )
 
         if smoothing:  # If smoothed
             # Write out detivatives via DerivativesDataSink
@@ -386,35 +386,45 @@ def init_writederivatives_wf(
                 mem_gb=2,
             )
 
-            write_derivative_smoothalff_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    meta_dict=smoothed_data_dictionary,
-                    source_file=bold_file,
-                    dismiss_entities=["den"],
-                    desc='smooth',
-                    den='91k',
-                    suffix='alff',
-                    extension='.dscalar.nii',
-                    check_hdr=False,
-                ),
-                name='write_derivative_smoothalff_wf',
-                run_without_submitting=True,
-                mem_gb=1,
-            )
+            if bandpass_filter:
+                write_derivative_smoothalff_wf = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        meta_dict=smoothed_data_dictionary,
+                        source_file=bold_file,
+                        dismiss_entities=["den"],
+                        desc='smooth',
+                        den='91k',
+                        suffix='alff',
+                        extension='.dscalar.nii',
+                        check_hdr=False,
+                    ),
+                    name='write_derivative_smoothalff_wf',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                )
 
     workflow.connect([
         (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
-        (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
         (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
+        (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
         (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
         (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
     ])
 
+    if bandpass_filter:
+        workflow.connect([
+            (inputnode, write_derivative_alff_wf, [('alff_out', 'in_file')]),
+        ])
+
     if smoothing:
         workflow.connect([
             (inputnode, write_derivative_smoothcleandata_wf, [('smoothed_bold', 'in_file')]),
-            (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
         ])
+
+        if bandpass_filter:
+            workflow.connect([
+                (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
+            ])
 
     return workflow

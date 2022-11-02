@@ -85,10 +85,20 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_reho.nii.gz
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_alff.nii.gz
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-smooth_alff.nii.gz
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_reho.dscalar.nii
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_alff.dscalar.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
+
+     .. important::
+          The smoothed ALFF image will only be generated is smoothing is enabled
+          (e.g., with the ``--smoothing parameter``).
+
+     .. important::
+          ALFF images will not be generated if bandpass filtering is disabled
+          (e.g., with the ``--disable-bandpass-filtering`` parameter).
 
    d. Other outputs include quality control and framewise  displacement::
 
