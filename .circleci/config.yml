@@ -6,32 +6,82 @@ version: 2.1
   working_directory: /src/xcp_d
 
 runinstall: &runinstall
-    name: Install xcp_d
-    command: |
-      VERSION=0+build
-      if [[ -n "$CIRCLE_TAG" ]]; then
-        VERSION="$CIRCLE_TAG"
-      fi
-      git checkout $CIRCLE_BRANCH
-      echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
-      echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
-      pip install .[tests] --progress-bar off
+  name: Install xcp_d
+  command: |
+    VERSION=0+build
+    if [[ -n "$CIRCLE_TAG" ]]; then
+      VERSION="$CIRCLE_TAG"
+    fi
+    git checkout $CIRCLE_BRANCH
+    echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
+    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
+    pip install .[tests] --progress-bar off
 
-      # Write the config file
-      mkdir ~/.nipype
-      CFG=~/.nipype/nipype.cfg
-      printf "[execution]\nstop_on_first_crash = true\n" > ${CFG}
-      echo "poll_sleep_duration = 0.01" >> ${CFG}
-      echo "hash_method = content" >> ${CFG}
-
+    # Write the config file
+    mkdir ~/.nipype
+    CFG=~/.nipype/nipype.cfg
+    printf "[execution]\nstop_on_first_crash = true\n" > ${CFG}
+    echo "poll_sleep_duration = 0.01" >> ${CFG}
+    echo "hash_method = content" >> ${CFG}
 
 jobs:
-
   build:
     <<: *dockersetup
     steps:
       - checkout
       - run: *runinstall
+
+  download_data_fmriprepwithfreesurfer:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: fmriprepwithfreesurfer-00
+      - run:
+          name: Download fmriprepwithfreesurfer test data
+          command: |
+            cd /src/xcp_d/.circleci
+            source get_data.sh
+            get_bids_data $PWD fmriprep_colornest
+            get_bids_data $PWD freesurfer_colornest
+      - save_cache:
+          key: fmriprepwithfreesurfer-00
+          paths:
+              - /src/xcp_d/.circleci/data/fmriprepwithfreesurfer
+
+  download_data_fmriprepwithoutfreesurfer:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
+      - run:
+          name: Download fmriprepwithoutfreesurfer test data
+          command: |
+            cd /src/xcp_d/.circleci
+            source get_data.sh
+            get_bids_data $PWD sub01
+      - save_cache:
+          key: fmriprepwithoutfreesurfer-01
+          paths:
+              - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
+
+  download_data_nibabies:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: nibabies-01
+      - run:
+          name: Download nibabies test data
+          command: |
+            cd /src/xcp_d/.circleci
+            source get_data.sh
+            get_bids_data $PWD nibabies
+      - save_cache:
+          key: nibabies-01
+          paths:
+              - /src/xcp_d/.circleci/data/nibabies_test_data
 
   nifti_without_freesurfer:
     <<: *dockersetup
@@ -45,6 +95,8 @@ jobs:
               echo "Skipping nifti_without_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -75,6 +127,8 @@ jobs:
               echo "Skipping nifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithfreesurfer-00
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -93,7 +147,6 @@ jobs:
             diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_with_freesurfer/test/outputs.out)
             exit $?
 
-
   nibabies:
     <<: *dockersetup
     steps:
@@ -106,6 +159,8 @@ jobs:
               echo "Skipping nibabies build"
               circleci step halt
             fi
+      - restore_cache:
+          key: nibabies-01
       - run: *runinstall
       - run:
           name: Run full xcp_d on nibabies
@@ -136,8 +191,9 @@ jobs:
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithfreesurfer-00
       - run: *runinstall
-
       - run:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
@@ -167,8 +223,11 @@ jobs:
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithfreesurfer-00
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
-
       - run:
           name: Run pytest on the tests directory
           no_output_timeout: 1h
@@ -241,9 +300,21 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer:
+      - download_data_fmriprepwithfreesurfer:
           requires:
             - build
+
+      - download_data_fmriprepwithoutfreesurfer:
+          requires:
+            - build
+
+      - download_data_nibabies:
+          requires:
+            - build
+
+      - cifti_with_freesurfer:
+          requires:
+            - download_data_fmriprepwithfreesurfer
           filters:
             branches:
               ignore:
@@ -254,7 +325,7 @@ workflows:
 
       - nifti_with_freesurfer:
           requires:
-            - build
+            - download_data_fmriprepwithfreesurfer
           filters:
             branches:
               ignore:
@@ -265,7 +336,7 @@ workflows:
 
       - nibabies:
           requires:
-            - build
+            - download_data_nibabies
           filters:
             branches:
               ignore:
@@ -276,7 +347,7 @@ workflows:
 
       - nifti_without_freesurfer:
           requires:
-            - build
+            - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
               ignore:
@@ -287,7 +358,8 @@ workflows:
 
       - pytests:
           requires:
-            - build
+            - download_data_fmriprepwithfreesurfer
+            - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
               ignore:

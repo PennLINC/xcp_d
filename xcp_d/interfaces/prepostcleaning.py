@@ -137,9 +137,9 @@ class RemoveTR(SimpleInterface):
                 custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
                     np.arange(volumes_to_drop))
             else:
-                LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
+                LOGGER.warning("No custom confounds were found or had their volumes dropped.")
         else:
-            LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
+            LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
@@ -279,7 +279,7 @@ class CensorScrub(SimpleInterface):
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
         if self.inputs.custom_confounds:
             if os.path.exists(self.inputs.custom_confounds):
-                custom_confounds_tsv_uncensored = pd.read_csv(
+                custom_confounds_tsv_uncensored = pd.read_table(
                     self.inputs.custom_confounds,
                     header=None,
                 )

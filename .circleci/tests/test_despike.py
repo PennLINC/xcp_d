@@ -14,7 +14,7 @@ from nipype.interfaces.afni import Despike
 from nipype.pipeline import engine as pe
 
 from xcp_d.interfaces.regression import CiftiDespike
-from xcp_d.utils.plot import _get_tr
+from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 

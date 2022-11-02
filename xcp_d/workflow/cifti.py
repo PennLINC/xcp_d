@@ -18,6 +18,7 @@ from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import _get_tr
 from xcp_d.utils.utils import consolidate_confounds, stringforparams
@@ -150,17 +151,9 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    TR = _get_tr(bold_file)
-    if TR is None:
-        metadata = layout.get_metadata(bold_file)
-        TR = metadata['RepetitionTime']
+    run_data = collect_run_data(layout, bold_file)
 
-    # Confounds file is necessary: ensure we can find it
-    from xcp_d.utils.confounds import get_confounds_tsv
-    try:
-        confounds_tsv = get_confounds_tsv(bold_file)
-    except Exception:
-        raise Exception(f"Unable to find confounds file for {bold_file}.")
+    TR = run_data["bold_metadata"]["RepetitionTime"]
 
     workflow = Workflow(name=name)
 
@@ -239,7 +232,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.fmriprep_confounds_tsv = confounds_tsv
+    inputnode.inputs.custom_confounds = str(custom_confounds)
+    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
 
     outputnode = pe.Node(
         niu.IdentityInterface(
