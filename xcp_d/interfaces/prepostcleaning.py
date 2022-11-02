@@ -33,8 +33,8 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
                                    mandatory=False,
                                    desc="fmriprep confounds tsv")
     custom_confounds = traits.Either(traits.Undefined,
-                                     File,
-                                     desc="Name of custom confounds file, or True",
+                                     File(exists=True),
+                                     desc="Name of custom confounds file",
                                      exists=False,
                                      mandatory=False)
 
@@ -48,11 +48,12 @@ class _RemoveTROutputSpec(TraitedSpec):
                                 mandatory=True,
                                 desc="bold or cifti with volumes dropped")
 
-    custom_confounds_dropped = traits.Either(traits.Undefined,
-                                     File,
-                                     desc="Custom confounds file with volumes dropped",
-                                     exists=False,
-                                     mandatory=False)
+    custom_confounds_dropped = traits.Either(
+        traits.Undefined,
+        File(exists=True),
+        desc="Custom confounds file with volumes dropped",
+        mandatory=False,
+    )
 
 
 class RemoveTR(SimpleInterface):
@@ -85,8 +86,6 @@ class RemoveTR(SimpleInterface):
             self._results['fmriprep_confounds_file_dropped'
                           '_TR'] = self.inputs.fmriprep_confounds_file
             return runtime
-        if not os.path.exists(self.inputs.custom_confounds):
-            self.inputs.custom_confounds = None
         # get the file names to output to
         dropped_bold_file = fname_presuffix(
             self.inputs.bold_file,
@@ -254,8 +253,6 @@ class CensorScrub(SimpleInterface):
     output_spec = _CensorScrubOutputSpec
 
     def _run_interface(self, runtime):
-        if not os.path.exists(self.inputs.custom_confounds):
-            self.inputs.custom_confounds = None
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_tsv_uncensored = pd.read_table(
             self.inputs.fmriprep_confounds_file,
