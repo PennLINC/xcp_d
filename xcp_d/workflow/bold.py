@@ -25,9 +25,7 @@ from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.utils import (
-    _t12native,
     get_bold2std_and_t1w_xforms,
-    get_maskfiles,
     get_std2bold_xforms,
     stringforparams,
 )
