@@ -25,7 +25,12 @@ from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 
-from xcp_d.utils.utils import get_transformfile, get_transformfilex, stringforparams
+from xcp_d.utils.utils import (
+    consolidate_confounds,
+    get_transformfile,
+    get_transformfilex,
+    stringforparams
+)
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf

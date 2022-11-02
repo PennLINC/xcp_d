@@ -157,7 +157,7 @@ def init_writederivatives_wf(
             base_directory=output_dir,
             source_file=bold_file,
             dismiss_entities=["space", "den", "res"],
-            datatype="func",          
+            datatype="func",
             suffix="design",
             extension=".tsv",
         ),
