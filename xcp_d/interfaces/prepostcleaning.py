@@ -83,7 +83,8 @@ class RemoveTR(SimpleInterface):
             self._results['fmriprep_confounds_file_dropped'
                           '_TR'] = self.inputs.fmriprep_confounds_file
             return runtime
-
+        if not os.path.exists(self.inputs.custom_confounds):
+            self.inputs.custom_confounds = None
         # get the file names to output to
         dropped_bold_file = fname_presuffix(
             self.inputs.bold_file,
@@ -131,13 +132,10 @@ class RemoveTR(SimpleInterface):
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
-            if os.path.exists(self.inputs.custom_confounds):
-                custom_confounds_tsv_undropped = pd.read_table(
-                    self.inputs.custom_confounds, header=None)
-                custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
-                    np.arange(volumes_to_drop))
-            else:
-                LOGGER.warning("No custom confounds were found or had their volumes dropped.")
+            custom_confounds_tsv_undropped = pd.read_table(
+                self.inputs.custom_confounds, header=None)
+            custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
+                np.arange(volumes_to_drop))
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
@@ -148,16 +146,15 @@ class RemoveTR(SimpleInterface):
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
 
         if self.inputs.custom_confounds:
-            if os.path.exists(self.inputs.custom_confounds):
-                self._results['custom_confounds_dropped'] = fname_presuffix(
-                    self.inputs.bold_file,
-                    suffix='_custom_confounds_dropped.tsv',
-                    newpath=os.getcwd(),
-                    use_ext=False)
-                custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
-                                                    index=False,
-                                                    header=False,
-                                                    sep="\t")  # Assuming input is tab separated!
+            self._results['custom_confounds_dropped'] = fname_presuffix(
+                self.inputs.bold_file,
+                suffix='_custom_confounds_dropped.tsv',
+                newpath=os.getcwd(),
+                use_ext=False)
+            custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
+                                                index=False,
+                                                header=False,
+                                                sep="\t")  # Assuming input is tab separated!
 
         return runtime
 
@@ -255,7 +252,8 @@ class CensorScrub(SimpleInterface):
     output_spec = _CensorScrubOutputSpec
 
     def _run_interface(self, runtime):
-
+        if not os.path.exists(self.inputs.custom_confounds):
+            self.inputs.custom_confounds = None
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_tsv_uncensored = pd.read_table(
             self.inputs.fmriprep_confounds_file,
@@ -278,13 +276,10 @@ class CensorScrub(SimpleInterface):
         # Read in custom confounds file (if any) and bold file to be censored
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
         if self.inputs.custom_confounds:
-            if os.path.exists(self.inputs.custom_confounds):
-                custom_confounds_tsv_uncensored = pd.read_table(
-                    self.inputs.custom_confounds,
-                    header=None,
-                )
-            else:
-                LOGGER.warning("No custom confounds were found or censored.")
+            custom_confounds_tsv_uncensored = pd.read_table(
+                self.inputs.custom_confounds,
+                header=None,
+            )
         else:
             LOGGER.warning("No custom confounds were found or censored.")
 
@@ -304,17 +299,15 @@ class CensorScrub(SimpleInterface):
                 fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)]
             )
             if self.inputs.custom_confounds:
-                if os.path.exists(self.inputs.custom_confounds):
-                    # If custom regressors are present
-                    custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.drop(
-                        custom_confounds_tsv_uncensored.index[np.where(tmask == 1)]
-                    )
+                # If custom regressors are present
+                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.drop(
+                    custom_confounds_tsv_uncensored.index[np.where(tmask == 1)]
+                )
         else:  # No censoring needed
             bold_file_censored = bold_file_uncensored
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
             if self.inputs.custom_confounds:
-                if os.path.exists(self.inputs.custom_confounds):
-                    custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
+                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
 
         # Turn censored bold into image
         if nb.load(self.inputs.in_file).ndim > 2:
@@ -358,13 +351,12 @@ class CensorScrub(SimpleInterface):
             use_ext=False,
         )
         if self.inputs.custom_confounds:
-            if os.path.exists(self.inputs.custom_confounds):
-                self._results["custom_confounds_censored"] = fname_presuffix(
-                    self.inputs.in_file,
-                    suffix="_custom_confounds_censored.tsv",
-                    newpath=runtime.cwd,
-                    use_ext=False,
-                )
+            self._results["custom_confounds_censored"] = fname_presuffix(
+                self.inputs.in_file,
+                suffix="_custom_confounds_censored.tsv",
+                newpath=runtime.cwd,
+                use_ext=False,
+            )
 
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
@@ -402,14 +394,13 @@ class CensorScrub(SimpleInterface):
             sep="\t",
         )
         if self.inputs.custom_confounds:
-            if os.path.exists(self.inputs.custom_confounds):
-                # Assuming input is tab separated!
-                custom_confounds_tsv_censored.to_csv(
-                    self._results["custom_confounds_censored"],
-                    index=False,
-                    header=False,
-                    sep="\t",
-                )
+            # Assuming input is tab separated!
+            custom_confounds_tsv_censored.to_csv(
+                self._results["custom_confounds_censored"],
+                index=False,
+                header=False,
+                sep="\t",
+            )
         return runtime
 
 
