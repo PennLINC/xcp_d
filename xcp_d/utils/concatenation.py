@@ -147,7 +147,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
-                LOGGER.debug(f"Concatenating motion files: {', '.join(motion_files)}")
+                motion_file_names = ', '.join([motion_file.path for motion_file in motion_files])
+                LOGGER.debug(f"Concatenating motion files: {motion_file_names}")
                 concat_motion_file = _get_concat_name(layout_xcpd, motion_files[0])
                 concatenate_tsv_files(motion_files, concat_motion_file)
 
@@ -162,7 +163,10 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     extension=".tsv",
                     **task_entities,
                 )
-                LOGGER.debug(f"Concatenating outlier files: {', '.join(outlier_files)}")
+                outlier_file_names = ', '.join(
+                    [outlier_file.path for outlier_file in outlier_files]
+                )
+                LOGGER.debug(f"Concatenating outlier files: {outlier_file_names}")
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
                 outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
