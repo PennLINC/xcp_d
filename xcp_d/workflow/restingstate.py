@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for calculating resting state-specific metrics."""
+from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
@@ -8,24 +9,21 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
-from xcp_d.interfaces.resting_state import (
-    BrainPlot,
-    ComputeALFF,
-    ReHoNamePatch,
-    SurfaceReHo,
-)
+from xcp_d.interfaces.resting_state import ComputeALFF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseScalar,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
 )
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.plot import plot_alff_reho_surface, plot_alff_reho_volumetric
 from xcp_d.utils.utils import fwhm2sigma
 
 
 @fill_doc
 def init_compute_alff_wf(
     mem_gb,
+    bold_file,
     TR,
     lowpass,
     highpass,
@@ -45,6 +43,7 @@ def init_compute_alff_wf(
             wf = init_compute_alff_wf(
                 mem_gb=0.1,
                 TR=2.,
+                bold_file = bold_file,
                 lowpass=6.,
                 highpass=60.,
                 smoothing=6,
@@ -74,6 +73,8 @@ def init_compute_alff_wf(
        residual and filtered
     bold_mask
        bold mask if bold is nifti
+    bold_file
+       original bold_file
 
     Outputs
     -------
@@ -81,8 +82,8 @@ def init_compute_alff_wf(
         alff output
     smoothed_alff
         smoothed alff  output
-    html
-        alff html for nifti
+    alffplot
+        alff svg
     """
     workflow = Workflow(name=name)
 
@@ -97,7 +98,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['alff_out', 'smoothed_alff', 'alffhtml']),
+        fields=['alff_out', 'smoothed_alff', 'alffplot']),
         name='outputnode')
 
     # compute alff
@@ -106,22 +107,20 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                          mem_gb=mem_gb,
                          name='alff_compt',
                          n_procs=omp_nthreads)
-    # create a node for the Nifti HTML
-    brain_plot = pe.Node(BrainPlot(),
-                         mem_gb=mem_gb,
-                         name='brain_plot',
-                         n_procs=omp_nthreads)
 
+    alff_plot = pe.Node(Function(
+                        input_names=["output_path", "filename", "bold_file"],
+                        output_names=["output_path"],
+                        function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric),
+                        name="alff_plot")
+    alff_plot.inputs.output_path = 'alff.svg'
+    alff_plot.inputs.bold_file = bold_file
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
-                      (alff_compt, outputnode, [('alff_out', 'alff_out')])])
-
-    if not cifti:  # if Nifti, get the HTML
-        workflow.connect([
-            (alff_compt, brain_plot, [('alff_out', 'in_file')]),
-            (inputnode, brain_plot, [('bold_mask', 'mask_file')]),
-            (brain_plot, outputnode, [('nifti_html', 'alffhtml')]),
-        ])
+                      (alff_compt, alff_plot, [('alff_out', 'filename')]),
+                      (alff_plot, outputnode, [('output_path', 'alffplot')]),
+                      (alff_compt, outputnode, [('alff_out', 'alff_out')])
+                      ])
 
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
@@ -175,6 +174,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 def init_cifti_reho_wf(
     mem_gb,
     omp_nthreads,
+    bold_file,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -187,6 +187,7 @@ def init_cifti_reho_wf(
             from xcp_d.workflow.restingstate import init_cifti_reho_wf
             wf = init_cifti_reho_wf(
                 mem_gb=0.1,
+                bold_file = bold_file,
                 omp_nthreads=1,
                 name="cifti_reho_wf",
             )
@@ -202,11 +203,15 @@ def init_cifti_reho_wf(
     ------
     clean_bold
        residual and filtered, cifti
+    bold_file
+       original bold_file
 
     Outputs
     -------
     reho_out
         ReHo in a CIFTI file.
+    rehoplot
+        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -223,7 +228,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         name='inputnode',
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['reho_out']),
+        niu.IdentityInterface(fields=['reho_out', 'rehoplot']),
         name='outputnode',
     )
 
@@ -274,7 +279,13 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
+    reho_plot = pe.Node(Function(
+                        input_names=["output_path", "filename", "bold_file"],
+                        output_names=["output_path"],
+                        function=plot_alff_reho_surface),
+                        name="reho_cifti_plot")
+    reho_plot.inputs.output_path = "reho.svg"
+    reho_plot.inputs.bold_file = bold_file
     # Write out results
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
@@ -288,6 +299,8 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (rh_reho, merge_cifti, [('surf_gii', 'right_metric')]),
         (subcortical_reho, merge_cifti, [('out_file', 'volume_data')]),
         (merge_cifti, outputnode, [('out_file', 'reho_out')]),
+        (merge_cifti, reho_plot, [('out_file', 'filename')]),
+        (reho_plot, outputnode, [('output_path', 'rehoplot')])
     ])
 
     return workflow
@@ -297,6 +310,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 def init_nifti_reho_wf(
     mem_gb,
     omp_nthreads,
+    bold_file,
     name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
@@ -309,6 +323,7 @@ def init_nifti_reho_wf(
             from xcp_d.workflow.restingstate import init_nifti_reho_wf
             wf = init_nifti_reho_wf(
                 mem_gb=0.1,
+                bold_file = bold_file,
                 omp_nthreads=1,
                 name="nifti_reho_wf",
             )
@@ -326,11 +341,15 @@ def init_nifti_reho_wf(
        residual and filtered, nifti
     bold_mask
        bold mask
+    bold_file
+       original bold_file
 
     Outputs
     -------
     reho_out
         reho output
+    rehoplot
+        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -341,7 +360,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
         name='inputnode')
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['reho_out', 'rehohtml']),
+        niu.IdentityInterface(fields=['reho_out', 'rehoplot']),
         name='outputnode')
 
     # Run AFNI'S 3DReHo on the data
@@ -349,17 +368,20 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
                            name="reho_3d",
                            mem_gb=mem_gb,
                            n_procs=omp_nthreads)
-    # Get the HTML
-    brain_plot = pe.Node(BrainPlot(),
-                         mem_gb=mem_gb,
-                         name='brain_plot',
-                         n_procs=omp_nthreads)
+    # Get the svg
+    reho_plot = pe.Node(Function(
+                        input_names=["output_path", "filename", "bold_file"],
+                        output_names=["output_path"],
+                        function=plot_alff_reho_volumetric),
+                        name="reho_nifti_plot")
+    reho_plot.inputs.output_path = "reho.svg"
+    reho_plot.inputs.bold_file = bold_file
     # Write the results out
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
-                      (compute_reho, brain_plot, [('out_file', 'in_file')]),
-                      (inputnode, brain_plot, [('bold_mask', 'mask_file')]),
-                      (brain_plot, outputnode, [('nifti_html', 'rehohtml')])])
+                      (compute_reho, reho_plot, [('out_file', 'filename')]),
+                      (reho_plot, outputnode, [('output_path', 'rehoplot')]),
+                      ])
 
     return workflow
