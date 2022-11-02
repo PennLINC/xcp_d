@@ -139,7 +139,7 @@ class RemoveTR(SimpleInterface):
             else:
                 LOGGER.warning("No custom confounds were found or had their volumes dropped.")
         else:
-            LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
+            LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
