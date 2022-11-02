@@ -221,7 +221,7 @@ get_bids_data() {
 
     elif [[ ${DS} = freesurfer_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer/freesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
