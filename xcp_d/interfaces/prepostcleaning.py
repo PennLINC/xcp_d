@@ -20,6 +20,7 @@ from nipype import logging
 
 LOGGER = logging.getLogger('nipype.interface')
 
+
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
                      mandatory=True,
@@ -303,7 +304,8 @@ class CensorScrub(SimpleInterface):
                 fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)]
             )
             if self.inputs.custom_confounds:
-                if os.path.exists(self.inputs.custom_confounds):  # If custom regressors are present
+                if os.path.exists(self.inputs.custom_confounds):
+                    # If custom regressors are present
                     custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.drop(
                         custom_confounds_tsv_uncensored.index[np.where(tmask == 1)]
                     )

@@ -24,6 +24,8 @@ xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-R_pial.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii
 xcp_d/sub-colornest001/ses-1/func
+xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_desc-preproc_design.tsv
+xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_desc-preproc_design.tsv
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_desc-filtered_motion.tsv
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_desc-filtered_motion-DCAN.hdf5
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_outliers.tsv
