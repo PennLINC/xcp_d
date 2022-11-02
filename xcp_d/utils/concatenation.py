@@ -106,31 +106,47 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 task_entities["task"] = task
 
                 motion_files = layout_xcpd.get(
+                    run=Query.ANY,
                     desc=["filtered", None],
                     suffix="motion",
                     extension=".tsv",
                     **task_entities,
                 )
                 if len(motion_files) == 0:
-                    continue
-                elif len(motion_files) == 1:
-                    # Make DCAN HDF5 file from single motion file
-                    dcan_df_file = (
-                        f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
-                    )
-
-                    # Get TR from one of the preproc files
-                    preproc_files = layout_fmriprep.get(
-                        desc=["preproc", None],
-                        suffix="bold",
-                        extension=img_extensions,
+                    # No run-wise motion files exist, so task probably only has one run.
+                    motion_files = layout_xcpd.get(
+                        run=None,
+                        desc=["filtered", None],
+                        suffix="motion",
+                        extension=".tsv",
                         **task_entities,
                     )
-                    TR = _get_tr(preproc_files[0].path)
+                    if len(motion_files) == 1:
+                        # Make DCAN HDF5 file from single motion file
+                        dcan_df_file = (
+                            f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
+                        )
 
-                    make_dcan_df([motion_files[0].path], dcan_df_file, TR)
-                    LOGGER.debug(f"Only one run found for task {task}")
-                    continue
+                        # Get TR from one of the preproc files
+                        preproc_files = layout_fmriprep.get(
+                            desc=["preproc", None],
+                            suffix="bold",
+                            extension=img_extensions,
+                            **task_entities,
+                        )
+                        TR = _get_tr(preproc_files[0].path)
+
+                        make_dcan_df([motion_files[0].path], dcan_df_file, TR)
+                        LOGGER.debug(f"Only one run found for task {task}")
+                        continue
+                    elif len(motion_files) == 0:
+                        LOGGER.warning(f"No motion files found for task {task}")
+                        continue
+                    else:
+                        raise ValueError(
+                            "Found multiple motion files when there should only be one: "
+                            f"{motion_files}"
+                        )
 
                 # Get TR from one of the preproc files
                 preproc_files = layout_fmriprep.get(
@@ -159,8 +175,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
-                    desc=None,
                     run=Query.ANY,
+                    desc=None,
                     suffix="outliers",
                     extension=".tsv",
                     **task_entities,
@@ -174,8 +190,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
-                    desc="denoised",
                     run=Query.ANY,
+                    desc="denoised",
                     suffix="bold",
                     extension=img_extensions,
                     **task_entities,
@@ -188,8 +204,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                     # Preprocessed BOLD files
                     preproc_files = layout_fmriprep.get(
-                        desc=["preproc", None],
                         run=Query.ANY,
+                        desc=["preproc", None],
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
@@ -198,7 +214,14 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         tempfile.mkdtemp(),
                         f"rawdata{preproc_files[0].extension}",
                     )
-                    LOGGER.debug(f"Concatenating preprocessed file: {concat_preproc_file}")
+                    preproc_files_str = "\n\t".join(
+                        [preproc_file.path for preproc_file in preproc_files]
+                    )
+                    LOGGER.debug(
+                        f"Concatenating preprocessed file ({concat_preproc_file}) from\n"
+                        f"{preproc_files_str}"
+                    )
+
                     _concatenate_niimgs(preproc_files, concat_preproc_file)
 
                     if not cifti:
@@ -236,6 +259,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                     # Denoised BOLD files
                     bold_files = layout_xcpd.get(
+                        run=Query.ANY,
                         desc="denoised",
                         suffix="bold",
                         extension=img_extensions,
@@ -255,6 +279,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                     # Concatenate smoothed BOLD files if they exist
                     smooth_bold_files = layout_xcpd.get(
+                        run=Query.ANY,
                         desc="denoisedSmoothed",
                         suffix="bold",
                         extension=img_extensions,
@@ -354,6 +379,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     for atlas in atlases:
                         LOGGER.debug(f"Concatenating time series files for atlas {atlas}")
                         atlas_timeseries_files = layout_xcpd.get(
+                            run=Query.ANY,
                             atlas=atlas,
                             suffix="timeseries",
                             extension=tsv_extensions,
