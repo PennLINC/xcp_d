@@ -1009,16 +1009,16 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
 
     Parameters
     ----------
-    output_path :
+    output_path : :obj:`str`
         path to save plot
-    filename :
+    filename : :obj:`str`
         surface file
-    bold_file :
+    bold_file : :obj:`str`
         original input bold file
 
     Returns
     ----------
-    output_path:
+    output_path : :obj:`str`
         path to plot
 
     """
@@ -1071,16 +1071,16 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     Parameters
     ----------
-    output_path :
+    output_path : :obj:`str`
         path to save plot
-    filename :
+    filename : :obj:`str`
         surface file
-    bold_file :
+    bold_file : :obj:`str`
         original input bold file
 
     Returns
     ----------
-    output_path:
+    output_path : :obj:`str`
         path to plot
 
     """
