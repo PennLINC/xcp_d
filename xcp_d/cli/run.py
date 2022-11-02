@@ -682,7 +682,12 @@ def build_workflow(opts, retval):
     from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
 
+    log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
+
     build_log = nlogging.getLogger("nipype.workflow")
+    build_log.setLevel(log_level)
+    nlogging.getLogger("nipype.interface").setLevel(log_level)
+    nlogging.getLogger("nipype.utils").setLevel(log_level)
 
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
@@ -882,7 +887,6 @@ def build_workflow(opts, retval):
     work_dir.mkdir(exist_ok=True, parents=True)
 
     # Nipype config (logs and execution)
-    log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     ncfg.update_config(
         {
             "logging": {
