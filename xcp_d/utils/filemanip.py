@@ -526,35 +526,12 @@ def ensure_list(filename):
     """Return a list given either a string or a list."""
     if isinstance(filename, (str, bytes)):
         return [filename]
-    elif isinstance(filename, list):
+    elif isinstance(filename, (list, tuple, type(None), np.ndarray)):
         return filename
     elif is_container(filename):
         return [x for x in filename]
     else:
         return None
-
-
-def simplify_list(filelist):
-    """Return a list from a list of length greater than 1 or the first element if not.
-
-    Parameters
-    ----------
-    filelist : list
-        A list to simplify.
-
-    Returns
-    -------
-    list or str
-        A list of ``filelist`` is longer than 1. Otherwise the first element from the list.
-    """
-    if len(filelist) > 1:
-        return filelist
-    else:
-        return filelist[0]
-
-
-filename_to_list = ensure_list
-list_to_filename = simplify_list
 
 
 def which(cmd, env=None, pathext=None):
