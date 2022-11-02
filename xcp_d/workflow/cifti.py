@@ -428,12 +428,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, bold_holder_node, [
-                ("bold_file", "bold_file"),
-                ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
-                ("custom_confounds", "custom_confounds"),
-            ]),
+            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+                                       ('custom_confounds', 'custom_confounds'),
+                                       ('bold_file', 'in_file')]),
+            (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+            (censor_scrub, bold_holder_node, [
+                ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
+                ("custom_confounds_censored", "custom_confounds")]),
         ])
 
     # The BOLD file is just used for filenames
