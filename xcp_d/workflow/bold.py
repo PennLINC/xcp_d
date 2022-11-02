@@ -25,11 +25,11 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.utils import (
     _t12native,
+    consolidate_confounds,
     get_maskfiles,
     get_transformfile,
     get_transformfilex,
     stringforparams,
-    consolidate_confounds,
 )
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf

@@ -20,7 +20,7 @@ from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import _get_tr
-from xcp_d.utils.utils import stringforparams, consolidate_confounds
+from xcp_d.utils.utils import consolidate_confounds, stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
