@@ -18,7 +18,7 @@ from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_mas
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from nipype import logging
 
-LOGGER = logging.getLogger('nipype.workflow')
+LOGGER = logging.getLogger('nipype.interface')
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
