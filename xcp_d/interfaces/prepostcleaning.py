@@ -16,7 +16,9 @@ from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
 from xcp_d.utils.write_save import read_ndata, write_ndata
+from nipype import logging
 
+LOGGER = logging.getLogger('nipype.workflow')
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True,
@@ -134,9 +136,9 @@ class RemoveTR(SimpleInterface):
                 custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
                     np.arange(volumes_to_drop))
             else:
-                print("No custom confounds were found or had their volumes dropped")
+                LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
         else:
-            print("No custom confounds were found or had their volumes dropped")
+            LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
@@ -275,11 +277,13 @@ class CensorScrub(SimpleInterface):
 
         # Read in custom confounds file (if any) and bold file to be censored
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
-        if self.inputs.custom_confounds:
+        if os.path.exists(self.inputs.custom_confounds):
             custom_confounds_tsv_uncensored = pd.read_csv(
                 self.inputs.custom_confounds,
                 header=None,
             )
+        else:
+            LOGGER.warning("No custom confounds were found or censored.")
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
@@ -296,14 +300,14 @@ class CensorScrub(SimpleInterface):
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.drop(
                 fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)]
             )
-            if self.inputs.custom_confounds:  # If custom regressors are present
+            if os.path.exists(self.inputs.custom_confounds):  # If custom regressors are present
                 custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.drop(
                     custom_confounds_tsv_uncensored.index[np.where(tmask == 1)]
                 )
         else:  # No censoring needed
             bold_file_censored = bold_file_uncensored
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
-            if self.inputs.custom_confounds:
+            if os.path.exists(self.inputs.custom_confounds):
                 custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
 
         # Turn censored bold into image
@@ -347,7 +351,7 @@ class CensorScrub(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        if self.inputs.custom_confounds:
+        if os.path.exists(self.inputs.custom_confounds):
             self._results["custom_confounds_censored"] = fname_presuffix(
                 self.inputs.in_file,
                 suffix="_custom_confounds_censored.tsv",
@@ -391,7 +395,7 @@ class CensorScrub(SimpleInterface):
             sep="\t",
         )
 
-        if self.inputs.custom_confounds:
+        if os.path.exists(self.inputs.custom_confounds):
             # Assuming input is tab separated!
             custom_confounds_tsv_censored.to_csv(
                 self._results["custom_confounds_censored"],
