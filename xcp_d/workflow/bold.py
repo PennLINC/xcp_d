@@ -148,9 +148,9 @@ def init_boldpostprocess_wf(
     smoothed_bold
         smoothed clean bold
     alff_out
-        alff niifti
+        ALFF file. Only generated if bandpass filtering is performed.
     smoothed_alff
-        smoothed alff
+        Smoothed ALFF file. Only generated if bandpass filtering is performed.
     reho_out
         reho output computed by afni.3dreho
     %(atlas_names)s
@@ -300,15 +300,17 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         omp_nthreads=omp_nthreads,
     )
 
-    alff_compute_wf = init_compute_alff_wf(mem_gb=mem_gbx['timeseries'],
-                                           TR=TR,
-                                           lowpass=upper_bpf,
-                                           bold_file=bold_file,
-                                           highpass=lower_bpf,
-                                           smoothing=smoothing,
-                                           cifti=False,
-                                           name="compute_alff_wf",
-                                           omp_nthreads=omp_nthreads)
+    if bandpass_filter:
+        alff_compute_wf = init_compute_alff_wf(
+            mem_gb=mem_gbx['timeseries'],
+            TR=TR,
+            lowpass=upper_bpf,
+            highpass=lower_bpf,
+            smoothing=smoothing,
+            cifti=False,
+            name="compute_alff_wf",
+            omp_nthreads=omp_nthreads,
+        )
 
     reho_compute_wf = init_nifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
@@ -320,6 +322,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
         bold_file=bold_file,
+        bandpass_filter=bandpass_filter,
         params=params,
         cifti=None,
         output_dir=output_dir,
@@ -597,13 +600,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # reho and alff
     workflow.connect([
-        (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
         (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')
-                                         ]),
-        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')
-                                         ]),
+        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
+    if bandpass_filter:
+        workflow.connect([
+            (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
+            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        ])
 
     # qc report
     workflow.connect([
@@ -626,14 +630,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                     ('tmask', 'tmask')]),
         (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
                                          'smoothed_bold')]),
-        (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out'),
-                                       ('outputnode.smoothed_alff',
-                                        'smoothed_alff')]),
         (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
         (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
                                   ('outputnode.correlations', 'correlations'),
                                   ('outputnode.timeseries', 'timeseries')]),
     ])
+
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, outputnode, [
+                ('outputnode.alff_out', 'alff_out'),
+                ('outputnode.smoothed_alff', 'smoothed_alff'),
+            ]),
+        ])
 
     # write derivatives
     workflow.connect([
@@ -643,9 +652,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                                   'inputnode.smoothed_bold')]),
         (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
                                              ('tmask', 'inputnode.tmask')]),
-        (alff_compute_wf, write_derivative_wf,
-         [('outputnode.alff_out', 'inputnode.alff_out'),
-          ('outputnode.smoothed_alff', 'inputnode.smoothed_alff')]),
         (reho_compute_wf, write_derivative_wf, [('outputnode.reho_out',
                                                  'inputnode.reho_out')]),
         (fcon_ts_wf, write_derivative_wf, [('outputnode.atlas_names', 'inputnode.atlas_names'),
@@ -653,6 +659,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                            ('outputnode.timeseries', 'inputnode.timeseries')]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')]),
     ])
+
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, write_derivative_wf, [
+                ('outputnode.alff_out', 'inputnode.alff_out'),
+                ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
+            ]),
+        ])
 
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
@@ -710,12 +724,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                                      datatype="figures"),
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)
-    ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                     source_file=bold_file,
-                                                     desc='alffVolumetricPlot',
-                                                     datatype="figures"),
-                                 name='ds_report_alffplot',
-                                 run_without_submitting=False)
+
+
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
@@ -723,9 +733,24 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
-        (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
     ])
+
+    if bandpass_filter:
+        ds_report_afniplot = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                desc='afniplot',
+                datatype="figures",
+            ),
+            name='ds_report_afniplot',
+            run_without_submitting=False,
+        )
+
+        workflow.connect([
+            (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
+        ])
 
     # executive summary workflow
     workflow.connect([

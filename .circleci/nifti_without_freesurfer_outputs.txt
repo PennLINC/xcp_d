@@ -39,10 +39,6 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_a
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_atlas-Schaefer917_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_atlas-subcortical_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_alff.json
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_alff.nii.gz
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_qc.csv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_reho.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_reho.nii.gz
@@ -78,10 +74,6 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_a
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_atlas-Schaefer917_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_atlas-subcortical_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_alff.json
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_alff.nii.gz
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_qc.csv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_reho.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_reho.nii.gz
