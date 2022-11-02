@@ -63,14 +63,14 @@ run_xcpd_cmd () {
     cfg_arg=""
     CFG=$(printenv NIPYPE_CONFIG)
     if [[ -n "${CFG}" ]]; then
-        cfg_arg="-v ${CFG}:/nipype/nipype.cfg --env NIPYPE_CONFIG_DIR=/nipype"
+      cfg_arg="-v ${CFG}:/nipype/nipype.cfg --env NIPYPE_CONFIG_DIR=/nipype"
     fi
 
     # Is there a Freesurfer license?
     fslicense_arg=""
     FS_LICENSE=$(printenv FS_LICENSE)
     if [[ -n "${CFG}" ]]; then
-        fslicense_arg="-v ${FS_LICENSE}:/license.txt --env FS_LICENSE=/license.txt"
+      fslicense_arg="-v ${FS_LICENSE}:/license.txt --env FS_LICENSE=/license.txt"
     fi
 
     # Otherwise we're going to use docker from the outside
