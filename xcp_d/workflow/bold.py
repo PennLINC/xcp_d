@@ -395,155 +395,154 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         ]),
     ])
 
+    regression_wf = pe.Node(
+        Regress(TR=TR, original_file=bold_file, params=params),
+        name="regression_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-regression_wf = pe.Node(
-    Regress(TR=TR, original_file=bold_file, params=params),
-    name="regression_wf",
-    mem_gb=mem_gbx['timeseries'],
-    n_procs=omp_nthreads)
+    interpolate_wf = pe.Node(
+        Interpolate(TR=TR),
+        name="interpolation_wf",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads)
 
-interpolate_wf = pe.Node(
-    Interpolate(TR=TR),
-    name="interpolation_wf",
-    mem_gb=mem_gbx['timeseries'],
-    n_procs=omp_nthreads)
+    executivesummary_wf = init_execsummary_wf(
+        TR=TR,
+        bold_file=bold_file,
+        layout=layout,
+        mem_gb=mem_gbx['timeseries'],
+        output_dir=output_dir,
+        dummyvols=initial_volumes_to_drop,
+        omp_nthreads=omp_nthreads)
 
-executivesummary_wf = init_execsummary_wf(
-    TR=TR,
-    bold_file=bold_file,
-    layout=layout,
-    mem_gb=mem_gbx['timeseries'],
-    output_dir=output_dir,
-    dummyvols=initial_volumes_to_drop,
-    omp_nthreads=omp_nthreads)
-
-# get transform file for resampling and fcon
-get_std2native_transform = pe.Node(
-    Function(
-        input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
-        output_names=["transform_list"],
-        function=get_transformfile,
-    ),
-    name="get_std2native_transform",
-)
-get_t1w_mask = pe.Node(
-    Function(
-        input_names=["bold_file", "mni_to_t1w"],
-        output_names=["bold_mask", "t1w_mask"],
-        function=get_maskfiles,
-    ),
-    name="get_t1w_mask",
-)
-get_native2space_transforms = pe.Node(
-    Function(
-        input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
-        output_names=["bold2MNI_trans", "bold2T1w_trans"],
-        function=get_transformfilex,
-    ),
-    name="get_native2space_transforms",
-)
-
-workflow.connect([
-    (inputnode, get_std2native_transform, [("bold_file", "bold_file"),
-                                           ("mni_to_t1w", "mni_to_t1w"),
-                                           ("t1w_to_native", "t1w_to_native")]),
-    (inputnode, get_t1w_mask, [("bold_file", "bold_file"), ("mni_to_t1w", "mni_to_t1w")]),
-    (inputnode, get_native2space_transforms, [("bold_file", "bold_file"),
-                                              ("mni_to_t1w", "mni_to_t1w"),
-                                              ("t1w_to_native", "t1w_to_native")]),
-])
-
-resample_parc = pe.Node(ApplyTransforms(
-    dimension=3,
-    input_image=str(
-        get_template('MNI152NLin2009cAsym',
-                     resolution=1,
-                     desc='carpet',
-                     suffix='dseg',
-                     extension=['.nii', '.nii.gz'])),
-    interpolation='MultiLabel'),
-    name='resample_parc',
-    n_procs=omp_nthreads,
-    mem_gb=mem_gbx['timeseries'])
-
-resample_bold2T1w = pe.Node(ApplyTransforms(
-    dimension=3,
-    input_image=mask_file,
-    interpolation='NearestNeighbor'),
-    name='bold2t1_trans',
-    n_procs=omp_nthreads,
-    mem_gb=mem_gbx['timeseries'])
-
-workflow.connect([
-    (get_t1w_mask, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
-    (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
-])
-
-resample_bold2MNI = pe.Node(ApplyTransforms(
-    dimension=3,
-    input_image=mask_file,
-    reference_image=str(
-        get_template('MNI152NLin2009cAsym',
-                     resolution=2,
-                     desc='brain',
-                     suffix='mask',
-                     extension=['.nii', '.nii.gz'])),
-    interpolation='NearestNeighbor'),
-    name='bold2mni_trans',
-    n_procs=omp_nthreads,
-    mem_gb=mem_gbx['timeseries'])
-
-workflow.connect([
-    (get_native2space_transforms, resample_bold2MNI, [('bold2MNI_trans', 'transforms')]),
-])
-
-censor_report = pe.Node(
-    CensoringPlot(
-         TR=TR,
-         dummytime=dummytime,
-         head_radius=head_radius,
-         motion_filter_type=motion_filter_type,
-         band_stop_max=band_stop_max,
-         band_stop_min=band_stop_min,
-         motion_filter_order=motion_filter_order,
-         fd_thresh=fd_thresh,
-         ),
-    name="censor_report",
-    mem_gb=mem_gbx["timeseries"],
-    n_procs=omp_nthreads,
+    # get transform file for resampling and fcon
+    get_std2native_transform = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["transform_list"],
+            function=get_transformfile,
+        ),
+        name="get_std2native_transform",
+    )
+    get_t1w_mask = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w"],
+            output_names=["bold_mask", "t1w_mask"],
+            function=get_maskfiles,
+        ),
+        name="get_t1w_mask",
+    )
+    get_native2space_transforms = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=["bold2MNI_trans", "bold2T1w_trans"],
+            function=get_transformfilex,
+        ),
+        name="get_native2space_transforms",
     )
 
-qcreport = pe.Node(
-     QCPlot(
-          TR=TR,
-          dummytime=dummytime,
-          template_mask=str(
-               get_template(
+    workflow.connect([
+        (inputnode, get_std2native_transform, [("bold_file", "bold_file"),
+                                               ("mni_to_t1w", "mni_to_t1w"),
+                                               ("t1w_to_native", "t1w_to_native")]),
+        (inputnode, get_t1w_mask, [("bold_file", "bold_file"), ("mni_to_t1w", "mni_to_t1w")]),
+        (inputnode, get_native2space_transforms, [("bold_file", "bold_file"),
+                                                  ("mni_to_t1w", "mni_to_t1w"),
+                                                  ("t1w_to_native", "t1w_to_native")]),
+    ])
+
+    resample_parc = pe.Node(ApplyTransforms(
+        dimension=3,
+        input_image=str(
+            get_template('MNI152NLin2009cAsym',
+                         resolution=1,
+                         desc='carpet',
+                         suffix='dseg',
+                         extension=['.nii', '.nii.gz'])),
+        interpolation='MultiLabel'),
+        name='resample_parc',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
+
+    resample_bold2T1w = pe.Node(ApplyTransforms(
+        dimension=3,
+        input_image=mask_file,
+        interpolation='NearestNeighbor'),
+        name='bold2t1_trans',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
+
+    workflow.connect([
+        (get_t1w_mask, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
+        (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
+    ])
+
+    resample_bold2MNI = pe.Node(ApplyTransforms(
+        dimension=3,
+        input_image=mask_file,
+        reference_image=str(
+            get_template('MNI152NLin2009cAsym',
+                         resolution=2,
+                         desc='brain',
+                         suffix='mask',
+                         extension=['.nii', '.nii.gz'])),
+        interpolation='NearestNeighbor'),
+        name='bold2mni_trans',
+        n_procs=omp_nthreads,
+        mem_gb=mem_gbx['timeseries'])
+
+    workflow.connect([
+        (get_native2space_transforms, resample_bold2MNI, [('bold2MNI_trans', 'transforms')]),
+    ])
+
+    censor_report = pe.Node(
+        CensoringPlot(
+            TR=TR,
+            dummytime=dummytime,
+            head_radius=head_radius,
+            motion_filter_type=motion_filter_type,
+            band_stop_max=band_stop_max,
+            band_stop_min=band_stop_min,
+            motion_filter_order=motion_filter_order,
+            fd_thresh=fd_thresh,
+        ),
+        name="censor_report",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
+
+    qcreport = pe.Node(
+        QCPlot(
+            TR=TR,
+            dummytime=dummytime,
+            template_mask=str(
+                get_template(
                     'MNI152NLin2009cAsym',
                     resolution=2,
                     desc='brain',
                     suffix='mask',
                     extension=['.nii', '.nii.gz']
                 )
-               ),
-          head_radius=head_radius,
-          ),
-     name="qc_report",
-     mem_gb=mem_gbx['timeseries'],
-     n_procs=omp_nthreads,
-     )
+            ),
+            head_radius=head_radius,
+        ),
+        name="qc_report",
+        mem_gb=mem_gbx['timeseries'],
+        n_procs=omp_nthreads,
+    )
 
- workflow.connect([
-      (inputnode, qcreport, [("bold_file", "bold_file")]),
-      (get_t1w_mask, qcreport, [("t1w_mask", "t1w_mask")]),
-      ])
+    workflow.connect([
+        (inputnode, qcreport, [("bold_file", "bold_file")]),
+        (get_t1w_mask, qcreport, [("t1w_mask", "t1w_mask")]),
+    ])
 
-  workflow.connect([
-       (inputnode, censor_report, [("bold_file", "bold_file")]),
-       ])
+    workflow.connect([
+        (inputnode, censor_report, [("bold_file", "bold_file")]),
+    ])
 
-   # Remove TR first:
-   if dummytime > 0:
+    # Remove TR first:
+    if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop,
                      custom_confounds=custom_confounds),
@@ -717,7 +716,7 @@ qcreport = pe.Node(
         datatype="figures"),
         name='ds_report_qualitycontrol',
         run_without_submitting=False)
-    
+
     ds_report_confounds = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         desc='design',
