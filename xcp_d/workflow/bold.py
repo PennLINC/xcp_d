@@ -733,7 +733,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
     ])
 
     if bandpass_filter:
@@ -749,7 +749,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         )
 
         workflow.connect([
-            (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
+            (alff_compute_wf, ds_report_afniplot, [('outputnode.alffplot', 'in_file')]),
         ])
 
     # executive summary workflow
