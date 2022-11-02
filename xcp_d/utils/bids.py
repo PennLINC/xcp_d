@@ -7,6 +7,7 @@ A PR will be submitted to niworkflows at some point.
 """
 import logging
 import os
+import pprint
 import warnings
 
 import nibabel as nb
@@ -15,7 +16,7 @@ from packaging.version import Version
 
 from xcp_d.utils.filemanip import ensure_list
 
-LOGGER = logging.getLogger("xcpd")
+LOGGER = logging.getLogger("nipype.utils")
 
 
 class BIDSError(ValueError):
@@ -324,6 +325,10 @@ def collect_run_data(layout, bold_file, cifti=False):
             to="scanner",
             suffix="xfm",
         )
+
+    LOGGER.debug(
+        f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
+    )
 
     for k, v in run_data.items():
         if v is None:
