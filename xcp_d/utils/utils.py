@@ -584,7 +584,24 @@ def consolidate_confounds(
     params,
     custom_confounds_file=None,
 ):
-    """Combine confounds files into a single TSV."""
+    """Combine confounds files into a single tsv.
+
+    Parameters
+    ----------
+    fmriprep_confounds_file : file
+        file to fmriprep confounds tsv
+    namesource : file
+        file to extract entities from
+    custom_confounds_file : file
+        file to custom confounds tsv
+    params : string
+        confound parameters to load
+
+    Returns
+    -------
+    out_file : file
+        file to combined tsv
+    """
     import os
 
     from xcp_d.utils.confounds import load_confound_matrix
