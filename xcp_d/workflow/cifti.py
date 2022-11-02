@@ -437,9 +437,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("custom_confounds_censored", "custom_confounds")]),
         ])
 
-    # The BOLD file is just used for filenames
-    workflow.connect([(inputnode, censor_scrub, [('bold_file', 'in_file')])])
-
     if despike:  # If we despike
         despike3d = pe.Node(CiftiDespike(TR=TR),
                             name="cifti_despike",

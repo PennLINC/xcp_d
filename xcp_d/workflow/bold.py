@@ -572,9 +572,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("custom_confounds_censored", "custom_confounds")]),
         ])
 
-    # The BOLD file is just used for filenames
-    workflow.connect([(inputnode, censor_scrub, [('bold_file', 'in_file')])])
-
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series
         # Despiking reduces/limits the amplitude or magnitude of
