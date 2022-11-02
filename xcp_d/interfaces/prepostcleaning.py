@@ -137,7 +137,7 @@ class RemoveTR(SimpleInterface):
                 custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
                     np.arange(volumes_to_drop))
             else:
-                LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
+                LOGGER.warning("No custom confounds were found or had their volumes dropped.")
         else:
             LOGGER.warning(("No custom confounds were found or had their volumes dropped."))
 
