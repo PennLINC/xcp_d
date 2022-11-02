@@ -304,6 +304,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         alff_compute_wf = init_compute_alff_wf(
             mem_gb=mem_gbx['timeseries'],
             TR=TR,
+            bold_file=bold_file,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             smoothing=smoothing,
@@ -314,6 +315,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     reho_compute_wf = init_nifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
+        bold_file=bold_file,
         name="nifti_reho_wf",
         omp_nthreads=omp_nthreads,
     )
@@ -719,7 +721,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
                                                      source_file=bold_file,
-                                                     desc='rehoplot',
+                                                     desc='rehoVolumetricPlot',
                                                      datatype="figures"),
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)
@@ -731,23 +733,23 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehohtml', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
     ])
 
     if bandpass_filter:
-        ds_report_afniplot = pe.Node(
+        ds_report_alffplot = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                desc='afniplot',
+                desc='alffVolumetricPlot',
                 datatype="figures",
             ),
-            name='ds_report_afniplot',
+            name='ds_report_alffplot',
             run_without_submitting=False,
         )
 
         workflow.connect([
-            (alff_compute_wf, ds_report_afniplot, [('outputnode.alffhtml', 'in_file')]),
+            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')]),
         ])
 
     # executive summary workflow

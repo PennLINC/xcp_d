@@ -83,6 +83,7 @@ class SurfaceReHo(SimpleInterface):
                   template=self.inputs.surf_bold,
                   filename=self._results['surf_gii'],
                   hemi=self.inputs.surf_hemi)
+
         return runtime
 
 
@@ -158,7 +159,6 @@ class ComputeALFF(SimpleInterface):
                     template=self.inputs.in_file,
                     filename=self._results['alff_out'],
                     mask=self.inputs.mask)
-
         return runtime
 
 

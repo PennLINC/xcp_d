@@ -271,6 +271,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         alff_compute_wf = init_compute_alff_wf(
             mem_gb=mem_gbx['timeseries'],
             TR=TR,
+            bold_file=bold_file,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             smoothing=smoothing,
@@ -281,6 +282,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     reho_compute_wf = init_cifti_reho_wf(
         mem_gb=mem_gbx['timeseries'],
+        bold_file=bold_file,
         name="cifti_reho_wf",
         omp_nthreads=omp_nthreads)
 
@@ -555,16 +557,35 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='ds_report_connectivity',
         run_without_submitting=True)
 
+    if bandpass_filter:
+        ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                         source_file=bold_file,
+                                                         desc='alffSurfacePlot',
+                                                         datatype="figures"),
+                                     name='ds_report_alffplot',
+                                     run_without_submitting=False)
+
+    ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
+                                                     source_file=bold_file,
+                                                     desc='rehoSurfacePlot',
+                                                     datatype="figures"),
+                                 name='ds_report_rehoplot',
+                                 run_without_submitting=False)
+
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
+        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
-
-    # exexetive summary workflow
+    if bandpass_filter:
+        workflow.connect([
+            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
+        ])
+    # executive summary workflow
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
