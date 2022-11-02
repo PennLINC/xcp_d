@@ -100,17 +100,19 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
           ALFF images will not be generated if bandpass filtering is disabled
           (e.g., with the ``--disable-bandpass-filtering`` parameter).
 
-   d. Other outputs include quality control and framewise  displacement::
+   d. Other outputs include quality control, framewise  displacement and confounds files::
 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_design.tsv
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_design.tsv
 
       The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;
       one for each of the six filtered motion parameters, as well as "framewise_displacement".
