@@ -5,11 +5,6 @@ version: 2.1
     - image: pennbbl/xcpd_build:0.0.6rc1
   working_directory: /src/xcp_d
 
-.fastdockersetup: &fastdockersetup
-  docker:
-    - image: cimg/base:2022.04
-  working_directory: /src/xcp_d
-
 runinstall: &runinstall
   name: Install xcp_d
   command: |
@@ -37,7 +32,7 @@ jobs:
       - run: *runinstall
 
   download_data_fmriprepwithfreesurfer:
-    <<: *fastdockersetup
+    <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
@@ -55,7 +50,7 @@ jobs:
               - /src/xcp_d/.circleci/data/fmriprepwithfreesurfer
 
   download_data_fmriprepwithoutfreesurfer:
-    <<: *fastdockersetup
+    <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
@@ -72,7 +67,7 @@ jobs:
               - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
 
   download_data_nibabies:
-    <<: *fastdockersetup
+    <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
