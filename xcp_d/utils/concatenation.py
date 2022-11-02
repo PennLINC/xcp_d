@@ -129,7 +129,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     TR = _get_tr(preproc_files[0].path)
 
                     make_dcan_df([motion_files[0].path], dcan_df_file, TR)
-                    LOGGER.debug(f"Only one run found for {preproc_files[0].path}")
+                    LOGGER.debug(f"Only one run found for task {task}")
                     continue
 
                 # Get TR from one of the preproc files
@@ -311,9 +311,9 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     LOGGER.debug("plot_svgx done")
 
                     # link or copy bb svgs
+                    # NOTE: This seems to fail, but execsummary workflow handles these figures.
                     in_fig_entities = preproc_files[0].get_entities()
                     in_fig_entities = _sanitize_entities(in_fig_entities)
-                    in_fig_entities["space"] = None
                     in_fig_entities["res"] = None
                     in_fig_entities["den"] = None
                     in_fig_entities["run"] = [None, 1]  # grab first run
@@ -321,7 +321,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     in_fig_entities["extension"] = ".svg"
 
                     for desc in ["bbregister", "boldref"]:
-                        in_fig_entities["desc"] = "bbregister"
+                        in_fig_entities["desc"] = desc
                         fig_in = layout_fmriprep.get(**in_fig_entities)
                         if len(fig_in) == 0:
                             LOGGER.warning(f"No files found for {in_fig_entities}")
@@ -330,7 +330,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                             out_fig_entities = in_fig_entities.copy()
                             out_fig_entities["run"] = None
-                            out_fig_entities["desc"] = "bbregister"
+                            out_fig_entities["desc"] = desc
                             fig_out = layout_xcpd.build_path(
                                 out_fig_entities,
                                 path_patterns=path_patterns,
