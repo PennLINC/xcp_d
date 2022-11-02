@@ -14,7 +14,8 @@ from nilearn.image import concat_imgs
 from nipype import logging
 from pkg_resources import resource_filename as _pkgres
 
-from xcp_d.utils.plot import _get_tr, plot_svgx
+from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.plot import plot_svgx
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_segfile
 from xcp_d.utils.write_save import read_ndata
