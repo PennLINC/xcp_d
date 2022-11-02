@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
 import os
-import pprint
 import sys
 from copy import deepcopy
 
@@ -10,6 +9,7 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
+import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -304,7 +304,7 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
-    LOGGER.debug(f"Collected data: {pprint.pformat(subj_data, indent=4, width=100)}")
+    LOGGER.debug(f"Collected data: {yaml.dump(subj_data, default_flow_style=False)}")
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf

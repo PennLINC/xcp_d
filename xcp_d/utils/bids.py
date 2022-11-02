@@ -7,10 +7,10 @@ A PR will be submitted to niworkflows at some point.
 """
 import logging
 import os
-import pprint
 import warnings
 
 import nibabel as nb
+import yaml
 from bids import BIDSLayout
 from packaging.version import Version
 
@@ -327,7 +327,7 @@ def collect_run_data(layout, bold_file, cifti=False):
         )
 
     LOGGER.debug(
-        f"Collected run data for {bold_file}:\n{pprint.pformat(run_data, indent=4, width=100)}"
+        f"Collected run data for {bold_file}:\n{yaml.dump(run_data, default_flow_style=False)}"
     )
 
     for k, v in run_data.items():
