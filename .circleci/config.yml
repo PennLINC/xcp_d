@@ -3,12 +3,12 @@ version: 2.1
 .dockersetup: &dockersetup
   docker:
     - image: pennbbl/xcpd_build:0.0.6rc1
-  working_directory: /home/circleci
+  working_directory: /src/xcp_d
 
 .fastdockersetup: &fastdockersetup
   docker:
     - image: cimg/base:2022.11
-  working_directory: /home/circleci
+  working_directory: /src/xcp_d
 
 runinstall: &runinstall
   name: Install xcp_d
@@ -18,8 +18,8 @@ runinstall: &runinstall
       VERSION="$CIRCLE_TAG"
     fi
     git checkout $CIRCLE_BRANCH
-    echo "${VERSION}" > /home/circleci/xcp_d/VERSION
-    echo "include xcp_d/VERSION" >> /home/circleci/MANIFEST.in
+    echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
+    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
     pip install .[tests] --progress-bar off
 
     # Write the config file
@@ -45,14 +45,14 @@ jobs:
       - run:
           name: Download fmriprepwithfreesurfer test data
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             source get_data.sh
             get_bids_data $PWD fmriprep_colornest
             get_bids_data $PWD freesurfer_colornest
       - save_cache:
           key: fmriprepwithfreesurfer-00
           paths:
-              - /home/circleci/.circleci/data/fmriprepwithfreesurfer
+              - /src/xcp_d/.circleci/data/fmriprepwithfreesurfer
 
   download_data_fmriprepwithoutfreesurfer:
     <<: *fastdockersetup
@@ -63,13 +63,13 @@ jobs:
       - run:
           name: Download fmriprepwithoutfreesurfer test data
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             source get_data.sh
             get_bids_data $PWD sub01
       - save_cache:
           key: fmriprepwithoutfreesurfer-01
           paths:
-              - /home/circleci/.circleci/data/fmriprepwithoutfreesurfer
+              - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
 
   download_data_nibabies:
     <<: *fastdockersetup
@@ -80,13 +80,13 @@ jobs:
       - run:
           name: Download nibabies test data
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             source get_data.sh
             get_bids_data $PWD nibabies
       - save_cache:
           key: nibabies-01
           paths:
-              - /home/circleci/.circleci/data/nibabies_test_data
+              - /src/xcp_d/.circleci/data/nibabies_test_data
 
   nifti_without_freesurfer:
     <<: *dockersetup
@@ -95,7 +95,7 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci
+            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_without_freesurfer\]' )" != "" ]]; then
               echo "Skipping nifti_without_freesurfer build"
               circleci step halt
@@ -107,17 +107,17 @@ jobs:
           name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             bash NiftiWithoutFreeSurferTest.sh
       - store_artifacts:
-          path: /home/circleci/.circleci/nifti_without_freesurfer/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/nifti_without_freesurfer/derivatives/xcp_d/
       - run:
           name: Check outputs of xcp_d run
           command: |
             mkdir -p /tmp/nifti_without_freesurfer/test
             CHECK_OUTPUTS_FILE="nifti_without_freesurfer_outputs.txt"
-            find /home/circleci/.circleci/nifti_without_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/home/circleci/.circleci/nifti_without_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/nifti_without_freesurfer/test/outputs.out
-            diff <(sort /home/circleci/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_without_freesurfer/test/outputs.out)
+            find /src/xcp_d/.circleci/nifti_without_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nifti_without_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/nifti_without_freesurfer/test/outputs.out
+            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_without_freesurfer/test/outputs.out)
             exit $?
 
   nifti_with_freesurfer:
@@ -127,7 +127,7 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci
+            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_with_freesurfer\]' )" != "" ]]; then
               echo "Skipping nifti_with_freesurfer build"
               circleci step halt
@@ -139,17 +139,17 @@ jobs:
           name: Run full xcp_d on nifti with freesurfer
           no_output_timeout: 1h
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             bash NiftiWithFreeSurferTest.sh
       - store_artifacts:
-          path: /home/circleci/.circleci/nifti_with_freesurfer/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/xcp_d/
       - run:
           name: Check outputs of xcp_d run
           command: |
             mkdir -p /tmp/nifti_with_freesurfer/test
             CHECK_OUTPUTS_FILE="nifti_with_freesurfer_outputs.txt"
-            find /home/circleci/.circleci/nifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/home/circleci/.circleci/nifti_with_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/nifti_with_freesurfer/test/outputs.out
-            diff <(sort /home/circleci/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_with_freesurfer/test/outputs.out)
+            find /src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nifti_with_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/nifti_with_freesurfer/test/outputs.out
+            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_with_freesurfer/test/outputs.out)
             exit $?
 
   nibabies:
@@ -159,7 +159,7 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci
+            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nibabies\]' )" != "" ]]; then
               echo "Skipping nibabies build"
               circleci step halt
@@ -171,17 +171,17 @@ jobs:
           name: Run full xcp_d on nibabies
           no_output_timeout: 1h
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             bash Nibabies.sh
       - store_artifacts:
-          path: /home/circleci/.circleci/nibabies/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/
       - run:
           name: Check outputs of xcp_d run
           command: |
             mkdir -p /tmp/nibabies/test
             CHECK_OUTPUTS_FILE="nibabies_outputs.txt"
-            find /home/circleci/.circleci/nibabies/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/home/circleci/.circleci/nibabies/derivatives/++ | grep -v sourcedata | sort > /tmp/nibabies/test/outputs.out
-            diff <(sort /home/circleci/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nibabies/test/outputs.out)
+            find /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nibabies/derivatives/++ | grep -v sourcedata | sort > /tmp/nibabies/test/outputs.out
+            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nibabies/test/outputs.out)
             exit $?
 
   cifti_with_freesurfer:
@@ -191,7 +191,7 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci
+            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
@@ -203,17 +203,17 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             bash CiftiWithFreeSurferTest.sh
       - store_artifacts:
-          path: /home/circleci/.circleci/cifti_with_freesurfer/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/cifti_with_freesurfer/derivatives/xcp_d/
       - run:
           name: Check outputs of xcp_d run
           command: |
             mkdir -p /tmp/cifti_with_freesurfer/test
             CHECK_OUTPUTS_FILE="cifti_with_freesurfer_outputs.txt"
-            find /home/circleci/.circleci/cifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/home/circleci/.circleci/cifti_with_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/cifti_with_freesurfer/test/outputs.out
-            diff <(sort /home/circleci/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/cifti_with_freesurfer/test/outputs.out)
+            find /src/xcp_d/.circleci/cifti_with_freesurfer/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/cifti_with_freesurfer/derivatives/++ | grep -v sourcedata | sort > /tmp/cifti_with_freesurfer/test/outputs.out
+            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/cifti_with_freesurfer/test/outputs.out)
             exit $?
 
   pytests:
@@ -223,7 +223,7 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci
+            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
@@ -237,7 +237,7 @@ jobs:
           name: Run pytest on the tests directory
           no_output_timeout: 1h
           command: |
-            cd /home/circleci/.circleci
+            cd /src/xcp_d/.circleci
             bash RunPyTests.sh
 
   deployable:
