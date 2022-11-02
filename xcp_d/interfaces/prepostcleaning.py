@@ -48,9 +48,11 @@ class _RemoveTROutputSpec(TraitedSpec):
                                 mandatory=True,
                                 desc="bold or cifti with volumes dropped")
 
-    custom_confounds_dropped = File(exists=False,
-                                    mandatory=False,
-                                    desc="custom_confounds_tsv dropped")
+    custom_confounds_dropped = traits.Either(traits.Undefined,
+                                     File,
+                                     desc="Custom confounds file with volumes dropped",
+                                     exists=False,
+                                     mandatory=False)
 
 
 class RemoveTR(SimpleInterface):
