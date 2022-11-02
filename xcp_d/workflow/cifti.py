@@ -6,7 +6,7 @@ import os
 import nibabel as nb
 import numpy as np
 import sklearn
-from nipype import logging
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -20,7 +20,7 @@ from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import _get_tr
-from xcp_d.utils.utils import stringforparams
+from xcp_d.utils.utils import stringforparams, consolidate_confounds
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -312,6 +312,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
+    bold_holder_node = pe.Node(
+        niu.IdentityInterface(
+            fields=["bold_file", "fmriprep_confounds_tsv", "custom_confounds"],
+        ),
+        name="bold_holder_node",
+    )
+
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
@@ -329,6 +336,29 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="filtering_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
+
+    consolidate_confounds_node = pe.Node(
+        Function(
+            input_names=[
+                "fmriprep_confounds_file",
+                "custom_confounds_file",
+                "namesource",
+                "params",
+            ],
+            output_names=["out_file"],
+            function=consolidate_confounds,
+        ),
+        name="consolidate_confounds_node",
+    )
+    consolidate_confounds_node.inputs.params = params
+
+    workflow.connect([
+        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
+        (bold_holder_node, consolidate_confounds_node, [
+            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+            ('custom_confounds', 'custom_confounds_file'),
+        ]),
+    ])
 
     regression_wf = pe.Node(
         Regress(TR=TR, original_file=bold_file, params=params),
@@ -398,10 +428,16 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [
-                ('bold_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-            ])])
+            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+            (inputnode, bold_holder_node, [
+                ("bold_file", "bold_file"),
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
+                ("custom_confounds", "custom_confounds"),
+            ]),
+        ])
+
+    # The BOLD file is just used for filenames
+    workflow.connect([(inputnode, censor_scrub, [('bold_file', 'in_file')])])
 
     if despike:  # If we despike
         despike3d = pe.Node(CiftiDespike(TR=TR),
@@ -518,6 +554,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='ds_report_qualitycontrol',
         run_without_submitting=True)
 
+    ds_report_confounds = pe.Node(DerivativesDataSink(
+        base_directory=output_dir,
+        desc='design',
+        source_file=bold_file,
+        datatype="bold"),
+        name='ds_report_confounds',
+        run_without_submitting=False)
+
     ds_report_preprocessing = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
         source_file=bold_file,
@@ -561,6 +605,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
+        (consolidate_confounds, ds_report_confounds, [('out_file', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
 

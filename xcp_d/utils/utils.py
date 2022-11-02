@@ -576,3 +576,38 @@ def demean_detrend_data(data):
                         overwrite_data=False)  # Detrend data using linear method
 
     return detrended  # Subtract these predicted values from the demeaned data
+
+
+def consolidate_confounds(
+    fmriprep_confounds_file,
+    custom_confounds_file,
+    namesource,
+    params,
+):
+    """Combine confounds files into a single TSV."""
+    import os
+
+    from xcp_d.utils.confounds import load_confound_matrix
+
+    out_file = os.path.abspath("confounds.tsv")
+
+    # It looks like nipype is passing this along as "None".
+    if custom_confounds_file == "None":
+        custom_confounds_file = None
+
+    if fmriprep_confounds_file and custom_confounds_file:
+        confounds_df = load_confound_matrix(
+            original_file=namesource,
+            custom_confounds=custom_confounds_file,
+            confound_tsv=fmriprep_confounds_file,
+            params=params,
+        )
+    else:  # No custom confounds
+        confounds_df = load_confound_matrix(
+            original_file=namesource,
+            confound_tsv=fmriprep_confounds_file,
+            params=params,
+        )
+
+    confounds_df.to_csv(out_file, sep="\t", index=False)
+    return out_file
