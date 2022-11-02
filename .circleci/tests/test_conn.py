@@ -75,8 +75,8 @@ def test_nifti_conn(data_dir, tmp_path_factory):
         name="fcons_ts_wf",
         omp_nthreads=2,
     )
-    fcon_ts_wf.inputs.inputnode.mni_to_t1w = mni_to_t1w,
-    fcon_ts_wf.inputs.inputnode.t1w_to_native = _t12native(bold_file),
+    fcon_ts_wf.inputs.inputnode.mni_to_t1w = mni_to_t1w
+    fcon_ts_wf.inputs.inputnode.t1w_to_native = _t12native(bold_file)
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
     fcon_ts_wf.inputs.inputnode.bold_file = bold_file
     fcon_ts_wf.inputs.inputnode.ref_file = os.path.join(
