@@ -580,9 +580,9 @@ def demean_detrend_data(data):
 
 def consolidate_confounds(
     fmriprep_confounds_file,
-    custom_confounds_file=None,
     namesource,
     params,
+    custom_confounds_file=None,
 ):
     """Combine confounds files into a single TSV."""
     import os
