@@ -10,7 +10,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pandas as pd
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
 from nilearn.image import concat_imgs
 from nipype import logging
 from pkg_resources import resource_filename as _pkgres
@@ -135,6 +135,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 # Get TR from one of the preproc files
                 preproc_files = layout_fmriprep.get(
                     desc=["preproc", None],
+                    run=Query.ANY,
                     suffix="bold",
                     extension=img_extensions,
                     **task_entities,
@@ -159,6 +160,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
                     desc=None,
+                    run=Query.ANY,
                     suffix="outliers",
                     extension=".tsv",
                     **task_entities,
@@ -173,6 +175,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
                     desc="denoised",
+                    run=Query.ANY,
                     suffix="bold",
                     extension=img_extensions,
                     **task_entities,
@@ -186,6 +189,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     # Preprocessed BOLD files
                     preproc_files = layout_fmriprep.get(
                         desc=["preproc", None],
+                        run=Query.ANY,
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
@@ -200,17 +204,18 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     if not cifti:
                         # Mask file
                         mask_files = layout_fmriprep.get(
+                            run=1,
                             desc=["brain"],
                             suffix="mask",
                             extension=[".nii.gz"],
                             **space_entities,
                         )
                         if len(mask_files) == 0:
-                            raise ValueError(
-                                f"No mask files found for {preproc_files[0].path}"
-                            )
+                            raise ValueError(f"No mask files found for {preproc_files[0].path}")
                         elif len(mask_files) != 1:
-                            print(f"Too many files found: {mask_files}")
+                            LOGGER.warning(
+                                f"More than one mask file found. Using first: {mask_files}"
+                            )
 
                         mask = mask_files[0].path
                         # TODO: Use layout_fmriprep for this
@@ -290,6 +295,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     initial_volumes_to_drop = 0
                     if dummytime > 0:
                         initial_volumes_to_drop = int(np.ceil(dummytime / TR))
+
                     LOGGER.debug("Starting plot_svgx")
                     plot_svgx(
                         dummyvols=initial_volumes_to_drop,
