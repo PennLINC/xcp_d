@@ -13,7 +13,7 @@ xcp_d/sub-01/ses-1mo/anat
 xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
 xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNI152NLin6Asym_dseg.nii.gz
 xcp_d/sub-01/ses-1mo/func
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_desc-preproc_design.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_outliers.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_alff.json
