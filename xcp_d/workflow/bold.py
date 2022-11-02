@@ -737,19 +737,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
 
     if bandpass_filter:
-        ds_report_afniplot = pe.Node(
+        ds_report_alffplot = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
-                desc='afniplot',
+                desc='alffVolumetricPlot',
                 datatype="figures",
             ),
-            name='ds_report_afniplot',
+            name='ds_report_alffplot',
             run_without_submitting=False,
         )
 
         workflow.connect([
-            (alff_compute_wf, ds_report_afniplot, [('outputnode.alffplot', 'in_file')]),
+            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')]),
         ])
 
     # executive summary workflow
