@@ -554,7 +554,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     ds_report_confounds = pe.Node(DerivativesDataSink(
         base_directory=output_dir,
-        desc='design',
+        suffix='design',
         source_file=bold_file,
         datatype="bold"),
         name='ds_report_confounds',
