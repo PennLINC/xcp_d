@@ -132,7 +132,7 @@ class RemoveTR(SimpleInterface):
         dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
 
         # Drop the first N rows from the custom confounds file, if provided:
-        if self.inputs.custom_confounds is not None:
+        if self.inputs.custom_confounds != 'None':
             custom_confounds_tsv_undropped = pd.read_table(
                 self.inputs.custom_confounds, header=None)
             custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
@@ -146,7 +146,7 @@ class RemoveTR(SimpleInterface):
         self._results['bold_file_dropped_TR'] = dropped_bold_file
         self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
 
-        if self.inputs.custom_confounds is not None:
+        if self.inputs.custom_confounds != 'None':
             self._results['custom_confounds_dropped'] = fname_presuffix(
                 self.inputs.bold_file,
                 suffix='_custom_confounds_dropped.tsv',
@@ -274,7 +274,7 @@ class CensorScrub(SimpleInterface):
 
         # Read in custom confounds file (if any) and bold file to be censored
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
-        if self.inputs.custom_confounds is not None:
+        if self.inputs.custom_confounds != 'None':
             custom_confounds_tsv_uncensored = pd.read_table(
                 self.inputs.custom_confounds,
                 header=None,
@@ -297,7 +297,7 @@ class CensorScrub(SimpleInterface):
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.drop(
                 fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)]
             )
-            if self.inputs.custom_confounds is not None:
+            if self.inputs.custom_confounds != 'None':
                 # If custom regressors are present
                 custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.drop(
                     custom_confounds_tsv_uncensored.index[np.where(tmask == 1)]
@@ -305,7 +305,7 @@ class CensorScrub(SimpleInterface):
         else:  # No censoring needed
             bold_file_censored = bold_file_uncensored
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
-            if self.inputs.custom_confounds is not None:
+            if self.inputs.custom_confounds != 'None':
                 custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
 
         # Turn censored bold into image
@@ -349,7 +349,7 @@ class CensorScrub(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        if self.inputs.custom_confounds is not None:
+        if self.inputs.custom_confounds != 'None':
             self._results["custom_confounds_censored"] = fname_presuffix(
                 self.inputs.in_file,
                 suffix="_custom_confounds_censored.tsv",
@@ -392,7 +392,7 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
-        if self.inputs.custom_confounds is not None:
+        if self.inputs.custom_confounds != 'None':
             # Assuming input is tab separated!
             custom_confounds_tsv_censored.to_csv(
                 self._results["custom_confounds_censored"],
