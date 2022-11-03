@@ -25,24 +25,20 @@ class _FilteringDataInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True,
                    mandatory=True,
                    desc="Bold file")
-    TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
-    filter_order = traits.Int(exists=True,
-                              mandatory=True,
+    TR = traits.Float(mandatory=True, desc="Repetition time")
+    filter_order = traits.Int(mandatory=True,
                               default_value=2,
                               desc="Filter order")
-    lowpass = traits.Float(exists=True,
-                           mandatory=True,
+    lowpass = traits.Float(mandatory=True,
                            default_value=0.10,
                            desc="Lowpass filter in Hz")
-    highpass = traits.Float(exists=True,
-                            mandatory=True,
+    highpass = traits.Float(mandatory=True,
                             default_value=0.01,
                             desc="Highpass filter in Hz")
     mask = File(exists=False,
                 mandatory=False,
                 desc="Bain mask for nifti file")
-    bandpass_filter = traits.Bool(exists=False,
-                                  mandatory=True,
+    bandpass_filter = traits.Bool(mandatory=True,
                                   desc="To apply bandpass or not")
 
 

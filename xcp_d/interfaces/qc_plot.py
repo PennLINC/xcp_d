@@ -34,14 +34,12 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     )
     tmask = File(exists=False, mandatory=False, desc="Temporal mask. Current unused.")
     dummytime = traits.Float(
-        exists=False,
         mandatory=False,
         default_value=0,
         desc="Dummy time to drop",
     )
-    TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
+    TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(
-        exists=True,
         mandatory=False,
         default_value=50,
         desc="Head radius; recommended value is 40 for babies",
@@ -49,29 +47,22 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     motion_filter_type = traits.Either(
         None,
         traits.Str,
-        exists=False,
         mandatory=True,
     )
-    motion_filter_order = traits.Int(exists=False, mandatory=True)
+    motion_filter_order = traits.Int(mandatory=True)
     band_stop_min = traits.Either(
         None,
         traits.Float,
-        exists=False,
         mandatory=True,
         desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
     band_stop_max = traits.Either(
         None,
         traits.Float,
-        exists=False,
         mandatory=True,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
-    fd_thresh = traits.Float(
-        exists=False,
-        mandatory=True,
-        desc="Framewise displacement threshold."
-    )
+    fd_thresh = traits.Float(mandatory=True, desc="Framewise displacement threshold.")
 
 
 class _CensoringPlotOutputSpec(TraitedSpec):
@@ -203,14 +194,12 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
     tmask = File(exists=False, mandatory=False, desc="Temporal mask")
     dummytime = traits.Float(
-        exists=False,
         mandatory=False,
         default_value=0,
         desc="Dummy time to drop",
     )
-    TR = traits.Float(exists=True, mandatory=True, desc="Repetition Time")
+    TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(
-        exists=True,
         mandatory=False,
         default_value=50,
         desc="Head radius; recommended value is 40 for babies",

@@ -34,7 +34,8 @@ class _SurfaceReHoInputSpec(BaseInterfaceInputSpec):
     surf_bold = File(exists=True,
                      mandatory=True,
                      desc="left or right hemisphere gii ")
-    surf_hemi = traits.Str(exists=True, mandatory=True, desc="L or R ")
+    # TODO: Change to Enum
+    surf_hemi = traits.Str(mandatory=True, desc="L or R ")
 
 
 class _SurfaceReHoOutputSpec(TraitedSpec):
@@ -89,18 +90,20 @@ class SurfaceReHo(SimpleInterface):
 
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
-    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
-    lowpass = traits.Float(exists=True,
-                           mandatory=True,
-                           default_value=0.10,
-                           desc="lowpass filter in Hz")
-    highpass = traits.Float(exists=True,
-                            mandatory=True,
-                            default_value=0.01,
-                            desc="highpass filter in Hz")
     mask = File(exists=False,
                 mandatory=False,
                 desc=" brain mask for nifti file")
+    TR = traits.Float(mandatory=True, desc="repetition time")
+    lowpass = traits.Float(
+        mandatory=True,
+        default_value=0.10,
+        desc="lowpass filter in Hz",
+    )
+    highpass = traits.Float(
+        mandatory=True,
+        default_value=0.01,
+        desc="highpass filter in Hz",
+    )
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):

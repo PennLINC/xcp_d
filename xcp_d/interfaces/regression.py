@@ -30,9 +30,6 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="The fMRIPrep confounds tsv after censoring")
     # TODO: Use Enum maybe?
-    params = traits.Str(exists=True, mandatory=True, desc="Parameter set to use.")
-    TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
-    mask = File(exists=False, mandatory=False, desc="Brain mask for nifti files")
     original_file = traits.Str(exists=True, mandatory=False,
                                desc="Name of original bold file- helps load in the confounds"
                                "file down the line using the original path name")
@@ -41,6 +38,9 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
                                      desc="Name of custom confounds file, or True",
                                      exists=False,
                                      mandatory=False)
+    params = traits.Str(mandatory=True, desc="Parameter set to use.")
+    TR = traits.Float(mandatory=True, desc="Repetition time")
+    mask = File(exists=True, mandatory=False, desc="Brain mask for nifti files")
 
 
 class _RegressOutputSpec(TraitedSpec):
@@ -134,7 +134,7 @@ class Regress(SimpleInterface):
 
 class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
-    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(mandatory=True, desc="repetition time")
 
 
 class _CiftiDespikeOutputSpec(TraitedSpec):

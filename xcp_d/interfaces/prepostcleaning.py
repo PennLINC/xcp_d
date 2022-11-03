@@ -165,7 +165,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         exists=True, mandatory=True, desc=" Partially processed bold or nifti"
     )
     fd_thresh = traits.Float(
-        exists=True,
         mandatory=False,
         default_value=0.2,
         desc="Framewise displacement"
@@ -184,27 +183,24 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         desc="fMRIPrep confounds tsv after removing dummy time, if any",
     )
     head_radius = traits.Float(
-        exists=True, mandatory=False, default_value=50, desc="Head radius in mm "
+        mandatory=False, default_value=50, desc="Head radius in mm "
     )
     motion_filter_type = traits.Either(
         None,
         traits.Str,
-        exists=False,
         mandatory=True,
     )
-    motion_filter_order = traits.Int(exists=False, mandatory=True)
+    motion_filter_order = traits.Int(mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     band_stop_min = traits.Either(
         None,
         traits.Float,
-        exists=True,
         mandatory=True,
         desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
     band_stop_max = traits.Either(
         None,
         traits.Float,
-        exists=True,
         mandatory=True,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
@@ -410,9 +406,7 @@ class _InterpolateInputSpec(BaseInterfaceInputSpec):
                      desc=" censored or clean bold")
     tmask = File(exists=True, mandatory=True, desc="temporal mask")
     mask_file = File(exists=False, mandatory=False, desc="required for nifti")
-    TR = traits.Float(exists=True,
-                      mandatory=True,
-                      desc="repetition time in TR")
+    TR = traits.Float(mandatory=True, desc="repetition time in TR")
 
 
 class _InterpolateOutputSpec(TraitedSpec):
