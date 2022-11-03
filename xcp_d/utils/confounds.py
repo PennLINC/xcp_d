@@ -179,6 +179,7 @@ def load_global_signal(confounds_df):
         The global signal from the confounds.
     """
     df = pd.DataFrame(confounds_df["global_signal"])
+    # Rename column per BEP012 (as of 2022/11/03)
     df.columns = ['GlobalSignal']
     return df
 
