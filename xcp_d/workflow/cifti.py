@@ -633,7 +633,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
-        (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_plot", "in_file")]),
+        (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
