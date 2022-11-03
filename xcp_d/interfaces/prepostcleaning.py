@@ -292,10 +292,10 @@ class CensorScrub(SimpleInterface):
             else:
                 bold_file_censored = bold_file_uncensored[tmask == 0, :]
 
-            fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.loc[tmask == 1]
+            fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.loc[tmask == 0]
             if self.inputs.custom_confounds:
                 # If custom regressors are present
-                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.loc[tmask == 1]
+                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.loc[tmask == 0]
 
         else:  # No censoring needed
             bold_file_censored = bold_file_uncensored
