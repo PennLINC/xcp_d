@@ -9,6 +9,7 @@ from xcp_d.utils.confounds import load_confound_matrix
 
 
 def test_custom_confounds(data_dir, tmp_path_factory):
+    """Ensure that custom confounds can be loaded without issue."""
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
 
     data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
@@ -16,11 +17,13 @@ def test_custom_confounds(data_dir, tmp_path_factory):
     TR = 2.5
 
     frame_times = np.arange(N_VOLUMES) * TR
-    events_df = pd.DataFrame({
-        "onset": [10, 30, 50, 70, 90, 110, 130, 150],
-        "duration": [5, 10, 5, 10, 5, 10, 5, 10],
-        "trial_type": ["a", "b", "a", "a", "b", "b", "a", "b"]
-    })
+    events_df = pd.DataFrame(
+        {
+            "onset": [10, 30, 50, 70, 90, 110, 130, 150],
+            "duration": [5, 10, 5, 10, 5, 10, 5, 10],
+            "trial_type": ["a", "b", "a", "a", "b", "b", "a", "b"]
+        },
+    )
     custom_confounds = make_first_level_design_matrix(
         frame_times,
         events_df,
