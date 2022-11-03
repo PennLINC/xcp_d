@@ -11,7 +11,7 @@ from scipy.signal import filtfilt, firwin, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger("utils")
 
 
 def get_confounds_tsv(datafile):
@@ -179,7 +179,6 @@ def load_global_signal(confounds_df):
         The global signal from the confounds.
     """
     df = pd.DataFrame(confounds_df["global_signal"])
-    # Rename column per BEP012 (as of 2022/11/03)
     df.columns = ['GlobalSignal']
     return df
 
@@ -197,9 +196,9 @@ def load_wm_csf(confounds_df):
     pandas.DataFrame
         The CSF and WM signals from the confounds.
     """
+    columns = ["CSF", "WhiteMatter"]
     df = confounds_df[["csf", "white_matter"]]
-    # Rename columns per BEP012 (as of 2022/11/03)
-    df.columns = ["CSF", "WhiteMatter"]
+    df.columns = columns
     return df
 
 
@@ -244,21 +243,19 @@ def load_acompcor(confounds_df, confoundjs):
     pandas.DataFrame
         The confounds DataFrame, reduced to only include aCompCor regressors.
     """
-    WM = []
-    CSF = []
+    wm_comp_cor_retained = []
+    csf_comp_cor_retained = []
     for key, value in confoundjs.items():  # Use the confounds json
         if "comp_cor" in key and "t" not in key:
             # Pull out variance explained for white matter masks that are retained
             if value["Mask"] == "WM" and value["Retained"]:
-                WM.append([key, value["VarianceExplained"]])
+                wm_comp_cor_retained.append([key, value["VarianceExplained"]])
             # Pull out variance explained for CSF masks that are retained
             if value["Mask"] == "CSF" and value["Retained"]:
-                CSF.append([key, value["VarianceExplained"]])
+                csf_comp_cor_retained.append([key, value["VarianceExplained"]])
 
     # grab up to 5 acompcor values
     N_COLS_TO_GRAB = 5
-    wm_comp_cor_retained = WM
-    csf_comp_cor_retained = CSF
 
     # Note that column names were changed from a_comp_cor to w_comp_cor and c_comp_cor
     # in later versions of fMRIPrep
@@ -273,9 +270,12 @@ def load_acompcor(confounds_df, confoundjs):
         LOGGER.warning(f"Only {len(wm_comp_cor_retained)} CSF CompCor columns found.")
         n_wm_comp_cor = len(csf_comp_cor_retained)
 
-    acompcor_columns = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
+    acompcor_values = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
+    acompcor = []
+    for item in acompcor_values:
+        acompcor.append(item[0])
 
-    return confounds_df[acompcor_columns]
+    return confounds_df[acompcor]
 
 
 def derivative(confound):
@@ -341,25 +341,21 @@ def load_confound_matrix(
         The loaded and selected confounds.
     """
     #  Get the confounds dat from the json and tsv
-    confoundjson = load_confound(original_file)[1]
-    confoundtsv = pd.read_table(confound_tsv)
+    confounds_metadata = load_confound(original_file)[1]
+    confounds_df = pd.read_table(confound_tsv)
 
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
-        trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_values, trans_values], axis=1)
+        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
         )
     elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF
         # global signal and square
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
-        trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_values, trans_values], axis=1)
+        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        whitematter_csf = load_wm_csf(confoundtsv)
-        global_signal = load_global_signal(confoundtsv)
+        whitematter_csf = load_wm_csf(confounds_df)
+        global_signal = load_global_signal(confounds_df)
         confound = pd.concat(
             [
                 derivative_rot_trans,
@@ -372,15 +368,13 @@ def load_confound_matrix(
     elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
-        trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
-        motion = confoundtsv[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
+        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         square_confounds = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
         )
         global_signal_whitematter_csf = pd.concat(
-            [load_wm_csf(confoundtsv), load_global_signal(confoundtsv)], axis=1
+            [load_wm_csf(confounds_df), load_global_signal(confounds_df)], axis=1
         )
         global_signal_whitematter_csf_derivative = pd.concat(
             [global_signal_whitematter_csf, derivative(global_signal_whitematter_csf)],
@@ -396,35 +390,31 @@ def load_confound_matrix(
         )
     elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
-        motion = pd.concat([trans_values, rot_values], axis=1)
+        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        acompcor = load_acompcor(confounds_df=confoundtsv, confoundjs=confoundjson)
-        cosine = load_cosine(confoundtsv)
+        acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
+        cosine = load_cosine(confounds_df)
         confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
     elif params == "aroma":  # Get the WM, CSF, and aroma values
-        whitematter_csf = load_wm_csf(confoundtsv)
+        whitematter_csf = load_wm_csf(confounds_df)
         aroma = load_aroma(datafile=original_file)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
     elif (
         params == "aroma_gsr"
     ):  # Get the WM, CSF, and aroma values, as well as global signal
-        whitematter_csf = load_wm_csf(confoundtsv)
+        whitematter_csf = load_wm_csf(confounds_df)
         aroma = load_aroma(datafile=original_file)
-        global_signal = load_global_signal(confoundtsv)
+        global_signal = load_global_signal(confounds_df)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
     elif (
         params == "acompcor_gsr"
     ):  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
-        trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
-        motion = pd.concat([trans_values, rot_values], axis=1)
+        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        acompcor = load_acompcor(confounds_df=confoundtsv, confoundjs=confoundjson)
-        global_signal = load_global_signal(confoundtsv)
-        cosine = load_cosine(confoundtsv)
+        acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
+        global_signal = load_global_signal(confounds_df)
+        cosine = load_cosine(confounds_df)
         confound = pd.concat(
             [derivative_rot_trans, acompcor, global_signal, cosine], axis=1
         )
