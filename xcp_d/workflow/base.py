@@ -403,11 +403,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,  # RF: need to change memory size
     )
 
+    # fmt:off
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
                              ('t1w_seg', 'inputnode.t1seg'),
                              ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])
+    # fmt:on
 
     # Plot the ribbon on the brain in a brainsprite figure
     brainsprite_wf = init_brainsprite_wf(
@@ -420,8 +422,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,
     )
 
+    # fmt:off
     workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
                                                    ('t1w_seg', 'inputnode.t1seg')])])
+    # fmt:on
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
@@ -434,10 +438,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,  # RF: need to change memory size
         )
 
+        # fmt:off
         workflow.connect([
             (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
                                         ('t1w_seg', 'inputnode.t1seg')]),
         ])
+        # fmt:on
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
@@ -472,6 +478,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
+        # fmt:off
         workflow.connect([
             (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
                                            ('t1w_seg', 'inputnode.t1seg'),
@@ -482,8 +489,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
             ])
 
+        # fmt:on
+
+    # fmt:off
     workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
                       (about, ds_report_about, [('out_report', 'in_file')])])
+    # fmt:on
 
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):

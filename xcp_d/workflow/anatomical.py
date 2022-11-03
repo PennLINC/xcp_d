@@ -911,6 +911,7 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            # fmt:off
             workflow.connect(
                 [
                     (disassemble_h5, merge_xfms_list, [("displacement_field", "in1")]),
@@ -1175,6 +1176,7 @@ def init_anatomical_wf(
                     (select_rh_32k_wm_surf, ds_wmRsurf_wf, [("out", "in_file")]),
                 ]
             )
+            # fmt:on
 
             # make "HCP-style" native midthickness and inflated
             lh_native_hcpmidthick_wf = pe.Node(
@@ -1342,6 +1344,7 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            # fmt:off
             workflow.connect(
                 [
                     (
@@ -1471,6 +1474,7 @@ def init_anatomical_wf(
                     ),
                 ]
             )
+            # fmt:on
 
         else:
             LOGGER.warning(
@@ -1484,11 +1488,13 @@ def init_anatomical_wf(
                 niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
                 name="nothingnode",
             )
+            # fmt:off
             workflow.connect(
                 [
                     (inputnode, nothingnode, [("t1w", "t1w")]),
                     (inputnode, nothingnode, [("t1seg", "t1seg")]),
                 ]
             )
+            # fmt:on
 
     return workflow

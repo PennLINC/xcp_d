@@ -130,10 +130,13 @@ def init_brainsprite_wf(
 
     if use_t1seg_as_ribbon:
         LOGGER.info("Using T1w segmentation for ribbon.")
+        # fmt:off
         workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
+        # fmt:on
     else:
         ribbon2statmap.inputs.ribbon = ribbon
 
+    # fmt:off
     workflow.connect(
         [
             (inputnode, generate_brainsprite, [("t1w", "template")]),
@@ -142,6 +145,7 @@ def init_brainsprite_wf(
             (inputnode, ds_brainspriteplot, [("t1w", "source_file")]),
         ]
     )
+    # fmt:on
 
     return workflow
 
@@ -291,6 +295,7 @@ def init_execsummary_wf(omp_nthreads,
                                  run_without_submitting=True)
 
     # Connect all the workflows
+    # fmt:off
     workflow.connect([
         (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
         (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
@@ -307,6 +312,7 @@ def init_execsummary_wf(omp_nthreads,
         (inputnode, ds_plot_bold_reference_file_wf, [('bold_file', 'source_file')]),
         (inputnode, ds_registration_wf, [('bold_file', 'source_file')]),
     ])
+    # fmt:on
 
     return workflow
 

@@ -115,12 +115,14 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                         name="alff_plot")
     alff_plot.inputs.output_path = 'alff.svg'
     alff_plot.inputs.bold_file = bold_file
+    # fmt:off
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
                                                ('bold_mask', 'mask')]),
                       (alff_compt, alff_plot, [('alff_out', 'filename')]),
                       (alff_plot, outputnode, [('output_path', 'alffplot')]),
                       (alff_compt, outputnode, [('alff_out', 'alff_out')])
                       ])
+    # fmt:on
 
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
@@ -134,10 +136,12 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                 name="niftismoothing",
                 n_procs=omp_nthreads,
             )
+            # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_alff')])
             ])
+            # fmt:on
 
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
@@ -162,10 +166,12 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                                   name="ciftismoothing",
                                   mem_gb=mem_gb,
                                   n_procs=omp_nthreads)
+            # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
                 (smooth_data, outputnode, [('out_file', 'smoothed_alff')]),
             ])
+            # fmt:on
 
     return workflow
 
@@ -287,6 +293,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
     # Write out results
+    # fmt:off
     workflow.connect([
         (inputnode, lh_surf, [('clean_bold', 'in_file')]),
         (inputnode, rh_surf, [('clean_bold', 'in_file')]),
@@ -302,6 +309,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (merge_cifti, reho_plot, [('out_file', 'filename')]),
         (reho_plot, outputnode, [('output_path', 'rehoplot')])
     ])
+    # fmt:on
 
     return workflow
 
@@ -377,11 +385,13 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
     # Write the results out
+    # fmt:off
     workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
                                                  ('bold_mask', 'mask_file')]),
                       (compute_reho, outputnode, [('out_file', 'reho_out')]),
                       (compute_reho, reho_plot, [('out_file', 'filename')]),
                       (reho_plot, outputnode, [('output_path', 'rehoplot')]),
                       ])
+    # fmt:on
 
     return workflow

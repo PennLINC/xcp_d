@@ -401,6 +401,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
             mem_gb=0.1 * mem_gbx['timeseries'])
+
+        # fmt:off
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
@@ -411,15 +413,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ('bold_file_dropped_TR', 'in_file'),
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
                 ('custom_confounds_dropped', 'custom_confounds')])])
+        # fmt:on
 
     else:  # No need to remove TR
         # Censor Scrub:
+        # fmt:off
         workflow.connect([
             (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
                                        ('custom_confounds', 'custom_confounds'),
                                        ('bold_file', 'in_file')]),
         ])
+        # fmt:on
 
+    # fmt:off
     workflow.connect([
         (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
         (censor_scrub, bold_holder_node, [
@@ -433,6 +439,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ('custom_confounds', 'custom_confounds_file'),
         ]),
     ])
+    # fmt:on
 
     if despike:  # If we despike
         despike3d = pe.Node(CiftiDespike(TR=TR),
@@ -440,6 +447,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                             mem_gb=mem_gbx['timeseries'],
                             n_procs=omp_nthreads)
 
+        # fmt:off
         workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
         # Censor Scrub:
         workflow.connect([
@@ -448,15 +456,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             (censor_scrub, regression_wf,
              [('fmriprep_confounds_censored', 'confounds'),
               ('custom_confounds_censored', 'custom_confounds')])])
+        # fmt:on
 
     else:  # If we don't despike
         # regression workflow
+        # fmt:off
         workflow.connect([(censor_scrub, regression_wf,
                          [('bold_censored', 'in_file'),
                           ('fmriprep_confounds_censored', 'confounds'),
                           ('custom_confounds_censored', 'custom_confounds')])])
+        # fmt:on
 
     # interpolation workflow
+    # fmt:off
     workflow.connect([
         (inputnode, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
@@ -538,6 +550,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
             ]),
         ])
+    # fmt:on
 
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
@@ -603,6 +616,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)
 
+    # fmt:off
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
@@ -632,6 +646,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                               'inputnode.tmask')
                                              ]),
     ])
+    # fmt:on
 
     return workflow
 

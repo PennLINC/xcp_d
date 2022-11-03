@@ -51,9 +51,11 @@ size of {str(smoothing)} mm  (FWHM).
             n_procs=omp_nthreads)
 
         #  Connect to workflow
+        # fmt:off
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
                           (smooth_data, outputnode, [('out_file',
                                                       'smoothed_bold')])])
+        # fmt:on
 
     else:  # for Nifti
         workflow.__desc__ = f""" \
@@ -66,6 +68,9 @@ The processed BOLD was smoothed using Nilearn with a gaussian kernel size of {st
                               n_procs=omp_nthreads)  # Use nilearn to smooth the image
 
         #  Connect to workflow
+        # fmt:off
         workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')]),
                           (smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
+        # fmt:on
+
     return workflow

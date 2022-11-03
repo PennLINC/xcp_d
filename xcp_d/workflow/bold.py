@@ -422,6 +422,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="get_native2space_transforms",
     )
 
+    # fmt:off
     workflow.connect([
         (inputnode, get_std2native_transform, [("bold_file", "bold_file"),
                                                ("mni_to_t1w", "mni_to_t1w"),
@@ -430,6 +431,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                                   ("mni_to_t1w", "mni_to_t1w"),
                                                   ("t1w_to_native", "t1w_to_native")]),
     ])
+    # fmt:on
 
     resample_parc = pe.Node(ApplyTransforms(
         dimension=3,
@@ -452,10 +454,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
+    # fmt:off
     workflow.connect([
         (inputnode, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
         (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
     ])
+    # fmt:on
 
     resample_bold2MNI = pe.Node(ApplyTransforms(
         dimension=3,
@@ -471,9 +475,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
+    # fmt:off
     workflow.connect([
         (get_native2space_transforms, resample_bold2MNI, [('bold2MNI_trans', 'transforms')]),
     ])
+    # fmt:on
 
     censor_report = pe.Node(
         CensoringPlot(
@@ -511,6 +517,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
     )
 
+    # fmt:off
     workflow.connect([
         (inputnode, qcreport, [("bold_file", "bold_file")]),
         (inputnode, qcreport, [("t1w_mask", "t1w_mask")]),
@@ -519,6 +526,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (inputnode, censor_report, [("bold_file", "bold_file")]),
     ])
+    # fmt:on
 
     # Remove TR first:
     if dummytime > 0:
@@ -527,6 +535,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                      custom_confounds=custom_confounds),
             name="remove_dummy_time",
             mem_gb=0.1 * mem_gbx['timeseries'])
+
+        # fmt:off
         workflow.connect([
             (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
             (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
@@ -538,14 +548,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
                 ('custom_confounds_dropped', 'custom_confounds')
             ])])
+        # fmt:on
 
     else:  # No need to remove TR
         # Censor Scrub:
+        # fmt:off
         workflow.connect([
             (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
                                        ('custom_confounds', 'custom_confounds'),
                                        ('bold_file', 'in_file')]),
         ])
+        # fmt:on
+
+    # fmt:off
     workflow.connect([
         (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
         (censor_scrub, bold_holder_node, [
@@ -560,6 +575,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ('custom_confounds', 'custom_confounds_file'),
         ]),
     ])
+    # fmt:on
 
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series
@@ -577,6 +593,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             mem_gb=mem_gbx['timeseries'],
             n_procs=omp_nthreads)
 
+        # fmt:off
         workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
         # Censor Scrub:
         workflow.connect([
@@ -586,16 +603,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             (censor_scrub, regression_wf,
              [('fmriprep_confounds_censored', 'confounds'),
               ('custom_confounds_censored', 'custom_confounds')])])
+        # fmt:on
 
     else:  # If we don't despike
         # regression workflow
+        # fmt:off
         workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
                           (censor_scrub, regression_wf,
                          [('bold_censored', 'in_file'),
                           ('fmriprep_confounds_censored', 'confounds'),
                           ('custom_confounds_censored', 'custom_confounds')])])
+        # fmt:on
 
     # interpolation workflow
+    # fmt:off
     workflow.connect([
         (inputnode, interpolate_wf, [('bold_file', 'bold_file'),
                                      ('bold_mask', 'mask_file')]),
@@ -692,6 +713,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
             ]),
         ])
+    # fmt:on
 
     functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
                             name='qcsummary',
@@ -750,6 +772,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                  name='ds_report_rehoplot',
                                  run_without_submitting=False)
 
+    # fmt:off
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
@@ -759,6 +782,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
     ])
+    # fmt:on
 
     if bandpass_filter:
         ds_report_alffplot = pe.Node(
@@ -772,11 +796,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             run_without_submitting=False,
         )
 
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')]),
         ])
+        # fmt:on
 
     # executive summary workflow
+    # fmt:off
     workflow.connect([
         (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
                                           ('t1seg', 'inputnode.t1seg'),
@@ -789,6 +816,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                              ('tmask',
                                               'inputnode.tmask')]),
     ])
+    # fmt:on
 
     return workflow
 

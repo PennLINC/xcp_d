@@ -165,11 +165,13 @@ def init_writederivatives_wf(
         run_without_submitting=False,
     )
 
+    # fmt:off
     workflow.connect([
         (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')]),
         (inputnode, ds_filtered_motion, [('filtered_motion', 'in_file')]),
         (inputnode, ds_confounds, [('confounds_file', 'in_file')])
     ])
+    # fmt:on
 
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
@@ -420,6 +422,7 @@ def init_writederivatives_wf(
                     mem_gb=1,
                 )
 
+    # fmt:off
     workflow.connect([
         (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
         (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
@@ -442,5 +445,6 @@ def init_writederivatives_wf(
             workflow.connect([
                 (inputnode, write_derivative_smoothalff_wf, [('smoothed_alff', 'in_file')]),
             ])
+    # fmt:on
 
     return workflow
