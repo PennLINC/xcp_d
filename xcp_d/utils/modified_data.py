@@ -52,8 +52,8 @@ def generate_mask(fd_res, fd_thresh):
     tmask : numpy.ndarray of shape (T)
         The temporal mask. Zeros are low-motion volumes. Ones are high-motion volumes.
     """
-    tmask = np.zeros(len(fd_res))
-    tmask[fd_res > fd_thresh] = 1
+    tmask = np.zeros(len(fd_res), dtype=bool)
+    tmask[fd_res > fd_thresh] = True
 
     return tmask
 
