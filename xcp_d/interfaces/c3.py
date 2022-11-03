@@ -24,7 +24,7 @@ class _C3dInputSpec(CommandLineInputSpec):
     """Input specification for C3d."""
 
     in_file = InputMultiPath(
-        File(),
+        File(exists=True),
         position=1,
         argstr="%s",
         mandatory=True,
@@ -38,7 +38,7 @@ class _C3dInputSpec(CommandLineInputSpec):
         desc="Output file of last image on the stack.",
     )
     out_files = InputMultiPath(
-        File(),
+        File(exists=False),
         argstr="-oo %s",
         xor=["out_file"],
         position=-1,
@@ -124,7 +124,7 @@ class _C3dInputSpec(CommandLineInputSpec):
 class _C3dOutputSpec(TraitedSpec):
     """Output specification for C3d."""
 
-    out_files = OutputMultiPath(File(exists=False))
+    out_files = OutputMultiPath(File(exists=True))
 
 
 class C3d(CommandLine):
