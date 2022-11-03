@@ -442,6 +442,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('custom_confounds', 'custom_confounds_file'),
         ]),
+        (consolidate_confounds_node, plot_design_matrix_node, [
+            ("out_file", "design_matrix"),
+        ]),
     ])
 
     if despike:  # If we despike
