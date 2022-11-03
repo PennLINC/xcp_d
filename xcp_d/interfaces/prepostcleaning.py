@@ -172,9 +172,8 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     )
     custom_confounds = traits.Either(
         traits.Undefined,
-        File,
-        desc="Name of custom confounds file, or True",
-        exists=False,
+        File(exists=True),
+        desc="Name of custom confounds file.",
         mandatory=False,
     )
     fmriprep_confounds_file = File(
@@ -212,8 +211,10 @@ class _CensorScrubOutputSpec(TraitedSpec):
     fmriprep_confounds_censored = File(
         exists=True, mandatory=True, desc="fmriprep_confounds_tsv censored"
     )
-    custom_confounds_censored = File(
-        exists=False, mandatory=False, desc="custom_confounds_tsv censored"
+    custom_confounds_censored = traits.Either(
+        traits.Undefined,
+        File(exists=True),
+        desc="Name of censored custom confounds file.",
     )
     tmask = File(
         exists=True,
@@ -401,11 +402,9 @@ class CensorScrub(SimpleInterface):
 
 class _InterpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
-    bold_file = File(exists=True,
-                     mandatory=True,
-                     desc=" censored or clean bold")
+    bold_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
     tmask = File(exists=True, mandatory=True, desc="temporal mask")
-    mask_file = File(exists=False, mandatory=False, desc="required for nifti")
+    mask_file = File(exists=True, mandatory=False, desc="required for nifti")
     TR = traits.Float(mandatory=True, desc="repetition time in TR")
 
 

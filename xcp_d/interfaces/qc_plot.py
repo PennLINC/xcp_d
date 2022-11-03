@@ -32,7 +32,7 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
     )
-    tmask = File(exists=False, mandatory=False, desc="Temporal mask. Current unused.")
+    tmask = File(exists=True, mandatory=False, desc="Temporal mask. Current unused.")
     dummytime = traits.Float(
         mandatory=False,
         default_value=0,
@@ -189,10 +189,10 @@ class CensoringPlot(SimpleInterface):
 
 class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Raw bold file from fMRIPrep")
-    mask_file = File(exists=False, mandatory=False, desc="Mask file from nifti")
-    seg_file = File(exists=False, mandatory=False, desc="Seg file for nifti")
+    mask_file = File(exists=True, mandatory=False, desc="Mask file from nifti")
+    seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
-    tmask = File(exists=False, mandatory=False, desc="Temporal mask")
+    tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     dummytime = traits.Float(
         mandatory=False,
         default_value=0,
@@ -204,10 +204,10 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
         default_value=50,
         desc="Head radius; recommended value is 40 for babies",
     )
-    bold2T1w_mask = File(exists=False, mandatory=False, desc="Bold mask in MNI")
-    bold2temp_mask = File(exists=False, mandatory=False, desc="Bold mask in T1W")
-    template_mask = File(exists=False, mandatory=False, desc="Template mask")
-    t1w_mask = File(exists=False, mandatory=False, desc="Mask in T1W")
+    bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
+    bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
+    template_mask = File(exists=True, mandatory=False, desc="Template mask")
+    t1w_mask = File(exists=True, mandatory=False, desc="Mask in T1W")
 
 
 class _QCPlotOutputSpec(TraitedSpec):

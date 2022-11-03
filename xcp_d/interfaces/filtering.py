@@ -35,7 +35,7 @@ class _FilteringDataInputSpec(BaseInterfaceInputSpec):
     highpass = traits.Float(mandatory=True,
                             default_value=0.01,
                             desc="Highpass filter in Hz")
-    mask = File(exists=False,
+    mask = File(exists=True,
                 mandatory=False,
                 desc="Bain mask for nifti file")
     bandpass_filter = traits.Bool(mandatory=True,

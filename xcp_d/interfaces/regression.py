@@ -30,17 +30,23 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="The fMRIPrep confounds tsv after censoring")
     # TODO: Use Enum maybe?
-    original_file = traits.Str(exists=True, mandatory=False,
-                               desc="Name of original bold file- helps load in the confounds"
-                               "file down the line using the original path name")
-    custom_confounds = traits.Either(traits.Undefined,
-                                     File,
-                                     desc="Name of custom confounds file, or True",
-                                     exists=False,
-                                     mandatory=False)
     params = traits.Str(mandatory=True, desc="Parameter set to use.")
     TR = traits.Float(mandatory=True, desc="Repetition time")
     mask = File(exists=True, mandatory=False, desc="Brain mask for nifti files")
+    original_file = traits.File(
+        exists=True,
+        mandatory=False,
+        desc=(
+            "Name of original bold file- helps load in the confounds "
+            "file down the line using the original path name"
+        ),
+    )
+    custom_confounds = traits.Either(
+        traits.Undefined,
+        File(exists=True),
+        desc="Name of custom confounds file, or True",
+        mandatory=False,
+    )
 
 
 class _RegressOutputSpec(TraitedSpec):

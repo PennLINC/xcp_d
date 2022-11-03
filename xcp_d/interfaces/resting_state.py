@@ -90,9 +90,6 @@ class SurfaceReHo(SimpleInterface):
 
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
-    mask = File(exists=False,
-                mandatory=False,
-                desc=" brain mask for nifti file")
     TR = traits.Float(mandatory=True, desc="repetition time")
     lowpass = traits.Float(
         mandatory=True,
@@ -103,6 +100,11 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         default_value=0.01,
         desc="highpass filter in Hz",
+    )
+    mask = File(
+        exists=True,
+        mandatory=False,
+        desc=" brain mask for nifti file",
     )
 
 
