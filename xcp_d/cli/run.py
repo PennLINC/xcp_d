@@ -946,7 +946,7 @@ Running xcp_d version {__version__}:
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_confounds=opts.custom_confounds,
+        custom_confounds_folder=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
