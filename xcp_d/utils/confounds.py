@@ -252,7 +252,7 @@ def load_acompcor(confounds_df, confoundjs):
                 wm_comp_cor_retained.append(key)
             # Pull out variance explained for CSF masks that are retained
             if value["Mask"] == "CSF" and value["Retained"]:
-                csf_comp_cor_retained.append([key, value["VarianceExplained"]])
+                csf_comp_cor_retained.append(key)
 
     # grab up to 5 acompcor values
     N_COLS_TO_GRAB = 5
@@ -270,12 +270,9 @@ def load_acompcor(confounds_df, confoundjs):
         LOGGER.warning(f"Only {len(wm_comp_cor_retained)} CSF CompCor columns found.")
         n_wm_comp_cor = len(csf_comp_cor_retained)
 
-    acompcor_values = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
-    acompcor = []
-    for item in acompcor_values:
-        acompcor.append(item[0])
+    acompcor_columns = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
 
-    return confounds_df[acompcor]
+    return confounds_df[acompcor_columns]
 
 
 def derivative(confound):
