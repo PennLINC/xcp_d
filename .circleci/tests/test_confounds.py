@@ -21,7 +21,7 @@ def test_custom_confounds(data_dir, tmp_path_factory):
         {
             "onset": [10, 30, 50, 70, 90, 110, 130, 150],
             "duration": [5, 10, 5, 10, 5, 10, 5, 10],
-            "trial_type": ["a", "b", "a", "a", "b", "b", "a", "b"]
+            "trial_type": (["condition01"] * 4) + (["condition02"] * 4)
         },
     )
     custom_confounds = make_first_level_design_matrix(
@@ -32,7 +32,7 @@ def test_custom_confounds(data_dir, tmp_path_factory):
         high_pass=None,
     )
     # The design matrix will include a constant column, which we should drop
-    custom_confounds.drop(columns="constant")
+    custom_confounds = custom_confounds.drop(columns="constant")
 
     # Save to file
     custom_confounds_file = os.path.join(
@@ -67,6 +67,6 @@ def test_custom_confounds(data_dir, tmp_path_factory):
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
-    assert combined_confounds.shape == (184, 26), "\n".join(
-        [str(c) for c in combined_confounds.columns]
-    )
+    assert combined_confounds.shape == (184, 26)
+    assert "condition01" in combined_confounds.columns
+    assert "condition02" in combined_confounds.columns
