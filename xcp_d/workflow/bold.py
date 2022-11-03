@@ -24,7 +24,12 @@ from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
-from xcp_d.utils.utils import get_transformfile, get_transformfilex, stringforparams
+from xcp_d.utils.utils import (
+    consolidate_confounds,
+    get_transformfile,
+    get_transformfilex,
+    stringforparams,
+)
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -338,6 +343,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         mem_gb=mem_gbx['timeseries'],
         omp_nthreads=omp_nthreads)
 
+    bold_holder_node = pe.Node(
+        niu.IdentityInterface(
+            fields=["bold_file", "fmriprep_confounds_tsv", "custom_confounds"],
+        ),
+        name="bold_holder_node",
+    )
+
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx['timeseries'],
         smoothing=smoothing,
@@ -355,6 +367,21 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="filtering_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
+
+    consolidate_confounds_node = pe.Node(
+        Function(
+            input_names=[
+                "fmriprep_confounds_file",
+                "custom_confounds_file",
+                "namesource",
+                "params",
+            ],
+            output_names=["out_file"],
+            function=consolidate_confounds,
+        ),
+        name="consolidate_confounds_node",
+    )
+    consolidate_confounds_node.inputs.params = params
 
     regression_wf = pe.Node(
         Regress(TR=TR, original_file=bold_file, params=params),
@@ -515,10 +542,24 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [
-                ('bold_file', 'in_file'),
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file')
-            ])])
+            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+                                       ('custom_confounds', 'custom_confounds'),
+                                       ('bold_file', 'in_file')]),
+        ])
+    workflow.connect([
+        (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+        (censor_scrub, bold_holder_node, [
+            ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
+            ("custom_confounds_censored", "custom_confounds")]),
+    ])
+
+    workflow.connect([
+        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
+        (bold_holder_node, consolidate_confounds_node, [
+            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+            ('custom_confounds', 'custom_confounds_file'),
+        ]),
+    ])
 
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series
@@ -628,6 +669,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # write derivatives
     workflow.connect([
+        (consolidate_confounds_node, write_derivative_wf, [('out_file',
+                                                            'inputnode.confounds_file')]),
         (filtering_wf, write_derivative_wf, [('filtered_file',
                                               'inputnode.processed_bold')]),
         (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
