@@ -11,7 +11,7 @@ from scipy.signal import filtfilt, firwin, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger("utils")
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def get_confounds_tsv(datafile):
