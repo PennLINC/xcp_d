@@ -88,7 +88,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
     df.loc[7:9, "trans_z"] = [12, 8, 9]
 
     # Rename with same convention as initial confounds tsv
-    confounds_tsv = f"edited_{confounds_file.split('/func/')[1]}"
+    confounds_tsv = os.path.join(tmpdir, f"edited_{confounds_file.split('/func/')[1]}")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
     # Run workflow
