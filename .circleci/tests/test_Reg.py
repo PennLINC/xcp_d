@@ -40,8 +40,7 @@ def test_Reg_Nifti(data_dir):
 
     # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
     df = pd.read_table(results.outputs.confound_matrix)
-    if df.shape[1] > 36:  # If that column is present
-        df = pd.read_table(results.outputs.confound_matrix, index_col=[0])
+
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -94,8 +93,6 @@ def test_Reg_Cifti(data_dir):
 
     # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
     df = pd.read_table(results.outputs.confound_matrix)
-    if df.shape[1] > 36:  # If that column is present
-        df = pd.read_table(results.outputs.confound_matrix, index_col=[0])
 
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
