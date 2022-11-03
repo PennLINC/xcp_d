@@ -405,12 +405,12 @@ def stringforparams(params):
     return bsignal
 
 
-def get_customfile(custom_confounds, bold_file):
+def get_customfile(custom_confounds_folder, bold_file):
     """Identify a custom confounds file.
 
     Parameters
     ----------
-    custom_confounds : str or None
+    custom_confounds_folder : str or None
         The path to the custom confounds file.
         This shouldn't include the actual filename.
     bold_file : str
@@ -418,24 +418,24 @@ def get_customfile(custom_confounds, bold_file):
 
     Returns
     -------
-    custom_file : str or None
+    custom_confounds_file : str or None
         The custom confounds file associated with the BOLD file.
     """
-    if custom_confounds is None:
+    if custom_confounds_folder is None:
         return None
 
     file_base = os.path.basename(bold_file).split("_space-")[0]
 
-    custom_file = os.path.abspath(
+    custom_confounds_file = os.path.abspath(
         os.path.join(
-            custom_confounds,
+            custom_confounds_folder,
             f"{file_base}_desc-custom_timeseries.tsv",
         ),
     )
-    if not os.path.isfile(custom_file):
-        raise FileNotFoundError(f"Custom confounds file not found: {custom_file}")
+    if not os.path.isfile(custom_confounds_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
 
-    return custom_file
+    return custom_confounds_file
 
 
 def zscore_nifti(img, outputname, mask=None):

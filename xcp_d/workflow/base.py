@@ -55,7 +55,7 @@ def init_xcpd_wf(
     subject_list,
     analysis_level,
     smoothing,
-    custom_confounds,
+    custom_confounds_folder,
     output_dir,
     work_dir,
     dummytime,
@@ -94,7 +94,7 @@ def init_xcpd_wf(
                 subject_list=["sub-01", "sub-02"],
                 analysis_level="participant",
                 smoothing=6,
-                custom_confounds=None,
+                custom_confounds_folder=None,
                 output_dir=".",
                 work_dir=".",
                 dummytime=0,
@@ -137,7 +137,7 @@ def init_xcpd_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds: str
+    custom_confounds_folder: str
         path to cusrtom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
@@ -177,7 +177,7 @@ def init_xcpd_wf(
             smoothing=smoothing,
             output_dir=output_dir,
             dummytime=dummytime,
-            custom_confounds=custom_confounds,
+            custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
             input_type=input_type,
@@ -216,7 +216,7 @@ def init_subject_wf(
     fd_thresh,
     task_id,
     smoothing,
-    custom_confounds,
+    custom_confounds_folder,
     process_surfaces,
     output_dir,
     input_type,
@@ -251,7 +251,7 @@ def init_subject_wf(
                 fd_thresh=0.2,
                 task_id="rest",
                 smoothing=6.,
-                custom_confounds=None,
+                custom_confounds_folder=None,
                 process_surfaces=False,
                 output_dir=".",
                 input_type="fmriprep",
@@ -284,7 +284,7 @@ def init_subject_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds: str
+    custom_confounds_folder: str
         path to custom nuisance regressors
     dummytime: float
         the first vols in seconds to be removed before postprocessing
@@ -313,7 +313,6 @@ def init_subject_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "custom_confounds",
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t1w_mask",  # not used by cifti workflow
@@ -324,7 +323,6 @@ def init_subject_wf(
         ),
         name='inputnode',
     )
-    inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
@@ -444,7 +442,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
         custom_confounds_file = get_customfile(
-            custom_confounds=custom_confounds,
+            custom_confounds_folder=custom_confounds_folder,
             bold_file=bold_file,
         )
 
