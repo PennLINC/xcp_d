@@ -197,9 +197,9 @@ def load_wm_csf(confounds_df):
     pandas.DataFrame
         The CSF and WM signals from the confounds.
     """
-    columns = ["CSF", "WhiteMatter"]
     df = confounds_df[["csf", "white_matter"]]
-    df.columns = columns
+    # Rename columns per BEP012 (as of 2022/11/03)
+    df.columns = ["CSF", "WhiteMatter"]
     return df
 
 
