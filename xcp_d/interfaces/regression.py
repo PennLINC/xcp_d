@@ -3,7 +3,6 @@
 """Regression interfaces."""
 from os.path import exists
 
-import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -47,9 +46,6 @@ class _RegressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
-    confound_matrix = File(exists=True,
-                           mandatory=True,
-                           desc="Confounds matrix returned for testing purposes only")
 
 
 class Regress(SimpleInterface):
@@ -83,17 +79,6 @@ class Regress(SimpleInterface):
                 confound_tsv=self.inputs.confounds,
                 params=self.inputs.params,
             )
-
-        # for testing, let's write out the confounds file:
-        confounds_file_output_name = fname_presuffix(
-            self.inputs.confounds,
-            suffix='_matrix.tsv',
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        self._results['confound_matrix'] = confounds_file_output_name
-        confound = pd.DataFrame(confound)
-        confound.to_csv(confounds_file_output_name, sep="\t", header=True, index=False)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
         # Get the nifti/cifti matrix

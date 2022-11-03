@@ -7,6 +7,7 @@ import scipy
 
 from xcp_d.interfaces.regression import Regress
 from xcp_d.utils.write_save import read_ndata
+from xcp_d.utils.confounds import load_confound_matrix
 
 
 def test_Reg_Nifti(data_dir):
@@ -38,8 +39,8 @@ def test_Reg_Nifti(data_dir):
     )
     results = test_nifti.run()
 
-    # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
-    df = pd.read_table(results.outputs.confound_matrix)
+    # Read in confounds
+    df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
 
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
@@ -59,6 +60,7 @@ def test_Reg_Nifti(data_dir):
         r, p = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
+    print(max(regressed_correlations))
     assert (max(regressed_correlations)) < 0.01
 
 
@@ -91,8 +93,8 @@ def test_Reg_Cifti(data_dir):
     )
     results = test_cifti.run()
 
-    # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
-    df = pd.read_table(results.outputs.confound_matrix)
+    # Read in confounds
+    df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
 
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
@@ -112,4 +114,7 @@ def test_Reg_Cifti(data_dir):
         r, p = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
+    print((regressed_correlations))
     assert (max(regressed_correlations)) < 0.01
+
+
