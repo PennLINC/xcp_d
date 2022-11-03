@@ -158,8 +158,12 @@ See `this example <https://nilearn.github.io/stable/auto_examples/04_glm_first_l
       add_regs=None,
       hrf_model="spm",
    )
+
+   # The design matrix will include a constant column, which we should drop
+   task_confounds.drop(columns="constant")
+
    task_confounds.to_csv(
-      "/path/to/custom_confounds/sub-X_ses-Y_task-Z_run-01_confounds.tsv",
+      "/path/to/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
       sep="\t",
       index=False,
    )
