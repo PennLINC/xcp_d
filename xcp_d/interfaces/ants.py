@@ -25,6 +25,7 @@ class _ConvertTransformFileInputSpec(CommandLineInputSpec):
         name_template="%s.txt",
         keep_extension=False,
         position=2,
+        exists=False,
     )
 
 
