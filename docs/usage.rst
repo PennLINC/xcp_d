@@ -42,8 +42,6 @@ Command-Line Arguments
 .. argparse::
    :ref: xcp_d.cli.run.get_parser
    :prog: xcp_d
-   :nodefault:
-   :nodefaultconst:
 
 
 .. _run_docker:
