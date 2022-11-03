@@ -13,6 +13,7 @@ from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("utils")
 
+
 def get_confounds_tsv(datafile):
     """Find path to confounds TSV file.
 
