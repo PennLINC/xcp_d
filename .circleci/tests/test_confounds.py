@@ -67,4 +67,6 @@ def test_custom_confounds(data_dir, tmp_path_factory):
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
-    assert combined_confounds.shape == (184, 26), "\n".join(combined_confounds.columns.tolist())
+    assert combined_confounds.shape == (184, 26), "\n".join(
+        [str(c) for c in combined_confounds.columns]
+    )
