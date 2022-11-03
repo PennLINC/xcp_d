@@ -231,7 +231,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.custom_confounds = str(custom_confounds)
+    inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
 
     outputnode = pe.Node(

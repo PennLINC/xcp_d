@@ -427,7 +427,6 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     )
 
     roi_override = traits.Bool(
-        exists=True,
         argstr="-roi-override %s ",
         position=2,
         desc=" perform correlation from a subset of rows to all rows",
