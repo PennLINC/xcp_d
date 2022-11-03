@@ -273,12 +273,9 @@ def load_acompcor(confounds_df, confoundjs):
         LOGGER.warning(f"Only {len(wm_comp_cor_retained)} CSF CompCor columns found.")
         n_wm_comp_cor = len(csf_comp_cor_retained)
 
-    acompcor_values = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
-    acompcor = []
-    for item in acompcor_values:
-        acompcor.append(item[0])
+    acompcor_columns = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
 
-    return confounds_df[acompcor]
+    return confounds_df[acompcor_columns]
 
 
 def derivative(confound):
