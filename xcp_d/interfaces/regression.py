@@ -42,10 +42,11 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
         ),
     )
     custom_confounds = traits.Either(
-        traits.Undefined,
+        None,
         File(exists=True),
-        desc="Name of custom confounds file, or True",
+        desc="Name of custom confounds file",
         mandatory=False,
+        usedefault=True,
     )
 
 
@@ -76,7 +77,7 @@ class Regress(SimpleInterface):
 
         # Get the confound matrix
         # Do we have custom confounds?
-        if self.inputs.custom_confounds and exists(self.inputs.custom_confounds):
+        if self.inputs.custom_confounds:
             confound = load_confound_matrix(
                 original_file=self.inputs.original_file,
                 custom_confounds=self.inputs.custom_confounds,
