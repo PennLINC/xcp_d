@@ -117,12 +117,14 @@ def init_t1w_wf(
             run_without_submitting=False,
         )
 
+        # fmt:off
         workflow.connect(
             [
                 (inputnode, ds_t1wmni, [("t1w", "in_file")]),
                 (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
             ]
         )
+        # fmt:on
     else:
         # #TM: need to replace MNI92FSL xfm with the correct
         # xfm from the MNI output space of fMRIPrep/NiBabies
@@ -174,6 +176,7 @@ def init_t1w_wf(
             run_without_submitting=False,
         )
 
+        # fmt:off
         workflow.connect(
             [
                 (inputnode, t1w_transform, [("t1w", "input_image"),
@@ -184,13 +187,16 @@ def init_t1w_wf(
                 (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
             ]
         )
+        # fmt:on
 
+    # fmt:off
     workflow.connect(
         [
             (inputnode, ds_t1wmni, [("t1w", "source_file")]),
             (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
         ]
     )
+    # fmt:on
 
     return workflow
 
