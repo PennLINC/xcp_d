@@ -249,7 +249,7 @@ def load_acompcor(confounds_df, confoundjs):
         if "comp_cor" in key and "t" not in key:
             # Pull out variance explained for white matter masks that are retained
             if value["Mask"] == "WM" and value["Retained"]:
-                wm_comp_cor_retained.append([key, value["VarianceExplained"]])
+                wm_comp_cor_retained.append(key)
             # Pull out variance explained for CSF masks that are retained
             if value["Mask"] == "CSF" and value["Retained"]:
                 csf_comp_cor_retained.append([key, value["VarianceExplained"]])
