@@ -175,7 +175,9 @@ def load_global_signal(confounds_df):
     pandas.Series
         The global signal from the confounds.
     """
-    return confounds_df["global_signal"]
+    df = pd.DataFrame(confounds_df["global_signal"])
+    df.columns = ['GlobalSignal']
+    return df
 
 
 def load_wm_csf(confounds_df):
@@ -191,7 +193,10 @@ def load_wm_csf(confounds_df):
     pandas.DataFrame
         The CSF and WM signals from the confounds.
     """
-    return confounds_df[["csf", "white_matter"]]
+    columns = ["CSF", "WhiteMatter"]
+    df = confounds_df[["csf", "white_matter"]]
+    df.columns = columns
+    return df
 
 
 def load_cosine(confounds_df):
@@ -245,7 +250,7 @@ def load_acompcor(confounds_df, confoundjs):
             # Pull out variance explained for CSF masks that are retained
             if value["Mask"] == "CSF" and value["Retained"]:
                 CSF.append([key, value["VarianceExplained"]])
-    # Select the first five components and add them to the list
+    # Select the first four components and add them to the list
     csflist = []
     wmlist = []
     for i in range(0, 4):
@@ -277,9 +282,11 @@ def derivative(confound):
         Derivative of the array, with a zero at the beginning.
         The column(s) will be untitled.
     """
+    columns = confound.columns.tolist()
+    new_columns = [c + "_dt" for c in columns]
     data = confound.to_numpy()
     # Prepend 0 to the differences of the confound data
-    return pd.DataFrame(np.diff(data, prepend=0))
+    return pd.DataFrame(data=np.diff(data, prepend=0), columns=new_columns)
 
 
 def square_confound(confound):
@@ -295,7 +302,11 @@ def square_confound(confound):
     array_like or int or float
         The squared input data.
     """
-    return confound**2  # Square the confound data
+    columns = confound.columns.tolist()
+    new_columns = [c + "_sq" for c in columns]
+    squared_confounds = (confound**2)
+    squared_confounds.columns = new_columns
+    return squared_confounds  # Square the confound data
 
 
 @fill_doc
@@ -351,9 +362,9 @@ def load_confound_matrix(
     elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_values, trans_values], axis=1)
+        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        motion = pd.concat([trans_values, rot_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         square_confounds = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
@@ -375,9 +386,9 @@ def load_confound_matrix(
         )
     elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_values, trans_values], axis=1)
+        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        motion = pd.concat([trans_values, rot_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confoundtsv, confoundjs=confoundjson)
         cosine = load_cosine(confoundtsv)
