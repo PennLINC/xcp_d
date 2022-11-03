@@ -6,10 +6,12 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from nipype import logging
 from scipy.signal import filtfilt, firwin, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
+LOGGER = logging.getLogger("utils")
 
 def get_confounds_tsv(datafile):
     """Find path to confounds TSV file.
@@ -250,21 +252,30 @@ def load_acompcor(confounds_df, confoundjs):
             # Pull out variance explained for CSF masks that are retained
             if value["Mask"] == "CSF" and value["Retained"]:
                 CSF.append([key, value["VarianceExplained"]])
-    # Select the first four components and add them to the list
-    csflist = []
-    wmlist = []
-    for i in range(0, 4):
-        try:
-            csflist.append(CSF[i][0])
-        except Exception as exc:
-            pass
-            print(exc)
-        try:
-            wmlist.append(WM[i][0])
-        except Exception as exc:
-            pass
-            print(exc)
-    acompcor = wmlist + csflist
+
+    # grab up to 5 acompcor values
+    N_COLS_TO_GRAB = 5
+    wm_comp_cor_retained = WM
+    csf_comp_cor_retained = CSF
+
+    # Note that column names were changed from a_comp_cor to w_comp_cor and c_comp_cor
+    # in later versions of fMRIPrep
+    n_wm_comp_cor = N_COLS_TO_GRAB
+    if len(wm_comp_cor_retained) < N_COLS_TO_GRAB:
+        LOGGER.warning(f"Only {len(wm_comp_cor_retained)} white matter CompCor columns found.")
+        n_wm_comp_cor = len(wm_comp_cor_retained)
+
+    # ditto for csf
+    n_csf_comp_cor = N_COLS_TO_GRAB
+    if len(csf_comp_cor_retained) < N_COLS_TO_GRAB:
+        LOGGER.warning(f"Only {len(wm_comp_cor_retained)} CSF CompCor columns found.")
+        n_wm_comp_cor = len(csf_comp_cor_retained)
+
+    acompcor_values = wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
+    acompcor = []
+    for item in acompcor_values:
+        acompcor.append(item[0])
+
     return confounds_df[acompcor]
 
 
@@ -408,9 +419,9 @@ def load_confound_matrix(
         params == "acompcor_gsr"
     ):  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
-        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_values, trans_values], axis=1)
+        rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
+        motion = pd.concat([trans_values, rot_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confoundtsv, confoundjs=confoundjson)
         global_signal = load_global_signal(confoundtsv)
