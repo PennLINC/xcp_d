@@ -20,6 +20,7 @@ from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.plot import plot_design_matrix
 from xcp_d.utils.utils import consolidate_confounds, stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -347,6 +348,15 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
     consolidate_confounds_node.inputs.params = params
 
+    plot_design_matrix_node = pe.Node(
+        Function(
+            input_names=["design_matrix"],
+            output_names=["design_matrix_figure"],
+            function=plot_design_matrix,
+        ),
+        name="plot_design_matrix_node",
+    )
+
     regression_wf = pe.Node(
         Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
@@ -559,6 +569,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name='ds_report_preprocessing',
         run_without_submitting=True)
 
+    ds_design_matrix_plot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["space", "res", "den", "desc"],
+            datatype="figures",
+            suffix="design",
+            extension=".svg",
+        ),
+        name='ds_design_matrix_plot',
+        run_without_submitting=False,
+    )
+
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -607,6 +630,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
+        (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_plot", "in_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),

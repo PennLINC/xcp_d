@@ -1160,3 +1160,28 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     fig.tight_layout()
     fig.savefig(output_path)
     return output_path
+
+
+def plot_design_matrix(design_matrix):
+    """Plot design matrix TSV with Nilearn.
+
+    Parameters
+    ----------
+    design_matrix : str
+        Path to TSV file containing the design matrix.
+
+    Returns
+    -------
+    design_matrix_figure : str
+        Path to SVG figure file.
+    """
+    import os
+
+    import pandas as pd
+    from nilearn import plotting
+
+    design_matrix_df = pd.read_table(design_matrix)
+    design_matrix_figure = os.path.abspath("design_matrix.svg")
+    plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
+
+    return design_matrix_figure
