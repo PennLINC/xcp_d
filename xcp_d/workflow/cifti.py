@@ -472,11 +472,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([(filtering_wf, resdsmoothing_wf,
                        [('filtered_file', 'inputnode.bold_file')])])
 
-    # functional connect workflow
-    workflow.connect([(filtering_wf, fcon_ts_wf, [
-        ('bold_file', 'inputnode.bold_file'),
-        ('filtered_file', 'inputnode.clean_bold'),
-    ])])
+    # functional connectivity workflow
+    workflow.connect([
+        (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file')]),
+        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')]),
+    ])
 
     # reho and alff
     workflow.connect([
