@@ -338,6 +338,11 @@ def load_confound_matrix(
     -------
     confound : pandas.DataFrame
         The loaded and selected confounds.
+
+    Notes
+    -------
+    Switching the order of the trans and rot values in the motion columns
+    can cause regression to happen incorrectly.
     """
     #  Get the confounds dat from the json and tsv
     confounds_metadata = load_confound(original_file)[1]
