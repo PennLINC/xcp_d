@@ -2,9 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Regression interfaces."""
 
-from os.path import exists
-import pandas as pd
-
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
