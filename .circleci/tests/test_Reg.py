@@ -37,8 +37,10 @@ def test_Reg_Nifti(data_dir):
         TR=TR,
         params="36P",
     )
+    os.mkdir("pytests")
+    os.chdir("pytests")
     results = test_nifti.run()
-
+    results.base_dir = os.getcwd()
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
 
@@ -91,7 +93,10 @@ def test_Reg_Cifti(data_dir):
         TR=TR,
         params="36P",
     )
+    os.mkdir("pytests")
+    os.chdir("pytests")
     results = test_cifti.run()
+    results.base_dir = os.getcwd()
 
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
