@@ -71,12 +71,13 @@ def test_nifti_conn(data_dir, tmp_path_factory):
     )
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        output_dir=tempdir,
         mem_gb=4,
         name="fcons_ts_wf",
         omp_nthreads=2,
     )
-    fcon_ts_wf.inputs.inputnode.mni_to_t1w = mni_to_t1w,
-    fcon_ts_wf.inputs.inputnode.t1w_to_native = _t12native(bold_file),
+    fcon_ts_wf.inputs.inputnode.mni_to_t1w = mni_to_t1w
+    fcon_ts_wf.inputs.inputnode.t1w_to_native = _t12native(bold_file)
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
     fcon_ts_wf.inputs.inputnode.bold_file = bold_file
     fcon_ts_wf.inputs.inputnode.ref_file = os.path.join(
@@ -158,7 +159,10 @@ def test_cifti_conn(data_dir, tmp_path_factory):
     # Create the node and a tempdir to write its results out to
     tmpdir = tmp_path_factory.mktemp("fcon_cifti_test_2")
     cifti_conts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=4, name="cifti_ts_con_wf", omp_nthreads=2
+        output_dir=tmpdir,
+        mem_gb=4,
+        name="cifti_ts_con_wf",
+        omp_nthreads=2,
     )
     cifti_conts_wf.base_dir = tmpdir
     # Run the node
