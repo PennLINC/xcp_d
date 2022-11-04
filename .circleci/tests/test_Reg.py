@@ -41,7 +41,7 @@ def test_Reg_Nifti(data_dir):
     results.base_dir = os.getcwd()
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
-    df.to_csv('conf_ni.tsv', sep = "\t")
+    df.to_csv('conf_ni.tsv', sep="\t")
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -96,7 +96,7 @@ def test_Reg_Cifti(data_dir):
 
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
-    df.to_csv('conf_ni.tsv', sep = "\t")
+    df.to_csv('conf_ni.tsv', sep="\t")
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -117,5 +117,3 @@ def test_Reg_Cifti(data_dir):
     # The strongest correlation should be less than 0.01
     print((regressed_correlations))
     assert (max(regressed_correlations)) < 0.01
-
-
