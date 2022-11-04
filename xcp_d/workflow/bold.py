@@ -264,7 +264,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.ref_file = run_data["boldref"]
     inputnode.inputs.bold_mask = mask_file
-    inputnode.inputs.custom_confounds = str(custom_confounds)
+    inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
 
