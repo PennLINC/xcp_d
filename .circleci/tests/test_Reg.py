@@ -37,6 +37,8 @@ def test_Reg_Nifti(data_dir):
         TR=TR,
         params="36P",
     )
+    os.mkdir("/src/xcp_d/.circleci/pytests")
+    os.chdir("/src/xcp_d/.circleci/pytests")
     results = test_nifti.run()
     results.base_dir = os.getcwd()
     # Read in confounds
@@ -61,7 +63,6 @@ def test_Reg_Nifti(data_dir):
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
     print(max(regressed_correlations))
-    assert ((os.getcwd() == '33'))
     assert (max(regressed_correlations)) < 0.01
 
 
@@ -92,7 +93,8 @@ def test_Reg_Cifti(data_dir):
         TR=TR,
         params="36P",
     )
-
+    os.mkdir("/src/xcp_d/.circleci/pytests")
+    os.chdir("/src/xcp_d/.circleci/pytests")
     results = test_cifti.run()
     results.base_dir = os.getcwd()
 
@@ -118,5 +120,4 @@ def test_Reg_Cifti(data_dir):
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
     print((regressed_correlations))
-    assert ((os.getcwd() == '33'))
     assert (max(regressed_correlations)) < 0.01
