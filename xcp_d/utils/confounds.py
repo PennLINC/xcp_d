@@ -344,14 +344,14 @@ def load_confound_matrix(
     confounds_df = pd.read_table(confound_tsv)
 
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
-        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
+        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
         )
     elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF
         # global signal and square
-        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
+        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         whitematter_csf = load_wm_csf(confounds_df)
         global_signal = load_global_signal(confounds_df)
@@ -367,7 +367,7 @@ def load_confound_matrix(
     elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
-        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
+        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         square_confounds = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
@@ -389,7 +389,7 @@ def load_confound_matrix(
         )
     elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
+        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
         cosine = load_cosine(confounds_df)
@@ -409,7 +409,7 @@ def load_confound_matrix(
         params == "acompcor_gsr"
     ):  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
-        motion = confounds_df[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]]
+        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
         global_signal = load_global_signal(confounds_df)
