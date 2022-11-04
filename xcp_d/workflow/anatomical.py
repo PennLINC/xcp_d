@@ -85,16 +85,10 @@ def init_t1w_wf(
     """
     workflow = Workflow(name=name)
 
-    if t2w_available:
-        inputnode = pe.Node(
-            niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_mni"]),
-            name="inputnode",
-        )
-    else:
-        inputnode = pe.Node(
-            niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
-            name="inputnode",
-        )
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_mni"]),
+        name="inputnode",
+    )
 
     mnitemplate = str(
         get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
