@@ -39,6 +39,7 @@ def test_Reg_Nifti(data_dir):
     results = test_nifti.run()
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
+    assert df.shape[1] == 36
 
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
@@ -94,7 +95,7 @@ def test_Reg_Cifti(data_dir):
 
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
-
+    assert df.shape[1] == 36
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
