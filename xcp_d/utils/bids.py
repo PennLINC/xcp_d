@@ -176,6 +176,8 @@ def collect_data(
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         # native T1w-space, preprocessed T1w file
         "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
+        # native T2w-space, preprocessed T1w file
+        "t2w": {"datatype": "anat", "space": None, "suffix": "T2w", "extension": ".nii.gz"},
         # native T1w-space dseg file, but not aseg or aparcaseg
         "t1w_seg": {
             "datatype": "anat",
@@ -211,6 +213,9 @@ def collect_data(
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
         queries["bold"]["extension"] = ".nii.gz"
+
+    # List any fields that aren't required
+    OPTIONAL_FIELDS = ["t2w"]
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
@@ -266,10 +271,13 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != "bold" and isinstance(filenames, list):
-            if not filenames:
+            if field not in OPTIONAL_FIELDS and not filenames:
                 raise FileNotFoundError(f"No {field} found with query: {queries[field]}")
 
-            subj_data[field] = filenames[0]
+            if filenames:
+                subj_data[field] = filenames[0]
+            else:
+                subj_data[field] = None
 
     return layout, subj_data
 

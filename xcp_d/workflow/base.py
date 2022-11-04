@@ -316,6 +316,7 @@ def init_subject_wf(
                 "custom_confounds",
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
+                "t2w",
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
                 "mni_to_t1w_xform",
@@ -327,6 +328,7 @@ def init_subject_wf(
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
+    inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
     inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
@@ -399,12 +401,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     t1w_wf = init_t1w_wf(
         output_dir=output_dir,
         input_type=input_type,
+        t2w_available=subj_data["t2w"] is not None,
         omp_nthreads=omp_nthreads,
         mem_gb=5,  # RF: need to change memory size
     )
 
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
+                             ('t2w', 'inputnode.t2w'),
                              ('t1w_seg', 'inputnode.t1seg'),
                              ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])

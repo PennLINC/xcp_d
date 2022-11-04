@@ -60,6 +60,7 @@ def init_t1w_wf(
             wf = init_t1w_wf(
                 output_dir=".",
                 input_type="fmriprep",
+                t2w_available=False,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="t1w_wf",
@@ -202,6 +203,7 @@ def init_t1w_wf(
             ds_t2wmni = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
+                    space="MNI152NLin6Asym",
                     extension=".nii.gz",
                 ),
                 name="ds_t2wmni",
@@ -231,7 +233,7 @@ def init_t1w_wf(
         ]
     )
     if t2w_available:
-        workflow.connect([(inputnode, ds_t1wmni, [("t1w", "source_file")])])
+        workflow.connect([(inputnode, ds_t1wmni, [("t2w", "source_file")])])
 
     return workflow
 
