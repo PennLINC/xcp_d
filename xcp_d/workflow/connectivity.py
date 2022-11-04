@@ -86,6 +86,11 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         name="outputnode",
     )
 
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
+    )
+
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
@@ -95,11 +100,6 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         ),
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
-    )
-
-    atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
-        name="atlas_name_grabber",
     )
 
     get_transformfile_node = pe.Node(
