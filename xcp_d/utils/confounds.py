@@ -353,7 +353,7 @@ def load_confound_matrix(
         # and global signal as well.
         rot_values = confoundtsv[["rot_x", "rot_y", "rot_z"]]
         trans_values = confoundtsv[["trans_x", "trans_y", "trans_z"]]
-        motion = pd.concat([rot_values, trans_values], axis=1)
+        motion = pd.concat([trans_values, rot_values], axis=1)
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         square_confounds = pd.concat(
             [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
