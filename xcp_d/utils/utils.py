@@ -120,6 +120,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     mni_to_t1w : str
         The MNI-to-T1w transform file.
         The ``from`` field is assumed to be the same space as the BOLD file is in.
+        The MNI space could be MNI152NLin2009cAsym, MNI152NLin6Asym, or MNIInfant.
     t1w_to_native : str
         The T1w-to-native space transform file.
 
@@ -264,9 +265,12 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
 
     Notes
     -----
-    Used by get_segfile (to be removed), to resample dseg in init_boldpostprocess_wf for QCReport,
-    to warp atlases to the same space as the BOLD data in init_nifti_functional_connectivity_wf,
-    and to resample dseg to BOLD space for the executive summary plots.
+    Used by:
+
+    - get_segfile (to be removed)
+    - to resample dseg in init_boldpostprocess_wf for QCReport
+    - to warp atlases to the same space as the BOLD data in init_nifti_functional_connectivity_wf
+    - to resample dseg to BOLD space for the executive summary plots
 
     Does not include inversion flag output because there is no need (yet).
     Can easily be added in the future.
