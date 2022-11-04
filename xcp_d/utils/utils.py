@@ -405,35 +405,43 @@ def stringforparams(params):
     return bsignal
 
 
-def get_customfile(custom_confounds_folder, bold_file):
+def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.
 
     Parameters
     ----------
     custom_confounds_folder : str or None
         The path to the custom confounds file.
-        This shouldn't include the actual filename.
-    bold_file : str
-        Path to the associated preprocessed BOLD file.
+        This may include the actual filename, if you want.
+    fmriprep_confounds_file : str
+        Path to the confounds file from the preprocessing pipeline.
+        We expect the custom confounds file to have the same name.
 
     Returns
     -------
     custom_confounds_file : str or None
-        The custom confounds file associated with the BOLD file.
+        The appropriate custom confounds file.
     """
     if custom_confounds_folder is None:
         return None
 
-    file_base = os.path.basename(bold_file).split("_space-")[0]
+    if os.path.isfile(custom_confounds_folder):
+        custom_confounds_file = custom_confounds_folder
 
-    custom_confounds_file = os.path.abspath(
-        os.path.join(
-            custom_confounds_folder,
-            f"{file_base}_desc-custom_timeseries.tsv",
-        ),
-    )
-    if not os.path.isfile(custom_confounds_file):
-        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
+    elif os.path.isdir(custom_confounds_folder):
+        custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+        custom_confounds_file = os.path.abspath(
+            os.path.join(
+                custom_confounds_folder,
+                custom_confounds_filename,
+            )
+        )
+
+        if not os.path.isfile(custom_confounds_file):
+            raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
+
+    else:
+        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
 
     return custom_confounds_file
 

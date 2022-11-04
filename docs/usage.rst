@@ -160,21 +160,26 @@ See `this example <https://nilearn.github.io/stable/auto_examples/04_glm_first_l
    # The design matrix will include a constant column, which we should drop
    task_confounds = task_confounds.drop(columns="constant")
 
+   # Assuming that the fMRIPrep confounds file is named
+   # "sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+   # we will name the custom confounds file the same thing, in a separate folder.
    task_confounds.to_csv(
-      "/path/to/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+      "/my/project/directory/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
       sep="\t",
       index=False,
    )
 
-Then, when you run XCP-D, you can use the flag ``--custom-confounds /path/to/custom_confounds``.
+Then, when you run XCP-D, you can use the flag ``--custom_confounds /my/project/directory/custom_confounds``.
 
 Command Line XCP-D with Custom Confounds
 ````````````````````````````````````````
 
-Last, supply the ``${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv`` file to xcp_d with ``-c`` option.
-``-c`` should point to the directory where this file exists, rather than to the file itself;
-``xcp_d`` will identify the correct file based on the subid, sesid, and taskid.
-You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call.
+Last, supply the file to xcp_d with the ``--custom_confounds`` option.
+``--custom_confounds`` should point to the directory where this file exists, rather than to the file itself;
+``xcp_d`` will identify the correct file based on the filename,
+which should match the name of the preprocessed BOLD data's associated confounds file.
+You can simultaneously perform additional confound regression by including,
+for example, ``--nuisance-regressors 36P`` in the call.
 
 .. code-block:: bash
 
@@ -182,15 +187,15 @@ You can simultaneously perform additional confound regression by including, for 
       /mnt/input/fmriprep \
       /mnt/output/directory \
       participant \
-      --despike --lower-bpf 0.01 --upper-bpf 0.08 \
-      --participant_label $subid -p 36P -f 10 \
-      -t emotionid -c /mnt/taskarray_file_dir
+      --participant_label X \
+      --task-id Z \
+      --nuisance-regressors 36P \
+      --custom_confounds /mnt/custom_confounds
 
 Custom Parcellations
 ====================
 While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations.
-We suggest running XCP-D with the ``-cifti`` option (assuming you have cifti files),
-and then using the Human Connectome Project wb_command to generate the time series:
+If you use the ``-cifti`` option, you can use the Human Connectome Project's ``wb_command`` to generate the time series:
 
 .. code-block:: bash
 
@@ -209,7 +214,10 @@ After this, if one wishes to have a connectivity matrix:
       {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii \
       {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.pconn.nii
 
-More information can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_
+More information can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_.
+
+If you use the default NIFTI processing pipeline, you can use Nilearn's
+`NiftiLabelsMasker <https://nilearn.github.io/stable/auto_examples/06_manipulating_images/plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-niftilabelsmasker>`_
 
 Troubleshooting
 ===============
