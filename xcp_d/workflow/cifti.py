@@ -256,6 +256,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     mem_gbx = _create_mem_gb(bold_file)
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
+        output_dir=output_dir,
         mem_gb=mem_gbx['timeseries'],
         name='cifti_ts_con_wf',
         omp_nthreads=omp_nthreads)
@@ -472,7 +473,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([(filtering_wf, fcon_ts_wf, [
+        ('bold_file', 'inputnode.bold_file'),
+        ('filtered_file', 'inputnode.clean_bold'),
+    ])])
 
     # reho and alff
     workflow.connect([

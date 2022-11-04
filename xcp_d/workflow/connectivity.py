@@ -185,6 +185,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
 @fill_doc
 def init_cifti_functional_connectivity_wf(
+    output_dir,
     mem_gb,
     omp_nthreads,
     name="cifti_fcon_wf",
@@ -240,7 +241,7 @@ the Connectome Workbench.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold"]),
+        niu.IdentityInterface(fields=["clean_bold", "bold_file"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -286,6 +287,25 @@ the Connectome Workbench.
         name="matrix_plot",
         mem_gb=mem_gb,
     )
+
+    ds_atlas = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
+            suffix="dseg",
+            extension=".nii.gz",
+        ),
+        name="ds_atlas",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    workflow.connect([
+        (inputnode, ds_atlas, [("bold_file", "source_file")]),
+        (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas, [("output_image", "in_file")]),
+    ])
 
     workflow.connect([
         (inputnode, parcellate_data, [("clean_bold", "in_file")]),
