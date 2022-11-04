@@ -294,7 +294,7 @@ the Connectome Workbench.
             dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
             allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
             suffix="dseg",
-            extension=".nii.gz",
+            extension=".dlabel.nii",
         ),
         name="ds_atlas",
         iterfield=["atlas", "in_file"],
