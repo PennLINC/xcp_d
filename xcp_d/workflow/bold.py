@@ -290,6 +290,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     mem_gbx = _create_mem_gb(bold_file)
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        output_dir=output_dir,
         mem_gb=mem_gbx['timeseries'],
         name="fcons_ts_wf",
         omp_nthreads=omp_nthreads,
