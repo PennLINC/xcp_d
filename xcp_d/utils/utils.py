@@ -151,7 +151,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     # Extract the space of the BOLD file
     file_base = os.path.basename(bold_file)
     bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not len(bold_space):
+    if not bold_space:
         bold_space = "native"
     else:
         bold_space = bold_space[0]
@@ -284,7 +284,7 @@ def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
     # Extract the space of the BOLD file
     file_base = os.path.basename(bold_file)
     bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not len(bold_space):
+    if not bold_space:
         bold_space = "native"
     else:
         bold_space = bold_space[0]
