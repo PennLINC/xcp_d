@@ -244,7 +244,13 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help="Custom confound to be added to nuisance regressors.",
+        help=(
+            "Custom confound to be added to nuisance regressors. "
+            "May be a folder containing confounds files, "
+            "in which case the file with the name matching the fMRIPrep confounds "
+            "file will be selected. "
+            "May also be a single filename, for when users are processing a single subject."
+        ),
     )
     g_param.add_argument(
         "-d",

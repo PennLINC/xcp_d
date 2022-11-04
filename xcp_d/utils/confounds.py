@@ -414,7 +414,7 @@ def load_confound_matrix(
     if params != "custom" and custom_confounds is not None:
         # For both custom and fMRIPrep confounds
         custom = pd.read_table(custom_confounds, sep="\t")
-        confound = pd.concat([confound, custom], axis=1)
+        confound = pd.concat([custom, confound], axis=1)
 
     return confound
 

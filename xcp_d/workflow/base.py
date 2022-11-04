@@ -137,8 +137,11 @@ def init_xcpd_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds_folder: str
-        path to cusrtom nuisance regressors
+    custom_confounds_folder : str
+        Path to custom nuisance regressors.
+        May be a folder containing confounds files,
+        in which case the file with the name matching the fMRIPrep confounds file will be selected.
+        May also be a single filename, when users are processing a single subject.
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(process_surfaces)s
@@ -284,8 +287,11 @@ def init_subject_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds_folder: str
-        path to custom nuisance regressors
+    custom_confounds_folder : str
+        Path to custom nuisance regressors.
+        May be a folder containing confounds files,
+        in which case the file with the name matching the fMRIPrep confounds file will be selected.
+        May also be a single filename, when users are processing a single subject.
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(process_surfaces)s
