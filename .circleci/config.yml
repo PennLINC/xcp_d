@@ -234,8 +234,6 @@ jobs:
           command: |
             cd /src/xcp_d/.circleci
             bash RunPyTests.sh
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/pytests
 
   deployable:
     docker:

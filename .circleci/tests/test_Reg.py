@@ -2,7 +2,6 @@
 import os
 
 import numpy as np
-import pandas as pd
 import scipy
 
 from xcp_d.interfaces.regression import Regress
@@ -37,13 +36,10 @@ def test_Reg_Nifti(data_dir):
         TR=TR,
         params="36P",
     )
-    os.mkdir("/src/xcp_d/.circleci/pytests")
-    os.chdir("/src/xcp_d/.circleci/pytests")
     results = test_nifti.run()
-    results.base_dir = os.getcwd()
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
-    df.to_csv('conf_ni.tsv', sep="\t")
+
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -94,13 +90,11 @@ def test_Reg_Cifti(data_dir):
         params="36P",
     )
 
-    os.chdir("/src/xcp_d/.circleci/pytests")
     results = test_cifti.run()
-    results.base_dir = os.getcwd()
 
     # Read in confounds
     df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
-    df.to_csv('conf_ci.tsv', sep="\t")
+
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
