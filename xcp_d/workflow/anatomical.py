@@ -42,6 +42,7 @@ LOGGER = logging.getLogger('nipype.workflow')
 def init_t1w_wf(
     output_dir,
     input_type,
+    t2w_available,
     omp_nthreads,
     mem_gb,
     name="t1w_wf",
@@ -83,20 +84,20 @@ def init_t1w_wf(
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
-        name="inputnode",
-    )
+    if t2w_available:
+        inputnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_mni"]),
+            name="inputnode",
+        )
+    else:
+        inputnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+            name="inputnode",
+        )
 
-    # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
     mnitemplate = str(
         get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
     )
-    # mnitemplatemask = str(
-    #     get_template(
-    #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
-    #     )
-    # )
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
@@ -123,6 +124,17 @@ def init_t1w_wf(
                 (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
             ]
         )
+        if t2w_available:
+            ds_t2wmni = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    extension=".nii.gz",
+                ),
+                name="ds_t2wmni",
+                run_without_submitting=False,
+            )
+            workflow.connect([(inputnode, ds_t2wmni, [("t2w", "in_file")])])
+
     else:
         # #TM: need to replace MNI92FSL xfm with the correct
         # xfm from the MNI output space of fMRIPrep/NiBabies
@@ -174,6 +186,33 @@ def init_t1w_wf(
             run_without_submitting=False,
         )
 
+        if t2w_available:
+            t2w_transform = pe.Node(
+                ApplyTransformsx(
+                    num_threads=2,
+                    reference_image=mnitemplate,
+                    interpolation="LanczosWindowedSinc",
+                    input_image_type=3,
+                    dimension=3,
+                ),
+                name="t2w_transform",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+            ds_t2wmni = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    extension=".nii.gz",
+                ),
+                name="ds_t2wmni",
+                run_without_submitting=False,
+            )
+            workflow.connect([
+                (inputnode, t2w_transform, [("t2w", "input_image"),
+                                            ("t1w_to_mni", "transforms")]),
+                (t2w_transform, ds_t2wmni, [("output_image", "in_file")]),
+            ])
+
         workflow.connect(
             [
                 (inputnode, t1w_transform, [("t1w", "input_image"),
@@ -191,6 +230,8 @@ def init_t1w_wf(
             (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
         ]
     )
+    if t2w_available:
+        workflow.connect([(inputnode, ds_t1wmni, [("t1w", "source_file")])])
 
     return workflow
 
