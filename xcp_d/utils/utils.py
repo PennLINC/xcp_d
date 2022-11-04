@@ -127,12 +127,12 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
     -------
     xforms_to_MNI : list of str
         A list of paths to transform files for warping to MNI152NLin2009cAsym space.
-    xforms_to_MNI_itf : list of bool
+    xforms_to_MNI_invert : list of bool
         A list of booleans indicating whether each transform in xforms_to_MNI indicating
         if each should be inverted (True) or not (False).
     xforms_to_T1w : list of str
         A list of paths to transform files for warping to T1w space.
-    xforms_to_T1w_itf : list of bool
+    xforms_to_T1w_invert : list of bool
         A list of booleans indicating whether each transform in xforms_to_T1w indicating
         if each should be inverted (True) or not (False).
 
@@ -162,11 +162,11 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [mni_to_t1w]  # used for all spaces except T1w and native
-    xforms_to_T1w_itf = [False]
+    xforms_to_T1w_invert = [False]
     if bold_space == "MNI152NLin2009cAsym":
         # Data already in MNI152NLin2009cAsym space.
         xforms_to_MNI = ["identity"]
-        xforms_to_MNI_itf = [False]
+        xforms_to_MNI_invert = [False]
 
     elif bold_space == "MNI152NLin6Asym":
         # MNI152NLin6Asym --> MNI152NLin2009cAsym
@@ -180,7 +180,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
             ),
         )
         xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_itf = [False]
+        xforms_to_MNI_invert = [False]
 
     elif bold_space == "MNIInfant":
         # MNIInfant --> MNI152NLin2009cAsym
@@ -189,7 +189,7 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
             "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_itf = [False]
+        xforms_to_MNI_invert = [False]
 
     elif bold_space == "T1w":
         # T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
@@ -205,13 +205,13 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
                 ),
             )
             xforms_to_MNI = [std_to_mni_xform, mni_to_t1w]
-            xforms_to_MNI_itf = [False, True]
+            xforms_to_MNI_invert = [False, True]
         else:
             xforms_to_MNI = [mni_to_t1w]
-            xforms_to_MNI_itf = [True]
+            xforms_to_MNI_invert = [True]
 
         xforms_to_T1w = ["identity"]
-        xforms_to_T1w_itf = [False]
+        xforms_to_T1w_invert = [False]
 
     elif bold_space == "native":
         # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
@@ -227,18 +227,18 @@ def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
                 ),
             )
             xforms_to_MNI = [std_to_mni_xform, mni_to_t1w, t1w_to_native]
-            xforms_to_MNI_itf = [False, True, True]
+            xforms_to_MNI_invert = [False, True, True]
         else:
             xforms_to_MNI = [mni_to_t1w, t1w_to_native]
-            xforms_to_MNI_itf = [True, True]
+            xforms_to_MNI_invert = [True, True]
 
         xforms_to_T1w = [t1w_to_native]
-        xforms_to_T1w_itf = [True]
+        xforms_to_T1w_invert = [True]
 
     else:
         raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
 
-    return xforms_to_MNI, xforms_to_MNI_itf, xforms_to_T1w, xforms_to_T1w_itf
+    return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
 def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
