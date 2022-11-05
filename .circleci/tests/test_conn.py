@@ -133,10 +133,8 @@ def test_cifti_conn(data_dir, tmp_path_factory):
                             "fmriprepwithfreesurfer")
     boldfile = os.path.join(
         data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-"
-            "fsLR_den-91k_bold.dtseries.nii"
-        )
+        "fmriprep/sub-colornest001/ses-1/func",
+        "sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_bold.dtseries.nii",
     )
     # Generate fake signal
     bold_data = read_ndata(boldfile)
@@ -167,6 +165,7 @@ def test_cifti_conn(data_dir, tmp_path_factory):
     cifti_conts_wf.base_dir = tmpdir
     # Run the node
     cifti_conts_wf.inputs.inputnode.clean_bold = fake_bold_file
+    cifti_conts_wf.inputs.inputnode.bold_file = boldfile
     cifti_conts_wf.run()
     # Let's find the correct parcellated file
     for file in os.listdir(os.path.join(

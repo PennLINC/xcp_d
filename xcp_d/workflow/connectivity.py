@@ -291,6 +291,7 @@ the Connectome Workbench.
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
+            check_hdr=False,
             dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
             allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
             suffix="dseg",
