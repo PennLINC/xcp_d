@@ -304,7 +304,7 @@ the Connectome Workbench.
     workflow.connect([
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
-        (atlas_file_grabber, ds_atlas, [("output_image", "in_file")]),
+        (atlas_file_grabber, ds_atlas, [("atlas_file", "in_file")]),
     ])
 
     workflow.connect([
