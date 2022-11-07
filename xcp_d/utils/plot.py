@@ -1007,13 +1007,20 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
 
-    entities_to_use = ["cohort", "den", "res"]
+    ENTITIES_TO_USE = ["cohort", "den", "res"]
+
+    # templateflow uses the full entity names in its BIDSLayout config,
+    # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
+    ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
     space = parse_file_entities(bold_file)["space"]
     file_entities = parse_file_entities(bold_file)
-    entities_to_use = {f: file_entities[f] for f in file_entities if f in entities_to_use}
+    entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
+    entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in file_entities.items()}
+
     template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
     if isinstance(template_file, list):
         template_file = template_file[0]
+
     template = str(template_file)
     output_path = os.path.abspath(output_path)
     plott.plot_stat_map(filename,
