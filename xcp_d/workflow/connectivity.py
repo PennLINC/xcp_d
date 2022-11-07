@@ -12,7 +12,7 @@ from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiCo
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils.utils import get_std2bold_xforms
 
 
 @fill_doc
@@ -102,23 +102,23 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         name="atlas_name_grabber",
     )
 
-    get_transformfile_node = pe.Node(
+    get_transforms_to_bold_space = pe.Node(
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
             output_names=["transformfile"],
-            function=get_transformfile,
+            function=get_std2bold_xforms,
         ),
-        name="get_transformfile_node",
+        name="get_transforms_to_bold_space",
     )
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
-    atlas_transform = pe.MapNode(
+    warp_atlases_to_bold_space = pe.MapNode(
         ApplyTransformsx(
             interpolation="MultiLabel",
             input_image_type=3,
             dimension=3,
         ),
-        name="atlas_mni_to_native",
+        name="warp_atlases_to_bold_space",
         iterfield=["input_image"],
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -140,18 +140,20 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
-        (inputnode, get_transformfile_node, [("bold_file", "bold_file"),
-                                             ("mni_to_t1w", "mni_to_t1w"),
-                                             ("t1w_to_native", "t1w_to_native")]),
-        (inputnode, atlas_transform, [("ref_file", "reference_image")]),
+        (inputnode, get_transforms_to_bold_space, [("bold_file", "bold_file"),
+                                                   ("mni_to_t1w", "mni_to_t1w"),
+                                                   ("t1w_to_native", "t1w_to_native")]),
+        (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
         (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, atlas_transform, [("atlas_file", "input_image")]),
-        (get_transformfile_node, atlas_transform, [("transformfile", "transforms")]),
-        (atlas_transform, nifti_connect, [("output_image", "atlas")]),
+        (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
+        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
+            ("transformfile", "transforms"),
+        ]),
+        (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
         (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
                                      ("fcon_matrix_tsv", "correlations")]),
         (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
