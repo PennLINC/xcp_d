@@ -29,7 +29,7 @@ def test_affines(data_dir, out_dir, cifti):
             desc='preproc_bold',
             run='1',
             extenstion='.nii.gz',
-            type='func'
+            datatype='func'
         )
         denoised_file = xcp_layout.get(
             desc='denoised',
