@@ -1,10 +1,15 @@
 """Confirm affines are not changing."""
 import nibabel as nb
 from bids import BIDSLayout
+import sys
+data_dir = sys.argv[0]
+out_dir = sys.argv[1]
+cifti = sys.argv[2]
 
 
 def test_affines(data_dir, out_dir, cifti):
     """Confirm affines don't change across XCP runs."""
+
     fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=True)
     xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=True)
     if cifti:  # Get the .dtseries.nii
@@ -32,5 +37,9 @@ def test_affines(data_dir, out_dir, cifti):
             extenstion='.nii.gz',
             type='func'
         )
-    print("The affines have not changed.")
+
     assert nb.load(bold_file).affine == nb.load(denoised_file).affine
+    print("No affines changed.")
+
+
+test_affines(data_dir, out_dir, cifti)
