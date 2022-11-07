@@ -959,6 +959,7 @@ Running xcp_d version {__version__}:
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
+        dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
         name="xcpd_wf",
     )
