@@ -28,7 +28,7 @@ def test_affines(data_dir, out_dir, cifti):
         bold_file = fmri_layout.get(
             desc='preproc_bold',
             run='1',
-            extenstion='.nii.gz',
+            extension='.nii.gz',
             datatype='func'
         )
         denoised_file = xcp_layout.get(
