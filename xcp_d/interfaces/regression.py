@@ -1,9 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Regression interfaces."""
-from os.path import exists
 
-import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -30,26 +28,30 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="The fMRIPrep confounds tsv after censoring")
     # TODO: Use Enum maybe?
-    params = traits.Str(exists=True, mandatory=True, desc="Parameter set to use.")
-    TR = traits.Float(exists=True, mandatory=True, desc="Repetition time")
-    mask = File(exists=False, mandatory=False, desc="Brain mask for nifti files")
-    original_file = traits.Str(exists=True, mandatory=False,
-                               desc="Name of original bold file- helps load in the confounds"
-                               "file down the line using the original path name")
-    custom_confounds = traits.Either(traits.Undefined,
-                                     File,
-                                     desc="Name of custom confounds file, or True",
-                                     exists=False,
-                                     mandatory=False)
+    params = traits.Str(mandatory=True, desc="Parameter set to use.")
+    TR = traits.Float(mandatory=True, desc="Repetition time")
+    mask = File(exists=True, mandatory=False, desc="Brain mask for nifti files")
+    original_file = traits.File(
+        exists=True,
+        mandatory=False,
+        desc=(
+            "Name of original bold file- helps load in the confounds "
+            "file down the line using the original path name"
+        ),
+    )
+    custom_confounds = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
 
 
 class _RegressOutputSpec(TraitedSpec):
     res_file = File(exists=True,
                     mandatory=True,
                     desc="Residual file after regression")
-    confound_matrix = File(exists=True,
-                           mandatory=True,
-                           desc="Confounds matrix returned for testing purposes only")
 
 
 class Regress(SimpleInterface):
@@ -70,7 +72,7 @@ class Regress(SimpleInterface):
 
         # Get the confound matrix
         # Do we have custom confounds?
-        if self.inputs.custom_confounds and exists(self.inputs.custom_confounds):
+        if self.inputs.custom_confounds:
             confound = load_confound_matrix(
                 original_file=self.inputs.original_file,
                 custom_confounds=self.inputs.custom_confounds,
@@ -83,17 +85,6 @@ class Regress(SimpleInterface):
                 confound_tsv=self.inputs.confounds,
                 params=self.inputs.params,
             )
-
-        # for testing, let's write out the confounds file:
-        confounds_file_output_name = fname_presuffix(
-            self.inputs.confounds,
-            suffix='_matrix.tsv',
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        self._results['confound_matrix'] = confounds_file_output_name
-        confound = pd.DataFrame(confound)
-        confound.to_csv(confounds_file_output_name, sep="\t", header=True, index=False)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
         # Get the nifti/cifti matrix
@@ -134,7 +125,7 @@ class Regress(SimpleInterface):
 
 class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
-    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(mandatory=True, desc="repetition time")
 
 
 class _CiftiDespikeOutputSpec(TraitedSpec):
