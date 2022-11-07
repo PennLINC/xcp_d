@@ -33,4 +33,4 @@ $XCPD_CMD \
     --nuissance-regressors 27P --input-type nibabies
     
 cifti=$false
-bash test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti
