@@ -21,7 +21,7 @@ from xcp_d.interfaces.surfplotting import (
     RibbontoStatmap,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_transformfile
+from xcp_d.utils.utils import get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -230,7 +230,7 @@ def init_execsummary_wf(omp_nthreads,
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
             output_names=["transform_list"],
-            function=get_transformfile,
+            function=get_std2bold_xforms,
         ),
         name="get_std2native_transform",
     )
