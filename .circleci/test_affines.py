@@ -50,12 +50,14 @@ def test_affines(data_dir, out_dir, input_type):
             extension='.nii.gz',
             suffix='bold',
             return_type="file",
+            space='MNIInfant',
             invalid_filters='allow',
             datatype='func'
         )
         denoised_file = xcp_layout.get(
             return_type="file",
             suffix='bold',
+            space='MNIInfant',
             extension='.nii.gz',
             datatype='func')
 
@@ -63,7 +65,7 @@ def test_affines(data_dir, out_dir, input_type):
         bold_file = bold_file[0]
     if isinstance(denoised_file, list):
         denoised_file = denoised_file[0]
-    print(bold_file, denoised_file)
+
     if input_type == 'cifti':
         assert nb.load(bold_file)._nifti_header.get_intent() == nb.load(
             denoised_file)._nifti_header.get_intent()
