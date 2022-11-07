@@ -21,7 +21,7 @@ from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_design_matrix
-from xcp_d.utils.utils import consolidate_confounds, stringforparams
+from xcp_d.utils.utils import consolidate_confounds, get_customfile, stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -46,7 +46,7 @@ def init_ciftipostprocess_wf(
     head_radius,
     params,
     output_dir,
-    custom_confounds,
+    custom_confounds_folder,
     omp_nthreads,
     dummytime,
     fd_thresh,
@@ -77,7 +77,7 @@ def init_ciftipostprocess_wf(
                 head_radius=50,
                 params="36P",
                 output_dir=".",
-                custom_confounds=None,
+                custom_confounds_folder=None,
                 omp_nthreads=1,
                 dummytime=0,
                 fd_thresh=0.2,
@@ -102,7 +102,7 @@ def init_ciftipostprocess_wf(
     %(head_radius)s
     %(params)s
     %(output_dir)s
-    custom_confounds: str
+    custom_confounds_folder: str
         path to cusrtom nuissance regressors
     %(omp_nthreads)s
     dummytime: float
@@ -120,7 +120,7 @@ def init_ciftipostprocess_wf(
     ------
     bold_file
         CIFTI file
-    custom_confounds
+    custom_confounds_folder
         custom regressors
     t1w
     t1seg
@@ -221,7 +221,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         niu.IdentityInterface(
             fields=[
                 'bold_file',
-                'custom_confounds',
+                'custom_confounds_folder',
                 't1w',
                 't1seg',
                 'mni_to_t1w',
@@ -232,7 +232,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.custom_confounds = custom_confounds
+    inputnode.inputs.custom_confounds_folder = custom_confounds_folder
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
 
     outputnode = pe.Node(
@@ -255,6 +255,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     mem_gbx = _create_mem_gb(bold_file)
+
+    get_custom_confounds_file = pe.Node(
+        Function(
+            input_names=["custom_confounds_folder", "fmriprep_confounds_file"],
+            output_names=["custom_confounds_file"],
+            function=get_customfile,
+        )
+    )
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=mem_gbx['timeseries'],
@@ -297,7 +305,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     censor_scrub = pe.Node(CensorScrub(
         TR=TR,
-        custom_confounds=custom_confounds,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
         motion_filter_type=motion_filter_type,
@@ -410,31 +417,46 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
-            mem_gb=0.1 * mem_gbx['timeseries'])
-        workflow.connect([
-            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
-            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
+            mem_gb=0.1 * mem_gbx['timeseries'],
+        )
 
         workflow.connect([
+            (inputnode, rm_dummytime, [
+                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+                ('bold_file', 'bold_file'),
+            ]),
+            (get_custom_confounds_file, rm_dummytime, [
+                ('custom_confounds_file', 'custom_confounds'),
+            ]),
             (rm_dummytime, censor_scrub, [
                 ('bold_file_dropped_TR', 'in_file'),
                 ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
-                ('custom_confounds_dropped', 'custom_confounds')])])
+                ('custom_confounds_dropped', 'custom_confounds'),
+            ]),
+        ])
 
     else:  # No need to remove TR
         # Censor Scrub:
         workflow.connect([
-            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-                                       ('custom_confounds', 'custom_confounds'),
-                                       ('bold_file', 'in_file')]),
+            (inputnode, censor_scrub, [
+                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+                ('bold_file', 'in_file'),
+            ]),
+            (get_custom_confounds_file, censor_scrub, [
+                ("custom_confounds_file", "custom_confounds"),
+            ]),
         ])
 
     workflow.connect([
         (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+        (inputnode, get_custom_confounds_file, [
+            ("custom_confounds_folder", "custom_confounds_folder"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+        ]),
         (censor_scrub, bold_holder_node, [
             ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
-            ("custom_confounds_censored", "custom_confounds")]),
+            ("custom_confounds_censored", "custom_confounds"),
+        ]),
     ])
     workflow.connect([
         (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),

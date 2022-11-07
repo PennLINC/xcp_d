@@ -25,7 +25,6 @@ from xcp_d.utils.bids import (
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
@@ -447,11 +446,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
-        custom_confounds_file = get_customfile(
-            custom_confounds_folder=custom_confounds_folder,
-            bold_file=bold_file,
-        )
-
         bold_postproc_wf = postproc_wf_function(
             bold_file=bold_file,
             lower_bpf=lower_bpf,
@@ -467,7 +461,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             head_radius=head_radius,
             omp_nthreads=omp_nthreads,
             n_runs=len(preproc_files),
-            custom_confounds=custom_confounds_file,
+            custom_confounds_folder=custom_confounds_folder,
             layout=layout,
             despike=despike,
             dummytime=dummytime,
