@@ -26,8 +26,8 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.utils import (
     consolidate_confounds,
-    get_transformfile,
-    get_transformfilex,
+    get_bold2std_and_t1w_xforms,
+    get_std2bold_xforms,
     stringforparams,
 )
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
@@ -409,15 +409,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
             output_names=["transform_list"],
-            function=get_transformfile,
+            function=get_std2bold_xforms,
         ),
         name="get_std2native_transform",
     )
     get_native2space_transforms = pe.Node(
         Function(
             input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            output_names=["bold2MNI_trans", "bold2T1w_trans"],
-            function=get_transformfilex,
+            output_names=[
+                "bold_to_std_xforms",
+                "bold_to_std_xforms_invert",
+                "bold_to_t1w_xforms",
+                "bold_to_t1w_xforms_invert",
+            ],
+            function=get_bold2std_and_t1w_xforms,
         ),
         name="get_native2space_transforms",
     )
@@ -444,35 +449,50 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
         mem_gb=mem_gbx['timeseries'])
 
-    resample_bold2T1w = pe.Node(ApplyTransforms(
-        dimension=3,
-        input_image=mask_file,
-        interpolation='NearestNeighbor'),
-        name='bold2t1_trans',
+    warp_boldmask_to_t1w = pe.Node(
+        ApplyTransforms(
+            dimension=3,
+            input_image=mask_file,
+            interpolation='NearestNeighbor',
+        ),
+        name='warp_boldmask_to_t1w',
         n_procs=omp_nthreads,
-        mem_gb=mem_gbx['timeseries'])
+        mem_gb=mem_gbx['timeseries'],
+    )
 
     workflow.connect([
-        (inputnode, resample_bold2T1w, [('t1w_mask', 'reference_image')]),
-        (get_native2space_transforms, resample_bold2T1w, [('bold2T1w_trans', 'transforms')]),
+        (inputnode, warp_boldmask_to_t1w, [('t1w_mask', 'reference_image')]),
+        (get_native2space_transforms, warp_boldmask_to_t1w, [
+            ('bold_to_t1w_xforms', 'transforms'),
+            ("bold_to_t1w_xforms_invert", "invert_transform_flags"),
+        ]),
     ])
 
-    resample_bold2MNI = pe.Node(ApplyTransforms(
-        dimension=3,
-        input_image=mask_file,
-        reference_image=str(
-            get_template('MNI152NLin2009cAsym',
-                         resolution=2,
-                         desc='brain',
-                         suffix='mask',
-                         extension=['.nii', '.nii.gz'])),
-        interpolation='NearestNeighbor'),
-        name='bold2mni_trans',
+    warp_boldmask_to_mni = pe.Node(
+        ApplyTransforms(
+            dimension=3,
+            input_image=mask_file,
+            reference_image=str(
+                get_template(
+                    'MNI152NLin2009cAsym',
+                    resolution=2,
+                    desc='brain',
+                    suffix='mask',
+                    extension=['.nii', '.nii.gz'],
+                ),
+            ),
+            interpolation='NearestNeighbor',
+        ),
+        name='warp_boldmask_to_mni',
         n_procs=omp_nthreads,
-        mem_gb=mem_gbx['timeseries'])
+        mem_gb=mem_gbx['timeseries'],
+    )
 
     workflow.connect([
-        (get_native2space_transforms, resample_bold2MNI, [('bold2MNI_trans', 'transforms')]),
+        (get_native2space_transforms, warp_boldmask_to_mni, [
+            ('bold_to_std_xforms', 'transforms'),
+            ("bold_to_std_xforms_invert", "invert_transform_flags"),
+        ]),
     ])
 
     censor_report = pe.Node(
@@ -641,8 +661,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, resample_parc, [('ref_file', 'reference_image')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, qcreport, [('output_image', 'seg_file')]),
-        (resample_bold2T1w, qcreport, [('output_image', 'bold2T1w_mask')]),
-        (resample_bold2MNI, qcreport, [('output_image', 'bold2temp_mask')]),
+        (warp_boldmask_to_t1w, qcreport, [('output_image', 'bold2T1w_mask')]),
+        (warp_boldmask_to_mni, qcreport, [('output_image', 'bold2temp_mask')]),
         (qcreport, outputnode, [('qc_file', 'qc_file')])
     ])
 
