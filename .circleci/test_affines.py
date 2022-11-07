@@ -8,8 +8,6 @@ data_dir = sys.argv[1]
 out_dir = sys.argv[2]
 input_type = sys.argv[3]
 
-#TODO: Index via desc
-
 def test_affines(data_dir, out_dir, input_type):
     """Confirm affines don't change across XCP runs."""
     fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
@@ -29,41 +27,43 @@ def test_affines(data_dir, out_dir, input_type):
             invalid_filters='allow',
             datatype='func'
         )
-        bold_file = bold_file[0]
-        denoised_file = denoised_file[0]
+
     elif input_type == 'nifti':  # Get the .nii.gz
         bold_file = fmri_layout.get(
             return_type="file",
             invalid_filters='allow',
             run=1,
+            suffix='bold',
             extension='.nii.gz',
             datatype='func'
         )
-        bold_file = bold_file[-1]
         denoised_file = xcp_layout.get(
             return_type="file",
-            invalid_filters='allow',
             run=1,
+            suffix='bold',
             extension='.nii.gz',
             datatype='func'
         )
-        denoised_file = denoised_file[1]
 
     else:  # Nibabies
         bold_file = fmri_layout.get(
             extension='.nii.gz',
+            suffix='bold',
             return_type="file",
             invalid_filters='allow',
             datatype='func'
         )
-        bold_file = bold_file[-1]
         denoised_file = xcp_layout.get(
             return_type="file",
-            invalid_filters='allow',
+            suffix='bold',
             extension='.nii.gz',
             datatype='func')
-        denoised_file = denoised_file[1]
 
+    if isinstance(bold_file, list):
+        bold_file = bold_file[0]
+    if isinstance(denoised_file, list):
+        denoised_file = denoised_file[0]
+    print(bold_file, denoised_file)
     if input_type == 'cifti':
         assert nb.load(bold_file)._nifti_header.get_intent() == nb.load(
             denoised_file)._nifti_header.get_intent()
