@@ -1168,6 +1168,7 @@ def plot_ribbon_svg(template, in_file):
 
     import matplotlib.pyplot as plt
     import nibabel as nib
+    import numpy as np
     from matplotlib.patches import Rectangle
     from nilearn.image import math_img
     from nilearn.plotting import plot_anat
