@@ -32,4 +32,5 @@ $XCPD_CMD \
     --smoothing 6  -f 100 -v -v \
     --nuissance-regressors 27P --input-type nibabies
     
-echo $XCPD_CMD
+cifti=$false
+bash test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti

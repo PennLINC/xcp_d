@@ -35,4 +35,6 @@ $XCPD_CMD \
     --warp-surfaces-native2std \
     --cifti \
     --combineruns
-echo $XCPD_CMD
+
+cifti=$true
+bash test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti
