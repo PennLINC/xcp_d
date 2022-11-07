@@ -261,7 +261,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             input_names=["custom_confounds_folder", "fmriprep_confounds_file"],
             output_names=["custom_confounds_file"],
             function=get_customfile,
-        )
+        ),
+        name="get_custom_confounds_file",
     )
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
