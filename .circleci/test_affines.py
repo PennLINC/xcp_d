@@ -27,7 +27,7 @@ def test_affines(data_dir, out_dir, cifti):
     else:  # Get the .nii.gz
         bold_file = fmri_layout.get(
             desc='preproc',
-            run='1',
+            run=1,
             extension='.nii.gz',
             datatype='func'
         )
