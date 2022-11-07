@@ -493,6 +493,13 @@ By default, this workflow is disabled.
         This file is only created if the input type is "fmriprep" or "nibabies".
 """
     )
+    g_experimental.add_argument(
+        "--dcan-qc",
+        action="store_true",
+        dest="dcan_qc",
+        default=False,
+        help="Run DCAN QC, including executive summary generation.",
+    )
 
     return parser
 
@@ -652,6 +659,7 @@ def main():
             output_dir=output_dir,
             run_uuid=run_uuid,
             combineruns=opts.combineruns,
+            dcan_qc=opts.dcan_qc,
             input_type=opts.input_type,
             cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),

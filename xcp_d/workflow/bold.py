@@ -60,6 +60,7 @@ def init_boldpostprocess_wf(
     fd_thresh,
     n_runs,
     despike,
+    dcan_qc,
     layout=None,
     name='bold_postprocess_wf',
 ):
@@ -91,6 +92,7 @@ def init_boldpostprocess_wf(
                 fd_thresh=0.2,
                 n_runs=1,
                 despike=False,
+                dcan_qc=False,
                 layout=None,
                 name='bold_postprocess_wf',
             )
@@ -121,6 +123,8 @@ def init_boldpostprocess_wf(
     n_runs
     despike: bool
         If True, run 3dDespike from AFNI
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s
@@ -394,15 +398,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="interpolation_wf",
         mem_gb=mem_gbx['timeseries'],
         n_procs=omp_nthreads)
-
-    executivesummary_wf = init_execsummary_wf(
-        TR=TR,
-        bold_file=bold_file,
-        layout=layout,
-        mem_gb=mem_gbx['timeseries'],
-        output_dir=output_dir,
-        dummyvols=initial_volumes_to_drop,
-        omp_nthreads=omp_nthreads)
 
     # get transform file for resampling and fcon
     get_std2native_transform = pe.Node(
@@ -797,18 +792,36 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         ])
 
     # executive summary workflow
-    workflow.connect([
-        (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
-                                          ('t1seg', 'inputnode.t1seg'),
-                                          ('bold_file', 'inputnode.bold_file'),
-                                          ('bold_mask', 'inputnode.mask'),
-                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')]),
-        (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion'),
-                                             ('tmask',
-                                              'inputnode.tmask')]),
-    ])
+    if dcan_qc:
+        executivesummary_wf = init_execsummary_wf(
+            TR=TR,
+            bold_file=bold_file,
+            layout=layout,
+            mem_gb=mem_gbx['timeseries'],
+            output_dir=output_dir,
+            dummyvols=initial_volumes_to_drop,
+            omp_nthreads=omp_nthreads,
+        )
+
+        workflow.connect([
+            (inputnode, executivesummary_wf, [
+                ('t1w', 'inputnode.t1w'),
+                ('t1seg', 'inputnode.t1seg'),
+                ('bold_file', 'inputnode.bold_file'),
+                ('bold_mask', 'inputnode.mask'),
+                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+            ]),
+            (regression_wf, executivesummary_wf, [
+                ('res_file', 'inputnode.regressed_data'),
+            ]),
+            (filtering_wf, executivesummary_wf, [
+                ('filtered_file', 'inputnode.residual_data'),
+            ]),
+            (censor_scrub, executivesummary_wf, [
+                ('filtered_motion', 'inputnode.filtered_motion'),
+                ('tmask', 'inputnode.tmask'),
+            ]),
+        ])
 
     return workflow
 

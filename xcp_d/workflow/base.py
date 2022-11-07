@@ -61,6 +61,7 @@ def init_xcpd_wf(
     dummytime,
     fd_thresh,
     process_surfaces=False,
+    dcan_qc=False,
     input_type='fmriprep',
     name='xcpd_wf',
 ):
@@ -100,6 +101,7 @@ def init_xcpd_wf(
                 dummytime=0,
                 fd_thresh=0.2,
                 process_surfaces=False,
+                dcan_qc=False,
                 input_type='fmriprep',
                 name='xcpd_wf',
             )
@@ -142,6 +144,8 @@ def init_xcpd_wf(
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(process_surfaces)s
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     %(input_type)s
     %(name)s
 
@@ -180,6 +184,7 @@ def init_xcpd_wf(
             custom_confounds=custom_confounds,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
+            dcan_qc=dcan_qc,
             input_type=input_type,
             name=f"single_subject_{subject_id}_wf",
         )
@@ -218,6 +223,7 @@ def init_subject_wf(
     smoothing,
     custom_confounds,
     process_surfaces,
+    dcan_qc,
     output_dir,
     input_type,
     name,
@@ -253,6 +259,7 @@ def init_subject_wf(
                 smoothing=6.,
                 custom_confounds=None,
                 process_surfaces=False,
+                dcan_qc=False,
                 output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
@@ -289,6 +296,8 @@ def init_subject_wf(
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(process_surfaces)s
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     %(subject_id)s
     %(input_type)s
     %(name)s
@@ -468,6 +477,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             despike=despike,
             dummytime=dummytime,
             fd_thresh=fd_thresh,
+            dcan_qc=dcan_qc,
             output_dir=output_dir,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )

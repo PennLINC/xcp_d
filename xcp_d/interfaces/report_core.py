@@ -5,6 +5,7 @@
 This is from niworkflows, a patch will be submitted.
 """
 import glob
+import logging
 import os
 from pathlib import Path
 
@@ -12,6 +13,8 @@ from niworkflows.reports.core import Report as _Report
 
 from xcp_d.interfaces.layout_builder import LayoutBuilder
 from xcp_d.utils.bids import _getsesid
+
+LOGGER = logging.getLogger("cli")
 
 
 class Report(_Report):
@@ -90,6 +93,7 @@ def generate_reports(subject_list,
                      config=None,
                      packagename=None,
                      combineruns=False,
+                     dcan_qc=False,
                      input_type='fmriprep'):
     """Execute run_reports on a list of subjects.
 
@@ -109,12 +113,15 @@ def generate_reports(subject_list,
         The name of the package.
     combineruns : bool, optional
         Whether to concatenate runs or not. Default is False.
+    dcan_qc : bool, optional
+        Whether to perform DCAN QC steps or not. Default is False.
     input_type : {'fmriprep', 'dcan', 'hcp'}, optional
         Default is 'fmriprep'.
     """
     # reportlets_dir = None
     if work_dir is not None:
         work_dir = work_dir
+
     report_errors = [
         run_reports(
             Path(output_dir) / 'xcp_d',
@@ -130,13 +137,10 @@ def generate_reports(subject_list,
     errno = sum(report_errors)
 
     if errno:
-        import logging
-
-        logger = logging.getLogger("cli")
         error_list = ", ".join(
             f"{subid} ({err})"
             for subid, err in zip(subject_list, report_errors) if err)
-        logger.error(
+        LOGGER.error(
             "Processsing did not finish successfully. Errors occurred while processing "
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
@@ -158,20 +162,25 @@ def generate_reports(subject_list,
                 outputdir=str(Path(str(output_dir)) / 'xcp_d/'),
                 work_dir=work_dir,
                 cifti=cifti,
+                dcan_qc=dcan_qc,
             )
             print('Concatenation complete!')
 
-        for subject_label in subject_list:
-            brainplotfile = glob.glob(
-                os.path.join(
-                    output_dir,
-                    f'xcp_d/sub-{subject_label}',
-                    'figures/*_bold.svg',
-                ),
-            )[0]
-            LayoutBuilder(html_path=str(Path(output_dir)) + '/xcp_d/',
-                          subject_id=subject_label,
-                          session_id=_getsesid(brainplotfile))
+        if dcan_qc:
+            LOGGER.info("Generating executive summary.")
+            for subject_label in subject_list:
+                brainplotfile = glob.glob(
+                    os.path.join(
+                        output_dir,
+                        f'xcp_d/sub-{subject_label}',
+                        'figures/*_bold.svg',
+                    ),
+                )[0]
+                LayoutBuilder(
+                    html_path=str(Path(output_dir)) + '/xcp_d/',
+                    subject_id=subject_label,
+                    session_id=_getsesid(brainplotfile),
+                )
 
         print('Reports generated successfully')
     return errno

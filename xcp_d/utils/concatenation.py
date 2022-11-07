@@ -25,7 +25,7 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, cifti):
+def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, cifti, dcan_qc):
     """Concatenate derivatives.
 
     This function does a lot more than concatenate derivatives.
@@ -50,6 +50,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
         List of subjects to run concatenation on.
     cifti : bool
         Whether xcpd was run on CIFTI files or not.
+    dcan_qc : bool
+        Whether to perform DCAN QC or not.
     """
     LOGGER.debug("Starting concatenation workflow.")
 
@@ -122,22 +124,24 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         **task_entities,
                     )
                     if len(motion_files) == 1:
-                        # Make DCAN HDF5 file from single motion file
-                        dcan_df_file = (
-                            f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
-                        )
+                        if dcan_qc:
+                            # Make DCAN HDF5 file from single motion file
+                            dcan_df_file = (
+                                f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
+                            )
 
-                        # Get TR from one of the preproc files
-                        preproc_files = layout_fmriprep.get(
-                            desc=["preproc", None],
-                            suffix="bold",
-                            extension=img_extensions,
-                            **task_entities,
-                        )
-                        TR = _get_tr(preproc_files[0].path)
+                            # Get TR from one of the preproc files
+                            preproc_files = layout_fmriprep.get(
+                                desc=["preproc", None],
+                                suffix="bold",
+                                extension=img_extensions,
+                                **task_entities,
+                            )
+                            TR = _get_tr(preproc_files[0].path)
 
-                        make_dcan_df([motion_files[0].path], dcan_df_file, TR)
-                        LOGGER.debug(f"Only one run found for task {task}")
+                            make_dcan_df([motion_files[0].path], dcan_df_file, TR)
+                            LOGGER.debug(f"Only one run found for task {task}")
+
                         continue
                     elif len(motion_files) == 0:
                         LOGGER.warning(f"No motion files found for task {task}")
@@ -159,9 +163,10 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 TR = _get_tr(preproc_files[0].path)
 
                 # Make DCAN HDF5 file for each of the motion files
-                for motion_file in motion_files:
-                    dcan_df_file = f"{'.'.join(motion_file.path.split('.')[:-1])}-DCAN.hdf5"
-                    make_dcan_df([motion_file.path], dcan_df_file, TR)
+                if dcan_qc:
+                    for motion_file in motion_files:
+                        dcan_df_file = f"{'.'.join(motion_file.path.split('.')[:-1])}-DCAN.hdf5"
+                        make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
                 motion_file_names = ', '.join([motion_file.path for motion_file in motion_files])
@@ -170,8 +175,11 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 concatenate_tsv_files(motion_files, concat_motion_file)
 
                 # Make DCAN HDF5 file from concatenated motion file
-                concat_dcan_df_file = f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
-                make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
+                if dcan_qc:
+                    concat_dcan_df_file = (
+                        f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+                    )
+                    make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
@@ -292,54 +300,55 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         )
                         _concatenate_niimgs(smooth_bold_files, concat_file)
 
-                    # Carpet plots
-                    LOGGER.debug("Generating carpet plots")
-                    carpet_entities = bold_files[0].get_entities()
-                    carpet_entities = _sanitize_entities(carpet_entities)
-                    carpet_entities["run"] = None
-                    carpet_entities["datatype"] = "figures"
-                    carpet_entities["extension"] = ".svg"
+                    # Executive summary carpet plots
+                    if dcan_qc:
+                        LOGGER.debug("Generating carpet plots")
+                        carpet_entities = bold_files[0].get_entities()
+                        carpet_entities = _sanitize_entities(carpet_entities)
+                        carpet_entities["run"] = None
+                        carpet_entities["datatype"] = "figures"
+                        carpet_entities["extension"] = ".svg"
 
-                    carpet_entities["desc"] = "precarpetplot"
-                    precarpet = layout_xcpd.build_path(
-                        carpet_entities,
-                        path_patterns=path_patterns,
-                        strict=False,
-                        validate=False,
-                    )
+                        carpet_entities["desc"] = "precarpetplot"
+                        precarpet = layout_xcpd.build_path(
+                            carpet_entities,
+                            path_patterns=path_patterns,
+                            strict=False,
+                            validate=False,
+                        )
 
-                    carpet_entities["desc"] = "postcarpetplot"
-                    postcarpet = layout_xcpd.build_path(
-                        carpet_entities,
-                        path_patterns=path_patterns,
-                        strict=False,
-                        validate=False,
-                    )
+                        carpet_entities["desc"] = "postcarpetplot"
+                        postcarpet = layout_xcpd.build_path(
+                            carpet_entities,
+                            path_patterns=path_patterns,
+                            strict=False,
+                            validate=False,
+                        )
 
-                    # Build figures
-                    initial_volumes_to_drop = 0
-                    if dummytime > 0:
-                        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
+                        # Build figures
+                        initial_volumes_to_drop = 0
+                        if dummytime > 0:
+                            initial_volumes_to_drop = int(np.ceil(dummytime / TR))
 
-                    LOGGER.debug("Starting plot_svgx")
-                    plot_svgx(
-                        dummyvols=initial_volumes_to_drop,
-                        tmask=outfile,
-                        rawdata=concat_preproc_file,
-                        regressed_data=concat_bold_file,
-                        residual_data=concat_bold_file,
-                        filtered_motion=concat_motion_file,
-                        raw_dvars=raw_dvars,
-                        regressed_dvars=regressed_dvars,
-                        filtered_dvars=regressed_dvars,
-                        processed_filename=postcarpet,
-                        unprocessed_filename=precarpet,
-                        mask=mask,
-                        seg_data=segfile,
-                        TR=TR,
-                        work_dir=work_dir,
-                    )
-                    LOGGER.debug("plot_svgx done")
+                        LOGGER.debug("Starting plot_svgx")
+                        plot_svgx(
+                            dummyvols=initial_volumes_to_drop,
+                            tmask=outfile,
+                            rawdata=concat_preproc_file,
+                            regressed_data=concat_bold_file,
+                            residual_data=concat_bold_file,
+                            filtered_motion=concat_motion_file,
+                            raw_dvars=raw_dvars,
+                            regressed_dvars=regressed_dvars,
+                            filtered_dvars=regressed_dvars,
+                            processed_filename=postcarpet,
+                            unprocessed_filename=precarpet,
+                            mask=mask,
+                            seg_data=segfile,
+                            TR=TR,
+                            work_dir=work_dir,
+                        )
+                        LOGGER.debug("plot_svgx done")
 
                     # Now timeseries files
                     atlases = layout_xcpd.get_atlases(
