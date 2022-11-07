@@ -3,8 +3,8 @@ import re
 from json import loads
 from pathlib import Path
 
-import niworkflows.interfaces.bids.DerivativesDataSink as BaseDerivativesDataSink
 from nipype import logging
+from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 from pkg_resources import resource_filename as _pkgres
 from templateflow.api import templates as _get_template_list
 
