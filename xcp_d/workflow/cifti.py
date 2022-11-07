@@ -452,7 +452,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
         (inputnode, get_custom_confounds_file, [
             ("custom_confounds_folder", "custom_confounds_folder"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
         ]),
         (censor_scrub, bold_holder_node, [
             ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
