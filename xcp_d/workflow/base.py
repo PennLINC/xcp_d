@@ -424,6 +424,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         fmri_dir=fmri_dir,
         subject_id=subject_id,
         output_dir=output_dir,
+        dcan_qc=dcan_qc,
         input_type=input_type,
         omp_nthreads=omp_nthreads,
         mem_gb=5,
