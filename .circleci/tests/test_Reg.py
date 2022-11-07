@@ -2,11 +2,11 @@
 import os
 
 import numpy as np
-import pandas as pd
 import scipy
 
 from xcp_d.interfaces.regression import Regress
 from xcp_d.utils.write_save import read_ndata
+from xcp_d.utils.confounds import load_confound_matrix
 
 
 def test_Reg_Nifti(data_dir):
@@ -37,11 +37,10 @@ def test_Reg_Nifti(data_dir):
         params="36P",
     )
     results = test_nifti.run()
+    # Read in confounds
+    df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
+    assert df.shape[1] == 36
 
-    # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
-    df = pd.read_table(results.outputs.confound_matrix)
-    if df.shape[1] > 36:  # If that column is present
-        df = pd.read_table(results.outputs.confound_matrix, index_col=[0])
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -60,6 +59,7 @@ def test_Reg_Nifti(data_dir):
         r, p = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
+    print(max(regressed_correlations))
     assert (max(regressed_correlations)) < 0.01
 
 
@@ -90,13 +90,12 @@ def test_Reg_Cifti(data_dir):
         TR=TR,
         params="36P",
     )
+
     results = test_cifti.run()
 
-    # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
-    df = pd.read_table(results.outputs.confound_matrix)
-    if df.shape[1] > 36:  # If that column is present
-        df = pd.read_table(results.outputs.confound_matrix, index_col=[0])
-
+    # Read in confounds
+    df = load_confound_matrix(in_file, confound_tsv=confounds, params="36P")
+    assert df.shape[1] == 36
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -115,4 +114,5 @@ def test_Reg_Cifti(data_dir):
         r, p = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
+    print((regressed_correlations))
     assert (max(regressed_correlations)) < 0.01
