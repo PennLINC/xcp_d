@@ -1,4 +1,25 @@
-"""Nipype interfaces for working with BIDS data."""
+"""Adapted interfaces from Niworkflows.
+
+This module contains code from the niworkflows library
+(https://github.com/nipreps/niworkflows).
+The code has been modified for xcp_d's purposes.
+
+License
+-------
+Copyright 2020 The NiPreps Developers
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import re
 from collections import defaultdict
 from json import dumps, loads
@@ -28,6 +49,7 @@ from pkg_resources import resource_filename as _pkgres
 from templateflow.api import templates as _get_template_list
 
 regz = re.compile(r"\.gz$")
+# NOTE: Modified for xcpd's purposes
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
 BIDS_DERIV_ENTITIES = frozenset({e["name"] for e in _pybids_spec["entities"]})
 BIDS_DERIV_PATTERNS = tuple(_pybids_spec["default_path_patterns"])
@@ -40,8 +62,7 @@ def _none():
 
 
 def _get_tf_resolution(space: str, resolution: str) -> str:
-    """
-    Query templateflow template information to elaborate on template resolution.
+    """Query templateflow template information to elaborate on template resolution.
 
     Examples
     --------
@@ -139,6 +160,7 @@ class DerivativesDataSink(SimpleInterface):
 
     input_spec = _DerivativesDataSinkInputSpec
     output_spec = _DerivativesDataSinkOutputSpec
+    # NOTE: Modified for xcpd's purposes
     out_path_base = "xcp_d"
     _always_run = True
     _allowed_entities = set(BIDS_DERIV_ENTITIES)
