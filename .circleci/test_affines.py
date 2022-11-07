@@ -32,5 +32,5 @@ def test_affines(data_dir, out_dir, cifti):
             extenstion='.nii.gz',
             type='func'
         )
-
+    print ("The affines have not changed.")
     assert nb.load(bold_file).affine == nb.load(denoised_file).affine
