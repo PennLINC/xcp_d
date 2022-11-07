@@ -36,5 +36,5 @@ $XCPD_CMD \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
     --warp-surfaces-native2std
 
-cifti=$false
-python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti
+input_type=nifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type

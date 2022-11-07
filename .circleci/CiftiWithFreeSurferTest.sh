@@ -36,5 +36,5 @@ $XCPD_CMD \
     --cifti \
     --combineruns
 
-cifti=$true
-python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti
+input_type=cifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type

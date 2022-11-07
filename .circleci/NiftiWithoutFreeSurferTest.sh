@@ -32,5 +32,5 @@ $XCPD_CMD \
     --nuissance-regressors 27P \
     --disable-bandpass-filter
 
-cifti=$false
-python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $cifti
+input_type=nifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
