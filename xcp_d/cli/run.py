@@ -495,6 +495,7 @@ By default, this workflow is disabled.
     )
     g_experimental.add_argument(
         "--dcan-qc",
+        "--dcan_qc",
         action="store_true",
         dest="dcan_qc",
         default=False,
