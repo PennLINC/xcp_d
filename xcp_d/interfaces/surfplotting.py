@@ -91,7 +91,10 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
-    dummyvols = traits.Float(default_value=0, desc="Dummy volumes to drop")
+    dummyvols = traits.Int(
+        default_value=0,
+        desc="Number of dummy volumes to drop from the beginning of the run.",
+    )
 
 
 class _PlotSVGDataOutputSpec(TraitedSpec):
@@ -117,29 +120,33 @@ class PlotSVGData(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        self._results['before_process'] = fname_presuffix('carpetplot_before_',
-                                                          suffix='file.svg',
-                                                          newpath=runtime.cwd,
-                                                          use_ext=False)
+        before_process_fn = fname_presuffix(
+            'carpetplot_before_',
+            suffix='file.svg',
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
 
-        self._results['after_process'] = fname_presuffix('carpetplot_after_',
-                                                         suffix='file.svg',
-                                                         newpath=runtime.cwd,
-                                                         use_ext=False)
+        after_process_fn = fname_presuffix(
+            'carpetplot_after_',
+            suffix='file.svg',
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
 
-        self._results['before_process'], self._results[
-            'after_process'] = plot_svgx(
-                tmask=self.inputs.tmask,
-                dummyvols=self.inputs.dummyvols,
-                rawdata=self.inputs.rawdata,
-                regressed_data=self.inputs.regressed_data,
-                residual_data=self.inputs.residual_data,
-                TR=self.inputs.TR,
-                mask=self.inputs.mask,
-                filtered_motion=self.inputs.filtered_motion,
-                seg_data=self.inputs.seg_data,
-                processed_filename=self._results['after_process'],
-                unprocessed_filename=self._results['before_process'])
+        self._results['before_process'], self._results['after_process'] = plot_svgx(
+            preprocessed_file=self.inputs.rawdata,
+            denoised_file=self.inputs.regressed_data,
+            denoised_filtered_file=self.inputs.residual_data,
+            tmask=self.inputs.tmask,
+            dummyvols=self.inputs.dummyvols,
+            TR=self.inputs.TR,
+            mask=self.inputs.mask,
+            filtered_motion=self.inputs.filtered_motion,
+            seg_data=self.inputs.seg_data,
+            processed_filename=after_process_fn,
+            unprocessed_filename=before_process_fn,
+        )
 
         return runtime
 
