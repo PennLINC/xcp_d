@@ -475,8 +475,8 @@ def plot_svgx(rawdata,
     tmask_bool = ~tmask_arr.astype(bool)
 
     # Let's remove dummy time from the raw_data if needed
-    if dummyvols > 1:
-        raw_data = raw_data[dummyvols:]
+    if dummyvols > 0:
+        raw_data_arr = raw_data_arr[:, dummyvols:]
 
     # Let's censor the interpolated data and raw_data:
     if sum(tmask_arr) > 0:
