@@ -422,30 +422,32 @@ def confoundplotx(time_series,
     return time_series_axis, grid_specification
 
 
-def plot_svgx(rawdata,
-              regressed_data,
-              residual_data,
-              tmask,
-              dummyvols,
-              filtered_motion,
-              unprocessed_filename,
-              processed_filename,
-              mask=None,
-              seg_data=None,
-              TR=1,
-              raw_dvars=None,
-              regressed_dvars=None,
-              filtered_dvars=None,
-              work_dir=None):
+def plot_svgx(
+    preprocessed_file,
+    denoised_file,
+    denoised_filtered_file,
+    tmask,
+    dummyvols,
+    filtered_motion,
+    unprocessed_filename,
+    processed_filename,
+    mask=None,
+    seg_data=None,
+    TR=1,
+    raw_dvars=None,
+    regressed_dvars=None,
+    filtered_dvars=None,
+    work_dir=None,
+):
     """Generate carpet plot with DVARS, FD, and WB.
 
     Parameters
     ----------
-    rawdata :
+    preprocessed_file :
         nifti or cifti before processing
-    regressed_data :
+    denoised_file :
         nifti or cifti after nuisance regression
-    residual_data :
+    denoised_filtered_file :
         nifti or cifti after regression and filtering
     mask :
         mask for nifti if available
@@ -465,9 +467,9 @@ def plot_svgx(rawdata,
         output file svg after processing
     """
     # Compute dvars correctly if not already done
-    raw_data_arr = read_ndata(datafile=rawdata, maskfile=mask)
-    regressed_data_arr = read_ndata(datafile=regressed_data, maskfile=mask)
-    filtered_data_arr = read_ndata(datafile=residual_data, maskfile=mask)
+    raw_data_arr = read_ndata(datafile=preprocessed_file, maskfile=mask)
+    regressed_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
+    filtered_data_arr = read_ndata(datafile=denoised_filtered_file, maskfile=mask)
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
@@ -493,9 +495,9 @@ def plot_svgx(rawdata,
     if not (raw_dvars.shape == regressed_dvars.shape == filtered_dvars.shape):
         raise ValueError(
             "Shapes do not match:\n"
-            f"\t{rawdata}: {raw_data_arr.shape}\n"
-            f"\t{regressed_data}: {regressed_data_arr.shape}\n"
-            f"\t{residual_data}: {filtered_data_arr.shape}\n\n"
+            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
+            f"\t{denoised_file}: {regressed_data_arr.shape}\n"
+            f"\t{denoised_filtered_file}: {filtered_data_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -530,11 +532,11 @@ def plot_svgx(rawdata,
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_raw_data = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
-    scaled_residual_data = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
+    scaled_raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask, scale=600)
+    scaled_residual_data = read_ndata(datafile=denoised_filtered_file, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
-    if rawdata.endswith('.nii.gz'):
+    if preprocessed_file.endswith('.nii.gz'):
         scaledrawdata = os.path.join(tempfile.mkdtemp(), 'filex_raw.nii.gz')
         scaledresdata = os.path.join(tempfile.mkdtemp(), 'filex_red.nii.gz')
     else:
@@ -543,12 +545,12 @@ def plot_svgx(rawdata,
 
     # Write out the scaled data
     scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
-                                template=rawdata,
+                                template=preprocessed_file,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
     scaledresdata = write_ndata(data_matrix=scaled_residual_data,
-                                template=residual_data,
+                                template=denoised_filtered_file,
                                 filename=scaledresdata,
                                 mask=mask,
                                 TR=TR)

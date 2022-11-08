@@ -135,11 +135,11 @@ class PlotSVGData(SimpleInterface):
         )
 
         self._results['before_process'], self._results['after_process'] = plot_svgx(
+            preprocessed_file=self.inputs.rawdata,
+            denoised_file=self.inputs.regressed_data,
+            denoised_filtered_file=self.inputs.residual_data,
             tmask=self.inputs.tmask,
             dummyvols=self.inputs.dummyvols,
-            rawdata=self.inputs.rawdata,
-            regressed_data=self.inputs.regressed_data,
-            residual_data=self.inputs.residual_data,
             TR=self.inputs.TR,
             mask=self.inputs.mask,
             filtered_motion=self.inputs.filtered_motion,
