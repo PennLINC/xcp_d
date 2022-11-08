@@ -42,3 +42,4 @@ class DerivativesDataSink(BaseDerivativesDataSink):
     DEFAULT_DTYPES = DEFAULT_DTYPES
     STANDARD_SPACES = STANDARD_SPACES
     regz = regz
+    _allowed_entities = set(BIDS_DERIV_ENTITIES)
