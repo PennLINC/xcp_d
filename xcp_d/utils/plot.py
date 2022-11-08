@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
-
+import os
 import tempfile
 
 import matplotlib.cm as cm
@@ -517,11 +517,13 @@ def plot_svgx(rawdata,
         'Mean': np.nanmean(raw_data_arr, axis=0),
         'Std': np.nanstd(raw_data_arr, axis=0)
     })
+
     # The mean and standard deviation of filtered data
     processed_data_timeseries = pd.DataFrame({
-        'Mean': np.nanmean(residual_data, axis=0),
-        'Std': np.nanstd(residual_data, axis=0)
+        'Mean': np.nanmean(filtered_data_arr, axis=0),
+        'Std': np.nanstd(filtered_data_arr, axis=0)
     })
+
     if seg_data is not None:
         atlaslabels = nb.load(seg_data).get_fdata()
     else:
@@ -533,11 +535,11 @@ def plot_svgx(rawdata,
 
     # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
-        scaledrawdata = tempfile.mkdtemp() + '/filex_raw.nii.gz'
-        scaledresdata = tempfile.mkdtemp() + '/filex_red.nii.gz'
+        scaledrawdata = os.path.join(tempfile.mkdtemp(), 'filex_raw.nii.gz')
+        scaledresdata = os.path.join(tempfile.mkdtemp(), 'filex_red.nii.gz')
     else:
-        scaledrawdata = tempfile.mkdtemp() + '/filex_raw.dtseries.nii'
-        scaledresdata = tempfile.mkdtemp() + '/filex_red.dtseries.nii'
+        scaledrawdata = os.path.join(tempfile.mkdtemp(), 'filex_raw.dtseries.nii')
+        scaledresdata = os.path.join(tempfile.mkdtemp(), 'filex_red.dtseries.nii')
 
     # Write out the scaled data
     scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
