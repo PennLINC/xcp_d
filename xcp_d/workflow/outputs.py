@@ -361,7 +361,7 @@ def init_writederivatives_wf(
                 dismiss_entities=['desc', 'den'],
                 den='91k',
                 suffix='reho',
-                extension='.dscalar.nii',
+                extension='.dlabel.nii',
             ),
             name='write_derivative_reho_wf',
             run_without_submitting=True,
