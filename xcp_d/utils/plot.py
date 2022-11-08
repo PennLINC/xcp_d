@@ -465,46 +465,47 @@ def plot_svgx(rawdata,
         output file svg after processing
     """
     # Compute dvars correctly if not already done
-    residual_data_file = residual_data
-    raw_data_file = rawdata
-    raw_data = read_ndata(datafile=rawdata, maskfile=mask)
-    regressed_data = read_ndata(datafile=regressed_data, maskfile=mask)
-    filtered_data = read_ndata(datafile=residual_data, maskfile=mask)
+    raw_data_arr = read_ndata(datafile=rawdata, maskfile=mask)
+    regressed_data_arr = read_ndata(datafile=regressed_data, maskfile=mask)
+    filtered_data_arr = read_ndata(datafile=residual_data, maskfile=mask)
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
 
-    # Let's remove dummy time from the raw_data if needed
+    # Let's remove dummy time from the raw_data_arr if needed
     if dummyvols > 0:
         raw_data_arr = raw_data_arr[:, dummyvols:]
 
-    # Let's censor the interpolated data and raw_data:
+    # Let's censor the interpolated data and raw_data_arr:
     if sum(tmask_arr) > 0:
-        raw_data = raw_data[:, tmask_bool]
-        filtered_data = filtered_data[:, tmask_bool]
+        raw_data_arr = raw_data_arr[:, tmask_bool]
+        filtered_data_arr = filtered_data_arr[:, tmask_bool]
 
-    if type(raw_dvars) != np.ndarray:
-        raw_dvars = compute_dvars(raw_data)
-    if type(regressed_dvars) != np.ndarray:
-        regressed_dvars = compute_dvars(regressed_data)
-    if type(filtered_dvars) != np.ndarray:
-        filtered_dvars = compute_dvars(filtered_data)
-    # For ease of reference later
+    if not isinstance(raw_dvars, np.ndarray):
+        raw_dvars = compute_dvars(raw_data_arr)
+
+    if not isinstance(regressed_dvars, np.ndarray):
+        regressed_dvars = compute_dvars(regressed_data_arr)
+
+    if not isinstance(filtered_dvars, np.ndarray):
+        filtered_dvars = compute_dvars(filtered_data_arr)
+
+    if not (raw_dvars.shape == regressed_dvars.shape == filtered_dvars.shape):
+        raise ValueError(
+            "Shapes do not match:\n"
+            f"\t{rawdata}: {raw_data_arr.shape}\n"
+            f"\t{regressed_data}: {regressed_data_arr.shape}\n"
+            f"\t{residual_data}: {filtered_data_arr.shape}\n\n"
+        )
 
     # Formatting & setting of files
     sns.set_style('whitegrid')
-    regressed_dvars_data = regressed_dvars
-    residual_dvars_data = filtered_dvars
-    raw_dvars_data = raw_dvars
-    # Load files
-    raw_data = read_ndata(datafile=raw_data_file, maskfile=mask)
-    residual_data = read_ndata(datafile=residual_data_file, maskfile=mask)
 
     # Create dataframes for the bold_data DVARS, FD
     DVARS_timeseries = pd.DataFrame({
-        'Pre regression': raw_dvars_data,
-        'Post regression': regressed_dvars_data,
-        'Post all': residual_dvars_data
+        'Pre regression': raw_dvars,
+        'Post regression': regressed_dvars,
+        'Post all': filtered_dvars
     })
 
     FD_timeseries = pd.DataFrame({
@@ -513,8 +514,8 @@ def plot_svgx(rawdata,
 
     # The mean and standard deviation of raw data
     unprocessed_data_timeseries = pd.DataFrame({
-        'Mean': np.nanmean(raw_data, axis=0),
-        'Std': np.nanstd(raw_data, axis=0)
+        'Mean': np.nanmean(raw_data_arr, axis=0),
+        'Std': np.nanstd(raw_data_arr, axis=0)
     })
     # The mean and standard deviation of filtered data
     processed_data_timeseries = pd.DataFrame({
@@ -527,8 +528,8 @@ def plot_svgx(rawdata,
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_raw_data = read_ndata(datafile=raw_data_file, maskfile=mask, scale=600)
-    scaled_residual_data = read_ndata(datafile=residual_data_file, maskfile=mask, scale=600)
+    scaled_raw_data = read_ndata(datafile=rawdata, maskfile=mask, scale=600)
+    scaled_residual_data = read_ndata(datafile=residual_data, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
     if rawdata.endswith('.nii.gz'):
@@ -540,12 +541,12 @@ def plot_svgx(rawdata,
 
     # Write out the scaled data
     scaledrawdata = write_ndata(data_matrix=scaled_raw_data,
-                                template=raw_data_file,
+                                template=rawdata,
                                 filename=scaledrawdata,
                                 mask=mask,
                                 TR=TR)
     scaledresdata = write_ndata(data_matrix=scaled_residual_data,
-                                template=residual_data_file,
+                                template=residual_data,
                                 filename=scaledresdata,
                                 mask=mask,
                                 TR=TR)
