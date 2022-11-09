@@ -15,15 +15,15 @@ from xcp_d.utils.execsummary import generate_brain_sprite, ribbon_to_statmap
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plot import plot_svgx, plotimage
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
 
 
 class _PlotImageInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc='plot image')
+    in_file = File(exists=True, mandatory=True, desc="plot image")
 
 
 class _PlotImageOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc='out image')
+    out_file = File(exists=True, desc="out image")
 
 
 class PlotImage(SimpleInterface):
@@ -33,13 +33,11 @@ class PlotImage(SimpleInterface):
     output_spec = _PlotImageOutputSpec
 
     def _run_interface(self, runtime):
-        self._results['out_file'] = fname_presuffix(self.inputs.in_file,
-                                                    suffix='_file.svg',
-                                                    newpath=runtime.cwd,
-                                                    use_ext=False)
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file, suffix="_file.svg", newpath=runtime.cwd, use_ext=False
+        )
 
-        self._results['out_file'] = plotimage(self.inputs.in_file,
-                                              self._results['out_file'])
+        self._results["out_file"] = plotimage(self.inputs.in_file, self._results["out_file"])
 
         return runtime
 
@@ -61,26 +59,25 @@ class BrainPlotx(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        self._results['out_html'] = fname_presuffix(
-            'brainsprite_out_',
-            suffix='file.html',
+        self._results["out_html"] = fname_presuffix(
+            "brainsprite_out_",
+            suffix="file.html",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        self._results['out_html'] = generate_brain_sprite(
+        self._results["out_html"] = generate_brain_sprite(
             template_image=self.inputs.template,
             stat_map=self.inputs.in_file,
-            out_file=self._results['out_html'])
+            out_file=self._results["out_html"],
+        )
 
         return runtime
 
 
 class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True, mandatory=True, desc="Raw data")
-    regressed_data = File(exists=True,
-                          mandatory=True,
-                          desc="Data after regression")
+    regressed_data = File(exists=True, mandatory=True, desc="Data after regression")
     residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
     filtered_motion = File(
         exists=True,
@@ -98,12 +95,8 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
 
 
 class _PlotSVGDataOutputSpec(TraitedSpec):
-    before_process = File(exists=True,
-                          mandatory=True,
-                          desc=".SVG file before processing")
-    after_process = File(exists=True,
-                         mandatory=True,
-                         desc=".SVG file after processing")
+    before_process = File(exists=True, mandatory=True, desc=".SVG file before processing")
+    after_process = File(exists=True, mandatory=True, desc=".SVG file after processing")
 
 
 class PlotSVGData(SimpleInterface):
@@ -121,20 +114,20 @@ class PlotSVGData(SimpleInterface):
     def _run_interface(self, runtime):
 
         before_process_fn = fname_presuffix(
-            'carpetplot_before_',
-            suffix='file.svg',
+            "carpetplot_before_",
+            suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
         after_process_fn = fname_presuffix(
-            'carpetplot_after_',
-            suffix='file.svg',
+            "carpetplot_after_",
+            suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        self._results['before_process'], self._results['after_process'] = plot_svgx(
+        self._results["before_process"], self._results["after_process"] = plot_svgx(
             preprocessed_file=self.inputs.rawdata,
             denoised_file=self.inputs.regressed_data,
             denoised_filtered_file=self.inputs.residual_data,
@@ -157,9 +150,7 @@ class _RibbontoStatmapInputSpec(BaseInterfaceInputSpec):
 
 
 class _RibbontoStatmapOutputSpec(TraitedSpec):
-    out_file = File(exists=True,
-                    mandatory=True,
-                    desc="ribbon > pial and white")
+    out_file = File(exists=True, mandatory=True, desc="ribbon > pial and white")
 
 
 class RibbontoStatmap(SimpleInterface):
@@ -170,12 +161,12 @@ class RibbontoStatmap(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        self._results['out_file'] = fname_presuffix('pial_white_',
-                                                    suffix='.nii.gz',
-                                                    newpath=runtime.cwd,
-                                                    use_ext=False)
+        self._results["out_file"] = fname_presuffix(
+            "pial_white_", suffix=".nii.gz", newpath=runtime.cwd, use_ext=False
+        )
 
-        self._results['out_file'] = ribbon_to_statmap(
-            ribbon=self.inputs.ribbon, outfile=self._results['out_file'])
+        self._results["out_file"] = ribbon_to_statmap(
+            ribbon=self.inputs.ribbon, outfile=self._results["out_file"]
+        )
 
         return runtime
