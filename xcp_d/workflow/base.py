@@ -9,7 +9,7 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
-from nipype import Function
+import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -21,13 +21,10 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
-    extract_t1w_seg,
     get_preproc_pipeline_info,
-    select_registrationfile,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import get_customfile
 from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
@@ -57,15 +54,16 @@ def init_xcpd_wf(
     subject_list,
     analysis_level,
     smoothing,
-    custom_confounds,
+    custom_confounds_folder,
     output_dir,
     work_dir,
     dummytime,
     dummy_scans,
     fd_thresh,
     process_surfaces=False,
-    input_type='fmriprep',
-    name='xcpd_wf',
+    dcan_qc=False,
+    input_type="fmriprep",
+    name="xcpd_wf",
 ):
     """Build and organize execution of xcp_d pipeline.
 
@@ -97,13 +95,14 @@ def init_xcpd_wf(
                 subject_list=["sub-01", "sub-02"],
                 analysis_level="participant",
                 smoothing=6,
-                custom_confounds=None,
+                custom_confounds_folder=None,
                 output_dir=".",
                 work_dir=".",
                 dummytime=None,
                 dummy_scans=0,
                 fd_thresh=0.2,
                 process_surfaces=False,
+                dcan_qc=False,
                 input_type='fmriprep',
                 name='xcpd_wf',
             )
@@ -141,11 +140,15 @@ def init_xcpd_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds: str
-        path to cusrtom nuisance regressors
+    custom_confounds_folder : str or None
+        Path to custom nuisance regressors.
+        Must be a folder containing confounds files,
+        in which case the file with the name matching the fMRIPrep confounds file will be selected.
     dummytime: float
         the first vols in seconds to be removed before postprocessing
     %(process_surfaces)s
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     %(input_type)s
     %(name)s
 
@@ -153,7 +156,7 @@ def init_xcpd_wf(
     ----------
     .. footbibliography::
     """
-    xcpd_wf = Workflow(name='xcpd_wf')
+    xcpd_wf = Workflow(name="xcpd_wf")
     xcpd_wf.base_dir = work_dir
     LOGGER.info(f"Beginning the {name} workflow")
 
@@ -182,15 +185,17 @@ def init_xcpd_wf(
             output_dir=output_dir,
             dummytime=dummytime,
             dummy_scans=dummy_scans,
-            custom_confounds=custom_confounds,
+            custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
+            dcan_qc=dcan_qc,
             input_type=input_type,
             name=f"single_subject_{subject_id}_wf",
         )
 
-        single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
-            output_dir, "xcp_d", "sub-" + subject_id, 'log'))
+        single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
+            output_dir, "xcp_d", "sub-" + subject_id, "log"
+        )
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
         print(f"Analyzing data at the {analysis_level} level")
@@ -222,8 +227,9 @@ def init_subject_wf(
     fd_thresh,
     task_id,
     smoothing,
-    custom_confounds,
+    custom_confounds_folder,
     process_surfaces,
+    dcan_qc,
     output_dir,
     input_type,
     name,
@@ -258,8 +264,9 @@ def init_subject_wf(
                 fd_thresh=0.2,
                 task_id="rest",
                 smoothing=6.,
-                custom_confounds=None,
+                custom_confounds_folder=None,
                 process_surfaces=False,
+                dcan_qc=False,
                 output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
@@ -291,8 +298,10 @@ def init_subject_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds: str
-        path to custom nuisance regressors
+    custom_confounds_folder : str or None
+        Path to custom nuisance regressors.
+        Must be a folder containing confounds files,
+        in which case the file with the name matching the fMRIPrep confounds file will be selected.
     dummytime: float
         the first vols in seconds to be removed before postprocessing.
         Deprecated in favor of dummy_scans.
@@ -300,6 +309,8 @@ def init_subject_wf(
         ``dummytime`` is not None.
     dummy_scans : int or "auto"
     %(process_surfaces)s
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     %(subject_id)s
     %(input_type)s
     %(name)s
@@ -315,17 +326,31 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
+    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['custom_confounds', 'subj_data']),
-        name='inputnode',
+        niu.IdentityInterface(
+            fields=[
+                "subj_data",  # not currently used, but will be in future
+                "t1w",
+                "t1w_mask",  # not used by cifti workflow
+                "t1w_seg",
+                "mni_to_t1w_xform",
+                "t1w_to_mni_xform",
+            ],
+        ),
+        name="inputnode",
     )
-    inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.subj_data = subj_data
+    inputnode.inputs.t1w = subj_data["t1w"]
+    inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
+    inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
+    inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
+    inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
 
     workflow = Workflow(name=name)
 
@@ -362,51 +387,33 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     summary = pe.Node(
         SubjectSummary(subject_id=subject_id, bold=preproc_files),
-        name='summary',
+        name="summary",
     )
 
     about = pe.Node(
-        AboutSummary(version=__version__, command=' '.join(sys.argv)),
-        name='about',
+        AboutSummary(version=__version__, command=" ".join(sys.argv)),
+        name="about",
     )
 
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=preproc_files[0],
-            desc='summary',
+            desc="summary",
             datatype="figures",
         ),
-        name='ds_report_summary',
+        name="ds_report_summary",
     )
 
     ds_report_about = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=preproc_files[0],
-            desc='about',
+            desc="about",
             datatype="figures",
         ),
-        name='ds_report_about',
+        name="ds_report_about",
         run_without_submitting=True,
-    )
-
-    t1w_file_grabber = pe.Node(
-        Function(
-            input_names=["subj_data"],
-            output_names=["t1w", "t1seg"],
-            function=extract_t1w_seg,
-        ),
-        name="t1w_file_grabber",
-    )
-
-    transform_file_grabber = pe.Node(
-        Function(
-            input_names=["subj_data"],
-            output_names=["mni_to_t1w", "t1w_to_mni"],
-            function=select_registrationfile,
-        ),
-        name="transform_file_grabber",
     )
 
     t1w_wf = init_t1w_wf(
@@ -416,12 +423,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,  # RF: need to change memory size
     )
 
+    # fmt:off
     workflow.connect([
-        (inputnode, t1w_file_grabber, [('subj_data', 'subj_data')]),
-        (inputnode, transform_file_grabber, [('subj_data', 'subj_data')]),
-        (t1w_file_grabber, t1w_wf, [('t1w', 'inputnode.t1w'), ('t1seg', 'inputnode.t1seg')]),
-        (transform_file_grabber, t1w_wf, [('t1w_to_mni', 'inputnode.t1w_to_mni')]),
+        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
+                             ('t1w_seg', 'inputnode.t1seg'),
+                             ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])
+    # fmt:on
 
     # Plot the ribbon on the brain in a brainsprite figure
     brainsprite_wf = init_brainsprite_wf(
@@ -429,13 +437,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         fmri_dir=fmri_dir,
         subject_id=subject_id,
         output_dir=output_dir,
+        dcan_qc=dcan_qc,
         input_type=input_type,
         omp_nthreads=omp_nthreads,
         mem_gb=5,
     )
 
-    workflow.connect([(t1w_file_grabber, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                          ('t1seg', 'inputnode.t1seg')])])
+    # fmt:off
+    workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
+                                                   ('t1w_seg', 'inputnode.t1seg')])])
+    # fmt:on
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
@@ -448,20 +459,17 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,  # RF: need to change memory size
         )
 
+        # fmt:off
         workflow.connect([
-            (t1w_file_grabber, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                               ('t1seg', 'inputnode.t1seg')]),
+            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
+                                        ('t1w_seg', 'inputnode.t1seg')]),
         ])
+        # fmt:on
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
-        custom_confounds_file = get_customfile(
-            custom_confounds=custom_confounds,
-            bold_file=bold_file,
-        )
-
         bold_postproc_wf = postproc_wf_function(
             bold_file=bold_file,
             lower_bpf=lower_bpf,
@@ -477,39 +485,37 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             head_radius=head_radius,
             omp_nthreads=omp_nthreads,
             n_runs=len(preproc_files),
-            custom_confounds=custom_confounds_file,
+            custom_confounds_folder=custom_confounds_folder,
             layout=layout,
             despike=despike,
             dummytime=dummytime,
             dummy_scans=dummy_scans,
             fd_thresh=fd_thresh,
+            dcan_qc=dcan_qc,
             output_dir=output_dir,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
-        workflow.connect(
-            [
-                (t1w_file_grabber, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
-                                                      ('t1seg', 'inputnode.t1seg')]),
-                (transform_file_grabber, bold_postproc_wf, [
-                    ('mni_to_t1w', 'inputnode.mni_to_t1w'),
-                ]),
-            ],
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
+                                           ('t1w_seg', 'inputnode.t1seg'),
+                                           ('mni_to_t1w_xform', 'inputnode.mni_to_t1w')]),
+        ])
+        if not cifti:
+            workflow.connect([
+                (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
+            ])
 
-    try:
-        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')
-                                                        ]),
-                          (about, ds_report_about, [('out_report', 'in_file')])])
-    except Exception as exc:
-        if cifti:
-            exc = "No cifti files ending with 'bold.dtseries.nii' found for one or more" \
-                " participants."
-            print(exc)
-            sys.exit()
+        # fmt:on
+
+    # fmt:off
+    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
+                      (about, ds_report_about, [('out_report', 'in_file')])])
+    # fmt:on
 
     for node in workflow.list_node_names():
-        if node.split('.')[-1].startswith('ds_'):
-            workflow.get_node(node).interface.out_path_base = 'xcp_d'
+        if node.split(".")[-1].startswith("ds_"):
+            workflow.get_node(node).interface.out_path_base = "xcp_d"
 
     return workflow

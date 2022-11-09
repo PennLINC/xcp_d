@@ -107,7 +107,7 @@ def split_filename(fname):
         ".dpconn.nii",
         ".dtraj.nii",
         ".pconnseries.nii",
-        ".pconnscalar.nii"
+        ".pconnscalar.nii",
     ]
 
     pth = op.dirname(fname)
@@ -246,11 +246,7 @@ def _parse_mount_table(exit_code, output):
         if match is None:
             fmlogger.debug("Cannot parse mount line: '%s'", line)
 
-    return [
-        mount
-        for mount in mount_info
-        if any(mount[0].startswith(path) for path in cifs_paths)
-    ]
+    return [mount for mount in mount_info if any(mount[0].startswith(path) for path in cifs_paths)]
 
 
 def _generate_cifs_table():
@@ -395,15 +391,11 @@ def copyfile(
             else:
                 raise AttributeError("Unknown hash method found:", hashmethod)
             newhash = hashfn(newfile)
-            fmlogger.debug(
-                "File: %s already exists,%s, copy:%d", newfile, newhash, copy
-            )
+            fmlogger.debug("File: %s already exists,%s, copy:%d", newfile, newhash, copy)
             orighash = hashfn(originalfile)
             keep = newhash == orighash
         if keep:
-            fmlogger.debug(
-                "File: %s already exists, not overwriting, copy:%d", newfile, copy
-            )
+            fmlogger.debug("File: %s already exists, not overwriting, copy:%d", newfile, copy)
         else:
             os.unlink(newfile)
 
@@ -441,8 +433,7 @@ def copyfile(
     # Associated files
     if copy_related_files:
         related_file_pairs = (
-            get_related_files(f, include_this_file=False)
-            for f in (originalfile, newfile)
+            get_related_files(f, include_this_file=False) for f in (originalfile, newfile)
         )
         for alt_ofile, alt_nfile in zip(*related_file_pairs):
             if op.exists(alt_ofile):
@@ -526,35 +517,12 @@ def ensure_list(filename):
     """Return a list given either a string or a list."""
     if isinstance(filename, (str, bytes)):
         return [filename]
-    elif isinstance(filename, list):
+    elif isinstance(filename, (list, tuple, type(None), np.ndarray)):
         return filename
     elif is_container(filename):
         return [x for x in filename]
     else:
         return None
-
-
-def simplify_list(filelist):
-    """Return a list from a list of length greater than 1 or the first element if not.
-
-    Parameters
-    ----------
-    filelist : list
-        A list to simplify.
-
-    Returns
-    -------
-    list or str
-        A list of ``filelist`` is longer than 1. Otherwise the first element from the list.
-    """
-    if len(filelist) > 1:
-        return filelist
-    else:
-        return filelist[0]
-
-
-filename_to_list = ensure_list
-list_to_filename = simplify_list
 
 
 def which(cmd, env=None, pathext=None):
@@ -612,13 +580,9 @@ def relpath(path, start=None):
         unc_path, rest = op.splitunc(path)
         unc_start, rest = op.splitunc(start)
         if bool(unc_path) ^ bool(unc_start):
-            raise ValueError(
-                ("Cannot mix UNC and non-UNC paths " "(%s and %s)") % (path, start)
-            )
+            raise ValueError(("Cannot mix UNC and non-UNC paths " "(%s and %s)") % (path, start))
         else:
-            raise ValueError(
-                f"path is on drive {path_list[0]}, start on drive {start_list[0]}"
-            )
+            raise ValueError(f"path is on drive {path_list[0]}, start on drive {start_list[0]}")
     # Work out how much of the filepath is shared by start and path.
     for i in range(min(len(start_list), len(path_list))):
         if start_list[i].lower() != path_list[i].lower():
@@ -668,8 +632,7 @@ def find_and_copy_files(seek_dir, pattern, output_dir):
     for found_file in glob.glob(glob_pattern):
         # TODO: change name to BIDS name?
         filename = os.path.basename(found_file)
-        rel_path = os.path.relpath(os.path.join(output_dir, filename),
-                                   os.getcwd())
+        rel_path = os.path.relpath(os.path.join(output_dir, filename), os.getcwd())
         shutil.copy(found_file, rel_path)
         rel_paths.append(rel_path)
 

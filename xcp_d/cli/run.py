@@ -36,10 +36,7 @@ def check_deps(workflow):
     return sorted(
         (node.interface.__class__.__name__, node.interface._cmd)
         for node in workflow._get_all_nodes()
-        if (
-            hasattr(node.interface, "_cmd")
-            and which(node.interface._cmd.split()[0]) is None
-        )
+        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
     )
 
 
@@ -198,8 +195,8 @@ def get_parser():
     g_outputoption.add_argument(
         "--input-type",
         required=False,
-        default='fmriprep',
-        choices=['fmriprep', 'dcan', 'hpc', 'nibabies'],
+        default="fmriprep",
+        choices=["fmriprep", "dcan", "hpc", "nibabies"],
         help=(
             "The pipeline used to generate the preprocessed derivatives. "
             "The default pipeline is 'fmriprep'. "
@@ -272,7 +269,12 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help="Custom confound to be added to nuisance regressors.",
+        help=(
+            "Custom confound to be added to nuisance regressors. "
+            "Must be a folder containing confounds files, "
+            "in which case the file with the name matching the fMRIPrep confounds "
+            "file will be selected. "
+        ),
     )
 
     dummyvols = g_param.add_mutually_exclusive_group()
@@ -310,7 +312,10 @@ def get_parser():
         "--disable_bandpass_filter",
         dest="bandpass_filter",
         action="store_false",
-        help="Disable bandpass filtering.",
+        help=(
+            "Disable bandpass filtering. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
+        ),
     )
     bandpass_filter_params.add_argument(
         "--bandpass_filter",
@@ -319,6 +324,7 @@ def get_parser():
         type=bool,
         help=(
             "Whether to Butterworth bandpass filter the data or not. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated. "
             "This parameter is deprecated and will be removed in version 0.3.0. "
             "Bandpass filtering is performed by default, and if you wish to disable it, "
             "please use `--disable-bandpass-filter``."
@@ -359,7 +365,7 @@ If not set, no filter will be applied.
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
 must be defined.
 If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
-"""
+""",
     )
     g_filter.add_argument(
         "--band-stop-min",
@@ -399,7 +405,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
 
 When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-used value for
 this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
-"""
+""",
     )
     g_filter.add_argument(
         "--band-stop-max",
@@ -435,7 +441,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         - 28
     *   - > 80
         - 30
-"""
+""",
     )
     g_filter.add_argument(
         "--motion-filter-order",
@@ -450,10 +456,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head_radius",
         default=50,
         type=float,
-        help=(
-            "head radius for computing FD, default is 50mm, "
-            "35mm is recommended for baby"
-        ),
+        help=("head radius for computing FD, default is 50mm, " "35mm is recommended for baby"),
     )
     g_censor.add_argument(
         "-f",
@@ -494,10 +497,10 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="Opt-out of sending tracking information",
     )
 
-    g_experimental = parser.add_argument_group('Experimental options')
+    g_experimental = parser.add_argument_group("Experimental options")
     g_experimental.add_argument(
-        '--warp-surfaces-native2std',
-        action='store_true',
+        "--warp-surfaces-native2std",
+        action="store_true",
         dest="process_surfaces",
         default=False,
         help="""\
@@ -535,7 +538,15 @@ By default, this workflow is disabled.
       - A very-inflated midthicknesss surface (also for visualization).
         This is derived from the HCP midthickness file.
         This file is only created if the input type is "fmriprep" or "nibabies".
-"""
+""",
+    )
+    g_experimental.add_argument(
+        "--dcan-qc",
+        "--dcan_qc",
+        action="store_true",
+        dest="dcan_qc",
+        default=False,
+        help="Run DCAN QC, including executive summary generation.",
     )
 
     return parser
@@ -544,8 +555,6 @@ By default, this workflow is disabled.
 def main():
     """Run the main workflow."""
     from multiprocessing import Manager, Process, set_start_method
-
-    from nipype import logging as nlogging
 
     set_start_method("forkserver")
     warnings.showwarning = _warn_redirect
@@ -565,9 +574,6 @@ def main():
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     # Set logging
     logger.setLevel(log_level)
-    nlogging.getLogger("nipype.workflow").setLevel(log_level)
-    nlogging.getLogger("nipype.interface").setLevel(log_level)
-    nlogging.getLogger("nipype.utils").setLevel(log_level)
 
     # Call build_workflow(opts, retval)
     with Manager() as mgr:
@@ -609,9 +615,7 @@ def main():
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-        crashfolders = [
-            output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
-        ]
+        crashfolders = [output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list]
         for crashfolder in crashfolders:
             for crashfile in crashfolder.glob("crash*.*"):
                 process_crashfile(crashfile)
@@ -660,9 +664,7 @@ def main():
             try:
                 check_call(cmd, timeout=10)
             except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(
-                    f"Could not generate CITATION.html file:\n{' '.join(cmd)}"
-                )
+                logger.warning(f"Could not generate CITATION.html file:\n{' '.join(cmd)}")
 
             # Generate LaTex file resolving citations
             cmd = [
@@ -679,9 +681,7 @@ def main():
             try:
                 check_call(cmd, timeout=10)
             except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(
-                    f"Could not generate CITATION.tex file:\n{' '.join(cmd)}"
-                )
+                logger.warning(f"Could not generate CITATION.tex file:\n{' '.join(cmd)}")
             else:
                 copyfile(pkgrf("xcp_d", "data/boilerplate.bib"), citation_files["bib"])
 
@@ -701,6 +701,7 @@ def main():
             output_dir=output_dir,
             run_uuid=run_uuid,
             combineruns=opts.combineruns,
+            dcan_qc=opts.dcan_qc,
             input_type=opts.input_type,
             cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),
@@ -731,7 +732,12 @@ def build_workflow(opts, retval):
     from xcp_d.utils.bids import collect_participants
     from xcp_d.workflow.base import init_xcpd_wf
 
+    log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
+
     build_log = nlogging.getLogger("nipype.workflow")
+    build_log.setLevel(log_level)
+    nlogging.getLogger("nipype.interface").setLevel(log_level)
+    nlogging.getLogger("nipype.utils").setLevel(log_level)
 
     fmri_dir = opts.fmri_dir.resolve()
     output_dir = opts.output_dir.resolve()
@@ -760,6 +766,8 @@ def build_workflow(opts, retval):
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
         retval["return_code"] = 1
+    elif not opts.bandpass_filter:
+        build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Motion filtering parameters
     if opts.motion_filter_type == "notch":
@@ -931,7 +939,13 @@ def build_workflow(opts, retval):
     # Nipype config (logs and execution)
     ncfg.update_config(
         {
-            "logging": {"log_directory": str(log_dir), "log_to_file": True},
+            "logging": {
+                "log_directory": str(log_dir),
+                "log_to_file": True,
+                "workflow_level": log_level,
+                "interface_level": log_level,
+                "utils_level": log_level,
+            },
             "execution": {
                 "crashdump_dir": str(log_dir),
                 "crashfile_format": "txt",
@@ -982,11 +996,12 @@ Running xcp_d version {__version__}:
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_confounds=opts.custom_confounds,
+        custom_confounds_folder=opts.custom_confounds,
         dummytime=opts.dummytime,
         dummy_scans=opts.dummy_scans,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
+        dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
         name="xcpd_wf",
     )

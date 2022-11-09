@@ -26,7 +26,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
      If you discover a problem with the BIDS compliance of ``xcp_d``'s derivatives, please open an issue in the ``xcp_d`` repository.
 
-1. Summary reports: There are two summary reports - an executive summary per session and a participant summary::
+1. Summary reports:
+   There are two summary reports - an executive summary per session (if ``--dcan-qc`` is used) and a participant summary::
 
        xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
        xcp_d/sub-<label>.html
@@ -62,13 +63,13 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
        .. code-block:: json-object
 
-        {
+          {
               "Freq Band": [ 0.009, 0.08],
               "RepetitionTime": 2.0,
               "compression": true,
               "dummy vols": 0,
-              "nuissance parameters": "27P",
-              }
+              "nuisance parameters": "27P",
+          }
 
    b. Functional timeseries and connectivity matrices::
 
@@ -85,28 +86,40 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_reho.nii.gz
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_alff.nii.gz
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-smooth_alff.nii.gz
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_reho.dscalar.nii
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_alff.dscalar.nii
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 
-   d. Other outputs include quality control and framewise  displacement::
+     .. important::
+          The smoothed ALFF image will only be generated is smoothing is enabled
+          (e.g., with the ``--smoothing parameter``).
+
+     .. important::
+          ALFF images will not be generated if bandpass filtering is disabled
+          (e.g., with the ``--disable-bandpass-filtering`` parameter).
+
+   d. Other outputs include quality control, framewise displacement, and confounds files::
 
         # Nifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_design.tsv
 
         # Cifti
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
         xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
+        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_design.tsv
 
       The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;
       one for each of the six filtered motion parameters, as well as "framewise_displacement".
       If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
 
-   e. DCAN style scrubbing file.
+   e. DCAN style scrubbing file (if ``--dcan-qc`` is used).
       This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps.
       At each step the following variables are present::
 

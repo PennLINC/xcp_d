@@ -25,9 +25,7 @@ def compute_fd(confound, head_radius=50):
         The framewise displacement time series.
     """
     confound = confound.replace(np.nan, 0)
-    mpars = confound[[
-        "trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"
-    ]].to_numpy()
+    mpars = confound[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
     diff[:, 3:6] *= head_radius
     fd_res = np.abs(diff).sum(axis=1)
@@ -52,8 +50,8 @@ def generate_mask(fd_res, fd_thresh):
     tmask : numpy.ndarray of shape (T)
         The temporal mask. Zeros are low-motion volumes. Ones are high-motion volumes.
     """
-    tmask = np.zeros(len(fd_res))
-    tmask[fd_res > fd_thresh] = 1
+    tmask = np.zeros(len(fd_res), dtype=bool)
+    tmask[fd_res > fd_thresh] = True
 
     return tmask
 
@@ -88,9 +86,9 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
     # Confirm that interpolation can be correctly performed
     bold_data_interpolated = bold_data
     if np.mean(tmask) == 0:
-        print('No flagged volume, interpolation will not be done.')
+        print("No flagged volume, interpolation will not be done.")
     elif np.mean(tmask) > 0.5:
-        print('More than 50% of volumes are flagged, interpolation will not be done.')
+        print("More than 50% of volumes are flagged, interpolation will not be done.")
     else:
         # Create slice time array
         slice_times = TR * np.arange(0, (bold_data.shape[1]), 1)
@@ -100,9 +98,8 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
         # Stack bold data: all timepoints not scrubbed are appended to
         # the last timepoint
         clean_volume = np.hstack(
-            (bold_data[:,
-                       (tmask == 0)], np.reshape(bold_data[:, -1],
-                                                 [bold_data.shape[0], 1])))
+            (bold_data[:, (tmask == 0)], np.reshape(bold_data[:, -1], [bold_data.shape[0], 1]))
+        )
 
         # looping through each voxel
         for voxel in range(0, bold_data.shape[0]):
