@@ -449,7 +449,6 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     ----------
     custom_confounds_folder : str or None
         The path to the custom confounds file.
-        This may include the actual filename, if you want.
     fmriprep_confounds_file : str
         Path to the confounds file from the preprocessing pipeline.
         We expect the custom confounds file to have the same name.
@@ -462,23 +461,19 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     if custom_confounds_folder is None:
         return None
 
-    if os.path.isfile(custom_confounds_folder):
-        custom_confounds_file = custom_confounds_folder
-
-    elif os.path.isdir(custom_confounds_folder):
-        custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
-        custom_confounds_file = os.path.abspath(
-            os.path.join(
-                custom_confounds_folder,
-                custom_confounds_filename,
-            )
-        )
-
-        if not os.path.isfile(custom_confounds_file):
-            raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
-
-    else:
+    if not os.path.isdir(custom_confounds_folder):
         raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
+
+    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_file = os.path.abspath(
+        os.path.join(
+            custom_confounds_folder,
+            custom_confounds_filename,
+        )
+    )
+
+    if not os.path.isfile(custom_confounds_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
 
     return custom_confounds_file
 
