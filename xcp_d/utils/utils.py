@@ -394,50 +394,68 @@ def stringforparams(params):
     """
     if params == "custom":
         bsignal = "A custom set of regressors was used, with no other regressors from XCP-D"
-    if params == "24P":
-        bsignal = "In total, 24 nuisance regressors were selected  from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters with their temporal derivatives, \
-        and their quadratic expansion of those six motion parameters and their \
-        temporal derivatives"
 
-    if params == "27P":
-        bsignal = "In total, 27 nuisance regressors were selected from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters with their temporal derivatives, \
-        the quadratic expansion of those six motion parameters and  \
-        their derivatives, the global signal, the mean white matter  \
-        signal, and the mean CSF signal"
+    elif params == "24P":
+        bsignal = (
+            "In total, 24 nuisance regressors were selected  from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "and their quadratic expansion of those six motion parameters and their "
+            "temporal derivatives"
+        )
 
-    if params == "36P":
-        bsignal = "In total, 36 nuisance regressors were selected from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters, global signal, the mean white matter,  \
-        the mean CSF signal  with their temporal derivatives, \
-        and the quadratic expansion of six motion parameters, tissues signals and  \
-        their temporal derivatives"
+    elif params == "27P":
+        bsignal = (
+            "In total, 27 nuisance regressors were selected from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "the quadratic expansion of those six motion parameters and "
+            "their derivatives, the global signal, the mean white matter "
+            "signal, and the mean CSF signal"
+        )
 
-    if params == "aroma":
-        bsignal = "All the clean aroma components with the mean white matter  \
-        signal, and the mean CSF signal were selected as nuisance regressors"
+    elif params == "36P":
+        bsignal = (
+            "In total, 36 nuisance regressors were selected from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters, global signal, the mean white matter, "
+            "the mean CSF signal with their temporal derivatives, "
+            "and the quadratic expansion of six motion parameters, tissues signals and "
+            "their temporal derivatives"
+        )
 
-    if params == "acompcor":
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments \
-        were selected as \
-        nuisance regressors. Additionally, the six motion parameters and their temporal \
-        derivatives were added as confounds."
+    elif params == "aroma":
+        bsignal = (
+            "All the clean aroma components with the mean white matter "
+            "signal, and the mean CSF signal were selected as nuisance regressors"
+        )
 
-    if params == "aroma_gsr":
-        bsignal = "All the clean aroma components with the mean white matter  \
-        signal, and the mean CSF signal, and mean global signal were \
-        selected as nuisance regressors"
+    elif params == "acompcor":
+        bsignal = (
+            "The top 5 principal aCompCor components from WM and CSF compartments "
+            "were selected as "
+            "nuisance regressors. Additionally, the six motion parameters and their temporal "
+            "derivatives were added as confounds."
+        )
 
-    if params == "acompcor_gsr":
-        bsignal = "The top 5 principal aCompCor components from WM and CSF \
-        compartments were selected as \
-        nuisance regressors. Additionally, the six motion parameters and their temporal \
-        derivatives were added as confounds. The average global signal was also added as a \
-        regressor."
+    elif params == "aroma_gsr":
+        bsignal = (
+            "All the clean aroma components with the mean white matter "
+            "signal, and the mean CSF signal, and mean global signal were "
+            "selected as nuisance regressors"
+        )
+
+    elif params == "acompcor_gsr":
+        bsignal = (
+            "The top 5 principal aCompCor components from WM and CSF "
+            "compartments were selected as "
+            "nuisance regressors. Additionally, the six motion parameters and their temporal "
+            "derivatives were added as confounds. The average global signal was also added as a "
+            "regressor."
+        )
+
+    else:
+        raise ValueError(f"Parameter string not understood: {params}")
 
     return bsignal
 
