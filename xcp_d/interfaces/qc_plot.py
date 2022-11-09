@@ -107,10 +107,10 @@ class CensoringPlot(SimpleInterface):
         )
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
-        if self.inputs.dummy_scans:
+        if self.inputs.dummyvols:
             ax.axvspan(
                 0,
-                self.inputs.dummy_scans,
+                self.inputs.dummyvols,
                 label="Dummy Volumes",
                 alpha=0.5,
                 color=palette[1],
