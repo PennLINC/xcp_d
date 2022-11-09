@@ -175,7 +175,6 @@ def init_execsummary_wf(
     bold_file,
     output_dir,
     TR,
-    dummy_scans,
     mem_gb,
     layout,
     name="execsummary_wf",
@@ -189,7 +188,6 @@ def init_execsummary_wf(
     %(output_dir)s
     TR
     %(mem_gb)s
-    dummy_scans
     layout
     %(name)s
 
@@ -219,6 +217,7 @@ def init_execsummary_wf(
                 "rawdata",
                 "mask",
                 "mni_to_t1w",
+                "dummy_scans",
             ]
         ),
         name="inputnode",
@@ -287,7 +286,7 @@ def init_execsummary_wf(
 
     # Plot the SVG files
     plot_svgx_wf = pe.Node(
-        PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummy_scans),
+        PlotSVGData(TR=TR, rawdata=bold_file),
         name="plot_svgx_wf",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -342,10 +341,15 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
-                                   ('regressed_data', 'regressed_data'),
-                                   ('residual_data', 'residual_data'), ('mask', 'mask'),
-                                   ('bold_file', 'rawdata'), ('tmask', 'tmask')]),
+        (inputnode, plot_svgx_wf, [
+            ('filtered_motion', 'filtered_motion'),
+            ('regressed_data', 'regressed_data'),
+            ('residual_data', 'residual_data'),
+            ('mask', 'mask'),
+            ('bold_file', 'rawdata'),
+            ('tmask', 'tmask'),
+            ('dummy_scans', 'dummy_scans'),
+        ]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
