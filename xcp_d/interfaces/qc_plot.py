@@ -109,6 +109,7 @@ class CensoringPlot(SimpleInterface):
         )
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
+        initial_volumes_to_drop = self.inputs.dummyvols
         if self.inputs.dummyvols:
             ax.axvspan(
                 0,
@@ -117,8 +118,6 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
                 color=palette[1],
             )
-        else:
-            initial_volumes_to_drop = 0
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
