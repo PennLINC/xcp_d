@@ -16,17 +16,14 @@ from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.utils import demean_detrend_data, linear_regression
 from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
 
 
 class _RegressInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True,
-                   mandatory=True,
-                   desc="The bold file to be regressed")
+    in_file = File(exists=True, mandatory=True, desc="The bold file to be regressed")
     confounds = File(
-        exists=True,
-        mandatory=True,
-        desc="The fMRIPrep confounds tsv after censoring")
+        exists=True, mandatory=True, desc="The fMRIPrep confounds tsv after censoring"
+    )
     # TODO: Use Enum maybe?
     params = traits.Str(mandatory=True, desc="Parameter set to use.")
     TR = traits.Float(mandatory=True, desc="Repetition time")
@@ -49,9 +46,7 @@ class _RegressInputSpec(BaseInterfaceInputSpec):
 
 
 class _RegressOutputSpec(TraitedSpec):
-    res_file = File(exists=True,
-                    mandatory=True,
-                    desc="Residual file after regression")
+    res_file = File(exists=True, mandatory=True, desc="Residual file after regression")
 
 
 class Regress(SimpleInterface):
@@ -88,8 +83,7 @@ class Regress(SimpleInterface):
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
         # Get the nifti/cifti matrix
-        bold_matrix = read_ndata(datafile=self.inputs.in_file,
-                                 maskfile=self.inputs.mask)
+        bold_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
 
         # Demean and detrend the data
 
@@ -97,29 +91,32 @@ class Regress(SimpleInterface):
 
         # Regress out the confounds via linear regression from sklearn
         if demeaned_detrended_data.shape[1] < confound.shape[0]:
-            print("Warning: Regression might not be effective due to rank deficiency, i.e:"
-                  "the number of volumes in the bold file is much smaller than the number of"
-                  " egressors.")
+            print(
+                "Warning: Regression might not be effective due to rank deficiency, i.e:"
+                "the number of volumes in the bold file is much smaller than the number of"
+                " egressors."
+            )
         residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
 
         # Write out the data
-        if self.inputs.in_file.endswith('.dtseries.nii'):  # If cifti
-            suffix = '_residualized.dtseries.nii'
-        elif self.inputs.in_file.endswith('.nii.gz'):  # If nifti
-            suffix = '_residualized.nii.gz'
+        if self.inputs.in_file.endswith(".dtseries.nii"):  # If cifti
+            suffix = "_residualized.dtseries.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):  # If nifti
+            suffix = "_residualized.nii.gz"
 
         # write the output out
-        self._results['res_file'] = fname_presuffix(
+        self._results["res_file"] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results['res_file'] = write_ndata(
+        self._results["res_file"] = write_ndata(
             data_matrix=residualized_data,
             template=self.inputs.in_file,
-            filename=self._results['res_file'],
-            mask=self.inputs.mask)
+            filename=self._results["res_file"],
+            mask=self.inputs.mask,
+        )
         return runtime
 
 
@@ -141,13 +138,13 @@ class CiftiDespike(SimpleInterface):
     def _run_interface(self, runtime):
 
         # write the output out
-        self._results['des_file'] = fname_presuffix(
-            'ciftidepike',
-            suffix='.dtseries.nii',
+        self._results["des_file"] = fname_presuffix(
+            "ciftidepike",
+            suffix=".dtseries.nii",
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results['des_file'] = despikedatacifti(cifti=self.inputs.in_file,
-                                                     TR=self.inputs.TR,
-                                                     basedir=runtime.cwd)
+        self._results["des_file"] = despikedatacifti(
+            cifti=self.inputs.in_file, TR=self.inputs.TR, basedir=runtime.cwd
+        )
         return runtime

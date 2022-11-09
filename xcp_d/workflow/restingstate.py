@@ -95,25 +95,29 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
-        name='inputnode')
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=['alff_out', 'smoothed_alff', 'alffplot']),
-        name='outputnode')
+        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]), name="inputnode"
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["alff_out", "smoothed_alff", "alffplot"]), name="outputnode"
+    )
 
     # compute alff
-    alff_compt = pe.Node(ComputeALFF(TR=TR, lowpass=lowpass,
-                                     highpass=highpass),
-                         mem_gb=mem_gb,
-                         name='alff_compt',
-                         n_procs=omp_nthreads)
+    alff_compt = pe.Node(
+        ComputeALFF(TR=TR, lowpass=lowpass, highpass=highpass),
+        mem_gb=mem_gb,
+        name="alff_compt",
+        n_procs=omp_nthreads,
+    )
 
-    alff_plot = pe.Node(Function(
-                        input_names=["output_path", "filename", "bold_file"],
-                        output_names=["output_path"],
-                        function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric),
-                        name="alff_plot")
-    alff_plot.inputs.output_path = 'alff.svg'
+    alff_plot = pe.Node(
+        Function(
+            input_names=["output_path", "filename", "bold_file"],
+            output_names=["output_path"],
+            function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric,
+        ),
+        name="alff_plot",
+    )
+    alff_plot.inputs.output_path = "alff.svg"
     alff_plot.inputs.bold_file = bold_file
     # fmt:off
     workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
@@ -150,22 +154,26 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             )
 
             # Smooth via Connectome Workbench
-            sigma_lx = fwhm2sigma(smoothing)   # Convert fwhm to standard deviation
+            sigma_lx = fwhm2sigma(smoothing)  # Convert fwhm to standard deviation
             # Get templates for each hemisphere
             lh_midthickness = str(
-                get_template("fsLR", hemi='L', suffix='sphere',
-                             density='32k')[0])
+                get_template("fsLR", hemi="L", suffix="sphere", density="32k")[0]
+            )
             rh_midthickness = str(
-                get_template("fsLR", hemi='R', suffix='sphere',
-                             density='32k')[0])
-            smooth_data = pe.Node(CiftiSmooth(sigma_surf=sigma_lx,
-                                              sigma_vol=sigma_lx,
-                                              direction='COLUMN',
-                                              right_surf=rh_midthickness,
-                                              left_surf=lh_midthickness),
-                                  name="ciftismoothing",
-                                  mem_gb=mem_gb,
-                                  n_procs=omp_nthreads)
+                get_template("fsLR", hemi="R", suffix="sphere", density="32k")[0]
+            )
+            smooth_data = pe.Node(
+                CiftiSmooth(
+                    sigma_surf=sigma_lx,
+                    sigma_vol=sigma_lx,
+                    direction="COLUMN",
+                    right_surf=rh_midthickness,
+                    left_surf=lh_midthickness,
+                ),
+                name="ciftismoothing",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
             # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
@@ -230,23 +238,23 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 *3dReHo* in AFNI [@afni].
 """
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['clean_bold']),
-        name='inputnode',
+        niu.IdentityInterface(fields=["clean_bold"]),
+        name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['reho_out', 'rehoplot']),
-        name='outputnode',
+        niu.IdentityInterface(fields=["reho_out", "rehoplot"]),
+        name="outputnode",
     )
 
     # Extract left and right hemispheres via Connectome Workbench
     lh_surf = pe.Node(
-        CiftiSeparateMetric(metric='CORTEX_LEFT', direction="COLUMN"),
+        CiftiSeparateMetric(metric="CORTEX_LEFT", direction="COLUMN"),
         name="separate_lh",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
     rh_surf = pe.Node(
-        CiftiSeparateMetric(metric='CORTEX_RIGHT', direction="COLUMN"),
+        CiftiSeparateMetric(metric="CORTEX_RIGHT", direction="COLUMN"),
         name="separate_rh",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -260,19 +268,19 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Calculate the reho by hemipshere
     lh_reho = pe.Node(
-        SurfaceReHo(surf_hemi='L'),
+        SurfaceReHo(surf_hemi="L"),
         name="reho_lh",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
     rh_reho = pe.Node(
-        SurfaceReHo(surf_hemi='R'),
+        SurfaceReHo(surf_hemi="R"),
         name="reho_rh",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHoNamePatch(neighborhood='vertices'),
+        ReHoNamePatch(neighborhood="vertices"),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -285,11 +293,14 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-    reho_plot = pe.Node(Function(
-                        input_names=["output_path", "filename", "bold_file"],
-                        output_names=["output_path"],
-                        function=plot_alff_reho_surface),
-                        name="reho_cifti_plot")
+    reho_plot = pe.Node(
+        Function(
+            input_names=["output_path", "filename", "bold_file"],
+            output_names=["output_path"],
+            function=plot_alff_reho_surface,
+        ),
+        name="reho_cifti_plot",
+    )
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
     # Write out results
@@ -365,23 +376,23 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['clean_bold', 'bold_mask']),
-        name='inputnode')
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=['reho_out', 'rehoplot']),
-        name='outputnode')
+        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]), name="inputnode"
+    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["reho_out", "rehoplot"]), name="outputnode")
 
     # Run AFNI'S 3DReHo on the data
-    compute_reho = pe.Node(ReHoNamePatch(neighborhood='vertices'),
-                           name="reho_3d",
-                           mem_gb=mem_gb,
-                           n_procs=omp_nthreads)
+    compute_reho = pe.Node(
+        ReHoNamePatch(neighborhood="vertices"), name="reho_3d", mem_gb=mem_gb, n_procs=omp_nthreads
+    )
     # Get the svg
-    reho_plot = pe.Node(Function(
-                        input_names=["output_path", "filename", "bold_file"],
-                        output_names=["output_path"],
-                        function=plot_alff_reho_volumetric),
-                        name="reho_nifti_plot")
+    reho_plot = pe.Node(
+        Function(
+            input_names=["output_path", "filename", "bold_file"],
+            output_names=["output_path"],
+            function=plot_alff_reho_volumetric,
+        ),
+        name="reho_nifti_plot",
+    )
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
     # Write the results out

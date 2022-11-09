@@ -103,7 +103,7 @@ class _BinaryMathInputSpec(BaseInterfaceInputSpec):
     )
     expression = traits.String(
         mandatory=True,
-        desc="A mathematical expression to apply to the image. Must have 'img' in it."
+        desc="A mathematical expression to apply to the image. Must have 'img' in it.",
     )
     out_file = File(
         "out_img.nii.gz",
