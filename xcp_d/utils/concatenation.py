@@ -164,7 +164,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     make_dcan_df([motion_file.path], dcan_df_file, TR)
 
                 # Concatenate motion files
-                motion_file_names = ', '.join([motion_file.path for motion_file in motion_files])
+                motion_file_names = ", ".join([motion_file.path for motion_file in motion_files])
                 LOGGER.debug(f"Concatenating motion files: {motion_file_names}")
                 concat_motion_file = _get_concat_name(layout_xcpd, motion_files[0])
                 concatenate_tsv_files(motion_files, concat_motion_file)
@@ -181,7 +181,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     extension=".tsv",
                     **task_entities,
                 )
-                outlier_file_names = ', '.join(
+                outlier_file_names = ", ".join(
                     [outlier_file.path for outlier_file in outlier_files]
                 )
                 LOGGER.debug(f"Concatenating outlier files: {outlier_file_names}")
@@ -287,9 +287,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     )
                     if len(smooth_bold_files):
                         concat_file = _get_concat_name(layout_xcpd, smooth_bold_files[0])
-                        LOGGER.debug(
-                            f"Concatenating smoothed postprocessed file: {concat_file}"
-                        )
+                        LOGGER.debug(f"Concatenating smoothed postprocessed file: {concat_file}")
                         _concatenate_niimgs(smooth_bold_files, concat_file)
 
                     # Carpet plots
@@ -323,11 +321,11 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                     LOGGER.debug("Starting plot_svgx")
                     plot_svgx(
+                        preprocessed_file=concat_preproc_file,
+                        denoised_file=concat_bold_file,
+                        denoised_filtered_file=concat_bold_file,
                         dummyvols=initial_volumes_to_drop,
                         tmask=outfile,
-                        rawdata=concat_preproc_file,
-                        regressed_data=concat_bold_file,
-                        residual_data=concat_bold_file,
                         filtered_motion=concat_motion_file,
                         raw_dvars=raw_dvars,
                         regressed_dvars=regressed_dvars,
@@ -414,9 +412,7 @@ def make_dcan_df(fds_files, name, TR):
                 data=(fd > thresh).astype(int),
                 dtype="float",
             )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float"
-            )
+            dcan.create_dataset(f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float")
             dcan.create_dataset(
                 f"/dcan_motion/fd_{thresh}/total_frame_count", data=len(fd), dtype="float"
             )

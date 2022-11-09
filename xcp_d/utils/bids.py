@@ -50,9 +50,7 @@ class BIDSWarning(RuntimeWarning):
     pass
 
 
-def collect_participants(
-    bids_dir, participant_label=None, strict=False, bids_validate=False
-):
+def collect_participants(bids_dir, participant_label=None, strict=False, bids_validate=False):
     """Collect a list of participants from a BIDS dataset.
 
     Parameters
@@ -101,9 +99,7 @@ def collect_participants(
         participant_label = [participant_label]
 
     # Drop sub- prefixes
-    participant_label = [
-        sub[4:] if sub.startswith("sub-") else sub for sub in participant_label
-    ]
+    participant_label = [sub[4:] if sub.startswith("sub-") else sub for sub in participant_label]
     # Remove duplicates
     participant_label = sorted(set(participant_label))
     # Remove labels not found
@@ -415,7 +411,7 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         with open(dataset_description) as f:
             dataset_dict = json.load(f)
 
-        info_dict["version"] = dataset_dict['GeneratedBy'][0]['Version']
+        info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
     else:
         info_dict["version"] = "unknown"
 
@@ -446,9 +442,9 @@ def _add_subject_prefix(subid):
     str
         Subject entity (e.g., 'sub-XX').
     """
-    if subid.startswith('sub-'):
+    if subid.startswith("sub-"):
         return subid
-    return '-'.join(('sub', subid))
+    return "-".join(("sub", subid))
 
 
 def _getsesid(filename):
@@ -468,10 +464,10 @@ def _getsesid(filename):
     ses_id = None
     base_filename = os.path.basename(filename)
 
-    file_id = base_filename.split('_')
+    file_id = base_filename.split("_")
     for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
+        if "ses" in k:
+            ses_id = k.split("-")[1]
             break
 
     return ses_id

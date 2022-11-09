@@ -18,20 +18,18 @@ from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True,
-                     mandatory=True,
-                     desc="Either cifti or nifti ")
-    initial_volumes_to_drop = traits.Int(mandatory=True,
-                                         desc="Number of volumes to drop from the beginning,"
-                                              "calculated in an earlier workflow from dummytime "
-                                              "and repetition time.")
-    fmriprep_confounds_file = File(exists=True,
-                                   mandatory=False,
-                                   desc="fmriprep confounds tsv")
+    bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
+    initial_volumes_to_drop = traits.Int(
+        mandatory=True,
+        desc="Number of volumes to drop from the beginning,"
+        "calculated in an earlier workflow from dummytime "
+        "and repetition time.",
+    )
+    fmriprep_confounds_file = File(exists=True, mandatory=False, desc="fmriprep confounds tsv")
     custom_confounds = traits.Either(
         None,
         File(exists=True),
@@ -42,13 +40,13 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
 
 
 class _RemoveTROutputSpec(TraitedSpec):
-    fmriprep_confounds_file_dropped_TR = File(exists=True,
-                                              mandatory=True,
-                                              desc="fmriprep confounds tsv after removing TRs,")
+    fmriprep_confounds_file_dropped_TR = File(
+        exists=True, mandatory=True, desc="fmriprep confounds tsv after removing TRs,"
+    )
 
-    bold_file_dropped_TR = File(exists=True,
-                                mandatory=True,
-                                desc="bold or cifti with volumes dropped")
+    bold_file_dropped_TR = File(
+        exists=True, mandatory=True, desc="bold or cifti with volumes dropped"
+    )
 
     custom_confounds_dropped = traits.Either(
         None,
@@ -85,21 +83,21 @@ class RemoveTR(SimpleInterface):
         # Check if we need to do anything
         if self.inputs.initial_volumes_to_drop == 0:
             # write the output out
-            self._results['bold_file_dropped_TR'] = self.inputs.bold_file
-            self._results['fmriprep_confounds_file_dropped'
-                          '_TR'] = self.inputs.fmriprep_confounds_file
+            self._results["bold_file_dropped_TR"] = self.inputs.bold_file
+            self._results[
+                "fmriprep_confounds_file_dropped" "_TR"
+            ] = self.inputs.fmriprep_confounds_file
             return runtime
         # get the file names to output to
         dropped_bold_file = fname_presuffix(
-            self.inputs.bold_file,
-            newpath=runtime.cwd,
-            suffix="_dropped",
-            use_ext=True)
+            self.inputs.bold_file, newpath=runtime.cwd, suffix="_dropped", use_ext=True
+        )
         dropped_confounds_file = fname_presuffix(
             self.inputs.fmriprep_confounds_file,
             newpath=runtime.cwd,
             suffix="_dropped",
-            use_ext=True)
+            use_ext=True,
+        )
 
         # read the bold file
         bold_image = nb.load(self.inputs.bold_file)
@@ -107,25 +105,25 @@ class RemoveTR(SimpleInterface):
 
         # If it's a Cifti Image:
         if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...]   # time series is the first element
+            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
             time_axis, brain_model_axis = [
-                bold_image.header.get_axis(i) for i in range(bold_image.ndim)]
+                bold_image.header.get_axis(i) for i in range(bold_image.ndim)
+            ]
             new_total_volumes = dropped_data.shape[0]
             dropped_time_axis = time_axis[:new_total_volumes]
             dropped_header = nb.cifti2.Cifti2Header.from_axes(
-                (dropped_time_axis, brain_model_axis))
+                (dropped_time_axis, brain_model_axis)
+            )
             dropped_image = nb.Cifti2Image(
-                dropped_data,
-                header=dropped_header,
-                nifti_header=bold_image.nifti_header)
+                dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
+            )
 
         # If it's a Nifti Image:
         else:
             dropped_data = data[..., volumes_to_drop:]
             dropped_image = nb.Nifti1Image(
-                dropped_data,
-                affine=bold_image.affine,
-                header=bold_image.header)
+                dropped_data, affine=bold_image.affine, header=bold_image.header
+            )
 
         # Write the file
         dropped_image.to_filename(dropped_bold_file)
@@ -137,41 +135,40 @@ class RemoveTR(SimpleInterface):
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
             custom_confounds_tsv_undropped = pd.read_table(
-                self.inputs.custom_confounds, header=None)
+                self.inputs.custom_confounds, header=None
+            )
             custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
-                np.arange(volumes_to_drop))
+                np.arange(volumes_to_drop)
+            )
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
         # Write to output node
-        self._results['bold_file_dropped_TR'] = dropped_bold_file
-        self._results['fmriprep_confounds_file_dropped_TR'] = dropped_confounds_file
+        self._results["bold_file_dropped_TR"] = dropped_bold_file
+        self._results["fmriprep_confounds_file_dropped_TR"] = dropped_confounds_file
 
         if self.inputs.custom_confounds:
-            self._results['custom_confounds_dropped'] = fname_presuffix(
+            self._results["custom_confounds_dropped"] = fname_presuffix(
                 self.inputs.bold_file,
-                suffix='_custom_confounds_dropped.tsv',
+                suffix="_custom_confounds_dropped.tsv",
                 newpath=os.getcwd(),
-                use_ext=False)
-            custom_confounds_tsv_dropped.to_csv(self._results['custom_confounds_dropped'],
-                                                index=False,
-                                                header=False,
-                                                sep="\t")  # Assuming input is tab separated!
+                use_ext=False,
+            )
+            custom_confounds_tsv_dropped.to_csv(
+                self._results["custom_confounds_dropped"], index=False, header=False, sep="\t"
+            )  # Assuming input is tab separated!
 
         return runtime
 
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True, mandatory=True, desc=" Partially processed bold or nifti"
-    )
+    in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
-        desc="Framewise displacement"
-        "threshold. All values above this will be dropped.",
+        desc="Framewise displacement" "threshold. All values above this will be dropped.",
     )
     custom_confounds = traits.Either(
         None,
@@ -185,9 +182,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv after removing dummy time, if any",
     )
-    head_radius = traits.Float(
-        mandatory=False, default_value=50, desc="Head radius in mm "
-    )
+    head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
     motion_filter_type = traits.Either(
         None,
         traits.Str,
@@ -414,9 +409,7 @@ class _InterpolateInputSpec(BaseInterfaceInputSpec):
 
 
 class _InterpolateOutputSpec(TraitedSpec):
-    bold_interpolated = File(exists=True,
-                             mandatory=True,
-                             desc=" fmriprep censored")
+    bold_interpolated = File(exists=True, mandatory=True, desc=" fmriprep censored")
 
 
 class Interpolate(SimpleInterface):
@@ -434,8 +427,7 @@ class Interpolate(SimpleInterface):
     def _run_interface(self, runtime):
         # Read in regressed bold data and temporal mask
         # from censorscrub
-        bold_data = read_ndata(datafile=self.inputs.in_file,
-                               maskfile=self.inputs.mask_file)
+        bold_data = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask_file)
 
         tmask_df = pd.read_table(self.inputs.tmask)
         tmask_arr = tmask_df["framewise_displacement"].values
@@ -456,7 +448,7 @@ class Interpolate(SimpleInterface):
         )
 
         # save out results
-        self._results['bold_interpolated'] = fname_presuffix(
+        self._results["bold_interpolated"] = fname_presuffix(
             self.inputs.in_file,
             newpath=os.getcwd(),
             use_ext=True,
@@ -467,7 +459,7 @@ class Interpolate(SimpleInterface):
             template=self.inputs.bold_file,
             mask=self.inputs.mask_file,
             TR=self.inputs.TR,
-            filename=self._results['bold_interpolated'],
+            filename=self._results["bold_interpolated"],
         )
 
         return runtime

@@ -35,7 +35,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 from xcp_d.utils.bids import _getsesid
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger('nipype.workflow')
+LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
@@ -113,12 +113,15 @@ def init_t1w_wf(
             run_without_submitting=False,
         )
 
+        # fmt:off
         workflow.connect(
             [
                 (inputnode, ds_t1wmni, [("t1w", "in_file")]),
                 (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
             ]
         )
+        # fmt:on
+
         if t2w_available:
             ds_t2wmni = pe.Node(
                 DerivativesDataSink(
@@ -128,7 +131,9 @@ def init_t1w_wf(
                 name="ds_t2wmni",
                 run_without_submitting=False,
             )
+            # fmt:off
             workflow.connect([(inputnode, ds_t2wmni, [("t2w", "in_file")])])
+            # fmt:on
 
     else:
         # #TM: need to replace MNI92FSL xfm with the correct
@@ -203,31 +208,36 @@ def init_t1w_wf(
                 name="ds_t2wmni",
                 run_without_submitting=False,
             )
+            # fmt:off
             workflow.connect([
                 (inputnode, t2w_transform, [("t2w", "input_image"),
                                             ("t1w_to_mni", "transforms")]),
                 (t2w_transform, ds_t2wmni, [("output_image", "in_file")]),
             ])
+            # fmt:on
 
-        workflow.connect(
-            [
-                (inputnode, t1w_transform, [("t1w", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
-                (inputnode, seg_transform, [("t1seg", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
-                (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
-                (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
-            ]
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, t1w_transform, [("t1w", "input_image"),
+                                        ("t1w_to_mni", "transforms")]),
+            (inputnode, seg_transform, [("t1seg", "input_image"),
+                                        ("t1w_to_mni", "transforms")]),
+            (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
+            (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
+        ])
+        # fmt:on
 
-    workflow.connect(
-        [
-            (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
-        ]
-    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_t1wmni, [("t1w", "source_file")]),
+        (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
+    ])
+    # fmt:on
+
     if t2w_available:
+        # fmt:off
         workflow.connect([(inputnode, ds_t1wmni, [("t2w", "source_file")])])
+        # fmt:on
 
     return workflow
 
@@ -319,18 +329,14 @@ def init_anatomical_wf(
         R_midthick_surf = fnmatch.filter(
             all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
         )[0]
-        L_pial_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii"
-        )[0]
-        R_pial_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii"
-        )[0]
-        L_wm_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii"
-        )[0]
-        R_wm_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii"
-        )[0]
+        L_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii")[0]
+        R_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii")[0]
+        L_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii")[
+            0
+        ]
+        R_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii")[
+            0
+        ]
 
         # All of the converted dcan and hcp files should have a session entity/folder
         ses_id = _getsesid(R_wm_surf)
@@ -357,17 +363,11 @@ def init_anatomical_wf(
         # verify freesurfer directory
         p = Path(fmri_dir)
 
-        freesurfer_paths = glob.glob(
-            str(p.parent) + "/*freesurfer*"
-        )  # for fmriprep and nibabies
+        freesurfer_paths = glob.glob(str(p.parent) + "/*freesurfer*")  # for fmriprep and nibabies
         if len(freesurfer_paths) == 0:
-            freesurfer_paths = glob.glob(
-                str(p) + "/sourcedata/*freesurfer*"
-            )  # nibabies
+            freesurfer_paths = glob.glob(str(p) + "/sourcedata/*freesurfer*")  # nibabies
 
-        if len(freesurfer_paths) > 0 and "freesurfer" in os.path.basename(
-            freesurfer_paths[0]
-        ):
+        if len(freesurfer_paths) > 0 and "freesurfer" in os.path.basename(freesurfer_paths[0]):
             freesurfer_path = freesurfer_paths[0]
         else:
             freesurfer_path = None
@@ -406,38 +406,26 @@ def init_anatomical_wf(
                 subid = subject_id
 
             lh_sphere_fsLR = str(
-                get_template(template="fsLR", hemi="L", density="32k", suffix="sphere")[
-                    0
-                ]
+                get_template(template="fsLR", hemi="L", density="32k", suffix="sphere")[0]
             )
             rh_sphere_fsLR = str(
-                get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[
-                    0
-                ]
+                get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[0]
             )
 
-            lh_sphere_raw = (
-                str(freesurfer_path) + "/" + subid + "/surf/lh.sphere.reg"
-            )  # MB, TM
-            rh_sphere_raw = (
-                str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"
-            )  # MB, TM
+            lh_sphere_raw = str(freesurfer_path) + "/" + subid + "/surf/lh.sphere.reg"  # MB, TM
+            rh_sphere_raw = str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"  # MB, TM
 
             # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
             h5_file = fnmatch.filter(
                 all_files,
-                "*sub-*"
-                + subject_id
-                + "*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
+                "*sub-*" + subject_id + "*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
             )[
                 0
             ]  # MB
 
             h5_inv_file = fnmatch.filter(
                 all_files,
-                "*sub-*"
-                + subject_id
-                + "*from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
+                "*sub-*" + subject_id + "*from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
             )[
                 0
             ]  # MB
@@ -711,27 +699,35 @@ def init_anatomical_wf(
                 )
             )
 
-            fs_L2fsLR = pkgrf('xcp_d',
-                              ('data/standard_mesh_atlases/fs_L/'
-                               'fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii'))
+            fs_L2fsLR = pkgrf(
+                "xcp_d",
+                (
+                    "data/standard_mesh_atlases/fs_L/"
+                    "fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii"
+                ),
+            )
 
-            fs_R2fsLR = pkgrf('xcp_d',
-                              ('data/standard_mesh_atlases/fs_R/'
-                               'fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii'))
+            fs_R2fsLR = pkgrf(
+                "xcp_d",
+                (
+                    "data/standard_mesh_atlases/fs_R/"
+                    "fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii"
+                ),
+            )
 
             surface_sphere_project_unproject_lh = pe.Node(
                 SurfaceSphereProjectUnproject(
                     sphere_project_to=fs_std_mesh_L,
                     sphere_unproject_from=fs_L2fsLR,
                 ),
-                name='surface_sphere_project_unproject_lh'
+                name="surface_sphere_project_unproject_lh",
             )
             surface_sphere_project_unproject_rh = pe.Node(
                 SurfaceSphereProjectUnproject(
                     sphere_project_to=fs_std_mesh_R,
                     sphere_unproject_from=fs_R2fsLR,
                 ),
-                name='surface_sphere_project_unproject_rh'
+                name="surface_sphere_project_unproject_rh",
             )
 
             # resample the mid, pial, wm surfs to fsLR32k
@@ -948,6 +944,7 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            # fmt:off
             workflow.connect(
                 [
                     (disassemble_h5, merge_xfms_list, [("displacement_field", "in1")]),
@@ -1212,6 +1209,7 @@ def init_anatomical_wf(
                     (select_rh_32k_wm_surf, ds_wmRsurf_wf, [("out", "in_file")]),
                 ]
             )
+            # fmt:on
 
             # make "HCP-style" native midthickness and inflated
             lh_native_hcpmidthick_wf = pe.Node(
@@ -1227,19 +1225,13 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )
             lh_32k_hcpmidthick_resample_wf = pe.Node(
-                CiftiSurfaceResample(
-                    new_sphere=lh_sphere_fsLR,
-                    metric=" BARYCENTRIC "
-                ),
+                CiftiSurfaceResample(new_sphere=lh_sphere_fsLR, metric=" BARYCENTRIC "),
                 name="lh_32k_hcpmidthick_resample_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
             rh_32k_hcpmidthick_resample_wf = pe.Node(
-                CiftiSurfaceResample(
-                    new_sphere=rh_sphere_fsLR,
-                    metric=" BARYCENTRIC "
-                ),
+                CiftiSurfaceResample(new_sphere=rh_sphere_fsLR, metric=" BARYCENTRIC "),
                 name="rh_32k_hcpmidthick_resample_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -1379,6 +1371,7 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            # fmt:off
             workflow.connect(
                 [
                     (
@@ -1508,6 +1501,7 @@ def init_anatomical_wf(
                     ),
                 ]
             )
+            # fmt:on
 
         else:
             LOGGER.warning(
@@ -1521,11 +1515,13 @@ def init_anatomical_wf(
                 niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
                 name="nothingnode",
             )
+            # fmt:off
             workflow.connect(
                 [
                     (inputnode, nothingnode, [("t1w", "t1w")]),
                     (inputnode, nothingnode, [("t1seg", "t1seg")]),
                 ]
             )
+            # fmt:on
 
     return workflow
