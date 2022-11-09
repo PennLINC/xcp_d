@@ -542,7 +542,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     censor_report = pe.Node(
         CensoringPlot(
             TR=TR,
-            dummytime=dummytime,
+            dummy_scans=dummy_scans,
             head_radius=head_radius,
             motion_filter_type=motion_filter_type,
             band_stop_max=band_stop_max,
@@ -558,7 +558,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            dummytime=dummytime,
+            dummy_scans=dummy_scans,
             template_mask=str(
                 get_template(
                     "MNI152NLin2009cAsym",
@@ -588,37 +588,30 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # Remove TR first:
     if dummy_scans:
-        rm_dummytime = pe.Node(
+        remove_dummy_scans = pe.Node(
             RemoveTR(initial_volumes_to_drop=dummy_scans),
-            name="remove_dummy_time",
+            name="remove_dummy_scans",
             mem_gb=0.1 * mem_gbx["timeseries"],
         )
 
-        workflow.connect(
-            [
-                (inputnode, rm_dummytime, [("fmriprep_confounds_tsv", "fmriprep_confounds_file")]),
-                (inputnode, rm_dummytime, [("bold_file", "bold_file")]),
-                (
-                    get_custom_confounds_file,
-                    rm_dummytime,
-                    [
-                        ("custom_confounds_file", "custom_confounds"),
-                    ],
-                ),
-                (
-                    rm_dummytime,
-                    censor_scrub,
-                    [
-                        ("bold_file_dropped_TR", "in_file"),
-                        ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
-                        ("custom_confounds_dropped", "custom_confounds"),
-                    ],
-                ),
-            ]
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, remove_dummy_scans, [
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+            ]),
+            (inputnode, remove_dummy_scans, [("bold_file", "bold_file")]),
+            (get_custom_confounds_file, remove_dummy_scans, [
+                ("custom_confounds_file", "custom_confounds"),
+            ]),
+            (remove_dummy_scans, censor_scrub, [
+                ("bold_file_dropped_TR", "in_file"),
+                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
+                ("custom_confounds_dropped", "custom_confounds"),
+            ]),
+        ])
+        # fmt:on
 
     else:  # No need to remove TR
-        # Censor Scrub:
         # fmt:off
         workflow.connect([
             (inputnode, censor_scrub, [

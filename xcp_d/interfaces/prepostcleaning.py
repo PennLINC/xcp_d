@@ -72,17 +72,6 @@ class RemoveTR(SimpleInterface):
 
     A bold file and its corresponding confounds TSV (fmriprep format)
     are adjusted to remove the first n seconds of data.
-
-    If 0, the bold file and confounds are returned as-is. If dummytime
-    is larger than the repetition time, the corresponding rows are removed
-    from the confounds TSV and the initial volumes are removed from the
-    nifti or cifti file.
-
-    If the dummy time is less than the repetition time, it will
-    be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
-
-    The number of volumes to be removed has been calculated in a previous
-    workflow.
     """
 
     input_spec = _RemoveTRInputSpec
@@ -119,6 +108,7 @@ class RemoveTR(SimpleInterface):
                 "fmriprep_confounds_file_dropped_TR"
             ] = self.inputs.fmriprep_confounds_file
             return runtime
+
         # get the file names to output to
         dropped_bold_file = fname_presuffix(
             self.inputs.bold_file, newpath=runtime.cwd, suffix="_dropped", use_ext=True
