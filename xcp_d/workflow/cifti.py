@@ -398,7 +398,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            dummy_scans=dummy_scans,
             head_radius=head_radius,
         ),
         name="qc_report",
@@ -409,7 +408,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     censor_report = pe.Node(
         CensoringPlot(
             TR=TR,
-            dummy_scans=dummy_scans,
             head_radius=head_radius,
             motion_filter_type=motion_filter_type,
             band_stop_max=band_stop_max,
@@ -444,6 +442,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
                 ("custom_confounds_dropped", "custom_confounds"),
             ]),
+            (remove_dummy_scans, censor_report, [
+                ("dummyvols", "dummy_scans"),
+            ]),
+            (remove_dummy_scans, qcreport, [
+                ("dummyvols", "dummy_scans"),
+            ])
         ])
         # fmt:on
 
@@ -724,7 +728,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             layout=layout,
             output_dir=output_dir,
             omp_nthreads=omp_nthreads,
-            dummy_scans=dummy_scans,
             mem_gb=mem_gbx["timeseries"],
         )
 
@@ -748,6 +751,15 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ]),
         ])
         # fmt:on
+
+        if dummy_scans:
+            # fmt:off
+            workflow.connect([
+                (remove_dummy_scans, executivesummary_wf, [
+                    ("dummyvols", "dummy_scans"),
+                ])
+            ])
+            # fmt:on
 
     return workflow
 
