@@ -1205,3 +1205,71 @@ def plot_design_matrix(design_matrix):
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
 
     return design_matrix_figure
+
+
+def plot_ribbon_svg(template, in_file):
+    """Plot the anatomical template and ribbon in a static SVG file."""
+    import os
+
+    import matplotlib.pyplot as plt
+    import nibabel as nib
+    import numpy as np
+    from matplotlib.patches import Rectangle
+    from nilearn.image import math_img
+    from nilearn.plotting import plot_anat
+
+    plot_file = os.path.abspath("ribbon.svg")
+
+    # Set vmax to 95-th percentile of T1w image
+    t1w_img = nib.load(template)
+    vmax = np.percentile(t1w_img.get_fdata(), 95)
+
+    # Coerce to ints
+    img = math_img("img.astype(int)", img=in_file)
+    white_img = math_img("img == 1", img=img)
+    pial_img = math_img("img == 2", img=img)
+    both_img = math_img("img == 3", img=img)
+
+    fig = plt.figure(
+        figsize=(25, 10),
+    )
+    display = plot_anat(
+        template,
+        draw_cross=False,
+        vmax=vmax,
+        figure=fig,
+    )
+    display.add_contours(
+        white_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["purple"],
+    )
+    display.add_contours(
+        pial_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["green"],
+    )
+    display.add_contours(
+        both_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["red"],
+    )
+    # We generate a legend using the trick described on
+    # http://matplotlib.sourceforge.net/users/legend_guide.httpml#using-proxy-artist
+    p1 = Rectangle((0, 0), 1, 1, fc="purple", label="White Matter")
+    p2 = Rectangle((0, 0), 1, 1, fc="green", label="Pial")
+    p3 = Rectangle((0, 0), 1, 1, fc="red", label="Both Somehow")
+    plt.legend([p1, p2, p3], ["White Matter", "Pial", "Both Somehow"], fontsize=18)
+
+    fig.savefig(plot_file, bbox_inches="tight", pad_inches=None)
+    # return fig
+    return plot_file

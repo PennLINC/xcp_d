@@ -62,6 +62,7 @@ def init_boldpostprocess_wf(
     fd_thresh,
     n_runs,
     despike,
+    dcan_qc,
     layout=None,
     name="bold_postprocess_wf",
 ):
@@ -93,6 +94,7 @@ def init_boldpostprocess_wf(
                 fd_thresh=0.2,
                 n_runs=1,
                 despike=False,
+                dcan_qc=False,
                 layout=None,
                 name='bold_postprocess_wf',
             )
@@ -123,6 +125,8 @@ def init_boldpostprocess_wf(
     n_runs
     despike: bool
         If True, run 3dDespike from AFNI
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s
@@ -419,16 +423,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="interpolation_wf",
         mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,
-    )
-
-    executivesummary_wf = init_execsummary_wf(
-        TR=TR,
-        bold_file=bold_file,
-        layout=layout,
-        mem_gb=mem_gbx["timeseries"],
-        output_dir=output_dir,
-        dummyvols=initial_volumes_to_drop,
-        omp_nthreads=omp_nthreads,
     )
 
     # get transform file for resampling and fcon
@@ -753,16 +747,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                   ('outputnode.correlations', 'correlations'),
                                   ('outputnode.timeseries', 'timeseries')]),
     ])
+    # fmt:on
 
     if bandpass_filter:
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, outputnode, [
                 ('outputnode.alff_out', 'alff_out'),
                 ('outputnode.smoothed_alff', 'smoothed_alff'),
             ]),
         ])
+        # fmt:on
 
     # write derivatives
+    # fmt:off
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [('out_file',
                                                             'inputnode.confounds_file')]),
@@ -779,15 +777,17 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                            ('outputnode.timeseries', 'inputnode.timeseries')]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')]),
     ])
+    # fmt:on
 
     if bandpass_filter:
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
                 ('outputnode.alff_out', 'inputnode.alff_out'),
                 ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
             ]),
         ])
-    # fmt:on
+        # fmt:on
 
     functional_qc = pe.Node(
         FunctionalSummary(bold_file=bold_file, TR=TR),
@@ -909,20 +909,38 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:on
 
     # executive summary workflow
-    # fmt:off
-    workflow.connect([
-        (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
-                                          ('t1seg', 'inputnode.t1seg'),
-                                          ('bold_file', 'inputnode.bold_file'),
-                                          ('bold_mask', 'inputnode.mask'),
-                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')]),
-        (filtering_wf, executivesummary_wf, [('filtered_file', 'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('filtered_motion', 'inputnode.filtered_motion'),
-                                             ('tmask',
-                                              'inputnode.tmask')]),
-    ])
-    # fmt:on
+    if dcan_qc:
+        executivesummary_wf = init_execsummary_wf(
+            TR=TR,
+            bold_file=bold_file,
+            layout=layout,
+            mem_gb=mem_gbx["timeseries"],
+            output_dir=output_dir,
+            dummyvols=initial_volumes_to_drop,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, executivesummary_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1seg", "inputnode.t1seg"),
+                ("bold_file", "inputnode.bold_file"),
+                ("bold_mask", "inputnode.mask"),
+                ("mni_to_t1w", "inputnode.mni_to_t1w"),
+            ]),
+            (regression_wf, executivesummary_wf, [
+                ("res_file", "inputnode.regressed_data"),
+            ]),
+            (filtering_wf, executivesummary_wf, [
+                ("filtered_file", "inputnode.residual_data"),
+            ]),
+            (censor_scrub, executivesummary_wf, [
+                ("filtered_motion", "inputnode.filtered_motion"),
+                ("tmask", "inputnode.tmask"),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 
