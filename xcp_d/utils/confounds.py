@@ -411,11 +411,12 @@ def load_confound_matrix(original_file, params, custom_confounds=None, confound_
         confound = pd.concat([derivative_rot_trans, acompcor, global_signal, cosine], axis=1)
     elif params == "custom":
         # For custom confounds with no other confounds
-        confound = pd.read_table(custom_confounds, sep="\t", header=None)
-    if params != "custom":  # For both custom and fMRIPrep confounds
-        if custom_confounds is not None:
-            custom = pd.read_table(custom_confounds, sep="\t", header=None)
-            confound = pd.concat([confound, custom], axis=1)
+        confound = pd.read_table(custom_confounds, sep="\t")
+
+    if params != "custom" and custom_confounds is not None:
+        # For both custom and fMRIPrep confounds
+        custom = pd.read_table(custom_confounds, sep="\t")
+        confound = pd.concat([custom, confound], axis=1)
 
     return confound
 

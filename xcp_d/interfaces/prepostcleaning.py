@@ -134,12 +134,10 @@ class RemoveTR(SimpleInterface):
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
-            custom_confounds_tsv_undropped = pd.read_table(
-                self.inputs.custom_confounds, header=None
-            )
-            custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.drop(
+            custom_confounds_tsv_undropped = pd.read_table(self.inputs.custom_confounds)
+            custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.loc[
                 np.arange(volumes_to_drop)
-            )
+            ]
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
@@ -157,8 +155,10 @@ class RemoveTR(SimpleInterface):
                 use_ext=False,
             )
             custom_confounds_tsv_dropped.to_csv(
-                self._results["custom_confounds_dropped"], index=False, header=False, sep="\t"
-            )  # Assuming input is tab separated!
+                self._results["custom_confounds_dropped"],
+                index=False,
+                sep="\t",
+            )
 
         return runtime
 
@@ -251,9 +251,7 @@ class CensorScrub(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Read in fmriprep confounds tsv to calculate FD
-        fmriprep_confounds_tsv_uncensored = pd.read_table(
-            self.inputs.fmriprep_confounds_file,
-        )
+        fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
         motion_df = load_motion(
             fmriprep_confounds_tsv_uncensored.copy(),
             TR=self.inputs.TR,
@@ -272,10 +270,7 @@ class CensorScrub(SimpleInterface):
         # Read in custom confounds file (if any) and bold file to be censored
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
         if self.inputs.custom_confounds:
-            custom_confounds_tsv_uncensored = pd.read_table(
-                self.inputs.custom_confounds,
-                header=None,
-            )
+            custom_confounds_tsv_uncensored = pd.read_table(self.inputs.custom_confounds)
         else:
             LOGGER.warning("No custom confounds were found or censored.")
 
@@ -291,14 +286,11 @@ class CensorScrub(SimpleInterface):
             else:
                 bold_file_censored = bold_file_uncensored[tmask == 0, :]
 
-            fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.drop(
-                fmriprep_confounds_tsv_uncensored.index[np.where(tmask == 1)]
-            )
+            fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.loc[tmask == 0]
             if self.inputs.custom_confounds:
                 # If custom regressors are present
-                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.drop(
-                    custom_confounds_tsv_uncensored.index[np.where(tmask == 1)]
-                )
+                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.loc[tmask == 0]
+
         else:  # No censoring needed
             bold_file_censored = bold_file_uncensored
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
@@ -394,7 +386,6 @@ class CensorScrub(SimpleInterface):
             custom_confounds_tsv_censored.to_csv(
                 self._results["custom_confounds_censored"],
                 index=False,
-                header=False,
                 sep="\t",
             )
         return runtime

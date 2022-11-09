@@ -241,7 +241,12 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help="Custom confound to be added to nuisance regressors.",
+        help=(
+            "Custom confound to be added to nuisance regressors. "
+            "Must be a folder containing confounds files, "
+            "in which case the file with the name matching the fMRIPrep confounds "
+            "file will be selected. "
+        ),
     )
     g_param.add_argument(
         "-d",
@@ -943,7 +948,7 @@ Running xcp_d version {__version__}:
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_confounds=opts.custom_confounds,
+        custom_confounds_folder=opts.custom_confounds,
         dummytime=opts.dummytime,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,

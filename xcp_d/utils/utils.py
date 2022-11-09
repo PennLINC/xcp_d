@@ -442,37 +442,40 @@ def stringforparams(params):
     return bsignal
 
 
-def get_customfile(custom_confounds, bold_file):
+def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.
 
     Parameters
     ----------
-    custom_confounds : str or None
+    custom_confounds_folder : str or None
         The path to the custom confounds file.
-        This shouldn't include the actual filename.
-    bold_file : str
-        Path to the associated preprocessed BOLD file.
+    fmriprep_confounds_file : str
+        Path to the confounds file from the preprocessing pipeline.
+        We expect the custom confounds file to have the same name.
 
     Returns
     -------
-    custom_file : str or None
-        The custom confounds file associated with the BOLD file.
+    custom_confounds_file : str or None
+        The appropriate custom confounds file.
     """
-    if custom_confounds is None:
+    if custom_confounds_folder is None:
         return None
 
-    file_base = os.path.basename(bold_file).split("_space-")[0]
+    if not os.path.isdir(custom_confounds_folder):
+        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
 
-    custom_file = os.path.abspath(
+    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_file = os.path.abspath(
         os.path.join(
-            custom_confounds,
-            f"{file_base}_desc-custom_timeseries.tsv",
-        ),
+            custom_confounds_folder,
+            custom_confounds_filename,
+        )
     )
-    if not os.path.isfile(custom_file):
-        raise FileNotFoundError(f"Custom confounds file not found: {custom_file}")
 
-    return custom_file
+    if not os.path.isfile(custom_confounds_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
+
+    return custom_confounds_file
 
 
 def zscore_nifti(img, outputname, mask=None):
@@ -633,25 +636,14 @@ def consolidate_confounds(
 
     from xcp_d.utils.confounds import load_confound_matrix
 
+    confounds_df = load_confound_matrix(
+        original_file=namesource,
+        custom_confounds=custom_confounds_file,
+        confound_tsv=fmriprep_confounds_file,
+        params=params,
+    )
+
     out_file = os.path.abspath("confounds.tsv")
-
-    # It looks like nipype is passing this along as "None".
-    if custom_confounds_file == "None":
-        custom_confounds_file = None
-
-    if fmriprep_confounds_file and custom_confounds_file:
-        confounds_df = load_confound_matrix(
-            original_file=namesource,
-            custom_confounds=custom_confounds_file,
-            confound_tsv=fmriprep_confounds_file,
-            params=params,
-        )
-    else:  # No custom confounds
-        confounds_df = load_confound_matrix(
-            original_file=namesource,
-            confound_tsv=fmriprep_confounds_file,
-            params=params,
-        )
-
     confounds_df.to_csv(out_file, sep="\t", index=False)
+
     return out_file
