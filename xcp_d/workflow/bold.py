@@ -269,6 +269,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
                 "t1w_to_native",
+                "dummy_scans",
             ],
         ),
         name="inputnode",
@@ -280,6 +281,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.custom_confounds_folder = custom_confounds_folder
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
+    inputnode.inputs.dummy_scans = dummy_scans
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -587,7 +589,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # Remove TR first:
     if dummy_scans:
         remove_dummy_scans = pe.Node(
-            RemoveTR(initial_volumes_to_drop=dummy_scans),
+            RemoveTR(),
             name="remove_dummy_scans",
             mem_gb=0.1 * mem_gbx["timeseries"],
         )
@@ -596,6 +598,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([
             (inputnode, remove_dummy_scans, [
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                ("dummy_scans", "initial_volumes_to_drop"),
             ]),
             (inputnode, remove_dummy_scans, [("bold_file", "bold_file")]),
             (get_custom_confounds_file, remove_dummy_scans, [
@@ -949,8 +952,16 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             # fmt:off
             workflow.connect([
                 (remove_dummy_scans, executivesummary_wf, [
-                    ("dummyvols", "dummy_scans"),
-                ])
+                    ("dummyvols", "inputnode.dummy_scans"),
+                ]),
+            ])
+            # fmt:on
+        else:
+            # fmt:off
+            workflow.connect([
+                (inputnode, executivesummary_wf, [
+                    ("dummy_scans", "inputnode.dummy_scans"),
+                ]),
             ])
             # fmt:on
 

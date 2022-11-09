@@ -89,7 +89,8 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
     dummyvols = traits.Int(
-        default_value=0,
+        0,
+        usedefault=True,
         desc="Number of dummy volumes to drop from the beginning of the run.",
     )
 

@@ -37,12 +37,14 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         exists=False,
         mandatory=False,
         default_value=0,
+        usedefault=True,
         desc="Dummy time to drop",
     )
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(
         mandatory=False,
         default_value=50,
+        usedefault=True,
         desc="Head radius; recommended value is 40 for babies",
     )
     motion_filter_type = traits.Either(
@@ -196,12 +198,14 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     dummy_scans = traits.Int(
         mandatory=False,
         default_value=0,
+        usedefault=True,
         desc="Dummy time to drop",
     )
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(
         mandatory=False,
         default_value=50,
+        usedefault=True,
         desc="Head radius; recommended value is 40 for babies",
     )
     bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
