@@ -205,6 +205,7 @@ def get_parser():
             "aroma_gsr",
             "custom",
         ],
+        default="36P",
         type=str,
         help="Nuisance parameters to be selected. See Ciric et. al (2007).",
     )
