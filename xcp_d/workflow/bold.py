@@ -709,16 +709,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                   ('outputnode.correlations', 'correlations'),
                                   ('outputnode.timeseries', 'timeseries')]),
     ])
+    # fmt:on
 
     if bandpass_filter:
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, outputnode, [
                 ('outputnode.alff_out', 'alff_out'),
                 ('outputnode.smoothed_alff', 'smoothed_alff'),
             ]),
         ])
+        # fmt:on
 
     # write derivatives
+    # fmt:off
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [('out_file',
                                                             'inputnode.confounds_file')]),
@@ -735,15 +739,17 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                            ('outputnode.timeseries', 'inputnode.timeseries')]),
         (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')]),
     ])
+    # fmt:on
 
     if bandpass_filter:
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
                 ('outputnode.alff_out', 'inputnode.alff_out'),
                 ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
             ]),
         ])
-    # fmt:on
+        # fmt:on
 
     functional_qc = pe.Node(
         FunctionalSummary(bold_file=bold_file, TR=TR),
@@ -862,43 +868,27 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             omp_nthreads=omp_nthreads,
         )
 
-        workflow.connect(
-            [
-                (
-                    inputnode,
-                    executivesummary_wf,
-                    [
-                        ("t1w", "inputnode.t1w"),
-                        ("t1seg", "inputnode.t1seg"),
-                        ("bold_file", "inputnode.bold_file"),
-                        ("bold_mask", "inputnode.mask"),
-                        ("mni_to_t1w", "inputnode.mni_to_t1w"),
-                    ],
-                ),
-                (
-                    regression_wf,
-                    executivesummary_wf,
-                    [
-                        ("res_file", "inputnode.regressed_data"),
-                    ],
-                ),
-                (
-                    filtering_wf,
-                    executivesummary_wf,
-                    [
-                        ("filtered_file", "inputnode.residual_data"),
-                    ],
-                ),
-                (
-                    censor_scrub,
-                    executivesummary_wf,
-                    [
-                        ("filtered_motion", "inputnode.filtered_motion"),
-                        ("tmask", "inputnode.tmask"),
-                    ],
-                ),
-            ]
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, executivesummary_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1seg", "inputnode.t1seg"),
+                ("bold_file", "inputnode.bold_file"),
+                ("bold_mask", "inputnode.mask"),
+                ("mni_to_t1w", "inputnode.mni_to_t1w"),
+            ]),
+            (regression_wf, executivesummary_wf, [
+                ("res_file", "inputnode.regressed_data"),
+            ]),
+            (filtering_wf, executivesummary_wf, [
+                ("filtered_file", "inputnode.residual_data"),
+            ]),
+            (censor_scrub, executivesummary_wf, [
+                ("filtered_motion", "inputnode.filtered_motion"),
+                ("tmask", "inputnode.tmask"),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 
