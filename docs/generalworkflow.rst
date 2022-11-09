@@ -151,7 +151,7 @@ Processing Steps
     ``XCP-D`` implements a Butterworth bandpass filter to filter BOLD signal after regression.
     The bandpass filter parameters are set to 0.009 to 0.08 Hz with order of 2 by default and can be modified in the command line.
     If there are any flagged volumes or timepoints during Temporal Censoring, these volumes are interpolated before bandpass filtering.
-    This can be set to `true` or `false` (the default being `true`) in the command line arguments with ``--bandpass_filter``.
+    This can be disabled in the command line arguments with ``--disable-bandpass-filter``.
 
 7.  Functional timeseries and connectivity matrices:
     ``XCP-D`` implements  a module that extracts voxelwise timeseries with brain atlases.
