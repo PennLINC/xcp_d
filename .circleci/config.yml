@@ -303,14 +303,23 @@ workflows:
       - download_data_fmriprepwithfreesurfer:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
 
       - download_data_fmriprepwithoutfreesurfer:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
 
       - download_data_nibabies:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
 
       - cifti_with_freesurfer:
           requires:
