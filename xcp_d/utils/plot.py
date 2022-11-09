@@ -1205,7 +1205,9 @@ def plot_ribbon_svg(template, in_file):
     pial_img = math_img("img == 2", img=img)
     both_img = math_img("img == 3", img=img)
 
-    fig = plt.figure(figsize=(25, 10), )
+    fig = plt.figure(
+        figsize=(25, 10),
+    )
     display = plot_anat(
         template,
         draw_cross=False,
@@ -1216,25 +1218,25 @@ def plot_ribbon_svg(template, in_file):
         white_img,
         contours=1,
         antialiased=False,
-        linewidths=1.,
+        linewidths=1.0,
         levels=[0],
-        colors=['purple'],
+        colors=["purple"],
     )
     display.add_contours(
         pial_img,
         contours=1,
         antialiased=False,
-        linewidths=1.,
+        linewidths=1.0,
         levels=[0],
-        colors=['green'],
+        colors=["green"],
     )
     display.add_contours(
         both_img,
         contours=1,
         antialiased=False,
-        linewidths=1.,
+        linewidths=1.0,
         levels=[0],
-        colors=['red'],
+        colors=["red"],
     )
     # We generate a legend using the trick described on
     # http://matplotlib.sourceforge.net/users/legend_guide.httpml#using-proxy-artist
