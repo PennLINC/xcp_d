@@ -260,10 +260,7 @@ class ChangeXfmType(SimpleInterface):
     def _run_interface(self, runtime):
         with open(self.inputs.in_transform) as f:
             lines = f.readlines()
-        listcomp = [
-            line.replace("AffineTransform", "MatrixOffsetTransformBase")
-            for line in lines
-        ]
+        listcomp = [line.replace("AffineTransform", "MatrixOffsetTransformBase") for line in lines]
         outfile = fname_presuffix(
             self.inputs.in_transform,
             suffix="_MatrixOffsetTransformBase",

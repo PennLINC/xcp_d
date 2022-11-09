@@ -35,10 +35,7 @@ def check_deps(workflow):
     return sorted(
         (node.interface.__class__.__name__, node.interface._cmd)
         for node in workflow._get_all_nodes()
-        if (
-            hasattr(node.interface, "_cmd")
-            and which(node.interface._cmd.split()[0]) is None
-        )
+        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
     )
 
 
@@ -170,8 +167,8 @@ def get_parser():
     g_outputoption.add_argument(
         "--input-type",
         required=False,
-        default='fmriprep',
-        choices=['fmriprep', 'dcan', 'hpc', 'nibabies'],
+        default="fmriprep",
+        choices=["fmriprep", "dcan", "hpc", "nibabies"],
         help=(
             "The pipeline used to generate the preprocessed derivatives. "
             "The default pipeline is 'fmriprep'. "
@@ -315,7 +312,7 @@ If not set, no filter will be applied.
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
 must be defined.
 If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
-"""
+""",
     )
     g_filter.add_argument(
         "--band-stop-min",
@@ -355,7 +352,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
 
 When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-used value for
 this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
-"""
+""",
     )
     g_filter.add_argument(
         "--band-stop-max",
@@ -391,7 +388,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         - 28
     *   - > 80
         - 30
-"""
+""",
     )
     g_filter.add_argument(
         "--motion-filter-order",
@@ -406,10 +403,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head_radius",
         default=50,
         type=float,
-        help=(
-            "head radius for computing FD, default is 50mm, "
-            "35mm is recommended for baby"
-        ),
+        help=("head radius for computing FD, default is 50mm, " "35mm is recommended for baby"),
     )
     g_censor.add_argument(
         "-f",
@@ -450,10 +444,10 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="Opt-out of sending tracking information",
     )
 
-    g_experimental = parser.add_argument_group('Experimental options')
+    g_experimental = parser.add_argument_group("Experimental options")
     g_experimental.add_argument(
-        '--warp-surfaces-native2std',
-        action='store_true',
+        "--warp-surfaces-native2std",
+        action="store_true",
         dest="process_surfaces",
         default=False,
         help="""\
@@ -491,7 +485,7 @@ By default, this workflow is disabled.
       - A very-inflated midthicknesss surface (also for visualization).
         This is derived from the HCP midthickness file.
         This file is only created if the input type is "fmriprep" or "nibabies".
-"""
+""",
     )
     g_experimental.add_argument(
         "--dcan-qc",
@@ -568,9 +562,7 @@ def main():
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-        crashfolders = [
-            output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
-        ]
+        crashfolders = [output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list]
         for crashfolder in crashfolders:
             for crashfile in crashfolder.glob("crash*.*"):
                 process_crashfile(crashfile)
@@ -619,9 +611,7 @@ def main():
             try:
                 check_call(cmd, timeout=10)
             except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(
-                    f"Could not generate CITATION.html file:\n{' '.join(cmd)}"
-                )
+                logger.warning(f"Could not generate CITATION.html file:\n{' '.join(cmd)}")
 
             # Generate LaTex file resolving citations
             cmd = [
@@ -638,9 +628,7 @@ def main():
             try:
                 check_call(cmd, timeout=10)
             except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(
-                    f"Could not generate CITATION.tex file:\n{' '.join(cmd)}"
-                )
+                logger.warning(f"Could not generate CITATION.tex file:\n{' '.join(cmd)}")
             else:
                 copyfile(pkgrf("xcp_d", "data/boilerplate.bib"), citation_files["bib"])
 

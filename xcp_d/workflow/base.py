@@ -62,8 +62,8 @@ def init_xcpd_wf(
     fd_thresh,
     process_surfaces=False,
     dcan_qc=False,
-    input_type='fmriprep',
-    name='xcpd_wf',
+    input_type="fmriprep",
+    name="xcpd_wf",
 ):
     """Build and organize execution of xcp_d pipeline.
 
@@ -153,7 +153,7 @@ def init_xcpd_wf(
     ----------
     .. footbibliography::
     """
-    xcpd_wf = Workflow(name='xcpd_wf')
+    xcpd_wf = Workflow(name="xcpd_wf")
     xcpd_wf.base_dir = work_dir
     LOGGER.info(f"Beginning the {name} workflow")
 
@@ -189,8 +189,9 @@ def init_xcpd_wf(
             name=f"single_subject_{subject_id}_wf",
         )
 
-        single_subj_wf.config['execution']['crashdump_dir'] = (os.path.join(
-            output_dir, "xcp_d", "sub-" + subject_id, 'log'))
+        single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
+            output_dir, "xcp_d", "sub-" + subject_id, "log"
+        )
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
         print(f"Analyzing data at the {analysis_level} level")
@@ -331,7 +332,7 @@ def init_subject_wf(
                 "t1w_to_mni_xform",
             ],
         ),
-        name='inputnode',
+        name="inputnode",
     )
     inputnode.inputs.custom_confounds = custom_confounds
     inputnode.inputs.subj_data = subj_data
@@ -376,32 +377,32 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     summary = pe.Node(
         SubjectSummary(subject_id=subject_id, bold=preproc_files),
-        name='summary',
+        name="summary",
     )
 
     about = pe.Node(
-        AboutSummary(version=__version__, command=' '.join(sys.argv)),
-        name='about',
+        AboutSummary(version=__version__, command=" ".join(sys.argv)),
+        name="about",
     )
 
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=preproc_files[0],
-            desc='summary',
+            desc="summary",
             datatype="figures",
         ),
-        name='ds_report_summary',
+        name="ds_report_summary",
     )
 
     ds_report_about = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=preproc_files[0],
-            desc='about',
+            desc="about",
             datatype="figures",
         ),
-        name='ds_report_about',
+        name="ds_report_about",
         run_without_submitting=True,
     )
 
@@ -412,11 +413,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,  # RF: need to change memory size
     )
 
+    # fmt:off
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
                              ('t1w_seg', 'inputnode.t1seg'),
                              ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
     ])
+    # fmt:on
 
     # Plot the ribbon on the brain in a brainsprite figure
     brainsprite_wf = init_brainsprite_wf(
@@ -430,8 +433,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,
     )
 
+    # fmt:off
     workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
                                                    ('t1w_seg', 'inputnode.t1seg')])])
+    # fmt:on
 
     if process_surfaces:
         anatomical_wf = init_anatomical_wf(
@@ -444,10 +449,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,  # RF: need to change memory size
         )
 
+        # fmt:off
         workflow.connect([
             (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
                                         ('t1w_seg', 'inputnode.t1seg')]),
         ])
+        # fmt:on
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
@@ -483,6 +490,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 
+        # fmt:off
         workflow.connect([
             (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
                                            ('t1w_seg', 'inputnode.t1seg'),
@@ -493,11 +501,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
             ])
 
+        # fmt:on
+
+    # fmt:off
     workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
                       (about, ds_report_about, [('out_report', 'in_file')])])
+    # fmt:on
 
     for node in workflow.list_node_names():
-        if node.split('.')[-1].startswith('ds_'):
-            workflow.get_node(node).interface.out_path_base = 'xcp_d'
+        if node.split(".")[-1].startswith("ds_"):
+            workflow.get_node(node).interface.out_path_base = "xcp_d"
 
     return workflow

@@ -33,8 +33,7 @@ def get_confounds_tsv(datafile):
         )
     else:
         confounds_timeseries = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0]
-            + "_desc-confounds_timeseries.tsv"
+            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-confounds_timeseries.tsv"
         )
 
     return confounds_timeseries
@@ -64,12 +63,10 @@ def load_confound(datafile):
         )
     else:
         confounds_timeseries = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0]
-            + "_desc-confounds_timeseries.tsv"
+            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-confounds_timeseries.tsv"
         )
         confounds_json = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0]
-            + "_desc-confounds_timeseries.json"
+            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-confounds_timeseries.json"
         )
 
     confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
@@ -179,7 +176,7 @@ def load_global_signal(confounds_df):
         The global signal from the confounds.
     """
     df = pd.DataFrame(confounds_df["global_signal"])
-    df.columns = ['GlobalSignal']
+    df.columns = ["GlobalSignal"]
     return df
 
 
@@ -313,15 +310,13 @@ def square_confound(confound):
     """
     columns = confound.columns.tolist()
     new_columns = [c + "_sq" for c in columns]
-    squared_confounds = (confound**2)
+    squared_confounds = confound**2
     squared_confounds.columns = new_columns
     return squared_confounds  # Square the confound data
 
 
 @fill_doc
-def load_confound_matrix(
-    original_file, params, custom_confounds=None, confound_tsv=None
-):
+def load_confound_matrix(original_file, params, custom_confounds=None, confound_tsv=None):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
@@ -351,9 +346,7 @@ def load_confound_matrix(
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        confound = pd.concat(
-            [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
-        )
+        confound = pd.concat([derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
     elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF
         # global signal and square
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
@@ -403,25 +396,19 @@ def load_confound_matrix(
         whitematter_csf = load_wm_csf(confounds_df)
         aroma = load_aroma(datafile=original_file)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
-    elif (
-        params == "aroma_gsr"
-    ):  # Get the WM, CSF, and aroma values, as well as global signal
+    elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
         whitematter_csf = load_wm_csf(confounds_df)
         aroma = load_aroma(datafile=original_file)
         global_signal = load_global_signal(confounds_df)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
-    elif (
-        params == "acompcor_gsr"
-    ):  # Get the rot and trans values, as well as their derivative,
+    elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
         global_signal = load_global_signal(confounds_df)
         cosine = load_cosine(confounds_df)
-        confound = pd.concat(
-            [derivative_rot_trans, acompcor, global_signal, cosine], axis=1
-        )
+        confound = pd.concat([derivative_rot_trans, acompcor, global_signal, cosine], axis=1)
     elif params == "custom":
         # For custom confounds with no other confounds
         confound = pd.read_table(custom_confounds, sep="\t", header=None)
@@ -455,12 +442,8 @@ def load_aroma(datafile):
             "_space-" + datafile.split("space-")[1], "_desc-MELODIC_mixing.tsv"
         )
     else:
-        aroma_noise = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_AROMAnoiseICs.csv"
-        )
-        melodic_ts = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-MELODIC_mixing.tsv"
-        )
+        aroma_noise = datafile.split("_desc-preproc_bold.nii.gz")[0] + "_AROMAnoiseICs.csv"
+        melodic_ts = datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-MELODIC_mixing.tsv"
     # Load data
     aroma_noise = np.genfromtxt(
         aroma_noise,

@@ -83,18 +83,20 @@ def run_reports(
     ).generate_report()
 
 
-def generate_reports(subject_list,
-                     dummytime,
-                     fmri_dir,
-                     work_dir,
-                     output_dir,
-                     run_uuid,
-                     cifti=False,
-                     config=None,
-                     packagename=None,
-                     combineruns=False,
-                     dcan_qc=False,
-                     input_type='fmriprep'):
+def generate_reports(
+    subject_list,
+    dummytime,
+    fmri_dir,
+    work_dir,
+    output_dir,
+    run_uuid,
+    cifti=False,
+    config=None,
+    packagename=None,
+    combineruns=False,
+    dcan_qc=False,
+    input_type="fmriprep",
+):
     """Execute run_reports on a list of subjects.
 
     subject_list : list of str
@@ -124,13 +126,14 @@ def generate_reports(subject_list,
 
     report_errors = [
         run_reports(
-            Path(output_dir) / 'xcp_d',
+            Path(output_dir) / "xcp_d",
             subject_label,
             run_uuid,
             config=config,
             packagename=packagename,
-            reportlets_dir=Path(output_dir) / 'xcp_d',
-        ) for subject_label in subject_list
+            reportlets_dir=Path(output_dir) / "xcp_d",
+        )
+        for subject_label in subject_list
     ]
 
     fmri_dir = fmri_dir
@@ -138,8 +141,8 @@ def generate_reports(subject_list,
 
     if errno:
         error_list = ", ".join(
-            f"{subid} ({err})"
-            for subid, err in zip(subject_list, report_errors) if err)
+            f"{subid} ({err})" for subid, err in zip(subject_list, report_errors) if err
+        )
         LOGGER.error(
             "Processsing did not finish successfully. Errors occurred while processing "
             "data from participants: %s. Check the HTML reports for details.",
@@ -150,21 +153,21 @@ def generate_reports(subject_list,
         if combineruns:
             from xcp_d.utils.concatenation import concatenate_derivatives
 
-            if input_type == 'dcan':
-                fmri_dir = str(work_dir) + '/dcanhcp'
-            elif input_type == 'hcp':
-                fmri_dir = str(work_dir) + '/hcp/hcp'
-            print('Concatenating bold files ...')
+            if input_type == "dcan":
+                fmri_dir = str(work_dir) + "/dcanhcp"
+            elif input_type == "hcp":
+                fmri_dir = str(work_dir) + "/hcp/hcp"
+            print("Concatenating bold files ...")
             concatenate_derivatives(
                 dummytime=dummytime,
                 subjects=subject_list,
                 fmridir=str(fmri_dir),
-                outputdir=str(Path(str(output_dir)) / 'xcp_d/'),
+                outputdir=str(Path(str(output_dir)) / "xcp_d/"),
                 work_dir=work_dir,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
             )
-            print('Concatenation complete!')
+            print("Concatenation complete!")
 
         if dcan_qc:
             LOGGER.info("Generating executive summary.")
@@ -172,15 +175,15 @@ def generate_reports(subject_list,
                 brainplotfile = glob.glob(
                     os.path.join(
                         output_dir,
-                        f'xcp_d/sub-{subject_label}',
-                        'figures/*_bold.svg',
+                        f"xcp_d/sub-{subject_label}",
+                        "figures/*_bold.svg",
                     ),
                 )[0]
                 LayoutBuilder(
-                    html_path=str(Path(output_dir)) + '/xcp_d/',
+                    html_path=str(Path(output_dir)) + "/xcp_d/",
                     subject_id=subject_label,
                     session_id=_getsesid(brainplotfile),
                 )
 
-        print('Reports generated successfully')
+        print("Reports generated successfully")
     return errno

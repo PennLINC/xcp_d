@@ -138,6 +138,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         mem_gb=mem_gb,
     )
 
+    # fmt:off
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
         (inputnode, get_transforms_to_bold_space, [("bold_file", "bold_file"),
@@ -159,6 +160,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
+    # fmt:on
 
     return workflow
 
@@ -267,6 +269,7 @@ the Connectome Workbench.
         mem_gb=mem_gb,
     )
 
+    # fmt:off
     workflow.connect([
         (inputnode, parcellate_data, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
@@ -280,5 +283,6 @@ the Connectome Workbench.
         (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
+    # fmt:on
 
     return workflow

@@ -23,7 +23,7 @@ from nipype.interfaces.base import (
 from xcp_d.utils.fcon import extract_timeseries_funct
 from xcp_d.utils.filemanip import fname_presuffix
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
 # nifti functional connectivity
 
 
@@ -33,12 +33,8 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _NiftiConnectOutputSpec(TraitedSpec):
-    time_series_tsv = File(exists=True,
-                           mandatory=True,
-                           desc=" time series file")
-    fcon_matrix_tsv = File(exists=True,
-                           mandatory=True,
-                           desc=" time series file")
+    time_series_tsv = File(exists=True, mandatory=True, desc=" time series file")
+    fcon_matrix_tsv = File(exists=True, mandatory=True, desc=" time series file")
 
 
 class NiftiConnect(SimpleInterface):
@@ -51,29 +47,28 @@ class NiftiConnect(SimpleInterface):
         # Write out time series using Nilearn's NiftiLabelMasker
         # Then write out functional correlation matrix of
         # timeseries using numpy.
-        self._results['time_series_tsv'] = fname_presuffix(
-            self.inputs.filtered_file,
-            suffix='time_series.tsv',
-            newpath=runtime.cwd,
-            use_ext=False)
-        self._results['fcon_matrix_tsv'] = fname_presuffix(
-            self.inputs.filtered_file,
-            suffix='fcon_matrix.tsv',
-            newpath=runtime.cwd,
-            use_ext=False)
+        self._results["time_series_tsv"] = fname_presuffix(
+            self.inputs.filtered_file, suffix="time_series.tsv", newpath=runtime.cwd, use_ext=False
+        )
+        self._results["fcon_matrix_tsv"] = fname_presuffix(
+            self.inputs.filtered_file, suffix="fcon_matrix.tsv", newpath=runtime.cwd, use_ext=False
+        )
 
-        self._results['time_series_tsv'], self._results['fcon_matrix_tsv'] = \
-            extract_timeseries_funct(
-                in_file=self.inputs.filtered_file,
-                atlas=self.inputs.atlas,
-                timeseries=self._results['time_series_tsv'],
-                fconmatrix=self._results['fcon_matrix_tsv'])
+        (
+            self._results["time_series_tsv"],
+            self._results["fcon_matrix_tsv"],
+        ) = extract_timeseries_funct(
+            in_file=self.inputs.filtered_file,
+            atlas=self.inputs.atlas,
+            timeseries=self._results["time_series_tsv"],
+            fconmatrix=self._results["fcon_matrix_tsv"],
+        )
         return runtime
 
 
 class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
     transforms = InputMultiObject(
-        traits.Either(File(exists=True), 'identity'),
+        traits.Either(File(exists=True), "identity"),
         argstr="%s",
         mandatory=True,
         desc="transform files",
@@ -91,10 +86,9 @@ class ApplyTransformsx(ApplyTransforms):
 
     def _run_interface(self, runtime):
         # Run normally
-        self.inputs.output_image = fname_presuffix(self.inputs.input_image,
-                                                   suffix='_trans.nii.gz',
-                                                   newpath=runtime.cwd,
-                                                   use_ext=False)
+        self.inputs.output_image = fname_presuffix(
+            self.inputs.input_image, suffix="_trans.nii.gz", newpath=runtime.cwd, use_ext=False
+        )
         runtime = super(ApplyTransformsx, self)._run_interface(runtime)
         return runtime
 
@@ -150,19 +144,19 @@ class ConnectPlot(SimpleInterface):
         # Generate a plot of each matrix's correlation coefficients
         fig, axes = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
-        font = {'weight': 'normal', 'size': 20}
+        font = {"weight": "normal", "size": 20}
 
         for atlas_name, subdict in ATLAS_LOOKUP.items():
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
             atlas_file = self.inputs.time_series_tsv[atlas_idx]
 
-            if self.inputs.in_file.endswith('dtseries.nii'):  # for cifti
+            if self.inputs.in_file.endswith("dtseries.nii"):  # for cifti
                 #  Get the correlation coefficient of the data
                 corrs = np.corrcoef(nb.load(atlas_file).get_fdata().T)
 
             else:  # for nifti
                 #  Get the correlation coefficient of the data
-                corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter='\t').T)
+                corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter="\t").T)
 
             plot_matrix(
                 mat=corrs,
@@ -177,14 +171,10 @@ class ConnectPlot(SimpleInterface):
             )
 
         # Write the results out
-        self._results['connectplot'] = fname_presuffix(
-            'connectivityplot',
-            suffix='_matrixplot.svg',
-            newpath=runtime.cwd,
-            use_ext=False)
+        self._results["connectplot"] = fname_presuffix(
+            "connectivityplot", suffix="_matrixplot.svg", newpath=runtime.cwd, use_ext=False
+        )
 
-        fig.savefig(self._results['connectplot'],
-                    bbox_inches="tight",
-                    pad_inches=None)
+        fig.savefig(self._results["connectplot"], bbox_inches="tight", pad_inches=None)
 
         return runtime
