@@ -219,33 +219,7 @@ def get_parser():
         default=False,
         help="despike the nifti/cifti before postprocessing",
     )
-
-    nuisance_params = g_param.add_mutually_exclusive_group()
-    nuisance_params.add_argument(
-        "--nuissance-regressors",
-        dest="nuisance_regressors",
-        action=_DeprecatedStoreAction030,
-        required=False,
-        default="36P",
-        choices=[
-            "27P",
-            "36P",
-            "24P",
-            "acompcor",
-            "aroma",
-            "acompcor_gsr",
-            "aroma_gsr",
-            "custom",
-        ],
-        type=str,
-        help=(
-            "Nuisance parameters to be selected, other options include 24P and 36P acompcor and "
-            "aroma. See Ciric et. al (2007) for more information about regression strategies. "
-            "This parameter is deprecated and will be removed in version 0.3.0. "
-            "Please use ``-p`` or ``--nuisance-regressors``."
-        ),
-    )
-    nuisance_params.add_argument(
+    g_param.add_argument(
         "-p",
         "--nuisance-regressors",
         dest="nuisance_regressors",
@@ -260,6 +234,7 @@ def get_parser():
             "aroma_gsr",
             "custom",
         ],
+        default="36P",
         type=str,
         help="Nuisance parameters to be selected. See Ciric et. al (2007).",
     )
@@ -306,8 +281,7 @@ def get_parser():
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
 
-    bandpass_filter_params = g_filter.add_mutually_exclusive_group()
-    bandpass_filter_params.add_argument(
+    g_filter.add_argument(
         "--disable-bandpass-filter",
         "--disable_bandpass_filter",
         dest="bandpass_filter",
@@ -317,20 +291,6 @@ def get_parser():
             "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
         ),
     )
-    bandpass_filter_params.add_argument(
-        "--bandpass_filter",
-        dest="bandpass_filter",
-        action=_DeprecatedStoreAction030,
-        type=bool,
-        help=(
-            "Whether to Butterworth bandpass filter the data or not. "
-            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated. "
-            "This parameter is deprecated and will be removed in version 0.3.0. "
-            "Bandpass filtering is performed by default, and if you wish to disable it, "
-            "please use `--disable-bandpass-filter``."
-        ),
-    )
-
     g_filter.add_argument(
         "--lower-bpf",
         action="store",

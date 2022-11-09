@@ -33,7 +33,7 @@ $XCPD_CMD \
     --smoothing 6 \
     -f 100 \
     -vv \
-    --nuissance-regressors 27P \
+    --nuisance-regressors 27P \
     --input-type nibabies
 
 echo $XCPD_CMD
