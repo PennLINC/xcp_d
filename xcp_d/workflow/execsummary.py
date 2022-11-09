@@ -348,7 +348,7 @@ def init_execsummary_wf(
             ('mask', 'mask'),
             ('bold_file', 'rawdata'),
             ('tmask', 'tmask'),
-            ('dummy_scans', 'dummy_scans'),
+            ('dummy_scans', 'dummyvols'),
         ]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
