@@ -25,7 +25,7 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, cifti, dcan_qc):
+def concatenate_derivatives(fmridir, outputdir, work_dir, subjects, cifti, dcan_qc):
     """Concatenate derivatives.
 
     This function does a lot more than concatenate derivatives.
@@ -38,8 +38,6 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
     Parameters
     ----------
-    dummytime: float
-        Amount of time to drop from the beginning of the scan
     fmridir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
     outputdir : str
@@ -194,7 +192,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                 )
                 LOGGER.debug(f"Concatenating outlier files: {outlier_file_names}")
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
-                outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
+                concat_outlier_file = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
@@ -323,18 +321,13 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             validate=False,
                         )
 
-                        # Build figures
-                        initial_volumes_to_drop = 0
-                        if dummytime > 0:
-                            initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-
                         LOGGER.debug("Starting plot_svgx")
                         plot_svgx(
                             preprocessed_file=concat_preproc_file,
                             denoised_file=concat_bold_file,
                             denoised_filtered_file=concat_bold_file,
-                            dummyvols=initial_volumes_to_drop,
-                            tmask=outfile,
+                            dummyvols=0,  # no point in this bc files are concatenated
+                            tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
                             regressed_dvars=regressed_dvars,
