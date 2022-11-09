@@ -48,7 +48,7 @@ class _BrainPlotxInputSpec(BaseInterfaceInputSpec):
 
 
 class _BrainPlotxOutputSpec(TraitedSpec):
-    out_html = File(exists=True, mandatory=True, desc="zscore html")
+    plot_file = File(exists=True, mandatory=True, desc="zscore html")
 
 
 class BrainPlotx(SimpleInterface):
@@ -59,17 +59,17 @@ class BrainPlotx(SimpleInterface):
 
     def _run_interface(self, runtime):
 
-        self._results["out_html"] = fname_presuffix(
+        self._results["plot_file"] = fname_presuffix(
             "brainsprite_out_",
             suffix="file.html",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        self._results["out_html"] = generate_brain_sprite(
+        self._results["plot_file"] = generate_brain_sprite(
             template_image=self.inputs.template,
             stat_map=self.inputs.in_file,
-            out_file=self._results["out_html"],
+            out_file=self._results["plot_file"],
         )
 
         return runtime

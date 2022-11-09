@@ -21,6 +21,7 @@ from xcp_d.interfaces.surfplotting import (
     RibbontoStatmap,
 )
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -32,6 +33,7 @@ def init_brainsprite_wf(
     fmri_dir,
     subject_id,
     output_dir,
+    dcan_qc,
     input_type,
     mem_gb,
     omp_nthreads,
@@ -45,6 +47,8 @@ def init_brainsprite_wf(
     %(fmri_dir)s
     %(subject_id)s
     %(output_dir)s
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     %(input_type)s
     %(mem_gb)s
     %(omp_nthreads)s
@@ -68,12 +72,27 @@ def init_brainsprite_wf(
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-    generate_brainsprite = pe.Node(
-        BrainPlotx(),
-        name="brainsprite",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
+    if dcan_qc:
+        # Create a brainsprite if dcan_qc is True
+        plot_ribbon = pe.Node(
+            BrainPlotx(),
+            name="brainsprite",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+    else:
+        # Otherwise, make a static mosaic plot
+        plot_ribbon = pe.Node(
+            Function(
+                input_names=["template", "in_file"],
+                output_names=["plot_file"],
+                function=plot_ribbon_svg,
+            ),
+            name="ribbon_mosaic",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
     ds_brainspriteplot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -139,9 +158,9 @@ def init_brainsprite_wf(
     # fmt:off
     workflow.connect(
         [
-            (inputnode, generate_brainsprite, [("t1w", "template")]),
-            (ribbon2statmap, generate_brainsprite, [("out_file", "in_file")]),
-            (generate_brainsprite, ds_brainspriteplot, [("out_html", "in_file")]),
+            (inputnode, plot_ribbon, [("t1w", "template")]),
+            (ribbon2statmap, plot_ribbon, [("out_file", "in_file")]),
+            (plot_ribbon, ds_brainspriteplot, [("plot_file", "in_file")]),
             (inputnode, ds_brainspriteplot, [("t1w", "source_file")]),
         ]
     )

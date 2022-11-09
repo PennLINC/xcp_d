@@ -1,6 +1,5 @@
 xcp_d/
 xcp_d/dataset_description.json
-xcp_d/sub-01_ses-1mo_executive_summary.html
 xcp_d/sub-01.html
 xcp_d/logs
 xcp_d/logs/CITATION.bib

@@ -51,6 +51,7 @@ def init_ciftipostprocess_wf(
     dummytime,
     fd_thresh,
     despike,
+    dcan_qc,
     n_runs,
     layout=None,
     name="cifti_process_wf",
@@ -82,6 +83,7 @@ def init_ciftipostprocess_wf(
                 dummytime=0,
                 fd_thresh=0.2,
                 despike=False,
+                dcan_qc=False,
                 n_runs=1,
                 layout=None,
                 name='cifti_postprocess_wf',
@@ -110,6 +112,8 @@ def init_ciftipostprocess_wf(
     %(fd_thresh)s
     despike: bool
         afni depsike
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     n_runs
     layout : BIDSLayout object
         BIDS dataset layout
@@ -411,16 +415,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
     )
 
-    executivesummary_wf = init_execsummary_wf(
-        TR=TR,
-        bold_file=bold_file,
-        layout=layout,
-        output_dir=output_dir,
-        omp_nthreads=omp_nthreads,
-        dummyvols=initial_volumes_to_drop,
-        mem_gb=mem_gbx["timeseries"],
-    )
-
     # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
@@ -719,27 +713,47 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
+    # fmt:on
+
     if bandpass_filter:
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
         ])
+        # fmt:on
+
     # executive summary workflow
-    workflow.connect([
-        (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
-                                          ('t1seg', 'inputnode.t1seg'),
-                                          ('bold_file', 'inputnode.bold_file'),
-                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
-                                              ]),
-        (filtering_wf, executivesummary_wf, [('filtered_file',
-                                              'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('filtered_motion',
-                                              'inputnode.filtered_motion'),
-                                             ('tmask',
-                                              'inputnode.tmask')
-                                             ]),
-    ])
-    # fmt:on
+    if dcan_qc:
+        executivesummary_wf = init_execsummary_wf(
+            TR=TR,
+            bold_file=bold_file,
+            layout=layout,
+            output_dir=output_dir,
+            omp_nthreads=omp_nthreads,
+            dummyvols=initial_volumes_to_drop,
+            mem_gb=mem_gbx["timeseries"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, executivesummary_wf, [
+                ('t1w', 'inputnode.t1w'),
+                ('t1seg', 'inputnode.t1seg'),
+                ('bold_file', 'inputnode.bold_file'),
+                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+            ]),
+            (regression_wf, executivesummary_wf, [
+                ('res_file', 'inputnode.regressed_data'),
+            ]),
+            (filtering_wf, executivesummary_wf, [
+                ('filtered_file', 'inputnode.residual_data'),
+            ]),
+            (censor_scrub, executivesummary_wf, [
+                ('filtered_motion', 'inputnode.filtered_motion'),
+                ('tmask', 'inputnode.tmask'),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 
