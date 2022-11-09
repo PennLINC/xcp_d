@@ -19,7 +19,6 @@ def init_writederivatives_wf(
     smoothing,
     params,
     cifti,
-    dummytime,
     output_dir,
     TR,
     name="write_derivatives_wf",
@@ -39,7 +38,6 @@ def init_writederivatives_wf(
                 smoothing=6,
                 params="36P",
                 cifti=False,
-                dummytime=0,
                 output_dir=".",
                 TR=2.,
                 name="write_derivatives_wf",
@@ -57,8 +55,6 @@ def init_writederivatives_wf(
     %(smoothing)s
     %(params)s
     %(cifti)s
-    dummytime : float
-        volume(s) removed before postprocessing in seconds
     output_dir : str
         output directory
     TR : float
