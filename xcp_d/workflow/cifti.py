@@ -443,7 +443,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("custom_confounds_dropped", "custom_confounds"),
             ]),
             (remove_dummy_scans, censor_report, [
-                ("dummyvols", "dummy_scans"),
+                ("dummyvols", "dummyvols"),
             ]),
             (remove_dummy_scans, qcreport, [
                 ("dummyvols", "dummy_scans"),
