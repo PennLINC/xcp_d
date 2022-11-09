@@ -330,11 +330,11 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                         LOGGER.debug("Starting plot_svgx")
                         plot_svgx(
+                            preprocessed_file=concat_preproc_file,
+                            denoised_file=concat_bold_file,
+                            denoised_filtered_file=concat_bold_file,
                             dummyvols=initial_volumes_to_drop,
                             tmask=outfile,
-                            rawdata=concat_preproc_file,
-                            regressed_data=concat_bold_file,
-                            residual_data=concat_bold_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
                             regressed_dvars=regressed_dvars,
