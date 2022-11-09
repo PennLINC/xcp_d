@@ -40,4 +40,4 @@ $XCPD_CMD \
     --cifti \
     --combineruns \
     --dcan-qc \
-    --dummy-vols 4
+    --dummy-scans 4
