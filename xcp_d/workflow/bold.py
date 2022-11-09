@@ -344,7 +344,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         params=params,
         cifti=None,
         output_dir=output_dir,
-        dummytime=dummytime,
         lowpass=upper_bpf,
         highpass=lower_bpf,
         motion_filter_type=motion_filter_type,
