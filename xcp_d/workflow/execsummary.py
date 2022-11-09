@@ -257,10 +257,12 @@ def init_execsummary_wf(omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads)
 
     # Plot the SVG files
-    plot_svgx_wf = pe.Node(PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummyvols),
-                           name='plot_svgx_wf',
-                           mem_gb=mem_gb,
-                           n_procs=omp_nthreads)
+    plot_svgx_wf = pe.Node(
+        PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummyvols),
+        name='plot_svgx_wf',
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
 
     # Write out the necessary files:
     # Reference file
