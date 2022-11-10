@@ -114,15 +114,14 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
     return bold_data_interpolated
 
 
-def _drop_dummy_scans(bold_file, dummy_scans=None):
+def _drop_dummy_scans(bold_file, dummy_scans):
     """Remove the first X volumes from a BOLD file.
 
     Parameters
     ----------
     bold_file : str
         Path to a nifti or cifti file.
-    dummy_scans : None or int, optional
-        If None (default), no volumes will be removed.
+    dummy_scans : int
         If an integer, the first ``dummy_scans`` volumes will be removed.
 
     Returns
@@ -132,8 +131,6 @@ def _drop_dummy_scans(bold_file, dummy_scans=None):
     """
     # read the bold file
     bold_image = nb.load(bold_file)
-    if dummy_scans is None:
-        return bold_image
 
     data = bold_image.get_fdata()
 
