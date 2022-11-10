@@ -491,11 +491,57 @@ def _sanitize_entities(dict_):
     return dict_
 
 
-def _concatenate_niimgs(files, out_file):
-    """Concatenate niimgs."""
-    if files[0].extension == ".nii.gz":
-        concat_preproc_img = concat_imgs([f.path for f in files])
+def _concatenate_niimgs(files, out_file, dummy_scans=None):
+    """Concatenate niimgs.
+
+    This is generally a very simple proposition (especially with niftis).
+    However, sometimes we need to account for dummy scans- especially when we want to use
+    the non-steady-state volume indices from fMRIPrep.
+
+    Parameters
+    ----------
+    files : :obj:`list` of :obj:`bids.layout.models.BIDSImageFile`
+        List of BOLD files to concatenate over the time dimension.
+    out_file : :obj:`str`
+        The concatenated file to write out.
+    dummy_scans : None or int, optional
+        The number of dummy scans to drop from the beginning of each file before concatenation.
+        If None (default), no volumes will be dropped.
+        If an integer, the same number of volumes will be dropped from each file.
+    """
+    if dummy_scans is not None:
+        assert isinstance(dummy_scans, int)
+
+    is_nifti = files[0].extension == ".nii.gz"
+
+    if isinstance(dummy_scans, int):
+        runwise_dummy_scans = [dummy_scans] * len(files)
+
+    if dummy_scans is not None:
+        bold_imgs = [
+            _drop_dummy_scans(f.path, dummy_scans=runwise_dummy_scans[i])
+            for i, f in enumerate(files)
+        ]
+        if is_nifti:
+            bold_files = bold_imgs
+        else:
+            # Create temporary files for cifti images
+            bold_files = []
+            for i_img, img in enumerate(bold_imgs):
+                temporary_file = f"temp_{i_img}{files[0].extension}"
+                img.to_filename(temporary_file)
+                bold_files.append(temporary_file)
+
+    else:
+        bold_files = [f.path for f in files]
+
+    if is_nifti:
+        concat_preproc_img = concat_imgs(bold_files)
         concat_preproc_img.to_filename(out_file)
     else:
-        combinefile = " -cifti ".join([f.path for f in files])
-        os.system("wb_command -cifti-merge " + out_file + " -cifti " + combinefile)
+        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(bold_files)}")
+
+        if dummy_scans is not None:
+            # Delete temporary files
+            for bold_file in bold_files:
+                os.remove(bold_file)
