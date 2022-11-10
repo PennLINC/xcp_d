@@ -331,7 +331,6 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         for bold_file in bold_files:
                             dvar = compute_dvars(read_ndata(bold_file.path, mask))
                             dvar[0] = np.mean(dvar)
-                            dvar = dvar[dummy_scans:]
                             denoised_dvars.append(dvar)
                         denoised_dvars = np.concatenate(denoised_dvars)
                         # Censor DVARS
