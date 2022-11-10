@@ -208,6 +208,8 @@ def concatenate_derivatives(
                 outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
+                # TODO: Split post-processed files by everything except "run",
+                # rather than hardcoding entities like space.
                 output_spaces = layout_xcpd.get_spaces(
                     run=Query.ANY,
                     desc="denoised",
@@ -270,6 +272,8 @@ def concatenate_derivatives(
                         )
 
                         # Get TR for BOLD files in this query (e.g., task/acq/ses)
+                        # We assume that TR is the same across runs,
+                        # which isn't a solid assumption, since we don't account for "acq".
                         TR = _get_tr(preproc_files[0].path)
 
                         if dummy_scans == 0 and dummytime is not None:

@@ -110,9 +110,8 @@ class RemoveTR(SimpleInterface):
             use_ext=True,
         )
 
+        # Remove the dummy volumes
         dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=volumes_to_drop)
-
-        # Write the file
         dropped_image.to_filename(dropped_bold_file)
 
         # Drop the first N rows from the pandas dataframe
