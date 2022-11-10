@@ -13,9 +13,14 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import load_motion
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
+from xcp_d.utils.modified_data import (
+    _drop_dummy_scans,
+    compute_fd,
+    generate_mask,
+    interpolate_masked_data,
+)
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -78,25 +83,10 @@ class RemoveTR(SimpleInterface):
     output_spec = _RemoveTROutputSpec
 
     def _run_interface(self, runtime):
-        volumes_to_drop = self.inputs.initial_volumes_to_drop
-
-        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        if volumes_to_drop == "auto":
-            nss_cols = [
-                c
-                for c in fmriprep_confounds_df.columns
-                if c.startswith("non_steady_state_outlier")
-            ]
-            initial_volumes_df = fmriprep_confounds_df[nss_cols]
-            volumes_to_drop = np.any(initial_volumes_df.to_numpy(), axis=1)
-            volumes_to_drop = np.where(volumes_to_drop)[0]
-            if volumes_to_drop:
-                volumes_to_drop = volumes_to_drop[-1] + 1
-            else:
-                LOGGER.warning(
-                    f"No non-steady-state outliers found in {self.inputs.fmriprep_confounds_file}"
-                )
-                volumes_to_drop = 0
+        volumes_to_drop = _infer_dummy_scans(
+            dummy_scans=self.inputs.initial_volumes_to_drop,
+            confounds_file=self.inputs.fmriprep_confounds_file,
+        )
 
         self._results["dummyvols"] = volumes_to_drop
 
@@ -120,44 +110,19 @@ class RemoveTR(SimpleInterface):
             use_ext=True,
         )
 
-        # read the bold file
-        bold_image = nb.load(self.inputs.bold_file)
-        data = bold_image.get_fdata()
-
-        # If it's a Cifti Image:
-        if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
-            time_axis, brain_model_axis = [
-                bold_image.header.get_axis(i) for i in range(bold_image.ndim)
-            ]
-            new_total_volumes = dropped_data.shape[0]
-            dropped_time_axis = time_axis[:new_total_volumes]
-            dropped_header = nb.cifti2.Cifti2Header.from_axes(
-                (dropped_time_axis, brain_model_axis)
-            )
-            dropped_image = nb.Cifti2Image(
-                dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
-            )
-
-        # If it's a Nifti Image:
-        else:
-            dropped_data = data[..., volumes_to_drop:]
-            dropped_image = nb.Nifti1Image(
-                dropped_data, affine=bold_image.affine, header=bold_image.header
-            )
+        dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=volumes_to_drop)
 
         # Write the file
         dropped_image.to_filename(dropped_bold_file)
 
         # Drop the first N rows from the pandas dataframe
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         dropped_confounds_df = fmriprep_confounds_df.drop(np.arange(volumes_to_drop))
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
-            custom_confounds_tsv_undropped = pd.read_table(self.inputs.custom_confounds)
-            custom_confounds_tsv_dropped = custom_confounds_tsv_undropped.loc[
-                np.arange(volumes_to_drop)
-            ]
+            custom_confounds_tsv = pd.read_table(self.inputs.custom_confounds)
+            custom_confounds_tsv_dropped = custom_confounds_tsv.drop[np.arange(volumes_to_drop)]
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 

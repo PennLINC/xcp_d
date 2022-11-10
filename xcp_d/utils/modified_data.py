@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for interpolating over high-motion volumes."""
+import nibabel as nb
 import numpy as np
 
 from xcp_d.utils.doc import fill_doc
@@ -111,3 +112,32 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
             bold_data_interpolated[voxel, (tmask == 1)] = interpolated_data[tmask == 1]
 
     return bold_data_interpolated
+
+
+def _drop_dummy_scans(bold_file, dummy_scans=None):
+    """Remove the first X volumes from a BOLD file."""
+    # read the bold file
+    bold_image = nb.load(bold_file)
+    data = bold_image.get_fdata()
+
+    if bold_image.ndim == 2:  # cifti
+        dropped_data = data[dummy_scans:, ...]  # time series is the first element
+        time_axis, brain_model_axis = [
+            bold_image.header.get_axis(i) for i in range(bold_image.ndim)
+        ]
+        new_total_volumes = dropped_data.shape[0]
+        dropped_time_axis = time_axis[:new_total_volumes]
+        dropped_header = nb.cifti2.Cifti2Header.from_axes(
+            (dropped_time_axis, brain_model_axis)
+        )
+        dropped_image = nb.Cifti2Image(
+            dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
+        )
+
+    else:  # nifti
+        dropped_data = data[..., dummy_scans:]
+        dropped_image = nb.Nifti1Image(
+            dropped_data, affine=bold_image.affine, header=bold_image.header
+        )
+
+    return dropped_image

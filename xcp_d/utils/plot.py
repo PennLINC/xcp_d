@@ -457,6 +457,7 @@ def plot_svgx(
     regressed_dvars=None,
     filtered_dvars=None,
     work_dir=None,
+    concat=False,
 ):
     """Generate carpet plot with DVARS, FD, and WB.
 
@@ -514,6 +515,14 @@ def plot_svgx(
     if not (raw_dvars.shape == regressed_dvars.shape == filtered_dvars.shape):
         raise ValueError(
             "Shapes do not match:\n"
+            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
+            f"\t{denoised_file}: {regressed_data_arr.shape}\n"
+            f"\t{denoised_filtered_file}: {filtered_data_arr.shape}\n\n"
+        )
+
+    if concat:
+        raise ValueError(
+            "Shapes:\n"
             f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
             f"\t{denoised_file}: {regressed_data_arr.shape}\n"
             f"\t{denoised_filtered_file}: {filtered_data_arr.shape}\n\n"
