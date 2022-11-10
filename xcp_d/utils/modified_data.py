@@ -141,9 +141,7 @@ def _drop_dummy_scans(bold_file, dummy_scans):
         ]
         new_total_volumes = dropped_data.shape[0]
         dropped_time_axis = time_axis[:new_total_volumes]
-        dropped_header = nb.cifti2.Cifti2Header.from_axes(
-            (dropped_time_axis, brain_model_axis)
-        )
+        dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
         dropped_image = nb.Cifti2Image(
             dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
         )

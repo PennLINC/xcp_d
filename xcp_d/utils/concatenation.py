@@ -249,6 +249,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             **space_entities,
                         )
                         TR = _get_tr(preproc_files[0].path)
+                        dummy_scans = int(np.ceil(dummytime / TR))
 
                         concat_preproc_file = os.path.join(
                             tmpdir,
@@ -261,7 +262,11 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             f"Concatenating preprocessed file ({concat_preproc_file}) from\n"
                             f"{preproc_files_str}"
                         )
-                        _concatenate_niimgs(preproc_files, concat_preproc_file)
+                        _concatenate_niimgs(
+                            preproc_files,
+                            concat_preproc_file,
+                            dummy_scans=dummy_scans,
+                        )
 
                         # Extract mask and segmentation files, if necessary
                         if not cifti:
