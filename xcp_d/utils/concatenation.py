@@ -236,17 +236,26 @@ def concatenate_derivatives(
                     _concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=None)
 
                     # Concatenate smoothed BOLD files if they exist
-                    smooth_bold_files = layout_xcpd.get(
+                    smooth_denoised_files = layout_xcpd.get(
                         run=Query.ANY,
                         desc="denoisedSmoothed",
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
                     )
-                    if len(smooth_bold_files):
-                        concat_file = _get_concat_name(layout_xcpd, smooth_bold_files[0])
-                        LOGGER.debug(f"Concatenating smoothed postprocessed file: {concat_file}")
-                        _concatenate_niimgs(smooth_bold_files, concat_file, dummy_scans=None)
+                    if len(smooth_denoised_files):
+                        concat_smooth_denoised_file = _get_concat_name(
+                            layout_xcpd, smooth_denoised_files[0]
+                        )
+                        LOGGER.debug(
+                            "Concatenating smoothed postprocessed file: "
+                            f"{concat_smooth_denoised_file}"
+                        )
+                        _concatenate_niimgs(
+                            smooth_denoised_files,
+                            concat_smooth_denoised_file,
+                            dummy_scans=None,
+                        )
 
                     # Executive summary carpet plots
                     if dcan_qc:
@@ -571,10 +580,6 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
             _drop_dummy_scans(f.path, dummy_scans=runwise_dummy_scans[i])
             for i, f in enumerate(files)
         ]
-        raise ValueError(
-            f"Dummy scans: {runwise_dummy_scans}\n"
-            f"BOLD imgs: {[bold_img.shape for bold_img in bold_imgs]}"
-        )
         if is_nifti:
             bold_files = bold_imgs
         else:
