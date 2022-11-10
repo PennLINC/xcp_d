@@ -205,7 +205,7 @@ def concatenate_derivatives(
                 )
                 LOGGER.debug(f"Concatenating outlier files: {outlier_file_names}")
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
-                outfile = concatenate_tsv_files(outlier_files, concat_outlier_file)
+                concat_outlier_file = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
                 # TODO: Split post-processed files by everything except "run",
@@ -375,7 +375,7 @@ def concatenate_derivatives(
                             denoised_file=concat_denoised_file,
                             denoised_filtered_file=concat_denoised_file,
                             dummyvols=0,  # dummyvols already dropped in concat_preproc_file
-                            tmask=outfile,
+                            tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
                             regressed_dvars=regressed_dvars,

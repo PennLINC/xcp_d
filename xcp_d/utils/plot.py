@@ -468,7 +468,7 @@ def plot_svgx(
     denoised_file :
         nifti or cifti after nuisance regression
     denoised_filtered_file :
-        nifti or cifti after regression and filtering
+        nifti or cifti after regression, filtering, and interpolation
     mask :
         mask for nifti if available
     tmask :
