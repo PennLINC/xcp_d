@@ -320,6 +320,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         for preproc_file in preproc_files:
                             dvar = compute_dvars(read_ndata(preproc_file.path, mask))
                             dvar[0] = np.mean(dvar)
+                            dvar = dvar[dummy_scans:]
                             raw_dvars.append(dvar)
                         raw_dvars = np.concatenate(raw_dvars)
                         # Censor DVARS
@@ -330,6 +331,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         for bold_file in bold_files:
                             dvar = compute_dvars(read_ndata(bold_file.path, mask))
                             dvar[0] = np.mean(dvar)
+                            dvar = dvar[dummy_scans:]
                             denoised_dvars.append(dvar)
                         denoised_dvars = np.concatenate(denoised_dvars)
                         # Censor DVARS
@@ -359,7 +361,6 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             validate=False,
                         )
 
-                        # Build figures
                         LOGGER.debug("Starting plot_svgx")
                         plot_svgx(
                             preprocessed_file=concat_preproc_file,
