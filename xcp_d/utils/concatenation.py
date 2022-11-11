@@ -555,7 +555,7 @@ def _sanitize_entities(dict_):
     return dict_
 
 
-def _concatenate_niimgs(files, out_file, dummy_scans=None):
+def _concatenate_niimgs(files, out_file, dummy_scans=0):
     """Concatenate niimgs.
 
     This is generally a very simple proposition (especially with niftis).
@@ -568,7 +568,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
         List of BOLD files to concatenate over the time dimension.
     out_file : :obj:`str`
         The concatenated file to write out.
-    dummy_scans : None or int or "auto", optional
+    dummy_scans : int or "auto", optional
         The number of dummy scans to drop from the beginning of each file before concatenation.
         If None (default), no volumes will be dropped.
         If an integer, the same number of volumes will be dropped from each file.
@@ -576,8 +576,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
         load it, and determine the number of non-steady-state volumes estimated by the
         preprocessing workflow.
     """
-    if dummy_scans is not None:
-        assert isinstance(dummy_scans, (int, str))
+    assert isinstance(dummy_scans, (int, str))
 
     is_nifti = files[0].extension == ".nii.gz"
 
@@ -593,7 +592,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
     elif isinstance(dummy_scans, int):
         runwise_dummy_scans = [dummy_scans] * len(files)
 
-    if dummy_scans is not None:
+    if dummy_scans != 0:
         bold_imgs = [
             _drop_dummy_scans(f.path, dummy_scans=runwise_dummy_scans[i])
             for i, f in enumerate(files)
