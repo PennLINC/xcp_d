@@ -12,7 +12,7 @@ def generate_brain_sprite(template_image, stat_map, out_file):
     """Generate a brainsprite HTML file."""
     html_view = view_img(
         stat_map_img=stat_map,
-        cmap='hsv',
+        cmap="hsv",
         symmetric_cmap=False,
         black_bg=True,
         vmin=-1,
@@ -61,7 +61,7 @@ def _get_contour(datax):
 
     # get y-z plane
     for i in range(dims[2]):
-        con = measure.find_contours(datax[:, :, i], fully_connected='low')
+        con = measure.find_contours(datax[:, :, i], fully_connected="low")
         conx = np.zeros_like(datax[:, :, i])
         for cx in con:
             conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])] = 1

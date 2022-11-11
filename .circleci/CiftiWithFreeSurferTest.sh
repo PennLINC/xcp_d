@@ -28,13 +28,21 @@ OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
 BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithfreesurfer/fmriprep
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
+echo $XCPD_CMD
+
 $XCPD_CMD \
-    --despike --head_radius 40 \
-    --smoothing 6 -vvv \
+    --despike \
+    --head_radius 40 \
+    --smoothing 6 \
+    -vvv \
     --motion-filter-type lp --band-stop-min 6 \
     --warp-surfaces-native2std \
     --cifti \
-    --combineruns
+    --combineruns \
+    --dcan-qc \
+    --dummytime 8 \
+    --fd-thresh 0.04
 
 input_type=cifti
 python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
+

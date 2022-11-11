@@ -34,3 +34,4 @@ $XCPD_CMD \
     
 input_type=nibabies
 python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
+

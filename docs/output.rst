@@ -26,7 +26,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
      If you discover a problem with the BIDS compliance of ``xcp_d``'s derivatives, please open an issue in the ``xcp_d`` repository.
 
-1. Summary reports: There are two summary reports - an executive summary per session and a participant summary::
+1. Summary reports:
+   There are two summary reports - an executive summary per session (if ``--dcan-qc`` is used) and a participant summary::
 
        xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
        xcp_d/sub-<label>.html
@@ -62,13 +63,13 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
        .. code-block:: json-object
 
-        {
+          {
               "Freq Band": [ 0.009, 0.08],
               "RepetitionTime": 2.0,
               "compression": true,
               "dummy vols": 0,
-              "nuissance parameters": "27P",
-              }
+              "nuisance parameters": "27P",
+          }
 
    b. Functional timeseries and connectivity matrices::
 
@@ -118,7 +119,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
       one for each of the six filtered motion parameters, as well as "framewise_displacement".
       If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
 
-   e. DCAN style scrubbing file.
+   e. DCAN style scrubbing file (if ``--dcan-qc`` is used).
       This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps.
       At each step the following variables are present::
 

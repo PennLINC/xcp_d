@@ -37,8 +37,8 @@ def _t12native(fname):
     """
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
-    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
+    fileup = filename.split("desc-preproc_bold.nii.gz")[0].split("space-")[0]
+    t12ref = directx + "/" + fileup + "from-T1w_to-scanner_mode-image_xfm.txt"
     return t12ref
 
 
@@ -65,15 +65,13 @@ def get_segfile(bold_file):
     """
     # get transform files
     dd = Path(os.path.dirname(bold_file))
-    anatdir = str(dd.parent) + '/anat'
+    anatdir = str(dd.parent) + "/anat"
 
     if Path(anatdir).is_dir():
-        mni_to_t1 = glob.glob(
-            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
     else:
-        anatdir = str(dd.parent.parent) + '/anat'
-        mni_to_t1 = glob.glob(
-            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        anatdir = str(dd.parent.parent) + "/anat"
+        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
 
     transformfilex = get_std2bold_xforms(
         bold_file=bold_file,
@@ -81,16 +79,16 @@ def get_segfile(bold_file):
         t1w_to_native=_t12native(bold_file),
     )
 
-    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
+    boldref = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
 
-    segfile = tempfile.mkdtemp() + 'segfile.nii.gz'
+    segfile = tempfile.mkdtemp() + "segfile.nii.gz"
     carpet = str(
         get_template(
-            'MNI152NLin2009cAsym',
+            "MNI152NLin2009cAsym",
             resolution=1,
-            desc='carpet',
-            suffix='dseg',
-            extension=['.nii', '.nii.gz'],
+            desc="carpet",
+            suffix="dseg",
+            extension=[".nii", ".nii.gz"],
         ),
     )
 
@@ -100,7 +98,7 @@ def get_segfile(bold_file):
     at.inputs.input_image = carpet
     at.inputs.reference_image = boldref
     at.inputs.output_image = segfile
-    at.inputs.interpolation = 'MultiLabel'
+    at.inputs.interpolation = "MultiLabel"
     at.inputs.transforms = transformfilex
     os.system(at.cmdline)
 
@@ -394,87 +392,108 @@ def stringforparams(params):
     bsignal : str
         String describing the parameters used for nuisance regression.
     """
-    if params == 'custom':
+    if params == "custom":
         bsignal = "A custom set of regressors was used, with no other regressors from XCP-D"
-    if params == '24P':
-        bsignal = "In total, 24 nuisance regressors were selected  from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters with their temporal derivatives, \
-        and their quadratic expansion of those six motion parameters and their \
-        temporal derivatives"
 
-    if params == '27P':
-        bsignal = "In total, 27 nuisance regressors were selected from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters with their temporal derivatives, \
-        the quadratic expansion of those six motion parameters and  \
-        their derivatives, the global signal, the mean white matter  \
-        signal, and the mean CSF signal"
+    elif params == "24P":
+        bsignal = (
+            "In total, 24 nuisance regressors were selected  from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "and their quadratic expansion of those six motion parameters and their "
+            "temporal derivatives"
+        )
 
-    if params == '36P':
-        bsignal = "In total, 36 nuisance regressors were selected from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters, global signal, the mean white matter,  \
-        the mean CSF signal  with their temporal derivatives, \
-        and the quadratic expansion of six motion parameters, tissues signals and  \
-        their temporal derivatives"
+    elif params == "27P":
+        bsignal = (
+            "In total, 27 nuisance regressors were selected from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "the quadratic expansion of those six motion parameters and "
+            "their derivatives, the global signal, the mean white matter "
+            "signal, and the mean CSF signal"
+        )
 
-    if params == 'aroma':
-        bsignal = "All the clean aroma components with the mean white matter  \
-        signal, and the mean CSF signal were selected as nuisance regressors"
+    elif params == "36P":
+        bsignal = (
+            "In total, 36 nuisance regressors were selected from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters, global signal, the mean white matter, "
+            "the mean CSF signal with their temporal derivatives, "
+            "and the quadratic expansion of six motion parameters, tissues signals and "
+            "their temporal derivatives"
+        )
 
-    if params == 'acompcor':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments \
-        were selected as \
-        nuisance regressors. Additionally, the six motion parameters and their temporal \
-        derivatives were added as confounds."
+    elif params == "aroma":
+        bsignal = (
+            "All the clean aroma components with the mean white matter "
+            "signal, and the mean CSF signal were selected as nuisance regressors"
+        )
 
-    if params == 'aroma_gsr':
-        bsignal = "All the clean aroma components with the mean white matter  \
-        signal, and the mean CSF signal, and mean global signal were \
-        selected as nuisance regressors"
+    elif params == "acompcor":
+        bsignal = (
+            "The top 5 principal aCompCor components from WM and CSF compartments "
+            "were selected as "
+            "nuisance regressors. Additionally, the six motion parameters and their temporal "
+            "derivatives were added as confounds."
+        )
 
-    if params == 'acompcor_gsr':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF \
-        compartments were selected as \
-        nuisance regressors. Additionally, the six motion parameters and their temporal \
-        derivatives were added as confounds. The average global signal was also added as a \
-        regressor."
+    elif params == "aroma_gsr":
+        bsignal = (
+            "All the clean aroma components with the mean white matter "
+            "signal, and the mean CSF signal, and mean global signal were "
+            "selected as nuisance regressors"
+        )
+
+    elif params == "acompcor_gsr":
+        bsignal = (
+            "The top 5 principal aCompCor components from WM and CSF "
+            "compartments were selected as "
+            "nuisance regressors. Additionally, the six motion parameters and their temporal "
+            "derivatives were added as confounds. The average global signal was also added as a "
+            "regressor."
+        )
+
+    else:
+        raise ValueError(f"Parameter string not understood: {params}")
 
     return bsignal
 
 
-def get_customfile(custom_confounds, bold_file):
+def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.
 
     Parameters
     ----------
-    custom_confounds : str or None
+    custom_confounds_folder : str or None
         The path to the custom confounds file.
-        This shouldn't include the actual filename.
-    bold_file : str
-        Path to the associated preprocessed BOLD file.
+    fmriprep_confounds_file : str
+        Path to the confounds file from the preprocessing pipeline.
+        We expect the custom confounds file to have the same name.
 
     Returns
     -------
-    custom_file : str or None
-        The custom confounds file associated with the BOLD file.
+    custom_confounds_file : str or None
+        The appropriate custom confounds file.
     """
-    if custom_confounds is None:
+    if custom_confounds_folder is None:
         return None
 
-    file_base = os.path.basename(bold_file).split("_space-")[0]
+    if not os.path.isdir(custom_confounds_folder):
+        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
 
-    custom_file = os.path.abspath(
+    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_file = os.path.abspath(
         os.path.join(
-            custom_confounds,
-            f"{file_base}_desc-custom_timeseries.tsv",
-        ),
+            custom_confounds_folder,
+            custom_confounds_filename,
+        )
     )
-    if not os.path.isfile(custom_file):
-        raise FileNotFoundError(f"Custom confounds file not found: {custom_file}")
 
-    return custom_file
+    if not os.path.isfile(custom_confounds_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
+
+    return custom_confounds_file
 
 
 def zscore_nifti(img, outputname, mask=None):
@@ -516,9 +535,7 @@ def zscore_nifti(img, outputname, mask=None):
         zscore_fdata = (imgdata - meandata) / stddata
 
     # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata,
-                             affine=img.affine,
-                             header=img.header)
+    dataout = nb.Nifti1Image(zscore_fdata, affine=img.affine, header=img.header)
     dataout.to_filename(outputname)
     return outputname
 
@@ -550,14 +567,15 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     lowcut = np.float(highpass) / nyq
     highcut = np.float(lowpass) / nyq
 
-    b, a = butter(order / 2, [lowcut, highcut], btype='band')  # get filter coeff
+    b, a = butter(order / 2, [lowcut, highcut], btype="band")  # get filter coeff
 
     filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
     for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(b, a, data[ii, :], padtype='odd',
-                                        padlen=3 * (max(len(b), len(a)) - 1))
+        filtered_data[ii, :] = filtfilt(
+            b, a, data[ii, :], padtype="odd", padlen=3 * (max(len(b), len(a)) - 1)
+        )
 
     return filtered_data
 
@@ -597,11 +615,13 @@ def demean_detrend_data(data):
     detrended : numpy.ndarray
         demeaned and detrended data
     """
-    demeaned = detrend(data, axis=- 1, type='constant', bp=0,
-                       overwrite_data=False)  # Demean data using "constant" detrend,
+    demeaned = detrend(
+        data, axis=-1, type="constant", bp=0, overwrite_data=False
+    )  # Demean data using "constant" detrend,
     # which subtracts mean
-    detrended = detrend(demeaned, axis=- 1, type='linear', bp=0,
-                        overwrite_data=False)  # Detrend data using linear method
+    detrended = detrend(
+        demeaned, axis=-1, type="linear", bp=0, overwrite_data=False
+    )  # Detrend data using linear method
 
     return detrended  # Subtract these predicted values from the demeaned data
 
@@ -634,25 +654,14 @@ def consolidate_confounds(
 
     from xcp_d.utils.confounds import load_confound_matrix
 
+    confounds_df = load_confound_matrix(
+        original_file=namesource,
+        custom_confounds=custom_confounds_file,
+        confound_tsv=fmriprep_confounds_file,
+        params=params,
+    )
+
     out_file = os.path.abspath("confounds.tsv")
-
-    # It looks like nipype is passing this along as "None".
-    if custom_confounds_file == "None":
-        custom_confounds_file = None
-
-    if fmriprep_confounds_file and custom_confounds_file:
-        confounds_df = load_confound_matrix(
-            original_file=namesource,
-            custom_confounds=custom_confounds_file,
-            confound_tsv=fmriprep_confounds_file,
-            params=params,
-        )
-    else:  # No custom confounds
-        confounds_df = load_confound_matrix(
-            original_file=namesource,
-            confound_tsv=fmriprep_confounds_file,
-            params=params,
-        )
-
     confounds_df.to_csv(out_file, sep="\t", index=False)
+
     return out_file
