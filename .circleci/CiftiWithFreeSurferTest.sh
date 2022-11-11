@@ -40,5 +40,5 @@ $XCPD_CMD \
     --cifti \
     --combineruns \
     --dcan-qc \
-    --dummy-scans 4 \
+    --dummy-scans auto \
     --fd-thresh 0.04
