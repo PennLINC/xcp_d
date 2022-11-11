@@ -416,7 +416,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head_radius",
         default=50,
         type=float,
-        help=("head radius for computing FD, default is 50mm, " "35mm is recommended for baby"),
+        help=("head radius for computing FD, default is 50mm, 35mm is recommended for baby"),
     )
     g_censor.add_argument(
         "-f",

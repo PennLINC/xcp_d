@@ -153,7 +153,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
-        desc="Framewise displacement" "threshold. All values above this will be dropped.",
+        desc="Framewise displacement threshold. All values above this will be dropped.",
     )
     custom_confounds = traits.Either(
         None,

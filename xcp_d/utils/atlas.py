@@ -52,7 +52,7 @@ def get_atlas_nifti(atlas_name):
         if atlas_name[8:12] == "1017":
             atlas_file = pkgrf(
                 "xcp_d",
-                ("data/niftiatlas/" "Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii"),
+                "data/niftiatlas/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii",
             )
         else:
             atlas_file = pkgrf(

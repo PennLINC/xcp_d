@@ -206,7 +206,7 @@ def init_boldpostprocess_wf(
             )
 
         filter_str = (
-            f"the six translation and rotation head motion traces were {filter_sub_str}. " "Next, "
+            f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
         )
         filter_post_str = (
             "The filtered versions of the motion traces and framewise displacement were not used "
