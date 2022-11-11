@@ -598,6 +598,7 @@ def _infer_dummy_scans(dummy_scans, confounds_file=None):
 
             # reasonably assumes all NSS volumes are contiguous
             dummy_scans = dummy_scans[-1] + 1
+            LOGGER.info(f"Found {dummy_scans} dummy scans in {os.path.basename(confounds_file)}")
 
         else:
             LOGGER.warning(f"No non-steady-state outliers found in {confounds_file}")

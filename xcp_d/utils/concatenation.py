@@ -233,7 +233,7 @@ def concatenate_derivatives(
                     )
                     concat_denoised_file = _get_concat_name(layout_xcpd, denoised_files[0])
                     LOGGER.debug(f"Concatenating postprocessed file: {concat_denoised_file}")
-                    _concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=None)
+                    _concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=0)
 
                     # Concatenate smoothed BOLD files if they exist
                     smooth_denoised_files = layout_xcpd.get(
@@ -254,7 +254,7 @@ def concatenate_derivatives(
                         _concatenate_niimgs(
                             smooth_denoised_files,
                             concat_smooth_denoised_file,
-                            dummy_scans=None,
+                            dummy_scans=0,
                         )
 
                     # Executive summary carpet plots
@@ -430,7 +430,7 @@ def concatenate_derivatives(
                             _concatenate_niimgs(
                                 atlas_timeseries_files,
                                 concat_file,
-                                dummy_scans=None,
+                                dummy_scans=0,
                             )
                         else:
                             raise ValueError(
