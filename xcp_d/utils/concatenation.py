@@ -20,7 +20,7 @@ from xcp_d.utils.modified_data import _drop_dummy_scans
 from xcp_d.utils.plot import plot_svgx
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_segfile
-from xcp_d.utils.write_save import read_ndata
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
 path_patterns = _pybids_spec["default_path_patterns"]
@@ -223,7 +223,7 @@ def concatenate_derivatives(
                     space_entities = task_entities.copy()
                     space_entities["space"] = space
 
-                    # Denoised BOLD files
+                    # Concatenate denoised BOLD files
                     denoised_files = layout_xcpd.get(
                         run=Query.ANY,
                         desc="denoised",
@@ -259,8 +259,9 @@ def concatenate_derivatives(
 
                     # Executive summary carpet plots
                     if dcan_qc:
-                        # Preprocessed BOLD files
-                        # Only used for the carpet plots.
+                        tmpdir = tempfile.mkdtemp()
+
+                        # Concatenate preprocessed BOLD files
                         preproc_files = layout_fmriprep.get(
                             run=Query.ANY,
                             desc=["preproc", None],
@@ -269,7 +270,7 @@ def concatenate_derivatives(
                             **space_entities,
                         )
                         concat_preproc_file = os.path.join(
-                            tempfile.mkdtemp(),
+                            tmpdir,
                             f"rawdata{preproc_files[0].extension}",
                         )
                         preproc_files_str = "\n\t".join(
@@ -297,7 +298,6 @@ def concatenate_derivatives(
 
                         # Get mask and dseg files for loading data and calculating DVARS.
                         if not cifti:
-                            # Mask file
                             mask_files = layout_fmriprep.get(
                                 run=1,
                                 desc=["brain"],
@@ -321,31 +321,50 @@ def concatenate_derivatives(
                             mask = None
                             segfile = None
 
+                        # Create a censored version of the denoised file,
+                        # because denoised_file is from before interpolation.
+                        concat_censored_file = os.path.join(
+                            tmpdir,
+                            f"filtereddata{preproc_files[0].extension}",
+                        )
+                        tmask_df = pd.read_table(concat_outlier_file)
+                        tmask_arr = tmask_df["framewise_displacement"].values
+                        tmask_bool = ~tmask_arr.astype(bool)
+                        temp_data_arr = read_ndata(
+                            datafile=concat_denoised_file,
+                            maskfile=mask,
+                        )
+                        temp_data_arr = temp_data_arr[:, tmask_bool]
+                        write_ndata(
+                            data_matrix=temp_data_arr,
+                            template=concat_denoised_file,
+                            filename=concat_censored_file,
+                            mask=mask,
+                            TR=TR,
+                        )
+
                         # Calculate DVARS from preprocessed BOLD
-                        # We calculate this ahead of time because the joining points between
-                        # runs need to be set to the mean DVARS value for the run.
                         raw_dvars = []
-                        for i_file, preproc_file in enumerate(preproc_files):
+                        for preproc_file in preproc_files:
                             dvar = compute_dvars(read_ndata(preproc_file.path, mask))
-                            if i_file > 0:
-                                dvar[0] = np.mean(dvar)
-
+                            dvar[0] = np.mean(dvar)
+                            dvar = dvar[dummy_scans:]
                             raw_dvars.append(dvar)
-
                         raw_dvars = np.concatenate(raw_dvars)
+                        # Censor DVARS
+                        raw_dvars = raw_dvars[tmask_bool]
 
                         # Calculate DVARS from denoised BOLD
-                        regressed_dvars = []
-                        for i_file, denoised_file in enumerate(denoised_files):
-                            dvar = compute_dvars(read_ndata(denoised_file.path, mask))
-                            if i_file > 0:
-                                dvar[0] = np.mean(dvar)
+                        denoised_dvars = []
+                        for bold_file in bold_files:
+                            dvar = compute_dvars(read_ndata(bold_file.path, mask))
+                            dvar[0] = np.mean(dvar)
+                            denoised_dvars.append(dvar)
+                        denoised_dvars = np.concatenate(denoised_dvars)
+                        # Censor DVARS
+                        denoised_dvars = denoised_dvars[tmask_bool]
 
-                            regressed_dvars.append(dvar)
-
-                        regressed_dvars = np.concatenate(regressed_dvars)
-
-                        # Now on to the plots
+                        # Start on carpet plots
                         LOGGER.debug("Generating carpet plots")
                         carpet_entities = denoised_files[0].get_entities()
                         carpet_entities = _sanitize_entities(carpet_entities)
@@ -372,14 +391,14 @@ def concatenate_derivatives(
                         LOGGER.debug("Starting plot_svgx")
                         plot_svgx(
                             preprocessed_file=concat_preproc_file,
+                            residuals_file=concat_censored_file,
                             denoised_file=concat_denoised_file,
-                            denoised_filtered_file=concat_denoised_file,
-                            dummyvols=0,  # dummyvols already dropped in concat_preproc_file
+                            dummyvols=0,
                             tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
-                            regressed_dvars=regressed_dvars,
-                            filtered_dvars=regressed_dvars,
+                            residuals_dvars=denoised_dvars,
+                            denoised_dvars=denoised_dvars,
                             processed_filename=postcarpet,
                             unprocessed_filename=precarpet,
                             mask=mask,

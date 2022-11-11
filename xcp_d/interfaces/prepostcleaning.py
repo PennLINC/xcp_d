@@ -120,8 +120,8 @@ class RemoveTR(SimpleInterface):
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
-            custom_confounds_tsv = pd.read_table(self.inputs.custom_confounds)
-            custom_confounds_tsv_dropped = custom_confounds_tsv.drop[np.arange(volumes_to_drop)]
+            custom_confounds_df = pd.read_table(self.inputs.custom_confounds)
+            custom_confounds_tsv_dropped = custom_confounds_df.drop[np.arange(volumes_to_drop)]
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
