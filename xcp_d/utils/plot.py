@@ -520,14 +520,6 @@ def plot_svgx(
             f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
         )
 
-    if concat:
-        raise ValueError(
-            "Shapes:\n"
-            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
-            f"\t{denoised_file}: {regressed_data_arr.shape}\n"
-            f"\t{denoised_filtered_file}: {filtered_data_arr.shape}\n\n"
-        )
-
     # Formatting & setting of files
     sns.set_style("whitegrid")
 
