@@ -218,7 +218,7 @@ def init_boldpostprocess_wf(
         f"@power_fd_dvars, with a head radius of {head_radius} mm"
     )
 
-    if dummy_scans == 0 and dummytime is not None:
+    if dummy_scans == 0 and dummytime != 0:
         dummy_scans = int(np.ceil(dummytime / TR))
 
     dummy_scans_str = ""

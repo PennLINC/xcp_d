@@ -210,8 +210,6 @@ def concatenate_derivatives(
                 concat_outlier_file = concatenate_tsv_files(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
-                # TODO: Split post-processed files by everything except "run",
-                # rather than hardcoding entities like space.
                 output_spaces = layout_xcpd.get_spaces(
                     run=Query.ANY,
                     desc="denoised",
@@ -288,7 +286,7 @@ def concatenate_derivatives(
                         # which isn't a solid assumption, since we don't account for "acq".
                         TR = _get_tr(preproc_files[0].path)
 
-                        if dummy_scans == 0 and dummytime is not None:
+                        if dummy_scans == 0 and dummytime != 0:
                             dummy_scans = int(np.ceil(dummytime / TR))
 
                         # Concatenate preprocessed files, but drop dummy scans from each run

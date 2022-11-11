@@ -332,10 +332,11 @@ layout : :obj:`bids.layout.BIDSLayout`
 docdict[
     "dummytime"
 ] = """
-dummytime : :obj:`float`
+dummytime : :obj:`float`, optional
     Number of seconds to remove from the beginning of each run.
     This parameter is deprecated. Please use ``dummy_scans`` instead.
-    This parameter will only take effect if ``dummy_scans`` is 0.
+    This parameter will only take effect if ``dummy_scans`` is 0 and ``dummytime`` is not.
+    Default is 0.
 """
 
 docdict[

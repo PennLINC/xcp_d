@@ -263,10 +263,7 @@ class QCPlot(SimpleInterface):
         # Drop volumes from time series
         # NOTE: TS- Why drop dummy volumes in preprocessed plot?
         dummy_scans = self.inputs.dummy_scans
-        try:
-            preproc_fd_timeseries = preproc_fd_timeseries[dummy_scans:]
-        except:
-            raise ValueError(f"dummy_scans: {dummy_scans}, {type(dummy_scans)}")
+        preproc_fd_timeseries = preproc_fd_timeseries[dummy_scans:]
         postproc_fd_timeseries = postproc_fd_timeseries[dummy_scans:]
         rmsd = rmsd[dummy_scans:]
 
