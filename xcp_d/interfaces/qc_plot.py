@@ -34,7 +34,6 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     )
     tmask = File(exists=True, mandatory=False, desc="Temporal mask. Current unused.")
     dummy_scans = traits.Int(
-        exists=False,
         mandatory=False,
         default_value=0,
         usedefault=True,
