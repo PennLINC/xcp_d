@@ -595,6 +595,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
     assert isinstance(dummy_scans, (int, list))
 
     is_nifti = files[0].extension == ".nii.gz"
+    use_temp_files = False
 
     if isinstance(dummy_scans, list):
         assert all([isinstance(val, int) for val in dummy_scans])
@@ -611,6 +612,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
             bold_files = bold_imgs
         else:
             # Create temporary files for cifti images
+            use_temp_files = True
             bold_files = []
             for i_img, img in enumerate(bold_imgs):
                 temporary_file = f"temp_{i_img}{files[0].extension}"
@@ -626,7 +628,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
     else:
         os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(bold_files)}")
 
-        if dummy_scans is not None:
+        if use_temp_files:
             # Delete temporary files
             for bold_file in bold_files:
                 os.remove(bold_file)
