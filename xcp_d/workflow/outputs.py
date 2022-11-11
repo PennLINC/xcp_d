@@ -84,6 +84,7 @@ def init_writederivatives_wf(
     confounds_file
     filtered_motion
     tmask
+    %(dummy_scans)s
     """
     workflow = Workflow(name=name)
 

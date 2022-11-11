@@ -44,11 +44,11 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
         desc="fmriprep confounds tsv",
     )
     custom_confounds = traits.Either(
-        traits.Undefined,
-        File,
-        desc="Name of custom confounds file, or True",
-        exists=False,
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
         mandatory=False,
+        usedefault=True,
     )
 
 

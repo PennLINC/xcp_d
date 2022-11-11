@@ -202,6 +202,7 @@ def init_execsummary_wf(
     rawdata
     mask
     %(mni_to_t1w)s
+    %(dummy_scans)s
     """
     workflow = Workflow(name=name)
 
