@@ -20,14 +20,15 @@ from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import consolidate_confounds, stringforparams
+from xcp_d.utils.plot import plot_design_matrix
+from xcp_d.utils.utils import consolidate_confounds, get_customfile, stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
 from xcp_d.workflow.restingstate import init_cifti_reho_wf, init_compute_alff_wf
 
-LOGGER = logging.getLogger('nipype.workflow')
+LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
@@ -45,14 +46,15 @@ def init_ciftipostprocess_wf(
     head_radius,
     params,
     output_dir,
-    custom_confounds,
+    custom_confounds_folder,
     omp_nthreads,
     dummytime,
     fd_thresh,
     despike,
+    dcan_qc,
     n_runs,
     layout=None,
-    name='cifti_process_wf',
+    name="cifti_process_wf",
 ):
     """Organize the cifti processing workflow.
 
@@ -76,11 +78,12 @@ def init_ciftipostprocess_wf(
                 head_radius=50,
                 params="36P",
                 output_dir=".",
-                custom_confounds=None,
+                custom_confounds_folder=None,
                 omp_nthreads=1,
                 dummytime=0,
                 fd_thresh=0.2,
                 despike=False,
+                dcan_qc=False,
                 n_runs=1,
                 layout=None,
                 name='cifti_postprocess_wf',
@@ -101,7 +104,7 @@ def init_ciftipostprocess_wf(
     %(head_radius)s
     %(params)s
     %(output_dir)s
-    custom_confounds: str
+    custom_confounds_folder: str
         path to cusrtom nuissance regressors
     %(omp_nthreads)s
     dummytime: float
@@ -109,6 +112,8 @@ def init_ciftipostprocess_wf(
     %(fd_thresh)s
     despike: bool
         afni depsike
+    dcan_qc : bool
+        Whether to run DCAN QC or not.
     n_runs
     layout : BIDSLayout object
         BIDS dataset layout
@@ -119,7 +124,7 @@ def init_ciftipostprocess_wf(
     ------
     bold_file
         CIFTI file
-    custom_confounds
+    custom_confounds_folder
         custom regressors
     t1w
     t1seg
@@ -171,8 +176,7 @@ def init_ciftipostprocess_wf(
             )
 
         filter_str = (
-            f"the six translation and rotation head motion traces were {filter_sub_str}. "
-            "Next, "
+            f"the six translation and rotation head motion traces were {filter_sub_str}. " "Next, "
         )
         filter_post_str = (
             "The filtered versions of the motion traces and framewise displacement were not used "
@@ -219,50 +223,58 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'bold_file',
-                'custom_confounds',
-                't1w',
-                't1seg',
-                'mni_to_t1w',
-                'fmriprep_confounds_tsv',
+                "bold_file",
+                "custom_confounds_folder",
+                "t1w",
+                "t1seg",
+                "mni_to_t1w",
+                "fmriprep_confounds_tsv",
             ],
         ),
-        name='inputnode',
+        name="inputnode",
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.custom_confounds = custom_confounds
+    inputnode.inputs.custom_confounds_folder = custom_confounds_folder
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
 
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'processed_bold',
-                'smoothed_bold',
-                'alff_out',
-                'smoothed_alff',
-                'reho_out',
-                'atlas_names',
-                'timeseries',
-                'correlations',
-                'qc_file',
-                'filtered_motion',
-                'tmask',
+                "processed_bold",
+                "smoothed_bold",
+                "alff_out",
+                "smoothed_alff",
+                "reho_out",
+                "atlas_names",
+                "timeseries",
+                "correlations",
+                "qc_file",
+                "filtered_motion",
+                "tmask",
             ],
         ),
-        name='outputnode',
+        name="outputnode",
     )
 
     mem_gbx = _create_mem_gb(bold_file)
 
+    get_custom_confounds_file = pe.Node(
+        Function(
+            input_names=["custom_confounds_folder", "fmriprep_confounds_file"],
+            output_names=["custom_confounds_file"],
+            function=get_customfile,
+        ),
+        name="get_custom_confounds_file",
+    )
+
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=mem_gbx['timeseries'],
-        name='cifti_ts_con_wf',
-        omp_nthreads=omp_nthreads)
+        mem_gb=mem_gbx["timeseries"], name="cifti_ts_con_wf", omp_nthreads=omp_nthreads
+    )
 
     if bandpass_filter:
         alff_compute_wf = init_compute_alff_wf(
-            mem_gb=mem_gbx['timeseries'],
+            mem_gb=mem_gbx["timeseries"],
             TR=TR,
             bold_file=bold_file,
             lowpass=upper_bpf,
@@ -274,10 +286,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         )
 
     reho_compute_wf = init_cifti_reho_wf(
-        mem_gb=mem_gbx['timeseries'],
+        mem_gb=mem_gbx["timeseries"],
         bold_file=bold_file,
         name="cifti_reho_wf",
-        omp_nthreads=omp_nthreads)
+        omp_nthreads=omp_nthreads,
+    )
 
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
@@ -294,18 +307,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="write_derivative_wf",
     )
 
-    censor_scrub = pe.Node(CensorScrub(
-        TR=TR,
-        custom_confounds=custom_confounds,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        head_radius=head_radius,
-        fd_thresh=fd_thresh),
-        name='censoring',
-        mem_gb=mem_gbx['timeseries'],
-        omp_nthreads=omp_nthreads)
+    censor_scrub = pe.Node(
+        CensorScrub(
+            TR=TR,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            head_radius=head_radius,
+            fd_thresh=fd_thresh,
+        ),
+        name="censoring",
+        mem_gb=mem_gbx["timeseries"],
+        omp_nthreads=omp_nthreads,
+    )
 
     bold_holder_node = pe.Node(
         niu.IdentityInterface(
@@ -315,11 +330,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     resdsmoothing_wf = init_resd_smoothing(
-        mem_gb=mem_gbx['timeseries'],
+        mem_gb=mem_gbx["timeseries"],
         smoothing=smoothing,
         cifti=True,
         name="resd_smoothing_wf",
-        omp_nthreads=omp_nthreads)
+        omp_nthreads=omp_nthreads,
+    )
 
     filtering_wf = pe.Node(
         FilteringData(
@@ -327,10 +343,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             lowpass=upper_bpf,
             highpass=lower_bpf,
             filter_order=bpf_order,
-            bandpass_filter=bandpass_filter),
+            bandpass_filter=bandpass_filter,
+        ),
         name="filtering_wf",
-        mem_gb=mem_gbx['timeseries'],
-        n_procs=omp_nthreads)
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
 
     consolidate_confounds_node = pe.Node(
         Function(
@@ -347,17 +365,28 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
     consolidate_confounds_node.inputs.params = params
 
+    plot_design_matrix_node = pe.Node(
+        Function(
+            input_names=["design_matrix"],
+            output_names=["design_matrix_figure"],
+            function=plot_design_matrix,
+        ),
+        name="plot_design_matrix_node",
+    )
+
     regression_wf = pe.Node(
         Regress(TR=TR, original_file=bold_file, params=params),
         name="regression_wf",
-        mem_gb=mem_gbx['timeseries'],
-        n_procs=omp_nthreads)
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
 
     interpolate_wf = pe.Node(
         Interpolate(TR=TR),
         name="interpolation_wf",
-        mem_gb=mem_gbx['timeseries'],
-        n_procs=omp_nthreads)
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
 
     qcreport = pe.Node(
         QCPlot(
@@ -366,8 +395,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             head_radius=head_radius,
         ),
         name="qc_report",
-        mem_gb=mem_gbx['resampled'],
-        n_procs=omp_nthreads)
+        mem_gb=mem_gbx["resampled"],
+        n_procs=omp_nthreads,
+    )
 
     censor_report = pe.Node(
         CensoringPlot(
@@ -385,46 +415,68 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
     )
 
-    executivesummary_wf = init_execsummary_wf(
-        TR=TR,
-        bold_file=bold_file,
-        layout=layout,
-        output_dir=output_dir,
-        omp_nthreads=omp_nthreads,
-        dummyvols=initial_volumes_to_drop,
-        mem_gb=mem_gbx['timeseries'],
-    )
-
     # Remove TR first:
     if dummytime > 0:
         rm_dummytime = pe.Node(
             RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
             name="remove_dummy_time",
-            mem_gb=0.1 * mem_gbx['timeseries'])
-        workflow.connect([
-            (inputnode, rm_dummytime, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
-            (inputnode, rm_dummytime, [('bold_file', 'bold_file')]),
-            (inputnode, rm_dummytime, [('custom_confounds', 'custom_confounds')])])
+            mem_gb=0.1 * mem_gbx["timeseries"],
+        )
 
-        workflow.connect([
-            (rm_dummytime, censor_scrub, [
-                ('bold_file_dropped_TR', 'in_file'),
-                ('fmriprep_confounds_file_dropped_TR', 'fmriprep_confounds_file'),
-                ('custom_confounds_dropped', 'custom_confounds')])])
+        workflow.connect(
+            [
+                (
+                    inputnode,
+                    rm_dummytime,
+                    [
+                        ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                        ("bold_file", "bold_file"),
+                    ],
+                ),
+                (
+                    get_custom_confounds_file,
+                    rm_dummytime,
+                    [
+                        ("custom_confounds_file", "custom_confounds"),
+                    ],
+                ),
+                (
+                    rm_dummytime,
+                    censor_scrub,
+                    [
+                        ("bold_file_dropped_TR", "in_file"),
+                        ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
+                        ("custom_confounds_dropped", "custom_confounds"),
+                    ],
+                ),
+            ]
+        )
 
     else:  # No need to remove TR
         # Censor Scrub:
+        # fmt:off
         workflow.connect([
-            (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-                                       ('custom_confounds', 'custom_confounds'),
-                                       ('bold_file', 'in_file')]),
+            (inputnode, censor_scrub, [
+                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+                ('bold_file', 'in_file'),
+            ]),
+            (get_custom_confounds_file, censor_scrub, [
+                ("custom_confounds_file", "custom_confounds"),
+            ]),
         ])
+        # fmt:on
 
+    # fmt:off
     workflow.connect([
         (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+        (inputnode, get_custom_confounds_file, [
+            ("custom_confounds_folder", "custom_confounds_folder"),
+            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+        ]),
         (censor_scrub, bold_holder_node, [
             ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
-            ("custom_confounds_censored", "custom_confounds")]),
+            ("custom_confounds_censored", "custom_confounds"),
+        ]),
     ])
     workflow.connect([
         (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
@@ -432,14 +484,21 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('custom_confounds', 'custom_confounds_file'),
         ]),
+        (consolidate_confounds_node, plot_design_matrix_node, [
+            ("out_file", "design_matrix"),
+        ]),
     ])
+    # fmt:on
 
     if despike:  # If we despike
-        despike3d = pe.Node(CiftiDespike(TR=TR),
-                            name="cifti_despike",
-                            mem_gb=mem_gbx['timeseries'],
-                            n_procs=omp_nthreads)
+        despike3d = pe.Node(
+            CiftiDespike(TR=TR),
+            name="cifti_despike",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
 
+        # fmt:off
         workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
         # Censor Scrub:
         workflow.connect([
@@ -448,15 +507,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             (censor_scrub, regression_wf,
              [('fmriprep_confounds_censored', 'confounds'),
               ('custom_confounds_censored', 'custom_confounds')])])
+        # fmt:on
 
     else:  # If we don't despike
         # regression workflow
+        # fmt:off
         workflow.connect([(censor_scrub, regression_wf,
                          [('bold_censored', 'in_file'),
                           ('fmriprep_confounds_censored', 'confounds'),
                           ('custom_confounds_censored', 'custom_confounds')])])
+        # fmt:on
 
     # interpolation workflow
+    # fmt:off
     workflow.connect([
         (inputnode, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
@@ -538,26 +601,48 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
             ]),
         ])
+    # fmt:on
 
-    functional_qc = pe.Node(FunctionalSummary(bold_file=bold_file, TR=TR),
-                            name='qcsummary',
-                            run_without_submitting=True)
+    functional_qc = pe.Node(
+        FunctionalSummary(bold_file=bold_file, TR=TR),
+        name="qcsummary",
+        run_without_submitting=True,
+    )
 
-    ds_report_qualitycontrol = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        desc='qualitycontrol',
-        source_file=bold_file,
-        datatype="figures"),
-        name='ds_report_qualitycontrol',
-        run_without_submitting=True)
+    ds_report_qualitycontrol = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="qualitycontrol",
+            source_file=bold_file,
+            datatype="figures",
+        ),
+        name="ds_report_qualitycontrol",
+        run_without_submitting=True,
+    )
 
-    ds_report_preprocessing = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=bold_file,
-        desc='preprocessing',
-        datatype="figures"),
-        name='ds_report_preprocessing',
-        run_without_submitting=True)
+    ds_report_preprocessing = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="preprocessing",
+            datatype="figures",
+        ),
+        name="ds_report_preprocessing",
+        run_without_submitting=True,
+    )
+
+    ds_design_matrix_plot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["space", "res", "den", "desc"],
+            datatype="figures",
+            suffix="design",
+            extension=".svg",
+        ),
+        name="ds_design_matrix_plot",
+        run_without_submitting=False,
+    )
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
@@ -568,70 +653,107 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             suffix="motion",
             extension=".svg",
         ),
-        name='ds_report_censoring',
+        name="ds_report_censoring",
         run_without_submitting=False,
     )
 
-    ds_report_postprocessing = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=bold_file,
-        desc='postprocessing',
-        datatype="figures"),
-        name='ds_report_postprocessing',
-        run_without_submitting=True)
+    ds_report_postprocessing = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="postprocessing",
+            datatype="figures",
+        ),
+        name="ds_report_postprocessing",
+        run_without_submitting=True,
+    )
 
-    ds_report_connectivity = pe.Node(DerivativesDataSink(
-        base_directory=output_dir,
-        source_file=bold_file,
-        desc='connectivityplot',
-        datatype="figures"),
-        name='ds_report_connectivity',
-        run_without_submitting=True)
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="connectivityplot",
+            datatype="figures",
+        ),
+        name="ds_report_connectivity",
+        run_without_submitting=True,
+    )
 
     if bandpass_filter:
-        ds_report_alffplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                         source_file=bold_file,
-                                                         desc='alffSurfacePlot',
-                                                         datatype="figures"),
-                                     name='ds_report_alffplot',
-                                     run_without_submitting=False)
+        ds_report_alffplot = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                desc="alffSurfacePlot",
+                datatype="figures",
+            ),
+            name="ds_report_alffplot",
+            run_without_submitting=False,
+        )
 
-    ds_report_rehoplot = pe.Node(DerivativesDataSink(base_directory=output_dir,
-                                                     source_file=bold_file,
-                                                     desc='rehoSurfacePlot',
-                                                     datatype="figures"),
-                                 name='ds_report_rehoplot',
-                                 run_without_submitting=False)
+    ds_report_rehoplot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="rehoSurfacePlot",
+            datatype="figures",
+        ),
+        name="ds_report_rehoplot",
+        run_without_submitting=False,
+    )
 
+    # fmt:off
     workflow.connect([
         (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
         (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
         (qcreport, functional_qc, [('qc_file', 'qc_file')]),
+        (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
+    # fmt:on
+
     if bandpass_filter:
+        # fmt:off
         workflow.connect([
             (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
         ])
+        # fmt:on
+
     # executive summary workflow
-    workflow.connect([
-        (inputnode, executivesummary_wf, [('t1w', 'inputnode.t1w'),
-                                          ('t1seg', 'inputnode.t1seg'),
-                                          ('bold_file', 'inputnode.bold_file'),
-                                          ('mni_to_t1w', 'inputnode.mni_to_t1w')]),
-        (regression_wf, executivesummary_wf, [('res_file', 'inputnode.regressed_data')
-                                              ]),
-        (filtering_wf, executivesummary_wf, [('filtered_file',
-                                              'inputnode.residual_data')]),
-        (censor_scrub, executivesummary_wf, [('filtered_motion',
-                                              'inputnode.filtered_motion'),
-                                             ('tmask',
-                                              'inputnode.tmask')
-                                             ]),
-    ])
+    if dcan_qc:
+        executivesummary_wf = init_execsummary_wf(
+            TR=TR,
+            bold_file=bold_file,
+            layout=layout,
+            output_dir=output_dir,
+            omp_nthreads=omp_nthreads,
+            dummyvols=initial_volumes_to_drop,
+            mem_gb=mem_gbx["timeseries"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, executivesummary_wf, [
+                ('t1w', 'inputnode.t1w'),
+                ('t1seg', 'inputnode.t1seg'),
+                ('bold_file', 'inputnode.bold_file'),
+                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+            ]),
+            (regression_wf, executivesummary_wf, [
+                ('res_file', 'inputnode.regressed_data'),
+            ]),
+            (filtering_wf, executivesummary_wf, [
+                ('filtered_file', 'inputnode.residual_data'),
+            ]),
+            (censor_scrub, executivesummary_wf, [
+                ('filtered_motion', 'inputnode.filtered_motion'),
+                ('tmask', 'inputnode.tmask'),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 
@@ -640,9 +762,9 @@ def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
     bold_tlen = nb.load(bold_fname).shape[-1]
     mem_gbz = {
-        'derivative': bold_size_gb,
-        'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        "derivative": bold_size_gb,
+        "resampled": bold_size_gb * 4,
+        "timeseries": bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
 
     return mem_gbz

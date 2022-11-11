@@ -27,10 +27,14 @@ BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithoutfreesurfer/fmriprep
 XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 $XCPD_CMD \
-    --despike --head_radius 40 \
-    --smoothing 6 -f 100 -vv \
-    --nuissance-regressors 27P \
-    --disable-bandpass-filter
+    --despike \
+    --head_radius 40 \
+    --smoothing 6 \
+    -f 100 \
+    -vv \
+    --nuisance-regressors 27P \
+    --disable-bandpass-filter \
+    --dcan-qc
 
 input_type=nifti
 python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
