@@ -17,6 +17,7 @@ from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -441,6 +442,7 @@ def confoundplotx(
     return time_series_axis, grid_specification
 
 
+@fill_doc
 def plot_svgx(
     preprocessed_file,
     residuals_file,
@@ -472,8 +474,7 @@ def plot_svgx(
         mask for nifti if available
     tmask :
        temporal censoring mask
-    dummy_scans :
-        initial number of volumes to drop
+    %(dummy_scans)s
     seg_data :
         3 tissues seg_data files
     TR : float, optional
