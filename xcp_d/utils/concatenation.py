@@ -597,7 +597,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
     is_nifti = files[0].extension == ".nii.gz"
 
     if isinstance(dummy_scans, list):
-        assert all([isinstance(val, int) for val in dummy_scans]), [type(val) for val in dummy_scans]
+        assert all([isinstance(val, int) for val in dummy_scans])
         runwise_dummy_scans = dummy_scans
     else:
         runwise_dummy_scans = [dummy_scans] * len(files)
