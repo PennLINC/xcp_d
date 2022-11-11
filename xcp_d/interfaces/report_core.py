@@ -87,11 +87,12 @@ def run_reports(
 @fill_doc
 def generate_reports(
     subject_list,
-    dummytime,
     fmri_dir,
     work_dir,
     output_dir,
     run_uuid,
+    dummy_scans,
+    dummytime=0,
     cifti=False,
     config=None,
     packagename=None,
@@ -103,7 +104,6 @@ def generate_reports(
 
     subject_list : list of str
         List of subject IDs.
-    %(dummytime)s
     fmri_dir : str
         The path to the fMRI directory.
     work_dir : str
@@ -112,6 +112,9 @@ def generate_reports(
         The path to the output directory.
     run_uuid : str
         The UUID of the run for which the report will be generated.
+    %(dummy_scans)s
+    %(dummytime)s
+    %(cifti)s
     config : None or str, optional
         Configuration file.
     packagename : None or str, optional
@@ -162,13 +165,14 @@ def generate_reports(
                 fmri_dir = str(work_dir) + "/hcp/hcp"
             print("Concatenating bold files ...")
             concatenate_derivatives(
-                dummytime=dummytime,
                 subjects=subject_list,
                 fmridir=str(fmri_dir),
                 outputdir=str(Path(str(output_dir)) / "xcp_d/"),
                 work_dir=work_dir,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
+                dummy_scans=dummy_scans,
+                dummytime=dummytime,
             )
             print("Concatenation complete!")
 

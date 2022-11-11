@@ -36,8 +36,8 @@ def concatenate_derivatives(
     subjects,
     cifti,
     dcan_qc,
-    dummy_scans=0,
-    dummytime=None,
+    dummy_scans,
+    dummytime=0,
 ):
     """Concatenate derivatives.
 

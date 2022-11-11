@@ -256,7 +256,7 @@ def get_parser():
     dummyvols.add_argument(
         "-d",
         "--dummytime",
-        default=None,
+        default=0,
         type=float,
         action=_DeprecatedStoreAction040,
         help=(
@@ -654,16 +654,17 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            dummytime=opts.dummytime,
             subject_list=subject_list,
             fmri_dir=fmri_dir,
             work_dir=work_dir,
             output_dir=output_dir,
             run_uuid=run_uuid,
+            cifti=opts.cifti,
+            dummy_scans=opts.dummy_scans,
+            dummytime=opts.dummytime,
             combineruns=opts.combineruns,
             dcan_qc=opts.dcan_qc,
             input_type=opts.input_type,
-            cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
         )
