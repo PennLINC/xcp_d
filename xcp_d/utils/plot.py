@@ -443,8 +443,8 @@ def confoundplotx(
 
 def plot_svgx(
     preprocessed_file,
+    residuals_file,
     denoised_file,
-    denoised_filtered_file,
     tmask,
     dummyvols,
     filtered_motion,
@@ -454,8 +454,8 @@ def plot_svgx(
     seg_data=None,
     TR=1,
     raw_dvars=None,
-    regressed_dvars=None,
-    filtered_dvars=None,
+    residuals_dvars=None,
+    denoised_dvars=None,
     work_dir=None,
 ):
     """Generate carpet plot with DVARS, FD, and WB.
@@ -464,9 +464,9 @@ def plot_svgx(
     ----------
     preprocessed_file :
         nifti or cifti before processing
-    denoised_file :
+    residuals_file :
         nifti or cifti after nuisance regression
-    denoised_filtered_file :
+    denoised_file :
         nifti or cifti after regression and filtering
     mask :
         mask for nifti if available
@@ -487,8 +487,8 @@ def plot_svgx(
     """
     # Compute dvars correctly if not already done
     raw_data_arr = read_ndata(datafile=preprocessed_file, maskfile=mask)
-    regressed_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
-    filtered_data_arr = read_ndata(datafile=denoised_filtered_file, maskfile=mask)
+    residuals_data_arr = read_ndata(datafile=residuals_file, maskfile=mask)
+    denoised_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
@@ -500,23 +500,23 @@ def plot_svgx(
     # Let's censor the interpolated data and raw_data_arr:
     if sum(tmask_arr) > 0:
         raw_data_arr = raw_data_arr[:, tmask_bool]
-        filtered_data_arr = filtered_data_arr[:, tmask_bool]
+        denoised_data_arr = denoised_data_arr[:, tmask_bool]
 
     if not isinstance(raw_dvars, np.ndarray):
         raw_dvars = compute_dvars(raw_data_arr)
 
-    if not isinstance(regressed_dvars, np.ndarray):
-        regressed_dvars = compute_dvars(regressed_data_arr)
+    if not isinstance(residuals_dvars, np.ndarray):
+        residuals_dvars = compute_dvars(residuals_data_arr)
 
-    if not isinstance(filtered_dvars, np.ndarray):
-        filtered_dvars = compute_dvars(filtered_data_arr)
+    if not isinstance(denoised_dvars, np.ndarray):
+        denoised_dvars = compute_dvars(denoised_data_arr)
 
-    if not (raw_dvars.shape == regressed_dvars.shape == filtered_dvars.shape):
+    if not (raw_dvars.shape == residuals_dvars.shape == denoised_dvars.shape):
         raise ValueError(
             "Shapes do not match:\n"
             f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
-            f"\t{denoised_file}: {regressed_data_arr.shape}\n"
-            f"\t{denoised_filtered_file}: {filtered_data_arr.shape}\n\n"
+            f"\t{residuals_file}: {residuals_data_arr.shape}\n"
+            f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -526,8 +526,8 @@ def plot_svgx(
     DVARS_timeseries = pd.DataFrame(
         {
             "Pre regression": raw_dvars,
-            "Post regression": regressed_dvars,
-            "Post all": filtered_dvars,
+            "Post regression": residuals_dvars,
+            "Post all": denoised_dvars,
         }
     )
 
@@ -545,8 +545,8 @@ def plot_svgx(
     # The mean and standard deviation of filtered data
     processed_data_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(filtered_data_arr, axis=0),
-            "Std": np.nanstd(filtered_data_arr, axis=0),
+            "Mean": np.nanmean(denoised_data_arr, axis=0),
+            "Std": np.nanstd(denoised_data_arr, axis=0),
         }
     )
 
@@ -557,28 +557,28 @@ def plot_svgx(
 
     # The plot going to carpet plot will be rescaled to [-600,600]
     scaled_raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask, scale=600)
-    scaled_residual_data = read_ndata(datafile=denoised_filtered_file, maskfile=mask, scale=600)
+    scaled_denoised_data = read_ndata(datafile=denoised_file, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
     if preprocessed_file.endswith(".nii.gz"):
-        scaledrawdata = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
-        scaledresdata = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
+        scaled_raw_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
+        scaled_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
     else:
-        scaledrawdata = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
-        scaledresdata = os.path.join(tempfile.mkdtemp(), "filex_red.dtseries.nii")
+        scaled_raw_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
+        scaled_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.dtseries.nii")
 
     # Write out the scaled data
-    scaledrawdata = write_ndata(
+    scaled_raw_file = write_ndata(
         data_matrix=scaled_raw_data,
         template=preprocessed_file,
-        filename=scaledrawdata,
+        filename=scaled_raw_file,
         mask=mask,
         TR=TR,
     )
-    scaledresdata = write_ndata(
-        data_matrix=scaled_residual_data,
-        template=denoised_filtered_file,
-        filename=scaledresdata,
+    scaled_denoised_file = write_ndata(
+        data_matrix=scaled_denoised_data,
+        template=denoised_file,
+        filename=scaled_denoised_file,
         mask=mask,
         TR=TR,
     )
@@ -597,7 +597,13 @@ def plot_svgx(
         hide_x=True,
         ylabel="WB",
     )
-    plot_carpet(func=scaledrawdata, atlaslabels=atlaslabels, TR=TR, subplot=grid[3], legend=False)
+    plot_carpet(
+        func=scaled_raw_file,
+        atlaslabels=atlaslabels,
+        TR=TR,
+        subplot=grid[3],
+        legend=False,
+    )
     confoundplotx(
         time_series=FD_timeseries,
         grid_spec_ts=grid[4],
@@ -635,7 +641,13 @@ def plot_svgx(
         work_dir=work_dir,
     )
 
-    plot_carpet(func=scaledresdata, atlaslabels=atlaslabels, TR=TR, subplot=grid[3], legend=True)
+    plot_carpet(
+        func=scaled_denoised_file,
+        atlaslabels=atlaslabels,
+        TR=TR,
+        subplot=grid[3],
+        legend=True,
+    )
     confoundplotx(
         time_series=FD_timeseries,
         grid_spec_ts=grid[4],
