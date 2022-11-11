@@ -51,7 +51,7 @@ BOLD Workflow
         params='27P',
         custom_confounds=custom_confounds,
         omp_nthreads=1,
-        dummytime=0,
+        dummy_scans=0,
         output_dir='output_dir',
         fd_thresh=0.2,
         n_runs=1,

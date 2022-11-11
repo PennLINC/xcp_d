@@ -81,7 +81,7 @@ def init_ciftipostprocess_wf(
                 output_dir=".",
                 custom_confounds_folder=None,
                 omp_nthreads=1,
-                dummytime=None,
+                dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
                 despike=False,
@@ -109,8 +109,8 @@ def init_ciftipostprocess_wf(
     custom_confounds_folder: str
         path to cusrtom nuissance regressors
     %(omp_nthreads)s
-    dummytime: float
-        the first few seconds to be removed before postprocessing
+    %(dummytime)s
+    %(dummy_scans)s
     %(fd_thresh)s
     despike: bool
         afni depsike

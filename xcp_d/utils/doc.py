@@ -329,6 +329,24 @@ layout : :obj:`bids.layout.BIDSLayout`
     BIDSLayout indexing the ingested (e.g., fMRIPrep-format) derivatives.
 """
 
+docdict[
+    "dummytime"
+] = """
+dummytime : :obj:`float`
+    Number of seconds to remove from the beginning of each run.
+    This parameter is deprecated. Please use ``dummy_scans`` instead.
+    This parameter will only take effect if ``dummy_scans`` is 0.
+"""
+
+docdict[
+    "dummy_scans"
+] = """
+dummy_scans : :obj:`int` or "auto"
+    Number of volumes to remove from the beginning of each run.
+    If set to 'auto', xcp_d will extract non-steady-state volume indices from the
+    preprocessing derivatives' confounds file.
+"""
+
 docdict_indented = {}
 
 

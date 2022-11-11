@@ -13,6 +13,7 @@ from niworkflows.reports.core import Report as _Report
 
 from xcp_d.interfaces.layout_builder import LayoutBuilder
 from xcp_d.utils.bids import _getsesid
+from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("cli")
 
@@ -83,6 +84,7 @@ def run_reports(
     ).generate_report()
 
 
+@fill_doc
 def generate_reports(
     subject_list,
     dummytime,
@@ -101,6 +103,7 @@ def generate_reports(
 
     subject_list : list of str
         List of subject IDs.
+    %(dummytime)s
     fmri_dir : str
         The path to the fMRI directory.
     work_dir : str

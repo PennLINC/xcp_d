@@ -34,7 +34,7 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc=(
             "Number of volumes to drop from the beginning, "
-            "calculated in an earlier workflow from dummytime "
+            "calculated in an earlier workflow from dummytime/dummy_scans "
             "and repetition time."
         ),
     )

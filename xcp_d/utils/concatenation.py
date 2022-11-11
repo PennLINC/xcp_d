@@ -16,6 +16,7 @@ from pkg_resources import resource_filename as _pkgres
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import _drop_dummy_scans
 from xcp_d.utils.plot import plot_svgx
 from xcp_d.utils.qcmetrics import compute_dvars
@@ -27,6 +28,7 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
+@fill_doc
 def concatenate_derivatives(
     fmridir,
     outputdir,
@@ -49,8 +51,6 @@ def concatenate_derivatives(
 
     Parameters
     ----------
-    dummytime: float
-        Amount of time to drop from the beginning of the scan
     fmridir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
     outputdir : str
@@ -63,6 +63,8 @@ def concatenate_derivatives(
         Whether xcpd was run on CIFTI files or not.
     dcan_qc : bool
         Whether to perform DCAN QC or not.
+    %(dummy_scans)s
+    %(dummytime)s
     """
     LOGGER.debug("Starting concatenation workflow.")
 

@@ -98,7 +98,7 @@ def init_xcpd_wf(
                 custom_confounds_folder=None,
                 output_dir=".",
                 work_dir=".",
-                dummytime=None,
+                dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
                 process_surfaces=False,
@@ -144,8 +144,8 @@ def init_xcpd_wf(
         Path to custom nuisance regressors.
         Must be a folder containing confounds files,
         in which case the file with the name matching the fMRIPrep confounds file will be selected.
-    dummytime: float
-        the first vols in seconds to be removed before postprocessing
+    %(dummytime)s
+    %(dummy_scans)s
     %(process_surfaces)s
     dcan_qc : bool
         Whether to run DCAN QC or not.
@@ -259,7 +259,7 @@ def init_subject_wf(
                 despike=False,
                 head_radius=50,
                 params="36P",
-                dummytime=None,
+                dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
                 task_id="rest",
@@ -302,12 +302,8 @@ def init_subject_wf(
         Path to custom nuisance regressors.
         Must be a folder containing confounds files,
         in which case the file with the name matching the fMRIPrep confounds file will be selected.
-    dummytime: float
-        the first vols in seconds to be removed before postprocessing.
-        Deprecated in favor of dummy_scans.
-        This parameter will only take effect if ``dummy_scans`` is 0 and
-        ``dummytime`` is not None.
-    dummy_scans : int or "auto"
+    %(dummytime)s
+    %(dummy_scans)s
     %(process_surfaces)s
     dcan_qc : bool
         Whether to run DCAN QC or not.

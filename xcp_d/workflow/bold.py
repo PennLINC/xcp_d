@@ -90,7 +90,7 @@ def init_boldpostprocess_wf(
                 params="36P",
                 custom_confounds_folder=None,
                 omp_nthreads=1,
-                dummytime=None,
+                dummytime=0,
                 dummy_scans=0,
                 output_dir=".",
                 fd_thresh=0.2,
@@ -119,8 +119,8 @@ def init_boldpostprocess_wf(
     custom_confounds: str
         path to cusrtom nuissance regressors
     %(omp_nthreads)s
-    dummytime: float
-        the time in seconds to be removed before postprocessing
+    %(dummytime)s
+    %(dummy_scans)s
     output_dir : str
         Directory in which to save xcp_d output
     %(fd_thresh)s
