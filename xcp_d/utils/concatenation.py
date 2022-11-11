@@ -289,11 +289,27 @@ def concatenate_derivatives(
                         if dummy_scans == 0 and dummytime != 0:
                             dummy_scans = int(np.ceil(dummytime / TR))
 
+                        if dummy_scans == "auto":
+                            runwise_dummy_scans = []
+                            for i_file, preproc_file in enumerate(preproc_files):
+                                confounds_file = get_confounds_tsv(preproc_file.path)
+                                if not os.path.isfile(confounds_file):
+                                    raise FileNotFoundError(
+                                        f"Confounds file not found: {confounds_file}"
+                                    )
+
+                                runwise_dummy_scans.append(
+                                    _infer_dummy_scans(dummy_scans, confounds_file)
+                                )
+
+                        elif isinstance(dummy_scans, int):
+                            runwise_dummy_scans = [dummy_scans] * len(preproc_files)
+
                         # Concatenate preprocessed files, but drop dummy scans from each run
                         _concatenate_niimgs(
                             preproc_files,
                             concat_preproc_file,
-                            dummy_scans=dummy_scans,
+                            dummy_scans=runwise_dummy_scans,
                         )
 
                         # Get mask and dseg files for loading data and calculating DVARS.
@@ -345,10 +361,10 @@ def concatenate_derivatives(
 
                         # Calculate DVARS from preprocessed BOLD
                         raw_dvars = []
-                        for preproc_file in preproc_files:
+                        for i_file, preproc_file in enumerate(preproc_files):
                             dvar = compute_dvars(read_ndata(preproc_file.path, mask))
                             dvar[0] = np.mean(dvar)
-                            dvar = dvar[dummy_scans:]
+                            dvar = dvar[runwise_dummy_scans[i_file] :]
                             raw_dvars.append(dvar)
                         raw_dvars = np.concatenate(raw_dvars)
                         # Censor DVARS
@@ -568,7 +584,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
         List of BOLD files to concatenate over the time dimension.
     out_file : :obj:`str`
         The concatenated file to write out.
-    dummy_scans : int or "auto", optional
+    dummy_scans : int or list of int, optional
         The number of dummy scans to drop from the beginning of each file before concatenation.
         If None (default), no volumes will be dropped.
         If an integer, the same number of volumes will be dropped from each file.
@@ -576,20 +592,14 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
         load it, and determine the number of non-steady-state volumes estimated by the
         preprocessing workflow.
     """
-    assert isinstance(dummy_scans, (int, str))
+    assert isinstance(dummy_scans, (int, list))
 
     is_nifti = files[0].extension == ".nii.gz"
 
-    if dummy_scans == "auto":
-        runwise_dummy_scans = []
-        for i_file, preproc_file in enumerate(files):
-            confounds_file = get_confounds_tsv(preproc_file.path)
-            if not os.path.isfile(confounds_file):
-                raise FileNotFoundError(f"Confounds file not found: {confounds_file}")
-
-            runwise_dummy_scans.append(_infer_dummy_scans(dummy_scans, confounds_file))
-
-    elif isinstance(dummy_scans, int):
+    if isinstance(dummy_scans, list):
+        assert all([isinstance(val, int) for val in dummy_scans])
+        runwise_dummy_scans = dummy_scans
+    else:
         runwise_dummy_scans = [dummy_scans] * len(files)
 
     if dummy_scans != 0:
