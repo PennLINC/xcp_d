@@ -33,7 +33,7 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
     )
     tmask = File(exists=True, mandatory=False, desc="Temporal mask. Current unused.")
-    dummyvols = traits.Int(
+    dummy_scans = traits.Int(
         exists=False,
         mandatory=False,
         default_value=0,
@@ -109,11 +109,11 @@ class CensoringPlot(SimpleInterface):
         )
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
-        initial_volumes_to_drop = self.inputs.dummyvols
-        if self.inputs.dummyvols:
+        dummy_scans = self.inputs.dummy_scans
+        if self.inputs.dummy_scans:
             ax.axvspan(
                 0,
-                self.inputs.dummyvols,
+                self.inputs.dummy_scans,
                 label="Dummy Volumes",
                 alpha=0.5,
                 color=palette[1],
@@ -145,7 +145,7 @@ class CensoringPlot(SimpleInterface):
 
         # NOTE: TS- Probably should replace with the actual tmask file.
         tmask = filtered_fd_timeseries >= self.inputs.fd_thresh
-        tmask[:initial_volumes_to_drop] = False
+        tmask[:dummy_scans] = False
 
         # Only plot censored volumes if any were flagged
         if sum(tmask) > 0:

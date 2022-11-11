@@ -28,7 +28,7 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
-    initial_volumes_to_drop = traits.Either(
+    dummy_scans = traits.Either(
         traits.Int,
         "auto",
         mandatory=True,
@@ -69,7 +69,7 @@ class _RemoveTROutputSpec(TraitedSpec):
         usedefault=True,
     )
 
-    dummyvols = traits.Int(desc="Number of volumes dropped.")
+    dummy_scans = traits.Int(desc="Number of volumes dropped.")
 
 
 class RemoveTR(SimpleInterface):
@@ -83,15 +83,15 @@ class RemoveTR(SimpleInterface):
     output_spec = _RemoveTROutputSpec
 
     def _run_interface(self, runtime):
-        volumes_to_drop = _infer_dummy_scans(
-            dummy_scans=self.inputs.initial_volumes_to_drop,
+        dummy_scans = _infer_dummy_scans(
+            dummy_scans=self.inputs.dummy_scans,
             confounds_file=self.inputs.fmriprep_confounds_file,
         )
 
-        self._results["dummyvols"] = volumes_to_drop
+        self._results["dummy_scans"] = dummy_scans
 
         # Check if we need to do anything
-        if volumes_to_drop == 0:
+        if dummy_scans == 0:
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
             self._results[
@@ -111,17 +111,17 @@ class RemoveTR(SimpleInterface):
         )
 
         # Remove the dummy volumes
-        dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=volumes_to_drop)
+        dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=dummy_scans)
         dropped_image.to_filename(dropped_bold_file)
 
         # Drop the first N rows from the pandas dataframe
         fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        dropped_confounds_df = fmriprep_confounds_df.drop(np.arange(volumes_to_drop))
+        dropped_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
             custom_confounds_df = pd.read_table(self.inputs.custom_confounds)
-            custom_confounds_tsv_dropped = custom_confounds_df.drop[np.arange(volumes_to_drop)]
+            custom_confounds_tsv_dropped = custom_confounds_df.drop[np.arange(dummy_scans)]
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 

@@ -435,7 +435,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             (inputnode, remove_dummy_scans, [
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
                 ("bold_file", "bold_file"),
-                ("dummy_scans", "initial_volumes_to_drop"),
+                ("dummy_scans", "dummy_scans"),
             ]),
             (get_custom_confounds_file, remove_dummy_scans, [
                 ("custom_confounds_file", "custom_confounds"),
@@ -446,10 +446,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("custom_confounds_dropped", "custom_confounds"),
             ]),
             (remove_dummy_scans, censor_report, [
-                ("dummyvols", "dummyvols"),
+                ("dummy_scans", "dummy_scans"),
             ]),
             (remove_dummy_scans, qcreport, [
-                ("dummyvols", "dummy_scans"),
+                ("dummy_scans", "dummy_scans"),
             ])
         ])
         # fmt:on
@@ -759,7 +759,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             # fmt:off
             workflow.connect([
                 (remove_dummy_scans, executivesummary_wf, [
-                    ("dummyvols", "inputnode.dummy_scans"),
+                    ("dummy_scans", "inputnode.dummy_scans"),
                 ])
             ])
             # fmt:on

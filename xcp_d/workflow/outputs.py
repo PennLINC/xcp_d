@@ -104,7 +104,7 @@ def init_writederivatives_wf(
                 "reho_out",
                 "filtered_motion",
                 "tmask",
-                "dummyvols",
+                "dummy_scans",
             ],
         ),
         name="inputnode",

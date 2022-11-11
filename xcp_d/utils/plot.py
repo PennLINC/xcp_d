@@ -446,7 +446,7 @@ def plot_svgx(
     residuals_file,
     denoised_file,
     tmask,
-    dummyvols,
+    dummy_scans,
     filtered_motion,
     unprocessed_filename,
     processed_filename,
@@ -457,7 +457,6 @@ def plot_svgx(
     residuals_dvars=None,
     denoised_dvars=None,
     work_dir=None,
-    concat=False,
 ):
     """Generate carpet plot with DVARS, FD, and WB.
 
@@ -473,7 +472,7 @@ def plot_svgx(
         mask for nifti if available
     tmask :
        temporal censoring mask
-    dummyvols :
+    dummy_scans :
         initial number of volumes to drop
     seg_data :
         3 tissues seg_data files
@@ -495,8 +494,8 @@ def plot_svgx(
     tmask_bool = ~tmask_arr.astype(bool)
 
     # Let's remove dummy time from the raw_data_arr if needed
-    if dummyvols > 0:
-        raw_data_arr = raw_data_arr[:, dummyvols:]
+    if dummy_scans > 0:
+        raw_data_arr = raw_data_arr[:, dummy_scans:]
 
     # Let's censor the interpolated data and raw_data_arr:
     if sum(tmask_arr) > 0:

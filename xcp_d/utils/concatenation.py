@@ -395,7 +395,7 @@ def concatenate_derivatives(
                             preprocessed_file=concat_preproc_file,
                             residuals_file=concat_censored_file,
                             denoised_file=concat_denoised_file,
-                            dummyvols=0,
+                            dummy_scans=0,
                             tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
@@ -407,7 +407,6 @@ def concatenate_derivatives(
                             seg_data=segfile,
                             TR=TR,
                             work_dir=work_dir,
-                            concat=True,
                         )
                         LOGGER.debug("plot_svgx done")
 
