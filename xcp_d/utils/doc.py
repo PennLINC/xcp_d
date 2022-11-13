@@ -13,59 +13,79 @@ import sys
 #
 docdict = dict()
 
-docdict["omp_nthreads"] = """
+docdict[
+    "omp_nthreads"
+] = """
 omp_nthreads : :obj:`int`
     Maximum number of threads an individual process may use.
 """
 
-docdict["mem_gb"] = """
+docdict[
+    "mem_gb"
+] = """
 mem_gb : :obj:`float`
     Memory limit, in gigabytes.
 """
 
-docdict["fmri_dir"] = """
+docdict[
+    "fmri_dir"
+] = """
 fmri_dir : :obj:`str`
     Path to the preprocessed derivatives dataset.
     For example, "/path/to/dset/derivatives/fmriprep/".
 """
 
-docdict["output_dir"] = """
+docdict[
+    "output_dir"
+] = """
 output_dir : :obj:`str`
     Path to the output directory for ``xcp_d`` derivatives.
     This should not include the ``xcp_d`` folder.
     For example, "/path/to/dset/derivatives/".
 """
 
-docdict["work_dir"] = """
+docdict[
+    "work_dir"
+] = """
 work_dir : :obj:`str`
     Directory in which to store workflow execution state and temporary files.
 """
 
-docdict["analysis_level"] = """
+docdict[
+    "analysis_level"
+] = """
 analysis_level : {"participant"}
     The analysis level for ``xcp_d``. Must be specified as "participant".
 """
 
-docdict["t1w_to_mni"] = """
+docdict[
+    "t1w_to_mni"
+] = """
 t1w_to_mni : :obj:`str`
     Path to the T1w-to-MNI transform file.
     May be "identity", for testing purposes.
 """
 
-docdict["mni_to_t1w"] = """
+docdict[
+    "mni_to_t1w"
+] = """
 mni_to_t1w : :obj:`str`
     Path to the MNI-to-T1w transform file.
     May be "identity", for testing purposes.
 """
 
-docdict["params"] = """
+docdict[
+    "params"
+] = """
 params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \
           "aroma", "aroma_gsr", "custom"}, optional
     Shorthand for the parameter set to extract from the confounds TSV.
     Default is "36P", most expansive option.
 """
 
-docdict["input_type"] = """
+docdict[
+    "input_type"
+] = """
 input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
     The format of the incoming preprocessed BIDS derivatives.
     DCAN- and HCP-format derivatives will automatically be converted to a more
@@ -74,28 +94,36 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
     file organization and naming.
 """
 
-docdict["smoothing"] = """
+docdict[
+    "smoothing"
+] = """
 smoothing : float
     The full width at half maximum (FWHM), in millimeters,
     of the Gaussian smoothing kernel that will be applied to the post-processed and denoised data.
     ALFF and ReHo outputs will also be smoothing with this kernel.
 """
 
-docdict["head_radius"] = """
+docdict[
+    "head_radius"
+] = """
 head_radius : float
     Radius of the head, in millimeters, for framewise displacement calculation.
 
     ``xcp_d``'s default head radius is 50. The recommended value for infants is 35.
 """
 
-docdict["fd_thresh"] = """
+docdict[
+    "fd_thresh"
+] = """
 fd_thresh : float
     Framewise displacement threshold for censoring, in millimeters.
     Any framewise displacement values higher than the threshold are flagged as "high motion".
     Default is 0.2 mm.
 """
 
-docdict["bandpass_filter"] = """
+docdict[
+    "bandpass_filter"
+] = """
 bandpass_filter : :obj:`bool`
     If True, a Butterworth bandpass filter will be applied to the fMRI data after interpolation,
     but before regression.
@@ -103,7 +131,9 @@ bandpass_filter : :obj:`bool`
     be performed.
 """
 
-docdict["lower_bpf"] = """
+docdict[
+    "lower_bpf"
+] = """
 lower_bpf : :obj:`float` or None
     Lower cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
@@ -111,7 +141,9 @@ lower_bpf : :obj:`float` or None
     This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
 """
 
-docdict["upper_bpf"] = """
+docdict[
+    "upper_bpf"
+] = """
 upper_bpf : :obj:`float` or None
     Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
@@ -119,14 +151,18 @@ upper_bpf : :obj:`float` or None
     This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
 """
 
-docdict["bpf_order"] = """
+docdict[
+    "bpf_order"
+] = """
 bpf_order : :obj:`int`
     Number of filter coefficients for Butterworth bandpass filter.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
 """
 
-docdict["motion_filter_type"] = """
+docdict[
+    "motion_filter_type"
+] = """
 motion_filter_type : {None, "lp", "notch"}
     Type of band-stop filter to use for removing respiratory artifact from motion regressors.
     If None, no filter will be applied.
@@ -136,14 +172,18 @@ motion_filter_type : {None, "lp", "notch"}
     If the filter type is set to "lp", then only ``band_stop_max`` must be defined.
 """
 
-docdict["motion_filter_order"] = """
+docdict[
+    "motion_filter_order"
+] = """
 motion_filter_order : :obj:`int`
     Number of filter coefficients for the band-stop filter, for filtering motion regressors.
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is used in conjunction with ``band_stop_max`` and ``band_stop_min``.
 """
 
-docdict["band_stop_min"] = """
+docdict[
+    "band_stop_min"
+] = """
 band_stop_min : :obj:`float` or None
     Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
@@ -170,7 +210,9 @@ band_stop_min : :obj:`float` or None
     this parameter is 6 BPM (equivalent to 0.1 Hertz), based on :footcite:t:`gratton2020removal`.
 """
 
-docdict["band_stop_max"] = """
+docdict[
+    "band_stop_max"
+] = """
 band_stop_max : :obj:`float` or None
     Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
@@ -193,19 +235,25 @@ band_stop_max : :obj:`float` or None
     ================= =================
 """
 
-docdict["name"] = """
+docdict[
+    "name"
+] = """
 name : :obj:`str`, optional
     Name of the workflow. This is used for working directories and workflow graphs.
 """
 
-docdict["cifti"] = """
+docdict[
+    "cifti"
+] = """
 cifti : :obj:`bool`
     Post-process surface data (CIFTIs) instead of volumetric data (NIFTIs).
     This parameter is overridden when DCAN- or HCP-format data are provided.
     Default is False.
 """
 
-docdict["atlas_names"] = """
+docdict[
+    "atlas_names"
+] = """
 atlas_names : :obj:`list` of :obj:`str`
     A list of atlases used for parcellating the BOLD data.
     The list of atlas names is generated by :func:`xcp_d.utils.atlas.get_atlas_names`.
@@ -214,17 +262,23 @@ atlas_names : :obj:`list` of :obj:`str`
     "Schaefer1017", "Glasser", "Gordon", and "subcortical" (Tian).
 """
 
-docdict["timeseries"] = """
+docdict[
+    "timeseries"
+] = """
 timeseries : :obj:`list` of :obj:`str`
     List of paths to atlas-specific time series files.
 """
 
-docdict["correlations"] = """
+docdict[
+    "correlations"
+] = """
 correlations : :obj:`list` of :obj:`str`
     List of paths to atlas-specific ROI-to-ROI correlation files.
 """
 
-docdict["process_surfaces"] = """
+docdict[
+    "process_surfaces"
+] = """
 process_surfaces : :obj:`bool`, optional
     If True, a workflow will be run to warp native-space (fsnative) reconstructed cortical
     surfaces (surf.gii files) produced by Freesurfer into standard (fsLR) space.
@@ -262,12 +316,16 @@ process_surfaces : :obj:`bool`, optional
             This file is only created if the input type is "fmriprep" or "nibabies".
 """
 
-docdict["subject_id"] = """
+docdict[
+    "subject_id"
+] = """
 subject_id : :obj:`str`
     The participant ID. This SHOULD NOT include the ``sub-`` prefix.
 """
 
-docdict["layout"] = """
+docdict[
+    "layout"
+] = """
 layout : :obj:`bids.layout.BIDSLayout`
     BIDSLayout indexing the ingested (e.g., fMRIPrep-format) derivatives.
 """
@@ -328,7 +386,7 @@ def fill_doc(f):
     try:
         indented = docdict_indented[icount]
     except KeyError:
-        indent = ' ' * icount
+        indent = " " * icount
         docdict_indented[icount] = indented = {}
         for name, dstr in docdict.items():
             lines = dstr.splitlines()
@@ -336,14 +394,13 @@ def fill_doc(f):
                 newlines = [lines[0]]
                 for line in lines[1:]:
                     newlines.append(indent + line)
-                indented[name] = '\n'.join(newlines)
+                indented[name] = "\n".join(newlines)
             except IndexError:
                 indented[name] = dstr
     try:
         f.__doc__ = docstring % indented
     except (TypeError, ValueError, KeyError) as exp:
         funcname = f.__name__
-        funcname = docstring.split('\n')[0] if funcname is None else funcname
-        raise RuntimeError('Error documenting %s:\n%s'
-                           % (funcname, str(exp)))
+        funcname = docstring.split("\n")[0] if funcname is None else funcname
+        raise RuntimeError(f"Error documenting {funcname}:\n{str(exp)}")
     return f

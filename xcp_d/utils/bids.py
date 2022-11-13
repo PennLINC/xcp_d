@@ -5,14 +5,18 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import logging
 import os
 import warnings
 
+import nibabel as nb
+import yaml
 from bids import BIDSLayout
-from nipype import logging
 from packaging.version import Version
 
-LOGGER = logging.getLogger("nipype.interface")
+from xcp_d.utils.filemanip import ensure_list
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 class BIDSError(ValueError):
@@ -46,9 +50,7 @@ class BIDSWarning(RuntimeWarning):
     pass
 
 
-def collect_participants(
-    bids_dir, participant_label=None, strict=False, bids_validate=False
-):
+def collect_participants(bids_dir, participant_label=None, strict=False, bids_validate=False):
     """Collect a list of participants from a BIDS dataset.
 
     Parameters
@@ -97,9 +99,7 @@ def collect_participants(
         participant_label = [participant_label]
 
     # Drop sub- prefixes
-    participant_label = [
-        sub[4:] if sub.startswith("sub-") else sub for sub in participant_label
-    ]
+    participant_label = [sub[4:] if sub.startswith("sub-") else sub for sub in participant_label]
     # Remove duplicates
     participant_label = sorted(set(participant_label))
     # Remove labels not found
@@ -168,31 +168,50 @@ def collect_data(
     allowed_spaces = PREFERRED_SPACES[cifti]
 
     queries = {
-        "regfile": {"datatype": "anat", "suffix": "xfm"},
+        # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
-        "t1w": {"datatype": "anat", "suffix": "T1w"},
-        "seg_data": {"datatype": "anat", "suffix": "dseg"},
-        "pial": {"datatype": "anat", "suffix": "pial"},
-        "wm": {"datatype": "anat", "suffix": "smoothwm"},
-        "midthickness": {"datatype": "anat", "suffix": "midthickness"},
-        "inflated": {"datatype": "anat", "suffix": "inflated"},
+        # native T1w-space, preprocessed T1w file
+        "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
+        # native T1w-space dseg file, but not aseg or aparcaseg
+        "t1w_seg": {
+            "datatype": "anat",
+            "space": None,
+            "desc": None,
+            "suffix": "dseg",
+            "extension": ".nii.gz",
+        },
+        # transform from standard space to T1w space
+        # from entity will be set later
+        "mni_to_t1w_xform": {
+            "datatype": "anat",
+            "to": "T1w",
+            "suffix": "xfm",
+        },
+        # native T1w-space brain mask
+        "t1w_mask": {
+            "datatype": "anat",
+            "space": None,
+            "desc": "brain",
+            "suffix": "mask",
+            "extension": ".nii.gz",
+        },
+        # transform from T1w space to standard space
+        # to entity will be set later
+        "t1w_to_mni_xform": {
+            "datatype": "anat",
+            "from": "T1w",
+            "suffix": "xfm",
+        },
     }
+    if cifti:
+        queries["bold"]["extension"] = ".dtseries.nii"
+    else:
+        queries["bold"]["extension"] = ".nii.gz"
 
+    # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
-
-    # Override the default allowed extensions for BOLD data so we don't accidentally
-    # collect both surface and volumetric files.
-    # Don't override if already set by the bids filters.
-    if "extension" not in queries["bold"].keys():
-        queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
-
-    # Set valid extensions for the file types.
-    # Don't override if already set by the bids filters or for BOLD data.
-    for acq, entities in queries.items():
-        if "extension" not in queries[acq].keys():
-            queries[acq]["extension"] = ["nii", "nii.gz", "dtseries.nii", "h5", "gii"]
 
     if task:
         queries["bold"]["task"] = task
@@ -206,7 +225,28 @@ def collect_data(
             )
             if bold_data:
                 queries["bold"]["space"] = space
+                if not cifti:
+                    queries["t1w_to_mni_xform"]["to"] = space
+                    queries["mni_to_t1w_xform"]["from"] = space
+
                 break
+    else:
+        allowed_spaces = ensure_list(queries["bold"]["space"])
+
+    if not bold_data:
+        allowed_space_str = ", ".join(allowed_spaces)
+        raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+
+    # Grab the first (and presumably best) density and resolution if there are multiple.
+    # This probably works well for resolution (1 typically means 1x1x1,
+    # 2 typically means 2x2x2, etc.), but probably doesn't work well for density.
+    resolutions = layout.get_res(**queries["bold"])
+    densities = layout.get_den(**queries["bold"])
+    if len(resolutions) > 1:
+        queries["bold"]["resolution"] = resolutions[0]
+
+    if len(densities) > 1:
+        queries["bold"]["density"] = densities[0]
 
     subj_data = {
         dtype: sorted(
@@ -219,96 +259,83 @@ def collect_data(
         for dtype, query in queries.items()
     }
 
+    for field, filenames in subj_data.items():
+        # All fields except the BOLD data should have a single file
+        if field != "bold" and isinstance(filenames, list):
+            if not filenames:
+                raise FileNotFoundError(f"No {field} found with query: {queries[field]}")
+
+            subj_data[field] = filenames[0]
+
     return layout, subj_data
 
 
-def select_registrationfile(subj_data):
-    """Select a registration file from a derivatives dataset.
+def collect_run_data(layout, bold_file, cifti=False):
+    """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
-    subj_data : dict
-        Dictionary where keys are filetypes and values are filenames.
+    layout : :obj:`bids.layout.BIDSLayout`
+        The BIDSLayout object used to grab files from the dataset.
+    bold_file : :obj:`str`
+        Path to the BOLD file.
+    cifti : :obj:`bool`, optional
+        Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
+        Default is False.
 
     Returns
     -------
-    mni_to_t1w : str
-        Path to the MNI-to-T1w transform file.
-    t1w_to_mni : str
-        Path to the T1w-to-MNI transform file.
+    run_data : :obj:`dict`
+        A dictionary of file types (e.g., "confounds") and associated filenames.
     """
-    regfile = subj_data["regfile"]
+    bids_file = layout.get_file(bold_file)
+    run_data, metadata = {}, {}
+    run_data["confounds"] = layout.get_nearest(
+        bids_file.path,
+        strict=False,
+        desc="confounds",
+        suffix="timeseries",
+        extension=".tsv",
+    )
+    metadata["bold_metadata"] = layout.get_metadata(bold_file)
+    # Ensure that we know the TR
+    if "RepetitionTime" not in metadata["bold_metadata"].keys():
+        metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    # get the file with the template name
-    template1 = "MNI152NLin6Asym"  # default for fmriprep / nibabies with cifti output
-    template2 = "MNI152NLin2009cAsym"  # default template for fmriprep,dcan and hcp
-    template3 = "MNIInfant"  # nibabies
+    if not cifti:
+        run_data["boldref"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            suffix="boldref",
+        )
+        run_data["boldmask"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            desc="brain",
+            suffix="mask",
+        )
+        run_data["t1w_to_native_xform"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            **{"from": "T1w"},  # "from" is protected Python kw
+            to="scanner",
+            suffix="xfm",
+        )
 
-    mni_to_t1w = None
-    t1w_to_mni = None
+    LOGGER.debug(
+        f"Collected run data for {bold_file}:\n"
+        f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
+    )
 
-    for j in regfile:
-        if (
-            "from-" + template1 in j
-            or ("from-" + template2 in j and mni_to_t1w is None)
-            or ("from-" + template3 in j and mni_to_t1w is None)
-        ):
-            mni_to_t1w = j
-        elif (
-            "to-" + template1 in j
-            or ("to-" + template2 in j and t1w_to_mni is None)
-            or ("to-" + template3 in j and t1w_to_mni is None)
-        ):
-            t1w_to_mni = j
-    # for validation, we need to check presence of MNI152NLin2009cAsym
-    # if not we use MNI152NLin2006cAsym for nibabies
-    # print(mni_to_t1w)
+    for k, v in run_data.items():
+        if v is None:
+            raise FileNotFoundError(f"No {k} file found for {bids_file.path}")
 
-    return mni_to_t1w, t1w_to_mni
+        metadata[f"{k}_metadata"] = layout.get_metadata(v)
 
+    run_data.update(metadata)
 
-def extract_t1w_seg(subj_data):
-    """Select preprocessed T1w and segmentation files.
-
-    Parameters
-    ----------
-    subj_data : dict
-
-    Returns
-    -------
-    selected_t1w_file : str
-        Preprocessed T1-weighted file.
-    selected_t1w_seg_file : str
-        Segmentation file.
-    """
-    import fnmatch
-    import os
-
-    selected_t1w_file, selected_t1w_seg_file = None, None
-    for t1w_file in subj_data["t1w"]:
-        t1w_filename = os.path.basename(t1w_file)
-        # Select the native T1w-space preprocessed T1w file (i.e., no "space" entity).
-        if not fnmatch.fnmatch(t1w_filename, "*_space-*"):
-            selected_t1w_file = t1w_file
-
-    for t1w_seg_file in subj_data["seg_data"]:
-        t1w_seg_filename = os.path.basename(t1w_seg_file)
-        # Select the native T1w-space segmentation file (i.e., no "space" entity).
-        # Also don't want aseg in the segmentation file name.
-        # TODO: Use BIDSLayout for this.
-        if not (
-            fnmatch.fnmatch(t1w_seg_filename, "*_space-*")
-            or fnmatch.fnmatch(t1w_seg_filename, "*aseg*")
-        ):
-            selected_t1w_seg_file = t1w_seg_file
-
-    if not selected_t1w_file:
-        raise ValueError("No T1w file found.")
-
-    if not selected_t1w_seg_file:
-        raise ValueError("No segmentation file found.")
-
-    return selected_t1w_file, selected_t1w_seg_file
+    return run_data
 
 
 def write_dataset_description(fmri_dir, xcpd_dir):
@@ -376,7 +403,7 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         with open(dataset_description) as f:
             dataset_dict = json.load(f)
 
-        info_dict["version"] = dataset_dict['GeneratedBy'][0]['Version']
+        info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
     else:
         info_dict["version"] = "unknown"
 
@@ -407,9 +434,9 @@ def _add_subject_prefix(subid):
     str
         Subject entity (e.g., 'sub-XX').
     """
-    if subid.startswith('sub-'):
+    if subid.startswith("sub-"):
         return subid
-    return '-'.join(('sub', subid))
+    return "-".join(("sub", subid))
 
 
 def _getsesid(filename):
@@ -429,10 +456,32 @@ def _getsesid(filename):
     ses_id = None
     base_filename = os.path.basename(filename)
 
-    file_id = base_filename.split('_')
+    file_id = base_filename.split("_")
     for k in file_id:
-        if 'ses' in k:
-            ses_id = k.split('-')[1]
+        if "ses" in k:
+            ses_id = k.split("-")[1]
             break
 
     return ses_id
+
+
+def _get_tr(img):
+    """Attempt to extract repetition time from NIfTI/CIFTI header.
+
+    Examples
+    --------
+    _get_tr(nb.load(Path(test_data) /
+    ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
+    2.2
+     _get_tr(nb.load(Path(test_data) /
+    ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
+    2.0
+    """
+    if isinstance(img, str):
+        img = nb.load(img)
+
+    try:
+        return img.header.matrix.get_index_map(0).series_step  # Get TR
+    except AttributeError:  # Error out if not in cifti
+        return img.header.get_zooms()[-1]
+    raise RuntimeError("Could not extract TR - unknown data structure type")

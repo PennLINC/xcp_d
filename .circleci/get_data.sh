@@ -63,7 +63,14 @@ run_xcpd_cmd () {
     cfg_arg=""
     CFG=$(printenv NIPYPE_CONFIG)
     if [[ -n "${CFG}" ]]; then
-        cfg_arg="-v ${CFG}:/nipype/nipype.cfg --env NIPYPE_CONFIG_DIR=/nipype"
+      cfg_arg="-v ${CFG}:/nipype/nipype.cfg --env NIPYPE_CONFIG_DIR=/nipype"
+    fi
+
+    # Is there a Freesurfer license?
+    fslicense_arg=""
+    FS_LICENSE=$(printenv FS_LICENSE)
+    if [[ -n "${CFG}" ]]; then
+      fslicense_arg="-v ${FS_LICENSE}:/license.txt --env FS_LICENSE=/license.txt"
     fi
 
     # Otherwise we're going to use docker from the outside
@@ -73,8 +80,7 @@ run_xcpd_cmd () {
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
 
-    
-    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
+    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
 
   fi
   echo "${XCPD_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"
@@ -215,7 +221,7 @@ get_bids_data() {
 
     elif [[ ${DS} = freesurfer_colornest ]]
     then
-      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer/freesurfer"
+      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then

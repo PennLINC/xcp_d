@@ -24,6 +24,8 @@ xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-R_pial.surf.gii
 xcp_d/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii
 xcp_d/sub-colornest001/ses-1/func
+xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_desc-preproc_design.tsv
+xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_desc-preproc_design.tsv
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_desc-filtered_motion.tsv
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_outliers.tsv
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
@@ -102,4 +104,3 @@ xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-M
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.json
 xcp_d/sub-colornest001/ses-1/func/sub-colornest001_ses-1_task-rest_run-2_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.nii.gz
-xcp_d/sub-colornest001_ses-1_executive_summary.html

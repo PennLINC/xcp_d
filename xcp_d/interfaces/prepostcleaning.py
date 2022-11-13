@@ -1,6 +1,7 @@
 """Interfaces for the post-processing workflows."""
 import numpy as np
 import pandas as pd
+from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -17,7 +18,6 @@ from xcp_d.utils.modified_data import compute_fd, generate_mask
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
     fd_thresh = traits.Float(
-        exists=True,
         mandatory=False,
         default_value=0.2,
         desc="Framewise displacement threshold. All values above this will be dropped.",
@@ -25,9 +25,15 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     initial_volumes_to_drop = traits.Either(
         traits.Int,
         "auto",
-        exists=False,
         mandatory=True,
         desc="Number of volumes to remove from the beginning of the BOLD run.",
+    )
+    custom_confounds = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
     )
     fmriprep_confounds_file = File(
         exists=True,
@@ -35,7 +41,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         desc="fMRIPrep confounds tsv.",
     )
     head_radius = traits.Float(
-        exists=True,
         mandatory=False,
         default_value=50,
         desc="Head radius in mm.",
@@ -44,21 +49,18 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     motion_filter_type = traits.Either(
         None,
         traits.Str,
-        exists=False,
         mandatory=True,
     )
-    motion_filter_order = traits.Int(exists=False, mandatory=True)
+    motion_filter_order = traits.Int(mandatory=True)
     band_stop_min = traits.Either(
         None,
         traits.Float,
-        exists=True,
         mandatory=True,
         desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
     band_stop_max = traits.Either(
         None,
         traits.Float,
-        exists=True,
         mandatory=True,
         desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
     )
@@ -96,7 +98,6 @@ class CensorScrub(SimpleInterface):
     output_spec = _CensorScrubOutputSpec
 
     def _run_interface(self, runtime):
-
         # Read in fmriprep confounds tsv to calculate FD
         fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         initial_volumes_to_drop = self.inputs.initial_volumes_to_drop

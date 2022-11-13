@@ -32,7 +32,8 @@ $XCPD_CMD \
     --smoothing 6 \
     -f 100 `# high motion threshold so no volumes are censored` \
     -vv \
-    --nuissance-regressors 27P \
-    --disable-bandpass-filter  `# dataset is too short (16 vols) for filtering`
+    --nuisance-regressors 27P \
+    --disable-bandpass-filter  `# dataset is too short (16 vols) for filtering` \
+    --dcan-qc
 
 echo $XCPD_CMD

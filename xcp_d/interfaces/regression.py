@@ -13,12 +13,12 @@ from nipype.interfaces.base import (
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.write_save import despikedatacifti
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CiftiDespikeInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" cifti  file ")
-    TR = traits.Float(exists=True, mandatory=True, desc="repetition time")
+    TR = traits.Float(mandatory=True, desc="repetition time")
 
 
 class _CiftiDespikeOutputSpec(TraitedSpec):
@@ -34,13 +34,13 @@ class CiftiDespike(SimpleInterface):
     def _run_interface(self, runtime):
 
         # write the output out
-        self._results['des_file'] = fname_presuffix(
-            'ciftidepike',
-            suffix='.dtseries.nii',
+        self._results["des_file"] = fname_presuffix(
+            "ciftidepike",
+            suffix=".dtseries.nii",
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results['des_file'] = despikedatacifti(cifti=self.inputs.in_file,
-                                                     TR=self.inputs.TR,
-                                                     basedir=runtime.cwd)
+        self._results["des_file"] = despikedatacifti(
+            cifti=self.inputs.in_file, TR=self.inputs.TR, basedir=runtime.cwd
+        )
         return runtime

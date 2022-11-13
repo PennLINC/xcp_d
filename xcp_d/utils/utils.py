@@ -28,11 +28,15 @@ def _t12native(fname):
     -------
     t12ref : str
         Path to the T1w-to-scanner transform.
+
+    Notes
+    -----
+    Only used in get_segfile, which should be removed ASAP.
     """
     directx = os.path.dirname(fname)
     filename = os.path.basename(fname)
-    fileup = filename.split('desc-preproc_bold.nii.gz')[0].split('space-')[0]
-    t12ref = directx + '/' + fileup + 'from-T1w_to-scanner_mode-image_xfm.txt'
+    fileup = filename.split("desc-preproc_bold.nii.gz")[0].split("space-")[0]
+    t12ref = directx + "/" + fileup + "from-T1w_to-scanner_mode-image_xfm.txt"
     return t12ref
 
 
@@ -52,35 +56,37 @@ def get_segfile(bold_file):
     -------
     segfile : str
         The associated segmentation file.
+
+    Notes
+    -----
+    Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
     # get transform files
     dd = Path(os.path.dirname(bold_file))
-    anatdir = str(dd.parent) + '/anat'
+    anatdir = str(dd.parent) + "/anat"
 
     if Path(anatdir).is_dir():
-        mni_to_t1 = glob.glob(
-            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
     else:
-        anatdir = str(dd.parent.parent) + '/anat'
-        mni_to_t1 = glob.glob(
-            anatdir + '/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5')[0]
+        anatdir = str(dd.parent.parent) + "/anat"
+        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
 
-    transformfilex = get_transformfile(
+    transformfilex = get_std2bold_xforms(
         bold_file=bold_file,
         mni_to_t1w=mni_to_t1,
         t1w_to_native=_t12native(bold_file),
     )
 
-    boldref = bold_file.split('desc-preproc_bold.nii.gz')[0] + 'boldref.nii.gz'
+    boldref = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
 
-    segfile = tempfile.mkdtemp() + 'segfile.nii.gz'
+    segfile = tempfile.mkdtemp() + "segfile.nii.gz"
     carpet = str(
         get_template(
-            'MNI152NLin2009cAsym',
+            "MNI152NLin2009cAsym",
             resolution=1,
-            desc='carpet',
-            suffix='dseg',
-            extension=['.nii', '.nii.gz'],
+            desc="carpet",
+            suffix="dseg",
+            extension=[".nii", ".nii.gz"],
         ),
     )
 
@@ -90,15 +96,15 @@ def get_segfile(bold_file):
     at.inputs.input_image = carpet
     at.inputs.reference_image = boldref
     at.inputs.output_image = segfile
-    at.inputs.interpolation = 'MultiLabel'
+    at.inputs.interpolation = "MultiLabel"
     at.inputs.transforms = transformfilex
     os.system(at.cmdline)
 
     return segfile
 
 
-def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
-    """Obtain the correct transform files in reverse order to transform to MNI space/T1W space.
+def get_bold2std_and_t1w_xforms(bold_file, mni_to_t1w, t1w_to_native):
+    """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
@@ -109,148 +115,131 @@ def get_transformfilex(bold_file, mni_to_t1w, t1w_to_native):
         The preprocessed BOLD file.
     mni_to_t1w : str
         The MNI-to-T1w transform file.
+        The ``from`` field is assumed to be the same space as the BOLD file is in.
+        The MNI space could be MNI152NLin2009cAsym, MNI152NLin6Asym, or MNIInfant.
     t1w_to_native : str
         The T1w-to-native space transform file.
 
     Returns
     -------
-    transformfileMNI : list of str
-        A list of paths to transform files for warping to MNI space.
-    transformfileT1W : list of str
+    xforms_to_MNI : list of str
+        A list of paths to transform files for warping to MNI152NLin2009cAsym space.
+    xforms_to_MNI_invert : list of bool
+        A list of booleans indicating whether each transform in xforms_to_MNI indicating
+        if each should be inverted (True) or not (False).
+    xforms_to_T1w : list of str
         A list of paths to transform files for warping to T1w space.
+    xforms_to_T1w_invert : list of bool
+        A list of booleans indicating whether each transform in xforms_to_T1w indicating
+        if each should be inverted (True) or not (False).
+
+    Notes
+    -----
+    Only used for QCReport in init_boldpostprocess_wf.
+    QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    import glob
     import os
+    import re
 
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
-    # get file basename, anatdir and list all transforms in anatdir
-    file_base = os.path.basename(str(bold_file))
-    MNI6 = str(
-        get_template(template='MNI152NLin2009cAsym',
-                     mode='image',
-                     suffix='xfm',
-                     extension='.h5'))
-
-    # get default template MNI152NLin2009cAsym for fmriprep
-    if 'MNI152NLin2009cAsym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin2009cAsym'
-
-    # for infants
-    elif 'MNIInfant' in os.path.basename(mni_to_t1w):
-        template = 'MNIInfant'
-
-    # in case fMRIPrep outputs are generated in MNI6, as
-    # done in case of AROMA outputs
-    elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin6Asym'
-
-    elif 'MNI152NLin6Asym' in os.path.basename(mni_to_t1w):
-        template = 'MNI152NLin6Asym'
-
-    # Pull out the correct transforms based on bold_file name
-    # and string them together.
-    if 'space-MNI152NLin2009cAsym' in file_base:
-        transformfileMNI = str(MNI6)
-        transformfileT1W = str(mni_to_t1w)
-
-    elif 'space-MNI152NLin6Asym' in file_base:
-        transformfileMNI = [MNI6]
-        transformfileT1W = [str(MNI6), str(mni_to_t1w)]
-
-    elif 'space-PNC' in file_base:
-        mnisf = mni_to_t1w.split('from-')[0]
-        pnc_to_t1w = mnisf + 'from-PNC*_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
-                               + '*_mode-image_xfm.h5')[0]
-        transformfileMNI = [str(pnc_to_t1w), str(t1w_to_mni)]
-        transformfileT1W = str(pnc_to_t1w)
-
-    elif 'space-NKI' in file_base:
-        mnisf = mni_to_t1w.split('from-')[0]
-        nki_to_t1w = mnisf + 'from-NKI_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
-                               + '*_mode-image_xfm.h5')[0]
-        transformfileMNI = [str(nki_to_t1w), str(t1w_to_mni)]
-        transformfileT1W = str(nki_to_t1w)
-
-    elif 'space-OASIS' in file_base:
-        mnisf = mni_to_t1w.split('from')[0]
-        oasis_to_t1w = mnisf + 'from-OASIS30ANTs_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
-                               + '*_mode-image_xfm.h5')[0]
-        transformfileMNI = [str(oasis_to_t1w), str(t1w_to_mni)]
-        transformfileT1W = [str(oasis_to_t1w)]
-
-    elif 'space-MNI152NLin6Sym' in file_base:
-        mnisf = mni_to_t1w.split('from-')[0]
-        mni6c_to_t1w = mnisf + 'from-MNI152NLin6Sym_to-T1w_mode-image_xfm.h5'
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
-                               + '*_mode-image_xfm.h5')[0]
-        transformfileMNI = [str(mni6c_to_t1w), str(t1w_to_mni)]
-        transformfileT1W = [str(mni6c_to_t1w)]
-
-    elif 'space-MNIInfant' in file_base:
-        transformfileMNI = str(
-            pkgrf('xcp_d', 'data/transform/infant_to_2009_Composite.h5'))
-        transformfileT1W = str(mni_to_t1w)
-
-    elif 'space-MNIPediatricAsym' in file_base:
-        mnisf = mni_to_t1w.split('from-')[0]
-        mni6c_to_t1w = glob.glob(
-            mnisf + 'from-MNIPediatricAsym*_to-T1w_mode-image_xfm.h5')[0]
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
-                               + '*_mode-image_xfm.h5')[0]
-        transformfileMNI = [str(mni6c_to_t1w), str(t1w_to_mni)]
-        transformfileT1W = [str(mni6c_to_t1w)]
-
-    elif 'space-T1w' in file_base:
-        mnisf = mni_to_t1w.split('from')[0]
-        transformfileMNI = [str(t1w_to_mni)]
-        transformfileT1W = [
-            str(pkgrf('xcp_d', 'data/transform/oneratiotransform.txt'))
-        ]
-
-    elif 'space-' not in file_base:
-        t1wf = t1w_to_native.split('from-T1w_to-scanner_mode-image_xfm.txt')[0]
-        native_to_t1w = t1wf + 'from-T1w_to-scanner_mode-image_xfm.txt'
-        mnisf = mni_to_t1w.split('from')[0]
-        t1w_to_mni = glob.glob(mnisf + 'from-T1w_to-' + template
-                               + '*_mode-image_xfm.h5')[0]
-        transformfileMNI = [str(t1w_to_mni), str(native_to_t1w)]
-        transformfileT1W = [str(native_to_t1w)]
+    # Extract the space of the BOLD file
+    file_base = os.path.basename(bold_file)
+    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
+    if not bold_space:
+        bold_space = "native"
     else:
-        print('space not supported')
+        bold_space = bold_space[0]
 
-    return transformfileMNI, transformfileT1W
+    if bold_space in ("native", "T1w"):
+        base_std_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+    elif f"from-{bold_space}" not in mni_to_t1w:
+        raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
+
+    # Pull out the correct transforms based on bold_file name and string them together.
+    xforms_to_T1w = [mni_to_t1w]  # used for all spaces except T1w and native
+    xforms_to_T1w_invert = [False]
+    if bold_space == "MNI152NLin2009cAsym":
+        # Data already in MNI152NLin2009cAsym space.
+        xforms_to_MNI = ["identity"]
+        xforms_to_MNI_invert = [False]
+
+    elif bold_space == "MNI152NLin6Asym":
+        # MNI152NLin6Asym --> MNI152NLin2009cAsym
+        MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
+            get_template(
+                template="MNI152NLin2009cAsym",
+                mode="image",
+                suffix="xfm",
+                extension=".h5",
+                **{"from": "MNI152NLin6Asym"},
+            ),
+        )
+        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        xforms_to_MNI_invert = [False]
+
+    elif bold_space == "MNIInfant":
+        # MNIInfant --> MNI152NLin2009cAsym
+        MNIInfant_to_MNI152NLin2009cAsym = pkgrf(
+            "xcp_d",
+            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        )
+        xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
+        xforms_to_MNI_invert = [False]
+
+    elif bold_space == "T1w":
+        # T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
+        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
+        if base_std_space != "MNI152NLin2009cAsym":
+            std_to_mni_xform = str(
+                get_template(
+                    template="MNI152NLin2009cAsym",
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": base_std_space},
+                ),
+            )
+            xforms_to_MNI = [std_to_mni_xform, mni_to_t1w]
+            xforms_to_MNI_invert = [False, True]
+        else:
+            xforms_to_MNI = [mni_to_t1w]
+            xforms_to_MNI_invert = [True]
+
+        xforms_to_T1w = ["identity"]
+        xforms_to_T1w_invert = [False]
+
+    elif bold_space == "native":
+        # native (BOLD) --> T1w --> ?? (extract from mni_to_t1w) --> MNI152NLin2009cAsym
+        # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
+        if base_std_space != "MNI152NLin2009cAsym":
+            std_to_mni_xform = str(
+                get_template(
+                    template="MNI152NLin2009cAsym",
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": base_std_space},
+                ),
+            )
+            xforms_to_MNI = [std_to_mni_xform, mni_to_t1w, t1w_to_native]
+            xforms_to_MNI_invert = [False, True, True]
+        else:
+            xforms_to_MNI = [mni_to_t1w, t1w_to_native]
+            xforms_to_MNI_invert = [True, True]
+
+        xforms_to_T1w = [t1w_to_native]
+        xforms_to_T1w_invert = [True]
+
+    else:
+        raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
+
+    return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
-def get_maskfiles(bold_file, mni_to_t1w):
-    """Identify BOLD- and T1-resolution brain masks from files.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the preprocessed BOLD file.
-    mni_to_t1w : str
-        Path to the MNI-to-T1w transform file.
-
-    Returns
-    -------
-    boldmask : str
-        The path to the BOLD-resolution mask.
-    t1mask : str
-        The path to the T1-resolution mask.
-    """
-    boldmask = bold_file.split(
-        'desc-preproc_bold.nii.gz')[0] + 'desc-brain_mask.nii.gz'
-    t1mask = mni_to_t1w.split('from-')[0] + 'desc-brain_mask.nii.gz'
-    return boldmask, t1mask
-
-
-def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
-    """Obtain transforms to warp atlases from MNI space to the same space as the bold file.
+def get_std2bold_xforms(bold_file, mni_to_t1w, t1w_to_native):
+    """Obtain transforms to warp atlases from MNI152NLin6Asym to the same space as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
@@ -261,6 +250,7 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
         The preprocessed BOLD file.
     mni_to_t1w : str
         The MNI-to-T1w transform file.
+        The ``from`` field is assumed to be the same space as the BOLD file is in.
     t1w_to_native : str
         The T1w-to-native space transform file.
 
@@ -268,73 +258,105 @@ def get_transformfile(bold_file, mni_to_t1w, t1w_to_native):
     -------
     transform_list : list of str
         A list of paths to transform files.
+
+    Notes
+    -----
+    Used by:
+
+    - get_segfile (to be removed)
+    - to resample dseg in init_boldpostprocess_wf for QCReport
+    - to warp atlases to the same space as the BOLD data in init_nifti_functional_connectivity_wf
+    - to resample dseg to BOLD space for the executive summary plots
+
+    Does not include inversion flag output because there is no need (yet).
+    Can easily be added in the future.
     """
-    import glob
     import os
+    import re
 
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
-    file_base = os.path.basename(str(bold_file))  # file base is the bold_name
-
-    # get the correct template via templateflow/ pkgrf
-    fMNI6 = str(  # template
-        get_template(template='MNI152NLin2009cAsym',
-                     mode='image',
-                     suffix='xfm',
-                     extension='.h5'))
-    FSL2MNI9 = pkgrf('xcp_d', 'data/transform/FSL2MNI9Composite.h5')
-
-    # Transform to MNI9
-    transform_list = []
-    if 'space-MNI152NLin6Asym' in file_base:
-        transform_list = [str(fMNI6)]
-    elif 'space-MNI152NLin2009cAsym' in file_base:
-        transform_list = [str(FSL2MNI9)]
-    elif 'space-PNC' in file_base:
-        #  get the PNC transforms
-        mnisf = mni_to_t1w.split('from-')[0]
-        t1w_to_pnc = mnisf + 'from-T1w_to-PNC_mode-image_xfm.h5'
-        #  get all the transform files together
-        transform_list = [str(t1w_to_pnc), str(mni_to_t1w), str(FSL2MNI9)]
-    elif 'space-NKI' in file_base:
-        #  get the NKI transforms
-        mnisf = mni_to_t1w.split('from-')[0]
-        t1w_to_nki = mnisf + 'from-T1w_to-NKI_mode-image_xfm.h5'
-        #  get all the transforms together
-        transform_list = [str(t1w_to_nki), str(mni_to_t1w), str(FSL2MNI9)]
-    elif 'space-OASIS30ANTs' in file_base:
-        #  get the relevant transform, put all transforms together
-        mnisf = mni_to_t1w.split('from-')[0]
-        t1w_to_oasis = mnisf + 'from-T1w_to-OASIS30ANTs_mode-image_xfm.h5'
-        transform_list = [str(t1w_to_oasis), str(mni_to_t1w), str(FSL2MNI9)]
-    elif 'space-MNI152NLin6Sym' in file_base:
-        #  get the relevant transform, put all transforms together
-        mnisf = mni_to_t1w.split('from-')[0]
-        t1w_to_mni6c = mnisf + 'from-T1w_to-MNI152NLin6Sym_mode-image_xfm.h5'
-        transform_list = [str(t1w_to_mni6c), str(mni_to_t1w), str(FSL2MNI9)]
-    elif 'space-MNIInfant' in file_base:
-        #  get the relevant transform, put all transforms together
-        infant2mni9 = pkgrf('xcp_d',
-                            'data/transform/infant_to_2009_Composite.h5')
-        transform_list = [str(infant2mni9), str(FSL2MNI9)]
-    elif 'space-MNIPediatricAsym' in file_base:
-        #  get the relevant transform, put all transforms together
-        mnisf = mni_to_t1w.split('from-')[0]
-        t1w_to_mni6cx = glob.glob(
-            mnisf + 'from-T1w_to-MNIPediatricAsym*_mode-image_xfm.h5')[0]
-        transform_list = [str(t1w_to_mni6cx), str(mni_to_t1w), str(FSL2MNI9)]
-    elif 'space-T1w' in file_base:
-        #  put all transforms together
-        transform_list = [str(mni_to_t1w), str(FSL2MNI9)]
-    elif 'space-' not in file_base:
-        #  put all transforms together
-        transform_list = [str(t1w_to_native), str(mni_to_t1w), str(FSL2MNI9)]
+    # Extract the space of the BOLD file
+    file_base = os.path.basename(bold_file)
+    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
+    if not bold_space:
+        bold_space = "native"
     else:
-        print('space not supported')
+        bold_space = bold_space[0]
 
-    if not transform_list:
-        raise Exception(f"Transforms not found for {file_base}")
+    # Check that the MNI-to-T1w xform is from the right space
+    if bold_space in ("native", "T1w"):
+        base_std_space = re.findall("from-([a-zA-Z0-9]+)", mni_to_t1w)[0]
+    elif f"from-{bold_space}" not in mni_to_t1w:
+        raise ValueError(f"Transform does not match BOLD space: {bold_space} != {mni_to_t1w}")
+
+    # Load useful inter-template transforms from templateflow
+    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
+        get_template(
+            template="MNI152NLin2009cAsym",
+            mode="image",
+            suffix="xfm",
+            extension=".h5",
+            **{"from": "MNI152NLin6Asym"},
+        ),
+    )
+
+    # Find the appropriate transform(s)
+    if bold_space == "MNI152NLin6Asym":
+        # NLin6 --> NLin6 (identity)
+        transform_list = ["identity"]
+
+    elif bold_space == "MNI152NLin2009cAsym":
+        # NLin6 --> NLin2009c
+        transform_list = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+
+    elif bold_space == "MNIInfant":
+        # NLin6 --> NLin2009c --> MNIInfant
+        MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
+            "xcp_d",
+            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        )
+        transform_list = [
+            MNI152NLin2009cAsym_to_MNI152Infant,
+            MNI152NLin6Asym_to_MNI152NLin2009cAsym,
+        ]
+
+    elif bold_space == "T1w":
+        # NLin6 --> ?? (extract from mni_to_t1w) --> T1w (BOLD)
+        if base_std_space != "MNI152NLin6Asym":
+            mni_to_std_xform = str(
+                get_template(
+                    template=base_std_space,
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": "MNI152NLin6Asym"},
+                ),
+            )
+            transform_list = [mni_to_t1w, mni_to_std_xform]
+        else:
+            transform_list = [mni_to_t1w]
+
+    elif bold_space == "native":
+        # The BOLD data are in native space
+        # NLin6 --> ?? (extract from mni_to_t1w) --> T1w --> native (BOLD)
+        if base_std_space != "MNI152NLin6Asym":
+            mni_to_std_xform = str(
+                get_template(
+                    template=base_std_space,
+                    mode="image",
+                    suffix="xfm",
+                    extension=".h5",
+                    **{"from": "MNI152NLin6Asym"},
+                ),
+            )
+            transform_list = [t1w_to_native, mni_to_t1w, mni_to_std_xform]
+        else:
+            transform_list = [t1w_to_native, mni_to_t1w]
+
+    else:
+        raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
 
     return transform_list
 
@@ -368,83 +390,108 @@ def stringforparams(params):
     bsignal : str
         String describing the parameters used for nuisance regression.
     """
-    if params == 'custom':
+    if params == "custom":
         bsignal = "A custom set of regressors was used, with no other regressors from XCP-D"
-    if params == '24P':
-        bsignal = "In total, 24 nuisance regressors were selected  from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters with their temporal derivatives, \
-        and their quadratic expansion of those six motion parameters and their \
-        temporal derivatives"
 
-    if params == '27P':
-        bsignal = "In total, 27 nuisance regressors were selected from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters with their temporal derivatives, \
-        the quadratic expansion of those six motion parameters and  \
-        their derivatives, the global signal, the mean white matter  \
-        signal, and the mean CSF signal"
+    elif params == "24P":
+        bsignal = (
+            "In total, 24 nuisance regressors were selected  from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "and their quadratic expansion of those six motion parameters and their "
+            "temporal derivatives"
+        )
 
-    if params == '36P':
-        bsignal = "In total, 36 nuisance regressors were selected from the nuisance \
-        confound matrices of fMRIPrep output. These nuisance regressors included \
-        six motion parameters, global signal, the mean white matter,  \
-        the mean CSF signal  with their temporal derivatives, \
-        and the quadratic expansion of six motion parameters, tissues signals and  \
-        their temporal derivatives"
+    elif params == "27P":
+        bsignal = (
+            "In total, 27 nuisance regressors were selected from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "the quadratic expansion of those six motion parameters and "
+            "their derivatives, the global signal, the mean white matter "
+            "signal, and the mean CSF signal"
+        )
 
-    if params == 'aroma':
-        bsignal = "All the clean aroma components with the mean white matter  \
-        signal, and the mean CSF signal were selected as nuisance regressors"
+    elif params == "36P":
+        bsignal = (
+            "In total, 36 nuisance regressors were selected from the nuisance "
+            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "six motion parameters, global signal, the mean white matter, "
+            "the mean CSF signal with their temporal derivatives, "
+            "and the quadratic expansion of six motion parameters, tissues signals and "
+            "their temporal derivatives"
+        )
 
-    if params == 'acompcor':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF compartments \
-        were selected as \
-        nuisance regressors. Additionally, the six motion parameters and their temporal \
-        derivatives were added as confounds."
+    elif params == "aroma":
+        bsignal = (
+            "All the clean aroma components with the mean white matter "
+            "signal, and the mean CSF signal were selected as nuisance regressors"
+        )
 
-    if params == 'aroma_gsr':
-        bsignal = "All the clean aroma components with the mean white matter  \
-        signal, and the mean CSF signal, and mean global signal were \
-        selected as nuisance regressors"
+    elif params == "acompcor":
+        bsignal = (
+            "The top 5 principal aCompCor components from WM and CSF compartments "
+            "were selected as "
+            "nuisance regressors. Additionally, the six motion parameters and their temporal "
+            "derivatives were added as confounds."
+        )
 
-    if params == 'acompcor_gsr':
-        bsignal = "The top 5 principal aCompCor components from WM and CSF \
-        compartments were selected as \
-        nuisance regressors. Additionally, the six motion parameters and their temporal \
-        derivatives were added as confounds. The average global signal was also added as a \
-        regressor."
+    elif params == "aroma_gsr":
+        bsignal = (
+            "All the clean aroma components with the mean white matter "
+            "signal, and the mean CSF signal, and mean global signal were "
+            "selected as nuisance regressors"
+        )
+
+    elif params == "acompcor_gsr":
+        bsignal = (
+            "The top 5 principal aCompCor components from WM and CSF "
+            "compartments were selected as "
+            "nuisance regressors. Additionally, the six motion parameters and their temporal "
+            "derivatives were added as confounds. The average global signal was also added as a "
+            "regressor."
+        )
+
+    else:
+        raise ValueError(f"Parameter string not understood: {params}")
 
     return bsignal
 
 
-def get_customfile(custom_confounds, bold_file):
+def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.
 
     Parameters
     ----------
-    custom_confounds : str
+    custom_confounds_folder : str or None
         The path to the custom confounds file.
-        This shouldn't include the actual filename.
-    bold_file : str
-        Path to the associated preprocessed BOLD file.
+    fmriprep_confounds_file : str
+        Path to the confounds file from the preprocessing pipeline.
+        We expect the custom confounds file to have the same name.
 
     Returns
     -------
-    custom_file : str
-        The custom confounds file associated with the BOLD file.
+    custom_confounds_file : str or None
+        The appropriate custom confounds file.
     """
-    if custom_confounds is not None:
-        confounds_timeseries = bold_file.replace(
-            "_space-" + bold_file.split("space-")[1],
-            "_desc-confounds_timeseries.tsv")
-        file_base = os.path.basename(
-            confounds_timeseries.split('-confounds_timeseries.tsv')[0])
-        custom_file = os.path.abspath(
-            str(custom_confounds) + '/' + file_base + '-custom_timeseries.tsv')
-    else:
-        custom_file = None
-    return custom_file
+    if custom_confounds_folder is None:
+        return None
+
+    if not os.path.isdir(custom_confounds_folder):
+        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
+
+    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_file = os.path.abspath(
+        os.path.join(
+            custom_confounds_folder,
+            custom_confounds_filename,
+        )
+    )
+
+    if not os.path.isfile(custom_confounds_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
+
+    return custom_confounds_file
 
 
 def zscore_nifti(img, outputname, mask=None):
@@ -486,9 +533,7 @@ def zscore_nifti(img, outputname, mask=None):
         zscore_fdata = (imgdata - meandata) / stddata
 
     # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata,
-                             affine=img.affine,
-                             header=img.header)
+    dataout = nb.Nifti1Image(zscore_fdata, affine=img.affine, header=img.header)
     dataout.to_filename(outputname)
     return outputname
 
@@ -691,35 +736,40 @@ def _denoise_with_nilearn(
 
 def consolidate_confounds(
     fmriprep_confounds_file,
-    custom_confounds_file,
     namesource,
     params,
+    custom_confounds_file=None,
 ):
-    """Combine confounds files into a single TSV."""
+    """Combine confounds files into a single tsv.
+
+    Parameters
+    ----------
+    fmriprep_confounds_file : file
+        file to fmriprep confounds tsv
+    namesource : file
+        file to extract entities from
+    custom_confounds_file : file
+        file to custom confounds tsv
+    params : string
+        confound parameters to load
+
+    Returns
+    -------
+    out_file : file
+        file to combined tsv
+    """
     import os
 
     from xcp_d.utils.confounds import load_confound_matrix
 
+    confounds_df = load_confound_matrix(
+        original_file=namesource,
+        custom_confounds=custom_confounds_file,
+        confound_tsv=fmriprep_confounds_file,
+        params=params,
+    )
+
     out_file = os.path.abspath("confounds.tsv")
-
-    # It looks like nipype is passing this along as "None".
-    if custom_confounds_file == "None":
-        custom_confounds_file = None
-
-    if fmriprep_confounds_file and custom_confounds_file:
-        confounds_df = load_confound_matrix(
-            original_file=namesource,
-            custom_confounds=custom_confounds_file,
-            confound_tsv=fmriprep_confounds_file,
-            params=params,
-        )
-    else:  # No custom confounds
-        confounds_df = load_confound_matrix(
-            original_file=namesource,
-            confound_tsv=fmriprep_confounds_file,
-            params=params,
-        )
-
     confounds_df.to_csv(out_file, sep="\t", index=False)
 
     return out_file

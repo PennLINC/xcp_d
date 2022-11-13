@@ -157,7 +157,7 @@ def run_shell(cmd, env=os.environ):
     error
     """
     if type(cmd) is list:
-        cmd = ' '.join(cmd)
+        cmd = " ".join(cmd)
 
     call_command = subprocess.Popen(
         cmd,
@@ -188,19 +188,21 @@ def write_gii(datat, template, filename, hemi):
     -------
     filename
     """
-    datax = np.array(datat, dtype='float32')
+    datax = np.array(datat, dtype="float32")
     template = str(
-        get_template("fsLR", hemi=hemi, suffix='midthickness', density='32k', desc='vaavg'))
+        get_template("fsLR", hemi=hemi, suffix="midthickness", density="32k", desc="vaavg")
+    )
     template = nb.load(template)
-    dataimg = nb.gifti.GiftiImage(header=template.header,
-                                  file_map=template.file_map,
-                                  extra=template.extra)
-    dataimg = nb.gifti.GiftiImage(header=template.header,
-                                  file_map=template.file_map,
-                                  extra=template.extra,
-                                  meta=template.meta)
-    d_timepoint = nb.gifti.GiftiDataArray(data=datax,
-                                          intent='NIFTI_INTENT_NORMAL')
+    dataimg = nb.gifti.GiftiImage(
+        header=template.header, file_map=template.file_map, extra=template.extra
+    )
+    dataimg = nb.gifti.GiftiImage(
+        header=template.header,
+        file_map=template.file_map,
+        extra=template.extra,
+        meta=template.meta,
+    )
+    d_timepoint = nb.gifti.GiftiDataArray(data=datax, intent="NIFTI_INTENT_NORMAL")
     dataimg.add_gifti_data_array(d_timepoint)
     dataimg.to_filename(filename)
     return filename
@@ -210,7 +212,7 @@ def read_gii(surf_gii):
     """Use nibabel to read surface file."""
     bold_data = nb.load(surf_gii)  # load the gifti
     gifti_data = bold_data.agg_data()  # aggregate the data
-    if not hasattr(gifti_data, '__shape__'):  # if it doesn't have 'shape', reshape
+    if not hasattr(gifti_data, "__shape__"):  # if it doesn't have 'shape', reshape
         gifti_data = np.zeros((len(bold_data.darrays[0].data), len(bold_data.darrays)))
         for arr in range(len(bold_data.darrays)):
             gifti_data[:, arr] = bold_data.darrays[arr].data
@@ -219,21 +221,22 @@ def read_gii(surf_gii):
 
 def despikedatacifti(cifti, TR, basedir):
     """Despike CIFTI file."""
-    fake_cifti1 = str(basedir + '/fake_niftix.nii.gz')
-    fake_cifti1_depike = str(basedir + '/fake_niftix_depike.nii.gz')
-    cifti_despike = str(basedir + '/despike_nifti2cifti.dtseries.nii')
-    run_shell([
-        'OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ', cifti,
-        fake_cifti1
-    ])
+    fake_cifti1 = str(basedir + "/fake_niftix.nii.gz")
+    fake_cifti1_depike = str(basedir + "/fake_niftix_depike.nii.gz")
+    cifti_despike = str(basedir + "/despike_nifti2cifti.dtseries.nii")
+    run_shell(["OMP_NUM_THREADS=2 wb_command -cifti-convert -to-nifti ", cifti, fake_cifti1])
+    run_shell(["3dDespike -nomask -NEW -prefix", fake_cifti1_depike, fake_cifti1])
     run_shell(
-        ['3dDespike -nomask -NEW -prefix', fake_cifti1_depike, fake_cifti1])
-    run_shell([
-        'OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ',
-        fake_cifti1_depike, cifti, cifti_despike, '-reset-timepoints',
-        str(TR),
-        str(0)
-    ])
+        [
+            "OMP_NUM_THREADS=2 wb_command  -cifti-convert -from-nifti  ",
+            fake_cifti1_depike,
+            cifti,
+            cifti_despike,
+            "-reset-timepoints",
+            str(TR),
+            str(0),
+        ]
+    )
     return cifti_despike
 
 
