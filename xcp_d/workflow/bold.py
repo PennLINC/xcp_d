@@ -375,7 +375,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             function=denoise_nifti_with_nilearn,
         ),
         name="denoise_bold",
-        mem_gb=mem_gbx['timeseries'],
+        mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,
     )
     denoise_bold.inputs.high_pass = lower_bpf
