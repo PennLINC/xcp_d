@@ -24,11 +24,10 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.plot import plot_design_matrix
 from xcp_d.utils.utils import (
-    _t12native,
     consolidate_confounds,
     denoise_nifti_with_nilearn,
     get_bold2std_and_t1w_xforms,
-    get_maskfiles,
+    get_customfile,
     get_std2bold_xforms,
     stringforparams,
 )
@@ -175,6 +174,7 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
+    apply_bandpass_filter = lower_bpf is not None and upper_bpf is not None
     run_data = collect_run_data(layout, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
@@ -306,7 +306,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         omp_nthreads=omp_nthreads,
     )
 
-    if bandpass_filter:
+    if apply_bandpass_filter:
         alff_compute_wf = init_compute_alff_wf(
             mem_gb=mem_gbx["timeseries"],
             TR=TR,
@@ -329,7 +329,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     write_derivative_wf = init_writederivatives_wf(
         smoothing=smoothing,
         bold_file=bold_file,
-        bandpass_filter=bandpass_filter,
         params=params,
         cifti=None,
         output_dir=output_dir,
@@ -393,14 +392,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     denoise_bold.inputs.low_pass = upper_bpf
     denoise_bold.inputs.TR = TR
 
-    executivesummary_wf = init_execsummary_wf(
-        TR=TR,
-        bold_file=bold_file,
-        layout=layout,
-        mem_gb=mem_gbx['timeseries'],
-        output_dir=output_dir,
-        dummyvols=initial_volumes_to_drop,
-        omp_nthreads=omp_nthreads)
+    plot_design_matrix_node = pe.Node(
+        Function(
+            input_names=["design_matrix"],
+            output_names=["design_matrix_figure"],
+            function=plot_design_matrix,
+        ),
+        name="plot_design_matrix_node",
+    )
 
     # get transform file for resampling and fcon
     get_std2native_transform = pe.Node(
@@ -550,6 +549,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, qcreport, [("bold_file", "bold_file")]),
         (inputnode, qcreport, [("t1w_mask", "t1w_mask")]),
     ])
+    workflow.connect([
+        (inputnode, censor_report, [("bold_file", "bold_file")]),
+    ])
+    # fmt:on
 
     # A node to hold outputs from either rm_dummytime or inputnode
     bold_holder_node = pe.Node(
@@ -575,23 +578,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
     consolidate_confounds_node.inputs.params = params
 
+    # Censor Scrub
+    # fmt:off
     workflow.connect([
-        (inputnode, censor_report, [("bold_file", "bold_file")]),
-    ])
-    # fmt:on
-
-    # Censor Scrub:
-    workflow.connect([
-        (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
+        (inputnode, censor_scrub, [
+            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+            ('bold_file', 'in_file'),
+        ])
         (inputnode, bold_holder_node, [
             ("bold_file", "bold_file"),
             ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
             ("custom_confounds", "custom_confounds"),
         ]),
     ])
-
-    # The BOLD file is just used for filenames
-    workflow.connect([(inputnode, censor_scrub, [('bold_file', 'in_file')])])
+    # fmt:on
 
     if despike:  # If we despike
         # Despiking truncates large spikes in the BOLD times series
@@ -610,27 +610,30 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         )
 
         # fmt:off
-        workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
-        # Censor Scrub:
         workflow.connect([
-            (despike3d, regression_wf, [('out_file', 'in_file')]),
-            (inputnode, regression_wf, [('bold_mask', 'mask')]),
-            (censor_scrub, regression_wf, [
-                ('fmriprep_confounds_censored', 'confounds'),
-                ('custom_confounds_censored', 'custom_confounds'),
-            ]),
+            (censor_scrub, despike3d, [('bold_censored', 'in_file')]),
+            (despike3d, denoise_bold, [('out_file', 'in_file')]),
         ])
         # fmt:on
 
     else:  # If we don't despike
-        # regression workflow
         # fmt:off
-        workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
-                          (censor_scrub, regression_wf,
-                         [('bold_censored', 'in_file'),
-                          ('fmriprep_confounds_censored', 'confounds'),
-                          ('custom_confounds_censored', 'custom_confounds')])])
+        workflow.connect([
+            (censor_scrub, denoise_bold, [('bold_censored', 'in_file')]),
+        ])
         # fmt:on
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, denoise_bold, [
+            ('bold_mask', 'mask'),
+        ]),
+        (censor_scrub, denoise_bold, [
+            ('fmriprep_confounds_censored', 'confounds'),
+            ('custom_confounds_censored', 'custom_confounds'),
+        ]),
+    ])
+    # fmt:on
 
     # interpolation workflow
     # fmt:off
@@ -665,13 +668,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # reho and alff
     workflow.connect([
         (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (denoise_bold, alff_compute_wf, [('out_file', 'inputnode.clean_bold')]),
         (denoise_bold, reho_compute_wf, [('out_file', 'inputnode.clean_bold')]),
     ])
-    if bandpass_filter:
+    if apply_bandpass_filter:
         workflow.connect([
             (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+            (denoise_bold, alff_compute_wf, [('out_file', 'inputnode.clean_bold')]),
         ])
 
     # qc report
@@ -702,7 +704,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
-    if bandpass_filter:
+    if apply_bandpass_filter:
         # fmt:off
         workflow.connect([
             (alff_compute_wf, outputnode, [
@@ -731,7 +733,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
-    if bandpass_filter:
+    if apply_bandpass_filter:
         # fmt:off
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
@@ -842,7 +844,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
-    if bandpass_filter:
+    if apply_bandpass_filter:
         ds_report_alffplot = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -881,11 +883,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("bold_mask", "inputnode.mask"),
                 ("mni_to_t1w", "inputnode.mni_to_t1w"),
             ]),
-            (regression_wf, executivesummary_wf, [
-                ("res_file", "inputnode.regressed_data"),
+            (denoise_bold, executivesummary_wf, [
+                ("out_file", "inputnode.regressed_data"),
             ]),
-            (filtering_wf, executivesummary_wf, [
-                ("filtered_file", "inputnode.residual_data"),
+            (denoise_bold, executivesummary_wf, [
+                ("out_file", "inputnode.residual_data"),
             ]),
             (censor_scrub, executivesummary_wf, [
                 ("filtered_motion", "inputnode.filtered_motion"),
