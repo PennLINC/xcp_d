@@ -41,7 +41,6 @@ BOLD Workflow
         bandpass_filter=True,
         upper_bpf=0.08,
         lower_bpf=0.01,
-        bpf_order=2,
         motion_filter_order=4,
         motion_filter_type='notch',
         band_stop_min=0.,

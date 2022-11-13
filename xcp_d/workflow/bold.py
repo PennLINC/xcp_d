@@ -44,7 +44,6 @@ LOGGER = logging.getLogger("nipype.workflow")
 def init_boldpostprocess_wf(
     lower_bpf,
     upper_bpf,
-    bpf_order,
     motion_filter_type,
     motion_filter_order,
     band_stop_min,
@@ -75,7 +74,6 @@ def init_boldpostprocess_wf(
             wf = init_boldpostprocess_wf(
                 lower_bpf=0.009,
                 upper_bpf=0.08,
-                bpf_order=2,
                 motion_filter_type=None,
                 motion_filter_order=4,
                 band_stop_min=0.,
@@ -100,7 +98,6 @@ def init_boldpostprocess_wf(
     ----------
     %(lower_bpf)s
     %(upper_bpf)s
-    %(bpf_order)s
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s

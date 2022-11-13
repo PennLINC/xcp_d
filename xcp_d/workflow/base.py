@@ -39,7 +39,6 @@ def init_xcpd_wf(
     lower_bpf,
     upper_bpf,
     despike,
-    bpf_order,
     motion_filter_type,
     motion_filter_order,
     band_stop_min,
@@ -78,7 +77,6 @@ def init_xcpd_wf(
                 lower_bpf=0.009,
                 upper_bpf=0.08,
                 despike=False,
-                bpf_order=2,
                 motion_filter_type=None,
                 motion_filter_order=4,
                 band_stop_min=0.,
@@ -111,7 +109,6 @@ def init_xcpd_wf(
     %(upper_bpf)s
     despike: bool
         afni depsike
-    %(bpf_order)s
     %(analysis_level)s
     %(motion_filter_type)s
     %(motion_filter_order)s
@@ -162,7 +159,6 @@ def init_xcpd_wf(
             layout=layout,
             lower_bpf=lower_bpf,
             upper_bpf=upper_bpf,
-            bpf_order=bpf_order,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
             band_stop_min=band_stop_min,
@@ -202,7 +198,6 @@ def init_subject_wf(
     layout,
     lower_bpf,
     upper_bpf,
-    bpf_order,
     motion_filter_order,
     motion_filter_type,
     band_stop_min,
@@ -237,7 +232,6 @@ def init_subject_wf(
                 layout=None,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
-                bpf_order=2,
                 motion_filter_type=None,
                 band_stop_min=0,
                 band_stop_max=0,
@@ -269,7 +263,6 @@ def init_subject_wf(
     %(upper_bpf)s
     despike: bool
         afni depsike
-    %(bpf_order)s
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s
@@ -458,7 +451,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             bold_file=bold_file,
             lower_bpf=lower_bpf,
             upper_bpf=upper_bpf,
-            bpf_order=bpf_order,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
             band_stop_min=band_stop_min,

@@ -257,13 +257,6 @@ def get_parser():
         help="upper cut-off frequency (Hz) for the butterworth bandpass filter",
     )
     g_filter.add_argument(
-        "--bpf-order",
-        action="store",
-        default=2,
-        type=int,
-        help="number of filter coefficients for butterworth bandpass filter",
-    )
-    g_filter.add_argument(
         "--motion-filter-type",
         action="store",
         type=str,
@@ -896,7 +889,6 @@ Running xcp_d version {__version__}:
         fmri_dir=str(fmri_dir),
         lower_bpf=opts.lower_bpf,
         upper_bpf=opts.upper_bpf,
-        bpf_order=opts.bpf_order,
         motion_filter_type=opts.motion_filter_type,
         motion_filter_order=opts.motion_filter_order,
         band_stop_min=opts.band_stop_min,
