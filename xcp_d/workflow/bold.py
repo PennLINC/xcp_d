@@ -355,13 +355,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         omp_nthreads=omp_nthreads,
     )
 
-    bold_holder_node = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold_file", "fmriprep_confounds_tsv", "custom_confounds"],
-        ),
-        name="bold_holder_node",
-    )
-
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx["timeseries"],
         smoothing=smoothing,
@@ -554,14 +547,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
-    # A node to hold outputs from either rm_dummytime or inputnode
-    bold_holder_node = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold_file", "fmriprep_confounds_tsv", "custom_confounds"],
-        ),
-        name="bold_holder_node",
-    )
-
     # Combine confounds into a single file
     consolidate_confounds_node = pe.Node(
         Function(
@@ -584,11 +569,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, censor_scrub, [
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('bold_file', 'in_file'),
-        ])
-        (inputnode, bold_holder_node, [
-            ("bold_file", "bold_file"),
-            ("fmriprep_confounds_tsv", "fmriprep_confounds_tsv"),
-            ("custom_confounds", "custom_confounds"),
         ]),
     ])
     # fmt:on
@@ -640,7 +620,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
         (inputnode, denoise_bold, [('bold_mask', 'mask_file')]),
-        (bold_holder_node, consolidate_confounds_node, [
+        (inputnode, consolidate_confounds_node, [
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
             ('custom_confounds', 'custom_confounds_file'),
         ]),
