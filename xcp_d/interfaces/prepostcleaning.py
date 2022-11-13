@@ -1,7 +1,6 @@
 """Interfaces for the post-processing workflows."""
 import numpy as np
 import pandas as pd
-from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -104,7 +103,8 @@ class CensorScrub(SimpleInterface):
 
         if initial_volumes_to_drop == "auto":
             nss_cols = [
-                c for c in fmriprep_confounds_df.columns
+                c
+                for c in fmriprep_confounds_df.columns
                 if c.startswith("non_steady_state_outlier")
             ]
             initial_volumes_df = fmriprep_confounds_df[nss_cols]
