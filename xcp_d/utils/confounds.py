@@ -436,7 +436,7 @@ def load_aroma(confounds_df):
         The AROMA noise components.
     """
     aroma_noise = [c for c in confounds_df.columns if c.startswith("aroma_motion_")]
-    aroma = melodic.drop(aroma_noise, axis=1)
+    aroma = confounds_df.drop(aroma_noise, axis=1)
 
     return aroma
 
