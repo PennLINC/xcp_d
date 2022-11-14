@@ -5,8 +5,8 @@ import numpy as np
 import scipy
 
 from xcp_d.interfaces.regression import Regress
-from xcp_d.utils.write_save import read_ndata
 from xcp_d.utils.confounds import load_confound_matrix
+from xcp_d.utils.write_save import read_ndata
 
 
 def test_regression_nifti(data_dir, tmp_path_factory):

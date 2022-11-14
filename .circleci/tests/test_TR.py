@@ -14,10 +14,12 @@ import pandas as pd
 from xcp_d.interfaces.prepostcleaning import RemoveTR
 
 
-def test_RemoveTR_nifti(data_dir):
+def test_RemoveTR_nifti(data_dir, tmp_path_factory):
     """Test RemoveTR() for NIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir, "fmriprepwithoutfreesurfer/fmriprep/")
+    temp_dir = tmp_path_factory.mktemp("test_RemoveTR_nifti")
+
     boldfile = (
         data_dir + "sub-01/func/"
         "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
@@ -38,7 +40,7 @@ def test_RemoveTR_nifti(data_dir):
         confounds_file=confounds_file,
         dummy_scans=0,
     )
-    results = remove_nothing.run()
+    results = remove_nothing.run(cwd=temp_dir)
     undropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
     assert op.exists(results.outputs.bold_file_dropped_TR)
@@ -53,9 +55,12 @@ def test_RemoveTR_nifti(data_dir):
     # Test a nifti file with 1-10 volumes to remove
     for n in range(0, 10):
         remove_n_vols = RemoveTR(
-            bold_file=boldfile, fmriprep_confounds_file=confounds_file, dummy_scans=n
+            bold_file=boldfile,
+            fmriprep_confounds_file=confounds_file,
+            confounds_file=confounds_file,
+            dummy_scans=n,
         )
-        results = remove_n_vols.run()
+        results = remove_n_vols.run(cwd=temp_dir)
         dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
         assert op.exists(results.outputs.bold_file_dropped_TR)
@@ -74,10 +79,12 @@ def test_RemoveTR_nifti(data_dir):
             raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
-def test_RemoveTR_cifti(data_dir):
+def test_RemoveTR_cifti(data_dir, tmp_path_factory):
     """Test RemoveTR() for CIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
+    temp_dir = tmp_path_factory.mktemp("test_RemoveTR_cifti")
+
     boldfile = (
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
@@ -98,7 +105,7 @@ def test_RemoveTR_cifti(data_dir):
         confounds_file=confounds_file,
         dummy_scans=0,
     )
-    results = remove_nothing.run()
+    results = remove_nothing.run(cwd=temp_dir)
     undropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
     assert op.exists(results.outputs.bold_file_dropped_TR)
@@ -113,10 +120,13 @@ def test_RemoveTR_cifti(data_dir):
     # Test a cifti file with 1-10 volumes to remove
     for n in range(0, 10):
         remove_n_vols = RemoveTR(
-            bold_file=boldfile, fmriprep_confounds_file=confounds_file, dummy_scans=n
+            bold_file=boldfile,
+            fmriprep_confounds_file=confounds_file,
+            confounds_file=confounds_file,
+            dummy_scans=n,
         )
         #         print(n)
-        results = remove_n_vols.run()
+        results = remove_n_vols.run(cwd=temp_dir)
         dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
         assert op.exists(results.outputs.bold_file_dropped_TR)
@@ -151,7 +161,7 @@ def test_RemoveTR_cifti(data_dir):
 #     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
 #     remvtr.inputs.dummy_scans = 5
-#     results = remvtr.run()
+#     results = remvtr.run(cwd=temp_dir)
 
 #     # Load in dropped image and confounds tsv
 #     dropped_image = nb.load(results.outputs.bold_file_dropped_TR)
@@ -178,7 +188,7 @@ def test_RemoveTR_cifti(data_dir):
 #     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
 #     remvtr.inputs.dummy_scans = 5
-#     results = remvtr.run()
+#     results = remvtr.run(cwd=temp_dir)
 
 #     # Load in dropped image and confounds tsv
 #     dropped_image = nb.load(results.outputs.bold_file_dropped_TR)
