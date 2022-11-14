@@ -30,42 +30,42 @@ class _Convert64to32InputSpec(BaseInterfaceInputSpec):
     bold_file = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="BOLD file",
         mandatory=False,
         usedefault=True,
     )
     ref_file = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="BOLD reference file",
         mandatory=False,
         usedefault=True,
     )
     bold_mask = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="BOLD mask file",
         mandatory=False,
         usedefault=True,
     )
     t1w = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="T1-weighted anatomical file",
         mandatory=False,
         usedefault=True,
     )
     t1seg = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="T1-space segmentation file",
         mandatory=False,
         usedefault=True,
     )
     t1w_mask = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="T1-space mask file",
         mandatory=False,
         usedefault=True,
     )
@@ -75,44 +75,38 @@ class _Convert64to32OutputSpec(TraitedSpec):
     bold_file = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="BOLD file",
         mandatory=False,
-        usedefault=True,
     )
     ref_file = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="BOLD reference file",
         mandatory=False,
-        usedefault=True,
     )
     bold_mask = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="BOLD mask file",
         mandatory=False,
-        usedefault=True,
     )
     t1w = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="T1-weighted anatomical file",
         mandatory=False,
-        usedefault=True,
     )
     t1seg = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="T1-space segmentation file",
         mandatory=False,
-        usedefault=True,
     )
     t1w_mask = traits.Either(
         None,
         File(exists=True),
-        desc="Name of custom confounds file",
+        desc="T1-space mask file",
         mandatory=False,
-        usedefault=True,
     )
 
 
@@ -121,12 +115,46 @@ class Convert64to32(SimpleInterface):
     output_spec = _Convert64to32OutputSpec
 
     def _run_interface(self, runtime):
-        if self.inputs.bold_file:
-            img = nb.load(self.inputs.bold_file)
-            if img.dtype == np.float64:
-                ...
+        self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
+        self._results["ref_file"] = downcast_to_32(self.inputs.ref_file)
+        self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
+        self._results["t1w"] = downcast_to_32(self.inputs.t1w)
+        self._results["t1seg"] = downcast_to_32(self.inputs.t1seg)
+        self._results["t1w_mask"] = downcast_to_32(self.inputs.t1w_mask)
 
         return runtime
+
+
+def downcast_to_32(in_file):
+    if in_file is None:
+        return in_file
+
+    elif not os.path.isfile(in_file):
+        raise FileNotFoundError(f"File not found: {in_file}")
+
+    img = nb.load(in_file)
+    if hasattr(img, "nifti_header"):
+        header = img.nifti_header
+    else:
+        header = img.header
+
+    SIZE32 = 4  # number of bytes in float32/int32
+    dtype = header.get_data_dtype()
+    if dtype.itemsize > SIZE32:
+        LOGGER.warning(f"Downcasting {in_file} to 32-bit.")
+        if np.issubdtype(dtype, np.integer):
+            header.set_data_dtype(np.int32)
+        elif np.issubdtype(dtype, np.floating):
+            header.set_data_dtype(np.float32)
+        else:
+            raise TypeError(f"Unknown datatype '{dtype}'.")
+
+        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
+        img.to_filename(out_file)
+    else:
+        out_file = in_file
+
+    return out_file
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
