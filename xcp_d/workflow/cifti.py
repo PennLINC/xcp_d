@@ -401,7 +401,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
     consolidate_confounds_node.inputs.params = params
 
-    # Censor Scrub:
+    # fmt:off
     workflow.connect([
         (inputnode, censor_scrub, [('fmriprep_confounds_tsv', 'fmriprep_confounds_file')]),
         (inputnode, get_custom_confounds_file, [
@@ -429,10 +429,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([(inputnode, denoise_bold, [('bold_file', 'bold_file')])])
 
     workflow.connect([
-        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
         (inputnode, consolidate_confounds_node, [
+            ('bold_file', 'namesource'),
             ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-        ])
+        ]),
         (get_custom_confounds_file, consolidate_confounds_node, [
             ('custom_confounds', 'custom_confounds_file'),
         ]),
