@@ -1,10 +1,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for interpolating over high-motion volumes."""
+import os
+
 import nibabel as nb
 import numpy as np
+from nipype import logging
 
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.filemanip import fname_presuffix
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 @fill_doc
@@ -153,3 +159,36 @@ def _drop_dummy_scans(bold_file, dummy_scans):
         )
 
     return dropped_image
+
+
+def downcast_to_32(in_file):
+    """Downcast a file from >32-bit to 32-bit if necessary."""
+    if in_file is None:
+        return in_file
+
+    elif not os.path.isfile(in_file):
+        raise FileNotFoundError(f"File not found: {in_file}")
+
+    img = nb.load(in_file)
+    if hasattr(img, "nifti_header"):
+        header = img.nifti_header
+    else:
+        header = img.header
+
+    SIZE32 = 4  # number of bytes in float32/int32
+    dtype = header.get_data_dtype()
+    if dtype.itemsize > SIZE32:
+        LOGGER.warning(f"Downcasting {in_file} to 32-bit.")
+        if np.issubdtype(dtype, np.integer):
+            header.set_data_dtype(np.int32)
+        elif np.issubdtype(dtype, np.floating):
+            header.set_data_dtype(np.float32)
+        else:
+            raise TypeError(f"Unknown datatype '{dtype}'.")
+
+        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
+        img.to_filename(out_file)
+    else:
+        out_file = in_file
+
+    return out_file

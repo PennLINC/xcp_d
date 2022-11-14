@@ -18,6 +18,7 @@ from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import (
     _drop_dummy_scans,
     compute_fd,
+    downcast_to_32,
     generate_mask,
     interpolate_masked_data,
 )
@@ -26,7 +27,7 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 LOGGER = logging.getLogger("nipype.interface")
 
 
-class _Convert64to32InputSpec(BaseInterfaceInputSpec):
+class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
     bold_file = traits.Either(
         None,
         File(exists=True),
@@ -71,7 +72,7 @@ class _Convert64to32InputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _Convert64to32OutputSpec(TraitedSpec):
+class _ConvertTo32OutputSpec(TraitedSpec):
     bold_file = traits.Either(
         None,
         File(exists=True),
@@ -110,11 +111,11 @@ class _Convert64to32OutputSpec(TraitedSpec):
     )
 
 
-class Convert64to32(SimpleInterface):
+class ConvertTo32(SimpleInterface):
     """Downcast files from >32-bit to 32-bit if necessary."""
 
-    input_spec = _Convert64to32InputSpec
-    output_spec = _Convert64to32OutputSpec
+    input_spec = _ConvertTo32InputSpec
+    output_spec = _ConvertTo32OutputSpec
 
     def _run_interface(self, runtime):
         self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
@@ -125,39 +126,6 @@ class Convert64to32(SimpleInterface):
         self._results["t1w_mask"] = downcast_to_32(self.inputs.t1w_mask)
 
         return runtime
-
-
-def downcast_to_32(in_file):
-    """Downcast a file from >32-bit to 32-bit if necessary."""
-    if in_file is None:
-        return in_file
-
-    elif not os.path.isfile(in_file):
-        raise FileNotFoundError(f"File not found: {in_file}")
-
-    img = nb.load(in_file)
-    if hasattr(img, "nifti_header"):
-        header = img.nifti_header
-    else:
-        header = img.header
-
-    SIZE32 = 4  # number of bytes in float32/int32
-    dtype = header.get_data_dtype()
-    if dtype.itemsize > SIZE32:
-        LOGGER.warning(f"Downcasting {in_file} to 32-bit.")
-        if np.issubdtype(dtype, np.integer):
-            header.set_data_dtype(np.int32)
-        elif np.issubdtype(dtype, np.floating):
-            header.set_data_dtype(np.float32)
-        else:
-            raise TypeError(f"Unknown datatype '{dtype}'.")
-
-        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
-        img.to_filename(out_file)
-    else:
-        out_file = in_file
-
-    return out_file
 
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):

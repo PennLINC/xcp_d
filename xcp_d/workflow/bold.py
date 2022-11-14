@@ -18,7 +18,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import (
     CensorScrub,
-    Convert64to32,
+    ConvertTo32,
     Interpolate,
     RemoveTR,
 )
@@ -310,7 +310,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     mem_gbx = _create_mem_gb(bold_file)
 
     downcast_data = pe.Node(
-        Convert64to32(),
+        ConvertTo32(),
         name="downcast_data",
         mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,
