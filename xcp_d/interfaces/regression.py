@@ -21,27 +21,14 @@ LOGGER = logging.getLogger("nipype.interface")
 class _RegressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="The bold file to be regressed")
     confounds = File(
-        exists=True, mandatory=True, desc="The fMRIPrep confounds tsv after censoring"
+        exists=True,
+        mandatory=True,
+        desc="The selected confounds for regression, in a TSV file.",
     )
     # TODO: Use Enum maybe?
     params = traits.Str(mandatory=True, desc="Parameter set to use.")
     TR = traits.Float(mandatory=True, desc="Repetition time")
     mask = File(exists=True, mandatory=False, desc="Brain mask for nifti files")
-    original_file = traits.File(
-        exists=True,
-        mandatory=False,
-        desc=(
-            "Name of original bold file- helps load in the confounds "
-            "file down the line using the original path name"
-        ),
-    )
-    custom_confounds = traits.Either(
-        None,
-        File(exists=True),
-        desc="Name of custom confounds file",
-        mandatory=False,
-        usedefault=True,
-    )
 
 
 class _RegressOutputSpec(TraitedSpec):

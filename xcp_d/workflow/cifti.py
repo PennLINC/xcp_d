@@ -392,7 +392,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     regression_wf = pe.Node(
-        Regress(TR=TR, original_file=bold_file, params=params),
+        Regress(TR=TR, params=params),
         name="regression_wf",
         mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,

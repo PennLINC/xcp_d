@@ -39,7 +39,6 @@ def test_regression_nifti(data_dir, tmp_path_factory):
     regression = Regress(
         mask=mask,
         in_file=in_file,
-        original_file=in_file,
         confounds=selected_confounds_file,
         TR=TR,
         params="36P",
@@ -101,7 +100,6 @@ def test_regression_cifti(data_dir, tmp_path_factory):
     regression = Regress(
         mask=mask,
         in_file=in_file,
-        original_file=in_file,
         confounds=selected_confounds_file,
         TR=TR,
         params="36P",
