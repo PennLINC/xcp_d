@@ -212,8 +212,11 @@ def load_cosine(confounds_df):
     Therefore, when using CompCor regressors, the corresponding cosine_XX regressors
     should also be included in the design matrix.
     """
-    cosine_cols = [c for c in confounds_df.columns if c.startswith("cosine")]
-    return confounds_df[cosine_cols]
+    cosine = []
+    for key in confounds_df.keys():  # Any colums with cosine
+        if "cosine" in key:
+            cosine.append(key)
+    return confounds_df[cosine]
 
 
 def load_acompcor(confounds_df, confoundjs):
@@ -341,13 +344,12 @@ def load_confound_matrix(params, confound_tsv, custom_confounds=None):
     confounds_df = pd.read_table(confound_tsv)
     confounds_metadata = readjson(confounds_json)
 
-    if params == "24P":
-        # Get rot and trans values, as well as derivatives and square
+    if params == "24P":  # Get rot and trans values, as well as derivatives and square
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat([derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
-    elif params == "27P":
-        # Get rot and trans values, as well as derivatives, WM, CSF, global signal and square
+    elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF,
+        # global signal and square
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         whitematter_csf = load_wm_csf(confounds_df)
@@ -361,9 +363,9 @@ def load_confound_matrix(params, confound_tsv, custom_confounds=None):
             ],
             axis=1,
         )
-    elif params == "36P":
-        # Get rot and trans values, as well as derivatives, WM, CSF, global signal, and square.
-        # Add the square and derivative of the WM, CSF and global signal as well.
+    elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
+        # global signal, and square. Add the square and derivative of the WM, CSF
+        # and global signal as well.
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         square_confounds = pd.concat(
@@ -384,27 +386,24 @@ def load_confound_matrix(params, confound_tsv, custom_confounds=None):
             ],
             axis=1,
         )
-    elif params == "acompcor":
-        # Get the rot and trans values, their derivative, as well as acompcor and cosine
+    elif params == "acompcor":  # Get the rot and trans values, their derivative,
+        # as well as acompcor and cosine
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
         cosine = load_cosine(confounds_df)
         confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
-    elif params == "aroma":
-        # Get the WM, CSF, and aroma values
+    elif params == "aroma":  # Get the WM, CSF, and aroma values
         whitematter_csf = load_wm_csf(confounds_df)
         aroma = load_aroma(confounds_df)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
-    elif params == "aroma_gsr":
-        # Get the WM, CSF, and aroma values, as well as global signal
+    elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
         whitematter_csf = load_wm_csf(confounds_df)
         aroma = load_aroma(confounds_df)
         global_signal = load_global_signal(confounds_df)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
-    elif params == "acompcor_gsr":
-        # Get the rot and trans values, as well as their derivative, acompcor and cosine values
-        # as well as global signal
+    elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
+        # acompcor and cosine values as well as global signal
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
@@ -413,13 +412,11 @@ def load_confound_matrix(params, confound_tsv, custom_confounds=None):
         confound = pd.concat([derivative_rot_trans, acompcor, global_signal, cosine], axis=1)
     elif params == "custom":
         # For custom confounds with no other confounds
-        confound = pd.read_table(custom_confounds)
-    else:
-        raise ValueError(f"Parameters '{params}' not understood.")
+        confound = pd.read_table(custom_confounds, sep="\t")
 
     if params != "custom" and custom_confounds is not None:
         # For both custom and fMRIPrep confounds
-        custom = pd.read_table(custom_confounds)
+        custom = pd.read_table(custom_confounds, sep="\t")
         confound = pd.concat([custom, confound], axis=1)
 
     return confound
@@ -438,8 +435,10 @@ def load_aroma(confounds_df):
     pandas.DataFrame
         The AROMA noise components.
     """
-    aroma_motion_columns = [c for c in confounds_df.columns if c.startswith("aroma_motion_")]
-    return confounds_df[aroma_motion_columns]
+    aroma_noise = [c for c in confounds_df.columns if c.startswith("aroma_motion_")]
+    aroma = melodic.drop(aroma_noise, axis=1)
+
+    return aroma
 
 
 @fill_doc
