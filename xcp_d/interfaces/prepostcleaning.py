@@ -26,6 +26,109 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 LOGGER = logging.getLogger("nipype.interface")
 
 
+class _Convert64to32InputSpec(BaseInterfaceInputSpec):
+    bold_file = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    ref_file = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    bold_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1seg = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+
+
+class _Convert64to32OutputSpec(TraitedSpec):
+    bold_file = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    ref_file = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    bold_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1seg = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="Name of custom confounds file",
+        mandatory=False,
+        usedefault=True,
+    )
+
+
+class Convert64to32(SimpleInterface):
+    input_spec = _Convert64to32InputSpec
+    output_spec = _Convert64to32OutputSpec
+
+    def _run_interface(self, runtime):
+        if self.inputs.bold_file:
+            img = nb.load(self.inputs.bold_file)
+            if img.dtype == np.float64:
+                ...
+
+        return runtime
+
+
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
     dummy_scans = traits.Either(
