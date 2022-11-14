@@ -129,7 +129,7 @@ class RemoveTR(SimpleInterface):
 
         # Drop the first N rows from the confounds file
         confounds_df = pd.read_table(self.inputs.confounds_file)
-        confounds_tsv_dropped = confounds_df.drop[np.arange(dummy_scans)]
+        confounds_tsv_dropped = confounds_df.drop(np.arange(dummy_scans))
 
         # Save out results
         dropped_fmriprep_confounds_df.to_csv(
