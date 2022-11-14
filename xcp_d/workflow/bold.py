@@ -394,7 +394,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             input_names=[
                 "fmriprep_confounds_file",
                 "custom_confounds_file",
-                "namesource",
                 "params",
             ],
             output_names=["out_file"],
@@ -412,7 +411,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
         ]),
         (inputnode, consolidate_confounds_node, [
-            ("bold_file", "namesource"),
             ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
         ]),
         (get_custom_confounds_file, consolidate_confounds_node, [

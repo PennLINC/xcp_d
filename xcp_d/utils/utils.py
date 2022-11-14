@@ -628,7 +628,6 @@ def demean_detrend_data(data):
 
 def consolidate_confounds(
     fmriprep_confounds_file,
-    namesource,
     params,
     custom_confounds_file=None,
 ):
@@ -638,8 +637,6 @@ def consolidate_confounds(
     ----------
     fmriprep_confounds_file : file
         file to fmriprep confounds tsv
-    namesource : file
-        file to extract entities from
     custom_confounds_file : file
         file to custom confounds tsv
     params : string
