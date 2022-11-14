@@ -368,13 +368,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         omp_nthreads=omp_nthreads,
     )
 
-    bold_holder_node = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold_file", "fmriprep_confounds_tsv", "custom_confounds"],
-        ),
-        name="bold_holder_node",
-    )
-
     resdsmoothing_wf = init_resd_smoothing(
         mem_gb=mem_gbx["timeseries"],
         smoothing=smoothing,
@@ -410,6 +403,23 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="consolidate_confounds_node",
     )
     consolidate_confounds_node.inputs.params = params
+
+    # Load and filter confounds
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_custom_confounds_file, [
+            ("custom_confounds_folder", "custom_confounds_folder"),
+            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+        ]),
+        (inputnode, consolidate_confounds_node, [
+            ("bold_file", "namesource"),
+            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+        ]),
+        (get_custom_confounds_file, consolidate_confounds_node, [
+            ("custom_confounds", "custom_confounds_file"),
+        ]),
+    ])
+    # fmt:on
 
     plot_design_matrix_node = pe.Node(
         Function(
@@ -465,10 +475,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, get_native2space_transforms, [("bold_file", "bold_file"),
                                                   ("mni_to_t1w", "mni_to_t1w"),
                                                   ("t1w_to_native", "t1w_to_native")]),
-        (inputnode, get_custom_confounds_file, [
-            ("custom_confounds_folder", "custom_confounds_folder"),
-            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-        ]),
     ])
     # fmt:on
 
@@ -597,57 +603,51 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, remove_dummy_scans, [
-                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                ("bold_file", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
+                # fMRIPrep confounds file is needed for filtered motion.
+                # The selected confounds are not guaranteed to include motion params.
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
-            (inputnode, remove_dummy_scans, [("bold_file", "bold_file")]),
-            (get_custom_confounds_file, remove_dummy_scans, [
-                ("custom_confounds_file", "custom_confounds"),
+            (consolidate_confounds_node, remove_dummy_scans, [
+                ("out_file", "confounds_file"),
             ]),
             (remove_dummy_scans, censor_scrub, [
                 ("bold_file_dropped_TR", "in_file"),
-                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
-                ("custom_confounds_dropped", "custom_confounds"),
+                ("confounds_file_dropped_TR", "confounds_file"),
+                # fMRIPrep confounds file is needed for filtered motion.
+                # The selected confounds are not guaranteed to include motion params.
+                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_tsv"),
             ]),
             (remove_dummy_scans, censor_report, [
                 ("dummy_scans", "dummy_scans"),
             ]),
             (remove_dummy_scans, qcreport, [
                 ("dummy_scans", "dummy_scans"),
-            ])
+            ]),
         ])
         # fmt:on
 
-    else:  # No need to remove TR
+    else:
         # fmt:off
         workflow.connect([
             (inputnode, censor_scrub, [
-                ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
                 ('bold_file', 'in_file'),
+                # fMRIPrep confounds file is needed for filtered motion.
+                # The selected confounds are not guaranteed to include motion params.
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
-            (get_custom_confounds_file, censor_scrub, [
-                ("custom_confounds_file", "custom_confounds"),
+            (consolidate_confounds_node, censor_scrub, [
+                ("out_file", "confounds_file"),
             ]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
-        (censor_scrub, bold_holder_node, [
-            ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
-            ("custom_confounds_censored", "custom_confounds")]),
-    ])
-
-    workflow.connect([
-        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
-        (bold_holder_node, consolidate_confounds_node, [
-            ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
-            ('custom_confounds', 'custom_confounds_file'),
+        (censor_scrub, plot_design_matrix_node, [
+            ("confounds_censored", "design_matrix"),
         ]),
-        (consolidate_confounds_node, plot_design_matrix_node, [
-            ("out_file", "design_matrix"),
-        ])
     ])
     # fmt:on
 
@@ -659,7 +659,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # to minimize the impact of spike. Despiking is applied to whole volumes
         # and data, and different from temporal censoring. It can be added to the
         # command line arguments with --despike.
-
         despike3d = pe.Node(
             DespikePatch(outputtype="NIFTI_GZ", args="-NEW"),
             name="despike3d",
@@ -668,27 +667,25 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         )
 
         # fmt:off
-        workflow.connect([(censor_scrub, despike3d, [('bold_censored', 'in_file')])])
-        # Censor Scrub:
         workflow.connect([
+            (censor_scrub, despike3d, [('bold_censored', 'in_file')]),
             (despike3d, regression_wf, [('out_file', 'in_file')]),
-            (inputnode, regression_wf, [('bold_mask', 'mask')]),
-            (censor_scrub, regression_wf, [
-                ('fmriprep_confounds_censored', 'confounds'),
-                ('custom_confounds_censored', 'custom_confounds'),
-            ]),
         ])
         # fmt:on
 
-    else:  # If we don't despike
-        # regression workflow
+    else:
         # fmt:off
-        workflow.connect([(inputnode, regression_wf, [('bold_mask', 'mask')]),
-                          (censor_scrub, regression_wf,
-                         [('bold_censored', 'in_file'),
-                          ('fmriprep_confounds_censored', 'confounds'),
-                          ('custom_confounds_censored', 'custom_confounds')])])
+        workflow.connect([
+            (censor_scrub, regression_wf, [('bold_censored', 'in_file')]),
+        ])
         # fmt:on
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, regression_wf, [('bold_mask', 'mask')]),
+        (censor_scrub, regression_wf, [('confounds_censored', 'confounds')]),
+    ])
+    # fmt:on
 
     # interpolation workflow
     # fmt:off
@@ -722,6 +719,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
         (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
+
     if bandpass_filter:
         workflow.connect([
             (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),

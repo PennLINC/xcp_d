@@ -655,10 +655,9 @@ def consolidate_confounds(
     from xcp_d.utils.confounds import load_confound_matrix
 
     confounds_df = load_confound_matrix(
-        original_file=namesource,
-        custom_confounds=custom_confounds_file,
         confound_tsv=fmriprep_confounds_file,
         params=params,
+        custom_confounds=custom_confounds_file,
     )
 
     out_file = os.path.abspath("confounds.tsv")

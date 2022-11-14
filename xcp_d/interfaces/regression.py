@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Regression interfaces."""
-
+import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -11,7 +11,6 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.utils import demean_detrend_data, linear_regression
 from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
@@ -66,20 +65,7 @@ class Regress(SimpleInterface):
     def _run_interface(self, runtime):
 
         # Get the confound matrix
-        # Do we have custom confounds?
-        if self.inputs.custom_confounds:
-            confound = load_confound_matrix(
-                original_file=self.inputs.original_file,
-                custom_confounds=self.inputs.custom_confounds,
-                confound_tsv=self.inputs.confounds,
-                params=self.inputs.params,
-            )
-        else:  # No custom confounds
-            confound = load_confound_matrix(
-                original_file=self.inputs.original_file,
-                confound_tsv=self.inputs.confounds,
-                params=self.inputs.params,
-            )
+        confound = pd.read_table(self.inputs.confounds)
 
         confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
         # Get the nifti/cifti matrix
