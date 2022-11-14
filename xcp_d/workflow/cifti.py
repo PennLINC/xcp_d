@@ -14,7 +14,12 @@ from num2words import num2words
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.prepostcleaning import (
+    CensorScrub,
+    Convert64to32,
+    Interpolate,
+    RemoveTR,
+)
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
 from xcp_d.interfaces.report import FunctionalSummary
@@ -269,6 +274,23 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     mem_gbx = _create_mem_gb(bold_file)
 
+    downcast_data = pe.Node(
+        Convert64to32(),
+        name="downcast_data",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, downcast_data, [
+            ("bold_file", "bold_file"),
+            ("t1w", "t1w"),
+            ("t1seg", "t1seg"),
+        ]),
+    ])
+    # fmt:on
+
     get_custom_confounds_file = pe.Node(
         Function(
             input_names=["custom_confounds_folder", "fmriprep_confounds_file"],
@@ -434,9 +456,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([
             (inputnode, remove_dummy_scans, [
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-                ("bold_file", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
             ]),
+            (downcast_data, remove_dummy_scans, [
+                ("bold_file", "bold_file"),
+            ])
             (get_custom_confounds_file, remove_dummy_scans, [
                 ("custom_confounds_file", "custom_confounds"),
             ]),
@@ -459,6 +483,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([
             (inputnode, censor_scrub, [
                 ('fmriprep_confounds_tsv', 'fmriprep_confounds_file'),
+            ]),
+            (downcast_data, censor_scrub, [
                 ('bold_file', 'in_file'),
             ]),
             (get_custom_confounds_file, censor_scrub, [
@@ -469,7 +495,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (inputnode, bold_holder_node, [("bold_file", "bold_file")]),
+        (downcast_data, bold_holder_node, [("bold_file", "bold_file")]),
         (inputnode, get_custom_confounds_file, [
             ("custom_confounds_folder", "custom_confounds_folder"),
             ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
@@ -522,7 +548,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # interpolation workflow
     # fmt:off
     workflow.connect([
-        (inputnode, interpolate_wf, [('bold_file', 'bold_file')]),
+        (downcast_data, interpolate_wf, [('bold_file', 'bold_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
@@ -550,8 +576,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # qc report
     workflow.connect([
-        (inputnode, qcreport, [("bold_file", "bold_file")]),
-        (inputnode, censor_report, [("bold_file", "bold_file")]),
+        (downcast_data, qcreport, [("bold_file", "bold_file")]),
+        (downcast_data, censor_report, [("bold_file", "bold_file")]),
         (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
         (censor_scrub, qcreport, [("tmask", "tmask")]),
         (censor_scrub, censor_report, [('tmask', 'tmask')]),
@@ -737,10 +763,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, executivesummary_wf, [
+                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+            ]),
+            (downcast_data, executivesummary_wf, [
                 ('t1w', 'inputnode.t1w'),
                 ('t1seg', 'inputnode.t1seg'),
                 ('bold_file', 'inputnode.bold_file'),
-                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
             ]),
             (regression_wf, executivesummary_wf, [
                 ('res_file', 'inputnode.regressed_data'),
