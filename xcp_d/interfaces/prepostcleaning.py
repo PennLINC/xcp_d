@@ -138,7 +138,7 @@ class RemoveTR(SimpleInterface):
             index=False,
         )
         confounds_tsv_dropped.to_csv(
-            self._results["confounds_dropped"],
+            self._results["confounds_file_dropped_TR"],
             sep="\t",
             index=False,
         )
