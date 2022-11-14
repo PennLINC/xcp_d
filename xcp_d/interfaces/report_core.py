@@ -13,6 +13,7 @@ from niworkflows.reports.core import Report as _Report
 
 from xcp_d.interfaces.layout_builder import LayoutBuilder
 from xcp_d.utils.bids import _getsesid
+from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("cli")
 
@@ -83,13 +84,15 @@ def run_reports(
     ).generate_report()
 
 
+@fill_doc
 def generate_reports(
     subject_list,
-    dummytime,
     fmri_dir,
     work_dir,
     output_dir,
     run_uuid,
+    dummy_scans,
+    dummytime=0,
     cifti=False,
     config=None,
     packagename=None,
@@ -109,6 +112,9 @@ def generate_reports(
         The path to the output directory.
     run_uuid : str
         The UUID of the run for which the report will be generated.
+    %(dummy_scans)s
+    %(dummytime)s
+    %(cifti)s
     config : None or str, optional
         Configuration file.
     packagename : None or str, optional
@@ -159,13 +165,14 @@ def generate_reports(
                 fmri_dir = str(work_dir) + "/hcp/hcp"
             print("Concatenating bold files ...")
             concatenate_derivatives(
-                dummytime=dummytime,
                 subjects=subject_list,
                 fmridir=str(fmri_dir),
                 outputdir=str(Path(str(output_dir)) / "xcp_d/"),
                 work_dir=work_dir,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
+                dummy_scans=dummy_scans,
+                dummytime=dummytime,
             )
             print("Concatenation complete!")
 

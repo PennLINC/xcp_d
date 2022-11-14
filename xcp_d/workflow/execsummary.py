@@ -171,7 +171,13 @@ def init_brainsprite_wf(
 
 @fill_doc
 def init_execsummary_wf(
-    omp_nthreads, bold_file, output_dir, TR, dummyvols, mem_gb, layout, name="execsummary_wf"
+    omp_nthreads,
+    bold_file,
+    output_dir,
+    TR,
+    mem_gb,
+    layout,
+    name="execsummary_wf",
 ):
     """Generate an executive summary.
 
@@ -184,7 +190,6 @@ def init_execsummary_wf(
     %(mem_gb)s
     layout
     %(name)s
-    dummyvols
 
     Inputs
     ------
@@ -197,6 +202,7 @@ def init_execsummary_wf(
     rawdata
     mask
     %(mni_to_t1w)s
+    %(dummy_scans)s
     """
     workflow = Workflow(name=name)
 
@@ -212,6 +218,7 @@ def init_execsummary_wf(
                 "rawdata",
                 "mask",
                 "mni_to_t1w",
+                "dummy_scans",
             ]
         ),
         name="inputnode",
@@ -280,7 +287,7 @@ def init_execsummary_wf(
 
     # Plot the SVG files
     plot_svgx_wf = pe.Node(
-        PlotSVGData(TR=TR, rawdata=bold_file, dummyvols=dummyvols),
+        PlotSVGData(TR=TR, rawdata=bold_file),
         name="plot_svgx_wf",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -335,10 +342,15 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [('filtered_motion', 'filtered_motion'),
-                                   ('regressed_data', 'regressed_data'),
-                                   ('residual_data', 'residual_data'), ('mask', 'mask'),
-                                   ('bold_file', 'rawdata'), ('tmask', 'tmask')]),
+        (inputnode, plot_svgx_wf, [
+            ('filtered_motion', 'filtered_motion'),
+            ('regressed_data', 'regressed_data'),
+            ('residual_data', 'residual_data'),
+            ('mask', 'mask'),
+            ('bold_file', 'rawdata'),
+            ('tmask', 'tmask'),
+            ('dummy_scans', 'dummy_scans'),
+        ]),
         (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),

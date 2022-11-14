@@ -49,6 +49,7 @@ def init_ciftipostprocess_wf(
     custom_confounds_folder,
     omp_nthreads,
     dummytime,
+    dummy_scans,
     fd_thresh,
     despike,
     dcan_qc,
@@ -81,6 +82,7 @@ def init_ciftipostprocess_wf(
                 custom_confounds_folder=None,
                 omp_nthreads=1,
                 dummytime=0,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 despike=False,
                 dcan_qc=False,
@@ -107,8 +109,8 @@ def init_ciftipostprocess_wf(
     custom_confounds_folder: str
         path to cusrtom nuissance regressors
     %(omp_nthreads)s
-    dummytime: float
-        the first few seconds to be removed before postprocessing
+    %(dummytime)s
+    %(dummy_scans)s
     %(fd_thresh)s
     despike: bool
         afni depsike
@@ -176,7 +178,7 @@ def init_ciftipostprocess_wf(
             )
 
         filter_str = (
-            f"the six translation and rotation head motion traces were {filter_sub_str}. " "Next, "
+            f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
         )
         filter_post_str = (
             "The filtered versions of the motion traces and framewise displacement were not used "
@@ -188,12 +190,18 @@ def init_ciftipostprocess_wf(
         f"@power_fd_dvars, with a head radius of {head_radius} mm"
     )
 
-    dummytime_str = ""
-    initial_volumes_to_drop = 0
-    if dummytime > 0:
-        initial_volumes_to_drop = int(np.ceil(dummytime / TR))
-        dummytime_str = (
-            f"the first {num2words(initial_volumes_to_drop)} of both the BOLD data and nuisance "
+    if dummy_scans == 0 and dummytime != 0:
+        dummy_scans = int(np.ceil(dummytime / TR))
+
+    dummy_scans_str = ""
+    if dummy_scans == "auto":
+        dummy_scans_str = (
+            "non-steady-state volumes were extracted from the preprocessed confounds "
+            "and were discarded from both the BOLD data and nuisance regressors, then"
+        )
+    elif dummy_scans > 0:
+        dummy_scans_str = (
+            f"the first {num2words(dummy_scans)} of both the BOLD data and nuisance "
             "regressors were discarded, then "
         )
 
@@ -205,7 +213,7 @@ def init_ciftipostprocess_wf(
     workflow.__desc__ = f"""\
 For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
 the following post-processing was performed.
-First, {dummytime_str}outlier detection was performed.
+First, {dummy_scans_str}outlier detection was performed.
 In order to identify high-motion outlier volumes, {fd_str}.
 Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
 {fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
@@ -229,6 +237,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "t1seg",
                 "mni_to_t1w",
                 "fmriprep_confounds_tsv",
+                "dummy_scans",
             ],
         ),
         name="inputnode",
@@ -237,6 +246,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.custom_confounds_folder = custom_confounds_folder
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
+    inputnode.inputs.dummy_scans = dummy_scans
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -299,7 +309,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         params=params,
         cifti=True,
         output_dir=output_dir,
-        dummytime=dummytime,
         lowpass=upper_bpf,
         highpass=lower_bpf,
         motion_filter_type=motion_filter_type,
@@ -391,7 +400,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            dummytime=dummytime,
             head_radius=head_radius,
         ),
         name="qc_report",
@@ -402,7 +410,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     censor_report = pe.Node(
         CensoringPlot(
             TR=TR,
-            dummytime=dummytime,
             head_radius=head_radius,
             motion_filter_type=motion_filter_type,
             band_stop_max=band_stop_max,
@@ -415,45 +422,39 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
     )
 
-    # Remove TR first:
-    if dummytime > 0:
-        rm_dummytime = pe.Node(
-            RemoveTR(initial_volumes_to_drop=initial_volumes_to_drop),
-            name="remove_dummy_time",
+    # Remove TR first
+    if dummy_scans:
+        remove_dummy_scans = pe.Node(
+            RemoveTR(),
+            name="remove_dummy_scans",
             mem_gb=0.1 * mem_gbx["timeseries"],
         )
 
-        workflow.connect(
-            [
-                (
-                    inputnode,
-                    rm_dummytime,
-                    [
-                        ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-                        ("bold_file", "bold_file"),
-                    ],
-                ),
-                (
-                    get_custom_confounds_file,
-                    rm_dummytime,
-                    [
-                        ("custom_confounds_file", "custom_confounds"),
-                    ],
-                ),
-                (
-                    rm_dummytime,
-                    censor_scrub,
-                    [
-                        ("bold_file_dropped_TR", "in_file"),
-                        ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
-                        ("custom_confounds_dropped", "custom_confounds"),
-                    ],
-                ),
-            ]
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, remove_dummy_scans, [
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                ("bold_file", "bold_file"),
+                ("dummy_scans", "dummy_scans"),
+            ]),
+            (get_custom_confounds_file, remove_dummy_scans, [
+                ("custom_confounds_file", "custom_confounds"),
+            ]),
+            (remove_dummy_scans, censor_scrub, [
+                ("bold_file_dropped_TR", "in_file"),
+                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
+                ("custom_confounds_dropped", "custom_confounds"),
+            ]),
+            (remove_dummy_scans, censor_report, [
+                ("dummy_scans", "dummy_scans"),
+            ]),
+            (remove_dummy_scans, qcreport, [
+                ("dummy_scans", "dummy_scans"),
+            ])
+        ])
+        # fmt:on
 
     else:  # No need to remove TR
-        # Censor Scrub:
         # fmt:off
         workflow.connect([
             (inputnode, censor_scrub, [
@@ -730,7 +731,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             layout=layout,
             output_dir=output_dir,
             omp_nthreads=omp_nthreads,
-            dummyvols=initial_volumes_to_drop,
             mem_gb=mem_gbx["timeseries"],
         )
 
@@ -754,6 +754,23 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ]),
         ])
         # fmt:on
+
+        if dummy_scans:
+            # fmt:off
+            workflow.connect([
+                (remove_dummy_scans, executivesummary_wf, [
+                    ("dummy_scans", "inputnode.dummy_scans"),
+                ])
+            ])
+            # fmt:on
+        else:
+            # fmt:off
+            workflow.connect([
+                (inputnode, executivesummary_wf, [
+                    ("dummy_scans", "inputnode.dummy_scans"),
+                ]),
+            ])
+            # fmt:on
 
     return workflow
 

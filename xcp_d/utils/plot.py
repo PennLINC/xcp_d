@@ -17,6 +17,7 @@ from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -441,12 +442,13 @@ def confoundplotx(
     return time_series_axis, grid_specification
 
 
+@fill_doc
 def plot_svgx(
     preprocessed_file,
     residuals_file,
     denoised_file,
     tmask,
-    dummyvols,
+    dummy_scans,
     filtered_motion,
     unprocessed_filename,
     processed_filename,
@@ -467,13 +469,12 @@ def plot_svgx(
     residuals_file :
         nifti or cifti after nuisance regression
     denoised_file :
-        nifti or cifti after regression and filtering
+        nifti or cifti after regression, filtering, and interpolation
     mask :
         mask for nifti if available
     tmask :
        temporal censoring mask
-    dummyvols :
-        initial number of volumes to drop
+    %(dummy_scans)s
     seg_data :
         3 tissues seg_data files
     TR : float, optional
@@ -494,8 +495,8 @@ def plot_svgx(
     tmask_bool = ~tmask_arr.astype(bool)
 
     # Let's remove dummy time from the raw_data_arr if needed
-    if dummyvols > 0:
-        raw_data_arr = raw_data_arr[:, dummyvols:]
+    if dummy_scans > 0:
+        raw_data_arr = raw_data_arr[:, dummy_scans:]
 
     # Let's censor the interpolated data and raw_data_arr:
     if sum(tmask_arr) > 0:

@@ -32,7 +32,7 @@ def test_RemoveTR_nifti(data_dir):
     remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
-        initial_volumes_to_drop=0)
+        dummy_scans=0)
     results = remove_nothing.run()
     undropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
@@ -49,7 +49,7 @@ def test_RemoveTR_nifti(data_dir):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
-            initial_volumes_to_drop=n)
+            dummy_scans=n)
         results = remove_n_vols.run()
         dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
@@ -85,7 +85,7 @@ def test_RemoveTR_cifti(data_dir):
     remove_nothing = RemoveTR(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
-        initial_volumes_to_drop=0)
+        dummy_scans=0)
     results = remove_nothing.run()
     undropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
     # Were the files created?
@@ -102,7 +102,7 @@ def test_RemoveTR_cifti(data_dir):
         remove_n_vols = RemoveTR(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
-            initial_volumes_to_drop=n)
+            dummy_scans=n)
 #         print(n)
         results = remove_n_vols.run()
         dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
@@ -135,7 +135,7 @@ def test_RemoveTR_cifti(data_dir):
 #     remvtr.inputs.bold_file = boldfile
 #     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
-#     remvtr.inputs.initial_volumes_to_drop = 5
+#     remvtr.inputs.dummy_scans = 5
 #     results = remvtr.run()
 
 #     # Load in dropped image and confounds tsv
@@ -162,7 +162,7 @@ def test_RemoveTR_cifti(data_dir):
 #     remvtr.inputs.bold_file = boldfile
 #     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
-#     remvtr.inputs.initial_volumes_to_drop = 5
+#     remvtr.inputs.dummy_scans = 5
 #     results = remvtr.run()
 
 #     # Load in dropped image and confounds tsv

@@ -580,7 +580,7 @@ def relpath(path, start=None):
         unc_path, rest = op.splitunc(path)
         unc_start, rest = op.splitunc(start)
         if bool(unc_path) ^ bool(unc_start):
-            raise ValueError(("Cannot mix UNC and non-UNC paths " "(%s and %s)") % (path, start))
+            raise ValueError(("Cannot mix UNC and non-UNC paths (%s and %s)") % (path, start))
         else:
             raise ValueError(f"path is on drive {path_list[0]}, start on drive {start_list[0]}")
     # Work out how much of the filepath is shared by start and path.

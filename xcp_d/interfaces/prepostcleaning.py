@@ -13,9 +13,14 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import load_motion
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
+from xcp_d.utils.modified_data import (
+    _drop_dummy_scans,
+    compute_fd,
+    generate_mask,
+    interpolate_masked_data,
+)
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -23,13 +28,21 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
-    initial_volumes_to_drop = traits.Int(
+    dummy_scans = traits.Either(
+        traits.Int,
+        "auto",
         mandatory=True,
-        desc="Number of volumes to drop from the beginning,"
-        "calculated in an earlier workflow from dummytime "
-        "and repetition time.",
+        desc=(
+            "Number of volumes to drop from the beginning, "
+            "calculated in an earlier workflow from dummytime/dummy_scans "
+            "and repetition time."
+        ),
     )
-    fmriprep_confounds_file = File(exists=True, mandatory=False, desc="fmriprep confounds tsv")
+    fmriprep_confounds_file = File(
+        exists=True,
+        mandatory=False,
+        desc="fmriprep confounds tsv",
+    )
     custom_confounds = traits.Either(
         None,
         File(exists=True),
@@ -56,38 +69,36 @@ class _RemoveTROutputSpec(TraitedSpec):
         usedefault=True,
     )
 
+    dummy_scans = traits.Int(desc="Number of volumes dropped.")
+
 
 class RemoveTR(SimpleInterface):
     """Removes initial volumes from a nifti or cifti file.
 
     A bold file and its corresponding confounds TSV (fmriprep format)
     are adjusted to remove the first n seconds of data.
-
-    If 0, the bold file and confounds are returned as-is. If dummytime
-    is larger than the repetition time, the corresponding rows are removed
-    from the confounds TSV and the initial volumes are removed from the
-    nifti or cifti file.
-
-    If the dummy time is less than the repetition time, it will
-    be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
-
-    The number of volumes to be removed has been calculated in a previous
-    workflow.
     """
 
     input_spec = _RemoveTRInputSpec
     output_spec = _RemoveTROutputSpec
 
     def _run_interface(self, runtime):
-        volumes_to_drop = self.inputs.initial_volumes_to_drop
+        dummy_scans = _infer_dummy_scans(
+            dummy_scans=self.inputs.dummy_scans,
+            confounds_file=self.inputs.fmriprep_confounds_file,
+        )
+
+        self._results["dummy_scans"] = dummy_scans
+
         # Check if we need to do anything
-        if self.inputs.initial_volumes_to_drop == 0:
+        if dummy_scans == 0:
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
             self._results[
-                "fmriprep_confounds_file_dropped" "_TR"
+                "fmriprep_confounds_file_dropped_TR"
             ] = self.inputs.fmriprep_confounds_file
             return runtime
+
         # get the file names to output to
         dropped_bold_file = fname_presuffix(
             self.inputs.bold_file, newpath=runtime.cwd, suffix="_dropped", use_ext=True
@@ -99,48 +110,24 @@ class RemoveTR(SimpleInterface):
             use_ext=True,
         )
 
-        # read the bold file
-        bold_image = nb.load(self.inputs.bold_file)
-        data = bold_image.get_fdata()
-
-        # If it's a Cifti Image:
-        if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
-            time_axis, brain_model_axis = [
-                bold_image.header.get_axis(i) for i in range(bold_image.ndim)
-            ]
-            new_total_volumes = dropped_data.shape[0]
-            dropped_time_axis = time_axis[:new_total_volumes]
-            dropped_header = nb.cifti2.Cifti2Header.from_axes(
-                (dropped_time_axis, brain_model_axis)
-            )
-            dropped_image = nb.Cifti2Image(
-                dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
-            )
-
-        # If it's a Nifti Image:
-        else:
-            dropped_data = data[..., volumes_to_drop:]
-            dropped_image = nb.Nifti1Image(
-                dropped_data, affine=bold_image.affine, header=bold_image.header
-            )
-
-        # Write the file
+        # Remove the dummy volumes
+        dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=dummy_scans)
         dropped_image.to_filename(dropped_bold_file)
 
         # Drop the first N rows from the pandas dataframe
-        confounds_df = pd.read_csv(self.inputs.fmriprep_confounds_file, sep="\t")
-        dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        dropped_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
         # Drop the first N rows from the custom confounds file, if provided:
         if self.inputs.custom_confounds:
             custom_confounds_df = pd.read_table(self.inputs.custom_confounds)
-            custom_confounds_tsv_dropped = custom_confounds_df.drop[np.arange(volumes_to_drop)]
+            custom_confounds_tsv_dropped = custom_confounds_df.drop[np.arange(dummy_scans)]
         else:
             LOGGER.warning("No custom confounds were found or had their volumes dropped.")
 
         # Save out results
         dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
+
         # Write to output node
         self._results["bold_file_dropped_TR"] = dropped_bold_file
         self._results["fmriprep_confounds_file_dropped_TR"] = dropped_confounds_file
@@ -166,7 +153,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
-        desc="Framewise displacement" "threshold. All values above this will be dropped.",
+        desc="Framewise displacement threshold. All values above this will be dropped.",
     )
     custom_confounds = traits.Either(
         None,

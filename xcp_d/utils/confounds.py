@@ -11,7 +11,7 @@ from scipy.signal import filtfilt, firwin, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger("utils")
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def get_confounds_tsv(datafile):
@@ -561,3 +561,47 @@ def motion_regression_filter(
             filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
 
     return filtered_data
+
+
+def _infer_dummy_scans(dummy_scans, confounds_file=None):
+    """Attempt to determine the number of dummy scans from the confounds file.
+
+    This function expects non-steady-state volumes flagged by the preprocessing pipeline
+    to be indicated in columns starting with "non_steady_state_outlier" in the confounds file.
+
+    Parameters
+    ----------
+    dummy_scans : "auto" or int
+        The number of dummy scans.
+        If an integer, this will be returned without modification.
+        If "auto", the confounds file will be loaded and the number of non-steady-state
+        volumes estimated by the preprocessing workflow will be determined.
+    confounds_file : None or str
+        Path to the confounds TSV file from the preprocessing pipeline.
+        Only used if dummy_scans is "auto".
+        Default is None.
+
+    Returns
+    -------
+    dummy_scans : int
+        Estimated number of dummy scans.
+    """
+    if dummy_scans == "auto":
+        confounds_df = pd.read_table(confounds_file)
+
+        nss_cols = [c for c in confounds_df.columns if c.startswith("non_steady_state_outlier")]
+
+        if nss_cols:
+            initial_volumes_df = confounds_df[nss_cols]
+            dummy_scans = np.any(initial_volumes_df.to_numpy(), axis=1)
+            dummy_scans = np.where(dummy_scans)[0]
+
+            # reasonably assumes all NSS volumes are contiguous
+            dummy_scans = int(dummy_scans[-1] + 1)
+            LOGGER.info(f"Found {dummy_scans} dummy scans in {os.path.basename(confounds_file)}")
+
+        else:
+            LOGGER.warning(f"No non-steady-state outliers found in {confounds_file}")
+            dummy_scans = 0
+
+    return dummy_scans

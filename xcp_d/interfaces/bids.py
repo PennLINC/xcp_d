@@ -63,7 +63,7 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
         "or left unmodified (None, default).",
     )
     data_dtype = Str(
-        desc="NumPy datatype to coerce NIfTI data to, or `source` to" "match the input file dtype"
+        desc="NumPy datatype to coerce NIfTI data to, or `source` to match the input file dtype"
     )
     dismiss_entities = InputMultiObject(
         traits.Either(None, Str),
