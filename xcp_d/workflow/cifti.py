@@ -460,7 +460,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ]),
             (downcast_data, remove_dummy_scans, [
                 ("bold_file", "bold_file"),
-            ])
+            ]),
             (get_custom_confounds_file, remove_dummy_scans, [
                 ("custom_confounds_file", "custom_confounds"),
             ]),
@@ -474,7 +474,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ]),
             (remove_dummy_scans, qcreport, [
                 ("dummy_scans", "dummy_scans"),
-            ])
+            ]),
         ])
         # fmt:on
 

@@ -112,6 +112,7 @@ class _Convert64to32OutputSpec(TraitedSpec):
 
 class Convert64to32(SimpleInterface):
     """Downcast files from >32-bit to 32-bit if necessary."""
+
     input_spec = _Convert64to32InputSpec
     output_spec = _Convert64to32OutputSpec
 
