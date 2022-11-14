@@ -455,7 +455,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("confounds_file_dropped_TR", "confounds_file"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
-                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_tsv"),
+                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
             ]),
             (remove_dummy_scans, censor_report, [
                 ("dummy_scans", "dummy_scans"),
