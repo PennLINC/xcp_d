@@ -421,44 +421,21 @@ def load_confound_matrix(original_file, params, custom_confounds=None, confound_
     return confound
 
 
-def load_aroma(datafile):
+def load_aroma(confounds_df):
     """Extract aroma confounds from a confounds TSV file.
 
     Parameters
     ----------
-    datafile : str
-        Path to the preprocessed BOLD file for which to extract AROMA confounds.
+    confounds_df : :obj:`pandas.DataFrame`
+        The confounds DataFrame.
 
     Returns
     -------
-    aroma : pandas.DataFrame
+    pandas.DataFrame
         The AROMA noise components.
     """
-    #  Pull out aroma and melodic_ts files
-    if "space" in os.path.basename(datafile):
-        aroma_noise = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_AROMAnoiseICs.csv"
-        )
-        melodic_ts = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_desc-MELODIC_mixing.tsv"
-        )
-    else:
-        aroma_noise = datafile.split("_desc-preproc_bold.nii.gz")[0] + "_AROMAnoiseICs.csv"
-        melodic_ts = datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-MELODIC_mixing.tsv"
-    # Load data
-    aroma_noise = np.genfromtxt(
-        aroma_noise,
-        delimiter=",",
-    )
-    aroma_noise = [np.int(i) - 1 for i in aroma_noise]  # change to 0-based index
-
-    # Load in meloditc_ts
-    melodic = pd.read_csv(melodic_ts, header=None, delimiter="\t", encoding="utf-8")
-
-    # Drop aroma_noise from melodic_ts
-    aroma = melodic.drop(aroma_noise, axis=1)
-
-    return aroma
+    aroma_motion_columns = [c for c in confounds_df.columns if c.startswith("aroma_motion_")]
+    return confounds_df[aroma_motion_columns]
 
 
 @fill_doc
