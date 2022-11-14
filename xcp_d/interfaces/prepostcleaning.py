@@ -111,6 +111,7 @@ class _Convert64to32OutputSpec(TraitedSpec):
 
 
 class Convert64to32(SimpleInterface):
+    """Downcast files from >32-bit to 32-bit if necessary."""
     input_spec = _Convert64to32InputSpec
     output_spec = _Convert64to32OutputSpec
 
@@ -126,6 +127,7 @@ class Convert64to32(SimpleInterface):
 
 
 def downcast_to_32(in_file):
+    """Downcast a file from >32-bit to 32-bit if necessary."""
     if in_file is None:
         return in_file
 

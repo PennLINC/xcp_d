@@ -16,7 +16,12 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.interfaces.prepostcleaning import CensorScrub, Convert64to32, Interpolate, RemoveTR
+from xcp_d.interfaces.prepostcleaning import (
+    CensorScrub,
+    Convert64to32,
+    Interpolate,
+    RemoveTR,
+)
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.report import FunctionalSummary
