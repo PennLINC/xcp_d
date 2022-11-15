@@ -247,25 +247,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
 
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "processed_bold",
-                "smoothed_bold",
-                "alff_out",
-                "smoothed_alff",
-                "reho_out",
-                "atlas_names",
-                "timeseries",
-                "correlations",
-                "qc_file",
-                "filtered_motion",
-                "tmask",
-            ],
-        ),
-        name="outputnode",
-    )
-
     mem_gbx = _create_mem_gb(bold_file)
 
     get_custom_confounds_file = pe.Node(
@@ -545,25 +526,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
         (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
-        (qc_report_wf, outputnode, [("outputnode.qc_file", "qc_file")])
     ])
-
-    workflow.connect([
-        (filtering_wf, outputnode, [('filtered_file', 'processed_bold')]),
-        (censor_scrub, outputnode, [('filtered_motion', 'filtered_motion'),
-                                    ('tmask', 'tmask')]),
-        (resdsmoothing_wf, outputnode, [('outputnode.smoothed_bold',
-                                         'smoothed_bold')]),
-        (reho_compute_wf, outputnode, [('outputnode.reho_out', 'reho_out')]),
-        (fcon_ts_wf, outputnode, [('outputnode.atlas_names', 'atlas_names'),
-                                  ('outputnode.correlations', 'correlations'),
-                                  ('outputnode.timeseries', 'timeseries')]),
-    ])
-
-    if bandpass_filter:
-        workflow.connect([
-            (alff_compute_wf, outputnode, [('outputnode.alff_out', 'alff_out')]),
-        ])
 
     # write derivatives
     workflow.connect([
