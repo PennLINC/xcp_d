@@ -70,6 +70,7 @@ def init_qc_report_wf(
     Inputs
     ------
     preprocessed_bold_file
+    boldref
     bold_mask
     t1w_mask
     %(mni_to_t1w)s
@@ -88,6 +89,7 @@ def init_qc_report_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold_file",
+                "boldref",
                 "bold_mask",
                 "t1w_mask",
                 "mni_to_t1w",
@@ -259,7 +261,7 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_parc, [("ref_file", "reference_image")]),
+            (inputnode, resample_parc, [("boldref", "reference_image")]),
             (get_std2native_transform, resample_parc, [("transform_list", "transforms")]),
         ])
         # fmt:on
@@ -362,10 +364,10 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_report_censoring, [("namesource", "source_file")]),
-        (inputnode, ds_report_qualitycontrol, [("namesource", "source_file")]),
-        (inputnode, ds_report_preprocessing, [("namesource", "source_file")]),
-        (inputnode, ds_report_postprocessing, [("namesource", "source_file")]),
+        (inputnode, ds_report_censoring, [("preprocessed_bold_file", "source_file")]),
+        (inputnode, ds_report_qualitycontrol, [("preprocessed_bold_file", "source_file")]),
+        (inputnode, ds_report_preprocessing, [("preprocessed_bold_file", "source_file")]),
+        (inputnode, ds_report_postprocessing, [("preprocessed_bold_file", "source_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
         (qcreport, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
