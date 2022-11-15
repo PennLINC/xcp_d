@@ -433,7 +433,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
-            ("mask_file", "inputnode.mask_file"),
+            ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
             ("mni_to_t1w", "inputnode.mni_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),

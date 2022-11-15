@@ -70,7 +70,7 @@ def init_qc_report_wf(
     Inputs
     ------
     preprocessed_bold_file
-    mask_file
+    bold_mask
     t1w_mask
     %(mni_to_t1w)s
     t1w_to_native
@@ -88,7 +88,7 @@ def init_qc_report_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold_file",
-                "mask_file",
+                "bold_mask",
                 "t1w_mask",
                 "mni_to_t1w",
                 "t1w_to_native",
@@ -184,7 +184,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, warp_boldmask_to_t1w, [
-                ("mask_file", "input_image"),
+                ("bold_mask", "input_image"),
                 ("t1w_mask", "reference_image"),
             ]),
             (get_native2space_transforms, warp_boldmask_to_t1w, [
@@ -208,7 +208,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, warp_boldmask_to_mni, [
-                ("mask_file", "input_image"),
+                ("bold_mask", "input_image"),
             ]),
             (get_native2space_transforms, warp_boldmask_to_mni, [
                 ("bold_to_std_xforms", "transforms"),
@@ -280,7 +280,7 @@ def init_qc_report_wf(
         (inputnode, qcreport, [
             ("preprocessed_bold_file", "bold_file"),
             ("t1w_mask", "t1w_mask"),
-            ("mask_file", "mask_file"),
+            ("bold_mask", "mask_file"),
             ("cleaned_file", "cleaned_file")
         ]),
         (qcreport, outputnode, [
