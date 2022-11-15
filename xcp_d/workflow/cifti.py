@@ -15,9 +15,7 @@ from num2words import num2words
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
-from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.regression import CiftiDespike, Regress
-from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_design_matrix
@@ -25,6 +23,7 @@ from xcp_d.utils.utils import consolidate_confounds, get_customfile, stringforpa
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
+from xcp_d.workflow.plotting import init_qc_report_wf
 from xcp_d.workflow.postprocessing import init_resd_smoothing
 from xcp_d.workflow.restingstate import init_cifti_reho_wf, init_compute_alff_wf
 
@@ -405,30 +404,29 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         n_procs=omp_nthreads,
     )
 
-    qcreport = pe.Node(
-        QCPlot(
-            TR=TR,
-            head_radius=head_radius,
-        ),
-        name="qc_report",
-        mem_gb=mem_gbx["resampled"],
-        n_procs=omp_nthreads,
+    qc_report_wf = init_qc_report_wf(
+        output_dir=output_dir,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        band_stop_max=band_stop_max,
+        band_stop_min=band_stop_min,
+        motion_filter_order=motion_filter_order,
+        fd_thresh=fd_thresh,
+        head_radius=head_radius,
+        mem_gb=mem_gbx["timeseries"],
+        omp_nthreads=omp_nthreads,
+        cifti=True,
+        name="qc_report_wf",
     )
 
-    censor_report = pe.Node(
-        CensoringPlot(
-            TR=TR,
-            head_radius=head_radius,
-            motion_filter_type=motion_filter_type,
-            band_stop_max=band_stop_max,
-            band_stop_min=band_stop_min,
-            motion_filter_order=motion_filter_order,
-            fd_thresh=fd_thresh,
-        ),
-        name="censor_report",
-        mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
-    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, qc_report_wf, [(
+            ("bold_file", "inputnode.preprocessed_bold_file"),
+            ("mni_to_t1w", "inputnode.mni_to_t1w"),
+        )]),
+    ])
+    # fmt:on
 
     # Remove TR first
     if dummy_scans:
@@ -457,11 +455,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
             ]),
-            (remove_dummy_scans, censor_report, [
-                ("dummy_scans", "dummy_scans"),
-            ]),
-            (remove_dummy_scans, qcreport, [
-                ("dummy_scans", "dummy_scans"),
+            (remove_dummy_scans, qc_report_wf, [
+                ("dummy_scans", "inputnode.dummy_scans"),
             ]),
         ])
         # fmt:on
@@ -548,12 +543,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # qc report
     workflow.connect([
-        (inputnode, qcreport, [("bold_file", "bold_file")]),
-        (inputnode, censor_report, [("bold_file", "bold_file")]),
-        (filtering_wf, qcreport, [('filtered_file', 'cleaned_file')]),
-        (censor_scrub, qcreport, [("tmask", "tmask")]),
-        (censor_scrub, censor_report, [('tmask', 'tmask')]),
-        (qcreport, outputnode, [('qc_file', 'qc_file')])
+        (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
+        (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
+        (qc_report_wf, outputnode, [("outputnode.qc_file", "qc_file")])
     ])
 
     workflow.connect([
@@ -590,7 +582,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             [('outputnode.atlas_names', 'inputnode.atlas_names'),
              ('outputnode.correlations', 'inputnode.correlations'),
              ('outputnode.timeseries', 'inputnode.timeseries')]),
-        (qcreport, write_derivative_wf, [('qc_file', 'inputnode.qc_file')])
     ])
 
     if bandpass_filter:
@@ -601,34 +592,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ]),
         ])
     # fmt:on
-
-    functional_qc = pe.Node(
-        FunctionalSummary(bold_file=bold_file, TR=TR),
-        name="qcsummary",
-        run_without_submitting=True,
-    )
-
-    ds_report_qualitycontrol = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="qualitycontrol",
-            source_file=bold_file,
-            datatype="figures",
-        ),
-        name="ds_report_qualitycontrol",
-        run_without_submitting=True,
-    )
-
-    ds_report_preprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            desc="preprocessing",
-            datatype="figures",
-        ),
-        name="ds_report_preprocessing",
-        run_without_submitting=True,
-    )
 
     ds_design_matrix_plot = pe.Node(
         DerivativesDataSink(
@@ -641,30 +604,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         ),
         name="ds_design_matrix_plot",
         run_without_submitting=False,
-    )
-
-    ds_report_censoring = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            datatype="figures",
-            desc="censoring",
-            suffix="motion",
-            extension=".svg",
-        ),
-        name="ds_report_censoring",
-        run_without_submitting=False,
-    )
-
-    ds_report_postprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            desc="postprocessing",
-            datatype="figures",
-        ),
-        name="ds_report_postprocessing",
-        run_without_submitting=True,
     )
 
     ds_report_connectivity = pe.Node(
@@ -703,12 +642,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
-        (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
-        (qcreport, functional_qc, [('qc_file', 'qc_file')]),
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
-        (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
         (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])

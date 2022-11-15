@@ -448,6 +448,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        cifti=False,
         name="qc_report_wf",
     )
 

@@ -23,6 +23,7 @@ def init_qc_report_wf(
     head_radius,
     mem_gb,
     omp_nthreads,
+    cifti,
     name="qc_report_wf",
 ):
     """Generate quality control figures and a QC file."""
@@ -88,122 +89,125 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
-    get_native2space_transforms = pe.Node(
-        Function(
-            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            output_names=[
-                "bold_to_std_xforms",
-                "bold_to_std_xforms_invert",
-                "bold_to_t1w_xforms",
-                "bold_to_t1w_xforms_invert",
-            ],
-            function=get_bold2std_and_t1w_xforms,
-        ),
-        name="get_native2space_transforms",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_native2space_transforms, [
-            ("preprocessed_bold_file", "bold_file"),
-            ("mni_to_t1w", "mni_to_t1w"),
-            ("t1w_to_native", "t1w_to_native"),
-        ]),
-    ])
-    # fmt:on
-
-    warp_boldmask_to_t1w = pe.Node(
-        ApplyTransforms(
-            dimension=3,
-            interpolation="NearestNeighbor",
-        ),
-        name="warp_boldmask_to_t1w",
-        n_procs=omp_nthreads,
-        mem_gb=mem_gb,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, warp_boldmask_to_t1w, [
-            ("mask_file", "input_image"),
-            ("t1w_mask", "reference_image"),
-        ]),
-        (get_native2space_transforms, warp_boldmask_to_t1w, [
-            ("bold_to_t1w_xforms", "transforms"),
-            ("bold_to_t1w_xforms_invert", "invert_transform_flags"),
-        ]),
-    ])
-    # fmt:on
-
-    warp_boldmask_to_mni = pe.Node(
-        ApplyTransforms(
-            dimension=3,
-            reference_image=brain_mask_template,
-            interpolation="NearestNeighbor",
-        ),
-        name="warp_boldmask_to_mni",
-        n_procs=omp_nthreads,
-        mem_gb=mem_gb,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, warp_boldmask_to_mni, [
-            ("mask_file", "input_image"),
-        ]),
-        (get_native2space_transforms, warp_boldmask_to_mni, [
-            ("bold_to_std_xforms", "transforms"),
-            ("bold_to_std_xforms_invert", "invert_transform_flags"),
-        ]),
-    ])
-    # fmt:on
-
-    # Obtain transforms for QC report
-    get_std2native_transform = pe.Node(
-        Function(
-            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
-            output_names=["transform_list"],
-            function=get_std2bold_xforms,
-        ),
-        name="get_std2native_transform",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_std2native_transform, [
-            ("preprocessed_bold_file", "bold_file"),
-            ("mni_to_t1w", "mni_to_t1w"),
-            ("t1w_to_native", "t1w_to_native"),
-        ]),
-    ])
-    # fmt:on
-
-    # Resample discrete segmentation for QCPlot into the appropriate space.
-    resample_parc = pe.Node(
-        ApplyTransforms(
-            dimension=3,
-            input_image=str(
-                get_template(
-                    "MNI152NLin2009cAsym",
-                    resolution=1,
-                    desc="carpet",
-                    suffix="dseg",
-                    extension=[".nii", ".nii.gz"],
-                )
+    if not cifti:
+        # We need the BOLD mask in T1w and standard spaces for QC metric calculation.
+        # This is only possible for nifti inputs.
+        get_native2space_transforms = pe.Node(
+            Function(
+                input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+                output_names=[
+                    "bold_to_std_xforms",
+                    "bold_to_std_xforms_invert",
+                    "bold_to_t1w_xforms",
+                    "bold_to_t1w_xforms_invert",
+                ],
+                function=get_bold2std_and_t1w_xforms,
             ),
-            interpolation="MultiLabel",
-        ),
-        name="resample_parc",
-        n_procs=omp_nthreads,
-        mem_gb=mem_gb,
-    )
+            name="get_native2space_transforms",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, resample_parc, [("ref_file", "reference_image")]),
-        (get_std2native_transform, resample_parc, [("transform_list", "transforms")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, get_native2space_transforms, [
+                ("preprocessed_bold_file", "bold_file"),
+                ("mni_to_t1w", "mni_to_t1w"),
+                ("t1w_to_native", "t1w_to_native"),
+            ]),
+        ])
+        # fmt:on
+
+        warp_boldmask_to_t1w = pe.Node(
+            ApplyTransforms(
+                dimension=3,
+                interpolation="NearestNeighbor",
+            ),
+            name="warp_boldmask_to_t1w",
+            n_procs=omp_nthreads,
+            mem_gb=mem_gb,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, warp_boldmask_to_t1w, [
+                ("mask_file", "input_image"),
+                ("t1w_mask", "reference_image"),
+            ]),
+            (get_native2space_transforms, warp_boldmask_to_t1w, [
+                ("bold_to_t1w_xforms", "transforms"),
+                ("bold_to_t1w_xforms_invert", "invert_transform_flags"),
+            ]),
+        ])
+        # fmt:on
+
+        warp_boldmask_to_mni = pe.Node(
+            ApplyTransforms(
+                dimension=3,
+                reference_image=brain_mask_template,
+                interpolation="NearestNeighbor",
+            ),
+            name="warp_boldmask_to_mni",
+            n_procs=omp_nthreads,
+            mem_gb=mem_gb,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, warp_boldmask_to_mni, [
+                ("mask_file", "input_image"),
+            ]),
+            (get_native2space_transforms, warp_boldmask_to_mni, [
+                ("bold_to_std_xforms", "transforms"),
+                ("bold_to_std_xforms_invert", "invert_transform_flags"),
+            ]),
+        ])
+        # fmt:on
+
+        # Obtain transforms for QC report
+        get_std2native_transform = pe.Node(
+            Function(
+                input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+                output_names=["transform_list"],
+                function=get_std2bold_xforms,
+            ),
+            name="get_std2native_transform",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, get_std2native_transform, [
+                ("preprocessed_bold_file", "bold_file"),
+                ("mni_to_t1w", "mni_to_t1w"),
+                ("t1w_to_native", "t1w_to_native"),
+            ]),
+        ])
+        # fmt:on
+
+        # Resample discrete segmentation for QCPlot into the appropriate space.
+        resample_parc = pe.Node(
+            ApplyTransforms(
+                dimension=3,
+                input_image=str(
+                    get_template(
+                        "MNI152NLin2009cAsym",
+                        resolution=1,
+                        desc="carpet",
+                        suffix="dseg",
+                        extension=[".nii", ".nii.gz"],
+                    )
+                ),
+                interpolation="MultiLabel",
+            ),
+            name="resample_parc",
+            n_procs=omp_nthreads,
+            mem_gb=mem_gb,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_parc, [("ref_file", "reference_image")]),
+            (get_std2native_transform, resample_parc, [("transform_list", "transforms")]),
+        ])
+        # fmt:on
 
     qcreport = pe.Node(
         QCPlot(
@@ -224,20 +228,24 @@ def init_qc_report_wf(
             ("mask_file", "mask_file"),
             ("cleaned_file", "cleaned_file")
         ]),
-        (resample_parc, qcreport, [
-            ("output_image", "seg_file"),
-        ]),
-        (warp_boldmask_to_t1w, qcreport, [
-            ("output_image", "bold2T1w_mask"),
-        ]),
-        (warp_boldmask_to_mni, qcreport, [
-            ("output_image", "bold2temp_mask"),
-        ]),
         (qcreport, outputnode, [
             ("qc_file", "qc_file"),
         ]),
     ])
     # fmt:on
+
+    if not cifti:
+        workflow.connect([
+            (resample_parc, qcreport, [
+                ("output_image", "seg_file"),
+            ]),
+            (warp_boldmask_to_t1w, qcreport, [
+                ("output_image", "bold2T1w_mask"),
+            ]),
+            (warp_boldmask_to_mni, qcreport, [
+                ("output_image", "bold2temp_mask"),
+            ]),
+        ])
 
     functional_qc = pe.Node(
         FunctionalSummary(TR=TR),
