@@ -9,9 +9,11 @@ from templateflow.api import get as get_template
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
 
+@fill_doc
 def init_qc_report_wf(
     output_dir,
     TR,
@@ -26,7 +28,60 @@ def init_qc_report_wf(
     cifti,
     name="qc_report_wf",
 ):
-    """Generate quality control figures and a QC file."""
+    """Generate quality control figures and a QC file.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.plotting import init_qc_report_wf
+            wf = init_qc_report_wf(
+                output_dir=".",
+                TR=0.5,
+                motion_filter_type=None,
+                band_stop_max=0,
+                band_stop_min=0,
+                motion_filter_order=1,
+                fd_thresh=0.2,
+                head_radius=50,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                cifti=False,
+                name="qc_report_wf",
+            )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    TR
+    %(motion_filter_type)s
+    %(band_stop_max)s
+    %(band_stop_min)s
+    %(motion_filter_order)s
+    %(fd_thresh)s
+    %(head_radius)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(cifti)s
+    %(name)s
+        Default is "qc_report_wf".
+
+    Inputs
+    ------
+    preprocessed_bold_file
+    mask_file
+    t1w_mask
+    %(mni_to_t1w)s
+    t1w_to_native
+    %(dummy_scans)s
+    cleaned_file
+    tmask
+
+    Outputs
+    -------
+    qc_file
+    """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
