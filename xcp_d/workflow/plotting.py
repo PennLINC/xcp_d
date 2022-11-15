@@ -235,6 +235,7 @@ def init_qc_report_wf(
     # fmt:on
 
     if not cifti:
+        # fmt:off
         workflow.connect([
             (resample_parc, qcreport, [
                 ("output_image", "seg_file"),
@@ -246,6 +247,7 @@ def init_qc_report_wf(
                 ("output_image", "bold2temp_mask"),
             ]),
         ])
+        # fmt:on
 
     functional_qc = pe.Node(
         FunctionalSummary(TR=TR),
