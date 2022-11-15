@@ -162,7 +162,25 @@ def _drop_dummy_scans(bold_file, dummy_scans):
 
 
 def downcast_to_32(in_file):
-    """Downcast a file from >32-bit to 32-bit if necessary."""
+    """Downcast a file from >32-bit to 32-bit if necessary.
+
+    Parameters
+    ----------
+    in_file : None or str
+        Path to a file to downcast.
+        If None, None will be returned.
+        If the file is lower-precision than 32-bit,
+        then it will be returned without modification.
+
+    Returns
+    -------
+    None or str
+        Path to the downcast file.
+        If in_file is None, None will be returned.
+        If in_file is a file with lower than 32-bit precision,
+        then it will be returned without modification.
+        Otherwise, a new path will be returned.
+    """
     if in_file is None:
         return in_file
 
@@ -189,6 +207,7 @@ def downcast_to_32(in_file):
         out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
         img.to_filename(out_file)
     else:
+        raise Exception(dtype)
         out_file = in_file
 
     return out_file
