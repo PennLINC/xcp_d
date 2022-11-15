@@ -402,10 +402,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (inputnode, qc_report_wf, [(
+        (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
             ("mni_to_t1w", "inputnode.mni_to_t1w"),
-        )]),
+        ]),
     ])
     # fmt:on
 
