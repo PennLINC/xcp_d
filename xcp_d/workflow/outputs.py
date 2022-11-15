@@ -33,8 +33,10 @@ def init_writederivatives_wf(
             from xcp_d.workflow.outputs import init_writederivatives_wf
             wf = init_writederivatives_wf(
                 bold_file="/path/to/file.nii.gz",
-                lowpass=6.,
-                highpass=60.,
+                bandpass_filter=True,
+                lowpass=0.1,
+                highpass=0.008,
+                motion_filter_type=None,
                 smoothing=6,
                 params="36P",
                 cifti=False,

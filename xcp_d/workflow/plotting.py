@@ -258,7 +258,7 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, functional_qc, [("preprocessed_bold_file", "bold_file")])
+        (inputnode, functional_qc, [("preprocessed_bold_file", "bold_file")]),
         (qcreport, functional_qc, [("qc_file", "qc_file")]),
     ])
     # fmt:on
