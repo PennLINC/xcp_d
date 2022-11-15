@@ -9,7 +9,7 @@ from templateflow.api import get as get_template
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.utils.utils import get_std2bold_xforms
+from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
 
 def init_qc_report_wf(
@@ -34,16 +34,33 @@ def init_qc_report_wf(
                 "preprocessed_bold_file",
                 "mask_file",
                 "t1w_mask",
-                "bold_to_std_xforms",
-                "bold_to_std_xforms_invert",
-                "bold_to_t1w_xforms",
-                "bold_to_t1w_xforms_invert",
+                "mni_to_t1w",
+                "t1w_to_native",
                 "dummy_scans",
                 "cleaned_file",
                 "tmask",
             ],
         ),
         name="inputnode",
+    )
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "qc_file",
+            ],
+        ),
+        name="outputnode",
+    )
+
+    brain_mask_template = str(
+        get_template(
+            "MNI152NLin2009cAsym",
+            resolution=2,
+            desc="brain",
+            suffix="mask",
+            extension=[".nii", ".nii.gz"],
+        )
     )
 
     censor_report = pe.Node(
@@ -71,6 +88,30 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
+    get_native2space_transforms = pe.Node(
+        Function(
+            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            output_names=[
+                "bold_to_std_xforms",
+                "bold_to_std_xforms_invert",
+                "bold_to_t1w_xforms",
+                "bold_to_t1w_xforms_invert",
+            ],
+            function=get_bold2std_and_t1w_xforms,
+        ),
+        name="get_native2space_transforms",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_native2space_transforms, [
+            ("preprocessed_bold_file", "bold_file"),
+            ("mni_to_t1w", "mni_to_t1w"),
+            ("t1w_to_native", "t1w_to_native"),
+        ]),
+    ])
+    # fmt:on
+
     warp_boldmask_to_t1w = pe.Node(
         ApplyTransforms(
             dimension=3,
@@ -85,8 +126,10 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, warp_boldmask_to_t1w, [
             ("mask_file", "input_image"),
-            ('t1w_mask', 'reference_image'),
-            ('bold_to_t1w_xforms', 'transforms'),
+            ("t1w_mask", "reference_image"),
+        ]),
+        (get_native2space_transforms, warp_boldmask_to_t1w, [
+            ("bold_to_t1w_xforms", "transforms"),
             ("bold_to_t1w_xforms_invert", "invert_transform_flags"),
         ]),
     ])
@@ -95,15 +138,7 @@ def init_qc_report_wf(
     warp_boldmask_to_mni = pe.Node(
         ApplyTransforms(
             dimension=3,
-            reference_image=str(
-                get_template(
-                    "MNI152NLin2009cAsym",
-                    resolution=2,
-                    desc="brain",
-                    suffix="mask",
-                    extension=[".nii", ".nii.gz"],
-                ),
-            ),
+            reference_image=brain_mask_template,
             interpolation="NearestNeighbor",
         ),
         name="warp_boldmask_to_mni",
@@ -115,7 +150,9 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, warp_boldmask_to_mni, [
             ("mask_file", "input_image"),
-            ('bold_to_std_xforms', 'transforms'),
+        ]),
+        (get_native2space_transforms, warp_boldmask_to_mni, [
+            ("bold_to_std_xforms", "transforms"),
             ("bold_to_std_xforms_invert", "invert_transform_flags"),
         ]),
     ])
@@ -134,7 +171,7 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, get_std2native_transform, [
-            ("bold_file", "bold_file"),
+            ("preprocessed_bold_file", "bold_file"),
             ("mni_to_t1w", "mni_to_t1w"),
             ("t1w_to_native", "t1w_to_native"),
         ]),
@@ -163,23 +200,15 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, resample_parc, [('ref_file', 'reference_image')]),
-        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
+        (inputnode, resample_parc, [("ref_file", "reference_image")]),
+        (get_std2native_transform, resample_parc, [("transform_list", "transforms")]),
     ])
     # fmt:on
 
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            template_mask=str(
-                get_template(
-                    "MNI152NLin2009cAsym",
-                    resolution=2,
-                    desc="brain",
-                    suffix="mask",
-                    extension=[".nii", ".nii.gz"],
-                )
-            ),
+            template_mask=brain_mask_template,
             head_radius=head_radius,
         ),
         name="qc_report",
@@ -190,18 +219,22 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, qcreport, [
-            ("bold_file", "bold_file"),
+            ("preprocessed_bold_file", "bold_file"),
             ("t1w_mask", "t1w_mask"),
-            ('bold_mask', 'mask_file'),
+            ("mask_file", "mask_file"),
+            ("cleaned_file", "cleaned_file")
         ]),
         (resample_parc, qcreport, [
-            ('output_image', 'seg_file'),
+            ("output_image", "seg_file"),
         ]),
         (warp_boldmask_to_t1w, qcreport, [
-            ('output_image', 'bold2T1w_mask'),
+            ("output_image", "bold2T1w_mask"),
         ]),
         (warp_boldmask_to_mni, qcreport, [
-            ('output_image', 'bold2temp_mask'),
+            ("output_image", "bold2temp_mask"),
+        ]),
+        (qcreport, outputnode, [
+            ("qc_file", "qc_file"),
         ]),
     ])
     # fmt:on
@@ -215,8 +248,8 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, functional_qc, [("namesource", "bold_file")])
-        (qcreport, functional_qc, [('qc_file', 'qc_file')]),
+        (inputnode, functional_qc, [("preprocessed_bold_file", "bold_file")])
+        (qcreport, functional_qc, [("qc_file", "qc_file")]),
     ])
     # fmt:on
 
@@ -269,9 +302,9 @@ def init_qc_report_wf(
         (inputnode, ds_report_preprocessing, [("namesource", "source_file")]),
         (inputnode, ds_report_postprocessing, [("namesource", "source_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
-        (functional_qc, ds_report_qualitycontrol, [('out_report', 'in_file')]),
-        (qcreport, ds_report_preprocessing, [('raw_qcplot', 'in_file')]),
-        (qcreport, ds_report_postprocessing, [('clean_qcplot', 'in_file')]),
+        (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
+        (qcreport, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
+        (qcreport, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
     ])
     # fmt:on
 
