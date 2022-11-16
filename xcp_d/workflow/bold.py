@@ -148,25 +148,6 @@ def init_boldpostprocess_wf(
     fmriprep_confounds_tsv
         Loaded in this workflow.
 
-    Outputs
-    -------
-    processed_bold
-        clean bold after regression and filtering
-    smoothed_bold
-        smoothed clean bold
-    alff_out
-        ALFF file. Only generated if bandpass filtering is performed.
-    smoothed_alff
-        Smoothed ALFF file. Only generated if bandpass filtering is performed.
-    reho_out
-        reho output computed by afni.3dreho
-    %(atlas_names)s
-    %(timeseries)s
-    %(correlations)s
-    qc_file
-        quality control files
-    filtered_motion
-
     References
     ----------
     .. footbibliography::
@@ -433,7 +414,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
-            ("ref_file", "boldref"),
+            ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
             ("mni_to_t1w", "inputnode.mni_to_t1w"),
@@ -583,19 +564,30 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # write derivatives
     # fmt:off
     workflow.connect([
-        (consolidate_confounds_node, write_derivative_wf, [('out_file',
-                                                            'inputnode.confounds_file')]),
-        (filtering_wf, write_derivative_wf, [('filtered_file',
-                                              'inputnode.processed_bold')]),
-        (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
-                                                  'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
-                                             ('tmask', 'inputnode.tmask')]),
-        (reho_compute_wf, write_derivative_wf, [('outputnode.reho_out',
-                                                 'inputnode.reho_out')]),
-        (fcon_ts_wf, write_derivative_wf, [('outputnode.atlas_names', 'inputnode.atlas_names'),
-                                           ('outputnode.correlations', 'inputnode.correlations'),
-                                           ('outputnode.timeseries', 'inputnode.timeseries')]),
+        (consolidate_confounds_node, write_derivative_wf, [
+            ('out_file', 'inputnode.confounds_file'),
+        ]),
+        (filtering_wf, write_derivative_wf, [
+            ('filtered_file', 'inputnode.processed_bold'),
+        ]),
+        (qc_report_wf, write_derivative_wf, [
+            ('outputnode.qc_file', 'inputnode.qc_file'),
+        ]),
+        (resdsmoothing_wf, write_derivative_wf, [
+            ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
+        ]),
+        (censor_scrub, write_derivative_wf, [
+            ('filtered_motion', 'inputnode.filtered_motion'),
+            ('tmask', 'inputnode.tmask'),
+        ]),
+        (reho_compute_wf, write_derivative_wf, [
+            ('outputnode.reho_out', 'inputnode.reho_out'),
+        ]),
+        (fcon_ts_wf, write_derivative_wf, [
+            ('outputnode.atlas_names', 'inputnode.atlas_names'),
+            ('outputnode.correlations', 'inputnode.correlations'),
+            ('outputnode.timeseries', 'inputnode.timeseries'),
+        ]),
     ])
     # fmt:on
 

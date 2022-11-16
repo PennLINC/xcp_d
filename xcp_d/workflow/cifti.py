@@ -132,26 +132,6 @@ def init_ciftipostprocess_wf(
     %(mni_to_t1w)s
     fmriprep_confounds_tsv
 
-    Outputs
-    -------
-    processed_bold
-        clean bold after regression and filtering
-    smoothed_bold
-        smoothed clean bold
-    alff_out
-        ALFF file. Only generated if bandpass filtering is performed.
-    smoothed_alff
-        Smoothed ALFF file. Only generated if bandpass filtering is performed.
-    reho_lh
-        reho left hemisphere
-    reho_rh
-        reho right hemisphere
-    %(atlas_names)s
-    %(timeseries)s
-    %(correlations)s
-    qc_file
-        quality control files
-
     References
     ----------
     .. footbibliography::
@@ -530,21 +510,30 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # write derivatives
     workflow.connect([
-        (consolidate_confounds_node, write_derivative_wf, [('out_file',
-                                                            'inputnode.confounds_file')]),
-        (filtering_wf, write_derivative_wf, [('filtered_file',
-                                              'inputnode.processed_bold')]),
-        (resdsmoothing_wf, write_derivative_wf, [('outputnode.smoothed_bold',
-                                                  'inputnode.smoothed_bold')]),
-        (censor_scrub, write_derivative_wf, [('filtered_motion', 'inputnode.filtered_motion'),
-                                             ('tmask', 'inputnode.tmask')]),
-        (reho_compute_wf, write_derivative_wf, [
-            ('outputnode.reho_out', 'inputnode.reho_out')
+        (consolidate_confounds_node, write_derivative_wf, [
+            ('out_file', 'inputnode.confounds_file'),
         ]),
-        (fcon_ts_wf, write_derivative_wf,
-            [('outputnode.atlas_names', 'inputnode.atlas_names'),
-             ('outputnode.correlations', 'inputnode.correlations'),
-             ('outputnode.timeseries', 'inputnode.timeseries')]),
+        (filtering_wf, write_derivative_wf, [
+            ('filtered_file', 'inputnode.processed_bold'),
+        ]),
+        (qc_report_wf, write_derivative_wf, [
+            ('outputnode.qc_file', 'inputnode.qc_file'),
+        ]),
+        (resdsmoothing_wf, write_derivative_wf, [
+            ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
+        ]),
+        (censor_scrub, write_derivative_wf, [
+            ('filtered_motion', 'inputnode.filtered_motion'),
+            ('tmask', 'inputnode.tmask'),
+        ]),
+        (reho_compute_wf, write_derivative_wf, [
+            ('outputnode.reho_out', 'inputnode.reho_out'),
+        ]),
+        (fcon_ts_wf, write_derivative_wf, [
+            ('outputnode.atlas_names', 'inputnode.atlas_names'),
+            ('outputnode.correlations', 'inputnode.correlations'),
+            ('outputnode.timeseries', 'inputnode.timeseries'),
+        ]),
     ])
 
     if bandpass_filter:
