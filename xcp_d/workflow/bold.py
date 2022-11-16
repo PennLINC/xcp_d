@@ -459,6 +459,9 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:
         # fmt:off
         workflow.connect([
+            (inputnode, qc_report_wf, [
+                ("dummy_scans", "inputnode.dummy_scans"),
+            ]),
             (inputnode, censor_scrub, [
                 ('bold_file', 'in_file'),
                 # fMRIPrep confounds file is needed for filtered motion.
