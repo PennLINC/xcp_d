@@ -33,25 +33,11 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
     )
-    tmask = File(exists=True, mandatory=False, desc="Temporal mask. Current unused.")
-    dummy_scans = traits.Int(
-        mandatory=False,
-        default_value=0,
-        usedefault=True,
-        desc="Dummy time to drop",
-    )
+    tmask = File(exists=True, mandatory=True, desc="Temporal mask.")
+    dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
-    head_radius = traits.Float(
-        mandatory=False,
-        default_value=50,
-        usedefault=True,
-        desc="Head radius; recommended value is 40 for babies",
-    )
-    motion_filter_type = traits.Either(
-        None,
-        traits.Str,
-        mandatory=True,
-    )
+    head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
+    motion_filter_type = traits.Either(None, traits.Str, mandatory=True)
     motion_filter_order = traits.Int(mandatory=True)
     band_stop_min = traits.Either(
         None,
@@ -124,6 +110,18 @@ class CensoringPlot(SimpleInterface):
                 color=palette[1],
             )
 
+        # Plot censored volumes as vertical lines
+        tmask_df = pd.read_table(self.inputs.tmask)
+        tmask_arr = tmask_df["framewise_displacement"].values
+        tmask_idx = np.where(tmask_arr)[0]
+        for i_idx, idx in enumerate(tmask_idx):
+            if i_idx == 0:
+                label = "Censored Volumes"
+            else:
+                label = ""
+
+            ax.axvline(idx * self.inputs.TR, label=label, color=palette[3], alpha=0.5)
+
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
             filtered_motion_df = load_motion(
@@ -147,21 +145,6 @@ class CensoringPlot(SimpleInterface):
             )
         else:
             filtered_fd_timeseries = preproc_fd_timeseries.copy()
-
-        # NOTE: TS- Probably should replace with the actual tmask file.
-        tmask = filtered_fd_timeseries >= self.inputs.fd_thresh
-        tmask[:dummy_scans] = 0
-
-        # Only plot censored volumes if any were flagged
-        if sum(tmask) > 0:
-            tmask_idx = np.where(tmask)[0]
-            for i_idx, idx in enumerate(tmask_idx):
-                if i_idx == 0:
-                    label = "Censored Volumes"
-                else:
-                    label = ""
-
-                ax.axvline(idx * self.inputs.TR, label=label, color=palette[3], alpha=0.5)
 
         ax.set_xlim(0, max(time_array))
         y_max = (
@@ -195,27 +178,19 @@ class CensoringPlot(SimpleInterface):
 
 class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Raw bold file from fMRIPrep")
-    mask_file = File(exists=True, mandatory=False, desc="Mask file from nifti")
-    seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
+    dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
+    tmask = File(exists=True, mandatory=True, desc="Temporal mask")
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
-    tmask = File(exists=True, mandatory=False, desc="Temporal mask")
-    dummy_scans = traits.Int(
-        mandatory=False,
-        default_value=0,
-        usedefault=True,
-        desc="Dummy time to drop",
-    )
     TR = traits.Float(mandatory=True, desc="Repetition Time")
-    head_radius = traits.Float(
-        mandatory=False,
-        default_value=50,
-        usedefault=True,
-        desc="Head radius; recommended value is 40 for babies",
-    )
+    head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
+    template_mask = File(exists=True, mandatory=True, desc="Template mask")
+    mask_file = File(exists=True, mandatory=True, desc="Mask file from nifti")
+    t1w_mask = File(exists=True, mandatory=True, desc="Mask in T1W")
+
+    # Inputs used only for nifti data
+    seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
     bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
     bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
-    template_mask = File(exists=True, mandatory=False, desc="Template mask")
-    t1w_mask = File(exists=True, mandatory=False, desc="Mask in T1W")
 
 
 class _QCPlotOutputSpec(TraitedSpec):

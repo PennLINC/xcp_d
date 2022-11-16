@@ -283,7 +283,9 @@ def init_qc_report_wf(
             ("preprocessed_bold_file", "bold_file"),
             ("t1w_mask", "t1w_mask"),
             ("bold_mask", "mask_file"),
-            ("cleaned_file", "cleaned_file")
+            ("cleaned_file", "cleaned_file"),
+            ("tmask", "tmask"),
+            ("dummy_scans", "dummy_scans"),
         ]),
         (qcreport, outputnode, [
             ("qc_file", "qc_file"),
