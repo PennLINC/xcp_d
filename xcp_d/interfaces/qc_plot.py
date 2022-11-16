@@ -15,6 +15,7 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
+from nipype.interfaces.base.traits_extension import isdefined
 
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
@@ -109,6 +110,11 @@ class CensoringPlot(SimpleInterface):
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
+        # This check is necessary, because init_qc_report_wf connects dummy_scans from the
+        # inputnode, forcing it to be undefined instead of using the default when not set.
+        if not isdefined(dummy_scans):
+            dummy_scans = 0
+
         if self.inputs.dummy_scans:
             ax.axvspan(
                 0,
@@ -144,7 +150,7 @@ class CensoringPlot(SimpleInterface):
 
         # NOTE: TS- Probably should replace with the actual tmask file.
         tmask = filtered_fd_timeseries >= self.inputs.fd_thresh
-        tmask[:dummy_scans] = False
+        tmask[:dummy_scans] = 0
 
         # Only plot censored volumes if any were flagged
         if sum(tmask) > 0:
