@@ -47,7 +47,7 @@ def init_t1w_wf(
     mem_gb,
     name="t1w_wf",
 ):
-    """Copy T1w and segmentation to the derivative directory.
+    """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
 
     If necessary, this workflow will also warp the images to standard space.
 
@@ -70,6 +70,8 @@ def init_t1w_wf(
     ----------
     %(output_dir)s
     %(input_type)s
+    t2w_available : bool
+        True if a preprocessed T2w is available, False if not.
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -78,7 +80,11 @@ def init_t1w_wf(
     Inputs
     ------
     t1w : str
-        Path to the T1w file.
+        Path to the preprocessed T1w file.
+        This file may be in standard space or native T1w space.
+    t2w : str
+        Path to the preprocessed T2w file.
+        This file may be in standard space or native T1w space.
     t1seg : str
         Path to the T1w segmentation file.
     %(t1w_to_mni)s
@@ -95,6 +101,7 @@ def init_t1w_wf(
     )
 
     if input_type in ("dcan", "hcp"):
+        # T1w and T2w are assumed to be in standard space already
         ds_t1wmni = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -114,12 +121,10 @@ def init_t1w_wf(
         )
 
         # fmt:off
-        workflow.connect(
-            [
-                (inputnode, ds_t1wmni, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
-            ]
-        )
+        workflow.connect([
+            (inputnode, ds_t1wmni, [("t1w", "in_file")]),
+            (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+        ])
         # fmt:on
 
         if t2w_available:
@@ -131,14 +136,16 @@ def init_t1w_wf(
                 name="ds_t2wmni",
                 run_without_submitting=False,
             )
+
             # fmt:off
             workflow.connect([(inputnode, ds_t2wmni, [("t2w", "in_file")])])
             # fmt:on
 
     else:
-        # #TM: need to replace MNI92FSL xfm with the correct
-        # xfm from the MNI output space of fMRIPrep/NiBabies
-        # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
+        # T1w and T2w are assumed to be in native T1w space, and must be warped to standard space.
+
+        # TM: need to replace MNI92FSL xfm with the correct xfm from the MNI output space of
+        # fMRIPrep/NiBabies (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
         # to MNI152NLin6Asym.
         t1w_transform = pe.Node(
             ApplyTransformsx(
@@ -208,22 +215,35 @@ def init_t1w_wf(
                 name="ds_t2wmni",
                 run_without_submitting=False,
             )
+
             # fmt:off
             workflow.connect([
-                (inputnode, t2w_transform, [("t2w", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
-                (t2w_transform, ds_t2wmni, [("output_image", "in_file")]),
+                (inputnode, t2w_transform, [
+                    ("t2w", "input_image"),
+                    ("t1w_to_mni", "transforms"),
+                ]),
+                (t2w_transform, ds_t2wmni, [
+                    ("output_image", "in_file"),
+                ]),
             ])
             # fmt:on
 
         # fmt:off
         workflow.connect([
-            (inputnode, t1w_transform, [("t1w", "input_image"),
-                                        ("t1w_to_mni", "transforms")]),
-            (inputnode, seg_transform, [("t1seg", "input_image"),
-                                        ("t1w_to_mni", "transforms")]),
-            (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
-            (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
+            (inputnode, t1w_transform, [
+                ("t1w", "input_image"),
+                ("t1w_to_mni", "transforms"),
+            ]),
+            (inputnode, seg_transform, [
+                ("t1seg", "input_image"),
+                ("t1w_to_mni", "transforms"),
+            ]),
+            (t1w_transform, ds_t1wmni, [
+                ("output_image", "in_file"),
+            ]),
+            (seg_transform, ds_t1wseg, [
+                ("output_image", "in_file"),
+            ]),
         ])
         # fmt:on
 
