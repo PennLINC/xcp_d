@@ -297,7 +297,7 @@ def init_qc_report_wf(
             (inputnode, qcreport, [
                 ("t1w_mask", "t1w_mask"),
                 ("bold_mask", "mask_file"),
-            ])
+            ]),
             (resample_parc, qcreport, [
                 ("output_image", "seg_file"),
             ]),
@@ -310,7 +310,7 @@ def init_qc_report_wf(
         ])
         # fmt:on
     else:
-        qcreport.inputnode.inputs.mask_file = None
+        qcreport.inputs.mask_file = None
 
     functional_qc = pe.Node(
         FunctionalSummary(TR=TR),
