@@ -104,7 +104,7 @@ class CensoringPlot(SimpleInterface):
         if self.inputs.dummy_scans:
             ax.axvspan(
                 0,
-                self.inputs.dummy_scans,
+                self.inputs.dummy_scans * self.inputs.TR,
                 label="Dummy Volumes",
                 alpha=0.5,
                 color=palette[1],
@@ -120,7 +120,13 @@ class CensoringPlot(SimpleInterface):
             else:
                 label = ""
 
-            ax.axvline(idx * self.inputs.TR, label=label, color=palette[3], alpha=0.5)
+            idx_after_dummy_scans = idx + dummy_scans
+            ax.axvline(
+                idx_after_dummy_scans * self.inputs.TR,
+                label=label,
+                color=palette[3],
+                alpha=0.5,
+            )
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
