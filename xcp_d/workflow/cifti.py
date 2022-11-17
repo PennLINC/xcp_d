@@ -24,7 +24,7 @@ from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
 from xcp_d.workflow.plotting import init_qc_report_wf
-from xcp_d.workflow.postprocessing import init_resd_smoothing
+from xcp_d.workflow.postprocessing import init_resd_smoothing_wf
 from xcp_d.workflow.restingstate import init_cifti_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -291,7 +291,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         omp_nthreads=omp_nthreads,
     )
 
-    resdsmoothing_wf = init_resd_smoothing(
+    resd_smoothing_wf = init_resd_smoothing_wf(
         mem_gb=mem_gbx["timeseries"],
         smoothing=smoothing,
         cifti=True,
@@ -489,7 +489,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                                                        'in_file')])])
 
     # residual smoothing
-    workflow.connect([(filtering_wf, resdsmoothing_wf,
+    workflow.connect([(filtering_wf, resd_smoothing_wf,
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
@@ -522,7 +522,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),
         ]),
-        (resdsmoothing_wf, write_derivative_wf, [
+        (resd_smoothing_wf, write_derivative_wf, [
             ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
         ]),
         (censor_scrub, write_derivative_wf, [
