@@ -281,8 +281,6 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, qcreport, [
             ("preprocessed_bold_file", "bold_file"),
-            ("t1w_mask", "t1w_mask"),
-            ("bold_mask", "mask_file"),
             ("cleaned_file", "cleaned_file"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
@@ -296,6 +294,10 @@ def init_qc_report_wf(
     if not cifti:
         # fmt:off
         workflow.connect([
+            (inputnode, qcreport, [
+                ("t1w_mask", "t1w_mask"),
+                ("bold_mask", "mask_file"),
+            ])
             (resample_parc, qcreport, [
                 ("output_image", "seg_file"),
             ]),
@@ -307,6 +309,8 @@ def init_qc_report_wf(
             ]),
         ])
         # fmt:on
+    else:
+        qcreport.inputnode.inputs.mask_file = None
 
     functional_qc = pe.Node(
         FunctionalSummary(TR=TR),

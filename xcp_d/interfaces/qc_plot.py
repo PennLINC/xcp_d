@@ -183,12 +183,17 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
-    template_mask = File(exists=True, mandatory=True, desc="Template mask")
-    mask_file = File(exists=True, mandatory=True, desc="Mask file from nifti")
-    t1w_mask = File(exists=True, mandatory=True, desc="Mask in T1W")
+    mask_file = traits.Either(
+        None,
+        File(exists=True),
+        mandatory=True,
+        desc="Mask file from nifti. May be None, for CIFTI processing.",
+    )
 
     # Inputs used only for nifti data
     seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
+    t1w_mask = File(exists=True, mandatory=False, desc="Mask in T1W")
+    template_mask = File(exists=True, mandatory=False, desc="Template mask")
     bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
     bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
 
