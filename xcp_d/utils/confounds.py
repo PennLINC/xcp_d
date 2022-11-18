@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from nilearn.interfaces.fmriprep import load_confounds
 from nipype import logging
 from scipy.signal import filtfilt, firwin, iirnotch
 
@@ -156,168 +157,15 @@ def load_motion(
     return motion_confounds_df
 
 
-def load_global_signal(confounds_df):
-    """Select global signal from confounds DataFrame.
-
-    Parameters
-    ----------
-    confounds_df : pandas.DataFrame
-        The confounds DataFrame from which to extract information.
-
-    Returns
-    -------
-    pandas.Series
-        The global signal from the confounds.
-    """
-    df = pd.DataFrame(confounds_df["global_signal"])
-    df.columns = ["GlobalSignal"]
-    return df
-
-
-def load_wm_csf(confounds_df):
-    """Select white matter and CSF nuisance regressors from confounds DataFrame.
-
-    Parameters
-    ----------
-    confounds_df : pandas.DataFrame
-        The confounds DataFrame from which to extract information.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The CSF and WM signals from the confounds.
-    """
-    columns = ["CSF", "WhiteMatter"]
-    df = confounds_df[["csf", "white_matter"]]
-    df.columns = columns
-    return df
-
-
-def load_cosine(confounds_df):
-    """Select discrete cosine-basis regressors for CompCor.
-
-    Parameters
-    ----------
-    confounds_df : pandas.DataFrame
-        The confounds DataFrame from which to extract information.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The cosine-basis regressors from the confounds.
-
-    Notes
-    -----
-    fMRIPrep does high-pass filtering before running anatomical or temporal CompCor.
-    Therefore, when using CompCor regressors, the corresponding cosine_XX regressors
-    should also be included in the design matrix.
-    """
-    cosine = []
-    for key in confounds_df.keys():  # Any colums with cosine
-        if "cosine" in key:
-            cosine.append(key)
-    return confounds_df[cosine]
-
-
-def load_acompcor(confounds_df, confoundjs):
-    """Select WM and GM acompcor separately.
-
-    Parameters
-    ----------
-    confounds_df : pandas.DataFrame
-        The confounds DataFrame from which to select the aCompCor regressors.
-    confoundjs : dict
-        The metadata associated with the confounds file.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The confounds DataFrame, reduced to only include aCompCor regressors.
-    """
-    wm_comp_cor_retained = []
-    csf_comp_cor_retained = []
-    for key, value in confoundjs.items():  # Use the confounds json
-        if "comp_cor" in key and "t" not in key:
-            # Pull out variance explained for white matter masks that are retained
-            if value["Mask"] == "WM" and value["Retained"]:
-                wm_comp_cor_retained.append(key)
-            # Pull out variance explained for CSF masks that are retained
-            if value["Mask"] == "CSF" and value["Retained"]:
-                csf_comp_cor_retained.append(key)
-
-    # grab up to 5 acompcor values
-    N_COLS_TO_GRAB = 5
-
-    # Note that column names were changed from a_comp_cor to w_comp_cor and c_comp_cor
-    # in later versions of fMRIPrep
-    n_wm_comp_cor = N_COLS_TO_GRAB
-    if len(wm_comp_cor_retained) < N_COLS_TO_GRAB:
-        LOGGER.warning(f"Only {len(wm_comp_cor_retained)} white matter CompCor columns found.")
-        n_wm_comp_cor = len(wm_comp_cor_retained)
-
-    # ditto for csf
-    n_csf_comp_cor = N_COLS_TO_GRAB
-    if len(csf_comp_cor_retained) < N_COLS_TO_GRAB:
-        LOGGER.warning(f"Only {len(wm_comp_cor_retained)} CSF CompCor columns found.")
-        n_wm_comp_cor = len(csf_comp_cor_retained)
-
-    acompcor_columns = (
-        wm_comp_cor_retained[:n_wm_comp_cor] + csf_comp_cor_retained[:n_csf_comp_cor]
-    )
-
-    return confounds_df[acompcor_columns]
-
-
-def derivative(confound):
-    """Calculate derivative of a given array.
-
-    Parameters
-    ----------
-    confound : pandas.DataFrame
-        The confound to be modified.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Derivative of the array, with a zero at the beginning.
-        The column(s) will be untitled.
-    """
-    columns = confound.columns.tolist()
-    new_columns = [c + "_dt" for c in columns]
-    data = confound.to_numpy()
-    # Prepend 0 to the differences of the confound data
-    return pd.DataFrame(data=np.diff(data, prepend=0), columns=new_columns)
-
-
-def square_confound(confound):
-    """Square an array.
-
-    Parameters
-    ----------
-    confound : array_like or int or float
-        An array or value to square.
-
-    Returns
-    -------
-    array_like or int or float
-        The squared input data.
-    """
-    columns = confound.columns.tolist()
-    new_columns = [c + "_sq" for c in columns]
-    squared_confounds = confound**2
-    squared_confounds.columns = new_columns
-    return squared_confounds  # Square the confound data
-
-
 @fill_doc
-def load_confound_matrix(params, confound_tsv, custom_confounds=None):
+def load_confound_matrix(params, img_files, custom_confounds=None):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
     ----------
     %(params)s
-    confound_tsv : str
-        The path to the confounds TSV file.
+    img_files : str
+        The path to the bold file.
     custom_confounds : str or None, optional
         Custom confounds TSV if there is one. Default is None.
 
@@ -332,84 +180,49 @@ def load_confound_matrix(params, confound_tsv, custom_confounds=None):
     can cause regression to happen incorrectly.
     """
     #  Get the confounds data from the json and tsv
-    confound_file_base, _ = os.path.splitext(confound_tsv)
-    confounds_json = confound_file_base + ".json"
-    if not os.path.isfile(confounds_json):
+    confound_file_base, _ = os.path.splitext(img_files)
+    confounds_tsv = confound_file_base + ".tsv"
+    if not os.path.isfile(confounds_tsv):
         raise FileNotFoundError(
-            "No json found for confounds tsv.\n"
-            f"\tTSV file: {confound_tsv}\n"
-            f"\tJSON file (DNE): {confounds_json}"
+            "No confounds tsv found for \n"
+            f"\tTSV file: {confounds_tsv}\n"
         )
-
-    confounds_df = pd.read_table(confound_tsv)
-    confounds_metadata = readjson(confounds_json)
 
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
-        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
-        derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        confound = pd.concat([derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
-    elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF,
-        # global signal and square
-        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
-        derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        whitematter_csf = load_wm_csf(confounds_df)
-        global_signal = load_global_signal(confounds_df)
-        confound = pd.concat(
-            [
-                derivative_rot_trans,
-                square_confound(derivative_rot_trans),
-                whitematter_csf,
-                global_signal,
-            ],
-            axis=1,
-        )
+        confound = load_confounds(img_files, strategy=(['motion']), motion='full',
+                                  scrub=100, fd_threshold=100, std_dvars_threshold=100)[0]
+    elif params == "27P":  # Get rot and trans values, as well as derivatives and square, WM, CSF,
+        # global signal
+        confound = load_confounds(img_files, strategy=(['motion', 'wm_csf', 'global_signal']),
+                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
+                                  motion='full')[0]
     elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
-        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
-        derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        square_confounds = pd.concat(
-            [derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1
-        )
-        global_signal_whitematter_csf = pd.concat(
-            [load_wm_csf(confounds_df), load_global_signal(confounds_df)], axis=1
-        )
-        global_signal_whitematter_csf_derivative = pd.concat(
-            [global_signal_whitematter_csf, derivative(global_signal_whitematter_csf)],
-            axis=1,
-        )
-        confound = pd.concat(
-            [
-                square_confounds,
-                global_signal_whitematter_csf_derivative,
-                square_confound(global_signal_whitematter_csf_derivative),
-            ],
-            axis=1,
-        )
+        confound = load_confounds(img_files, strategy=(['motion', 'wm_csf', 'global_signal']),
+                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
+                                  motion='full', global_signal='full', wm_csf='full')[0]
     elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
-        derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
-        cosine = load_cosine(confounds_df)
-        confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
+        confound = load_confounds(img_files, strategy=(['motion', 'high_pass', 'compcor', ]),
+                                  motion='derivatives', compcor='anat_separated',
+                                  scrub=100, fd_threshold=100, n_compcor=5,
+                                  std_dvars_threshold=100)[0]
     elif params == "aroma":  # Get the WM, CSF, and aroma values
-        whitematter_csf = load_wm_csf(confounds_df)
-        aroma = load_aroma(confounds_df)
-        confound = pd.concat([whitematter_csf, aroma], axis=1)
+        confound = load_confounds(img_files, strategy=(['wm_csf', 'ica_aroma']),
+                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
+                                  wm_csf='basic', ica_aroma='full')[0]
     elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
-        whitematter_csf = load_wm_csf(confounds_df)
-        aroma = load_aroma(confounds_df)
-        global_signal = load_global_signal(confounds_df)
-        confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
+        confound = load_confounds(img_files, strategy=(['wm_csf', 'ica_aroma', 'global_signal']),
+                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
+                                  wm_csf='basic', global_signal='basic', ica_aroma='full')[0]
     elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
-        motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
-        derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
-        acompcor = load_acompcor(confounds_df=confounds_df, confoundjs=confounds_metadata)
-        global_signal = load_global_signal(confounds_df)
-        cosine = load_cosine(confounds_df)
-        confound = pd.concat([derivative_rot_trans, acompcor, global_signal, cosine], axis=1)
+        confound = load_confounds(img_files, strategy=(['motion', 'high_pass', 'compcor',
+                                                        'global_signal']),
+                                  motion='derivatives', compcor='anat_separated',
+                                  scrub=100, fd_threshold=100, global_signal='basic', n_compcor=5,
+                                  std_dvars_threshold=100)[0]
     elif params == "custom":
         # For custom confounds with no other confounds
         confound = pd.read_table(custom_confounds, sep="\t")
