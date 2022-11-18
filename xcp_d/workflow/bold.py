@@ -521,28 +521,40 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # interpolation workflow
     # fmt:off
     workflow.connect([
-        (inputnode, interpolate_wf, [("bold_file", "bold_file"),
-                                     ("bold_mask", "mask_file")]),
-        (censor_scrub, interpolate_wf, [("tmask", "tmask")]),
-        (regression_wf, interpolate_wf, [("res_file", "in_file")])
+        (inputnode, interpolate_wf, [
+            ("bold_file", "bold_file"),
+            ("bold_mask", "mask_file"),
+        ]),
+        (censor_scrub, interpolate_wf, [
+            ("tmask", "tmask"),
+        ]),
+        (regression_wf, interpolate_wf, [
+            ("res_file", "in_file"),
+        ]),
     ])
 
     # add filtering workflow
-    workflow.connect([(inputnode, filtering_wf, [("bold_mask", "mask")]),
-                      (interpolate_wf, filtering_wf, [("bold_interpolated",
-                                                       "in_file")])])
+    workflow.connect([
+        (inputnode, filtering_wf, [("bold_mask", "mask")]),
+        (interpolate_wf, filtering_wf, [("bold_interpolated", "in_file")]),
+    ])
 
     # residual smoothing
-    workflow.connect([(filtering_wf, resd_smoothing_wf,
-                       [("filtered_file", "inputnode.bold_file")])])
+    workflow.connect([
+        (filtering_wf, resd_smoothing_wf, [("filtered_file", "inputnode.bold_file")]),
+    ])
 
     # functional connect workflow
     workflow.connect([
-        (inputnode, fcon_ts_wf, [("bold_file", "inputnode.bold_file"),
-                                 ("ref_file", "inputnode.ref_file"),
-                                 ("mni_to_t1w", "inputnode.mni_to_t1w"),
-                                 ("t1w_to_native", "inputnode.t1w_to_native")]),
-        (filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")])
+        (inputnode, fcon_ts_wf, [
+            ("bold_file", "inputnode.bold_file"),
+            ("ref_file", "inputnode.ref_file"),
+            ("mni_to_t1w", "inputnode.mni_to_t1w"),
+            ("t1w_to_native", "inputnode.t1w_to_native"),
+        ]),
+        (filtering_wf, fcon_ts_wf, [
+            ("filtered_file", "inputnode.clean_bold"),
+        ]),
     ])
 
     # reho and alff

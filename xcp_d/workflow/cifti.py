@@ -485,15 +485,19 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
 
     # add filtering workflow
-    workflow.connect([(interpolate_wf, filtering_wf, [("bold_interpolated",
-                                                       "in_file")])])
+    workflow.connect([
+        (interpolate_wf, filtering_wf, [("bold_interpolated", "in_file")]),
+    ])
 
     # residual smoothing
-    workflow.connect([(filtering_wf, resd_smoothing_wf,
-                       [("filtered_file", "inputnode.bold_file")])])
+    workflow.connect([
+        (filtering_wf, resd_smoothing_wf, [("filtered_file", "inputnode.bold_file")]),
+    ])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")])])
+    workflow.connect([
+        (filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")]),
+    ])
 
     # reho and alff
     workflow.connect([
@@ -599,14 +603,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
         (reho_compute_wf, ds_report_rehoplot, [("outputnode.rehoplot", "in_file")]),
-        (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")])
+        (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")]),
     ])
     # fmt:on
 
     if bandpass_filter:
         # fmt:off
         workflow.connect([
-            (alff_compute_wf, ds_report_alffplot, [("outputnode.alffplot", "in_file")])
+            (alff_compute_wf, ds_report_alffplot, [("outputnode.alffplot", "in_file")]),
         ])
         # fmt:on
 
@@ -647,7 +651,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             workflow.connect([
                 (remove_dummy_scans, executivesummary_wf, [
                     ("dummy_scans", "inputnode.dummy_scans"),
-                ])
+                ]),
             ])
             # fmt:on
         else:
