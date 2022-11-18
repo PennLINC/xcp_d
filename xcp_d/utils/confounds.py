@@ -179,14 +179,6 @@ def load_confound_matrix(params, img_files, custom_confounds=None):
     Switching the order of the trans and rot values in the motion columns
     can cause regression to happen incorrectly.
     """
-    #  Get the confounds data from the json and tsv
-    confound_file_base, _ = os.path.splitext(img_files)
-    confounds_tsv = confound_file_base + ".tsv"
-    if not os.path.isfile(confounds_tsv):
-        raise FileNotFoundError(
-            "No confounds tsv found for \n"
-            f"\tTSV file: {confounds_tsv}\n"
-        )
 
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
         confound = load_confounds(img_files, strategy=(['motion']), motion='full',
