@@ -159,7 +159,8 @@ def load_motion(
 
 @fill_doc
 def load_confound_matrix(params, img_files, custom_confounds=None):
-    """Load a subset of the confounds associated with a given file.
+    """
+    Load a subset of the confounds associated with a given file.
 
     Parameters
     ----------
@@ -179,7 +180,6 @@ def load_confound_matrix(params, img_files, custom_confounds=None):
     Switching the order of the trans and rot values in the motion columns
     can cause regression to happen incorrectly.
     """
-
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
         confound = load_confounds(img_files, strategy=(['motion']), motion='full',
                                   scrub=100, fd_threshold=100, std_dvars_threshold=100)[0]
