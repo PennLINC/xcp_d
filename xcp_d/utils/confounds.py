@@ -174,11 +174,6 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     -------
     confound : pandas.DataFrame
         The loaded and selected confounds.
-
-    Notes
-    -------
-    Switching the order of the trans and rot values in the motion columns
-    can cause regression to happen incorrectly.
     """
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
         confound = load_confounds(img_file, strategy=(['motion']), motion='full')[0]
