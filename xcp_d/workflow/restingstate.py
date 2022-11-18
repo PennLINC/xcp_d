@@ -23,7 +23,6 @@ from xcp_d.utils.utils import fwhm2sigma
 
 @fill_doc
 def init_compute_alff_wf(
-    bold_file,
     output_dir,
     TR,
     lowpass,
@@ -43,7 +42,6 @@ def init_compute_alff_wf(
 
             from xcp_d.workflow.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
-                bold_file="/path/to/file.nii.gz",
                 output_dir=".",
                 TR=2.,
                 lowpass=0.1,
@@ -57,8 +55,6 @@ def init_compute_alff_wf(
 
     Parameters
     ----------
-    bold_file : str
-        Path to the preprocessed BOLD file. Used for naming outputs.
     output_dir : str
         Output directory. Used for saving the ReHo figure.
     TR : float
@@ -76,6 +72,8 @@ def init_compute_alff_wf(
 
     Inputs
     ------
+    bold_file : str
+        Path to the preprocessed BOLD file. Used for naming outputs.
     clean_bold
        residual and filtered
     bold_mask
@@ -98,7 +96,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]),
+        niu.IdentityInterface(fields=["bold_file", "clean_bold", "bold_mask"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -131,12 +129,10 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         name="alff_plot",
     )
     alff_plot.inputs.output_path = "alff.svg"
-    alff_plot.inputs.bold_file = bold_file
 
     ds_report_alffplot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
             desc="alffSurfacePlot" if cifti else "alffVolumetricPlot",
             datatype="figures",
         ),
@@ -144,10 +140,14 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         run_without_submitting=False,
     )
 
+    # fmt:off
     workflow.connect([
+        (inputnode, alff_plot, [("bold_file", "bold_file")]),
         (alff_compt, alff_plot, [("alff_out", "filename")]),
+        (inputnode, ds_report_alffplot, [("bold_file", "source_file")]),
         (alff_plot, ds_report_alffplot, [("output_path", "in_file")]),
     ])
+    # fmt:on
 
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
@@ -161,6 +161,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                 name="niftismoothing",
                 n_procs=omp_nthreads,
             )
+
             # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [("alff_out", "in_file")]),
@@ -208,7 +209,6 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 @fill_doc
 def init_cifti_reho_wf(
-    bold_file,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -223,7 +223,6 @@ def init_cifti_reho_wf(
 
             from xcp_d.workflow.restingstate import init_cifti_reho_wf
             wf = init_cifti_reho_wf(
-                bold_file="/path/to/bold.dtseries.nii",
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -232,8 +231,6 @@ def init_cifti_reho_wf(
 
     Parameters
     ----------
-    bold_file : str
-        Path to the preprocessed BOLD file. Used for naming outputs.
     output_dir : str
         Output directory. Used for saving the ReHo figure.
     %(mem_gb)s
@@ -243,6 +240,8 @@ def init_cifti_reho_wf(
 
     Inputs
     ------
+    bold_file : str
+        Path to the preprocessed BOLD file. Used for naming outputs.
     clean_bold
        residual and filtered, cifti
 
@@ -262,7 +261,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 *3dReHo* in AFNI [@afni].
 """
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold"]),
+        niu.IdentityInterface(fields=["bold_file", "clean_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -344,12 +343,10 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         name="reho_cifti_plot",
     )
     reho_plot.inputs.output_path = "reho.svg"
-    reho_plot.inputs.bold_file = bold_file
 
     ds_report_rehoplot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
             desc="rehoSurfacePlot",
             datatype="figures",
         ),
@@ -359,7 +356,9 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # fmt:off
     workflow.connect([
+        (inputnode, reho_plot, [("bold_file", "bold_file")]),
         (merge_cifti, reho_plot, [("out_file", "filename")]),
+        (inputnode, ds_report_rehoplot, [("bold_file", "source_file")]),
         (reho_plot, ds_report_rehoplot, [("output_path", "in_file")]),
     ])
     # fmt:on
@@ -369,7 +368,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 @fill_doc
 def init_nifti_reho_wf(
-    bold_file,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -384,7 +382,6 @@ def init_nifti_reho_wf(
 
             from xcp_d.workflow.restingstate import init_nifti_reho_wf
             wf = init_nifti_reho_wf(
-                bold_file="/path/to/bold.nii.gz",
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -393,8 +390,6 @@ def init_nifti_reho_wf(
 
     Parameters
     ----------
-    bold_file : str
-        Path to the preprocessed BOLD file. Used for naming outputs.
     output_dir : str
         Output directory. Used for saving the ReHo figure.
     %(mem_gb)s
@@ -404,6 +399,8 @@ def init_nifti_reho_wf(
 
     Inputs
     ------
+    bold_file : str
+        Path to the preprocessed BOLD file. Used for naming outputs.
     clean_bold
        residual and filtered, nifti
     bold_mask
@@ -420,11 +417,11 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]),
+        niu.IdentityInterface(fields=["bold_file", "clean_bold", "bold_mask"]),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["reho_out", "rehoplot"]),
+        niu.IdentityInterface(fields=["reho_out"]),
         name="outputnode",
     )
 
@@ -458,12 +455,10 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         name="reho_nifti_plot",
     )
     reho_plot.inputs.output_path = "reho.svg"
-    reho_plot.inputs.bold_file = bold_file
 
     ds_report_rehoplot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
             desc="rehoVolumetricPlot",
             datatype="figures",
         ),
@@ -473,7 +468,9 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 
     # fmt:off
     workflow.connect([
+        (inputnode, reho_plot, [("bold_file", "bold_file")]),
         (compute_reho, reho_plot, [("out_file", "filename")]),
+        (inputnode, ds_report_rehoplot, [("bold_file", "source_file")]),
         (reho_plot, ds_report_rehoplot, [("output_path", "in_file")]),
     ])
     # fmt:on

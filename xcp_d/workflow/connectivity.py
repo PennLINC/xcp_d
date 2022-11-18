@@ -8,6 +8,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
@@ -17,6 +18,7 @@ from xcp_d.utils.utils import get_std2bold_xforms
 
 @fill_doc
 def init_nifti_functional_connectivity_wf(
+    output_dir,
     mem_gb,
     omp_nthreads,
     name="nifti_fcon_wf",
@@ -30,6 +32,7 @@ def init_nifti_functional_connectivity_wf(
 
             from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
             wf = init_nifti_functional_connectivity_wf(
+                output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="nifti_fcon_wf",
@@ -37,6 +40,8 @@ def init_nifti_functional_connectivity_wf(
 
     Parameters
     ----------
+    output_dir : str
+        Output directory. Used for saving the ReHo figure.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -58,9 +63,6 @@ def init_nifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
-    connectplot : str
-        Path to the connectivity plot.
-        This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
     workflow = Workflow(name=name)
 
@@ -77,13 +79,25 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["bold_file", "ref_file", "clean_bold", "mni_to_t1w", "t1w_to_native"],
+            fields=[
+                "bold_file",
+                "ref_file",
+                "clean_bold",
+                "mni_to_t1w",
+                "t1w_to_native",
+            ],
         ),
         name="inputnode",
     )
+
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations"]),
         name="outputnode",
+    )
+
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
     )
 
     # get atlases via pkgrf
@@ -97,10 +111,12 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         iterfield=["atlas_name"],
     )
 
-    atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
-        name="atlas_name_grabber",
-    )
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+    ])
+    # fmt:on
 
     get_transforms_to_bold_space = pe.Node(
         Function(
@@ -110,6 +126,16 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         ),
         name="get_transforms_to_bold_space",
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_transforms_to_bold_space, [
+            ("bold_file", "bold_file"),
+            ("mni_to_t1w", "mni_to_t1w"),
+            ("t1w_to_native", "t1w_to_native"),
+        ]),
+    ])
+    # fmt:on
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
@@ -124,6 +150,21 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         n_procs=omp_nthreads,
     )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, warp_atlases_to_bold_space, [
+            ("ref_file", "reference_image"),
+        ]),
+        (atlas_file_grabber, warp_atlases_to_bold_space, [
+            ("atlas_file", "input_image"),
+        ]),
+        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
+            ("transformfile", "transforms"),
+        ]),
+    ])
+    # fmt:on
+
+    # Calculate correlation matrices from time series
     nifti_connect = pe.MapNode(
         NiftiConnect(),
         name="nifti_connect",
@@ -131,7 +172,22 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         mem_gb=mem_gb,
     )
 
-    # Create a node to plot the matrixes
+    # fmt:off
+    workflow.connect([
+        (inputnode, nifti_connect, [
+            ("clean_bold", "filtered_file"),
+        ]),
+        (warp_atlases_to_bold_space, nifti_connect, [
+            ("output_image", "atlas"),
+        ]),
+        (nifti_connect, outputnode, [
+            ("time_series_tsv", "timeseries"),
+            ("fcon_matrix_tsv", "correlations"),
+        ]),
+    ])
+    # fmt:on
+
+    # Plot a subset of correlation matrices in a figure
     matrix_plot = pe.Node(
         ConnectPlot(),
         name="matrix_plot",
@@ -140,25 +196,26 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     # fmt:off
     workflow.connect([
-        # Transform Atlas to correct MNI2009 space
-        (inputnode, get_transforms_to_bold_space, [("bold_file", "bold_file"),
-                                                   ("mni_to_t1w", "mni_to_t1w"),
-                                                   ("t1w_to_native", "t1w_to_native")]),
-        (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
-        (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
-        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
-            ("transformfile", "transforms"),
-        ]),
-        (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
-                                     ("fcon_matrix_tsv", "correlations")]),
         (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+    ])
+    # fmt:on
+
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivityplot",
+            datatype="figures",
+        ),
+        name="ds_report_connectivity",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_connectivity, [("bold_file", "source_file")]),
+        (matrix_plot, ds_report_connectivity, [("connectplot", "in_file")]),
     ])
     # fmt:on
 

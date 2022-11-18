@@ -431,6 +431,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
+    # functional connectivity workflow
+    fcon_ts_wf = init_cifti_functional_connectivity_wf(
+        output_dir=output_dir,
+        mem_gb=mem_gbx["timeseries"],
+        name="cifti_ts_con_wf",
+        omp_nthreads=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")]),
+    ])
+    # fmt:on
+
     # Residual smoothing workflow: Smooth filtered, interpolated residuals
     resd_smoothing_wf = init_resd_smoothing_wf(
         mem_gb=mem_gbx["timeseries"],
@@ -446,22 +460,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
-    # functional connect workflow
-    fcon_ts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=mem_gbx["timeseries"],
-        name="cifti_ts_con_wf",
-        omp_nthreads=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")]),
-    ])
-    # fmt:on
-
     # reho and alff
     compute_reho_wf = init_cifti_reho_wf(
-        bold_file=bold_file,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
@@ -470,9 +470,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     if bandpass_filter:
         compute_alff_wf = init_compute_alff_wf(
-            TR=TR,
-            bold_file=bold_file,
             output_dir=output_dir,
+            TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             smoothing=smoothing,
@@ -484,11 +483,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
+        (inputnode, compute_reho_wf, [("bold_file", "inputnode.bold_file")]),
         (filtering_wf, compute_reho_wf, [("filtered_file", "inputnode.clean_bold")]),
     ])
 
     if bandpass_filter:
         workflow.connect([
+            (inputnode, compute_alff_wf, [("bold_file", "inputnode.bold_file")]),
             (filtering_wf, compute_alff_wf, [("filtered_file", "inputnode.clean_bold")]),
         ])
 
@@ -582,23 +583,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (plot_design_matrix_node, ds_design_matrix_plot, [
             ("design_matrix_figure", "in_file"),
         ]),
-    ])
-    # fmt:on
-
-    ds_report_connectivity = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            desc="connectivityplot",
-            datatype="figures",
-        ),
-        name="ds_report_connectivity",
-        run_without_submitting=True,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")]),
     ])
     # fmt:on
 
