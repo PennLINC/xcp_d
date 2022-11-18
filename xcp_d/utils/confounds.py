@@ -200,7 +200,7 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
         confound = load_confounds(img_file, strategy=(['motion', 'high_pass', 'compcor',
-                                                        'global_signal']),
+                                                       'global_signal']),
                                   motion='derivatives', compcor='anat_separated',
                                   global_signal='basic', n_compcor=5)[0]
     elif params == "custom":
@@ -213,25 +213,6 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
         confound = pd.concat([custom, confound], axis=1)
 
     return confound
-
-
-def load_aroma(confounds_df):
-    """Extract aroma confounds from a confounds TSV file.
-
-    Parameters
-    ----------
-    confounds_df : :obj:`pandas.DataFrame`
-        The confounds DataFrame.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The AROMA noise components.
-    """
-    aroma_noise = [c for c in confounds_df.columns if c.startswith("aroma_motion_")]
-    aroma = confounds_df[aroma_noise]
-
-    return aroma
 
 
 @fill_doc
