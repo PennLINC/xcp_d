@@ -118,7 +118,6 @@ def test_cifti_reho(data_dir, tmp_path_factory):
         omp_nthreads=2,
         mem_gb=4,
         name="orig_reho_wf",
-        bold_file=source_file,
     )
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.bold_file = source_file
