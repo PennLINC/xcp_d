@@ -85,8 +85,8 @@ def test_smoothing_cifti(data_dir, sigma_lx=fwhm2sigma(6)):
         'data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii',
     )
     left_surf = pkgrf(
-        'xcp_d', 'data/ciftiatlas/'
-        'Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
+        'xcp_d',
+        'data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
     )
 
     data_dir = os.path.join(data_dir,
@@ -103,7 +103,6 @@ def test_smoothing_cifti(data_dir, sigma_lx=fwhm2sigma(6)):
 
     # Let's get into a temp dir
     tmpdir = tempfile.mkdtemp()
-    os.chdir(tmpdir)
 
     smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
         #  hemisphere
@@ -111,17 +110,17 @@ def test_smoothing_cifti(data_dir, sigma_lx=fwhm2sigma(6)):
         sigma_vol=sigma_lx,  # the volume of the surface kernel
         direction='COLUMN',  # which direction to smooth along@
         right_surf=pkgrf(  # pull out atlases for each hemisphere
-            'xcp_d', 'data/ciftiatlas/'
-            'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
+            'xcp_d',
+            'data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
         ),
         left_surf=pkgrf(
-            'xcp_d', 'data/ciftiatlas/'
-            'Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
+            'xcp_d',
+            'data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
         )),
         name="cifti_smoothing")
     smooth_data.inputs.in_file = in_file
-    smooth_data.base_dir = os.getcwd()
-    smooth_data.inputs.out_file = 'test.dtseries.nii'
+    smooth_data.base_dir = tmpdir
+    smooth_data.inputs.out_file = os.path.join(tmpdir,'test.dtseries.nii')
     results = smooth_data.run()
     out_file = results.outputs.out_file
 
