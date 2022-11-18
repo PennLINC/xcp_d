@@ -10,6 +10,15 @@ from xcp_d.utils.confounds import load_confound_matrix
 
 def test_custom_confounds(data_dir, tmp_path_factory):
     """Ensure that custom confounds can be loaded without issue."""
+    bold_file = os.path.join(
+        data_dir,
+        (
+            "fmriprep/sub-colornest001/ses-1/func/"
+            "sub-colornest001_ses-1_task-rest_run-1"
+            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+        )
+    )
+
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
 
     data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
@@ -51,7 +60,7 @@ def test_custom_confounds(data_dir, tmp_path_factory):
     )
     combined_confounds = load_confound_matrix(
         params="24P",
-        confound_tsv=confounds_file,
+        img_files=bold_file,
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
