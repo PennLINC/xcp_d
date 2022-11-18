@@ -139,6 +139,7 @@ def init_ciftipostprocess_wf(
     run_data = collect_run_data(layout, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
+    mem_gbx = _create_mem_gb(bold_file)
 
     workflow = Workflow(name=name)
 
@@ -226,8 +227,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.custom_confounds_folder = custom_confounds_folder
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
-
-    mem_gbx = _create_mem_gb(bold_file)
 
     get_custom_confounds_file = pe.Node(
         Function(

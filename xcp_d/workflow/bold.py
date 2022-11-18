@@ -155,6 +155,7 @@ def init_boldpostprocess_wf(
     run_data = collect_run_data(layout, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
+    mem_gbx = _create_mem_gb(bold_file)
 
     # TODO: This is a workaround for a bug in nibabies.
     # Once https://github.com/nipreps/nibabies/issues/245 is resolved
@@ -254,8 +255,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
     inputnode.inputs.dummy_scans = dummy_scans
-
-    mem_gbx = _create_mem_gb(bold_file)
 
     get_custom_confounds_file = pe.Node(
         Function(
