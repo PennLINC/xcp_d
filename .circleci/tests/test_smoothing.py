@@ -81,8 +81,8 @@ def test_smoothing_cifti(data_dir, sigma_lx=fwhm2sigma(6)):
 
     # Specify inputs
     right_surf = pkgrf(  # pull out atlases for each hemisphere
-        'xcp_d', 'data/ciftiatlas/'
-        'Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
+        'xcp_d',
+        'data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii',
     )
     left_surf = pkgrf(
         'xcp_d', 'data/ciftiatlas/'
