@@ -87,7 +87,7 @@ def init_ciftipostprocess_wf(
                 dcan_qc=False,
                 n_runs=1,
                 layout=None,
-                name='cifti_postprocess_wf',
+                name="cifti_postprocess_wf",
             )
 
     Parameters
@@ -119,7 +119,7 @@ def init_ciftipostprocess_wf(
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s
-        Default is 'cifti_postprocess_wf'.
+        Default is "cifti_postprocess_wf".
 
     Inputs
     ------
@@ -429,7 +429,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
             (inputnode, censor_scrub, [
-                ('bold_file', 'in_file'),
+                ("bold_file", "in_file"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
@@ -466,43 +466,43 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:
         # fmt:off
         workflow.connect([
-            (censor_scrub, regression_wf, [('bold_censored', 'in_file')]),
+            (censor_scrub, regression_wf, [("bold_censored", "in_file")]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (censor_scrub, regression_wf, [('confounds_censored', 'confounds')]),
+        (censor_scrub, regression_wf, [("confounds_censored", "confounds")]),
     ])
     # fmt:on
 
     # interpolation workflow
     # fmt:off
     workflow.connect([
-        (inputnode, interpolate_wf, [('bold_file', 'bold_file')]),
-        (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
-        (regression_wf, interpolate_wf, [('res_file', 'in_file')])
+        (inputnode, interpolate_wf, [("bold_file", "bold_file")]),
+        (censor_scrub, interpolate_wf, [("tmask", "tmask")]),
+        (regression_wf, interpolate_wf, [("res_file", "in_file")])
     ])
 
     # add filtering workflow
-    workflow.connect([(interpolate_wf, filtering_wf, [('bold_interpolated',
-                                                       'in_file')])])
+    workflow.connect([(interpolate_wf, filtering_wf, [("bold_interpolated",
+                                                       "in_file")])])
 
     # residual smoothing
     workflow.connect([(filtering_wf, resd_smoothing_wf,
-                       [('filtered_file', 'inputnode.bold_file')])])
+                       [("filtered_file", "inputnode.bold_file")])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([(filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")])])
 
     # reho and alff
     workflow.connect([
-        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (filtering_wf, reho_compute_wf, [("filtered_file", "inputnode.clean_bold")]),
     ])
 
     if bandpass_filter:
         workflow.connect([
-            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+            (filtering_wf, alff_compute_wf, [("filtered_file", "inputnode.clean_bold")]),
         ])
 
     # qc report
@@ -514,36 +514,36 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # write derivatives
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [
-            ('out_file', 'inputnode.confounds_file'),
+            ("out_file", "inputnode.confounds_file"),
         ]),
         (filtering_wf, write_derivative_wf, [
-            ('filtered_file', 'inputnode.processed_bold'),
+            ("filtered_file", "inputnode.processed_bold"),
         ]),
         (qc_report_wf, write_derivative_wf, [
-            ('outputnode.qc_file', 'inputnode.qc_file'),
+            ("outputnode.qc_file", "inputnode.qc_file"),
         ]),
         (resd_smoothing_wf, write_derivative_wf, [
-            ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
+            ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
         ]),
         (censor_scrub, write_derivative_wf, [
-            ('filtered_motion', 'inputnode.filtered_motion'),
-            ('tmask', 'inputnode.tmask'),
+            ("filtered_motion", "inputnode.filtered_motion"),
+            ("tmask", "inputnode.tmask"),
         ]),
         (reho_compute_wf, write_derivative_wf, [
-            ('outputnode.reho_out', 'inputnode.reho_out'),
+            ("outputnode.reho_out", "inputnode.reho_out"),
         ]),
         (fcon_ts_wf, write_derivative_wf, [
-            ('outputnode.atlas_names', 'inputnode.atlas_names'),
-            ('outputnode.correlations', 'inputnode.correlations'),
-            ('outputnode.timeseries', 'inputnode.timeseries'),
+            ("outputnode.atlas_names", "inputnode.atlas_names"),
+            ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.timeseries", "inputnode.timeseries"),
         ]),
     ])
 
     if bandpass_filter:
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
-                ('outputnode.alff_out', 'inputnode.alff_out'),
-                ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
+                ("outputnode.alff_out", "inputnode.alff_out"),
+                ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
         ])
     # fmt:on
@@ -598,15 +598,15 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # fmt:off
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
-        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
+        (reho_compute_wf, ds_report_rehoplot, [("outputnode.rehoplot", "in_file")]),
+        (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")])
     ])
     # fmt:on
 
     if bandpass_filter:
         # fmt:off
         workflow.connect([
-            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')])
+            (alff_compute_wf, ds_report_alffplot, [("outputnode.alffplot", "in_file")])
         ])
         # fmt:on
 
@@ -624,20 +624,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, executivesummary_wf, [
-                ('t1w', 'inputnode.t1w'),
-                ('t1seg', 'inputnode.t1seg'),
-                ('bold_file', 'inputnode.bold_file'),
-                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                ("t1w", "inputnode.t1w"),
+                ("t1seg", "inputnode.t1seg"),
+                ("bold_file", "inputnode.bold_file"),
+                ("mni_to_t1w", "inputnode.mni_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [
-                ('res_file', 'inputnode.regressed_data'),
+                ("res_file", "inputnode.regressed_data"),
             ]),
             (filtering_wf, executivesummary_wf, [
-                ('filtered_file', 'inputnode.residual_data'),
+                ("filtered_file", "inputnode.residual_data"),
             ]),
             (censor_scrub, executivesummary_wf, [
-                ('filtered_motion', 'inputnode.filtered_motion'),
-                ('tmask', 'inputnode.tmask'),
+                ("filtered_motion", "inputnode.filtered_motion"),
+                ("tmask", "inputnode.tmask"),
             ]),
         ])
         # fmt:on
