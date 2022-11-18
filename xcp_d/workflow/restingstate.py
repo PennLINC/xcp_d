@@ -56,7 +56,7 @@ def init_compute_alff_wf(
     Parameters
     ----------
     output_dir : str
-        Output directory. Used for saving the ReHo figure.
+        Output directory. Used for saving the ALFF figure.
     TR : float
         repetition time
     lowpass : float

@@ -57,7 +57,6 @@ def test_nifti_reho(data_dir, tmp_path_factory):
         output_dir=tempdir,
         omp_nthreads=2,
         mem_gb=4,
-        bold_file=bold_file,
     )
     reho_wf.inputs.inputnode.bold_file = bold_file
     reho_wf.inputs.inputnode.bold_mask = bold_mask

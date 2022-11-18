@@ -169,7 +169,7 @@ def test_cifti_conn(data_dir, tmp_path_factory):
         omp_nthreads=2,
     )
     cifti_conts_wf.base_dir = tmpdir
-    # Run the node
+    cifti_conts_wf.inputs.inputnode.bold_file = boldfile
     cifti_conts_wf.inputs.inputnode.clean_bold = fake_bold_file
     cifti_conts_wf.run()
     # Let's find the correct parcellated file
