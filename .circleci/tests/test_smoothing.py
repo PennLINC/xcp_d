@@ -77,7 +77,7 @@ def test_smoothing_Nifti(data_dir):
     return
 
 
-def test_smoothing_Cifti(data_dir, sigma_lx=fwhm2sigma(6)):
+def test_smoothing_cifti(data_dir, sigma_lx=fwhm2sigma(6)):
 
     # Specify inputs
     right_surf = pkgrf(  # pull out atlases for each hemisphere
