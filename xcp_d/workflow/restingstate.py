@@ -24,6 +24,7 @@ from xcp_d.utils.utils import fwhm2sigma
 @fill_doc
 def init_compute_alff_wf(
     bold_file,
+    output_dir,
     TR,
     lowpass,
     highpass,
@@ -42,8 +43,9 @@ def init_compute_alff_wf(
 
             from xcp_d.workflow.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
-                TR=2.,
                 bold_file="/path/to/file.nii.gz",
+                output_dir=".",
+                TR=2.,
                 lowpass=0.1,
                 highpass=0.009,
                 smoothing=6,
@@ -55,6 +57,10 @@ def init_compute_alff_wf(
 
     Parameters
     ----------
+    bold_file : str
+        Path to the preprocessed BOLD file. Used for naming outputs.
+    output_dir : str
+        Output directory. Used for saving the ReHo figure.
     TR : float
         repetition time
     lowpass : float
@@ -74,8 +80,6 @@ def init_compute_alff_wf(
        residual and filtered
     bold_mask
        bold mask if bold is nifti
-    bold_file
-       original bold_file
 
     Outputs
     -------
@@ -83,8 +87,6 @@ def init_compute_alff_wf(
         alff output
     smoothed_alff
         smoothed alff  output
-    alffplot
-        alff svg
     """
     workflow = Workflow(name=name)
 
@@ -96,10 +98,12 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]), name="inputnode"
+        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]),
+        name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["alff_out", "smoothed_alff", "alffplot"]), name="outputnode"
+        niu.IdentityInterface(fields=["alff_out", "smoothed_alff"]),
+        name="outputnode",
     )
 
     # compute alff
@@ -110,6 +114,14 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         n_procs=omp_nthreads,
     )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, alff_compt, [("clean_bold", "in_file"), ("bold_mask", "mask")]),
+        (alff_compt, outputnode, [("alff_out", "alff_out")])
+    ])
+    # fmt:on
+
+    # Create and save figure
     alff_plot = pe.Node(
         Function(
             input_names=["output_path", "filename", "bold_file"],
@@ -120,14 +132,22 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     )
     alff_plot.inputs.output_path = "alff.svg"
     alff_plot.inputs.bold_file = bold_file
-    # fmt:off
-    workflow.connect([(inputnode, alff_compt, [("clean_bold", "in_file"),
-                                               ("bold_mask", "mask")]),
-                      (alff_compt, alff_plot, [("alff_out", "filename")]),
-                      (alff_plot, outputnode, [("output_path", "alffplot")]),
-                      (alff_compt, outputnode, [("alff_out", "alff_out")])
-                      ])
-    # fmt:on
+
+    ds_report_alffplot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="alffSurfacePlot" if cifti else "alffVolumetricPlot",
+            datatype="figures",
+        ),
+        name="ds_report_alffplot",
+        run_without_submitting=False,
+    )
+
+    workflow.connect([
+        (alff_compt, alff_plot, [("alff_out", "filename")]),
+        (alff_plot, ds_report_alffplot, [("output_path", "in_file")]),
+    ])
 
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti

@@ -461,23 +461,25 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # reho and alff
     compute_reho_wf = init_cifti_reho_wf(
-        mem_gb=mem_gbx["timeseries"],
         bold_file=bold_file,
-        name="compute_reho_wf",
+        output_dir=output_dir,
+        mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        name="compute_reho_wf",
     )
 
     if bandpass_filter:
         compute_alff_wf = init_compute_alff_wf(
-            mem_gb=mem_gbx["timeseries"],
             TR=TR,
             bold_file=bold_file,
+            output_dir=output_dir,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             smoothing=smoothing,
             cifti=True,
-            name="compute_alff_wf",
+            mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
+            name="compute_alff_wf",
         )
 
     # fmt:off
@@ -594,30 +596,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         run_without_submitting=True,
     )
 
-    if bandpass_filter:
-        ds_report_alffplot = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc="alffSurfacePlot",
-                datatype="figures",
-            ),
-            name="ds_report_alffplot",
-            run_without_submitting=False,
-        )
-
     # fmt:off
     workflow.connect([
         (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")]),
     ])
     # fmt:on
-
-    if bandpass_filter:
-        # fmt:off
-        workflow.connect([
-            (compute_alff_wf, ds_report_alffplot, [("outputnode.alffplot", "in_file")]),
-        ])
-        # fmt:on
 
     # executive summary workflow
     if dcan_qc:
