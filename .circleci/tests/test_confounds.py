@@ -50,14 +50,6 @@ def test_custom_confounds(data_dir, tmp_path_factory):
     )
     custom_confounds.to_csv(custom_confounds_file, sep="\t", index=False)
 
-    confounds_file = os.path.join(
-        data_dir,
-        "fmriprep",
-        "sub-colornest001",
-        "ses-1",
-        "func",
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv",
-    )
     combined_confounds = load_confound_matrix(
         params="24P",
         img_files=bold_file,
