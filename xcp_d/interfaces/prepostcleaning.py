@@ -13,9 +13,14 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import load_motion
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_fd, generate_mask, interpolate_masked_data
+from xcp_d.utils.modified_data import (
+    _drop_dummy_scans,
+    compute_fd,
+    generate_mask,
+    interpolate_masked_data,
+)
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -23,38 +28,47 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
-    initial_volumes_to_drop = traits.Int(
+    dummy_scans = traits.Either(
+        traits.Int,
+        "auto",
         mandatory=True,
-        desc="Number of volumes to drop from the beginning,"
-        "calculated in an earlier workflow from dummytime "
-        "and repetition time.",
+        desc=(
+            "Number of volumes to drop from the beginning, "
+            "calculated in an earlier workflow from dummytime/dummy_scans "
+            "and repetition time."
+        ),
     )
-    fmriprep_confounds_file = File(exists=True, mandatory=False, desc="fmriprep confounds tsv")
-    custom_confounds = traits.Either(
-        None,
-        File(exists=True),
-        desc="Name of custom confounds file",
-        mandatory=False,
-        usedefault=True,
+    confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with selected confounds for denoising.",
+    )
+    fmriprep_confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds tsv. Used for motion-based censoring.",
     )
 
 
 class _RemoveTROutputSpec(TraitedSpec):
+    confounds_file_dropped_TR = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with selected confounds for denoising, after removing TRs.",
+    )
+
     fmriprep_confounds_file_dropped_TR = File(
-        exists=True, mandatory=True, desc="fmriprep confounds tsv after removing TRs,"
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds tsv after removing TRs. Used for motion-based censoring.",
     )
 
     bold_file_dropped_TR = File(
-        exists=True, mandatory=True, desc="bold or cifti with volumes dropped"
+        exists=True,
+        mandatory=True,
+        desc="bold or cifti with volumes dropped",
     )
-
-    custom_confounds_dropped = traits.Either(
-        None,
-        File(exists=True),
-        desc="Custom confounds file with volumes dropped.",
-        mandatory=False,
-        usedefault=True,
-    )
+    dummy_scans = traits.Int(desc="Number of volumes dropped.")
 
 
 class RemoveTR(SimpleInterface):
@@ -62,101 +76,72 @@ class RemoveTR(SimpleInterface):
 
     A bold file and its corresponding confounds TSV (fmriprep format)
     are adjusted to remove the first n seconds of data.
-
-    If 0, the bold file and confounds are returned as-is. If dummytime
-    is larger than the repetition time, the corresponding rows are removed
-    from the confounds TSV and the initial volumes are removed from the
-    nifti or cifti file.
-
-    If the dummy time is less than the repetition time, it will
-    be rounded up. (i.e. dummytime=3, TR=2 will remove the first 2 volumes).
-
-    The number of volumes to be removed has been calculated in a previous
-    workflow.
     """
 
     input_spec = _RemoveTRInputSpec
     output_spec = _RemoveTROutputSpec
 
     def _run_interface(self, runtime):
-        volumes_to_drop = self.inputs.initial_volumes_to_drop
+        dummy_scans = _infer_dummy_scans(
+            dummy_scans=self.inputs.dummy_scans,
+            confounds_file=self.inputs.fmriprep_confounds_file,
+        )
+
+        self._results["dummy_scans"] = dummy_scans
+
         # Check if we need to do anything
-        if self.inputs.initial_volumes_to_drop == 0:
+        if dummy_scans == 0:
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
             self._results[
-                "fmriprep_confounds_file_dropped" "_TR"
+                "fmriprep_confounds_file_dropped_TR"
             ] = self.inputs.fmriprep_confounds_file
+            self._results["confounds_file_dropped_TR"] = self.inputs.confounds_file
             return runtime
+
         # get the file names to output to
-        dropped_bold_file = fname_presuffix(
-            self.inputs.bold_file, newpath=runtime.cwd, suffix="_dropped", use_ext=True
-        )
-        dropped_confounds_file = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
+        self._results["bold_file_dropped_TR"] = fname_presuffix(
+            self.inputs.bold_file,
             newpath=runtime.cwd,
             suffix="_dropped",
             use_ext=True,
         )
+        self._results["fmriprep_confounds_file_dropped_TR"] = fname_presuffix(
+            self.inputs.fmriprep_confounds_file,
+            newpath=runtime.cwd,
+            suffix="_fmriprepDropped",
+            use_ext=True,
+        )
+        self._results["confounds_file_dropped_TR"] = fname_presuffix(
+            self.inputs.bold_file,
+            suffix="_selected_confounds_dropped.tsv",
+            newpath=os.getcwd(),
+            use_ext=False,
+        )
 
-        # read the bold file
-        bold_image = nb.load(self.inputs.bold_file)
-        data = bold_image.get_fdata()
-
-        # If it's a Cifti Image:
-        if bold_image.ndim == 2:
-            dropped_data = data[volumes_to_drop:, ...]  # time series is the first element
-            time_axis, brain_model_axis = [
-                bold_image.header.get_axis(i) for i in range(bold_image.ndim)
-            ]
-            new_total_volumes = dropped_data.shape[0]
-            dropped_time_axis = time_axis[:new_total_volumes]
-            dropped_header = nb.cifti2.Cifti2Header.from_axes(
-                (dropped_time_axis, brain_model_axis)
-            )
-            dropped_image = nb.Cifti2Image(
-                dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
-            )
-
-        # If it's a Nifti Image:
-        else:
-            dropped_data = data[..., volumes_to_drop:]
-            dropped_image = nb.Nifti1Image(
-                dropped_data, affine=bold_image.affine, header=bold_image.header
-            )
-
-        # Write the file
-        dropped_image.to_filename(dropped_bold_file)
+        # Remove the dummy volumes
+        dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=dummy_scans)
+        dropped_image.to_filename(self._results["bold_file_dropped_TR"])
 
         # Drop the first N rows from the pandas dataframe
-        confounds_df = pd.read_csv(self.inputs.fmriprep_confounds_file, sep="\t")
-        dropped_confounds_df = confounds_df.drop(np.arange(volumes_to_drop))
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        dropped_fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
-        # Drop the first N rows from the custom confounds file, if provided:
-        if self.inputs.custom_confounds:
-            custom_confounds_df = pd.read_table(self.inputs.custom_confounds)
-            custom_confounds_tsv_dropped = custom_confounds_df.drop[np.arange(volumes_to_drop)]
-        else:
-            LOGGER.warning("No custom confounds were found or had their volumes dropped.")
+        # Drop the first N rows from the confounds file
+        confounds_df = pd.read_table(self.inputs.confounds_file)
+        confounds_tsv_dropped = confounds_df.drop(np.arange(dummy_scans))
 
         # Save out results
-        dropped_confounds_df.to_csv(dropped_confounds_file, sep="\t", index=False)
-        # Write to output node
-        self._results["bold_file_dropped_TR"] = dropped_bold_file
-        self._results["fmriprep_confounds_file_dropped_TR"] = dropped_confounds_file
-
-        if self.inputs.custom_confounds:
-            self._results["custom_confounds_dropped"] = fname_presuffix(
-                self.inputs.bold_file,
-                suffix="_custom_confounds_dropped.tsv",
-                newpath=os.getcwd(),
-                use_ext=False,
-            )
-            custom_confounds_tsv_dropped.to_csv(
-                self._results["custom_confounds_dropped"],
-                index=False,
-                sep="\t",
-            )
+        dropped_fmriprep_confounds_df.to_csv(
+            self._results["fmriprep_confounds_file_dropped_TR"],
+            sep="\t",
+            index=False,
+        )
+        confounds_tsv_dropped.to_csv(
+            self._results["confounds_file_dropped_TR"],
+            sep="\t",
+            index=False,
+        )
 
         return runtime
 
@@ -166,19 +151,17 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
-        desc="Framewise displacement" "threshold. All values above this will be dropped.",
+        desc="Framewise displacement threshold. All values above this will be dropped.",
     )
-    custom_confounds = traits.Either(
-        None,
-        File(exists=True),
-        desc="Name of custom confounds file",
-        mandatory=False,
-        usedefault=True,
+    confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc="File with selected confounds for denoising.",
     )
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
-        desc="fMRIPrep confounds tsv after removing dummy time, if any",
+        desc="fMRIPrep confounds tsv. Used for flagging high-motion volumes.",
     )
     head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
     motion_filter_type = traits.Either(
@@ -206,13 +189,14 @@ class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True, mandatory=True, desc="FD-censored bold file")
 
     fmriprep_confounds_censored = File(
-        exists=True, mandatory=True, desc="fmriprep_confounds_tsv censored"
+        exists=True,
+        mandatory=True,
+        desc="fmriprep_confounds_file censored",
     )
-    custom_confounds_censored = traits.Either(
-        None,
-        File(exists=True),
-        desc="Name of censored custom confounds file",
-        usedefault=True,
+    confounds_censored = File(
+        exists=True,
+        mandatory=True,
+        desc="confounds_file censored",
     )
     tmask = File(
         exists=True,
@@ -265,12 +249,9 @@ class CensorScrub(SimpleInterface):
         )
         motion_df["framewise_displacement"] = fd_timeseries_uncensored
 
-        # Read in custom confounds file (if any) and bold file to be censored
+        # Read in confounds file and bold file to be censored
+        confounds_tsv_uncensored = pd.read_table(self.inputs.confounds_file)
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
-        if self.inputs.custom_confounds:
-            custom_confounds_tsv_uncensored = pd.read_table(self.inputs.custom_confounds)
-        else:
-            LOGGER.warning("No custom confounds were found or censored.")
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
@@ -285,15 +266,12 @@ class CensorScrub(SimpleInterface):
                 bold_file_censored = bold_file_uncensored[tmask == 0, :]
 
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.loc[tmask == 0]
-            if self.inputs.custom_confounds:
-                # If custom regressors are present
-                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored.loc[tmask == 0]
+            confounds_tsv_censored = confounds_tsv_uncensored.loc[tmask == 0]
 
         else:  # No censoring needed
             bold_file_censored = bold_file_uncensored
             fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
-            if self.inputs.custom_confounds:
-                custom_confounds_tsv_censored = custom_confounds_tsv_uncensored
+            confounds_tsv_censored = confounds_tsv_uncensored
 
         # Turn censored bold into image
         if nb.load(self.inputs.in_file).ndim > 2:
@@ -336,13 +314,12 @@ class CensorScrub(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        if self.inputs.custom_confounds:
-            self._results["custom_confounds_censored"] = fname_presuffix(
-                self.inputs.in_file,
-                suffix="_custom_confounds_censored.tsv",
-                newpath=runtime.cwd,
-                use_ext=False,
-            )
+        self._results["confounds_censored"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_selected_confounds_censored.tsv",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
 
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
@@ -379,13 +356,11 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
-        if self.inputs.custom_confounds:
-            # Assuming input is tab separated!
-            custom_confounds_tsv_censored.to_csv(
-                self._results["custom_confounds_censored"],
-                index=False,
-                sep="\t",
-            )
+        confounds_tsv_censored.to_csv(
+            self._results["confounds_censored"],
+            index=False,
+            sep="\t",
+        )
         return runtime
 
 

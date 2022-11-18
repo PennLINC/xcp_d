@@ -58,6 +58,7 @@ def init_xcpd_wf(
     output_dir,
     work_dir,
     dummytime,
+    dummy_scans,
     fd_thresh,
     process_surfaces=False,
     dcan_qc=False,
@@ -98,6 +99,7 @@ def init_xcpd_wf(
                 output_dir=".",
                 work_dir=".",
                 dummytime=0,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 process_surfaces=False,
                 dcan_qc=False,
@@ -142,8 +144,8 @@ def init_xcpd_wf(
         Path to custom nuisance regressors.
         Must be a folder containing confounds files,
         in which case the file with the name matching the fMRIPrep confounds file will be selected.
-    dummytime: float
-        the first vols in seconds to be removed before postprocessing
+    %(dummytime)s
+    %(dummy_scans)s
     %(process_surfaces)s
     dcan_qc : bool
         Whether to run DCAN QC or not.
@@ -182,6 +184,7 @@ def init_xcpd_wf(
             smoothing=smoothing,
             output_dir=output_dir,
             dummytime=dummytime,
+            dummy_scans=dummy_scans,
             custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
@@ -220,6 +223,7 @@ def init_subject_wf(
     head_radius,
     params,
     dummytime,
+    dummy_scans,
     fd_thresh,
     task_id,
     smoothing,
@@ -256,6 +260,7 @@ def init_subject_wf(
                 head_radius=50,
                 params="36P",
                 dummytime=0,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 task_id="rest",
                 smoothing=6.,
@@ -297,8 +302,8 @@ def init_subject_wf(
         Path to custom nuisance regressors.
         Must be a folder containing confounds files,
         in which case the file with the name matching the fMRIPrep confounds file will be selected.
-    dummytime: float
-        the first vols in seconds to be removed before postprocessing
+    %(dummytime)s
+    %(dummy_scans)s
     %(process_surfaces)s
     dcan_qc : bool
         Whether to run DCAN QC or not.
@@ -480,6 +485,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             layout=layout,
             despike=despike,
             dummytime=dummytime,
+            dummy_scans=dummy_scans,
             fd_thresh=fd_thresh,
             dcan_qc=dcan_qc,
             output_dir=output_dir,
