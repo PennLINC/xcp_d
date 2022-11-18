@@ -315,7 +315,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     consolidate_confounds_node = pe.Node(
         Function(
             input_names=[
-                "img_files",
+                "img_file",
                 "custom_confounds_file",
                 "params",
             ],
@@ -334,7 +334,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
         ]),
         (inputnode, consolidate_confounds_node, [
-            ("bold_file", "img_files"),
+            ("bold_file", "img_file"),
         ]),
         (get_custom_confounds_file, consolidate_confounds_node, [
             ("custom_confounds_file", "custom_confounds_file"),

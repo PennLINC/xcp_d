@@ -55,7 +55,7 @@ def test_custom_confounds(data_dir, tmp_path_factory):
 
     combined_confounds = load_confound_matrix(
         params="24P",
-        img_files=bold_file,
+        img_file=bold_file,
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)

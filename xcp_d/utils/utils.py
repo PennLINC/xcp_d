@@ -627,7 +627,7 @@ def demean_detrend_data(data):
 
 
 def consolidate_confounds(
-    img_files,
+    img_file,
     params,
     custom_confounds_file=None,
 ):
@@ -635,7 +635,7 @@ def consolidate_confounds(
 
     Parameters
     ----------
-    img_files : file
+    img_file : file
         bold file
     custom_confounds_file : file
         file to custom confounds tsv
@@ -652,7 +652,7 @@ def consolidate_confounds(
     from xcp_d.utils.confounds import load_confound_matrix
 
     confounds_df = load_confound_matrix(
-        img_files=img_files,
+        img_file=img_file,
         params=params,
         custom_confounds=custom_confounds_file,
     )
