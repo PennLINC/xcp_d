@@ -224,6 +224,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
 @fill_doc
 def init_cifti_functional_connectivity_wf(
+    output_dir,
     mem_gb,
     omp_nthreads,
     name="cifti_fcon_wf",
@@ -237,6 +238,7 @@ def init_cifti_functional_connectivity_wf(
 
             from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
             wf = init_cifti_functional_connectivity_wf(
+                output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="cifti_fcon_wf",
@@ -244,8 +246,12 @@ def init_cifti_functional_connectivity_wf(
 
     Parameters
     ----------
+    output_dir : str
+        Output directory. Used for saving the ReHo figure.
     %(mem_gb)s
     %(omp_nthreads)s
+    %(name)s
+        Default is "cifti_fcon_wf".
 
     Inputs
     ------
@@ -303,6 +309,13 @@ the Connectome Workbench.
         iterfield=["atlas_name"],
     )
 
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+    ])
+    # fmt:on
+
     parcellate_data = pe.MapNode(
         CiftiParcellate(direction="COLUMN"),
         mem_gb=mem_gb,
@@ -311,6 +324,14 @@ the Connectome Workbench.
         iterfield=["atlas_label"],
     )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, parcellate_data, [("clean_bold", "in_file")]),
+        (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
+        (parcellate_data, outputnode, [("out_file", "timeseries")]),
+    ])
+    # fmt:on
+
     correlate_data = pe.MapNode(
         CiftiCorrelation(),
         mem_gb=mem_gb,
@@ -318,6 +339,13 @@ the Connectome Workbench.
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (parcellate_data, correlate_data, [("out_file", "in_file")]),
+        (correlate_data, outputnode, [("out_file", "correlations")]),
+    ])
+    # fmt:on
 
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
@@ -328,17 +356,26 @@ the Connectome Workbench.
 
     # fmt:off
     workflow.connect([
-        (inputnode, parcellate_data, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
-        (parcellate_data, correlate_data, [("out_file", "in_file")]),
-        (parcellate_data, outputnode, [("out_file", "timeseries")]),
-        (correlate_data, outputnode, [("out_file", "correlations")]),
         (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+    ])
+    # fmt:on
+
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivityplot",
+            datatype="figures",
+        ),
+        name="ds_report_connectivity",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_connectivity, [("bold_file", "source_file")]),
+        (matrix_plot, ds_report_connectivity, [("connectplot", "in_file")]),
     ])
     # fmt:on
 

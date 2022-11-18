@@ -41,10 +41,11 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     )
 
     # Let's initialize the ALFF node
+    tempdir = tmp_path_factory.mktemp("test_ALFF_nifti")
     TR = _get_tr(nb.load(bold_file))
     alff_compute_wf = init_compute_alff_wf(
+        output_dir=tempdir,
         omp_nthreads=2,
-        bold_file=bold_file,
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
@@ -54,8 +55,8 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     )
 
     # Let's move to a temporary directory before running
-    tempdir = tmp_path_factory.mktemp("test_ALFF_nifti")
     alff_compute_wf.base_dir = tempdir
+    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
     alff_compute_wf.run()
@@ -121,8 +122,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     and confirm the ALFF after addition to lower frequencies
     has changed in the expected direction.
     """
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
+    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
     bold_file = os.path.join(
         data_dir,
         (
@@ -141,9 +141,10 @@ def test_cifti_alff(data_dir, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
+    tempdir = tmp_path_factory.mktemp("test_ALFF_cifti")
     alff_compute_wf = init_compute_alff_wf(
+        output_dir=tempdir,
         omp_nthreads=2,
-        bold_file=bold_file,
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
@@ -153,8 +154,8 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     )
 
     # Let's move to a temporary directory before running
-    tempdir = tmp_path_factory.mktemp("test_ALFF_cifti")
     alff_compute_wf.base_dir = tempdir
+    alff_compute_wf.inputs.inputnode.bold_file = bold_file
     alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
     alff_compute_wf.run()

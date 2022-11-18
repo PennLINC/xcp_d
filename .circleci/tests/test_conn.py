@@ -69,8 +69,9 @@ def test_nifti_conn(data_dir, tmp_path_factory):
             "from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
         )
     )
-
+    tmpdir = tmp_path_factory.mktemp("fcon_nifti_test_2")
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        output_dir=tmpdir,
         mem_gb=4,
         name="fcons_ts_wf",
         omp_nthreads=2,
@@ -86,7 +87,7 @@ def test_nifti_conn(data_dir, tmp_path_factory):
             "_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz"
         )
     )
-    fcon_ts_wf.base_dir = tmp_path_factory.mktemp("fcon_nifti_test_2")
+    fcon_ts_wf.base_dir = tmpdir
     fcon_ts_wf.run()
 
     # Let's find the correct FCON matrix file
@@ -162,7 +163,10 @@ def test_cifti_conn(data_dir, tmp_path_factory):
     # Create the node and a tempdir to write its results out to
     tmpdir = tmp_path_factory.mktemp("fcon_cifti_test_2")
     cifti_conts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=4, name="cifti_ts_con_wf", omp_nthreads=2
+        output_dir=tmpdir,
+        mem_gb=4,
+        name="cifti_ts_con_wf",
+        omp_nthreads=2,
     )
     cifti_conts_wf.base_dir = tmpdir
     # Run the node
