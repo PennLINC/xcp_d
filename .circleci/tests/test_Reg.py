@@ -91,7 +91,7 @@ def test_regression_cifti(data_dir, tmp_path_factory):
     )
 
     # Read in confounds. Confounds must be selected before running Regress.
-    df = load_confound_matrix(img_file=in_file, params="36P")
+    df = load_confound_matrix(img_files=in_file, params="36P")
     assert df.shape[1] == 36
     selected_confounds_file = os.path.join(temp_dir, "temp.tsv")
     df.to_csv(selected_confounds_file, sep="\t", index=False)

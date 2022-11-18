@@ -181,40 +181,33 @@ def load_confound_matrix(params, img_files, custom_confounds=None):
     can cause regression to happen incorrectly.
     """
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
-        confound = load_confounds(img_files, strategy=(['motion']), motion='full',
-                                  scrub=100, fd_threshold=100, std_dvars_threshold=100)[0]
+        confound = load_confounds(img_files, strategy=(['motion']), motion='full')[0]
     elif params == "27P":  # Get rot and trans values, as well as derivatives and square, WM, CSF,
         # global signal
         confound = load_confounds(img_files, strategy=(['motion', 'wm_csf', 'global_signal']),
-                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
                                   motion='full')[0]
     elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
         confound = load_confounds(img_files, strategy=(['motion', 'wm_csf', 'global_signal']),
-                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
                                   motion='full', global_signal='full', wm_csf='full')[0]
     elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
         confound = load_confounds(img_files, strategy=(['motion', 'high_pass', 'compcor', ]),
                                   motion='derivatives', compcor='anat_separated',
-                                  scrub=100, fd_threshold=100, n_compcor=5,
-                                  std_dvars_threshold=100)[0]
+                                  n_compcor=5)[0]
     elif params == "aroma":  # Get the WM, CSF, and aroma values
         confound = load_confounds(img_files, strategy=(['wm_csf', 'ica_aroma']),
-                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
                                   wm_csf='basic', ica_aroma='full')[0]
     elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
         confound = load_confounds(img_files, strategy=(['wm_csf', 'ica_aroma', 'global_signal']),
-                                  scrub=100, fd_threshold=100, std_dvars_threshold=100,
                                   wm_csf='basic', global_signal='basic', ica_aroma='full')[0]
     elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
         confound = load_confounds(img_files, strategy=(['motion', 'high_pass', 'compcor',
                                                         'global_signal']),
                                   motion='derivatives', compcor='anat_separated',
-                                  scrub=100, fd_threshold=100, global_signal='basic', n_compcor=5,
-                                  std_dvars_threshold=100)[0]
+                                  global_signal='basic', n_compcor=5)[0]
     elif params == "custom":
         # For custom confounds with no other confounds
         confound = pd.read_table(custom_confounds, sep="\t")
