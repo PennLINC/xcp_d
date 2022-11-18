@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for collecting and saving xcp_d outputs."""
-import numpy as np
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -20,7 +19,6 @@ def init_writederivatives_wf(
     smoothing,
     params,
     cifti,
-    dummytime,
     output_dir,
     TR,
     name="write_derivatives_wf",
@@ -35,12 +33,13 @@ def init_writederivatives_wf(
             from xcp_d.workflow.outputs import init_writederivatives_wf
             wf = init_writederivatives_wf(
                 bold_file="/path/to/file.nii.gz",
-                lowpass=6.,
-                highpass=60.,
+                bandpass_filter=True,
+                lowpass=0.1,
+                highpass=0.008,
+                motion_filter_type=None,
                 smoothing=6,
                 params="36P",
                 cifti=False,
-                dummytime=0,
                 output_dir=".",
                 TR=2.,
                 name="write_derivatives_wf",
@@ -58,8 +57,6 @@ def init_writederivatives_wf(
     %(smoothing)s
     %(params)s
     %(cifti)s
-    dummytime : float
-        volume(s) removed before postprocessing in seconds
     output_dir : str
         output directory
     TR : float
@@ -89,6 +86,7 @@ def init_writederivatives_wf(
     confounds_file
     filtered_motion
     tmask
+    %(dummy_scans)s
     """
     workflow = Workflow(name=name)
 
@@ -109,6 +107,7 @@ def init_writederivatives_wf(
                 "reho_out",
                 "filtered_motion",
                 "tmask",
+                "dummy_scans",
             ],
         ),
         name="inputnode",
@@ -118,7 +117,6 @@ def init_writederivatives_wf(
     cleaned_data_dictionary = {
         "RepetitionTime": TR,
         "nuisance parameters": params,
-        "dummy vols": int(np.ceil(dummytime / TR)),
     }
     if bandpass_filter:
         cleaned_data_dictionary["Freq Band"] = [highpass, lowpass]

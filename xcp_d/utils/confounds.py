@@ -11,7 +11,7 @@ from scipy.signal import filtfilt, firwin, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger("utils")
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def get_confounds_tsv(datafile):
@@ -49,31 +49,25 @@ def load_confound(datafile):
 
     Returns
     -------
-    confoundpd : pandas.DataFrame
+    confounds_df : pandas.DataFrame
         Loaded confounds TSV file.
-    confoundjs : dict
+    confounds_metadata : dict
         Metadata from associated confounds JSON file.
     """
-    if "space" in os.path.basename(datafile):
-        confounds_timeseries = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.tsv"
-        )
-        confounds_json = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.json"
-        )
-    else:
-        confounds_timeseries = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-confounds_timeseries.tsv"
-        )
-        confounds_json = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-confounds_timeseries.json"
+    confounds_tsv = get_confounds_tsv(datafile)
+    confound_file_base, _ = os.path.splitext(confounds_tsv)
+    confounds_json = confound_file_base + ".json"
+    if not os.path.isfile(confounds_json):
+        raise FileNotFoundError(
+            "No json found for confounds tsv.\n"
+            f"\tTSV file: {confounds_tsv}\n"
+            f"\tJSON file (DNE): {confounds_json}"
         )
 
-    confoundpd = pd.read_csv(confounds_timeseries, delimiter="\t", encoding="utf-8")
+    confounds_df = pd.read_table(confounds_tsv)
+    confounds_metadata = readjson(confounds_json)
 
-    confoundjs = readjson(confounds_json)
-
-    return confoundpd, confoundjs
+    return confounds_df, confounds_metadata
 
 
 def readjson(jsonfile):
@@ -316,18 +310,16 @@ def square_confound(confound):
 
 
 @fill_doc
-def load_confound_matrix(original_file, params, custom_confounds=None, confound_tsv=None):
+def load_confound_matrix(params, confound_tsv, custom_confounds=None):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
     ----------
-    original_file :
-       File used to find confounds json.
     %(params)s
+    confound_tsv : str
+        The path to the confounds TSV file.
     custom_confounds : str or None, optional
         Custom confounds TSV if there is one. Default is None.
-    confound_tsv : str or None, optional
-        The path to the confounds TSV file. Default is None.
 
     Returns
     -------
@@ -339,15 +331,24 @@ def load_confound_matrix(original_file, params, custom_confounds=None, confound_
     Switching the order of the trans and rot values in the motion columns
     can cause regression to happen incorrectly.
     """
-    #  Get the confounds dat from the json and tsv
-    confounds_metadata = load_confound(original_file)[1]
+    #  Get the confounds data from the json and tsv
+    confound_file_base, _ = os.path.splitext(confound_tsv)
+    confounds_json = confound_file_base + ".json"
+    if not os.path.isfile(confounds_json):
+        raise FileNotFoundError(
+            "No json found for confounds tsv.\n"
+            f"\tTSV file: {confound_tsv}\n"
+            f"\tJSON file (DNE): {confounds_json}"
+        )
+
     confounds_df = pd.read_table(confound_tsv)
+    confounds_metadata = readjson(confounds_json)
 
     if params == "24P":  # Get rot and trans values, as well as derivatives and square
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
         confound = pd.concat([derivative_rot_trans, square_confound(derivative_rot_trans)], axis=1)
-    elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF
+    elif params == "27P":  # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal and square
         motion = confounds_df[["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]]
         derivative_rot_trans = pd.concat([motion, derivative(motion)], axis=1)
@@ -394,11 +395,11 @@ def load_confound_matrix(original_file, params, custom_confounds=None, confound_
         confound = pd.concat([derivative_rot_trans, acompcor, cosine], axis=1)
     elif params == "aroma":  # Get the WM, CSF, and aroma values
         whitematter_csf = load_wm_csf(confounds_df)
-        aroma = load_aroma(datafile=original_file)
+        aroma = load_aroma(confounds_df)
         confound = pd.concat([whitematter_csf, aroma], axis=1)
     elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
         whitematter_csf = load_wm_csf(confounds_df)
-        aroma = load_aroma(datafile=original_file)
+        aroma = load_aroma(confounds_df)
         global_signal = load_global_signal(confounds_df)
         confound = pd.concat([whitematter_csf, aroma, global_signal], axis=1)
     elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
@@ -421,42 +422,21 @@ def load_confound_matrix(original_file, params, custom_confounds=None, confound_
     return confound
 
 
-def load_aroma(datafile):
+def load_aroma(confounds_df):
     """Extract aroma confounds from a confounds TSV file.
 
     Parameters
     ----------
-    datafile : str
-        Path to the preprocessed BOLD file for which to extract AROMA confounds.
+    confounds_df : :obj:`pandas.DataFrame`
+        The confounds DataFrame.
 
     Returns
     -------
-    aroma : pandas.DataFrame
+    pandas.DataFrame
         The AROMA noise components.
     """
-    #  Pull out aroma and melodic_ts files
-    if "space" in os.path.basename(datafile):
-        aroma_noise = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_AROMAnoiseICs.csv"
-        )
-        melodic_ts = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_desc-MELODIC_mixing.tsv"
-        )
-    else:
-        aroma_noise = datafile.split("_desc-preproc_bold.nii.gz")[0] + "_AROMAnoiseICs.csv"
-        melodic_ts = datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-MELODIC_mixing.tsv"
-    # Load data
-    aroma_noise = np.genfromtxt(
-        aroma_noise,
-        delimiter=",",
-    )
-    aroma_noise = [np.int(i) - 1 for i in aroma_noise]  # change to 0-based index
-
-    # Load in meloditc_ts
-    melodic = pd.read_csv(melodic_ts, header=None, delimiter="\t", encoding="utf-8")
-
-    # Drop aroma_noise from melodic_ts
-    aroma = melodic.drop(aroma_noise, axis=1)
+    aroma_noise = [c for c in confounds_df.columns if c.startswith("aroma_motion_")]
+    aroma = confounds_df[aroma_noise]
 
     return aroma
 
@@ -561,3 +541,47 @@ def motion_regression_filter(
             filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
 
     return filtered_data
+
+
+def _infer_dummy_scans(dummy_scans, confounds_file=None):
+    """Attempt to determine the number of dummy scans from the confounds file.
+
+    This function expects non-steady-state volumes flagged by the preprocessing pipeline
+    to be indicated in columns starting with "non_steady_state_outlier" in the confounds file.
+
+    Parameters
+    ----------
+    dummy_scans : "auto" or int
+        The number of dummy scans.
+        If an integer, this will be returned without modification.
+        If "auto", the confounds file will be loaded and the number of non-steady-state
+        volumes estimated by the preprocessing workflow will be determined.
+    confounds_file : None or str
+        Path to the confounds TSV file from the preprocessing pipeline.
+        Only used if dummy_scans is "auto".
+        Default is None.
+
+    Returns
+    -------
+    dummy_scans : int
+        Estimated number of dummy scans.
+    """
+    if dummy_scans == "auto":
+        confounds_df = pd.read_table(confounds_file)
+
+        nss_cols = [c for c in confounds_df.columns if c.startswith("non_steady_state_outlier")]
+
+        if nss_cols:
+            initial_volumes_df = confounds_df[nss_cols]
+            dummy_scans = np.any(initial_volumes_df.to_numpy(), axis=1)
+            dummy_scans = np.where(dummy_scans)[0]
+
+            # reasonably assumes all NSS volumes are contiguous
+            dummy_scans = int(dummy_scans[-1] + 1)
+            LOGGER.info(f"Found {dummy_scans} dummy scans in {os.path.basename(confounds_file)}")
+
+        else:
+            LOGGER.warning(f"No non-steady-state outliers found in {confounds_file}")
+            dummy_scans = 0
+
+    return dummy_scans

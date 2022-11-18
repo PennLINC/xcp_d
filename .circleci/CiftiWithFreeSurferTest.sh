@@ -40,7 +40,7 @@ $XCPD_CMD \
     --cifti \
     --combineruns \
     --dcan-qc \
-    --dummytime 8 \
+    --dummy-scans auto \
     --fd-thresh 0.04
 
 input_type=cifti

@@ -5,6 +5,7 @@
 xcp_d preprocessing workflow
 ============================
 """
+import argparse
 import gc
 import logging
 import os
@@ -39,18 +40,46 @@ def check_deps(workflow):
     )
 
 
-class DeprecatedStoreAction(Action):
+def _int_or_auto(string, is_parser=True):
+    """Check if argument is an integer >= 0 or the string "auto"."""
+    if string == "auto":
+        return string
+
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        intarg = int(string)
+    except ValueError:
+        msg = "Argument must be a nonnegative integer or 'auto'."
+        raise error(msg)
+
+    if intarg < 0:
+        raise error("Int argument must be nonnegative.")
+    return intarg
+
+
+class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 
     Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
     """
 
+    __version__ = ""
+
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.4.0."
+            f"Argument '{option_string}' is deprecated and will be removed in version "
+            f"{self.__version__}. "
         )
         setattr(namespace, self.dest, values)
+
+
+class _DeprecatedStoreAction030(_DeprecatedStoreAction):
+    __version__ = "0.3.0"
+
+
+class _DeprecatedStoreAction040(_DeprecatedStoreAction):
+    __version__ = "0.4.0"
 
 
 def get_parser():
@@ -222,12 +251,32 @@ def get_parser():
             "file will be selected. "
         ),
     )
-    g_param.add_argument(
+
+    dummyvols = g_param.add_mutually_exclusive_group()
+    dummyvols.add_argument(
         "-d",
         "--dummytime",
         default=0,
         type=float,
-        help="first volume in seconds to be removed or skipped before postprocessing",
+        action=_DeprecatedStoreAction040,
+        help=(
+            "Number of seconds to remove from the beginning of each run. "
+            "This value will be rounded up to the nearest TR. "
+            "This parameter is deprecated and will be removed in version 0.4.0. "
+            "Please use ``--dummy-scans``."
+        ),
+    )
+    dummyvols.add_argument(
+        "--dummy-scans",
+        dest="dummy_scans",
+        default=0,
+        type=_int_or_auto,
+        metavar="{{auto,INT}}",
+        help=(
+            "Number of volumes to remove from the beginning of each run. "
+            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "preprocessing derivatives' confounds file."
+        ),
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
@@ -367,7 +416,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head_radius",
         default=50,
         type=float,
-        help=("head radius for computing FD, default is 50mm, " "35mm is recommended for baby"),
+        help=("head radius for computing FD, default is 50mm, 35mm is recommended for baby"),
     )
     g_censor.add_argument(
         "-f",
@@ -605,16 +654,17 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            dummytime=opts.dummytime,
             subject_list=subject_list,
             fmri_dir=fmri_dir,
             work_dir=work_dir,
             output_dir=output_dir,
             run_uuid=run_uuid,
+            cifti=opts.cifti,
+            dummy_scans=opts.dummy_scans,
+            dummytime=opts.dummytime,
             combineruns=opts.combineruns,
             dcan_qc=opts.dcan_qc,
             input_type=opts.input_type,
-            cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
         )
@@ -909,6 +959,7 @@ Running xcp_d version {__version__}:
         head_radius=opts.head_radius,
         custom_confounds_folder=opts.custom_confounds,
         dummytime=opts.dummytime,
+        dummy_scans=opts.dummy_scans,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
         dcan_qc=opts.dcan_qc,

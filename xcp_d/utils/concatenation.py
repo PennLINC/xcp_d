@@ -15,6 +15,8 @@ from nipype import logging
 from pkg_resources import resource_filename as _pkgres
 
 from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import _drop_dummy_scans
 from xcp_d.utils.plot import plot_svgx
 from xcp_d.utils.qcmetrics import compute_dvars
@@ -26,7 +28,17 @@ path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
 
-def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, cifti, dcan_qc):
+@fill_doc
+def concatenate_derivatives(
+    fmridir,
+    outputdir,
+    work_dir,
+    subjects,
+    cifti,
+    dcan_qc,
+    dummy_scans,
+    dummytime=0,
+):
     """Concatenate derivatives.
 
     This function does a lot more than concatenate derivatives.
@@ -39,8 +51,6 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
     Parameters
     ----------
-    dummytime: float
-        Amount of time to drop from the beginning of the scan
     fmridir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
     outputdir : str
@@ -53,6 +63,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
         Whether xcpd was run on CIFTI files or not.
     dcan_qc : bool
         Whether to perform DCAN QC or not.
+    %(dummy_scans)s
+    %(dummytime)s
     """
     LOGGER.debug("Starting concatenation workflow.")
 
@@ -212,29 +224,38 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                     space_entities["space"] = space
 
                     # Concatenate denoised BOLD files
-                    bold_files = layout_xcpd.get(
+                    denoised_files = layout_xcpd.get(
                         run=Query.ANY,
                         desc="denoised",
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
                     )
-                    concat_denoised_file = _get_concat_name(layout_xcpd, bold_files[0])
+                    concat_denoised_file = _get_concat_name(layout_xcpd, denoised_files[0])
                     LOGGER.debug(f"Concatenating postprocessed file: {concat_denoised_file}")
-                    _concatenate_niimgs(bold_files, concat_denoised_file)
+                    _concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=0)
 
-                    # Concatenate smoothed, denoised BOLD files if they exist
-                    smooth_bold_files = layout_xcpd.get(
+                    # Concatenate smoothed BOLD files if they exist
+                    smooth_denoised_files = layout_xcpd.get(
                         run=Query.ANY,
                         desc="denoisedSmoothed",
                         suffix="bold",
                         extension=img_extensions,
                         **space_entities,
                     )
-                    if len(smooth_bold_files):
-                        concat_file = _get_concat_name(layout_xcpd, smooth_bold_files[0])
-                        LOGGER.debug(f"Concatenating smoothed postprocessed file: {concat_file}")
-                        _concatenate_niimgs(smooth_bold_files, concat_file)
+                    if len(smooth_denoised_files):
+                        concat_smooth_denoised_file = _get_concat_name(
+                            layout_xcpd, smooth_denoised_files[0]
+                        )
+                        LOGGER.debug(
+                            "Concatenating smoothed postprocessed file: "
+                            f"{concat_smooth_denoised_file}"
+                        )
+                        _concatenate_niimgs(
+                            smooth_denoised_files,
+                            concat_smooth_denoised_file,
+                            dummy_scans=0,
+                        )
 
                     # Executive summary carpet plots
                     if dcan_qc:
@@ -248,9 +269,6 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             extension=img_extensions,
                             **space_entities,
                         )
-                        TR = _get_tr(preproc_files[0].path)
-                        dummy_scans = int(np.ceil(dummytime / TR))
-
                         concat_preproc_file = os.path.join(
                             tmpdir,
                             f"rawdata{preproc_files[0].extension}",
@@ -262,13 +280,39 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             f"Concatenating preprocessed file ({concat_preproc_file}) from\n"
                             f"{preproc_files_str}"
                         )
+
+                        # Get TR for BOLD files in this query (e.g., task/acq/ses)
+                        # We assume that TR is the same across runs,
+                        # which isn't a solid assumption, since we don't account for "acq".
+                        TR = _get_tr(preproc_files[0].path)
+
+                        if dummy_scans == 0 and dummytime != 0:
+                            dummy_scans = int(np.ceil(dummytime / TR))
+
+                        if dummy_scans == "auto":
+                            runwise_dummy_scans = []
+                            for i_file, preproc_file in enumerate(preproc_files):
+                                confounds_file = get_confounds_tsv(preproc_file.path)
+                                if not os.path.isfile(confounds_file):
+                                    raise FileNotFoundError(
+                                        f"Confounds file not found: {confounds_file}"
+                                    )
+
+                                runwise_dummy_scans.append(
+                                    _infer_dummy_scans(dummy_scans, confounds_file)
+                                )
+
+                        elif isinstance(dummy_scans, int):
+                            runwise_dummy_scans = [dummy_scans] * len(preproc_files)
+
+                        # Concatenate preprocessed files, but drop dummy scans from each run
                         _concatenate_niimgs(
                             preproc_files,
                             concat_preproc_file,
-                            dummy_scans=dummy_scans,
+                            dummy_scans=runwise_dummy_scans,
                         )
 
-                        # Extract mask and segmentation files, if necessary
+                        # Get mask and dseg files for loading data and calculating DVARS.
                         if not cifti:
                             mask_files = layout_fmriprep.get(
                                 run=1,
@@ -317,10 +361,10 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                         # Calculate DVARS from preprocessed BOLD
                         raw_dvars = []
-                        for preproc_file in preproc_files:
+                        for i_file, preproc_file in enumerate(preproc_files):
                             dvar = compute_dvars(read_ndata(preproc_file.path, mask))
                             dvar[0] = np.mean(dvar)
-                            dvar = dvar[dummy_scans:]
+                            dvar = dvar[runwise_dummy_scans[i_file] :]
                             raw_dvars.append(dvar)
                         raw_dvars = np.concatenate(raw_dvars)
                         # Censor DVARS
@@ -328,8 +372,8 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                         # Calculate DVARS from denoised BOLD
                         denoised_dvars = []
-                        for bold_file in bold_files:
-                            dvar = compute_dvars(read_ndata(bold_file.path, mask))
+                        for denoised_file in denoised_files:
+                            dvar = compute_dvars(read_ndata(denoised_file.path, mask))
                             dvar[0] = np.mean(dvar)
                             denoised_dvars.append(dvar)
                         denoised_dvars = np.concatenate(denoised_dvars)
@@ -338,7 +382,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
 
                         # Start on carpet plots
                         LOGGER.debug("Generating carpet plots")
-                        carpet_entities = bold_files[0].get_entities()
+                        carpet_entities = denoised_files[0].get_entities()
                         carpet_entities = _sanitize_entities(carpet_entities)
                         carpet_entities["run"] = None
                         carpet_entities["datatype"] = "figures"
@@ -365,7 +409,7 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                             preprocessed_file=concat_preproc_file,
                             residuals_file=concat_censored_file,
                             denoised_file=concat_denoised_file,
-                            dummyvols=0,
+                            dummy_scans=0,
                             tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
@@ -399,7 +443,11 @@ def concatenate_derivatives(dummytime, fmridir, outputdir, work_dir, subjects, c
                         if atlas_timeseries_files[0].extension == ".tsv":
                             concatenate_tsv_files(atlas_timeseries_files, concat_file)
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
-                            _concatenate_niimgs(atlas_timeseries_files, concat_file)
+                            _concatenate_niimgs(
+                                atlas_timeseries_files,
+                                concat_file,
+                                dummy_scans=0,
+                            )
                         else:
                             raise ValueError(
                                 f"Unknown extension for {atlas_timeseries_files[0].path}"
@@ -523,7 +571,7 @@ def _sanitize_entities(dict_):
     return dict_
 
 
-def _concatenate_niimgs(files, out_file, dummy_scans=None):
+def _concatenate_niimgs(files, out_file, dummy_scans=0):
     """Concatenate niimgs.
 
     This is generally a very simple proposition (especially with niftis).
@@ -536,20 +584,26 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
         List of BOLD files to concatenate over the time dimension.
     out_file : :obj:`str`
         The concatenated file to write out.
-    dummy_scans : None or int, optional
+    dummy_scans : int or list of int, optional
         The number of dummy scans to drop from the beginning of each file before concatenation.
         If None (default), no volumes will be dropped.
         If an integer, the same number of volumes will be dropped from each file.
+        If "auto", this function will attempt to find each file's associated confounds file,
+        load it, and determine the number of non-steady-state volumes estimated by the
+        preprocessing workflow.
     """
-    if dummy_scans is not None:
-        assert isinstance(dummy_scans, int)
+    assert isinstance(dummy_scans, (int, list))
 
     is_nifti = files[0].extension == ".nii.gz"
+    use_temp_files = False
 
-    if isinstance(dummy_scans, int):
+    if isinstance(dummy_scans, list):
+        assert all([isinstance(val, int) for val in dummy_scans])
+        runwise_dummy_scans = dummy_scans
+    else:
         runwise_dummy_scans = [dummy_scans] * len(files)
 
-    if dummy_scans is not None:
+    if dummy_scans != 0:
         bold_imgs = [
             _drop_dummy_scans(f.path, dummy_scans=runwise_dummy_scans[i])
             for i, f in enumerate(files)
@@ -558,6 +612,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
             bold_files = bold_imgs
         else:
             # Create temporary files for cifti images
+            use_temp_files = True
             bold_files = []
             for i_img, img in enumerate(bold_imgs):
                 temporary_file = f"temp_{i_img}{files[0].extension}"
@@ -573,7 +628,7 @@ def _concatenate_niimgs(files, out_file, dummy_scans=None):
     else:
         os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(bold_files)}")
 
-        if dummy_scans is not None:
+        if use_temp_files:
             # Delete temporary files
             for bold_file in bold_files:
                 os.remove(bold_file)

@@ -88,8 +88,9 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
     TR = traits.Float(default_value=1, desc="Repetition time")
-    dummyvols = traits.Int(
-        default_value=0,
+    dummy_scans = traits.Int(
+        0,
+        usedefault=True,
         desc="Number of dummy volumes to drop from the beginning of the run.",
     )
 
@@ -132,7 +133,7 @@ class PlotSVGData(SimpleInterface):
             residuals_file=self.inputs.regressed_data,
             denoised_file=self.inputs.residual_data,
             tmask=self.inputs.tmask,
-            dummyvols=self.inputs.dummyvols,
+            dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
             mask=self.inputs.mask,
             filtered_motion=self.inputs.filtered_motion,
