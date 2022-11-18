@@ -56,7 +56,7 @@ def test_regression_nifti(data_dir, tmp_path_factory):
     for regressor in list_of_regressors:
         regressor = np.array(regressor)
         regressor[~np.isfinite(regressor)] = 0
-        r, p = scipy.stats.pearsonr(regressor, regressed)
+        r, _ = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
     print(max(regressed_correlations))
@@ -74,11 +74,6 @@ def test_regression_cifti(data_dir, tmp_path_factory):
         data_dir,
         "fmriprep/sub-colornest001/ses-1/func",
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
-    )
-    confounds = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv",
     )
     mask = os.path.join(
         data_dir,
@@ -118,7 +113,7 @@ def test_regression_cifti(data_dir, tmp_path_factory):
     for regressor in list_of_regressors:
         regressor = np.array(regressor)
         regressor[~np.isfinite(regressor)] = 0
-        r, p = scipy.stats.pearsonr(regressor, regressed)
+        r, _ = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
     print((regressed_correlations))
