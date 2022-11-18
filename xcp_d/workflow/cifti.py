@@ -441,6 +441,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
+        (inputnode, fcon_ts_wf, [("bold_file", "inputnode.bold_file")]),
         (filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")]),
     ])
     # fmt:on

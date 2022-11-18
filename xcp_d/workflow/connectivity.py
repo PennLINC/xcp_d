@@ -255,12 +255,12 @@ def init_cifti_functional_connectivity_wf(
 
     Inputs
     ------
+    bold_file
+        Used for names.
     clean_bold
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
-    %(atlas_names)s
-        Defined in the function.
 
     Outputs
     -------
@@ -285,7 +285,7 @@ the Connectome Workbench.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold"]),
+        niu.IdentityInterface(fields=["bold_file", "clean_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
