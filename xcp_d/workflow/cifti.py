@@ -237,10 +237,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="get_custom_confounds_file",
     )
 
-    fcon_ts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=mem_gbx["timeseries"], name="cifti_ts_con_wf", omp_nthreads=omp_nthreads
-    )
-
     if bandpass_filter:
         alff_compute_wf = init_compute_alff_wf(
             mem_gb=mem_gbx["timeseries"],
@@ -259,20 +255,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         bold_file=bold_file,
         name="cifti_reho_wf",
         omp_nthreads=omp_nthreads,
-    )
-
-    write_derivative_wf = init_writederivatives_wf(
-        smoothing=smoothing,
-        bold_file=bold_file,
-        bandpass_filter=bandpass_filter,
-        params=params,
-        cifti=True,
-        output_dir=output_dir,
-        lowpass=upper_bpf,
-        highpass=lower_bpf,
-        motion_filter_type=motion_filter_type,
-        TR=TR,
-        name="write_derivative_wf",
     )
 
     censor_scrub = pe.Node(
@@ -492,8 +474,16 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (filtering_wf, resd_smoothing_wf, [("filtered_file", "inputnode.bold_file")]),
     ])
+    # fmt:on
 
     # functional connect workflow
+    fcon_ts_wf = init_cifti_functional_connectivity_wf(
+        mem_gb=mem_gbx["timeseries"],
+        name="cifti_ts_con_wf",
+        omp_nthreads=omp_nthreads,
+    )
+
+    # fmt:off
     workflow.connect([
         (filtering_wf, fcon_ts_wf, [("filtered_file", "inputnode.clean_bold")]),
     ])
@@ -513,8 +503,24 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
         (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
     ])
+    # fmt:on
 
     # write derivatives
+    write_derivative_wf = init_writederivatives_wf(
+        smoothing=smoothing,
+        bold_file=bold_file,
+        bandpass_filter=bandpass_filter,
+        params=params,
+        cifti=True,
+        output_dir=output_dir,
+        lowpass=upper_bpf,
+        highpass=lower_bpf,
+        motion_filter_type=motion_filter_type,
+        TR=TR,
+        name="write_derivative_wf",
+    )
+
+    # fmt:off
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [
             ("out_file", "inputnode.confounds_file"),

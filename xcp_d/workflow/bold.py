@@ -265,12 +265,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         name="get_custom_confounds_file",
     )
 
-    fcon_ts_wf = init_nifti_functional_connectivity_wf(
-        mem_gb=mem_gbx["timeseries"],
-        name="fcons_ts_wf",
-        omp_nthreads=omp_nthreads,
-    )
-
     if bandpass_filter:
         alff_compute_wf = init_compute_alff_wf(
             mem_gb=mem_gbx["timeseries"],
@@ -289,20 +283,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         bold_file=bold_file,
         name="nifti_reho_wf",
         omp_nthreads=omp_nthreads,
-    )
-
-    write_derivative_wf = init_writederivatives_wf(
-        smoothing=smoothing,
-        bold_file=bold_file,
-        bandpass_filter=bandpass_filter,
-        params=params,
-        cifti=None,
-        output_dir=output_dir,
-        lowpass=upper_bpf,
-        highpass=lower_bpf,
-        motion_filter_type=motion_filter_type,
-        TR=TR,
-        name="write_derivative_wf",
     )
 
     censor_scrub = pe.Node(
@@ -542,8 +522,16 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (filtering_wf, resd_smoothing_wf, [("filtered_file", "inputnode.bold_file")]),
     ])
+    # fmt:on
 
     # functional connect workflow
+    fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        mem_gb=mem_gbx["timeseries"],
+        name="fcons_ts_wf",
+        omp_nthreads=omp_nthreads,
+    )
+
+    # fmt:off
     workflow.connect([
         (inputnode, fcon_ts_wf, [
             ("bold_file", "inputnode.bold_file"),
@@ -555,8 +543,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("filtered_file", "inputnode.clean_bold"),
         ]),
     ])
+    # fmt:on
 
     # reho and alff
+    # fmt:off
     workflow.connect([
         (inputnode, reho_compute_wf, [("bold_mask", "inputnode.bold_mask")]),
         (filtering_wf, reho_compute_wf, [("filtered_file", "inputnode.clean_bold")]),
@@ -576,6 +566,20 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # fmt:on
 
     # write derivatives
+    write_derivative_wf = init_writederivatives_wf(
+        smoothing=smoothing,
+        bold_file=bold_file,
+        bandpass_filter=bandpass_filter,
+        params=params,
+        cifti=None,
+        output_dir=output_dir,
+        lowpass=upper_bpf,
+        highpass=lower_bpf,
+        motion_filter_type=motion_filter_type,
+        TR=TR,
+        name="write_derivative_wf",
+    )
+
     # fmt:off
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [
