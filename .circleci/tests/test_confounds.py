@@ -16,11 +16,11 @@ def test_custom_confounds(data_dir, tmp_path_factory):
 
     bold_file = os.path.join(
         data_dir,
+        "fmriprep/sub-colornest001/ses-1/func",
         (
-            "fmriprep/sub-colornest001/ses-1/func/"
             "sub-colornest001_ses-1_task-rest_run-1"
             "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-        )
+        ),
     )
 
     N_VOLUMES = 184
