@@ -20,17 +20,13 @@ def test_regression_nifti(data_dir, tmp_path_factory):
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     )
-    confounds = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-2_desc-confounds_timeseries.tsv"
-    )
     mask = (
         data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
         "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
     )
 
     # Read in confounds. Confounds must be selected before running Regress.
-    df = load_confound_matrix(confound_tsv=confounds, params="36P")
+    df = load_confound_matrix(img_file=in_file, params="36P")
     assert df.shape[1] == 36
     selected_confounds_file = os.path.join(temp_dir, "temp.tsv")
     df.to_csv(selected_confounds_file, sep="\t", index=False)
@@ -60,7 +56,7 @@ def test_regression_nifti(data_dir, tmp_path_factory):
     for regressor in list_of_regressors:
         regressor = np.array(regressor)
         regressor[~np.isfinite(regressor)] = 0
-        r, p = scipy.stats.pearsonr(regressor, regressed)
+        r, _ = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
     print(max(regressed_correlations))
@@ -79,11 +75,6 @@ def test_regression_cifti(data_dir, tmp_path_factory):
         "fmriprep/sub-colornest001/ses-1/func",
         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
     )
-    confounds = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv",
-    )
     mask = os.path.join(
         data_dir,
         "fmriprep/sub-colornest001/ses-1/func",
@@ -91,7 +82,7 @@ def test_regression_cifti(data_dir, tmp_path_factory):
     )
 
     # Read in confounds. Confounds must be selected before running Regress.
-    df = load_confound_matrix(confound_tsv=confounds, params="36P")
+    df = load_confound_matrix(img_file=in_file, params="36P")
     assert df.shape[1] == 36
     selected_confounds_file = os.path.join(temp_dir, "temp.tsv")
     df.to_csv(selected_confounds_file, sep="\t", index=False)
@@ -122,7 +113,7 @@ def test_regression_cifti(data_dir, tmp_path_factory):
     for regressor in list_of_regressors:
         regressor = np.array(regressor)
         regressor[~np.isfinite(regressor)] = 0
-        r, p = scipy.stats.pearsonr(regressor, regressed)
+        r, _ = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
     print((regressed_correlations))
