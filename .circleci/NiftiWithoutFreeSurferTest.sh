@@ -37,4 +37,5 @@ $XCPD_CMD \
     --dcan-qc \
     --dummy-scans 1
 
-echo $XCPD_CMD
+input_type=nifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
