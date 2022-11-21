@@ -188,7 +188,7 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
                                   motion='full', global_signal='full', wm_csf='full')[0]
     elif params == "acompcor":  # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        confound = load_confounds(img_file, strategy=(['motion', 'high_pass', 'compcor', ]),
+        confound = load_confounds(img_file, strategy=(['motion', 'high_pass', 'compcor']),
                                   motion='derivatives', compcor='anat_separated',
                                   n_compcor=5)[0]
     elif params == "aroma":  # Get the WM, CSF, and aroma values
