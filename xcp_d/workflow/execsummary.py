@@ -21,6 +21,13 @@ from xcp_d.interfaces.surfplotting import (
     RibbontoStatmap,
 )
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.execsummary import (
+    build_scene_from_brainsprite_template,
+    create_image_from_brainsprite_scene,
+    get_n_frames,
+    make_brainsprite_html,
+    make_mosaic,
+)
 from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import get_std2bold_xforms
 
@@ -63,9 +70,20 @@ def init_brainsprite_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        niu.IdentityInterface(
+            fields=[
+                "t1w",
+                "t2w",
+                "t1seg",
+                "lh_wm_surf",
+                "rh_wm_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+            ]
+        ),
         name="inputnode",
     )
+
     ribbon2statmap = pe.Node(
         RibbontoStatmap(),
         name="ribbon2statmap",
@@ -73,6 +91,99 @@ def init_brainsprite_wf(
         n_procs=omp_nthreads,
     )
     if dcan_qc:
+        # Load template scene file
+        from pkg_resources import resource_filename as pkgrf
+
+        scene_template = pkgrf("xcp_d", "data/parasagittal_Tx_169_template.scene.gz")
+
+        # Modify template scene file with file paths
+        modify_template_scene = pe.Node(
+            Function(
+                function=build_scene_from_brainsprite_template,
+                input_names=[
+                    "tx_img",
+                    "rh_pial_file",
+                    "lh_pial_file",
+                    "rh_white_file",
+                    "lh_white_file",
+                    "scene_template",
+                ],
+                output_names=["out_file"],
+            ),
+            name="modify_template_scene",
+        )
+        modify_template_scene.inputs.scene_template = scene_template
+
+        # Create slice-wise PNGs
+        get_number_of_frames = pe.Node(
+            Function(
+                function=get_n_frames,
+                input_names=["scene_file"],
+                output_names=["frame_numbers"],
+            ),
+            name="get_number_of_frames",
+        )
+
+        create_framewise_pngs = pe.MapNode(
+            Function(
+                function=create_image_from_brainsprite_scene,
+                input_names=["scene_file", "frame_number"],
+                output_names=["out_file"],
+            ),
+            name="create_framewise_pngs",
+            iterfield=["frame_number"],
+        )
+
+        # Make mosaic
+        make_mosaic_node = pe.Node(
+            Function(
+                function=make_mosaic,
+                input_names=["png_files"],
+                output_names=["mosaic_file"],
+            ),
+            name="make_mosaic_node",
+        )
+
+        make_brainsprite = pe.Node(
+            Function(
+                function=make_brainsprite_html,
+                input_names=["mosaic_file", "selected_png_files", "input_type"],
+                output_names=["out_file"],
+            ),
+            name="make_brainsprite",
+        )
+        make_brainsprite.inputs.input_type = "t1w"
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, modify_template_scene, [
+                ("t1w", "tx_img"),
+                ("lh_wm_surf", "lh_white_file"),
+                ("rh_wm_surf", "rh_white_file"),
+                ("lh_pial_surf", "lh_pial_file"),
+                ("rh_pial_surf", "rh_pial_file"),
+            ]),
+            (modify_template_scene, get_number_of_frames, [
+                ("scene_file", "scene_file"),
+            ]),
+            (modify_template_scene, create_framewise_pngs, [
+                ("scene_file", "scene_file"),
+            ]),
+            (get_number_of_frames, create_framewise_pngs, [
+                ("frame_numbers", "frame_number"),
+            ]),
+            (create_framewise_pngs, make_mosaic_node, [
+                ("out_file", "png_files"),
+            ]),
+            (make_mosaic_node, make_brainsprite, [
+                ("mosaic_file", "mosaic_file"),
+            ]),
+            (create_framewise_pngs, make_brainsprite, [
+                ("out_file", "selected_png_files"),
+            ]),
+        ])
+        # fmt:on
+
         # Create a brainsprite if dcan_qc is True
         plot_ribbon = pe.Node(
             BrainPlotx(),
