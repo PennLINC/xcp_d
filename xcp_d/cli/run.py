@@ -27,6 +27,7 @@ logger = logging.getLogger("cli")
 
 
 def json_file(file_):
+    """Load a JSON file and return it."""
     if file_ is None:
         return file_
     elif os.path.isfile(file_):
@@ -153,9 +154,7 @@ def get_parser():
         type=json_file,
         default=None,
         metavar="FILE",
-        help=(
-            "A JSON file defining BIDS input filters using PyBIDS."
-        ),
+        help="A JSON file defining BIDS input filters using PyBIDS.",
     )
     g_bids.add_argument(
         "-m",
