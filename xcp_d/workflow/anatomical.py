@@ -79,12 +79,12 @@ def init_t1w_wf(
         Path to the T1w file.
     t1seg : str
         Path to the T1w segmentation file.
-    %(t1w_to_mni)s
+    %(t1w_to_template)s
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
         name="inputnode",
     )
 
@@ -180,9 +180,9 @@ def init_t1w_wf(
         workflow.connect(
             [
                 (inputnode, t1w_transform, [("t1w", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
+                                            ("t1w_to_template", "transforms")]),
                 (inputnode, seg_transform, [("t1seg", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
+                                            ("t1w_to_template", "transforms")]),
                 (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
                 (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
             ]
@@ -1471,7 +1471,7 @@ def init_anatomical_wf(
             # This "nothingnode" exists just to allow the inputnode to connect to something.
             # TODO: Should we maybe raise an Exception instead?
             nothingnode = pe.Node(
-                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
                 name="nothingnode",
             )
             # fmt:off

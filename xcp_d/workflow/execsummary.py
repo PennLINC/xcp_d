@@ -201,7 +201,7 @@ def init_execsummary_wf(
     tmask
     rawdata
     mask
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
@@ -217,7 +217,7 @@ def init_execsummary_wf(
                 "tmask",
                 "rawdata",
                 "mask",
-                "mni_to_t1w",
+                "template_to_t1w",
                 "dummy_scans",
             ]
         ),
@@ -255,7 +255,7 @@ def init_execsummary_wf(
     # Get the transform file to native space
     get_std2native_transform = pe.Node(
         Function(
-            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
             output_names=["transform_list"],
             function=get_std2bold_xforms,
         ),
@@ -351,7 +351,7 @@ def init_execsummary_wf(
             ('tmask', 'tmask'),
             ('dummy_scans', 'dummy_scans'),
         ]),
-        (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
+        (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
         (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),

@@ -182,7 +182,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "mni_to_t1w_xform": {
+        "template_to_t1w_xform": {
             "datatype": "anat",
             "to": "T1w",
             "suffix": "xfm",
@@ -197,7 +197,7 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_mni_xform": {
+        "t1w_to_template_xform": {
             "datatype": "anat",
             "from": "T1w",
             "suffix": "xfm",
@@ -226,8 +226,8 @@ def collect_data(
             if bold_data:
                 queries["bold"]["space"] = space
                 if not cifti:
-                    queries["t1w_to_mni_xform"]["to"] = space
-                    queries["mni_to_t1w_xform"]["from"] = space
+                    queries["t1w_to_template_xform"]["to"] = space
+                    queries["template_to_t1w_xform"]["from"] = space
 
                 break
     else:

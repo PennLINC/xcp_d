@@ -335,8 +335,8 @@ def init_subject_wf(
                 "t1w",
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
-                "mni_to_t1w_xform",
-                "t1w_to_mni_xform",
+                "template_to_t1w_xform",
+                "t1w_to_template_xform",
             ],
         ),
         name="inputnode",
@@ -345,8 +345,8 @@ def init_subject_wf(
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-    inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
-    inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
+    inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
+    inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
 
     workflow = Workflow(name=name)
 
@@ -423,7 +423,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
                              ('t1w_seg', 'inputnode.t1seg'),
-                             ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
+                             ('t1w_to_template_xform', 'inputnode.t1w_to_template')]),
     ])
     # fmt:on
 
@@ -496,7 +496,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
                                            ('t1w_seg', 'inputnode.t1seg'),
-                                           ('mni_to_t1w_xform', 'inputnode.mni_to_t1w')]),
+                                           ('template_to_t1w_xform', 'inputnode.template_to_t1w')]),
         ])
         if not cifti:
             workflow.connect([
