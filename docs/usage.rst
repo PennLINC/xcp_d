@@ -44,6 +44,34 @@ Command-Line Arguments
    :prog: xcp_d
 
 
+.. _filter_files:
+
+Filtering Inputs with BIDS Filter Files
+=======================================
+
+.. code-block:: json
+
+   {
+      # all preprocessed BOLD files in the right space/resolution/density
+      # you can select a specific space, session, task, etc. here.
+      "bold": {
+         "session": ["01"],
+         "task": "rest",
+      },
+      # native T1w-space, preprocessed T1w file
+      "t1w": {},
+      # native T1w-space dseg file, but not aseg or aparcaseg
+      "t1w_seg": {},
+      # transform from standard space to T1w space
+      # from entity will be set later
+      "template_to_t1w_xform": {},
+      # native T1w-space brain mask
+      "t1w_mask": {},
+      # transform from T1w space to standard space
+      "t1w_to_template_xform": {}
+   }
+
+
 .. _run_docker:
 
 Running ``xcp_d`` via Docker containers
