@@ -13,7 +13,7 @@ Running XCP-D
 Execution and Input Formats
 ===========================
 
-The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `DCAN` and `HCP` outputs in the form of BIDS derivatives.
+The *XCP-D* workflow takes `fMRIPRep`, `NiBabies` and `HCP` outputs in the form of BIDS derivatives.
 In these examples, we use an fmriprep output directory.
 
 The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image.
