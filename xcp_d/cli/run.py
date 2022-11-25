@@ -7,6 +7,7 @@ xcp_d preprocessing workflow
 """
 import argparse
 import gc
+import json
 import logging
 import os
 import sys
@@ -23,6 +24,17 @@ warnings.filterwarnings("ignore")
 logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
 logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
+
+
+def json_file(file_):
+    if file_ is None:
+        return file_
+    elif os.path.isfile(file_):
+        with open(file_, "r") as fo:
+            data = json.load(fo)
+        return data
+    else:
+        raise ValueError(f"Not supported: {file_}")
 
 
 def _warn_redirect(message, category):
@@ -138,7 +150,8 @@ def get_parser():
         "--bids-filter-file",
         dest="bids_filters",
         action="store",
-        type=Path,
+        type=json_file,
+        default=None,
         metavar="FILE",
         help=(
             "A JSON file defining BIDS input filters using PyBIDS."
