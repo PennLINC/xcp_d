@@ -245,7 +245,8 @@ def init_execsummary_wf(
             function=find_nifti_bold_files,
             input_names=["bold_file", "mni_to_t1w"],
             output_names=["bold_file", "bold_reference_file"],
-        )
+        ),
+        name="find_nifti_files",
     )
 
     # fmt:off
@@ -273,7 +274,8 @@ def init_execsummary_wf(
             function=t1_to_native,
             input_names=["bold_file"],
             output_names=["t1w_to_native_xform"],
-        )
+        ),
+        name="find_t1_to_native",
     )
 
     # fmt:off
