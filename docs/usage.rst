@@ -49,26 +49,51 @@ Command-Line Arguments
 Filtering Inputs with BIDS Filter Files
 =======================================
 
+``xcp_d`` allows users to choose which preprocessed files will be post-processed with the ``--bids-filter-file`` parameter.
+This argument must point to a JSON file, containing filters that will be fed into PyBIDS.
+
+The keys in this JSON file are unique to ``xcp_d``.
+They are our internal terms for different inputs that will be selected from the preprocessed dataset.
+
+``"bold"`` determines which preprocessed BOLD files will be chosen.
+You can set a number of entities here, including "session", "task", "space", "resolution", and "density".
+We recommend NOT setting the datatype, suffix, or file extension in the filter file.
+
+``"t1w"`` selects a native T1w-space, preprocessed T1w file.
+We recommend NOT adding any additional filters to this field.
+
+``"t1w_seg"`` selects a native T1w-space segmentation file.
+This file is primarily used for figures.
+We recommend NOT adding any additional filters to this field.
+
+``"t1w_mask"`` selects a native T1w-space brain mask.
+We recommend NOT adding any additional filters to this field.
+
+``"t1w_to_template_xform"`` selects a transform from T1w space to standard space.
+The standard space that will be used depends on the ``"bold"`` files that are selected,
+so we recommend NOT adding any additional filters to this field.
+
+``"template_to_t1w_xform"`` selects a transform from standard space to T1w space.
+Again, the standard space is determined based on other files,
+so we recommend NOT adding any additional filters to this field.
+
+Example bids-filter-file
+------------------------
+
+In this example file, we only run ``xcp_d`` on resting-state preprocessed BOLD runs from session "01".
+
 .. code-block:: json
 
    {
-      # all preprocessed BOLD files in the right space/resolution/density
-      # you can select a specific space, session, task, etc. here.
       "bold": {
          "session": ["01"],
          "task": "rest",
       },
-      # native T1w-space, preprocessed T1w file
       "t1w": {},
-      # native T1w-space dseg file, but not aseg or aparcaseg
       "t1w_seg": {},
-      # transform from standard space to T1w space
-      # from entity will be set later
-      "template_to_t1w_xform": {},
-      # native T1w-space brain mask
       "t1w_mask": {},
-      # transform from T1w space to standard space
       "t1w_to_template_xform": {}
+      "template_to_t1w_xform": {},
    }
 
 
