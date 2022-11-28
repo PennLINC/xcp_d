@@ -74,7 +74,9 @@ def init_qc_report_wf(
     bold_mask
     t1w_mask
     %(mni_to_t1w)s
+        Only used with non-CIFTI data.
     t1w_to_native
+        Only used with non-CIFTI data.
     %(dummy_scans)s
     cleaned_file
     tmask
