@@ -22,7 +22,7 @@ from xcp_d.interfaces.surfplotting import (
 from xcp_d.utils.bids import find_nifti_bold_files
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
-from xcp_d.utils.utils import get_std2bold_xforms
+from xcp_d.utils.utils import _t12native, get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -271,7 +271,7 @@ def init_execsummary_wf(
 
     find_t1_to_native = pe.Node(
         Function(
-            function=t1_to_native,
+            function=_t12native,
             input_names=["bold_file"],
             output_names=["t1w_to_native_xform"],
         ),
@@ -414,14 +414,3 @@ def init_execsummary_wf(
     # fmt:on
 
     return workflow
-
-
-def t1_to_native(file_name):
-    """Get t1 to native transform file."""
-    dir_name = os.path.dirname(file_name)
-    filename = os.path.basename(file_name)
-    file_name_prefix = filename.split("desc-preproc_bold.nii.gz")[0].split("space-")[0]
-    t1_to_native_file = (
-        dir_name + "/" + file_name_prefix + "from-T1w_to-scanner_mode-image_xfm.txt"
-    )
-    return t1_to_native_file

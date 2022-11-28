@@ -14,6 +14,7 @@ import yaml
 from bids import BIDSLayout
 from packaging.version import Version
 
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger("nipype.utils")
@@ -124,8 +125,10 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     return found_label
 
 
+@fill_doc
 def collect_data(
     bids_dir,
+    input_type,
     participant_label,
     task=None,
     bids_validate=False,
@@ -137,10 +140,12 @@ def collect_data(
     Parameters
     ----------
     bids_dir
+    %(input_type)s
     participant_label
     task
     bids_validate
     bids_filters
+    %(cifti)s
 
     Returns
     -------
@@ -155,17 +160,21 @@ def collect_data(
     )
 
     # TODO: Add and test fsaverage.
-    PREFERRED_SPACES = {
-        False: [
-            "MNI152NLin6Asym",
-            "MNI152NLin2009cAsym",
-            "MNIInfant",
-        ],
-        True: [
-            "fsLR",
-        ],
-    }
-    allowed_spaces = PREFERRED_SPACES[cifti]
+    if cifti:
+        allowed_spaces = ["fsLR"]
+    else:
+        if input_type == "nibabies":
+            allowed_spaces = [
+                "MNIInfant",
+                "MNI152NLin6Asym",
+                "MNI152NLin2009cAsym",
+            ]
+        else:
+            allowed_spaces = [
+                "MNI152NLin6Asym",
+                "MNI152NLin2009cAsym",
+                "MNIInfant",
+            ]
 
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
