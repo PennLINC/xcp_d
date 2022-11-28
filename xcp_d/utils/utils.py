@@ -28,18 +28,23 @@ def _t12native(fname):
 
     Returns
     -------
-    t12ref : str
+    t1w_to_native_xform : str
         Path to the T1w-to-scanner transform.
 
     Notes
     -----
     Only used in get_segfile, which should be removed ASAP.
     """
-    directx = os.path.dirname(fname)
-    filename = os.path.basename(fname)
-    fileup = filename.split("desc-preproc_bold.nii.gz")[0].split("space-")[0]
-    t12ref = directx + "/" + fileup + "from-T1w_to-scanner_mode-image_xfm.txt"
-    return t12ref
+    import os
+
+    pth, fname = os.path.split(fname)
+    file_prefix = fname.split("space-")[0]
+    t1w_to_native_xform = os.path.join(pth, f"{file_prefix}from-T1w_to-scanner_mode-image_xfm.txt")
+
+    if not os.path.isfile(t1w_to_native_xform):
+        raise FileNotFoundError(f"File not found: {t1w_to_native_xform}")
+
+    return t1w_to_native_xform
 
 
 def get_segfile(bold_file):
