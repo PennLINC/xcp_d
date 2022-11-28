@@ -87,13 +87,8 @@ In this example file, we only run ``xcp_d`` on resting-state preprocessed BOLD r
    {
       "bold": {
          "session": ["01"],
-         "task": "rest",
-      },
-      "t1w": {},
-      "t1w_seg": {},
-      "t1w_mask": {},
-      "t1w_to_template_xform": {}
-      "template_to_t1w_xform": {},
+         "task": "rest"
+      }
    }
 
 
