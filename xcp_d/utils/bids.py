@@ -511,6 +511,7 @@ def find_nifti_bold_files(bold_file, mni_to_t1w):
         Path to the volumetric (nifti) BOLD reference file associated with nifti_bold_file.
     """
     import glob
+    import os
     import re
 
     # Get the nifti reference file
