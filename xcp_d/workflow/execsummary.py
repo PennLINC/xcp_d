@@ -272,7 +272,7 @@ def init_execsummary_wf(
     find_t1_to_native = pe.Node(
         Function(
             function=_t12native,
-            input_names=["bold_file"],
+            input_names=["fname"],
             output_names=["t1w_to_native_xform"],
         ),
         name="find_t1_to_native",
@@ -281,7 +281,7 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (find_nifti_files, find_t1_to_native, [
-            ("nifti_bold_file", "bold_file"),
+            ("nifti_bold_file", "fname"),
         ]),
     ])
     # fmt:on
