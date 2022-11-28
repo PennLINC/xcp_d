@@ -343,14 +343,6 @@ def init_execsummary_wf(
         n_procs=omp_nthreads,
     )
 
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, plot_svgx_wf, [
-            ("nifti_bold_file", "rawdata"),
-        ]),
-    ])
-    # fmt:on
-
     # Write out the necessary files:
     # Reference file
     ds_plot_bold_reference_file_wf = pe.Node(
