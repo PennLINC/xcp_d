@@ -19,6 +19,7 @@ from xcp_d.interfaces.surfplotting import (
     PlotSVGData,
     RibbontoStatmap,
 )
+from xcp_d.utils.bids import find_nifti_bold_files
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import get_std2bold_xforms
@@ -241,7 +242,7 @@ def init_execsummary_wf(
 
     find_nifti_files = pe.Node(
         Function(
-            function=_find_nifti_files,
+            function=find_nifti_bold_files,
             input_names=["bold_file", "mni_to_t1w"],
             output_names=["bold_file", "bold_reference_file"],
         )
@@ -262,7 +263,7 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (find_nifti_files, plotrefbold_wf, [
-            ("bold_reference_file", "in_file"),
+            ("nifti_boldref_file", "in_file"),
         ]),
     ])
     # fmt:on
@@ -278,7 +279,7 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (find_nifti_files, find_t1_to_native, [
-            ("bold_file", "bold_file"),
+            ("nifti_bold_file", "bold_file"),
         ]),
     ])
     # fmt:on
@@ -296,7 +297,7 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (find_nifti_files, get_std2native_transform, [
-            ("bold_file", "bold_file"),
+            ("nifti_bold_file", "bold_file"),
         ]),
         (find_t1_to_native, get_std2native_transform, [
             ("t1w_to_native_xform", "t1w_to_native"),
@@ -327,7 +328,7 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (find_nifti_files, resample_parc, [
-            ("bold_reference_file", "reference_image"),
+            ("nifti_boldref_file", "reference_image"),
         ]),
     ])
     # fmt:on
@@ -343,7 +344,7 @@ def init_execsummary_wf(
     # fmt:off
     workflow.connect([
         (find_nifti_files, plot_svgx_wf, [
-            ("bold_file", "rawdata"),
+            ("nifti_bold_file", "rawdata"),
         ]),
     ])
     # fmt:on
@@ -430,38 +431,3 @@ def t1_to_native(file_name):
         dir_name + "/" + file_name_prefix + "from-T1w_to-scanner_mode-image_xfm.txt"
     )
     return t1_to_native_file
-
-
-def _find_nifti_files(bold_file, mni_to_t1w):
-    """Find nifti files associated with a given input file."""
-    import glob
-    import re
-
-    # Get the nifti reference file
-    if bold_file.endswith(".nii.gz"):
-        bold_reference_file = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
-
-    else:  # Get the cifti reference file
-        # Infer the volumetric space from the transform
-        nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(mni_to_t1w))[0]
-        if "+" in nifti_template:
-            nifti_template, cohort = nifti_template.split("+")
-            search_substring = f"space-{nifti_template}_cohort-{cohort}"
-        else:
-            search_substring = f"space-{nifti_template}"
-
-        bb_file_prefix = bold_file.split("space-fsLR_den-91k_bold.dtseries.nii")[0]
-
-        bold_reference_file = sorted(
-            glob.glob(bb_file_prefix + search_substring + "*boldref.nii.gz")
-        )
-        if len(bold_reference_file) > 1:
-            LOGGER.warn(f"More than one nifti boldref found: {', '.join(bold_reference_file)}")
-            bold_reference_file = bold_reference_file[0]
-
-        bold_file = sorted(glob.glob(bb_file_prefix + search_substring + "*preproc_bold.nii.gz"))
-        if len(bold_file) > 1:
-            LOGGER.warn(f"More than one nifti bold file found: {', '.join(bold_file)}")
-            bold_file = bold_file[0]
-
-    return bold_file, bold_reference_file
