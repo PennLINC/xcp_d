@@ -19,6 +19,7 @@ BOLD Workflow
     fmri_dir = pkgrf('xcp_d', 'data/fmriprep')
     layout, subj_data = collect_data(
         bids_dir=fmri_dir,
+        input_type="fmriprep",
         participant_label='colornest001',
         task='rest',
         bids_validate=False,
