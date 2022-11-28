@@ -324,6 +324,7 @@ def init_subject_wf(
     """
     layout, subj_data = collect_data(
         bids_dir=fmri_dir,
+        input_type=input_type,
         participant_label=subject_id,
         task=task_id,
         bids_filters=bids_filters,
