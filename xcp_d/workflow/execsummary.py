@@ -244,7 +244,7 @@ def init_execsummary_wf(
         Function(
             function=find_nifti_bold_files,
             input_names=["bold_file", "mni_to_t1w"],
-            output_names=["bold_file", "bold_reference_file"],
+            output_names=["nifti_bold_file", "nifti_boldref_file"],
         ),
         name="find_nifti_files",
     )
@@ -349,7 +349,7 @@ def init_execsummary_wf(
         DerivativesDataSink(
             base_directory=output_dir, dismiss_entities=["den"], datatype="figures", desc="boldref"
         ),
-        name="plotbold_reference_file",
+        name="ds_plot_bold_reference_file_wf",
         run_without_submitting=True,
     )
 
