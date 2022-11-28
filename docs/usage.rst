@@ -59,23 +59,23 @@ They are our internal terms for different inputs that will be selected from the 
 You can set a number of entities here, including "session", "task", "space", "resolution", and "density".
 We recommend NOT setting the datatype, suffix, or file extension in the filter file.
 
+.. warning::
+   We do not recommend applying additional filters to any of the following fields.
+   We have documented them here, for edge cases where they might be useful,
+   but the only field that most users should filter is ``"bold"``.
+
 ``"t1w"`` selects a native T1w-space, preprocessed T1w file.
-We recommend NOT adding any additional filters to this field.
 
 ``"t1w_seg"`` selects a native T1w-space segmentation file.
 This file is primarily used for figures.
-We recommend NOT adding any additional filters to this field.
 
 ``"t1w_mask"`` selects a native T1w-space brain mask.
-We recommend NOT adding any additional filters to this field.
 
 ``"t1w_to_template_xform"`` selects a transform from T1w space to standard space.
-The standard space that will be used depends on the ``"bold"`` files that are selected,
-so we recommend NOT adding any additional filters to this field.
+The standard space that will be used depends on the ``"bold"`` files that are selected.
 
 ``"template_to_t1w_xform"`` selects a transform from standard space to T1w space.
-Again, the standard space is determined based on other files,
-so we recommend NOT adding any additional filters to this field.
+Again, the standard space is determined based on other files.
 
 Example bids-filter-file
 ------------------------
