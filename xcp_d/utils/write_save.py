@@ -7,8 +7,9 @@ import subprocess
 import nibabel as nb
 import numpy as np
 from nilearn import masking
-from nipype.utils.filemanip import split_filename
 from templateflow.api import get as get_template
+
+from xcp_d.utils.filemanip import split_filename
 
 
 def read_ndata(datafile, maskfile=None, scale=0):
