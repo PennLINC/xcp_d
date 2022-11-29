@@ -49,7 +49,7 @@ def init_nifti_functional_connectivity_wf(
     ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
     t1w_to_native
 
     Outputs
@@ -77,7 +77,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["bold_file", "ref_file", "clean_bold", "mni_to_t1w", "t1w_to_native"],
+            fields=["bold_file", "ref_file", "clean_bold", "template_to_t1w", "t1w_to_native"],
         ),
         name="inputnode",
     )
@@ -104,7 +104,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     get_transforms_to_bold_space = pe.Node(
         Function(
-            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
             output_names=["transformfile"],
             function=get_std2bold_xforms,
         ),
@@ -142,7 +142,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
         (inputnode, get_transforms_to_bold_space, [("bold_file", "bold_file"),
-                                                   ("mni_to_t1w", "mni_to_t1w"),
+                                                   ("template_to_t1w", "template_to_t1w"),
                                                    ("t1w_to_native", "t1w_to_native")]),
         (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
         (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),

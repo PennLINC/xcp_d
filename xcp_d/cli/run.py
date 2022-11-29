@@ -7,6 +7,7 @@ xcp_d preprocessing workflow
 """
 import argparse
 import gc
+import json
 import logging
 import os
 import sys
@@ -23,6 +24,18 @@ warnings.filterwarnings("ignore")
 logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
 logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
+
+
+def json_file(file_):
+    """Load a JSON file and return it."""
+    if file_ is None:
+        return file_
+    elif os.path.isfile(file_):
+        with open(file_, "r") as fo:
+            data = json.load(fo)
+        return data
+    else:
+        raise ValueError(f"Not supported: {file_}")
 
 
 def _warn_redirect(message, category):
@@ -117,8 +130,8 @@ def get_parser():
     # optional arguments
     parser.add_argument("--version", action="version", version=verstr)
 
-    g_bidx = parser.add_argument_group("Options for filtering BIDS queries")
-    g_bidx.add_argument(
+    g_bids = parser.add_argument_group("Options for filtering BIDS queries")
+    g_bids.add_argument(
         "--participant_label",
         "--participant-label",
         action="store",
@@ -128,13 +141,22 @@ def get_parser():
             "identifier (the sub- prefix can be removed)"
         ),
     )
-    g_bidx.add_argument(
+    g_bids.add_argument(
         "-t",
         "--task-id",
         action="store",
         help="select a specific task to be selected for the postprocessing ",
     )
-    g_bidx.add_argument(
+    g_bids.add_argument(
+        "--bids-filter-file",
+        dest="bids_filters",
+        action="store",
+        type=json_file,
+        default=None,
+        metavar="FILE",
+        help="A JSON file defining BIDS input filters using PyBIDS.",
+    )
+    g_bids.add_argument(
         "-m",
         "--combineruns",
         action="store_true",
@@ -950,6 +972,7 @@ Running xcp_d version {__version__}:
         subject_list=subject_list,
         work_dir=str(work_dir),
         task_id=opts.task_id,
+        bids_filters=opts.bids_filters,
         despike=opts.despike,
         smoothing=opts.smoothing,
         params=opts.nuisance_regressors,
