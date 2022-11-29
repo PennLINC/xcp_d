@@ -8,25 +8,34 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
-from nipype.interfaces.mixins.fixheader import CopyHeaderInterface
 from nipype.interfaces.workbench.base import WBCommand
 from nipype.interfaces.workbench.cifti import CiftiSmooth as _CiftiSmooth
 
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.write_save import _modify_cifti_intent
 
 iflogger = logging.getLogger("nipype.interface")
 
 
-class CiftiSmooth(_CiftiSmooth, CopyHeaderInterface):
-    """Interface for wb_command's -cifti-smooth command.
+class CiftiSmooth(_CiftiSmooth):
+    """Modified interface for wb_command's -cifti-smooth command.
 
     Notes
     -----
-    We've added the CopyHeaderInterface because -cifti-smooth overwrites the output file's
-    intent to match a dtseries extension, even when it is a dscalar file.
+    We've added a custom _post_run_hook method because -cifti-smooth overwrites the
+    output file's intent to match a dtseries extension, even when it is a dscalar file.
     """
 
-    _copy_header_map = {"out_file": "in_file"}
+    def _post_run_hook(self, runtime):
+        """Ensure output file has appropriate intent in header."""
+        runtime = super()._post_run_hook(runtime)
+
+        outputs = self.aggregate_outputs(runtime=runtime).get_traitsfree()
+        # only modify the out_file if it is not a dtseries
+        if not outputs["out_file"].endswith(".dtseries"):
+            _modify_cifti_intent(filename=outputs["out_file"])
+
+        return runtime
 
 
 class _ConvertAffineInputSpec(CommandLineInputSpec):

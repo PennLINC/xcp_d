@@ -50,6 +50,57 @@ def read_ndata(datafile, maskfile=None, scale=0):
     return data
 
 
+def get_cifti_intents():
+    """Return a dictionary of CIFTI extensions and associated intents.
+
+    Copied from https://www.nitrc.org/projects/cifti/ PDF.
+    """
+    CIFTI_INTENTS = {
+        ".dtseries.nii": "ConnDenseSeries",
+        ".dconn.nii": "ConnDense",
+        ".pconn.nii": "ConnParcels",
+        ".ptseries.nii": "ConnParcelSries",
+        ".dscalar.nii": "ConnDenseScalar",
+        ".dlabel.nii": "ConnDenseLabel",
+        ".pscalar.nii": "ConnParcelScalr",
+        ".pdconn.nii": "ConnParcelDense",
+        ".dpconn.nii": "ConnDenseParcel",
+        ".pconnseries.nii": "ConnPPSr",
+        ".pconnscalar.nii": "ConnPPSc",
+        ".dfan.nii": "ConnDenseSeries",
+        ".dfibersamp.nii": "ConnUnknown",
+        ".dfansamp.nii": "ConnUnknown",
+    }
+    return CIFTI_INTENTS
+
+
+def _modify_cifti_intent(filename, img=None):
+    import nibabel as nb
+
+    from xcp_d.utils.filemanip import split_filename
+    from xcp_d.utils.write_save import get_cifti_intents
+
+    return_img = True
+    if img is None:
+        return_img = False
+        img = nb.load(filename)
+
+    cifti_intents = get_cifti_intents()
+
+    _, _, out_extension = split_filename(filename)
+    target_intent = cifti_intents.get(out_extension, None)
+
+    if target_intent is None:
+        raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
+
+    img.nifti_header.set_intent(target_intent)
+
+    if return_img:
+        return img
+    else:
+        img.to_filename(filename)
+
+
 def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     """Save numpy array to a nifti or cifti file.
 
@@ -76,26 +127,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
     assert data_matrix.ndim in (1, 2), f"Input data must be a 1-2D array, not {data_matrix.ndim}."
     assert os.path.isfile(template)
 
-    # Copied from https://www.nitrc.org/projects/cifti/ PDF.
-    CIFTI_INTENTS = {
-        ".dtseries.nii": "ConnDenseSeries",
-        ".dconn.nii": "ConnDense",
-        ".pconn.nii": "ConnParcels",
-        ".ptseries.nii": "ConnParcelSries",
-        ".dscalar.nii": "ConnDenseScalar",
-        ".dlabel.nii": "ConnDenseLabel",
-        ".pscalar.nii": "ConnParcelScalr",
-        ".pdconn.nii": "ConnParcelDense",
-        ".dpconn.nii": "ConnDenseParcel",
-        ".pconnseries.nii": "ConnPPSr",
-        ".pconnscalar.nii": "ConnPPSc",
-        ".dfan.nii": "ConnDenseSeries",
-        ".dfibersamp.nii": "ConnUnknown",
-        ".dfansamp.nii": "ConnUnknown",
-    }
+    cifti_intents = get_cifti_intents()
 
     _, _, template_extension = split_filename(template)
-    if template_extension in CIFTI_INTENTS.keys():
+    if template_extension in cifti_intents.keys():
         file_format = "cifti"
     elif template.endswith(".nii.gz"):
         file_format = "nifti"
@@ -145,13 +180,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
 
             img = nb.Cifti2Image(data_matrix, new_header)
 
-        _, _, out_extension = split_filename(filename)
-        target_intent = CIFTI_INTENTS.get(out_extension, None)
-
-        if target_intent is None:
-            raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
-
-        img.nifti_header.set_intent(target_intent)
+        img = _modify_cifti_intent(filename=filename, img=img)
 
     else:
         # write nifti series
