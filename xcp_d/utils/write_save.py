@@ -80,24 +80,24 @@ def _modify_cifti_intent(filename, img=None):
     from xcp_d.utils.filemanip import split_filename
     from xcp_d.utils.write_save import get_cifti_intents
 
-    return_img = True
-    if img is None:
-        return_img = False
-        img = nb.load(filename)
-
     cifti_intents = get_cifti_intents()
-
     _, _, out_extension = split_filename(filename)
     target_intent = cifti_intents.get(out_extension, None)
 
     if target_intent is None:
         raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
 
+    return_img = True
+    if img is None:
+        return_img = False
+        img = nb.load(filename)
+
     img.nifti_header.set_intent(target_intent)
 
     if return_img:
         return img
     else:
+        # Overwrite the original file
         img.to_filename(filename)
 
 
