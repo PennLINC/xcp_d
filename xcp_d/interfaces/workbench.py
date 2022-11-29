@@ -18,6 +18,13 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class CiftiSmooth(_CiftiSmooth, CopyHeaderInterface):
+    """Interface for wb_command's -cifti-smooth command.
+
+    Notes
+    -----
+    We've added the CopyHeaderInterface because -cifti-smooth overwrites the output file's
+    intent to match a dtseries extension, even when it is a dscalar file.
+    """
     _copy_header_map = {"out_file": "in_file"}
 
 
