@@ -548,10 +548,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # interpolation workflow
     # fmt:off
     workflow.connect([
-        (downcast_data, interpolate_wf, [
-            ('bold_file', 'bold_file'),
-            ('bold_mask', 'mask_file'),
-        ]),
+        (downcast_data, interpolate_wf, [('bold_file', 'bold_file'),
+                                         ('bold_mask', 'mask_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
@@ -567,10 +565,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # functional connect workflow
     workflow.connect([
-        (downcast_data, fcon_ts_wf, [
-            ('bold_file', 'inputnode.bold_file'),
-            ('ref_file', 'inputnode.ref_file'),
-        ]),
+        (downcast_data, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
+                                     ('ref_file', 'inputnode.ref_file')]),
         (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
