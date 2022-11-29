@@ -404,7 +404,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (inputnode, qc_report_wf, [
+        (downcast_data, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
         ]),
     ])
@@ -448,13 +448,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:
         # fmt:off
         workflow.connect([
-            (downcast_data, censor_scrub, [
-                ('bold_file', 'in_file'),
             (inputnode, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
-            (inputnode, censor_scrub, [
+            (downcast_data, censor_scrub, [
                 ('bold_file', 'in_file'),
+            ]),
+            (inputnode, censor_scrub, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
@@ -467,15 +467,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (downcast_data, bold_holder_node, [("bold_file", "bold_file")]),
-        (inputnode, get_custom_confounds_file, [
-            ("custom_confounds_folder", "custom_confounds_folder"),
-            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-        ]),
-        (censor_scrub, bold_holder_node, [
-            ("fmriprep_confounds_censored", "fmriprep_confounds_tsv"),
-            ("custom_confounds_censored", "custom_confounds"),
-        ]),
         (censor_scrub, plot_design_matrix_node, [
             ("confounds_censored", "design_matrix"),
         ]),
@@ -541,8 +532,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # qc report
     workflow.connect([
-        (downcast_data, qc_report_wf, [("bold_file", "bold_file")]),
-        (downcast_data, censor_report, [("bold_file", "bold_file")]),
         (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
         (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
     ])
@@ -660,7 +649,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, executivesummary_wf, [
-                ('mni_to_t1w', 'inputnode.mni_to_t1w'),
                 ('template_to_t1w', 'inputnode.template_to_t1w'),
             ]),
             (downcast_data, executivesummary_wf, [
