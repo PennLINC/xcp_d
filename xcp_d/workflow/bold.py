@@ -459,7 +459,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, remove_dummy_scans, [
-                ("bold_file", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
@@ -504,7 +503,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (inputnode, consolidate_confounds_node, [('bold_file', 'namesource')]),
         (censor_scrub, plot_design_matrix_node, [
             ("confounds_censored", "design_matrix"),
         ]),
@@ -530,11 +528,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([
             (censor_scrub, despike3d, [('bold_censored', 'in_file')]),
             (despike3d, regression_wf, [('out_file', 'in_file')]),
-            (downcast_data, regression_wf, [('bold_mask', 'mask')]),
-            (censor_scrub, regression_wf, [
-                ('fmriprep_confounds_censored', 'confounds'),
-                ('custom_confounds_censored', 'custom_confounds'),
-            ]),
         ])
         # fmt:on
 
@@ -716,9 +709,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
         # fmt:off
         workflow.connect([
-            (inputnode, executivesummary_wf, [
-                ("mni_to_t1w", "inputnode.mni_to_t1w"),
-            ]),
             (downcast_data, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
                 ("t1seg", "inputnode.t1seg"),
