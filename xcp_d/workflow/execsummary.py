@@ -243,7 +243,7 @@ def init_execsummary_wf(
     find_nifti_files = pe.Node(
         Function(
             function=find_nifti_bold_files,
-            input_names=["bold_file", "mni_to_t1w"],
+            input_names=["bold_file", "template_to_t1w"],
             output_names=["nifti_bold_file", "nifti_boldref_file"],
         ),
         name="find_nifti_files",
@@ -253,7 +253,7 @@ def init_execsummary_wf(
     workflow.connect([
         (inputnode, find_nifti_files, [
             ("bold_file", "bold_file"),
-            ("mni_to_t1w", "mni_to_t1w"),
+            ("template_to_t1w", "template_to_t1w"),
         ]),
     ])
     # fmt:on
