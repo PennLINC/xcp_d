@@ -263,10 +263,8 @@ def collect_data(
             default_allowed_spaces,
         )["nifti"]
         for space in temp_allowed_spaces:
-            nifti_bold_data = layout.get(
-                space=space,
-                **temp_bold_query,
-            )
+            temp_bold_query["space"] = space
+            nifti_bold_data = layout.get(**temp_bold_query)
             if nifti_bold_data:
                 queries["t1w_to_template_xform"]["to"] = space
                 queries["template_to_t1w_xform"]["from"] = space
