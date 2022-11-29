@@ -42,3 +42,7 @@ $XCPD_CMD \
     --dcan-qc \
     --dummy-scans auto \
     --fd-thresh 0.04
+
+input_type=cifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
+

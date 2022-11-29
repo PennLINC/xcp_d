@@ -59,17 +59,17 @@ analysis_level : {"participant"}
 """
 
 docdict[
-    "t1w_to_mni"
+    "t1w_to_template"
 ] = """
-t1w_to_mni : :obj:`str`
+t1w_to_template : :obj:`str`
     Path to the T1w-to-MNI transform file.
     May be "identity", for testing purposes.
 """
 
 docdict[
-    "mni_to_t1w"
+    "template_to_t1w"
 ] = """
-mni_to_t1w : :obj:`str`
+template_to_t1w : :obj:`str`
     Path to the MNI-to-T1w transform file.
     May be "identity", for testing purposes.
 """

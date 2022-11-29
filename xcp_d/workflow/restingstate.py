@@ -43,9 +43,9 @@ def init_compute_alff_wf(
             wf = init_compute_alff_wf(
                 mem_gb=0.1,
                 TR=2.,
-                bold_file = bold_file,
-                lowpass=6.,
-                highpass=60.,
+                bold_file="/path/to/file.nii.gz",
+                lowpass=0.1,
+                highpass=0.009,
                 smoothing=6,
                 cifti=False,
                 omp_nthreads=1,
@@ -201,7 +201,7 @@ def init_cifti_reho_wf(
             from xcp_d.workflow.restingstate import init_cifti_reho_wf
             wf = init_cifti_reho_wf(
                 mem_gb=0.1,
-                bold_file = bold_file,
+                bold_file="/path/to/bold.dtseries.nii",
                 omp_nthreads=1,
                 name="cifti_reho_wf",
             )
@@ -342,7 +342,7 @@ def init_nifti_reho_wf(
             from xcp_d.workflow.restingstate import init_nifti_reho_wf
             wf = init_nifti_reho_wf(
                 mem_gb=0.1,
-                bold_file = bold_file,
+                bold_file="/path/to/bold.nii.gz",
                 omp_nthreads=1,
                 name="nifti_reho_wf",
             )

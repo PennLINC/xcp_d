@@ -43,6 +43,7 @@ def test_fd_interface_cifti(data_dir, tmp_path_factory):
     cscrub.inputs.band_stop_min = 0
     cscrub.inputs.band_stop_max = 0
     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
+    cscrub.inputs.confounds_file = confounds_tsv
     cscrub.inputs.head_radius = 50
     results = cscrub.run(cwd=tmpdir)
 
@@ -54,9 +55,7 @@ def test_fd_interface_cifti(data_dir, tmp_path_factory):
 
     # Load in censored image and confounds tsv
     censored_image = nb.load(results.outputs.bold_censored)
-    censored_confounds_timeseries = pd.read_table(
-        results.outputs.fmriprep_confounds_censored
-    )
+    censored_confounds_timeseries = pd.read_table(results.outputs.fmriprep_confounds_censored)
     # Assert the length of the confounds is the same as the nvol of the image
     if censored_confounds_timeseries.shape[0] != censored_image.get_fdata().shape[0]:
         raise Exception(
@@ -101,6 +100,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
     cscrub.inputs.band_stop_min = 0
     cscrub.inputs.band_stop_max = 0
     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
+    cscrub.inputs.confounds_file = confounds_tsv
     cscrub.inputs.head_radius = 50
     results = cscrub.run(cwd=tmpdir)
 
@@ -112,9 +112,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
 
     # Load in censored image and confounds tsv
     censored_image = nb.load(results.outputs.bold_censored)
-    censored_confounds_timeseries = pd.read_table(
-        results.outputs.fmriprep_confounds_censored
-    )
+    censored_confounds_timeseries = pd.read_table(results.outputs.fmriprep_confounds_censored)
 
     # Assert the length of the confounds is the same as the nvol of the image
     if censored_confounds_timeseries.shape[0] != censored_image.get_fdata().shape[3]:
@@ -155,7 +153,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
 #     cscrub.inputs.band_stop_min = 0
 #     cscrub.inputs.band_stop_max = 0
 #     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
-#     cscrub.inputs.custom_confounds = custom_confounds_tsv
+#     cscrub.inputs.confounds_file = custom_confounds_tsv
 #     cscrub.inputs.head_radius = 50
 #     results = cscrub.run()
 #     # Load in censored image and confounds tsv
@@ -196,7 +194,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
 #     cscrub.inputs.band_stop_min = 0
 #     cscrub.inputs.band_stop_max = 0
 #     cscrub.inputs.fmriprep_confounds_file = confounds_tsv
-#     cscrub.inputs.custom_confounds = custom_confounds_tsv
+#     cscrub.inputs.confounds_file = custom_confounds_tsv
 #     cscrub.inputs.head_radius = 50
 #     results = cscrub.run()
 #     # Load in censored image and confounds tsv

@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for generating the executive summary."""
 import fnmatch
-import glob
 import os
 from pathlib import Path
 
@@ -20,9 +19,10 @@ from xcp_d.interfaces.surfplotting import (
     PlotSVGData,
     RibbontoStatmap,
 )
+from xcp_d.utils.bids import find_nifti_bold_files
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
-from xcp_d.utils.utils import get_std2bold_xforms
+from xcp_d.utils.utils import _t12native, get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -201,7 +201,7 @@ def init_execsummary_wf(
     tmask
     rawdata
     mask
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
@@ -217,7 +217,7 @@ def init_execsummary_wf(
                 "tmask",
                 "rawdata",
                 "mask",
-                "mni_to_t1w",
+                "template_to_t1w",
                 "dummy_scans",
             ]
         ),
@@ -240,29 +240,72 @@ def init_execsummary_wf(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]
 
-    # Get the nifti reference file
-    if bold_file.endswith(".nii.gz"):
-        bold_reference_file = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
+    find_nifti_files = pe.Node(
+        Function(
+            function=find_nifti_bold_files,
+            input_names=["bold_file", "template_to_t1w"],
+            output_names=["nifti_bold_file", "nifti_boldref_file"],
+        ),
+        name="find_nifti_files",
+    )
 
-    else:  # Get the cifti reference file
-        bb_file_prefix = bold_file.split("space-fsLR_den-91k_bold.dtseries.nii")[0]
-        bold_reference_file = glob.glob(bb_file_prefix + "*boldref.nii.gz")[0]
-        bold_file = glob.glob(bb_file_prefix + "*preproc_bold.nii.gz")[0]
+    # fmt:off
+    workflow.connect([
+        (inputnode, find_nifti_files, [
+            ("bold_file", "bold_file"),
+            ("template_to_t1w", "template_to_t1w"),
+        ]),
+    ])
+    # fmt:on
 
     # Plot the reference bold image
-    plotrefbold_wf = pe.Node(PlotImage(in_file=bold_reference_file), name="plotrefbold_wf")
+    plotrefbold_wf = pe.Node(PlotImage(), name="plotrefbold_wf")
+
+    # fmt:off
+    workflow.connect([
+        (find_nifti_files, plotrefbold_wf, [
+            ("nifti_boldref_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
+
+    find_t1_to_native = pe.Node(
+        Function(
+            function=_t12native,
+            input_names=["fname"],
+            output_names=["t1w_to_native_xform"],
+        ),
+        name="find_t1_to_native",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (find_nifti_files, find_t1_to_native, [
+            ("nifti_bold_file", "fname"),
+        ]),
+    ])
+    # fmt:on
 
     # Get the transform file to native space
     get_std2native_transform = pe.Node(
         Function(
-            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
             output_names=["transform_list"],
             function=get_std2bold_xforms,
         ),
         name="get_std2native_transform",
     )
-    get_std2native_transform.inputs.bold_file = bold_file
-    get_std2native_transform.inputs.t1w_to_native = t1_to_native(bold_file)
+
+    # fmt:off
+    workflow.connect([
+        (find_nifti_files, get_std2native_transform, [
+            ("nifti_bold_file", "bold_file"),
+        ]),
+        (find_t1_to_native, get_std2native_transform, [
+            ("t1w_to_native_xform", "t1w_to_native"),
+        ]),
+    ])
+    # fmt:on
 
     # Transform the file to native space
     resample_parc = pe.Node(
@@ -278,16 +321,23 @@ def init_execsummary_wf(
                 )
             ),
             interpolation="MultiLabel",
-            reference_image=bold_reference_file,
         ),
         name="resample_parc",
         n_procs=omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads,
     )
 
+    # fmt:off
+    workflow.connect([
+        (find_nifti_files, resample_parc, [
+            ("nifti_boldref_file", "reference_image"),
+        ]),
+    ])
+    # fmt:on
+
     # Plot the SVG files
     plot_svgx_wf = pe.Node(
-        PlotSVGData(TR=TR, rawdata=bold_file),
+        PlotSVGData(TR=TR),
         name="plot_svgx_wf",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -299,7 +349,7 @@ def init_execsummary_wf(
         DerivativesDataSink(
             base_directory=output_dir, dismiss_entities=["den"], datatype="figures", desc="boldref"
         ),
-        name="plotbold_reference_file",
+        name="ds_plot_bold_reference_file_wf",
         run_without_submitting=True,
     )
 
@@ -351,7 +401,7 @@ def init_execsummary_wf(
             ('tmask', 'tmask'),
             ('dummy_scans', 'dummy_scans'),
         ]),
-        (inputnode, get_std2native_transform, [('mni_to_t1w', 'mni_to_t1w')]),
+        (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
         (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
         (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
@@ -364,14 +414,3 @@ def init_execsummary_wf(
     # fmt:on
 
     return workflow
-
-
-def t1_to_native(file_name):
-    """Get t1 to native transform file."""
-    dir_name = os.path.dirname(file_name)
-    filename = os.path.basename(file_name)
-    file_name_prefix = filename.split("desc-preproc_bold.nii.gz")[0].split("space-")[0]
-    t1_to_native_file = (
-        dir_name + "/" + file_name_prefix + "from-T1w_to-scanner_mode-image_xfm.txt"
-    )
-    return t1_to_native_file
