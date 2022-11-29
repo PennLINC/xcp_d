@@ -25,6 +25,7 @@ class CiftiSmooth(_CiftiSmooth, CopyHeaderInterface):
     We've added the CopyHeaderInterface because -cifti-smooth overwrites the output file's
     intent to match a dtseries extension, even when it is a dscalar file.
     """
+
     _copy_header_map = {"out_file": "in_file"}
 
 
