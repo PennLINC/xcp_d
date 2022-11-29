@@ -92,6 +92,17 @@ Processing Steps
 
     For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
 
+    .. warning::
+
+      In XCP-D versions prior to 0.3.1, the selected AROMA confounds were incorrect.
+      We strongly advise users of these versions not to use the ``aroma`` or ``aroma_gsr`` options.
+
+    .. warning::
+
+      In XCP-D version 0.3.1, AROMA motion components are loaded without modification.
+      This means that XCP-D performs "aggressive" denoising.
+      This is a suboptimal approach to denoising, so we recommend against using the ``aroma`` or ``aroma_gsr`` options.
+
     After the selection of confound regressors,
     the respiratory effects can optionally be filtered out from the motion estimates with band-stop or low-pass filtering to improve fMRI data quality.
     Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020removal` for more information.
