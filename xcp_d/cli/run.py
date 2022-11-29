@@ -218,7 +218,7 @@ def get_parser():
         "--input-type",
         required=False,
         default="fmriprep",
-        choices=["fmriprep", "dcan", "hpc", "nibabies"],
+        choices=["fmriprep", "dcan", "hcp", "nibabies"],
         help=(
             "The pipeline used to generate the preprocessed derivatives. "
             "The default pipeline is 'fmriprep'. "
