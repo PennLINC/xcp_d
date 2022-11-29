@@ -73,7 +73,7 @@ def init_qc_report_wf(
     boldref
     bold_mask
     t1w_mask
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
         Only used with non-CIFTI data.
     t1w_to_native
         Only used with non-CIFTI data.
@@ -94,7 +94,7 @@ def init_qc_report_wf(
                 "boldref",
                 "bold_mask",
                 "t1w_mask",
-                "mni_to_t1w",
+                "template_to_t1w",
                 "t1w_to_native",
                 "dummy_scans",
                 "cleaned_file",
@@ -153,7 +153,7 @@ def init_qc_report_wf(
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
             Function(
-                input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+                input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
                 output_names=[
                     "bold_to_std_xforms",
                     "bold_to_std_xforms_invert",
@@ -169,7 +169,7 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, get_native2space_transforms, [
                 ("preprocessed_bold_file", "bold_file"),
-                ("mni_to_t1w", "mni_to_t1w"),
+                ("template_to_t1w", "template_to_t1w"),
                 ("t1w_to_native", "t1w_to_native"),
             ]),
         ])
@@ -224,7 +224,7 @@ def init_qc_report_wf(
         # Obtain transforms for QC report
         get_std2native_transform = pe.Node(
             Function(
-                input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+                input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
                 output_names=["transform_list"],
                 function=get_std2bold_xforms,
             ),
@@ -235,7 +235,7 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, get_std2native_transform, [
                 ("preprocessed_bold_file", "bold_file"),
-                ("mni_to_t1w", "mni_to_t1w"),
+                ("template_to_t1w", "template_to_t1w"),
                 ("t1w_to_native", "t1w_to_native"),
             ]),
         ])

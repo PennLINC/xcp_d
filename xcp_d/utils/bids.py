@@ -160,21 +160,24 @@ def collect_data(
     )
 
     # TODO: Add and test fsaverage.
-    if cifti:
-        allowed_spaces = ["fsLR"]
-    else:
-        if input_type == "nibabies":
-            allowed_spaces = [
+    default_allowed_spaces = {
+        "cifti": ["fsLR"],
+        "nifti": [
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+            "MNIInfant",
+        ],
+    }
+    input_type_allowed_spaces = {
+        "nibabies": {
+            "cifti": ["fsLR"],
+            "nifti": [
                 "MNIInfant",
                 "MNI152NLin6Asym",
                 "MNI152NLin2009cAsym",
-            ]
-        else:
-            allowed_spaces = [
-                "MNI152NLin6Asym",
-                "MNI152NLin2009cAsym",
-                "MNIInfant",
-            ]
+            ],
+        },
+    }
 
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
@@ -191,7 +194,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "mni_to_t1w_xform": {
+        "template_to_t1w_xform": {
             "datatype": "anat",
             "to": "T1w",
             "suffix": "xfm",
@@ -206,7 +209,7 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_mni_xform": {
+        "t1w_to_template_xform": {
             "datatype": "anat",
             "from": "T1w",
             "suffix": "xfm",
@@ -226,23 +229,28 @@ def collect_data(
         queries["bold"]["task"] = task
 
     # Select the best available space
-    if "space" not in queries["bold"]:
-        for space in allowed_spaces:
-            bold_data = layout.get(
-                space=space,
-                **queries["bold"],
-            )
-            if bold_data:
-                queries["bold"]["space"] = space
-                break
-    else:
+    if "space" in queries["bold"]:
+        # Hopefully no one puts in multiple spaces here,
+        # but we'll grab the first one with available data if they did.
         allowed_spaces = ensure_list(queries["bold"]["space"])
+    else:
+        allowed_spaces = input_type_allowed_spaces.get(input_type, default_allowed_spaces)[
+            "cifti" if cifti else "nifti"
+        ]
+
+    for space in allowed_spaces:
+        queries["bold"]["space"] = space
+        bold_data = layout.get(**queries["bold"])
+        if bold_data:
+            # will leave the best available space in the query
+            break
 
     if not bold_data:
         allowed_space_str = ", ".join(allowed_spaces)
         raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
 
     if not cifti:
+        # use the BOLD file's space if the BOLD file is a nifti
         queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
         queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
     else:
@@ -250,18 +258,25 @@ def collect_data(
         # This space will be used in the executive summary and T1w/T2w workflows.
         temp_bold_query = queries["bold"].copy()
         temp_bold_query["extension"] = ".nii.gz"
-        nifti_space = None
-        for space in allowed_spaces:
-            bold_data = layout.get(
+        temp_allowed_spaces = input_type_allowed_spaces.get(
+            input_type,
+            default_allowed_spaces,
+        )["nifti"]
+        for space in temp_allowed_spaces:
+            nifti_bold_data = layout.get(
                 space=space,
                 **temp_bold_query,
             )
-            if bold_data:
-                nifti_space = space
+            if nifti_bold_data:
+                queries["t1w_to_template_xform"]["to"] = space
+                queries["template_to_t1w_xform"]["from"] = space
                 break
 
-        queries["t1w_to_template_xform"]["to"] = nifti_space
-        queries["template_to_t1w_xform"]["from"] = nifti_space
+        if not nifti_bold_data:
+            allowed_space_str = ", ".join(temp_allowed_spaces)
+            raise FileNotFoundError(
+                f"No nifti BOLD data found in allowed spaces ({allowed_space_str})"
+            )
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -513,7 +528,7 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def find_nifti_bold_files(bold_file, mni_to_t1w):
+def find_nifti_bold_files(bold_file, template_to_t1w):
     """Find nifti bold and boldref files associated with a given input file.
 
     Parameters
@@ -521,10 +536,10 @@ def find_nifti_bold_files(bold_file, mni_to_t1w):
     bold_file : str
         Path to the preprocessed BOLD file that XCPD will denoise elsewhere.
         If this is a cifti file, then the appropriate nifti file will be determined based on
-        entities in this file, as well as the space and, potentially, cohort in the mni_to_t1w
-        file.
+        entities in this file, as well as the space and, potentially, cohort in the
+        template_to_t1w file.
         When this is a nifti file, it is returned without modification.
-    mni_to_t1w : str
+    template_to_t1w : str
         The transform from standard space to T1w space.
         This is used to determine the volumetric template when bold_file is a cifti file.
         When bold_file is a nifti file, this is not used.
@@ -549,7 +564,7 @@ def find_nifti_bold_files(bold_file, mni_to_t1w):
 
     else:  # Get the cifti reference file
         # Infer the volumetric space from the transform
-        nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(mni_to_t1w))[0]
+        nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(template_to_t1w))[0]
         if "+" in nifti_template:
             nifti_template, cohort = nifti_template.split("+")
             search_substring = f"space-{nifti_template}_cohort-{cohort}"
