@@ -8,11 +8,17 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
+from nipype.interfaces.mixins.fixheader import CopyHeaderInterface
 from nipype.interfaces.workbench.base import WBCommand
+from nipype.interfaces.workbench.cifti import CiftiSmooth as _CiftiSmooth
 
 from xcp_d.utils.filemanip import fname_presuffix
 
 iflogger = logging.getLogger("nipype.interface")
+
+
+class CiftiSmooth(_CiftiSmooth, CopyHeaderInterface):
+    _copy_header_map = {"out_file": "in_file"}
 
 
 class _ConvertAffineInputSpec(CommandLineInputSpec):

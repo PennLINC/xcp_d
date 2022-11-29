@@ -2,12 +2,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing BOLD data."""
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.nilearn import Smooth
+from xcp_d.interfaces.workbench import CiftiSmooth
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
 

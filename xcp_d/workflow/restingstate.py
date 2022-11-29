@@ -3,7 +3,6 @@
 """Workflows for calculating resting state-specific metrics."""
 from nipype import Function
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
@@ -14,6 +13,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCreateDenseScalar,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
+    CiftiSmooth,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_alff_reho_surface, plot_alff_reho_volumetric
