@@ -234,10 +234,6 @@ def collect_data(
             )
             if bold_data:
                 queries["bold"]["space"] = space
-                if not cifti:
-                    queries["t1w_to_mni_xform"]["to"] = space
-                    queries["mni_to_t1w_xform"]["from"] = space
-
                 break
     else:
         allowed_spaces = ensure_list(queries["bold"]["space"])
@@ -245,6 +241,27 @@ def collect_data(
     if not bold_data:
         allowed_space_str = ", ".join(allowed_spaces)
         raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+
+    if not cifti:
+        queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
+        queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
+    else:
+        # Select the best *volumetric* space, based on available nifti BOLD files.
+        # This space will be used in the executive summary and T1w/T2w workflows.
+        temp_bold_query = queries["bold"].copy()
+        temp_bold_query["extension"] = ".nii.gz"
+        nifti_space = None
+        for space in allowed_spaces:
+            bold_data = layout.get(
+                space=space,
+                **temp_bold_query,
+            )
+            if bold_data:
+                nifti_space = space
+                break
+
+        queries["t1w_to_template_xform"]["to"] = nifti_space
+        queries["template_to_t1w_xform"]["from"] = nifti_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
