@@ -710,6 +710,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
+            ]),
+            (inputnode, executivesummary_wf, [
                 ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [
