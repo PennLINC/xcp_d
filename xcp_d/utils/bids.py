@@ -191,7 +191,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "mni_to_t1w_xform": {
+        "template_to_t1w_xform": {
             "datatype": "anat",
             "to": "T1w",
             "suffix": "xfm",
@@ -206,7 +206,7 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_mni_xform": {
+        "t1w_to_template_xform": {
             "datatype": "anat",
             "from": "T1w",
             "suffix": "xfm",
@@ -235,8 +235,8 @@ def collect_data(
             if bold_data:
                 queries["bold"]["space"] = space
                 if not cifti:
-                    queries["t1w_to_mni_xform"]["to"] = space
-                    queries["mni_to_t1w_xform"]["from"] = space
+                    queries["t1w_to_template_xform"]["to"] = space
+                    queries["template_to_t1w_xform"]["from"] = space
 
                 break
     else:
@@ -496,7 +496,7 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def find_nifti_bold_files(bold_file, mni_to_t1w):
+def find_nifti_bold_files(bold_file, template_to_t1w):
     """Find nifti bold and boldref files associated with a given input file.
 
     Parameters
@@ -504,10 +504,10 @@ def find_nifti_bold_files(bold_file, mni_to_t1w):
     bold_file : str
         Path to the preprocessed BOLD file that XCPD will denoise elsewhere.
         If this is a cifti file, then the appropriate nifti file will be determined based on
-        entities in this file, as well as the space and, potentially, cohort in the mni_to_t1w
-        file.
+        entities in this file, as well as the space and, potentially, cohort in the
+        template_to_t1w file.
         When this is a nifti file, it is returned without modification.
-    mni_to_t1w : str
+    template_to_t1w : str
         The transform from standard space to T1w space.
         This is used to determine the volumetric template when bold_file is a cifti file.
         When bold_file is a nifti file, this is not used.
@@ -532,7 +532,7 @@ def find_nifti_bold_files(bold_file, mni_to_t1w):
 
     else:  # Get the cifti reference file
         # Infer the volumetric space from the transform
-        nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(mni_to_t1w))[0]
+        nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(template_to_t1w))[0]
         if "+" in nifti_template:
             nifti_template, cohort = nifti_template.split("+")
             search_substring = f"space-{nifti_template}_cohort-{cohort}"

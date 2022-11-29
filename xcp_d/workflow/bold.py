@@ -136,7 +136,7 @@ def init_boldpostprocess_wf(
         Loaded in this workflow.
     custom_confounds_folder
         custom regressors
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
         MNI to T1W ants Transformation file/h5
         Fed from the subject workflow.
     t1w
@@ -235,7 +235,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "ref_file",
                 "bold_mask",
                 "custom_confounds_folder",
-                "mni_to_t1w",
+                "template_to_t1w",
                 "t1w",
                 "t1seg",
                 "t1w_mask",
@@ -417,7 +417,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
-            ("mni_to_t1w", "inputnode.mni_to_t1w"),
+            ("template_to_t1w", "inputnode.template_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),
         ]),
     ])
@@ -540,7 +540,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     workflow.connect([
         (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
                                  ('ref_file', 'inputnode.ref_file'),
-                                 ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+                                 ('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
@@ -683,7 +683,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
-                ("mni_to_t1w", "inputnode.mni_to_t1w"),
+                ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [
                 ("res_file", "inputnode.regressed_data"),
