@@ -3,6 +3,7 @@ import os
 
 import nibabel as nb
 import numpy as np
+import pytest
 
 from xcp_d.interfaces.prepostcleaning import ConvertTo32
 
@@ -70,6 +71,7 @@ def test_conversion_to_32bit_nifti(data_dir, tmp_path_factory):
     assert int32_img.dataobj.dtype == np.int32
 
 
+@pytest.mark.skip(reason="Cannot make a cifti with float64 data.")
 def test_conversion_to_32bit_cifti(data_dir, tmp_path_factory):
     """Convert nifti files to 32-bit."""
     tmpdir = tmp_path_factory.mktemp("test_conversion_to_32bit")

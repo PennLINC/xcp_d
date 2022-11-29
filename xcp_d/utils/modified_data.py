@@ -207,7 +207,6 @@ def downcast_to_32(in_file):
         out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
         img.to_filename(out_file)
     else:
-        raise Exception(dtype)
         out_file = in_file
 
     return out_file
