@@ -90,10 +90,10 @@ class Regress(SimpleInterface):
         if signal_columns:
             betas = regression.coef_
             pred_noise_data = np.dot(
+                betas[:, noise_columns_idx],
                 confound_arr[noise_columns_idx, :],
-                betas[noise_columns_idx, :],
             )
-            residuals = demeaned_detrended_data - pred_noise_data.T
+            residuals = demeaned_detrended_data - pred_noise_data
         else:
             pred_noise_data = regression.predict(confound_arr.T)
             residuals = demeaned_detrended_data - pred_noise_data.T

@@ -263,7 +263,7 @@ def _get_mixing_matrix(img_file):
     if not mixing_file:
         raise FileNotFoundError(f"Could not find mixing matrix for {img_file}")
 
-    return mixing_file
+    return mixing_file[0]
 
 
 def _get_aroma_noise_comps(img_file):
@@ -278,7 +278,7 @@ def _get_aroma_noise_comps(img_file):
     if not index_file:
         raise FileNotFoundError(f"Could not find AROMAnoiseICs file for {img_file}")
 
-    return index_file
+    return index_file[0]
 
 
 def _label_mixing_matrix(mixing_file, noise_index_file):
