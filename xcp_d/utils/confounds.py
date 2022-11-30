@@ -174,6 +174,8 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     -------
     confound : pandas.DataFrame
         The loaded and selected confounds.
+        If "AROMA" is requested, then this DataFrame will include signal components as well.
+        These will be named something like "signal_[XX]".
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square
@@ -235,12 +237,67 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
         # For custom confounds with no other confounds
         confound = pd.read_table(custom_confounds, sep="\t")
 
+    if "aroma" in params:
+        ica_mixing_matrix = _get_mixing_matrix(img_file)
+        aroma_noise_comps_idx = _get_aroma_noise_comps(img_file)
+        labeled_ica_mixing_matrix = _label_mixing_matrix(ica_mixing_matrix, aroma_noise_comps_idx)
+        confound = pd.concat([confound, labeled_ica_mixing_matrix], axis=1)
+
     if params != "custom" and custom_confounds is not None:
         # For both custom and fMRIPrep confounds
         custom = pd.read_table(custom_confounds, sep="\t")
         confound = pd.concat([custom, confound], axis=1)
 
     return confound
+
+
+def _get_mixing_matrix(img_file):
+    suffix = "_space-" + img_file.split("space-")[1]
+
+    mixing_candidates = [
+        img_file.replace(suffix, "_desc-MELODIC_mixing.tsv"),
+    ]
+
+    mixing_file = [cr for cr in mixing_candidates if os.path.isfile(cr)]
+
+    if not mixing_file:
+        raise FileNotFoundError(f"Could not find mixing matrix for {img_file}")
+
+    return mixing_file
+
+
+def _get_aroma_noise_comps(img_file):
+    suffix = "_space-" + img_file.split("space-")[1]
+
+    index_candidates = [
+        img_file.replace(suffix, "_AROMAnoiseICs.csv"),
+    ]
+
+    index_file = [cr for cr in index_candidates if os.path.isfile(cr)]
+
+    if not index_file:
+        raise FileNotFoundError(f"Could not find AROMAnoiseICs file for {img_file}")
+
+    return index_file
+
+
+def _label_mixing_matrix(mixing_file, noise_index_file):
+    mixing_matrix = np.loadtxt(mixing_file, delimiter="\t")
+    noise_index = np.loadtxt(noise_index_file, delimiter=",", dtype=int)
+    # shift noise index to start with zero
+    noise_index -= 1
+    all_index = np.arange(mixing_matrix.shape[1], dtype=int)
+    signal_index = np.setdiff1d(all_index, noise_index)
+    noise_components = mixing_matrix[:, noise_index]
+    signal_components = mixing_matrix[:, signal_index]
+    # basing naming convention on fMRIPrep confounds column names
+    noise_component_names = [f"aroma_motion_{i:03g}" for i in noise_index]
+    signal_component_names = [f"signal__aroma_signal_{i:03g}" for i in signal_index]
+
+    noise_component_df = pd.DataFrame(noise_components, columns=noise_component_names)
+    signal_component_df = pd.DataFrame(signal_components, columns=signal_component_names)
+    component_df = pd.concat((noise_component_df, signal_component_df), axis=1)
+    return component_df
 
 
 @fill_doc

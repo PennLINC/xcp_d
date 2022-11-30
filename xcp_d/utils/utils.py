@@ -10,7 +10,6 @@ import nibabel as nb
 import numpy as np
 from nipype.interfaces.ants import ApplyTransforms
 from scipy.signal import butter, detrend, filtfilt
-from sklearn.linear_model import LinearRegression
 from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
@@ -583,28 +582,6 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
         )
 
     return filtered_data
-
-
-def linear_regression(data, confound):
-    """Perform linear regression with sklearn's LinearRegression.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-    confound : numpy.ndarray
-       nuisance regressors - vertices by timepoints for confounds matrix
-
-    Returns
-    -------
-    numpy.ndarray
-        residual matrix after regression
-    """
-    regression = LinearRegression(n_jobs=1)
-    regression.fit(confound.T, data.T)
-    y_predicted = regression.predict(confound.T)
-
-    return data - y_predicted.T
 
 
 def demean_detrend_data(data):

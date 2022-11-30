@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Regression interfaces."""
+import numpy as np
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
@@ -10,9 +11,10 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
+from sklearn.linear_model import LinearRegression
 
-from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.utils import demean_detrend_data, linear_regression
+from xcp_d.utils.filemanip import fname_presuffix, split_filename
+from xcp_d.utils.utils import demean_detrend_data
 from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -54,30 +56,52 @@ class Regress(SimpleInterface):
         # Get the confound matrix
         confound = pd.read_table(self.inputs.confounds)
 
-        confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
+        # Any columns starting with "signal__" are assumed to be signal regressors
+        signal_columns = [c for c in confound.columns if c.startswith("signal__")]
+        if signal_columns:
+            LOGGER.info(
+                "Performing nonaggressive denoising using the following signal columns: "
+                f"{', '.join(signal_columns)}"
+            )
+            noise_columns_idx = [
+                i for i, c in enumerate(confound.columns) if c not in signal_columns
+            ]
+
+        # Transpose confounds matrix to line up with bold matrix
+        confound_arr = confound.to_numpy().T
+
         # Get the nifti/cifti matrix
         bold_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
 
         # Demean and detrend the data
-
         demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
 
         # Regress out the confounds via linear regression from sklearn
-        if demeaned_detrended_data.shape[1] < confound.shape[0]:
-            print(
-                "Warning: Regression might not be effective due to rank deficiency, i.e:"
-                "the number of volumes in the bold file is much smaller than the number of"
-                " egressors."
+        if demeaned_detrended_data.shape[1] < confound_arr.shape[0]:
+            LOGGER.warning(
+                "Warning: Regression might not be effective due to rank deficiency, "
+                "i.e., the number of volumes in the bold file is smaller than the number "
+                "of regressors."
             )
-        residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
+
+        regression = LinearRegression(n_jobs=1)
+        regression.fit(confound_arr.T, demeaned_detrended_data.T)
+
+        if signal_columns:
+            betas = regression.coef_
+            pred_noise_data = np.dot(
+                confound_arr[noise_columns_idx, :],
+                betas[noise_columns_idx, :],
+            )
+            residuals = demeaned_detrended_data - pred_noise_data.T
+        else:
+            pred_noise_data = regression.predict(confound_arr.T)
+            residuals = demeaned_detrended_data - pred_noise_data.T
 
         # Write out the data
-        if self.inputs.in_file.endswith(".dtseries.nii"):  # If cifti
-            suffix = "_residualized.dtseries.nii"
-        elif self.inputs.in_file.endswith(".nii.gz"):  # If nifti
-            suffix = "_residualized.nii.gz"
+        _, _, extension = split_filename(self.inputs.in_file)
+        suffix = f"_residualized{extension}"
 
-        # write the output out
         self._results["res_file"] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
@@ -85,7 +109,7 @@ class Regress(SimpleInterface):
             use_ext=False,
         )
         self._results["res_file"] = write_ndata(
-            data_matrix=residualized_data,
+            data_matrix=residuals,
             template=self.inputs.in_file,
             filename=self._results["res_file"],
             mask=self.inputs.mask,
