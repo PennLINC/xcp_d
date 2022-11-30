@@ -214,16 +214,16 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
             "global_signal": "basic",
             "n_compcor": 5,
         },
-        # Get the WM, CSF, and aroma values
+        # Get WM and CSF
+        # AROMA confounds are loaded separately
         "aroma": {
-            "strategy": ["ica_aroma", "wm_csf"],
-            "ica_aroma": "basic",
+            "strategy": ["wm_csf"],
             "wm_csf": "basic",
         },
-        # Get the WM, CSF, and aroma values, as well as global signal
+        # Get WM, CSF, and global signal
+        # AROMA confounds are loaded separately
         "aroma_gsr": {
-            "strategy": ["ica_aroma", "wm_csf", "global_signal"],
-            "ica_aroma": "basic",
+            "strategy": ["wm_csf", "global_signal"],
             "wm_csf": "basic",
             "global_signal": "basic",
         },
