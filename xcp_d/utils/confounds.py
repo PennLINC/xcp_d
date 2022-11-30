@@ -175,59 +175,62 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     confound : pandas.DataFrame
         The loaded and selected confounds.
     """
-    if params == "24P":  # Get rot and trans values, as well as derivatives and square
-        confound = load_confounds(img_file, strategy=(["motion"]), motion="full")[0]
-    elif params == "27P":  # Get rot and trans values, as well as derivatives and square, WM, CSF,
-        # global signal
-        confound = load_confounds(
-            img_file, strategy=(["motion", "wm_csf", "global_signal"]), motion="full"
-        )[0]
-    elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
+    PARAM_KWARGS = {
+        # Get rot and trans values, as well as derivatives and square
+        "24P": {
+            "strategy": ["motion"],
+            "motion": "full",
+        },
+        # Get rot and trans values, as well as derivatives and square, WM, CSF,
+        "27P": {
+            "strategy": ["motion", "global_signal", "wm_csf"],
+            "motion": "full",
+        },
+        # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
-        confound = load_confounds(
-            img_file,
-            strategy=(["motion", "wm_csf", "global_signal"]),
-            motion="full",
-            global_signal="full",
-            wm_csf="full",
-        )[0]
-    elif params == "acompcor":  # Get the rot and trans values, their derivative,
+        "36P": {
+            "strategy": ["motion", "global_signal", "wm_csf"],
+            "motion": "full",
+            "global_signal": "full",
+            "wm_csf": "full",
+        },
+        # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        confound = load_confounds(
-            img_file,
-            strategy=["motion", "high_pass", "compcor"],
-            motion="derivatives",
-            compcor="anat_separated",
-            n_compcor=5,
-        )[0]
-    elif params == "aroma":  # Get the WM, CSF, and aroma values
-        # NOTE: This works with *aggressive* denoising!
-        confound = load_confounds(
-            img_file,
-            strategy=(["wm_csf", "ica_aroma"]),
-            wm_csf="basic",
-            ica_aroma="basic",
-        )[0]
-    elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
-        # NOTE: This works with *aggressive* denoising!
-        confound = load_confounds(
-            img_file,
-            strategy=(["wm_csf", "ica_aroma", "global_signal"]),
-            wm_csf="basic",
-            global_signal="basic",
-            ica_aroma="basic",
-        )[0]
-    elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
+        "acompcor": {
+            "strategy": ["motion", "high_pass", "compcor"],
+            "motion": "derivatives",
+            "compcor": "anat_separated",
+            "n_compcor": 5,
+        },
+        # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
-        confound = load_confounds(
-            img_file,
-            strategy=(["motion", "high_pass", "compcor", "global_signal"]),
-            motion="derivatives",
-            compcor="anat_separated",
-            global_signal="basic",
-            n_compcor=5,
-        )[0]
+        "acompcor_gsr": {
+            "strategy": ["motion", "high_pass", "compcor", "global_signal"],
+            "motion": "derivatives",
+            "compcor": "anat_separated",
+            "global_signal": "basic",
+            "n_compcor": 5,
+        },
+        # Get the WM, CSF, and aroma values
+        "aroma": {
+            "strategy": ["ica_aroma", "wm_csf"],
+            "ica_aroma": "basic",
+            "wm_csf": "basic",
+        },
+        # Get the WM, CSF, and aroma values, as well as global signal
+        "aroma_gsr": {
+            "strategy": ["ica_aroma", "wm_csf", "global_signal"],
+            "ica_aroma": "basic",
+            "wm_csf": "basic",
+            "global_signal": "basic",
+        },
+    }
+
+    if params in PARAM_KWARGS.keys():
+        kwargs = PARAM_KWARGS[params]
+        confound = load_confounds(img_file, **kwargs)[0]
+
     elif params == "custom":
         # For custom confounds with no other confounds
         confound = pd.read_table(custom_confounds, sep="\t")
