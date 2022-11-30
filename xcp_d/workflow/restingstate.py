@@ -3,6 +3,7 @@
 """Workflows for calculating resting state-specific metrics."""
 from nipype import Function
 from nipype.interfaces import utility as niu
+from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
@@ -13,7 +14,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCreateDenseScalar,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
-    CiftiSmooth,
+    FixCiftiIntent,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_alff_reho_surface, plot_alff_reho_volumetric
@@ -174,10 +175,20 @@ calculated at each voxel to yield voxel-wise ALFF measures.
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
+
+            # Always check the intent code in CiftiSmooth's output file
+            fix_cifti_intent = pe.Node(
+                FixCiftiIntent(),
+                name="fix_cifti_intent",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
             # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [('alff_out', 'in_file')]),
-                (smooth_data, outputnode, [('out_file', 'smoothed_alff')]),
+                (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
+                (fix_cifti_intent, outputnode, [('out_file', 'smoothed_alff')]),
             ])
             # fmt:on
 
