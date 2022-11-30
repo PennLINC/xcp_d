@@ -9,7 +9,7 @@ from pathlib import Path
 import nibabel as nb
 import numpy as np
 from nipype.interfaces.ants import ApplyTransforms
-from scipy.signal import butter, detrend, filtfilt
+from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
@@ -582,30 +582,6 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
         )
 
     return filtered_data
-
-
-def demean_detrend_data(data):
-    """Mean-center and remove linear trends over time from data.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-
-    Returns
-    -------
-    detrended : numpy.ndarray
-        demeaned and detrended data
-    """
-    demeaned = detrend(
-        data, axis=-1, type="constant", bp=0, overwrite_data=False
-    )  # Demean data using "constant" detrend,
-    # which subtracts mean
-    detrended = detrend(
-        demeaned, axis=-1, type="linear", bp=0, overwrite_data=False
-    )  # Detrend data using linear method
-
-    return detrended  # Subtract these predicted values from the demeaned data
 
 
 def consolidate_confounds(
