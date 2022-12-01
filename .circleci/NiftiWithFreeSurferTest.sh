@@ -39,4 +39,4 @@ echo $XCPD_CMD
 
 $XCPD_CMD
 
-# python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR nifti
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR nifti
