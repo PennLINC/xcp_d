@@ -69,8 +69,15 @@ run_xcpd_cmd () {
     # Is there a Freesurfer license?
     fslicense_arg=""
     FS_LICENSE=$(printenv FS_LICENSE)
-    if [[ -n "${CFG}" ]]; then
+    if [[ -n "${FS_LICENSE}" ]]; then
       fslicense_arg="-v ${FS_LICENSE}:/license.txt --env FS_LICENSE=/license.txt"
+    fi
+
+    # Is there a BIDS filter file?
+    bids_filter_file_arg=""
+    BIDS_FILTER_FILE=$(printenv BIDS_FILTER_FILE)
+    if [[ -n "${BIDS_FILTER_FILE}" ]]; then
+      bids_filter_file_arg="-v ${BIDS_FILTER_FILE}:/bids_filter_file.json"
     fi
 
     # Otherwise we're going to use docker from the outside
@@ -80,7 +87,7 @@ run_xcpd_cmd () {
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
 
-    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
+    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_filter_file_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
 
   fi
   echo "${XCPD_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"

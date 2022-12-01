@@ -18,6 +18,9 @@ get_bids_data ${TESTDIR} ds001419-fmriprep
 CFG=${TESTDIR}/data/nipype.cfg
 export FS_LICENSE=${TESTDIR}/data/license.txt
 
+# Select filter file to use, if any
+export BIDS_FILTER_FILE=${TESTDIR}/tests/data/ds001419-fmriprep_nifti_filter.json
+
 TESTNAME=nifti_with_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
@@ -29,7 +32,7 @@ BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 cp ${TESTDIR}/tests/data/ds001419-fmriprep_nifti_filter.json ${TEMPDIR}/
 
 XCPD_CMD="$BASE_XCPD_CMD \
-    --bids-filter-file /work/ds001419-fmriprep_nifti_filter.json \
+    --bids-filter-file /bids_filter_file.json \
     --despike \
     --dummytime 8 \
     --fd-thresh 0.04 \
