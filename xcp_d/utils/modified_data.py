@@ -138,25 +138,11 @@ def _drop_dummy_scans(bold_file, dummy_scans):
     # read the bold file
     bold_image = nb.load(bold_file)
 
-    data = bold_image.get_fdata()
-
     if bold_image.ndim == 2:  # cifti
-        dropped_data = data[dummy_scans:, ...]  # time series is the first element
-        time_axis, brain_model_axis = [
-            bold_image.header.get_axis(i) for i in range(bold_image.ndim)
-        ]
-        new_total_volumes = dropped_data.shape[0]
-        dropped_time_axis = time_axis[:new_total_volumes]
-        dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
-        bold_image = nb.Cifti2Image(
-            dropped_data, header=dropped_header, nifti_header=bold_image.nifti_header
-        )
+        bold_image = bold_image.slicer[dummy_scans:, ...]  # time series is the first element
 
     else:  # nifti
-        dropped_data = data[..., dummy_scans:]
-        bold_image = nb.Nifti1Image(
-            dropped_data, affine=bold_image.affine, header=bold_image.header
-        )
+        bold_image = bold_image.slicer[..., dummy_scans:]  # time is fourth dim
 
     return bold_image
 
