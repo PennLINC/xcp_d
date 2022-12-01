@@ -2,10 +2,10 @@
 
 cat << DOC
 
-Test XCP-D on nifti data without FreeSurfer
-===========================================
+Test XCP-D on fMRIPrepped nifti data without FreeSurfer
+=======================================================
 
-Testing regular volumetric outputs from fmriprep
+Testing regular volumetric outputs from fMRIPrep.
 
 DOC
 
@@ -18,7 +18,6 @@ get_bids_data ${TESTDIR} sub01
 CFG=${TESTDIR}/data/nipype.cfg
 export FS_LICENSE=${TESTDIR}/data/license.txt
 
-# Test dipy_mapmri
 TESTNAME=nifti_without_freesurfer
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work

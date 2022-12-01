@@ -5,7 +5,7 @@ cat << DOC
 Run PyTests
 ===========
 
-Run the suite of pytests easily on a local machine or on circleci
+Run the suite of pytests easily on a local machine or on circleci.
 
 DOC
 
@@ -53,8 +53,7 @@ get_config_data ${TESTDIR}
 
 # Get the data outside of running the tests
 get_bids_data ${TESTDIR} sub01
-get_bids_data ${TESTDIR} fmriprep_colornest
-get_bids_data ${TESTDIR} freesurfer_colornest
+get_bids_data ${TESTDIR} ds001419-fmriprep
 
 CFG=${TESTDIR}/data/nipype.cfg
 export FS_LICENSE=${TESTDIR}/data/license.txt

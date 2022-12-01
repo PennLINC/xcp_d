@@ -31,23 +31,22 @@ jobs:
       - checkout
       - run: *runinstall
 
-  download_data_fmriprepwithfreesurfer:
+  download_data_ds001419-fmriprep:
     <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
-          key: fmriprepwithfreesurfer-00
+          key: ds001419-fmriprep-00
       - run:
-          name: Download fmriprepwithfreesurfer test data
+          name: Download ds001419-fmriprep test data
           command: |
             cd /src/xcp_d/.circleci
             source get_data.sh
-            get_bids_data $PWD fmriprep_colornest
-            get_bids_data $PWD freesurfer_colornest
+            get_bids_data $PWD ds001419-fmriprep
       - save_cache:
-          key: fmriprepwithfreesurfer-00
+          key: ds001419-fmriprep-00
           paths:
-              - /src/xcp_d/.circleci/data/fmriprepwithfreesurfer
+              - /src/xcp_d/.circleci/data/ds001419-fmriprep
 
   download_data_fmriprepwithoutfreesurfer:
     <<: *dockersetup
@@ -128,7 +127,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithfreesurfer-00
+          key: ds001419-fmriprep-00
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -192,7 +191,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithfreesurfer-00
+          key: ds001419-fmriprep-00
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -224,7 +223,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithfreesurfer-00
+          key: ds001419-fmriprep-00
       - restore_cache:
           key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
@@ -300,7 +299,7 @@ workflows:
             tags:
               only: /.*/
 
-      - download_data_fmriprepwithfreesurfer:
+      - download_data_ds001419-fmriprep:
           requires:
             - build
           filters:
@@ -323,7 +322,7 @@ workflows:
 
       - cifti_with_freesurfer:
           requires:
-            - download_data_fmriprepwithfreesurfer
+            - download_data_ds001419-fmriprep
           filters:
             branches:
               ignore:
@@ -334,7 +333,7 @@ workflows:
 
       - nifti_with_freesurfer:
           requires:
-            - download_data_fmriprepwithfreesurfer
+            - download_data_ds001419-fmriprep
           filters:
             branches:
               ignore:
@@ -367,7 +366,7 @@ workflows:
 
       - pytests:
           requires:
-            - download_data_fmriprepwithfreesurfer
+            - download_data_ds001419-fmriprep
             - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
