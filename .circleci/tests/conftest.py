@@ -32,8 +32,9 @@ def output_dir(request):
 
 @pytest.fixture
 def fmriprep_with_freesurfer_data(data_dir):
-    func_dir = os.path.join(data_dir, "sub-01", "func")
-    anat_dir = os.path.join(data_dir, "sub-01", "anat")
+    subj_dir = os.path.join(data_dir, "ds001419-fmriprep", "sub-01")
+    func_dir = os.path.join(subj_dir, "func")
+    anat_dir = os.path.join(subj_dir, "anat")
 
     files = {}
     files["nifti_file"] = os.path.join(
