@@ -51,6 +51,13 @@ run_xcpd_cmd () {
   # Defines a call to qsiprep that works on circleci OR for a local
   # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
+
+    # Is there a BIDS filter file?
+    BIDS_FILTER_FILE=$(printenv BIDS_FILTER_FILE)
+    if [[ -n "${BIDS_FILTER_FILE}" ]]; then
+      cp ${BIDS_FILTER_FILE} /bids_filter_file.json
+    fi
+
     # In circleci we're running from inside the container. call directly
     XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
   else
