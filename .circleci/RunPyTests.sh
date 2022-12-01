@@ -5,7 +5,7 @@ cat << DOC
 Run PyTests
 ===========
 
-Run the suite of pytests easily on a local machine or on circleci.
+Run the suite of pytests easily on a local machine or on CircleCI.
 
 DOC
 
