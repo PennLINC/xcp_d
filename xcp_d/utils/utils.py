@@ -480,6 +480,8 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     custom_confounds_file : str or None
         The appropriate custom confounds file.
     """
+    import os
+
     if custom_confounds_folder is None:
         return None
 
