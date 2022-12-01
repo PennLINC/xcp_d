@@ -3,6 +3,6 @@
         "task": ["imagery", "rest"],
         "run": ["01", "02", null],
         "space": "MNI152NLin2009cAsym",
-        "resolution": "2"
+        "res": "2"
     }
 }

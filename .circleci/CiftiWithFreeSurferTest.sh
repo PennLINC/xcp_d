@@ -25,8 +25,11 @@ OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
 BIDS_INPUT_DIR=${TESTDIR}/data/ds001419-fmriprep
 BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
+# Copy filter file to working directory
+cp ${TESTDIR}/tests/data/ds001419-fmriprep_cifti_filter.json ${TEMPDIR}/
+
 XCPD_CMD="$BASE_XCPD_CMD \
-    --bids-filter-file ${TESTDIR}/tests/data/ds001419-fmriprep_cifti_filter.json \
+    --bids-filter-file /work/ds001419-fmriprep_cifti_filter.json \
     --despike \
     --head_radius 40 \
     --smoothing 6 \
