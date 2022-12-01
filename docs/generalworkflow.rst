@@ -7,9 +7,8 @@ General Workflow
 
 Input data
 ----------
-The default inputs to `XCP-D` are the outputs of  `fMRIPrep` and `Nibabies`.
-`xcp_d` can also minimally process `HCP` data,
- whichs require the `input-type` flag ( `hcp` ).
+The default inputs to ``xcp_d`` are the outputs of  ``fMRIPrep`` and ``Nibabies``.
+``xcp_d`` can also minimally process ``HCP`` data, which requires the ``--input-type hcp`` flag.
 
 
 Processing Steps
