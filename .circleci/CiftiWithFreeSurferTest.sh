@@ -25,7 +25,7 @@ OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
 BIDS_INPUT_DIR=${TESTDIR}/data/ds001419-fmriprep
 BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
-XCPD_CMD=$BASE_XCPD_CMD \
+XCPD_CMD="$BASE_XCPD_CMD \
     --despike \
     --head_radius 40 \
     --smoothing 6 \
@@ -36,7 +36,7 @@ XCPD_CMD=$BASE_XCPD_CMD \
     --combineruns \
     --dcan-qc \
     --dummy-scans auto \
-    --fd-thresh 0.04
+    --fd-thresh 0.04"
 
 echo $XCPD_CMD
 

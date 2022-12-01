@@ -24,13 +24,16 @@ setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
 BIDS_INPUT_DIR=${TESTDIR}/data/nibabies_test_data/derivatives/nibabies
-XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
+BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
-$XCPD_CMD \
+XCPD_CMD="$BASE_XCPD_CMD \
     --despike  --head_radius 40 \
     --smoothing 6  -f 100 -v -v \
-    --nuisance-regressors 27P --input-type nibabies
+    --nuisance-regressors 27P --input-type nibabies"
 
-input_type=nibabies
-python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
+echo $XCPD_CMD
+
+$XCPD_CMD
+
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR nibabies
 

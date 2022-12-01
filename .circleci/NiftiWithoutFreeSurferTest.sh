@@ -23,9 +23,9 @@ setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
 BIDS_INPUT_DIR=${TESTDIR}/data/fmriprepwithoutfreesurfer/fmriprep
-XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
+BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
-$XCPD_CMD \
+XCPD_CMD="$BASE_XCPD_CMD \
     --despike \
     --head_radius 40 \
     --smoothing 6 \
@@ -34,7 +34,10 @@ $XCPD_CMD \
     --nuisance-regressors 27P \
     --disable-bandpass-filter \
     --dcan-qc \
-    --dummy-scans 1
+    --dummy-scans 1"
 
-input_type=nifti
-python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR $input_type
+echo $XCPD_CMD
+
+$XCPD_CMD
+
+python test_affines.py $BIDS_INPUT_DIR $OUTPUT_DIR nifti
