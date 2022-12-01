@@ -57,15 +57,14 @@ class Regress(SimpleInterface):
         confound_arr = confound.to_numpy()
 
         # Any columns starting with "signal__" are assumed to be signal regressors
-        signal_columns = [c for c in confound.columns if c.startswith("signal__")]
+        cols = confound.columns.tolist()
+        signal_columns = [c for c in cols if c.startswith("signal__")]
         if signal_columns:
             LOGGER.info(
                 "Performing nonaggressive denoising using the following signal columns: "
                 f"{', '.join(signal_columns)}"
             )
-            noise_columns_idx = [
-                i for i, c in enumerate(confound.columns) if c not in signal_columns
-            ]
+            noise_reg_idx = [i for i, c in enumerate(cols) if c not in signal_columns]
 
         # Get the nifti/cifti matrix
         bold_arr = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
@@ -91,15 +90,25 @@ class Regress(SimpleInterface):
                 ensure_finite=True,
             )
 
+            # Mean-center and detrend the regressors in the same manner.
+            # If we don't, the regression could reintroduce trends (see Lindquist2019).
+            # Later bandpass filtering should deal with these trends if they are reintroduced,
+            # but users can disable the filter, so we shouldn't rely on that.
+            confound_arr = signal.clean(
+                signals=confound_arr,
+                detrend=True,  # this mean-centers and linearly detrends the data
+                standardize=False,
+                confounds=None,
+                filter=None,
+                ensure_finite=True,
+            )
+
             # Fit to all regressors, including signal ones.
             # NOTE: Could we replace with nilearn.glm.first_level.run_glm?
             betas = np.linalg.lstsq(confound_arr, bold_arr, rcond=None)[0]
 
             # Use the parameter estimates from the full fit to remove the *noise* only
-            pred_noise_data = np.dot(
-                confound_arr[:, noise_columns_idx],
-                betas[noise_columns_idx, :],
-            )
+            pred_noise_data = np.dot(confound_arr[:, noise_reg_idx], betas[noise_reg_idx, :])
             residuals = bold_arr - pred_noise_data
 
         else:
@@ -120,7 +129,7 @@ class Regress(SimpleInterface):
 
         # Write out the data
         _, _, extension = split_filename(self.inputs.in_file)
-        suffix = f"_residualized{extension}"
+        suffix = "_residualized" + extension
         self._results["res_file"] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
