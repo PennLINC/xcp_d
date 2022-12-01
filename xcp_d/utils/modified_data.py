@@ -137,12 +137,16 @@ def _drop_dummy_scans(bold_file, dummy_scans):
     """
     # read the bold file
     bold_image = nb.load(bold_file)
+    ndim = bold_image.ndim
 
-    if bold_image.ndim == 2:  # cifti
+    if ndim == 2:  # cifti
         bold_image = bold_image.slicer[dummy_scans:, ...]  # time series is the first element
 
-    else:  # nifti
+    elif ndim == 4:  # nifti
         bold_image = bold_image.slicer[..., dummy_scans:]  # time is fourth dim
+
+    else:
+        raise ValueError(f"Image dimensionality ({ndim}) not supported for {bold_file}")
 
     return bold_image
 
