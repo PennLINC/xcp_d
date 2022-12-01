@@ -33,7 +33,7 @@ cp ${TESTDIR}/tests/data/ds001419-fmriprep_nifti_filter.json ${TEMPDIR}/
 
 XCPD_CMD="$BASE_XCPD_CMD \
     --bids-filter-file /bids_filter_file.json \
-    --nuisance-parameters aroma_gsr \
+    --nuisance-regressors aroma_gsr \
     --despike \
     --dummytime 8 \
     --fd-thresh 0.04 \
