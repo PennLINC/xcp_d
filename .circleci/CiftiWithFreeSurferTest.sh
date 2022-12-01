@@ -26,6 +26,7 @@ BIDS_INPUT_DIR=${TESTDIR}/data/ds001419-fmriprep
 BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 XCPD_CMD="$BASE_XCPD_CMD \
+    --bids-filter-file ${TESTDIR}/tests/data/ds001419-fmriprep_cifti_filter.json \
     --despike \
     --head_radius 40 \
     --smoothing 6 \
