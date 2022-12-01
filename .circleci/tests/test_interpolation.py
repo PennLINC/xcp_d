@@ -13,20 +13,15 @@ from xcp_d.interfaces.prepostcleaning import Interpolate
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
-def test_interpolate_cifti(data_dir, tmp_path_factory):
+def test_interpolate_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test CIFTI interpolation."""
     # edit this if you want to see the edited confounds
     tmpdir = tmp_path_factory.mktemp("test_interpolate_cifti")
 
     # CIFTI - ORIGINAL SIGNAL
     # Feed in inputs
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
-    boldfile = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
-    )
+    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+
     TR = 2.5
 
     # Let's replace some voxels in the original bold_file
@@ -124,19 +119,12 @@ def test_interpolate_cifti(data_dir, tmp_path_factory):
     assert diff1 < diff2
 
 
-def test_interpolate_nifti(data_dir):
+def test_interpolate_nifti(fmriprep_with_freesurfer_data):
     """Check results - first must censor file."""
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
-    boldfile = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    )
+    boldfile = fmriprep_with_freesurfer_data["nifti_file"]
+    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
     TR = 0.5
-    mask = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-    )
+
     # Let's replace some voxels in the original bold_file
     file_data = read_ndata(boldfile, mask)
 
