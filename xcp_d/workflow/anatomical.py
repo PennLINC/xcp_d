@@ -322,9 +322,11 @@ def init_anatomical_wf(
         # verify freesurfer directory
         p = Path(fmri_dir)
 
-        freesurfer_paths = glob.glob(str(p.parent) + "/*freesurfer*")  # for fmriprep and nibabies
+        # for fMRIPrep/Nibabies versions >=20.2.1
+        freesurfer_paths = glob.glob(str(p) + "/sourcedata/*freesurfer*")
         if len(freesurfer_paths) == 0:
-            freesurfer_paths = glob.glob(str(p) + "/sourcedata/*freesurfer*")  # nibabies
+            # for fMRIPrep/Nibabies versions <20.2.1
+            freesurfer_paths = glob.glob(str(p.parent) + "/*freesurfer*")
 
         if len(freesurfer_paths) > 0 and "freesurfer" in os.path.basename(freesurfer_paths[0]):
             freesurfer_path = freesurfer_paths[0]
