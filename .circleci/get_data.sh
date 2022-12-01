@@ -208,7 +208,7 @@ get_bids_data() {
 
         ${WGET} \
           -O ds001419-fmriprep.tar.xz \
-          "https://upenn.box.com/s/mqedc972yp9f4gsuy2yq0fqbn1d4qum5"
+          "https://upenn.box.com/shared/static/mqedc972yp9f4gsuy2yq0fqbn1d4qum5.xz"
         tar xvfJ ds001419-fmriprep.tar.xz -C $TEST_DATA_DIR
         rm ds001419-fmriprep.tar.xz
 
