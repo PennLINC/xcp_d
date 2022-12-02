@@ -195,6 +195,7 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     return custom_confounds_file
 
 
+@fill_doc
 def consolidate_confounds(
     img_file,
     params,
@@ -204,17 +205,16 @@ def consolidate_confounds(
 
     Parameters
     ----------
-    params : str
     img_file : str
         bold file
-    fmriprep_confounds_file : str
-    custom_confounds_folder : str
-        file to custom confounds tsv
+    %(params)s
+    custom_confounds_folder : str or None
+        Path to custom confounds tsv. May be None.
 
     Returns
     -------
     out_file : str
-        file to combined tsv
+        Path to combined tsv.
     """
     import os
 
@@ -234,7 +234,18 @@ def consolidate_confounds(
 
 @fill_doc
 def describe_regression(params, custom_confounds_file):
-    """Build a text description of the regression that will be performed."""
+    """Build a text description of the regression that will be performed.
+
+    Parameters
+    ----------
+    %(params)s
+    custom_confounds_file : str or None
+
+    Returns
+    -------
+    desc : str
+        A text description of the regression.
+    """
     import nilearn
     import pandas as pd
 
@@ -247,46 +258,49 @@ def describe_regression(params, custom_confounds_file):
     BASE_DESCRIPTIONS = {
         "custom": "A custom set of regressors was used, with no other regressors from XCP-D. ",
         "24P": (
-            "In total, 24 nuisance regressors were selected  from the nuisance "
-            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "In total, 24 nuisance regressors were selected from the preprocessing confounds. "
+            "These nuisance regressors included "
             "six motion parameters with their temporal derivatives, "
             "and their quadratic expansion of those six motion parameters and their "
-            "temporal derivatives  [@benchmarkp;@satterthwaite_2013]. "
+            "temporal derivatives [@benchmarkp;@satterthwaite_2013]. "
         ),
         "27P": (
-            "In total, 27 nuisance regressors were selected from the nuisance "
-            "confound matrices of fMRIPrep output. These nuisance regressors included "
+            "In total, 27 nuisance regressors were selected from the preprocessing confounds. "
+            "These nuisance regressors included "
             "six motion parameters with their temporal derivatives, "
-            "the quadratic expansion of those six motion parameters and "
-            "their derivatives, the global signal, the mean white matter "
-            "signal, and the mean CSF signal [@benchmarkp;@satterthwaite_2013]. "
+            "the quadratic expansion of those six motion parameters and their derivatives, "
+            "mean global signal, mean white matter signal, and mean CSF signal "
+            "[@benchmarkp;@satterthwaite_2013]. "
         ),
         "36P": (
-            "In total, 36 nuisance regressors were selected from the nuisance "
-            "confound matrices of fMRIPrep output. These nuisance regressors included "
-            "six motion parameters, global signal, the mean white matter, "
-            "the mean CSF signal with their temporal derivatives, "
+            "In total, 36 nuisance regressors were selected from the preprocessing confounds. "
+            "These nuisance regressors included "
+            "six motion parameters, mean global signal, mean white matter signal, "
+            "mean CSF signal with their temporal derivatives, "
             "and the quadratic expansion of six motion parameters, tissues signals and "
             "their temporal derivatives [@benchmarkp;@satterthwaite_2013]. "
         ),
         "acompcor": (
-            "The top 5 principal aCompCor components from WM and CSF compartments "
-            "were selected as "
-            "nuisance regressors. Additionally, the six motion parameters and their temporal "
-            "derivatives were added as confounds [@benchmarkp;@satterthwaite_2013]. "
+            "The top 5 aCompCor principal components from the WM and CSF compartments "
+            "were selected as nuisance regressors [@behzadi2007component], "
+            "along with the six motion parameters and their temporal derivatives "
+            "[@benchmarkp;@satterthwaite_2013]. "
         ),
         "acompcor_gsr": (
-            "All the clean aroma components [@pruim2015ica] with the mean white matter "
-            "signal, and the mean CSF signal, and mean global signal were "
-            "selected as nuisance regressors [@benchmarkp;@satterthwaite_2013]. "
+            "The top 5 aCompCor principal components from the WM and CSF compartments "
+            "were selected as nuisance regressors [@behzadi2007component], "
+            "along with the six motion parameters and their temporal derivatives, "
+            "mean white matter signal, mean CSF signal, and mean global signal "
+            "[@benchmarkp;@satterthwaite_2013]. "
         ),
         "aroma": (
-            "AROMA motion-labeled components, mean white matter signal, and mean CSF signal were "
-            "selected as nuisance regressors [@benchmarkp;@satterthwaite_2013]. "
+            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
+            "and mean CSF signal were selected as nuisance regressors "
+            "[@benchmarkp;@satterthwaite_2013]. "
         ),
         "aroma_gsr": (
-            "AROMA motion-labeled components, mean white matter signal, mean CSF signal, "
-            "and mean global signal were selected as nuisance regressors "
+            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
+            "mean CSF signal, and mean global signal were selected as nuisance regressors "
             "[@benchmarkp;@satterthwaite_2013]. "
         ),
     }
@@ -296,7 +310,7 @@ def describe_regression(params, custom_confounds_file):
 
     desc = BASE_DESCRIPTIONS[params]
     if use_custom_confounds and params != "custom":
-        desc += "Additionally, custom confounds were also included as nuisance regressors."
+        desc += "Additionally, custom confounds were also included as nuisance regressors. "
 
     if "aroma" not in params and non_aggro:
         desc += (
@@ -337,8 +351,7 @@ def describe_regression(params, custom_confounds_file):
 
 @fill_doc
 def load_confound_matrix(params, img_file, custom_confounds=None):
-    """
-    Load a subset of the confounds associated with a given file.
+    """Load a subset of the confounds associated with a given file.
 
     Parameters
     ----------
@@ -433,6 +446,7 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
 
 
 def _get_mixing_matrix(img_file):
+    """Find AROMA (i.e., MELODIC) mixing matrix file for a given BOLD file."""
     suffix = "_space-" + img_file.split("space-")[1]
 
     mixing_candidates = [
@@ -448,6 +462,7 @@ def _get_mixing_matrix(img_file):
 
 
 def _get_aroma_noise_comps(img_file):
+    """Find AROMA noise components file for a given BOLD file."""
     suffix = "_space-" + img_file.split("space-")[1]
 
     index_candidates = [
@@ -463,6 +478,7 @@ def _get_aroma_noise_comps(img_file):
 
 
 def _label_mixing_matrix(mixing_file, noise_index_file):
+    """Prepend 'signal__' to any non-noise components in AROMA mixing matrix."""
     mixing_matrix = np.loadtxt(mixing_file, delimiter="\t")
     noise_index = np.loadtxt(noise_index_file, delimiter=",", dtype=int)
     # shift noise index to start with zero
