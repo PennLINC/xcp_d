@@ -1,4 +1,5 @@
 """Custom wb_command interfaces."""
+import os
 
 from nipype import logging
 from nipype.interfaces.base import (
@@ -919,8 +920,9 @@ class _ShowSceneInputSpec(CommandLineInputSpec):
     )
     out_file = File(
         exists=False,
-        mandatory=True,
+        mandatory=False,
         argstr="%s",
+        genfile=True,
         position=2,
         desc="output image file name",
     )
@@ -1007,3 +1009,24 @@ class ShowScene(WBCommand):
     input_spec = _ShowSceneInputSpec
     output_spec = _ShowSceneOutputSpec
     _cmd = "wb_command -show-scene"
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_outfilename())
+        return outputs
+
+    def _gen_filename(self, name):
+        if name == "out_file":
+            return self._gen_outfilename()
+        else:
+            return None
+
+    def _gen_outfilename(self):
+        frame_number = self.inputs.scene_name_or_number
+        if isinstance(frame_number, int):
+            # Add a bunch of leading zeros for easy sorting
+            out_file = f"frame_{frame_number:06g}.png"
+        else:
+            out_file = f"frame_{frame_number}.png"
+
+        return out_file

@@ -1,0 +1,10 @@
+<script>
+    $( window ).load(function() {
+        var brain{{ image_type }} = brainsprite({
+            canvas: "{{ image_type }}-viewer",
+            sprite: "{{ image_type }}-spriteImg",
+            nbSlice: { 'Y':218 , 'Z':218 },
+            flagCoordinates: true,
+        });
+    });
+</script>

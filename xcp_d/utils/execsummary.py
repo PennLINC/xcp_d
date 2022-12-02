@@ -1,38 +1,22 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for generating the executive summary."""
-import gzip
-import os
-from re import split
-
 import nibabel as nb
 import nilearn.image as nlimage
 import numpy as np
 from nilearn.plotting import view_img
-from PIL import Image  # for BrainSprite
 from skimage import measure
 
-from xcp_d.interfaces.workbench import ShowScene
 
+def make_brainsprite_html(mosaic_file, selected_png_files, image_type):
+    """Create HTML file with brainsprite figure stored within."""
+    import os
 
-def natural_sort(list_):
-    """Need this function so frames sort in correct order."""
-
-    def convert(text):
-        return int(text) if text.isdigit() else text.lower()
-
-    def alphanum_key(key):
-        return [convert(c) for c in split("([0-9]+)", key)]
-
-    return sorted(list_, key=alphanum_key)
-
-
-def make_brainsprite_html(mosaic_file, selected_png_files, input_type):
     from xcp_d.interfaces import constants
     from xcp_d.interfaces.layout_builder import ModalSlider
 
-    viewer = input_type + "-viewer"
-    spriteImg = input_type + "-spriteImg"
+    viewer = image_type + "-viewer"
+    spriteImg = image_type + "-spriteImg"
 
     spriteviewer = constants.SPRITE_VIEWER_HTML.format(
         viewer=viewer,
@@ -41,7 +25,7 @@ def make_brainsprite_html(mosaic_file, selected_png_files, input_type):
         width="100%",
     )
     spriteloader = constants.SPRITE_LOAD_SCRIPT.format(
-        tx=input_type,
+        tx=image_type,
         viewer=viewer,
         spriteImg=spriteImg,
     )
@@ -49,19 +33,22 @@ def make_brainsprite_html(mosaic_file, selected_png_files, input_type):
     # Just a sanity check, since we happen to know how many to expect.
     if len(selected_png_files) != 9:
         # TODO: log WARNING
-        print(f"Expected 9 {input_type} pngs but found {len(selected_png_files)}.")
+        print(f"Expected 9 {image_type} pngs but found {len(selected_png_files)}.")
+
+    # Let's say that the PNGs are in the same folder as the HTML file for now.
+    selected_png_files = [os.path.basename(f) for f in selected_png_files]
 
     # Make a modal container with a slider and add the pngs.
-    pngs_slider = ModalSlider(f"{input_type}_modal", f"{input_type}pngs")
+    pngs_slider = ModalSlider(f"{image_type}_modal", f"{image_type}pngs")
     pngs_slider.add_images(selected_png_files)
 
     # Add HTML for the bar with the brainsprite label and pngs button,
     # and for the brainsprite viewer.
-    btn_label = f"View {input_type} pngs"
-    html_code = constants.T1X_SECTION.format(
-        tx=input_type,
-        t1_pngs_button=pngs_slider.get_button(btn_label),
-        t1wbrainplot=spriteviewer,
+    btn_label = f"View {image_type} pngs"
+    html_code = constants.BRAINSPRITE_CODE.format(
+        image_type=image_type,
+        anat_pngs_button=pngs_slider.get_button(btn_label),
+        anat_brainsprite=spriteviewer,
     )
 
     html_code += pngs_slider.get_container()
@@ -80,6 +67,11 @@ def make_mosaic(png_files):
 
     The mosaic will be usable in a BrainSprite viewer.
     """
+    import os
+
+    import numpy as np
+    from PIL import Image  # for BrainSprite
+
     mosaic_file = os.path.abspath("mosaic.jpg")
     files = sorted(png_files)  # just in case they get shuffled
     files = files[::-1]  # we want last first, I guess?
@@ -105,17 +97,20 @@ def make_mosaic(png_files):
     return mosaic_file
 
 
-def build_scene_from_brainsprite_template(
-    tx_img,
+def modify_brainsprite_scene_template(
+    anat_file,
     rh_pial_file,
     lh_pial_file,
     rh_white_file,
     lh_white_file,
     scene_template,
 ):
-    """Create modified .scene text file to be used for creating PNGs later."""
+    """Create modified .scene text file to be used for creating brainsprite PNGs later."""
+    import gzip
+    import os
+
     paths = {
-        "TX_IMG": tx_img,
+        "TX_IMG": anat_file,
         "R_PIAL": rh_pial_file,
         "L_PIAL": lh_pial_file,
         "R_WHITE": rh_white_file,
@@ -143,50 +138,78 @@ def build_scene_from_brainsprite_template(
     return out_file
 
 
-def create_image_from_brainsprite_scene(scene_file, frame_number):
-    """Create a single PNG for a brainsprite.
+def modify_pngs_scene_template(
+    anat_file,
+    image_type,
+    rh_pial_file,
+    lh_pial_file,
+    rh_white_file,
+    lh_white_file,
+    scene_template,
+):
+    """Create modified .scene text file to be used for creating PNGs later."""
+    import gzip
+    import os
 
-    Parameters
-    ----------
-    output_dir
-    scene_file
-    frame_number : int
-        Starts with 1.
-    """
-    out_file = os.path.abspath(f"frame_{frame_number:06g}.png")
+    paths = {
+        f"{image_type}_IMG": anat_file,
+        "RPIAL": rh_pial_file,
+        "LPIAL": lh_pial_file,
+        "RWHITE": rh_white_file,
+        "LWHITE": lh_white_file,
+    }
 
-    show_scene = ShowScene(
-        scene_file=scene_file,
-        scene_name_or_number=frame_number,
-        out_file=out_file,
-        image_width=900,
-        image_height=800,
-    )
-    _ = show_scene.run()
+    out_file = os.path.abspath("modified_scene.scene")
+
+    if scene_template.endswith(".gz"):
+        with gzip.open(scene_template, mode="rt") as fo:
+            data = fo.read()
+    else:
+        with open(scene_template, "r") as fo:
+            data = fo.read()
+
+    for template, path in paths.items():
+        # Replace templated pathnames and filenames in local copy.
+        data = data.replace(f"{template}_PATH", path)
+        filename = os.path.basename(path)
+        data = data.replace(f"{template}_NAME", filename)
+
+    with open(out_file, "w") as fo:
+        fo.write(data)
 
     return out_file
 
 
 def get_n_frames(scene_file):
+    """Infer the number of frames from a scene file."""
     with open(scene_file, "r") as fo:
         data = fo.read()
 
     total_frames = data.count("SceneInfo Index=")
     frame_numbers = list(range(1, total_frames + 1))
+
     return frame_numbers
 
 
-def create_images_from_brainsprite_scene(output_dir, scene_file):
-    """Create a series of PNG files that will later be used in a brainsprite."""
-    with open(scene_file, "r") as fo:
-        data = fo.read()
+def get_png_image_names(image_type):
+    """Get a list of scene names for which to produce PNGs."""
+    image_descriptions = [
+        "AxialInferiorTemporalCerebellum",
+        "AxialBasalGangliaPutamen",
+        "AxialSuperiorFrontal",
+        "CoronalPosteriorParietalLingual",
+        "CoronalCaudateAmygdala",
+        "CoronalOrbitoFrontal",
+        "SagittalInsulaFrontoTemporal",
+        "SagittalCorpusCallosum",
+        "SagittalInsulaTemporalHippocampalSulcus",
+    ]
 
-    total_frames = data.count("SceneInfo Index=")
+    scene_index = list(range(1, len(image_descriptions) * 2, 2))
+    if image_type == "T2":
+        scene_index = [i + 1 for i in scene_index]
 
-    for i_frame in range(total_frames):
-        _ = create_image_from_brainsprite_scene(output_dir, scene_file, i_frame + 1)
-
-    return output_dir
+    return scene_index, image_descriptions
 
 
 def generate_brain_sprite(template_image, stat_map, out_file):

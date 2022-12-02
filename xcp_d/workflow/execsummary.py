@@ -14,24 +14,292 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import (
-    BrainPlotx,
-    PlotImage,
-    PlotSVGData,
-    RibbontoStatmap,
-)
+from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData, RibbontoStatmap
+from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.execsummary import (
-    build_scene_from_brainsprite_template,
-    create_image_from_brainsprite_scene,
     get_n_frames,
+    get_png_image_names,
     make_brainsprite_html,
     make_mosaic,
+    modify_brainsprite_scene_template,
+    modify_pngs_scene_template,
 )
 from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
+
+
+def init_brainsprite_mini_wf(
+    output_dir,
+    image_type,
+    brainsprite_scene_template,
+    pngs_scene_template,
+    name="init_brainsprite_mini_wf",
+):
+    """Create an executive summary-style brainsprite file."""
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "anat_file",
+                "image_type",  # T1 or T2
+                "t1w_seg",
+                "lh_wm_surf",
+                "rh_wm_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.image_type = image_type
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "brainsprite",
+            ]
+        ),
+        name="outputnode",
+    )
+
+    # Modify template scene file with file paths
+    modify_brainsprite_template_scene = pe.Node(
+        Function(
+            function=modify_brainsprite_scene_template,
+            input_names=[
+                "anat_file",
+                "rh_pial_file",
+                "lh_pial_file",
+                "rh_white_file",
+                "lh_white_file",
+                "scene_template",
+            ],
+            output_names=["out_file"],
+        ),
+        name="modify_brainsprite_template_scene",
+    )
+    modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, modify_brainsprite_template_scene, [
+            ("anat_file", "anat_file"),
+            ("lh_wm_surf", "lh_white_file"),
+            ("rh_wm_surf", "rh_white_file"),
+            ("lh_pial_surf", "lh_pial_file"),
+            ("rh_pial_surf", "rh_pial_file"),
+        ]),
+    ])
+    # fmt:on
+
+    # Create slice-wise PNGs
+    get_number_of_frames = pe.Node(
+        Function(
+            function=get_n_frames,
+            input_names=["scene_file"],
+            output_names=["frame_numbers"],
+        ),
+        name="get_number_of_frames",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (modify_brainsprite_template_scene, get_number_of_frames, [
+            ("out_file", "scene_file"),
+        ]),
+    ])
+    # fmt:on
+
+    create_framewise_pngs = pe.MapNode(
+        ShowScene(
+            image_width=900,
+            image_height=800,
+        ),
+        name="create_framewise_pngs",
+        iterfield=["scene_name_or_number"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (modify_brainsprite_template_scene, create_framewise_pngs, [
+            ("out_file", "scene_file"),
+        ]),
+        (get_number_of_frames, create_framewise_pngs, [
+            ("frame_numbers", "scene_name_or_number"),
+        ]),
+    ])
+    # fmt:on
+
+    # Make mosaic
+    make_mosaic_node = pe.Node(
+        Function(
+            function=make_mosaic,
+            input_names=["png_files"],
+            output_names=["mosaic_file"],
+        ),
+        name="make_mosaic_node",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (create_framewise_pngs, make_mosaic_node, [
+            ("out_file", "png_files"),
+        ]),
+    ])
+    # fmt:on
+
+    ds_mosaic_file = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["desc"],
+            desc="mosaic",
+            datatype="figures",
+            suffix="T1w",
+        ),
+        name="ds_mosaic_file",
+        run_without_submitting=False,
+        iterfield=["in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_mosaic_file, [
+            ("anat_file", "source_file"),
+        ]),
+        (make_mosaic_node, ds_mosaic_file, [
+            ("mosaic_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
+
+    # Start working on the selected PNG images for the button
+    modify_pngs_template_scene = pe.Node(
+        Function(
+            function=modify_pngs_scene_template,
+            input_names=[
+                "anat_file",
+                "image_type",
+                "rh_pial_file",
+                "lh_pial_file",
+                "rh_white_file",
+                "lh_white_file",
+                "scene_template",
+            ],
+            output_names=["out_file"],
+        ),
+        name="modify_pngs_template_scene",
+    )
+    modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, modify_pngs_template_scene, [
+            ("anat_file", "anat_file"),
+            ("image_type", "image_type"),
+            ("lh_wm_surf", "lh_white_file"),
+            ("rh_wm_surf", "rh_white_file"),
+            ("lh_pial_surf", "lh_pial_file"),
+            ("rh_pial_surf", "rh_pial_file"),
+        ])
+    ])
+    # fmt:on
+
+    # Create specific PNGs for button
+    get_png_scene_names = pe.Node(
+        Function(
+            function=get_png_image_names,
+            input_names=["image_type"],
+            output_names=["scene_index", "scene_descriptions"],
+        ),
+        name="get_png_scene_names",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_png_scene_names, [
+            ("image_type", "image_type"),
+        ])
+    ])
+    # fmt:on
+
+    create_scenewise_pngs = pe.MapNode(
+        ShowScene(image_width=900, image_height=800),
+        name="create_scenewise_pngs",
+        iterfield=["scene_name_or_number"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (modify_pngs_template_scene, create_scenewise_pngs, [
+            ("out_file", "scene_file"),
+        ]),
+        (get_png_scene_names, create_scenewise_pngs, [
+            ("scene_index", "scene_name_or_number"),
+        ]),
+    ])
+    # fmt:on
+
+    # What about relative paths?
+    # Do I need the HTML file to contain relative paths from itself?
+    # Or from the report HTML file's path?
+    ds_scenewise_pngs = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["desc"],
+            datatype="figures",
+            suffix="T1w",
+        ),
+        name="ds_scenewise_pngs",
+        run_without_submitting=False,
+        iterfield=["desc", "in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_scenewise_pngs, [
+            ("anat_file", "source_file"),
+        ]),
+        (get_png_scene_names, ds_scenewise_pngs, [
+            ("scene_descriptions", "desc"),
+        ]),
+        (create_scenewise_pngs, ds_scenewise_pngs, [
+            ("out_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
+
+    # Create the brainsprite file
+    make_brainsprite = pe.Node(
+        Function(
+            function=make_brainsprite_html,
+            input_names=["mosaic_file", "selected_png_files", "image_type"],
+            output_names=["out_file"],
+        ),
+        name="make_brainsprite",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, make_brainsprite, [
+            ("image_type", "image_type"),
+        ]),
+        (make_mosaic_node, make_brainsprite, [
+            ("mosaic_file", "mosaic_file"),
+        ]),
+        (ds_scenewise_pngs, make_brainsprite, [
+            ("out_file", "selected_png_files"),
+        ]),
+        (make_brainsprite, outputnode, [
+            ("out_file", "brainsprite"),
+        ])
+    ])
+    # fmt:on
+
+    return workflow
 
 
 @fill_doc
@@ -42,6 +310,7 @@ def init_brainsprite_wf(
     output_dir,
     dcan_qc,
     input_type,
+    t2w_available,
     mem_gb,
     omp_nthreads,
     name="init_brainsprite_wf",
@@ -65,7 +334,7 @@ def init_brainsprite_wf(
     Inputs
     ------
     t1w
-    t1seg
+    t1w_seg
     """
     workflow = Workflow(name=name)
 
@@ -74,7 +343,7 @@ def init_brainsprite_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1seg",
+                "t1w_seg",
                 "lh_wm_surf",
                 "rh_wm_surf",
                 "lh_pial_surf",
@@ -84,115 +353,81 @@ def init_brainsprite_wf(
         name="inputnode",
     )
 
-    ribbon2statmap = pe.Node(
-        RibbontoStatmap(),
-        name="ribbon2statmap",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "t1w_brainsprite",
+                "t2w_brainsprite",
+            ]
+        ),
+        name="outputnode",
     )
+
     if dcan_qc:
         # Load template scene file
         from pkg_resources import resource_filename as pkgrf
 
-        scene_template = pkgrf("xcp_d", "data/parasagittal_Tx_169_template.scene.gz")
+        brainsprite_scene_template = pkgrf("xcp_d", "data/parasagittal_Tx_169_template.scene.gz")
+        pngs_scene_template = pkgrf("xcp_d", "data/image_template_temp.scene.gz")
 
-        # Modify template scene file with file paths
-        modify_template_scene = pe.Node(
-            Function(
-                function=build_scene_from_brainsprite_template,
-                input_names=[
-                    "tx_img",
-                    "rh_pial_file",
-                    "lh_pial_file",
-                    "rh_white_file",
-                    "lh_white_file",
-                    "scene_template",
-                ],
-                output_names=["out_file"],
-            ),
-            name="modify_template_scene",
+        brainsprite_mini_t1w_wf = init_brainsprite_mini_wf(
+            output_dir=output_dir,
+            image_type="T1",
+            brainsprite_scene_template=brainsprite_scene_template,
+            pngs_scene_template=pngs_scene_template,
+            name="brainsprite_mini_t1w_wf",
         )
-        modify_template_scene.inputs.scene_template = scene_template
-
-        # Create slice-wise PNGs
-        get_number_of_frames = pe.Node(
-            Function(
-                function=get_n_frames,
-                input_names=["scene_file"],
-                output_names=["frame_numbers"],
-            ),
-            name="get_number_of_frames",
-        )
-
-        create_framewise_pngs = pe.MapNode(
-            Function(
-                function=create_image_from_brainsprite_scene,
-                input_names=["scene_file", "frame_number"],
-                output_names=["out_file"],
-            ),
-            name="create_framewise_pngs",
-            iterfield=["frame_number"],
-        )
-
-        # Make mosaic
-        make_mosaic_node = pe.Node(
-            Function(
-                function=make_mosaic,
-                input_names=["png_files"],
-                output_names=["mosaic_file"],
-            ),
-            name="make_mosaic_node",
-        )
-
-        make_brainsprite = pe.Node(
-            Function(
-                function=make_brainsprite_html,
-                input_names=["mosaic_file", "selected_png_files", "input_type"],
-                output_names=["out_file"],
-            ),
-            name="make_brainsprite",
-        )
-        make_brainsprite.inputs.input_type = "t1w"
 
         # fmt:off
         workflow.connect([
-            (inputnode, modify_template_scene, [
-                ("t1w", "tx_img"),
-                ("lh_wm_surf", "lh_white_file"),
-                ("rh_wm_surf", "rh_white_file"),
-                ("lh_pial_surf", "lh_pial_file"),
-                ("rh_pial_surf", "rh_pial_file"),
+            (inputnode, brainsprite_mini_t1w_wf, [
+                ("t1w", "inputnode.anat_file"),
+                ("t1w_seg", "inputnode.t1w_seg"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
             ]),
-            (modify_template_scene, get_number_of_frames, [
-                ("scene_file", "scene_file"),
-            ]),
-            (modify_template_scene, create_framewise_pngs, [
-                ("scene_file", "scene_file"),
-            ]),
-            (get_number_of_frames, create_framewise_pngs, [
-                ("frame_numbers", "frame_number"),
-            ]),
-            (create_framewise_pngs, make_mosaic_node, [
-                ("out_file", "png_files"),
-            ]),
-            (make_mosaic_node, make_brainsprite, [
-                ("mosaic_file", "mosaic_file"),
-            ]),
-            (create_framewise_pngs, make_brainsprite, [
-                ("out_file", "selected_png_files"),
+            (brainsprite_mini_t1w_wf, outputnode, [
+                ("outputnode.brainsprite", "t1w_brainsprite"),
             ]),
         ])
         # fmt:on
 
-        # Create a brainsprite if dcan_qc is True
-        plot_ribbon = pe.Node(
-            BrainPlotx(),
-            name="brainsprite",
+        if t2w_available:
+            brainsprite_mini_t2w_wf = init_brainsprite_mini_wf(
+                output_dir=output_dir,
+                image_type="T2",
+                brainsprite_scene_template=brainsprite_scene_template,
+                pngs_scene_template=pngs_scene_template,
+                name="brainsprite_mini_t2w_wf",
+            )
+            brainsprite_mini_t2w_wf.inputnode.inputs.image_type = "T2"
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, brainsprite_mini_t2w_wf, [
+                    ("t2w", "inputnode.anat_file"),
+                    ("t1w_seg", "inputnode.t1w_seg"),
+                    ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                    ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                    ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                    ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ]),
+                (brainsprite_mini_t1w_wf, outputnode, [
+                    ("outputnode.brainsprite", "t2w_brainsprite"),
+                ]),
+            ])
+            # fmt:on
+    else:
+        # Otherwise, make a static mosaic plot
+        ribbon2statmap = pe.Node(
+            RibbontoStatmap(),
+            name="ribbon2statmap",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
-    else:
-        # Otherwise, make a static mosaic plot
+
         plot_ribbon = pe.Node(
             Function(
                 input_names=["template", "in_file"],
@@ -203,79 +438,114 @@ def init_brainsprite_wf(
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
+        use_t1seg_as_ribbon = False
 
-    ds_brainspriteplot = pe.Node(
+        if input_type in ("dcan", "hcp"):
+            # The dcan2fmriprep/hcp2fmriprep functions copy the ribbon file to the derivatives
+            # dset.
+            ribbon = layout.get(
+                return_type="file",
+                subject=subject_id,
+                desc="ribbon",
+                extension="nii.gz",
+            )
+            if len(ribbon) != 1:
+                LOGGER.warning(f"{len(ribbon)} matches found for the ribbon file: {ribbon}")
+                use_t1seg_as_ribbon = True
+            else:
+                ribbon = ribbon[0]
+
+        else:
+            # verify freesurfer directory
+            fmri_path = Path(fmri_dir).absolute()
+
+            # for fmriprep and nibabies versions before XXXX,
+            # the freesurfer dir was placed at the same level as the main derivatives
+            freesurfer_paths = [fp for fp in fmri_path.parent.glob("*freesurfer*") if fp.is_dir()]
+            if len(freesurfer_paths) == 0:
+                # for later versions, the freesurfer dir is placed in sourcedata
+                # within the main derivatives folder
+                freesurfer_paths = [
+                    fp for fp in fmri_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
+                ]
+
+            if len(freesurfer_paths) > 0:
+                freesurfer_path = freesurfer_paths[0]
+                LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
+                ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
+                LOGGER.info(f"Using {ribbon} for ribbon.")
+
+                if not ribbon.is_file():
+                    LOGGER.warning(f"File DNE: {ribbon}")
+                    use_t1seg_as_ribbon = True
+
+            else:
+                LOGGER.info("No Freesurfer derivatives found.")
+                use_t1seg_as_ribbon = True
+
+        if use_t1seg_as_ribbon:
+            LOGGER.info("Using T1w segmentation for ribbon.")
+            # fmt:off
+            workflow.connect([(inputnode, ribbon2statmap, [("t1w_seg", "ribbon")])])
+            # fmt:on
+        else:
+            ribbon2statmap.inputs.ribbon = ribbon
+
+    ds_t1w_brainsprite = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             check_hdr=False,
             dismiss_entities=["desc"],
-            desc="brainplot",
             datatype="figures",
+            desc="brainsprite",
+            suffix="T1w",
         ),
-        name="ds_brainspriteplot",
+        name="ds_t1w_brainsprite",
     )
-
-    use_t1seg_as_ribbon = False
-    if input_type in ("dcan", "hcp"):
-        # The dcan2fmriprep/hcp2fmriprep functions copy the ribbon file to the derivatives dset.
-        ribbon = layout.get(
-            return_type="file",
-            subject=subject_id,
-            desc="ribbon",
-            extension="nii.gz",
-        )
-        if len(ribbon) != 1:
-            LOGGER.warning(f"{len(ribbon)} matches found for the ribbon file: {ribbon}")
-            use_t1seg_as_ribbon = True
-        else:
-            ribbon = ribbon[0]
-
-    else:
-        # verify freesurfer directory
-        fmri_path = Path(fmri_dir).absolute()
-
-        # for fmriprep and nibabies versions before XXXX,
-        # the freesurfer dir was placed at the same level as the main derivatives
-        freesurfer_paths = [fp for fp in fmri_path.parent.glob("*freesurfer*") if fp.is_dir()]
-        if len(freesurfer_paths) == 0:
-            # for later versions, the freesurfer dir is placed in sourcedata
-            # within the main derivatives folder
-            freesurfer_paths = [
-                fp for fp in fmri_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
-            ]
-
-        if len(freesurfer_paths) > 0:
-            freesurfer_path = freesurfer_paths[0]
-            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
-            ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
-            LOGGER.info(f"Using {ribbon} for ribbon.")
-
-            if not ribbon.is_file():
-                LOGGER.warning(f"File DNE: {ribbon}")
-                use_t1seg_as_ribbon = True
-
-        else:
-            LOGGER.info("No Freesurfer derivatives found.")
-            use_t1seg_as_ribbon = True
-
-    if use_t1seg_as_ribbon:
-        LOGGER.info("Using T1w segmentation for ribbon.")
-        # fmt:off
-        workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
-        # fmt:on
-    else:
-        ribbon2statmap.inputs.ribbon = ribbon
 
     # fmt:off
-    workflow.connect(
-        [
+    workflow.connect([
+        (inputnode, ds_t1w_brainsprite, [
+            ("t1w", "source_file"),
+        ]),
+        (brainsprite_mini_t1w_wf, ds_t1w_brainsprite, [
+            ("outputnode.brainsprite", "in_file"),
+        ]),
+    ])
+    # fmt:on
+
+    if t2w_available:
+        ds_t2w_brainsprite = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                check_hdr=False,
+                dismiss_entities=["desc"],
+                datatype="figures",
+                desc="brainsprite",
+                suffix="T2w",
+            ),
+            name="ds_t2w_brainsprite",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_t2w_brainsprite, [
+                ("t2w", "source_file"),
+            ]),
+            (brainsprite_mini_t2w_wf, ds_t2w_brainsprite, [
+                ("outputnode.brainsprite", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
+    if not dcan_qc:
+        # fmt:off
+        workflow.connect([
             (inputnode, plot_ribbon, [("t1w", "template")]),
             (ribbon2statmap, plot_ribbon, [("out_file", "in_file")]),
-            (plot_ribbon, ds_brainspriteplot, [("plot_file", "in_file")]),
-            (inputnode, ds_brainspriteplot, [("t1w", "source_file")]),
-        ]
-    )
-    # fmt:on
+            (plot_ribbon, ds_t1w_brainsprite, [("plot_file", "in_file")]),
+        ])
+        # fmt:on
 
     return workflow
 
@@ -305,7 +575,7 @@ def init_execsummary_wf(
     Inputs
     ------
     t1w
-    t1seg
+    t1w_seg
     regressed_data
     residual_data
     filtered_motion
@@ -321,7 +591,7 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
-                "t1seg",
+                "t1w_seg",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",

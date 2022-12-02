@@ -35,6 +35,7 @@ $XCPD_CMD \
     --smoothing 6 \
     -vvv \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
+    --dcan_qc \
     --warp-surfaces-native2std
 
 input_type=nifti

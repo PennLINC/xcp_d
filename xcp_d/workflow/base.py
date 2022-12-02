@@ -103,8 +103,8 @@ def init_xcpd_wf(
                 fd_thresh=0.2,
                 process_surfaces=False,
                 dcan_qc=False,
-                input_type='fmriprep',
-                name='xcpd_wf',
+                input_type="fmriprep",
+                name="xcpd_wf",
             )
 
     Parameters
@@ -421,27 +421,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # fmt:off
     workflow.connect([
-        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
-                             ('t1w_seg', 'inputnode.t1seg'),
-                             ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
+        (inputnode, t1w_wf, [
+            ("t1w", "inputnode.t1w"),
+            ("t1w_seg", "inputnode.t1w_seg"),
+            ("t1w_to_mni_xform", "inputnode.t1w_to_mni"),
+        ]),
     ])
-    # fmt:on
-
-    # Plot the ribbon on the brain in a brainsprite figure
-    brainsprite_wf = init_brainsprite_wf(
-        layout=layout,
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        output_dir=output_dir,
-        dcan_qc=dcan_qc,
-        input_type=input_type,
-        omp_nthreads=omp_nthreads,
-        mem_gb=5,
-    )
-
-    # fmt:off
-    workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                   ('t1w_seg', 'inputnode.t1seg')])])
     # fmt:on
 
     if process_surfaces:
@@ -457,14 +442,51 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         # fmt:off
         workflow.connect([
-            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                        ('t1w_seg', 'inputnode.t1seg')]),
+            (inputnode, anatomical_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1w_seg", "inputnode.t1w_seg"),
+            ]),
+        ])
+        # fmt:on
+
+    # Plot the ribbon on the brain in a brainsprite figure
+    brainsprite_wf = init_brainsprite_wf(
+        layout=layout,
+        fmri_dir=fmri_dir,
+        subject_id=subject_id,
+        output_dir=output_dir,
+        dcan_qc=dcan_qc,
+        input_type=input_type,
+        t2w_available=False,
+        omp_nthreads=omp_nthreads,
+        mem_gb=5,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (t1w_wf, brainsprite_wf, [
+            ("outputnode.t1w", "inputnode.t1w"),
+            ("outputnode.t1w_seg", "inputnode.t1w_seg"),
+        ]),
+    ])
+    # fmt:on
+
+    if process_surfaces:
+        # fmt:off
+        workflow.connect([
+            (anatomical_wf, brainsprite_wf, [
+                ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+            ]),
         ])
         # fmt:on
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
+    preproc_files = []
     for i_run, bold_file in enumerate(preproc_files):
         bold_postproc_wf = postproc_wf_function(
             bold_file=bold_file,
@@ -494,20 +516,29 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         # fmt:off
         workflow.connect([
-            (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
-                                           ('t1w_seg', 'inputnode.t1seg'),
-                                           ('mni_to_t1w_xform', 'inputnode.mni_to_t1w')]),
+            (inputnode, bold_postproc_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1w_seg", "inputnode.t1w_seg"),
+                ("mni_to_t1w_xform", "inputnode.mni_to_t1w"),
+            ]),
         ])
         if not cifti:
             workflow.connect([
-                (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
+                (inputnode, bold_postproc_wf, [
+                    ("t1w_mask", "inputnode.t1w_mask"),
+                ]),
             ])
-
         # fmt:on
 
     # fmt:off
-    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
-                      (about, ds_report_about, [('out_report', 'in_file')])])
+    workflow.connect([
+        (summary, ds_report_summary, [
+            ("out_report", "in_file"),
+        ]),
+        (about, ds_report_about, [
+            ("out_report", "in_file"),
+        ]),
+    ])
     # fmt:on
 
     for node in workflow.list_node_names():

@@ -79,6 +79,18 @@ TX_SECTION_START = """
 </section>
         """
 
+BRAINSPRITE_CODE = """
+<div class="w3-container">
+    <div class="w3-cell w3-left label3">{image_type}</div>
+    <div class="w3-cell w3-right">
+        {anat_pngs_button}
+    </div>
+</div>
+<div class="w3-container">
+    {anat_brainsprite}
+</div>
+"""
+
 T1X_SECTION = """
 <section id="{tx1}">
     <div class="w3-container">

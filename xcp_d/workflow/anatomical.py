@@ -77,26 +77,25 @@ def init_t1w_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1seg : str
+    t1w_seg : str
         Path to the T1w segmentation file.
     %(t1w_to_mni)s
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+        niu.IdentityInterface(fields=["t1w", "t1w_seg", "t1w_to_mni"]),
         name="inputnode",
     )
 
-    # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "t1w_seg"]),
+        name="outputnode",
+    )
+
     mnitemplate = str(
         get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
     )
-    # mnitemplatemask = str(
-    #     get_template(
-    #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
-    #     )
-    # )
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
@@ -121,7 +120,7 @@ def init_t1w_wf(
         workflow.connect(
             [
                 (inputnode, ds_t1wmni, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+                (inputnode, ds_t1wseg, [("t1w_seg", "in_file")]),
             ]
         )
         # fmt:on
@@ -177,25 +176,31 @@ def init_t1w_wf(
         )
 
         # fmt:off
-        workflow.connect(
-            [
-                (inputnode, t1w_transform, [("t1w", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
-                (inputnode, seg_transform, [("t1seg", "input_image"),
-                                            ("t1w_to_mni", "transforms")]),
-                (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
-                (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
-            ]
-        )
+        workflow.connect([
+            (inputnode, t1w_transform, [
+                ("t1w", "input_image"),
+                ("t1w_to_mni", "transforms"),
+            ]),
+            (inputnode, seg_transform, [
+                ("t1w_seg", "input_image"),
+                ("t1w_to_mni", "transforms"),
+            ]),
+            (t1w_transform, ds_t1wmni, [
+                ("output_image", "in_file"),
+            ]),
+            (seg_transform, ds_t1wseg, [
+                ("output_image", "in_file"),
+            ]),
+        ])
         # fmt:on
 
     # fmt:off
-    workflow.connect(
-        [
-            (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
-        ]
-    )
+    workflow.connect([
+        (inputnode, ds_t1wmni, [("t1w", "source_file")]),
+        (inputnode, ds_t1wseg, [("t1w_seg", "source_file")]),
+        (ds_t1wmni, outputnode, [("out_file", "t1w")]),
+        (ds_t1wseg, outputnode, [("out_file", "t1w_seg")]),
+    ])
     # fmt:on
 
     return workflow
@@ -255,7 +260,7 @@ def init_anatomical_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1seg : str
+    t1w_seg : str
         Path to the T1w segmentation file.
 
     Notes
@@ -269,7 +274,18 @@ def init_anatomical_wf(
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
+    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1w_seg"]), name="inputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "lh_wm_surf",
+                "rh_wm_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+            ],
+        ),
+        name="outputnode",
+    )
 
     mnitemplate = get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
 
@@ -819,6 +835,13 @@ def init_anatomical_wf(
                 run_without_submitting=False,
                 mem_gb=2,
             )
+
+            # fmt:off
+            workflow.connect([
+                (ds_wmLsurf_wf, outputnode, [("out_file", "lh_wm_surf")]),
+            ])
+            # fmt:on
+
             ds_wmRsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -836,6 +859,12 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            # fmt:off
+            workflow.connect([
+                (ds_wmRsurf_wf, outputnode, [("out_file", "rh_wm_surf")]),
+            ])
+            # fmt:on
+
             ds_pialLsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -852,6 +881,13 @@ def init_anatomical_wf(
                 run_without_submitting=True,
                 mem_gb=2,
             )
+
+            # fmt:off
+            workflow.connect([
+                (ds_pialLsurf_wf, outputnode, [("out_file", "lh_pial_surf")]),
+            ])
+            # fmt:on
+
             ds_pialRsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -868,6 +904,12 @@ def init_anatomical_wf(
                 run_without_submitting=False,
                 mem_gb=2,
             )
+
+            # fmt:off
+            workflow.connect([
+                (ds_pialRsurf_wf, outputnode, [("out_file", "rh_pial_surf")]),
+            ])
+            # fmt:on
 
             ds_midLsurf_wf = pe.Node(
                 DerivativesDataSink(
@@ -1471,14 +1513,14 @@ def init_anatomical_wf(
             # This "nothingnode" exists just to allow the inputnode to connect to something.
             # TODO: Should we maybe raise an Exception instead?
             nothingnode = pe.Node(
-                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_mni"]),
+                niu.IdentityInterface(fields=["t1w", "t1w_seg", "t1w_to_mni"]),
                 name="nothingnode",
             )
             # fmt:off
             workflow.connect(
                 [
                     (inputnode, nothingnode, [("t1w", "t1w")]),
-                    (inputnode, nothingnode, [("t1seg", "t1seg")]),
+                    (inputnode, nothingnode, [("t1w_seg", "t1w_seg")]),
                 ]
             )
             # fmt:on
