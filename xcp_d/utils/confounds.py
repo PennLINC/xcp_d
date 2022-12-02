@@ -195,7 +195,6 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     return custom_confounds_file
 
 
-@fill_doc
 def consolidate_confounds(
     img_file,
     params,
@@ -207,7 +206,7 @@ def consolidate_confounds(
     ----------
     img_file : str
         bold file
-    %(params)s
+    params
     custom_confounds_folder : str or None
         Path to custom confounds tsv. May be None.
 
