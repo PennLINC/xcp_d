@@ -8,11 +8,11 @@ from nipype.pipeline import engine as pe
 from xcp_d.interfaces.nilearn import Smooth
 
 
-def test_smoothing_Nifti(fmriprep_with_freesurfer_data):
+def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     """Test NIFTI smoothing."""
     #  Specify inputs
-    in_file = fmriprep_with_freesurfer_data["nifti_file"]
-    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    in_file = fmriprep_without_freesurfer_data["nifti_file"]
+    mask = fmriprep_without_freesurfer_data["brain_mask_file"]
 
     # Let's get into a temp dir
     tmpdir = tempfile.mkdtemp()

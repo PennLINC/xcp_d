@@ -75,3 +75,29 @@ def fmriprep_with_freesurfer_data(data_dir):
     )
 
     return files
+
+
+@pytest.fixture
+def fmriprep_without_freesurfer_data(data_dir):
+    subj_dir = os.path.join(data_dir, "fmriprepwithoutfreesurfer", "fmriprep", "sub-01")
+    func_dir = os.path.join(subj_dir, "func")
+
+    files = {}
+    files["nifti_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
+    )
+    files["brain_mask_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz",
+    )
+    files["confounds_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv",
+    )
+    files["boldref"] = os.path.join(
+        func_dir,
+        "sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_boldref.nii.gz",
+    )
+
+    return files

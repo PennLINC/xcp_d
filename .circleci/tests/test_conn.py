@@ -2,10 +2,10 @@
 
 # Necessary imports
 import fnmatch
+import glob
 import os
 
 import nibabel as nb
-import nilearn
 import numpy as np
 import pandas as pd
 from nilearn.input_data import NiftiLabelsMasker
@@ -13,8 +13,8 @@ from nilearn.input_data import NiftiLabelsMasker
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflow.connectivity import (
-    init_nifti_functional_connectivity_wf,
     init_cifti_functional_connectivity_wf,
+    init_nifti_functional_connectivity_wf,
 )
 
 
@@ -26,15 +26,13 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     boldref = fmriprep_with_freesurfer_data["boldref"]
     t1w_to_native_xform = fmriprep_with_freesurfer_data["t1w_to_native_xform"]
 
+    tempdir = tmp_path_factory.mktemp("test_nifti_conn")
+
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
-    # Get the shape so we can generate a matrix of random numbers with the same shape
-    shape = bold_data.shape
-
-    fake_signal = np.random.randint(bold_data.min(), bold_data.max(), size=shape)
+    fake_signal = np.random.randint(bold_data.min(), bold_data.max(), size=bold_data.shape)
 
     # Let's write that out
-    tempdir = tmp_path_factory.mktemp("fcon_nifti_test")
     filename = os.path.join(tempdir, "fake_signal_file.nii.gz")
     write_ndata(
         fake_signal,
@@ -61,33 +59,32 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     fcon_ts_wf.run()
 
     # Let's find the correct FCON matrix file
-    for file_ in os.listdir(os.path.join(
-            fcon_ts_wf.base_dir, "fcons_ts_wf/nifti_connect/mapflow/_nifti_connect3")):
+    files = glob.glob(
+        os.path.join(
+            fcon_ts_wf.base_dir,
+            "fcons_ts_wf/nifti_connect/mapflow/_nifti_connect3/*",
+        ),
+    )
+    for file_ in files:
         if fnmatch.fnmatch(file_, "*matrix*"):
             out_file = file_
-    out_file = os.path.join(fcon_ts_wf.base_dir,
-                            "fcons_ts_wf/nifti_connect/mapflow/_nifti_connect3", out_file)
 
     # Read that into a df
     df = pd.read_table(out_file, header=None)
-    # ... and then convert to an array
-    xcp_array = np.array(df)
+    xcp_array = df.to_numpy()
 
     # Now let's get the ground truth. First, we should locate the atlas
-    for file_ in os.listdir(
+    files = glob.glob(
         os.path.join(
             fcon_ts_wf.base_dir,
-            "fcons_ts_wf/warp_atlases_to_bold_space/mapflow/_warp_atlases_to_bold_space3",
+            "fcons_ts_wf/warp_atlases_to_bold_space/mapflow/_warp_atlases_to_bold_space3/*",
         )
-    ):
+    )
+    for file_ in files:
         if fnmatch.fnmatch(file_, "*.nii.gz*"):
             atlas = file_
-    atlas = os.path.join(
-        fcon_ts_wf.base_dir,
-        "fcons_ts_wf/warp_atlases_to_bold_space/mapflow/_warp_atlases_to_bold_space3",
-        atlas,
-    )
-    atlas = nilearn.image.load_img(atlas)
+
+    atlas = nb.load(atlas)
 
     # Masking img
     masker = NiftiLabelsMasker(atlas, standardize=False)
@@ -97,6 +94,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # The "ground truth" matrix
     ground_truth = np.corrcoef(signals.T)
+    # This is what's failing.
     assert np.allclose(xcp_array, ground_truth, atol=0.01)
 
 
