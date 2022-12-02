@@ -141,21 +141,23 @@ def _drop_dummy_scans(bold_file, dummy_scans):
 
     if ndim == 2:  # cifti
         data = bold_image.get_fdata()
-        dropped_data = data[dummy_scans:, ...]  # time series is the first element
+        data = data[dummy_scans:, ...]  # time series is the first element
         time_axis, brain_model_axis = [
             bold_image.header.get_axis(i) for i in range(bold_image.ndim)
         ]
-        new_total_volumes = dropped_data.shape[0]
+        new_total_volumes = data.shape[0]
         dropped_time_axis = time_axis[:new_total_volumes]
         dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
         bold_image = nb.Cifti2Image(
-            dropped_data,
+            data,
             header=dropped_header,
             nifti_header=bold_image.nifti_header,
         )
 
     elif ndim == 4:  # nifti
-        bold_image = bold_image.slicer[..., dummy_scans:]  # time is fourth dim
+        data = bold_image.get_fdata()
+        data = data[..., dummy_scans:]  # time is fourth dim
+        bold_image = nb.Nifti1Image(data, bold_image.affine, bold_image.header)
 
     else:
         raise ValueError(f"Image dimensionality ({ndim}) not supported for {bold_file}")
