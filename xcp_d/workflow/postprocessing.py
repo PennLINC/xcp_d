@@ -2,12 +2,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing BOLD data."""
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench import CiftiSmooth
+from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.nilearn import Smooth
+from xcp_d.interfaces.workbench import FixCiftiIntent
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import fwhm2sigma
 
@@ -91,6 +92,21 @@ size of {str(smoothing)} mm  (FWHM).
             n_procs=omp_nthreads,
         )
 
+        # Always check the intent code in CiftiSmooth's output file
+        fix_cifti_intent = pe.Node(
+            FixCiftiIntent(),
+            name="fix_cifti_intent",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
+            (fix_cifti_intent, outputnode, [("out_file", "smoothed_bold")]),
+        ])
+        # fmt:on
+
     else:
         workflow.__desc__ = f""" \
 The processed BOLD was smoothed using Nilearn with a gaussian kernel size of {str(smoothing)} mm
@@ -104,10 +120,15 @@ The processed BOLD was smoothed using Nilearn with a gaussian kernel size of {st
             n_procs=omp_nthreads,
         )
 
+        # fmt:off
+        workflow.connect([
+            (smooth_data, outputnode, [("out_file", "smoothed_bold")]),
+        ])
+        # fmt:on
+
     # fmt:off
     workflow.connect([
         (inputnode, smooth_data, [("bold_file", "in_file")]),
-        (smooth_data, outputnode, [("out_file", "smoothed_bold")]),
     ])
     # fmt:on
 
