@@ -14,7 +14,12 @@ from num2words import num2words
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.interfaces.prepostcleaning import CensorScrub, Interpolate, RemoveTR
+from xcp_d.interfaces.prepostcleaning import (
+    CensorScrub,
+    ConvertTo32,
+    Interpolate,
+    RemoveTR,
+)
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.bids import collect_run_data
@@ -136,7 +141,7 @@ def init_boldpostprocess_wf(
         Loaded in this workflow.
     custom_confounds_folder
         custom regressors
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
         MNI to T1W ants Transformation file/h5
         Fed from the subject workflow.
     t1w
@@ -235,7 +240,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "ref_file",
                 "bold_mask",
                 "custom_confounds_folder",
-                "mni_to_t1w",
+                "template_to_t1w",
                 "t1w",
                 "t1w_seg",
                 "t1w_mask",
@@ -256,6 +261,26 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.dummy_scans = dummy_scans
 
     mem_gbx = _create_mem_gb(bold_file)
+
+    downcast_data = pe.Node(
+        ConvertTo32(),
+        name="downcast_data",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, downcast_data, [
+            ("bold_file", "bold_file"),
+            ("ref_file", "ref_file"),
+            ("bold_mask", "bold_mask"),
+            ("t1w", "t1w"),
+            ("t1seg", "t1seg"),
+            ("t1w_mask", "t1w_mask"),
+        ]),
+    ])
+    # fmt:on
 
     get_custom_confounds_file = pe.Node(
         Function(
@@ -345,7 +370,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     consolidate_confounds_node = pe.Node(
         Function(
             input_names=[
-                "fmriprep_confounds_file",
+                "img_file",
                 "custom_confounds_file",
                 "params",
             ],
@@ -364,7 +389,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
         ]),
         (inputnode, consolidate_confounds_node, [
-            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+            ("bold_file", "img_file"),
         ]),
         (get_custom_confounds_file, consolidate_confounds_node, [
             ("custom_confounds_file", "custom_confounds_file"),
@@ -417,7 +442,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
-            ("mni_to_t1w", "inputnode.mni_to_t1w"),
+            ("template_to_t1w", "inputnode.template_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),
         ]),
     ])
@@ -434,12 +459,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, remove_dummy_scans, [
-                ("bold_file", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
+            (downcast_data, remove_dummy_scans, [("bold_file", "bold_file")]),
             (consolidate_confounds_node, remove_dummy_scans, [
                 ("out_file", "confounds_file"),
             ]),
@@ -459,11 +484,13 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     else:
         # fmt:off
         workflow.connect([
+            (downcast_data, censor_scrub, [
+                ('bold_file', 'in_file'),
+            ]),
             (inputnode, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
             (inputnode, censor_scrub, [
-                ('bold_file', 'in_file'),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
@@ -513,7 +540,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # fmt:off
     workflow.connect([
-        (inputnode, regression_wf, [('bold_mask', 'mask')]),
+        (downcast_data, regression_wf, [('bold_mask', 'mask')]),
         (censor_scrub, regression_wf, [('confounds_censored', 'confounds')]),
     ])
     # fmt:on
@@ -521,14 +548,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # interpolation workflow
     # fmt:off
     workflow.connect([
-        (inputnode, interpolate_wf, [('bold_file', 'bold_file'),
-                                     ('bold_mask', 'mask_file')]),
+        (downcast_data, interpolate_wf, [('bold_file', 'bold_file'),
+                                         ('bold_mask', 'mask_file')]),
         (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
 
     # add filtering workflow
-    workflow.connect([(inputnode, filtering_wf, [('bold_mask', 'mask')]),
+    workflow.connect([(downcast_data, filtering_wf, [('bold_mask', 'mask')]),
                       (interpolate_wf, filtering_wf, [('bold_interpolated',
                                                        'in_file')])])
 
@@ -538,22 +565,22 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # functional connect workflow
     workflow.connect([
-        (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
-                                 ('ref_file', 'inputnode.ref_file'),
-                                 ('mni_to_t1w', 'inputnode.mni_to_t1w'),
+        (downcast_data, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
+                                     ('ref_file', 'inputnode.ref_file')]),
+        (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
     workflow.connect([
-        (inputnode, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
+        (downcast_data, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
         (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
 
     if bandpass_filter:
         workflow.connect([
-            (inputnode, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
+            (downcast_data, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
             (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
         ])
 
@@ -678,12 +705,14 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
         # fmt:off
         workflow.connect([
-            (inputnode, executivesummary_wf, [
+            (downcast_data, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
                 ("t1w_seg", "inputnode.t1w_seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
-                ("mni_to_t1w", "inputnode.mni_to_t1w"),
+            ]),
+            (inputnode, executivesummary_wf, [
+                ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [
                 ("res_file", "inputnode.regressed_data"),
