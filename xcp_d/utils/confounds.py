@@ -245,9 +245,7 @@ def describe_regression(params, custom_confounds_file):
         non_aggro = any([c.startswith("signal__") for c in custom_confounds.columns])
 
     BASE_DESCRIPTIONS = {
-        "custom": (
-            "A custom set of regressors was used, with no other regressors from XCP-D. "
-        ),
+        "custom": "A custom set of regressors was used, with no other regressors from XCP-D. ",
         "24P": (
             "In total, 24 nuisance regressors were selected  from the nuisance "
             "confound matrices of fMRIPrep output. These nuisance regressors included "
@@ -298,9 +296,7 @@ def describe_regression(params, custom_confounds_file):
 
     desc = BASE_DESCRIPTIONS[params]
     if use_custom_confounds and params != "custom":
-        desc += (
-            "Additionally, custom confounds were also included as nuisance regressors."
-        )
+        desc += "Additionally, custom confounds were also included as nuisance regressors."
 
     if "aroma" not in params and non_aggro:
         desc += (
