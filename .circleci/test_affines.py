@@ -8,6 +8,7 @@ data_dir = sys.argv[1]
 out_dir = sys.argv[2]
 input_type = sys.argv[3]
 
+
 def test_affines(data_dir, out_dir, input_type):
     """Confirm affines don't change across XCP runs."""
     fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)

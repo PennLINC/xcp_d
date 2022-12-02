@@ -6,7 +6,7 @@ import pytest
 from xcp_d.utils import write_save
 
 
-def test_read_ndata(fmriprep_with_freesurfer_data):
+def test_read_ndata(fmriprep_with_freesurfer_data, fmriprep_without_freesurfer_data):
     """Test write_save.read_ndata."""
     # Try to load a gifti
     gifti_file = fmriprep_with_freesurfer_data["gifti_file"]
@@ -19,14 +19,14 @@ def test_read_ndata(fmriprep_with_freesurfer_data):
     assert cifti_data.shape == (91282, 170)
 
     # Load nifti
-    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
-    mask_file = fmriprep_with_freesurfer_data["brain_mask_file"]
+    nifti_file = fmriprep_without_freesurfer_data["nifti_file"]
+    mask_file = fmriprep_without_freesurfer_data["brain_mask_file"]
 
     with pytest.raises(AssertionError, match="must be provided"):
         write_save.read_ndata(nifti_file, maskfile=None)
 
     nifti_data = write_save.read_ndata(nifti_file, maskfile=mask_file)
-    assert nifti_data.shape == (66319, 170)
+    assert nifti_data.shape == (66319, 16)
 
 
 def test_write_ndata(fmriprep_with_freesurfer_data, tmp_path_factory):
