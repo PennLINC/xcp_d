@@ -22,11 +22,12 @@ fmlogger = logging.getLogger("nipype.utils")
 
 related_filetype_sets = [(".hdr", ".img", ".mat"), (".nii", ".mat"), (".BRIK", ".HEAD")]
 
-# TODO: Fix non-binary mask bug in Nibabel 22.1.3
-
 
 def check_binary_mask(mask_file):
-    """Check if the mask is binary."""
+    """Check if the mask is binary.
+
+    TODO: Fix non-binary mask bug in nibabies 22.1.3
+    """
     is_binary = 1
     if len(np.unique(nb.load(mask_file).get_fdata())) > 2:
         is_binary = 0
@@ -108,6 +109,9 @@ def split_filename(fname):
         ".dtraj.nii",
         ".pconnseries.nii",
         ".pconnscalar.nii",
+        ".dfan.nii",
+        ".dfibersamp.nii",
+        ".dfansamp.nii",
     ]
 
     pth = op.dirname(fname)

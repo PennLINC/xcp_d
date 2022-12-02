@@ -125,7 +125,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
         tempdir,
         "compute_alff_wf",
         "alff_compt",
-        "sub-01_task-rest_space-fsLR_den-91k_bold_alff.dtseries.nii",
+        "sub-01_task-rest_space-fsLR_den-91k_bold_alff.dscalar.nii",
     )
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
@@ -155,7 +155,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean
-    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dtseries.nii")
+    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dscalar.nii")
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
