@@ -628,12 +628,12 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         # fmt:off
         workflow.connect([
             (inputnode, executivesummary_wf, [
-                ("t1w", "inputnode.t1w"),
+                ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),
             (downcast_data, executivesummary_wf, [
+                ("t1w", "inputnode.t1w"),
                 ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
-                ("mni_to_t1w", "inputnode.mni_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [
                 ("res_file", "inputnode.regressed_data"),

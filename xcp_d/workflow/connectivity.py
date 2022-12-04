@@ -131,7 +131,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     workflow.connect([
         (inputnode, get_transforms_to_bold_space, [
             ("bold_file", "bold_file"),
-            ("mni_to_t1w", "mni_to_t1w"),
+            ("template_to_t1w", "template_to_t1w"),
             ("t1w_to_native", "t1w_to_native"),
         ]),
     ])
