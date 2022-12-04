@@ -149,7 +149,7 @@ class ComputeALFF(SimpleInterface):
         # Write out the data
 
         if self.inputs.in_file.endswith(".dtseries.nii"):
-            suffix = "_alff.dtseries.nii"
+            suffix = "_alff.dscalar.nii"
         elif self.inputs.in_file.endswith(".nii.gz"):
             suffix = "_alff.nii.gz"
 

@@ -196,28 +196,27 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
         # as well as acompcor and cosine
         confound = load_confounds(
             img_file,
-            strategy=(
-                [
-                    "motion",
-                    "high_pass",
-                    "compcor",
-                ]
-            ),
+            strategy=["motion", "high_pass", "compcor"],
             motion="derivatives",
             compcor="anat_separated",
             n_compcor=5,
         )[0]
     elif params == "aroma":  # Get the WM, CSF, and aroma values
+        # NOTE: This works with *aggressive* denoising!
         confound = load_confounds(
-            img_file, strategy=(["wm_csf", "ica_aroma"]), wm_csf="basic", ica_aroma="full"
+            img_file,
+            strategy=(["wm_csf", "ica_aroma"]),
+            wm_csf="basic",
+            ica_aroma="basic",
         )[0]
     elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
+        # NOTE: This works with *aggressive* denoising!
         confound = load_confounds(
             img_file,
             strategy=(["wm_csf", "ica_aroma", "global_signal"]),
             wm_csf="basic",
             global_signal="basic",
-            ica_aroma="full",
+            ica_aroma="basic",
         )[0]
     elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal

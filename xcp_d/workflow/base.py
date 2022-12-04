@@ -49,6 +49,7 @@ def init_xcpd_wf(
     omp_nthreads,
     cifti,
     task_id,
+    bids_filters,
     head_radius,
     params,
     subject_list,
@@ -90,6 +91,7 @@ def init_xcpd_wf(
                 omp_nthreads=1,
                 cifti=False,
                 task_id="rest",
+                bids_filters=None,
                 head_radius=50.,
                 params="36P",
                 subject_list=["sub-01", "sub-02"],
@@ -128,6 +130,7 @@ def init_xcpd_wf(
     %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
+    bids_filters : dict or None
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
     %(output_dir)s
@@ -181,6 +184,7 @@ def init_xcpd_wf(
             head_radius=head_radius,
             params=params,
             task_id=task_id,
+            bids_filters=bids_filters,
             smoothing=smoothing,
             output_dir=output_dir,
             dummytime=dummytime,
@@ -226,6 +230,7 @@ def init_subject_wf(
     dummy_scans,
     fd_thresh,
     task_id,
+    bids_filters,
     smoothing,
     custom_confounds_folder,
     process_surfaces,
@@ -263,6 +268,7 @@ def init_subject_wf(
                 dummy_scans=0,
                 fd_thresh=0.2,
                 task_id="rest",
+                bids_filters=None,
                 smoothing=6.,
                 custom_confounds_folder=None,
                 process_surfaces=False,
@@ -291,6 +297,7 @@ def init_subject_wf(
     %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
+    bids_filters : dict or None
     low_mem : bool
         Write uncompressed .nii files in some cases to reduce memory usage
     %(output_dir)s
@@ -320,6 +327,7 @@ def init_subject_wf(
         input_type=input_type,
         participant_label=subject_id,
         task=task_id,
+        bids_filters=bids_filters,
         bids_validate=False,
         cifti=cifti,
     )
@@ -336,8 +344,8 @@ def init_subject_wf(
                 "t1w",
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
-                "mni_to_t1w_xform",
-                "t1w_to_mni_xform",
+                "template_to_t1w_xform",
+                "t1w_to_template_xform",
             ],
         ),
         name="inputnode",
@@ -346,8 +354,8 @@ def init_subject_wf(
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-    inputnode.inputs.mni_to_t1w_xform = subj_data["mni_to_t1w_xform"]
-    inputnode.inputs.t1w_to_mni_xform = subj_data["t1w_to_mni_xform"]
+    inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
+    inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
 
     workflow = Workflow(name=name)
 
@@ -424,7 +432,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
                              ('t1w_seg', 'inputnode.t1seg'),
-                             ('t1w_to_mni_xform', 'inputnode.t1w_to_mni')]),
+                             ('t1w_to_template_xform', 'inputnode.t1w_to_template')]),
     ])
     # fmt:on
 
@@ -495,9 +503,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         # fmt:off
         workflow.connect([
-            (inputnode, bold_postproc_wf, [('t1w', 'inputnode.t1w'),
-                                           ('t1w_seg', 'inputnode.t1seg'),
-                                           ('mni_to_t1w_xform', 'inputnode.mni_to_t1w')]),
+            (inputnode, bold_postproc_wf, [
+                ('t1w', 'inputnode.t1w'),
+                ('t1w_seg', 'inputnode.t1seg'),
+                ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
+            ]),
         ])
         if not cifti:
             workflow.connect([

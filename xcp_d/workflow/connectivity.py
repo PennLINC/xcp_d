@@ -54,7 +54,7 @@ def init_nifti_functional_connectivity_wf(
     ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
-    %(mni_to_t1w)s
+    %(template_to_t1w)s
     t1w_to_native
 
     Outputs
@@ -83,7 +83,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
                 "bold_file",
                 "ref_file",
                 "clean_bold",
-                "mni_to_t1w",
+                "template_to_t1w",
                 "t1w_to_native",
             ],
         ),
@@ -120,7 +120,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     get_transforms_to_bold_space = pe.Node(
         Function(
-            input_names=["bold_file", "mni_to_t1w", "t1w_to_native"],
+            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
             output_names=["transformfile"],
             function=get_std2bold_xforms,
         ),

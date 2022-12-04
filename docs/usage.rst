@@ -44,6 +44,54 @@ Command-Line Arguments
    :prog: xcp_d
 
 
+.. _filter_files:
+
+Filtering Inputs with BIDS Filter Files
+=======================================
+
+``xcp_d`` allows users to choose which preprocessed files will be post-processed with the ``--bids-filter-file`` parameter.
+This argument must point to a JSON file, containing filters that will be fed into PyBIDS.
+
+The keys in this JSON file are unique to ``xcp_d``.
+They are our internal terms for different inputs that will be selected from the preprocessed dataset.
+
+``"bold"`` determines which preprocessed BOLD files will be chosen.
+You can set a number of entities here, including "session", "task", "space", "resolution", and "density".
+We recommend NOT setting the datatype, suffix, or file extension in the filter file.
+
+.. warning::
+   We do not recommend applying additional filters to any of the following fields.
+   We have documented them here, for edge cases where they might be useful,
+   but the only field that most users should filter is ``"bold"``.
+
+``"t1w"`` selects a native T1w-space, preprocessed T1w file.
+
+``"t1w_seg"`` selects a native T1w-space segmentation file.
+This file is primarily used for figures.
+
+``"t1w_mask"`` selects a native T1w-space brain mask.
+
+``"t1w_to_template_xform"`` selects a transform from T1w space to standard space.
+The standard space that will be used depends on the ``"bold"`` files that are selected.
+
+``"template_to_t1w_xform"`` selects a transform from standard space to T1w space.
+Again, the standard space is determined based on other files.
+
+Example bids-filter-file
+------------------------
+
+In this example file, we only run ``xcp_d`` on resting-state preprocessed BOLD runs from session "01".
+
+.. code-block:: json
+
+   {
+      "bold": {
+         "session": ["01"],
+         "task": "rest"
+      }
+   }
+
+
 .. _run_docker:
 
 Running ``xcp_d`` via Docker containers

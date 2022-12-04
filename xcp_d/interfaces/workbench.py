@@ -1,7 +1,8 @@
 """Custom wb_command interfaces."""
-
+import nibabel as nb
 from nipype import logging
 from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
     CommandLineInputSpec,
     File,
     SimpleInterface,
@@ -10,9 +11,62 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.workbench.base import WBCommand
 
-from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix, split_filename
+from xcp_d.utils.write_save import get_cifti_intents
 
 iflogger = logging.getLogger("nipype.interface")
+
+
+class _FixCiftiIntentInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc="CIFTI file to check.")
+
+
+class _FixCiftiIntentOutputSpec(TraitedSpec):
+    out_file = File(exists=True, mandatory=True, desc="Fixed CIFTI file.")
+
+
+class FixCiftiIntent(SimpleInterface):
+    """This is not technically a Connectome Workbench interface, but it is related.
+
+    CiftiSmooth (-cifti-smooth) overwrites the output file's intent to match a dtseries extension,
+    even when it is a dscalar file.
+    This interface sets the appropriate intent based on the extension.
+
+    We initially tried using a _post_run_hook in a modified version of the CiftiSmooth interface,
+    but felt that the errors being raised were too opaque.
+
+    If in_file has the correct intent code, it will be returned without modification.
+    """
+
+    input_spec = _FixCiftiIntentInputSpec
+    output_spec = _FixCiftiIntentOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+
+        cifti_intents = get_cifti_intents()
+        _, _, out_extension = split_filename(in_file)
+        target_intent = cifti_intents.get(out_extension, None)
+
+        if target_intent is None:
+            raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
+
+        img = nb.load(in_file)
+        out_file = in_file
+        # modify the intent if necessary, and write out the modified file
+        if img.nifti_header.get_intent()[0] != target_intent:
+            out_file = fname_presuffix(
+                self.inputs.in_file,
+                suffix="_modified",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+
+            img.nifti_header.set_intent(target_intent)
+            img.to_filename(out_file)
+
+        self._results["out_file"] = out_file
+        return runtime
 
 
 class _ConvertAffineInputSpec(CommandLineInputSpec):
