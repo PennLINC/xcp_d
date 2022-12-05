@@ -10,18 +10,47 @@ import pandas as pd
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
+import logging
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
     """Convert HCP-format data to fMRIPrep format."""
+    LOGGER.warning(f"This is an experimental function and has not been tested yet.")
     hcpdir = os.path.abspath(hcpdir)
     outdir = os.path.abspath(outdir)
     if sub_id is None:
         sub_idir = glob.glob(hcpdir + "/*")
         sub_id = [os.path.basename(j) for j in sub_idir]
+        subjects = []
+        x_list = [
+            "BiasField",
+            "Native",
+            "ROIs",
+            "Results",
+            "T1w",
+            "T1w_restore",
+            "T1w_restore_brain",
+            "T2w",
+            "T2w_restore",
+            "T2w_restore_brain",
+            "aparc",
+            "aparc+aseg",
+            "brainmask_fs",
+            "fsaverage_LR32k",
+            "ribbon",
+            "wmparc",
+            "xfms",
+        ]
+        for item in sub_id:
+            item = item.split(".")[0]
+            if item not in subjects and item not in x_list:
+                subjects.append(item)
+            sub_id = subjects
         if len(sub_id) == 0:
             raise ValueError(f"No subject found in {hcpdir}")
-        elif len(sub_id) > 0:
+        if len(sub_id) > 0:
             for j in sub_id:
                 hcpfmriprepx(hcp_dir=hcpdir, out_dir=outdir, sub_id=j)
     else:
@@ -30,19 +59,19 @@ def hcp2fmriprep(hcpdir, outdir, sub_id=None):
     return sub_id
 
 
-def hcpfmriprepx(hcp_dir, out_dir, subid):
+def hcpfmriprepx(hcp_dir, out_dir, sub_id):
     """Do the internal work for hcp2fmriprep."""
-    sub_id = "sub-" + subid
-    anat_dirx = hcp_dir + "/" + subid + "/T1w/"
-
+    print(sub_id)
+    anat_dirx = hcp_dir
     # make new directory for anat and func
-    anatdir = out_dir + "/sub-" + subid + "/anat/"
-    funcdir = out_dir + "/sub-" + subid + "/func/"
+
+    anatdir = out_dir + "/sub-" + sub_id + "/anat/"
+    funcdir = out_dir + "/sub-" + sub_id + "/func/"
     os.makedirs(anatdir, exist_ok=True)
     os.makedirs(funcdir, exist_ok=True)
 
     # get old files
-    tw1 = anat_dirx + "/T1w_acpc_dc_restore.nii.gz"
+    tw1 = anat_dirx + "/T1w_restore.nii.gz"
     brainmask = anat_dirx + "/brainmask_fs.nii.gz"
     ribbon = anat_dirx + "/ribbon.nii.gz"
     segm = anat_dirx + "/aparc+aseg.nii.gz"
@@ -76,24 +105,26 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
     ]
 
     # to fmriprep directory
-    t1wim = anatdir + sub_id + "_desc-preproc_T1w.nii.gz"
-    t1seg = anatdir + sub_id + "_dseg.nii.gz"
-    t1ribbon = anatdir + sub_id + "_desc-ribbon_T1w.nii.gz"
-    t1brainm = anatdir + sub_id + "_desc-brain_mask.nii.gz"
-    regfile1 = anatdir + sub_id + "_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
-    regfile2 = anatdir + sub_id + "_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
+    if "sub" not in sub_id:
+        subid = "sub-" + sub_id
+    t1wim = anatdir + subid + "_desc-preproc_T1w.nii.gz"
+    t1seg = anatdir + subid + "_dseg.nii.gz"
+    t1ribbon = anatdir + subid + "_desc-ribbon_T1w.nii.gz"
+    t1brainm = anatdir + subid + "_desc-brain_mask.nii.gz"
+    regfile1 = anatdir + subid + "_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
+    regfile2 = anatdir + subid + "_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
 
-    lMid = anatdir + sub_id + "_hemi-L_midthickness.surf.gii"
-    rMid = anatdir + sub_id + "_hemi-R_midthickness.surf.gii"
+    lMid = anatdir + subid + "_hemi-L_midthickness.surf.gii"
+    rMid = anatdir + subid + "_hemi-R_midthickness.surf.gii"
 
-    lpial = anatdir + sub_id + "_hemi-L_pial.surf.gii"
-    rpial = anatdir + sub_id + "_hemi-R_pial.surf.gii"
+    lpial = anatdir + subid + "_hemi-L_pial.surf.gii"
+    rpial = anatdir + subid + "_hemi-R_pial.surf.gii"
 
-    lwhite = anatdir + sub_id + "_hemi-L_smoothwm.surf.gii"
-    rwhite = anatdir + sub_id + "_hemi-R_smoothwm.surf.gii"
+    lwhite = anatdir + subid + "_hemi-L_smoothwm.surf.gii"
+    rwhite = anatdir + subid + "_hemi-R_smoothwm.surf.gii"
 
-    linf = anatdir + sub_id + "_hemi-L_inflated.surf.gii"
-    rinf = anatdir + sub_id + "_hemi-R_inflated.surf.gii"
+    linf = anatdir + subid + "_hemi-L_inflated.surf.gii"
+    rinf = anatdir + subid + "_hemi-R_inflated.surf.gii"
     newanatfiles = [
         t1wim,
         t1seg,
@@ -115,15 +146,16 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         copyfileobj_example(i, j)
 
     # get the task files
-    taskx = glob.glob(hcp_dir + "/" + subid + "/MNINonLinear/Results/*")
+
+    taskx = glob.glob(hcp_dir + "/Results/*")
     tasklistx = []
+    print(hcp_dir)
     for j in taskx:
         if j.endswith("RL") or j.endswith("LR"):
             tasklistx.append(j)
 
-    csf_mask = pkgrf("xcp_d", "masks/csf.nii.gz")
-    wm_mask = pkgrf("xcp_d", "masks/wm.nii.gz")
-
+    csf_mask = pkgrf("xcp_d", "/data/masks/csf.nii.gz")
+    wm_mask = pkgrf("xcp_d", "/data/masks/wm.nii.gz")
     for k in tasklistx:
         idx = os.path.basename(k).split("_")
         filenamex = os.path.basename(k)
@@ -156,7 +188,7 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         regressors.to_csv(
             funcdir
             + "/sub-"
-            + subid
+            + sub_id
             + "_task-"
             + idx[1]
             + "_acq-"
@@ -168,7 +200,7 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         regressors.to_json(
             funcdir
             + "/sub-"
-            + subid
+            + sub_id
             + "_task-"
             + idx[1]
             + "_acq-"
@@ -181,7 +213,7 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         prep_ref = (
             funcdir
             + "/sub-"
-            + subid
+            + sub_id
             + "_task-"
             + idx[1]
             + "_acq-"
@@ -194,7 +226,7 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         ciftib = (
             funcdir
             + "/sub-"
-            + subid
+            + sub_id
             + "_task-"
             + idx[1]
             + "_acq-"
@@ -218,7 +250,7 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         boldjson = (
             funcdir
             + "/sub-"
-            + subid
+            + sub_id
             + "_task-"
             + idx[1]
             + "_acq-"
@@ -228,7 +260,7 @@ def hcpfmriprepx(hcp_dir, out_dir, subid):
         ciftijson = (
             funcdir
             + "/sub-"
-            + subid
+            + sub_id
             + "_task-"
             + idx[1]
             + "_acq-"
