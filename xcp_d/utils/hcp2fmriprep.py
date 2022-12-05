@@ -17,7 +17,7 @@ LOGGER = logging.getLogger("hcp")
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
     """Convert HCP-format data to fMRIPrep format."""
-    LOGGER.warning(f"This is an experimental function and has not been tested yet.")
+    LOGGER.warning("This is an experimental function and has not been tested yet.")
     hcpdir = os.path.abspath(hcpdir)
     outdir = os.path.abspath(outdir)
     if sub_id is None:
