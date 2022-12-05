@@ -239,6 +239,8 @@ def collect_data(
 
     for space in allowed_spaces:
         queries["bold"]["space"] = space
+        if input_type == 'hcp':
+            queries["bold"]["suffix"] = "boldref"
         bold_data = layout.get(**queries["bold"])
         if bold_data:
             # will leave the best available space in the query
@@ -285,6 +287,10 @@ def collect_data(
 
     if len(densities) > 1:
         queries["bold"]["density"] = densities[0]
+
+    if input_type == 'hcp':
+            queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
+            queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
 
     subj_data = {
         dtype: sorted(

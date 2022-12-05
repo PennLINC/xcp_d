@@ -111,8 +111,8 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
     t1seg = anatdir + subid + "_dseg.nii.gz"
     t1ribbon = anatdir + subid + "_desc-ribbon_T1w.nii.gz"
     t1brainm = anatdir + subid + "_desc-brain_mask.nii.gz"
-    regfile1 = anatdir + subid + "_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
-    regfile2 = anatdir + subid + "_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5"
+    regfile1 = anatdir + subid + "_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.txt"
+    regfile2 = anatdir + subid + "_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.txt"
 
     lMid = anatdir + subid + "_hemi-L_midthickness.surf.gii"
     rMid = anatdir + subid + "_hemi-R_midthickness.surf.gii"
@@ -269,7 +269,7 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
             + "_space-fsLR_den-91k_bold.dtseries.json"
         )
 
-        ddjson = {"Name": "HCP", "DatasetType": "derivatives", "GeneratedBy": [{"Name": "HCP"}]}
+        ddjson = {"Name": "HCP", "DatasetType": "derivative", "GeneratedBy": [{"Name": "HCP"}]}
 
         writejson(jsontis, boldjson)
         writejson(json2, ciftijson)
