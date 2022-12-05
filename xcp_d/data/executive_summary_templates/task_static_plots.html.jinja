@@ -7,16 +7,16 @@
             <div class="w3-center"><h2>Functional Data</h2></div>
             <div>
 
-                {% for i in range(len(imgs)) %}
+                {% for i in range(len(files)) %}
 
-                    {% set task = imgs[i]["task"] %}
-                    {% set run = imgs[i]["run"] %}
-                    {% set task_in_t1w_img = imgs[i]["task_in_t1w_img"] %}
-                    {% set t1w_in_task_img = imgs[i]["t1w_in_task_img"] %}
-                    {% set bold_img = imgs[i]["bold_img"] %}
-                    {% set boldref_img = imgs[i]["boldref_img"] %}
-                    {% set prereg_img = imgs[i]["prereg_img"] %}
-                    {% set postreg_img = imgs[i]["postreg_img"] %}
+                    {% set task = tasks[i] %}
+                    {% set run = runs[i] %}
+                    {% set task_in_t1w_img = task_in_t1w_imgs[i] %}
+                    {% set t1w_in_task_img = t1w_in_task_imgs[i] %}
+                    {% set bold_img = bold_imgs[i] %}
+                    {% set boldref_img = boldref_imgs[i] %}
+                    {% set prereg_img = prereg_imgs[i] %}
+                    {% set postreg_img = postreg_imgs[i] %}
 
                     <!--
                         Add the task name for the next few rows.
