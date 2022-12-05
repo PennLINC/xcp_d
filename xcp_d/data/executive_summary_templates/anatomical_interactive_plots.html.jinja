@@ -1,0 +1,35 @@
+<!--
+    Make a section for T1 or T2.
+    This will show the brainsprite viewer, with a label above it to identify T1 v T2,
+    and a button that will open a modal window with a slider for the T1 or T2 pngs.
+-->
+<section id="Anat">
+    <div class="w3-container">
+        <div class="w3-row-padding">
+            <div class="w3-center"><h2>Anatomical Data</h2></div>
+        </div>
+
+        <!--
+            Loop over the modalities (T1/T2) and add their brainsprites.
+        -->
+        {% for image_type in image_types %}
+            {% assign brainsprite_label = brainsprite_labels[image_type] %}
+            {% assign pngs_button = pngs_buttons[image_type] %}
+            {% assign brainsprite_viewer = brainsprite_viewers[image_type] %}
+
+            <section id="{{ image_type }}">
+                <div class="w3-container">
+                    <div class="w3-cell w3-left label3">{{ brainsprite_label }}</div>
+                    <div class="w3-cell w3-right">
+                        {{ pngs_button }}
+                    </div>
+                </div>
+                <div class="w3-container">
+                    {{ brainsprite_viewer }}
+                </div>
+            </section>
+
+        {% endfor %}
+
+    </div>
+</section>

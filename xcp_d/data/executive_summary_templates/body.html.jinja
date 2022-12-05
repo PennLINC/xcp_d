@@ -1,0 +1,49 @@
+<!--
+    Make the html 'title' (what will be seen on the tab, etc.),
+    as well as the page header.
+-->
+<title>Executive Summary: {{ subject }} {{ session }}</title>
+<header> <h1>{{ subject }}/{{ session }}</h1> </header>
+
+<!--
+    Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons.
+-->
+{{ anatomical_interactive_plots }}
+
+<!--
+    "Anatomical Data" section, with static gif files showing segmentations.
+    1. Atlas in T1
+    2. T1 in Atlas
+    3. Atlas in Subcorticals (nibabies only)
+    4. Subcorticals in Atlas (nibabies only)
+-->
+{{ anatomical_static_plots }}
+
+<!--
+    Carpet/line plot for pre- and post-regression, concatenate across runs.
+-->
+{{ concatenated_task_static_plots }}
+
+<!--
+    Task static plots. One section per run of each task.
+    1. Task in T1
+    2. T1 in Task
+    3. BOLD mean(?) image on the left
+    4. BOLD reference image on the left
+    3/4. Pre and post regression carpet/line plots on right.
+-->
+{{ task_static_plots }}
+
+<!--
+    Script sections with Javascript snippets.
+    1. BrainSprite: brainsprite(params)
+    2. jquery import
+    3. another jquery import
+    4. var brainT1 = brainsprite()
+    5. var brainT2 = brainsprite()
+    6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
+    7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
+    8. show_Images and open_img_modal_to_index
+    9. change_Registrations and show_Registrations and open_regs_modal_to_index
+-->
+{{ scripts }}

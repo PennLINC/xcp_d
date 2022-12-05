@@ -1,0 +1,28 @@
+<!--
+    The slider scripts that will show the next or previous image in a given class.
+    Needs the following values: modal_id, image_class.
+-->
+<script>
+    var %(image_class)sIdx = 1;
+    show_%(image_class)s(%(image_class)sIdx)
+
+    function change_%(image_class)s(n) {
+        show_%(image_class)s(%(image_class)sIdx += n)
+    }
+
+    function show_%(image_class)s(n) {
+        var i;
+        var x = document.getElementsByClassName("%(image_class)s");
+        if (n > x.length) { %(image_class)sIdx = 1 }
+        if (n < 1) { %(image_class)sIdx = x.length }
+        for (i = 0; i < x.length; i++) {
+            x[i].style.display = "none";
+        }
+        x[%(image_class)sIdx-1].style.display = "block";
+    }
+
+    function open_%(modal_id)s_to_index(idx) {
+        show_%(image_class)s(%(image_class)sIdx = idx)
+        document.getElementById("%(modal_id)s").style.display='block'
+    }
+</script>
