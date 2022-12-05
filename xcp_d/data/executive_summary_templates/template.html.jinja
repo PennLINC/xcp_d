@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
+    integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+<style type="text/css">
+    header, footer, section, article, nav, aside { display: block; }
+    h1, h2, h3, body, button, p, w3-btn { font-family: Verdana, Helvetica, Arial, Bookman, sans-serif; }
+    h1 { text-align: center; font-size: 2.5em; }
+    h2{ text-align: center; font-size: 2.00em; }
+    h3{ text-align: left; font-size: 2.5em; }
+    p{ font-size: 1.0em; }
+    body{ font-size: 1.0em; }
+    img{ width: 100%; padding: 2px; }
+    .label1, .label2, .label3, .label4{ font-family: Verdana, Helvetica, Arial, Bookman, sans-serif }
+    .label1 { font-size: 1.25em; text-align: center; }
+    .label2 { font-size: 1.25em; text-align: right; }
+    .label3 { font-size: 1.25em; text-align: left; }
+    .label4 { font-size: 1.00em; text-align: center; }
+    .grid-container { grid-gap: 2px; padding: 2px; }
+    .T1pngs, .T2pngs, .Registrations, .Images { display: none; }
+    .modal { vertical-align: top; margin-top:0; border-top-style:none; padding-top:0; top:0; height: 100%; width: auto; }
+    .Images{ height: 100%; width: auto; }
+</style>
+<body>
+    <!--
+        Make the html 'title' (what will be seen on the tab, etc.),
+        as well as the page header.
+    -->
+    <title>Executive Summary: {{ subject }} {{ session }}</title>
+    <header> <h1>{{ subject }}/{{ session }}</h1> </header>
+
+    <!--
+        Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons.
+    -->
+    {% include 'anatomical_interactive_plots.html.jinja' %}
+
+    <!--
+        "Anatomical Data" section, with static gif files showing segmentations.
+        1. Atlas in T1
+        2. T1 in Atlas
+        3. Atlas in Subcorticals (nibabies only)
+        4. Subcorticals in Atlas (nibabies only)
+    -->
+    {% include 'anatomical_static_plots.html.jinja' %}
+
+    <!--
+        Carpet/line plot for pre- and post-regression, concatenate across runs.
+    -->
+    {% include 'concatenated_task_static_plots.html.jinja' %}
+
+    <!--
+        Task static plots. One section per run of each task.
+        1. Task in T1
+        2. T1 in Task
+        3. BOLD mean(?) image on the left
+        4. BOLD reference image on the left
+        3/4. Pre and post regression carpet/line plots on right.
+    -->
+    {% include 'task_static_plots.html.jinja' %}
+
+    <!--
+        Script sections with Javascript snippets.
+        1. BrainSprite: brainsprite(params)
+        2. jquery import
+        3. another jquery import
+        4. var brainT1 = brainsprite()
+        5. var brainT2 = brainsprite()
+        6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
+        7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
+        8. show_Images and open_img_modal_to_index
+        9. change_Registrations and show_Registrations and open_regs_modal_to_index
+    -->
+    {% include 'scripts.html.jinja' %}
+
+</body>
+</html>

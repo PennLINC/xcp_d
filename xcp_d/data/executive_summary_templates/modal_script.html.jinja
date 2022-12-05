@@ -3,22 +3,22 @@
     Needs the following values: modal_id, image_class.
 -->
 <script>
-    var %(image_class)sIdx = 1;
-    show_%(image_class)s(%(image_class)sIdx)
+    var {{ image_class }}Idx = 1;
+    show_{{ image_class }}({{ image_class }}sIdx)
 
-    function show_%(image_class)s(n) {
+    function show_{{ image_class }}(n) {
         var i;
-        var x = document.getElementsByClassName("%(image_class)s");
-        if (n > x.length) { %(image_class)sIdx = 1 }
-        if (n < 1) { %(image_class)sIdx = x.length }
+        var x = document.getElementsByClassName("{{ image_class }}");
+        if (n > x.length) { {{ image_class }}Idx = 1 }
+        if (n < 1) { {{ image_class }}Idx = x.length }
         for (i = 0; i < x.length; i++) {
             x[i].style.display = "none";
         }
-        x[%(image_class)sIdx-1].style.display = "block";
+        x[{{ image_class }}Idx-1].style.display = "block";
     }
 
-    function open_%(modal_id)s_to_index(idx) {
-        show_%(image_class)s(%(image_class)sIdx = idx)
-        document.getElementById("%(modal_id)s").style.display='block'
+    function open_{{ modal_id }}_to_index(idx) {
+        show_{{ image_class }}({{ image_class }}Idx = idx)
+        document.getElementById("{{ modal_id }}").style.display='block'
     }
 </script>

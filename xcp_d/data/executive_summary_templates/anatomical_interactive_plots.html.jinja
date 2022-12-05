@@ -13,9 +13,9 @@
             Loop over the modalities (T1/T2) and add their brainsprites.
         -->
         {% for image_type in image_types %}
-            {% assign brainsprite_label = brainsprite_labels[image_type] %}
-            {% assign pngs_button = pngs_buttons[image_type] %}
-            {% assign brainsprite_viewer = brainsprite_viewers[image_type] %}
+            {% set brainsprite_label = brainsprite_labels[image_type] %}
+            {% set pngs_button = pngs_buttons[image_type] %}
+            {% set brainsprite_viewer = brainsprite_viewers[image_type] %}
 
             <section id="{{ image_type }}">
                 <div class="w3-container">

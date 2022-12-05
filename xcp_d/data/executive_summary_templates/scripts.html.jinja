@@ -28,29 +28,29 @@
     4. var brainT1 = brainsprite()
     Modify sprite_load_script template for each image type.
 -->
-{{ sprite_load_script T1 }}
+{% include 'sprite_load_script.html.jinja' T1 %}
 
 <!--
     5. var brainT2 = brainsprite()
     Modify sprite_load_script template for each image type.
 -->
-{{ sprite_load_script T2 }}
+{% include 'sprite_load_script.html.jinja' T2 %}
 
 <!--
     6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
 -->
-{{ slider_script T1 }}
+{% include 'slider_script.html.jinja' T1 %}
 
 <!--
     7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
 -->
-{{ slider_script T2 }}
+{% include 'slider_script.html.jinja' T2 %}
 
 <!--
     8. show_Images and open_img_modal_to_index
     Seems to be used on the BOLD carpet plots, but isn't present in constants.
 -->
-{{ modal_script }}
+{% include 'modal_script.html.jinja' %}
 
 <!--
     9. change_Registrations and show_Registrations and open_regs_modal_to_index

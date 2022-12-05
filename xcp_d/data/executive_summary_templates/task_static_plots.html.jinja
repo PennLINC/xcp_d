@@ -9,14 +9,14 @@
 
                 {% for i in range(len(imgs)) %}
 
-                    {% assign task = imgs[i]["task"] %}
-                    {% assign run = imgs[i]["run"] %}
-                    {% assign task_in_t1w_img = imgs[i]["task_in_t1w_img"] %}
-                    {% assign t1w_in_task_img = imgs[i]["t1w_in_task_img"] %}
-                    {% assign bold_img = imgs[i]["bold_img"] %}
-                    {% assign boldref_img = imgs[i]["boldref_img"] %}
-                    {% assign prereg_img = imgs[i]["prereg_img"] %}
-                    {% assign postreg_img = imgs[i]["postreg_img"] %}
+                    {% set task = imgs[i]["task"] %}
+                    {% set run = imgs[i]["run"] %}
+                    {% set task_in_t1w_img = imgs[i]["task_in_t1w_img"] %}
+                    {% set t1w_in_task_img = imgs[i]["t1w_in_task_img"] %}
+                    {% set bold_img = imgs[i]["bold_img"] %}
+                    {% set boldref_img = imgs[i]["boldref_img"] %}
+                    {% set prereg_img = imgs[i]["prereg_img"] %}
+                    {% set postreg_img = imgs[i]["postreg_img"] %}
 
                     <!--
                         Add the task name for the next few rows.
