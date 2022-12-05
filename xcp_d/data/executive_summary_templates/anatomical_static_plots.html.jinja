@@ -4,33 +4,25 @@
             <div class="w3-center"><h2>Anatomical Data</h2></div>
         </div>
 
-        <div class="w3-row-padding">
-            <div class="w3-col l1 label2">Atlas in Subcorticals</div>
-            <div class="w3-col l11">
-            {% if %}
-                <img src="img/sub-3840308617_desc-T1wInAtlas.gif" onclick="open_regs_modal_to_index(2)">
-            {% else %}
-                <div class="w3-container w3-pale-red label3">Image Not Available</div>
-                <div class="w3-container w3-pale-red label3"><br></div>
-                <div class="w3-container"><br></div>
-            {% endif %}
-            </div>
-        </div>
+        {% for img_type in img_types %}
 
-        {% set img_counter = 0%}
-        {% for img in imgs %}
-            <div class="w3-row-padding">
-                <div class="w3-col l1 label2">Atlas in Subcorticals</div>
-                <div class="w3-col l11">
-                {% if img is not None %}
-                    {% img_counter += 1 %}
-                    <img src="{{ img }}" onclick="open_regs_modal_to_index(img_counter)">
-                {% else %}
-                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
-                    <div class="w3-container w3-pale-red label3"><br></div>
-                {% endif %}
+            {% set imgs = all_imgs[img_type] %}
+            {% set img_counter = 0%}
+            {% for img in imgs %}
+                <div class="w3-row-padding">
+                    <div class="w3-col l1 label2">Atlas in Subcorticals</div>
+                    <div class="w3-col l11">
+                    {% if img is not None %}
+                        {% img_counter += 1 %}
+                        <img src="{{ img }}" onclick="open_regs_modal_to_index(img_counter)">
+                    {% else %}
+                        <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                        <div class="w3-container w3-pale-red label3"><br></div>
+                    {% endif %}
+                    </div>
                 </div>
-            </div>
+            {% endfor %}
+
         {% endfor %}
 
         <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_{{ image_type }}pngs(-1)">
@@ -45,4 +37,4 @@
         </button>
 
     </div>
-</div>
+</section>
