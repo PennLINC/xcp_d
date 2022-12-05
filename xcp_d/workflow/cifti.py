@@ -647,11 +647,11 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         )
 
         # fmt:off
+        # Use inputnode for executive summary instead of downcast_data
+        # because T1w is used as name source.
         workflow.connect([
             (inputnode, executivesummary_wf, [
                 ('template_to_t1w', 'inputnode.template_to_t1w'),
-            ]),
-            (downcast_data, executivesummary_wf, [
                 ('t1w', 'inputnode.t1w'),
                 ('t1seg', 'inputnode.t1seg'),
                 ('bold_file', 'inputnode.bold_file'),
