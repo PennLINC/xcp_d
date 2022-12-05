@@ -274,7 +274,6 @@ def collect_data(
             raise FileNotFoundError(
                 f"No nifti BOLD data found in allowed spaces ({allowed_space_str})"
             )
-            
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
