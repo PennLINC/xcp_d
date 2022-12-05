@@ -12,7 +12,7 @@ from pkg_resources import resource_filename as pkgrf
 from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
 import logging
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger("hcp")
 
 
 def hcp2fmriprep(hcpdir, outdir, sub_id=None):
