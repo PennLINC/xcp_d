@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-format data to fMRIPrep format."""
 import glob
+import logging
 import os
 
 import nibabel as nb
@@ -10,7 +11,6 @@ import pandas as pd
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
-import logging
 
 LOGGER = logging.getLogger("hcp")
 
@@ -257,6 +257,7 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
             + idx[2]
             + "_space-MNI152NLin6Asym_desc-preproc_bold.json"
         )
+        ddjsonfile = out_dir + "/dataset_description.json"
         ciftijson = (
             funcdir
             + "/sub-"
@@ -268,8 +269,11 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
             + "_space-fsLR_den-91k_bold.dtseries.json"
         )
 
+        ddjson = {"Name": "HCP", "DatasetType": "derivatives", "GeneratedBy": [{"Name": "HCP"}]}
+
         writejson(jsontis, boldjson)
         writejson(json2, ciftijson)
+        writejson(ddjson, ddjsonfile)
 
         # get the files
         rawfiles = [hcp_ref, ciftip]
