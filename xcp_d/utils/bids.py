@@ -337,7 +337,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
         Default is False.
     input_type: :obj:`str`
-        Input type. 
+        Input type.
 
     Returns
     -------
