@@ -143,7 +143,7 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
 
     for i, j in zip(hcpfiles, newanatfiles):
         copyfileobj_example(i, j)
-    print ("finished converting anat files")
+    print("finished converting anat files")
     # get the task files
 
     taskx = glob.glob(hcp_dir + "/Results/*")
