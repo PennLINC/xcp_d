@@ -51,10 +51,10 @@ def test_interpolate_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's replace some timepoints with a spike
     # in each of these columns
     file_data[3, 3] = spike
-    file_data[3, 88] = spike
-    file_data[3, 48] = spike
     file_data[3, 20] = spike
-    file_data[3, 100] = spike
+    file_data[3, 30] = spike
+    file_data[3, 40] = spike
+    file_data[3, 48] = spike
 
     # Let's get the fft of a noisy timepoint and plot it:
     X = fft(file_data[3, :])
@@ -80,10 +80,10 @@ def test_interpolate_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     tmask_file = os.path.join(tmpdir, "tmask.tsv")
     tmask = np.zeros(N)
     tmask[3] = 1
-    tmask[88] = 1
-    tmask[48] = 1
     tmask[20] = 1
-    tmask[100] = 1
+    tmask[30] = 1
+    tmask[40] = 1
+    tmask[48] = 1
     tmask_df = pd.DataFrame(
         data=tmask,
         columns=["framewise_displacement"],

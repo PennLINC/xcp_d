@@ -16,7 +16,7 @@ def test_read_ndata(fmriprep_with_freesurfer_data, fmriprep_without_freesurfer_d
     # Load cifti
     cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
     cifti_data = write_save.read_ndata(cifti_file)
-    assert cifti_data.shape == (91282, 170)
+    assert cifti_data.shape == (91282, 60)
 
     # Load nifti
     nifti_file = fmriprep_without_freesurfer_data["nifti_file"]
@@ -26,7 +26,7 @@ def test_read_ndata(fmriprep_with_freesurfer_data, fmriprep_without_freesurfer_d
         write_save.read_ndata(nifti_file, maskfile=None)
 
     nifti_data = write_save.read_ndata(nifti_file, maskfile=mask_file)
-    assert nifti_data.shape == (66319, 16)
+    assert nifti_data.shape == (66319, 60)
 
 
 def test_write_ndata(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -35,26 +35,26 @@ def test_write_ndata(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
     cifti_data = write_save.read_ndata(cifti_file)
-    cifti_data[1000, 100] = 1000
+    cifti_data[1000, 50] = 1000
 
     # Write an unmodified CIFTI
     temp_cifti_file = os.path.join(tmpdir, "cifti_file.dtseries.nii")
     write_save.write_ndata(cifti_data, template=cifti_file, filename=temp_cifti_file)
     assert os.path.isfile(temp_cifti_file)
     cifti_data_loaded = write_save.read_ndata(temp_cifti_file)
-    assert cifti_data_loaded.shape == (91282, 170)
+    assert cifti_data_loaded.shape == (91282, 60)
     # It won't equal exactly 1000
-    assert (cifti_data_loaded[1000, 100] - 1000) < 1
+    assert (cifti_data_loaded[1000, 50] - 1000) < 1
 
     # Write a shortened CIFTI
     cifti_data = cifti_data[:, ::2]
-    assert cifti_data.shape == (91282, 85)
+    assert cifti_data.shape == (91282, 30)
 
     temp_cifti_file = os.path.join(tmpdir, "shortened_cifti_file.dtseries.nii")
     write_save.write_ndata(cifti_data, template=cifti_file, filename=temp_cifti_file)
     assert os.path.isfile(temp_cifti_file)
     cifti_data_loaded = write_save.read_ndata(temp_cifti_file)
-    assert cifti_data_loaded.shape == (91282, 85)
+    assert cifti_data_loaded.shape == (91282, 30)
     # It won't equal exactly 1000
     assert (cifti_data_loaded[1000, 50] - 1000) < 1
 
