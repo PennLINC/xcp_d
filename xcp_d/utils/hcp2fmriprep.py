@@ -214,19 +214,19 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
         # get derivatives and powers
         regressors = pd.concat([mvreg, brainreg], axis=1)
         regressors["global_signal_derivative1"] = pd.DataFrame(
-            np.diff(regressors["global_signal"].tonumpy(), prepend=0)
+            np.diff(regressors["global_signal"].to_numpy(), prepend=0)
         )
         regressors["global_signal_derivative1_power2"] = (
             regressors["global_signal_derivative1"] ** 2
         )
 
         regressors["white_matter_derivative1"] = pd.DataFrame(
-            np.diff(regressors["white_matter"].tonumpy(), prepend=0)
+            np.diff(regressors["white_matter"].to_numpy(), prepend=0)
         )
         regressors["white_matter_derivative1_power2"] = regressors["white_matter_derivative1"] ** 2
 
         regressors["csf_derivative1"] = pd.DataFrame(
-            np.diff(regressors["csf"].tonumpy(), prepend=0)
+            np.diff(regressors["csf"].to_numpy(), prepend=0)
         )
         regressors["csf_derivative1_power2"] = regressors["csf_derivative1"] ** 2
 
