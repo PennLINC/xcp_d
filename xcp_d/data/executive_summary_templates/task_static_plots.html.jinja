@@ -4,8 +4,8 @@
     Inputs:
     - task_files[]{"task"}
     - task_files[]{"run"}
-    - task_files[]{"task_in_t1w"}
-    - task_files[]{"t1w_in_task"}
+    - task_files[]{"registration_files"}
+    - task_files[]{"registration_titles"}
     - task_files[]{"bold"}
     - task_files[]{"reference"}
     - task_files[]{"preproc_carpet"}
@@ -20,8 +20,8 @@
 
                     {% set task = run_dict["task"] %}
                     {% set run = run_dict["run"] %}
-                    {% set task_in_t1w = run_dict["task_in_t1w"] %}
-                    {% set t1w_in_task = run_dict["t1w_in_task"] %}
+                    {% set registration_files = run_dict["registration_files"] %}
+                    {% set registration_titles = run_dict["registration_titles"] %}
                     {% set bold = run_dict["bold"] %}
                     {% set reference = run_dict["reference"] %}
                     {% set preproc_carpet = run_dict["preproc_carpet"] %}
@@ -34,20 +34,22 @@
                         <div class="w3-left label2">task-{{ task }} run-{{ run }}:</div>
                     <div class="w3-row">
 
-                    <!--START-->
-                    <!--Full Row-->
-                    <div class="w3-row-padding">
-                        <div class="w3-col l1 label2">Task in T1</div>
-                        <div class="w3-col l11">
-                            {% if task_in_t1w != "None" %}
-                                <img src="{{ task_in_t1w }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
-                            {% else %}
-                                <div class="w3-container w3-pale-red label3">Image Not Available</div>
-                                <div class="w3-container w3-pale-red label3"><br></div>
-                            {% endif %}
+                    <!--Full rows for registration files-->
+                    {% for i_img in range(registration_files | length) %}
+                        {% set registration_file = registration_files[i_img] %}
+                        {% set registration_title = registration_titles[i_img] %}
+                        <div class="w3-row-padding">
+                            <div class="w3-col l1 label2">{{ registration_title }}</div>
+                            <div class="w3-col l11">
+                                {% if registration_file != "None" %}
+                                    <img src="{{ registration_file }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
+                                {% else %}
+                                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                    <div class="w3-container w3-pale-red label3"><br></div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <!--END-->
+                    {% endfor %}
 
                     <!--START-->
                     <!--Full Row-->

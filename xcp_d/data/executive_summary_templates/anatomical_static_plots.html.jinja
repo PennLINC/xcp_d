@@ -10,11 +10,10 @@
         <div class="w3-row-padding">
             <div class="w3-center"><h2>Anatomical Data</h2></div>
         </div>
-
+        {% set img_counter = 1 %}
         {% for img_type in structural_files.keys() %}
 
             {% set registration_files = structural_files[img_type]["registration_files"] %}
-            {% set img_counter = 0 %}
             {% for i_img in range(registration_files | length) %}
                 {% set registration_file = registration_files[i_img] %}
                 {% set title = structural_files[img_type]["registration_titles"][i_img] %}
@@ -24,7 +23,7 @@
                     <div class="w3-col l11">
                     {% if registration_file != "None" %}
                         {% set img_counter = img_counter + 1 %}
-                        <img src="{{ registration_file }}" onclick="open_{{ img_type }}_slider_to_index(img_counter)">
+                        <img src="{{ registration_file }}" onclick="open_registrations_slider_to_index({{ img_counter }})">
                     {% else %}
                         <div class="w3-container w3-pale-red label3">Image Not Available</div>
                         <div class="w3-container w3-pale-red label3"><br></div>
@@ -35,6 +34,16 @@
             {% endfor %}
 
         {% endfor %}
+
+        <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_registrations(-1)">
+            <i class="fas fa-angle-left"></i>
+        </button>
+        <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_registrations(1)">
+            <i class="fas fa-angle-right"></i>
+        </button>
+        <button class="w3-btn w3-red w3-display-topright w3-large" onclick="document.getElementById('regs_modal').style.display='none'">
+            <i class="fa fa-close"></i>
+        </button>
 
     </div>
 </section>

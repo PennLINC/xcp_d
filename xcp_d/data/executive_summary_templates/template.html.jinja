@@ -60,6 +60,28 @@
     <title>Executive Summary: {{ subject }} {{ session }}</title>
     <header> <h1>{{ subject }}/{{ session }}</h1> </header>
 
+    <!--Compile a list of all registration files and their titles.-->
+    {% set all_registration_files = [] %}
+    {% set all_registration_titles = [] %}
+    {% for i_reg_file in range(structural_files["registration_files"] | length) %}
+        {% set registration_file = structural_files["registration_files"][i_reg_file] %}
+        {% set registration_title = structural_files["registration_titles"][i_reg_file] %}
+        {{ all_registration_files.append(registration_file) }}
+        {{ all_registration_titles.append(registration_title) }}
+    {% endfor %}
+
+    {% for run_dict in task_files %}
+        {% set registration_files = run_dict["registration_files"] %}
+        {% set registration_titles = run_dict["registration_titles"] %}
+
+        {% for i_reg_file in range(registration_files | length) %}
+            {% set registration_file = registration_files[i_reg_file] %}
+            {% set registration_title = registration_titles[i_reg_file] %}
+            {{ all_registration_files.append(registration_file) }}
+            {{ all_registration_titles.append(registration_title) }}
+        {% endfor %}
+    {% endfor %}
+
     <!--
         Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons.
     -->
@@ -88,6 +110,10 @@
         3/4. Pre and post regression carpet/line plots on right.
     -->
     {% include 'task_static_plots.html.jinja' %}
+
+    {% include "image_cycler.html.jinja" %}
+
+    {% include "registration_cycler.html.jinja" %}
 
     <!--
         Script sections with Javascript snippets.
