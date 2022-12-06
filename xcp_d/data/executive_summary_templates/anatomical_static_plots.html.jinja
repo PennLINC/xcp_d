@@ -2,9 +2,8 @@
     Make a section for static anatomical registration images.
 
     Inputs:
-    - image_types
-    - all_imgs{image_type}[]
-    - titles
+    - structural_files{image_type}{"registration_files"}[]
+    - structural_files{image_type}{"registration_titles"}[]
 -->
 <section id="Anat">
     <div class="w3-container">
@@ -12,19 +11,20 @@
             <div class="w3-center"><h2>Anatomical Data</h2></div>
         </div>
 
-        {% for img_type in image_types %}
+        {% for img_type in structural_files.keys() %}
 
-            {% set imgs = all_imgs[img_type] %}
+            {% set registration_files = structural_files[img_type]["registration_files"] %}
             {% set img_counter = 0 %}
-            {% for i_img in range(imgs | length) %}
-                {% set img = imgs[i_img] %}
+            {% for i_img in range(registration_files | length) %}
+                {% set registration_file = registration_files[i_img] %}
+                {% set title = structural_files[img_type]["registration_titles"][i_img] %}
                 <div class="w3-row-padding">
-                    <div class="w3-col l1 label2">{{ titles[i_img] }}</div>
+                    <div class="w3-col l1 label2">{{ title }}</div>
 
                     <div class="w3-col l11">
                     {% if img != "None" %}
                         {% set img_counter = img_counter + 1 %}
-                        <img src="{{ img }}" onclick="open_{{ img_type }}_slider_to_index(img_counter)">
+                        <img src="{{ registration_file }}" onclick="open_{{ img_type }}_slider_to_index(img_counter)">
                     {% else %}
                         <div class="w3-container w3-pale-red label3">Image Not Available</div>
                         <div class="w3-container w3-pale-red label3"><br></div>

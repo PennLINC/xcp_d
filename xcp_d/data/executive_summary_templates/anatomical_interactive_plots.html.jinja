@@ -4,16 +4,15 @@
     and a button that will open a modal window with a slider for the T1 or T2 pngs.
 
     Inputs:
-    - image_types[]
-    - mosaic_files{image_type}
-    - png_imgs{image_type}[]
+    - structural_files{image_type}{"mosaic"}
+    - structural_files{image_type}{"slices"}
 -->
 <!--
     Loop over the modalities (T1/T2) and add their brainsprites.
 -->
-{% for image_type in image_types %}
-    {% set mosaic_file = mosaic_files[image_type] %}
-    {% set imgs = png_imgs[image_type] %}
+{% for image_type in structural_files.keys() %}
+    {% set mosaic_file = structural_files[image_type]["mosaic"] %}
+    {% set slice_imgs = structural_files[image_type]["slices"] %}
 
     <section id="{{ image_type }}">
 
@@ -43,10 +42,10 @@
         <div class="w3-modal-content">
             <div class="w3-content w3-display-container">
 
-                {% for img in imgs %}
+                {% for slice_img in slice_imgs %}
                     <div class="w3-display-container {{ image_type }}pngs">
-                        <img src="{{ img }}">
-                        <div class="w3-display-topleft w3-black"><p>{{ img | basename }}</p></div>
+                        <img src="{{ slice_img }}">
+                        <div class="w3-display-topleft w3-black"><p>{{ slice_img | basename }}</p></div>
                     </div>
                 {% endfor %}
 

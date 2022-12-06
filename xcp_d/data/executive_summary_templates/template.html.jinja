@@ -5,28 +5,26 @@
     - session
 
     anatomical_interactive_plots:
-    - image_types[]
-    - mosaic_file{image_type}
-    - png_imgs{image_type}[]
+    - structural_files{image_type}{"mosaic"}
+    - structural_files{image_type}{"slices"}
 
     anatomical_static_plots:
-    - image_types
-    - all_imgs{image_type}[]
-    - titles
+    - structural_files{image_type}{"registration_files"}[]
+    - structural_files{image_type}{"registration_titles"}[]
 
     concatenated_task_static_plots:
-    - prereg_img
-    - postreg_img
+    - concatenated_rest_files{"preproc_carpet"}
+    - concatenated_rest_files{"postproc_carpet"}
 
     task_static_plots:
-    - tasks[]
-    - runs[]
-    - task_in_t1w_imgs[]
-    - t1w_in_task_imgs[]
-    - bold_imgs[]
-    - boldref_imgs[]
-    - prereg_imgs[]
-    - postreg_imgs[]
+    - task_files[]{"task"}
+    - task_files[]{"run"}
+    - task_files[]{"task_in_t1w"}
+    - task_files[]{"t1w_in_task"}
+    - task_files[]{"bold"}
+    - task_files[]{"reference"}
+    - task_files[]{"preproc_carpet"}
+    - task_files[]{"postproc_carpet"}
 -->
 <!DOCTYPE html>
 <html>

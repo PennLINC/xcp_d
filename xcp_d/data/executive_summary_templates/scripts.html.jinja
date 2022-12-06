@@ -26,10 +26,30 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 
 <!--
+    The loader script to be run when then window loads. Put this
+    with other scripts.
+
+    TS: Seems to call the brainsprite function for a give image type.
+-->
+{% macro build_sprite_loader_script(image_type) %}
+    <script>
+        $( window ).load(function() {
+            var brain{{ image_type }} = brainsprite({
+                canvas: "{{ image_type }}-viewer",
+                sprite: "{{ image_type }}-spriteImg",
+                nbSlice: { 'Y':218 , 'Z':218 },
+                flagCoordinates: true,
+            });
+        });
+    </script>
+{% endmacro %}
+
+<!--
     4. var brainT1 = brainsprite()
     Modify sprite_load_script template for each image type.
 -->
-{% if T1 %}
+
+{% if "T1w" in structural_files.keys() %}
     {{ build_sprite_loader_script("T1") }}
 {% endif %}
 
@@ -37,21 +57,52 @@
     5. var brainT2 = brainsprite()
     Modify sprite_load_script template for each image type.
 -->
-{% if T2 %}
+{% if "T2w" in structural_files.keys() %}
     {{ build_sprite_loader_script("T2") }}
 {% endif %}
 
 <!--
+    The slider scripts that will show the next or previous image in a given class.
+    Needs the following values: modal_id, image_class.
+-->
+{% macro build_slider_script(image_class, modal_id) %}
+    <script>
+        var {{ image_class }}Idx = 1;
+        show_{{ image_class }}({{ image_class }}Idx)
+
+        function change_{{ image_class }}(n) {
+            show_{{ image_class }}({{ image_class }}Idx += n)
+        }
+
+        function show_{{ image_class }}(n) {
+            var i;
+            var x = document.getElementsByClassName("{{ image_class }}");
+            if (n > x.length) { {{ image_class }}Idx = 1 }
+            if (n < 1) { {{ image_class }}Idx = x.length }
+            for (i = 0; i < x.length; i++) {
+                x[i].style.display = "none";
+            }
+            x[{{ image_class }}Idx-1].style.display = "block";
+        }
+
+        function open_{{ modal_id }}_slider_to_index(idx) {
+            show_{{ image_class }}({{ image_class }}Idx = idx)
+            document.getElementById("{{ modal_id }}").style.display='block'
+        }
+    </script>
+{% endmacro %}
+
+<!--
     6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
 -->
-{% if T1 %}
+{% if "T1w" in structural_files.keys() %}
     {{ build_slider_script("T1", "T1") }}
 {% endif %}
 
 <!--
     7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
 -->
-{% if T2 %}
+{% if "T2w" in structural_files.keys() %}
     {{ build_slider_script("T2", "T2") }}
 {% endif %}
 
