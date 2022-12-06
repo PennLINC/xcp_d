@@ -6,7 +6,7 @@ import pytest
 from xcp_d.utils import write_save
 
 
-def test_read_ndata(fmriprep_with_freesurfer_data, fmriprep_without_freesurfer_data):
+def test_read_ndata(fmriprep_with_freesurfer_data):
     """Test write_save.read_ndata."""
     # Try to load a gifti
     gifti_file = fmriprep_with_freesurfer_data["gifti_file"]
@@ -19,14 +19,14 @@ def test_read_ndata(fmriprep_with_freesurfer_data, fmriprep_without_freesurfer_d
     assert cifti_data.shape == (91282, 60)
 
     # Load nifti
-    nifti_file = fmriprep_without_freesurfer_data["nifti_file"]
-    mask_file = fmriprep_without_freesurfer_data["brain_mask_file"]
+    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
+    mask_file = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     with pytest.raises(AssertionError, match="must be provided"):
         write_save.read_ndata(nifti_file, maskfile=None)
 
     nifti_data = write_save.read_ndata(nifti_file, maskfile=mask_file)
-    assert nifti_data.shape == (66319, 60)
+    assert nifti_data.shape == (249657, 60)
 
 
 def test_write_ndata(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -55,11 +55,11 @@ def test_write_ndata(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(temp_cifti_file)
     cifti_data_loaded = write_save.read_ndata(temp_cifti_file)
     assert cifti_data_loaded.shape == (91282, 30)
-    # It won't equal exactly 1000
-    assert (cifti_data_loaded[1000, 50] - 1000) < 1
+    # It won't equal exactly 1000, but check that the modified value is in the right place
+    assert (cifti_data_loaded[1000, 25] - 1000) < 1
 
     # Write a CIFTI image (no time points)
-    cifti_data = cifti_data[:, 50]
+    cifti_data = cifti_data[:, 25]
     assert cifti_data.shape == (91282,)
 
     temp_cifti_file = os.path.join(tmpdir, "shortened_cifti_file.dtseries.nii")

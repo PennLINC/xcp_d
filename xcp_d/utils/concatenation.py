@@ -543,7 +543,7 @@ def concatenate_tsv_files(tsv_files, fileout):
     fileout : str
         Path to the file that will be written out.
     """
-    print(f"Creating {fileout} from {', '.join(tsv_files)}")
+    print(f"Creating {fileout} from {', '.join([f.path for f in tsv_files])}")
     # TODO: Support headers in timeseries files
     if tsv_files[0].path.endswith("timeseries.tsv"):
         # timeseries files have no header
