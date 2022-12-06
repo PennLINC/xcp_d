@@ -160,7 +160,7 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, bold_file, input_type)
+    run_data = collect_run_data(layout, input_type, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 

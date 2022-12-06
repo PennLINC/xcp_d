@@ -389,13 +389,11 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             suffix="mask",
             desc="brain",
         )
-        run_data["t1w_to_native_xform"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            **{"from": "T1w"},  # "from" is protected Python kw
-            to="scanner",
+        run_data["t1w_to_native_xform"] = layout.get(
+            return_type="file",
+            datatype="anat",
             suffix="xfm",
-        )
+        )[1]
 
     LOGGER.debug(
         f"Collected run data for {bold_file}:\n"
