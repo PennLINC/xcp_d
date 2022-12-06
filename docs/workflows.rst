@@ -54,6 +54,7 @@ BOLD Workflow
         fd_thresh=0.2,
         n_runs=1,
         layout=layout,
+        input_type,
         despike=False,
         dummytime=0,
         dcan_qc=False,

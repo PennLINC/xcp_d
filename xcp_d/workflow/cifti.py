@@ -52,6 +52,7 @@ def init_ciftipostprocess_wf(
     output_dir,
     custom_confounds_folder,
     omp_nthreads,
+    input_type,
     dummytime,
     dummy_scans,
     fd_thresh,
@@ -91,13 +92,16 @@ def init_ciftipostprocess_wf(
                 despike=False,
                 dcan_qc=False,
                 n_runs=1,
+                input_type,
                 layout=None,
+                input_type,
                 name='cifti_postprocess_wf',
             )
 
     Parameters
     ----------
     bold_file
+    input_type
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -125,6 +129,7 @@ def init_ciftipostprocess_wf(
         BIDS dataset layout
     %(name)s
         Default is 'cifti_postprocess_wf'.
+    input_type
 
     Inputs
     ------
@@ -141,7 +146,7 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, bold_file)
+    run_data = collect_run_data(layout, bold_file, input_type)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 

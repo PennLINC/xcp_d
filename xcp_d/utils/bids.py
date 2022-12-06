@@ -324,7 +324,7 @@ def collect_data(
     return layout, subj_data
 
 
-def collect_run_data(layout, bold_file, cifti=False):
+def collect_run_data(layout, input_type, bold_file, cifti=False):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -336,6 +336,8 @@ def collect_run_data(layout, bold_file, cifti=False):
     cifti : :obj:`bool`, optional
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
         Default is False.
+    input_type: :obj:`str`
+        Input type. 
 
     Returns
     -------
@@ -356,7 +358,7 @@ def collect_run_data(layout, bold_file, cifti=False):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti:
+    if not cifti and input_type != 'hcp' :
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
@@ -367,6 +369,25 @@ def collect_run_data(layout, bold_file, cifti=False):
             strict=False,
             desc="brain",
             suffix="mask",
+        )
+        run_data["t1w_to_native_xform"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            **{"from": "T1w"},  # "from" is protected Python kw
+            to="scanner",
+            suffix="xfm",
+        )
+
+    if not cifti and input_type == 'hcp' :
+        run_data["boldref"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            suffix="boldref",
+        )
+        run_data["boldmask"] = layout.get(
+            return_type="file",
+            suffix="mask",
+            desc="brain",
         )
         run_data["t1w_to_native_xform"] = layout.get_nearest(
             bids_file.path,

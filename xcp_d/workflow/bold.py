@@ -55,6 +55,7 @@ def init_boldpostprocess_wf(
     omp_nthreads,
     dummytime,
     dummy_scans,
+    input_type,
     output_dir,
     fd_thresh,
     n_runs,
@@ -152,12 +153,14 @@ def init_boldpostprocess_wf(
         Fed from the subject workflow.
     fmriprep_confounds_tsv
         Loaded in this workflow.
+    input_type
+        Input type.
 
     References
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, bold_file)
+    run_data = collect_run_data(layout, bold_file, input_type)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
