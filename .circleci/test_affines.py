@@ -14,64 +14,67 @@ def test_affines(data_dir, out_dir, input_type):
     """Confirm affines don't change across XCP runs."""
     fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
     xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=False)
-    if input_type == 'cifti':  # Get the .dtseries.nii
-        bold_file = fmri_layout.get(
-            run=1,
-            return_type="file",
-            invalid_filters='allow',
-            extension='.dtseries.nii',
-            datatype='func'
-        )
+    if input_type == "cifti":  # Get the .dtseries.nii
         denoised_file = xcp_layout.get(
             return_type="file",
             run=1,
-            extension='.dtseries.nii',
-            invalid_filters='allow',
-            datatype='func'
+            extension=".dtseries.nii",
+            invalid_filters="allow",
+            datatype="func",
+        )
+        space = denoised_file.get_entities()["space"]
+        bold_file = fmri_layout.get(
+            run=1,
+            space=space,
+            return_type="file",
+            invalid_filters="allow",
+            extension=".dtseries.nii",
+            datatype="func",
         )
 
-    elif input_type == 'nifti':  # Get the .nii.gz
+    elif input_type == "nifti":  # Get the .nii.gz
         # Problem: it's collecting native-space data
+        denoised_file = xcp_layout.get(
+            return_type="file", run=1, suffix="bold", extension=".nii.gz", datatype="func"
+        )
+        space = denoised_file.get_entities()["space"]
         bold_file = fmri_layout.get(
             return_type="file",
-            invalid_filters='allow',
+            invalid_filters="allow",
             run=1,
-            suffix='bold',
-            extension='.nii.gz',
-            datatype='func'
-        )
-        denoised_file = xcp_layout.get(
-            return_type="file",
-            run=1,
-            suffix='bold',
-            extension='.nii.gz',
-            datatype='func'
+            space=space,
+            suffix="bold",
+            extension=".nii.gz",
+            datatype="func",
         )
 
     else:  # Nibabies
-        bold_file = fmri_layout.get(
-            extension='.nii.gz',
-            suffix='bold',
-            return_type="file",
-            space='MNIInfant',
-            invalid_filters='allow',
-            datatype='func'
-        )
         denoised_file = xcp_layout.get(
             return_type="file",
-            suffix='bold',
-            space='MNIInfant',
-            extension='.nii.gz',
-            datatype='func')
+            suffix="bold",
+            space="MNIInfant",
+            extension=".nii.gz",
+            datatype="func",
+        )
+        bold_file = fmri_layout.get(
+            extension=".nii.gz",
+            suffix="bold",
+            return_type="file",
+            space="MNIInfant",
+            invalid_filters="allow",
+            datatype="func",
+        )
 
     if isinstance(bold_file, list):
         bold_file = bold_file[0]
     if isinstance(denoised_file, list):
         denoised_file = denoised_file[0]
 
-    if input_type == 'cifti':
-        assert nb.load(bold_file)._nifti_header.get_intent() == nb.load(
-            denoised_file)._nifti_header.get_intent()
+    if input_type == "cifti":
+        assert (
+            nb.load(bold_file)._nifti_header.get_intent()
+            == nb.load(denoised_file)._nifti_header.get_intent()
+        )
     else:
         if not np.array_equal(nb.load(bold_file).affine, nb.load(denoised_file).affine):
             raise AssertionError(f"Affines do not match:\n\t{bold_file}\n\t{denoised_file}")
