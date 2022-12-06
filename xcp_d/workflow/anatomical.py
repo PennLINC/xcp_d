@@ -125,7 +125,7 @@ def init_t1w_wf(
             ]
         )
         nothingnode = pe.Node(
-            niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
+            niu.IdentityInterface(fields=["t1w", "t1seg"]),
             name="nothingnode",
         )
 
