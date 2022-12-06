@@ -1,13 +1,12 @@
 <!--
     Inputs:
-    - all_registration_files
+    - ns.registration_files
 -->
 <div id="regs_modal" class="w3-modal">
     <div class="w3-modal-content">
         <div class="w3-content w3-display-container">
 
-            {% for i_file in range(all_registration_files | length) %}
-                {% set registration_file = all_registration_files[i_file] %}
+            {% for registration_file in ns.registration_files %}
                 {% if registration_file != "None" %}
                     <div class="w3-display-container Registrations">
                         <img src="{{ registration_file }}">
@@ -16,10 +15,10 @@
                 {% endif %}
             {% endfor %}
 
-            <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_registrations(-1)">
+            <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_Registrations(-1)">
                 <i class="fas fa-angle-left"></i>
             </button>
-            <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_registrations(1)">
+            <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_Registrations(1)">
                 <i class="fas fa-angle-right"></i>
             </button>
             <button class="w3-btn w3-red w3-display-topright w3-large" onclick="document.getElementById('regs_modal').style.display='none'">

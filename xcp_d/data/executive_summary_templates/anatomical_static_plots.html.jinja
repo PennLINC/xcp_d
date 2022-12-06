@@ -10,20 +10,19 @@
         <div class="w3-row-padding">
             <div class="w3-center"><h2>Anatomical Data</h2></div>
         </div>
-        {% set img_counter = 1 %}
         {% for img_type in structural_files.keys() %}
 
             {% set registration_files = structural_files[img_type]["registration_files"] %}
             {% for i_img in range(registration_files | length) %}
                 {% set registration_file = registration_files[i_img] %}
-                {% set title = structural_files[img_type]["registration_titles"][i_img] %}
+                {% set registration_title = structural_files[img_type]["registration_titles"][i_img] %}
                 <div class="w3-row-padding">
-                    <div class="w3-col l1 label2">{{ title }}</div>
+                    <div class="w3-col l1 label2">{{ registration_title }}</div>
 
                     <div class="w3-col l11">
                     {% if registration_file != "None" %}
-                        {% set img_counter = img_counter + 1 %}
-                        <img src="{{ registration_file }}" onclick="open_registrations_slider_to_index({{ img_counter }})">
+                        <img src="{{ registration_file }}" onclick="open_regs_modal_to_index({{ ns.registrations_counter }})">
+                        {% set ns.registrations_counter = ns.registrations_counter + 1 %}
                     {% else %}
                         <div class="w3-container w3-pale-red label3">Image Not Available</div>
                         <div class="w3-container w3-pale-red label3"><br></div>
@@ -35,10 +34,10 @@
 
         {% endfor %}
 
-        <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_registrations(-1)">
+        <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_Registrations(-1)">
             <i class="fas fa-angle-left"></i>
         </button>
-        <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_registrations(1)">
+        <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_Registrations(1)">
             <i class="fas fa-angle-right"></i>
         </button>
         <button class="w3-btn w3-red w3-display-topright w3-large" onclick="document.getElementById('regs_modal').style.display='none'">
