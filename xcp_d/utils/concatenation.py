@@ -368,14 +368,11 @@ def concatenate_derivatives(
                         for i_file, preproc_file in enumerate(preproc_files):
                             dvar = compute_dvars(read_ndata(preproc_file.path, mask))
                             dvar[0] = np.mean(dvar)
-                            print(preproc_file.path)
-                            print(dvar.shape)
                             dvar = dvar[runwise_dummy_scans[i_file] :]
-                            print(dvar.shape)
                             raw_dvars.append(dvar)
-                            print()
+
                         raw_dvars = np.concatenate(raw_dvars)
-                        print(raw_dvars.shape)
+
                         # Censor DVARS
                         raw_dvars = raw_dvars[tmask_bool]
 
@@ -543,7 +540,6 @@ def concatenate_tsv_files(tsv_files, fileout):
     fileout : str
         Path to the file that will be written out.
     """
-    print(f"Creating {fileout} from {', '.join([f.path for f in tsv_files])}")
     # TODO: Support headers in timeseries files
     if tsv_files[0].path.endswith("timeseries.tsv"):
         # timeseries files have no header
