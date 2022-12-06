@@ -5,20 +5,20 @@
     - session
 
     anatomical_interactive_plots:
-    - image_types
+    - image_types[]
     - mosaic_file{image_type}
     - png_imgs{image_type}[]
 
     anatomical_static_plots:
-    - image_type
-    - imgs[]
+    - img_types
+    - all_imgs{img_type}[]
+    - titles
 
     concatenated_task_static_plots:
     - prereg_img
     - postreg_img
 
     task_static_plots:
-    - files[]
     - tasks[]
     - runs[]
     - task_in_t1w_imgs[]

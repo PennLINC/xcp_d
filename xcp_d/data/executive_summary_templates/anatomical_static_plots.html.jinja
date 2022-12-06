@@ -1,3 +1,11 @@
+<!--
+    Make a section for static anatomical registration images.
+
+    Inputs:
+    - img_types
+    - all_imgs{img_type}[]
+    - titles
+-->
 <section id="Anat">
     <div class="w3-container">
         <div class="w3-row-padding">
@@ -7,34 +15,25 @@
         {% for img_type in img_types %}
 
             {% set imgs = all_imgs[img_type] %}
-            {% set img_counter = 0%}
-            {% for img in imgs %}
+            {% set img_counter = 0 %}
+            {% for i_img, img in enumerate(imgs) %}
                 <div class="w3-row-padding">
-                    <div class="w3-col l1 label2">Atlas in Subcorticals</div>
+                    <div class="w3-col l1 label2">{{ titles[i_img] }}</div>
+
                     <div class="w3-col l11">
                     {% if img is not None %}
                         {% img_counter += 1 %}
-                        <img src="{{ img }}" onclick="open_regs_modal_to_index(img_counter)">
+                        <img src="{{ img }}" onclick="open_{{ img_type }}_slider_to_index(img_counter)">
                     {% else %}
                         <div class="w3-container w3-pale-red label3">Image Not Available</div>
                         <div class="w3-container w3-pale-red label3"><br></div>
                     {% endif %}
                     </div>
+
                 </div>
             {% endfor %}
 
         {% endfor %}
-
-        <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_{{ image_type }}pngs(-1)">
-            <i class="fas fa-angle-left"></i>
-        </button>
-        <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_{{ image_type }}pngs(1)">
-            <i class="fas fa-angle-right"></i>
-        </button>
-
-        <button class="w3-btn w3-red w3-display-topright w3-large"
-            onclick="document.getElementById('{{ image_type }}_modal').style.display='none'"><i class="fa fa-close"></i>
-        </button>
 
     </div>
 </section>

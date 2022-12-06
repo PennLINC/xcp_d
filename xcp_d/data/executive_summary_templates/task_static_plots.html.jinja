@@ -1,5 +1,15 @@
 <!--
     Start the tasks section and  put in the column headings for the task-specific data.
+
+    Inputs:
+    - tasks[]
+    - runs[]
+    - task_in_t1w_imgs[]
+    - t1w_in_task_imgs[]
+    - bold_imgs[]
+    - boldref_imgs[]
+    - prereg_imgs[]
+    - postreg_imgs[]
 -->
 <section id="Tasks">
     <div class="w3-container">
@@ -7,7 +17,7 @@
             <div class="w3-center"><h2>Functional Data</h2></div>
             <div>
 
-                {% for i in range(len(files)) %}
+                {% for i in range(len(tasks)) %}
 
                     {% set task = tasks[i] %}
                     {% set run = runs[i] %}
@@ -28,35 +38,30 @@
                     <!--START-->
                     <!--Full Row-->
                     <div class="w3-row-padding">
-                        <div class="w3-col l1 label2">{{ row_label }}</div>
+                        <div class="w3-col l1 label2">Task in T1</div>
                         <div class="w3-col l11">
-                            {% if img_available %}
-                                <img src="{{ row_img }}" onclick="open_{{ row_modal }}_to_index({{ row_idx }})">
+                            {% if task_in_t1w_img is not None %}
+                                <img src="{{ task_in_t1w_img }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
                             {% else %}
                                 <div class="w3-container w3-pale-red label3">Image Not Available</div>
                                 <div class="w3-container w3-pale-red label3"><br></div>
                             {% endif %}
                         </div>
                     </div>
-
-                    <div class="w3-row-padding">
-                        <div class="w3-col l1 label2">Task in T1</div>
-                        <div class="w3-col l11"><img src="{{ task_in_t1w_img }}" onclick="open_regs_modal_to_index(5)"></div>
-                    </div>
                     <!--END-->
 
                     <!--START-->
                     <!--Full Row-->
                     <div class="w3-row-padding">
-                        <div class="w3-col l1 label2">{{ row_label }}</div>
-                        <div class="w3-col l11">
-                            <img src="{{ row_img }}" onclick="open_{{ row_modal }}_to_index({{ row_idx }})">
-                        </div>
-                    </div>
-
-                    <div class="w3-row-padding">
                         <div class="w3-col l1 label2">T1 in Task</div>
-                        <div class="w3-col l11"><img src="{{ t1w_in_task_img }}" onclick="open_regs_modal_to_index(6)"></div>
+                        <div class="w3-col l11"></div>
+                            {% if t1w_in_task_img is not None %}
+                                <img src="{{ t1w_in_task_img }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
+                            {% else %}
+                                <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                <div class="w3-container w3-pale-red label3"><br></div>
+                            {% endif %}
+                        </div>
                     </div>
                     <!--END-->
 
@@ -66,30 +71,30 @@
                             <!--START-->
                             <!--Half Row-->
                             <div  class="w3-row-padding">
-                                <div class="w3-col l2 label2">{{ row_label }}</div>
-                                <div class="w3-col l9">
-                                    <img src="{{ row_img }}" onclick="open_{{ row_modal }}_to_index({{ row_idx }})">
-                                </div>
-                            </div>
-
-                            <div class="w3-row-padding">
                                 <div class="w3-col l2 label2">BOLD</div>
-                                <div class="w3-col l9"><img src="{{ bold_img }}" onclick="open_img_modal_to_index(3)"></div>
+                                <div class="w3-col l9">
+                                    {% if bold_img is not None %}
+                                        <img src="{{ bold_img }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
+                                    {% else %}
+                                        <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                        <div class="w3-container w3-pale-red label3"><br></div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <!--END-->
 
                             <!--START-->
                             <!--Half Row-->
                             <div  class="w3-row-padding">
-                                <div class="w3-col l2 label2">{{ row_label }}</div>
-                                <div class="w3-col l9">
-                                    <img src="{{ row_img }}" onclick="open_{{ row_modal }}_to_index({{ row_idx }})">
-                                </div>
-                            </div>
-
-                            <div class="w3-row-padding">
                                 <div class="w3-col l2 label2">Reference</div>
-                                <div class="w3-col l9"><img src="{{ boldref_img }}" onclick="open_img_modal_to_index(4)"></div>
+                                <div class="w3-col l9">
+                                    {% if boldref_img is not None %}
+                                        <img src="{{ boldref_img }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
+                                    {% else %}
+                                        <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                        <div class="w3-container w3-pale-red label3"><br></div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <!--END-->
 
@@ -98,30 +103,30 @@
                         <!--START-->
                         <!--Quarter Row-->
                         <div class="w3-quarter">
-                            <div class="w3-row w3-center label1">{{ row_label }}</div>
-                            <div class="w3-row">
-                                <img src="{{ row_img }}" onclick="open_{{ row_modal }}_to_index({{ row_idx }})">
-                            </div>
-                        </div>
-
-                        <div class="w3-quarter">
                             <div class="w3-row w3-center label1">Pre-Regression</div>
-                            <div class="w3-row"><img src="{{ prereg_img }}" onclick="open_img_modal_to_index(5)"></div>
+                            <div class="w3-row">
+                                {% if prereg_img is not None %}
+                                    <img src="{{ prereg_img }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
+                                {% else %}
+                                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                    <div class="w3-container w3-pale-red label3"><br></div>
+                                {% endif %}
+                            </div>
                         </div>
                         <!--END-->
 
                         <!--START-->
                         <!--Quarter Row-->
                         <div class="w3-quarter">
-                            <div class="w3-row w3-center label1">{{ row_label }}</div>
-                            <div class="w3-row">
-                                <img src="{{ row_img }}" onclick="open_{{ row_modal }}_to_index({{ row_idx }})">
-                            </div>
-                        </div>
-
-                        <div class="w3-quarter">
                             <div class="w3-row w3-center label1">Post-Regression</div>
-                            <div class="w3-row"><img src="{{ postreg_img }}" onclick="open_img_modal_to_index(6)"></div>
+                            <div class="w3-row">
+                                {% if postreg_img is not None %}
+                                    <img src="{{ postreg_img }}" onclick="open_{{ row_modal }}_modal_to_index({{ row_idx }})">
+                                {% else %}
+                                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                    <div class="w3-container w3-pale-red label3"><br></div>
+                                {% endif %}
+                            </div>
                         </div>
                         <!--END-->
                     </div>
