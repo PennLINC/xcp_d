@@ -162,12 +162,31 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
         # create confound regressors
 
         mvreg = pd.read_csv(k + "/Movement_Regressors.txt", header=None, delimiter=r"\s+")
-        mvreg = mvreg.iloc[:, 0:6]
-        mvreg.columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+        mvreg = mvreg.iloc[:, :]
+        mvreg.columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z",
+                         "trans_x_derivative1", "trans_y_derivative1", "trans_z_derivative1",
+                         "rot_x_derivative1", "rot_y_derivative1", "rot_z_derivative1"]
         # convert rot to rad
         mvreg["rot_x"] = mvreg["rot_x"] * np.pi / 180
         mvreg["rot_y"] = mvreg["rot_y"] * np.pi / 180
         mvreg["rot_z"] = mvreg["rot_z"] * np.pi / 180
+        mvreg["rot_x_derivative1"] = mvreg["rot_x_derivative1"] * np.pi / 180
+        mvreg["rot_y_derivative1"] = mvreg["rot_y_derivative1"] * np.pi / 180
+        mvreg["rot_z_derivative1"] = mvreg["rot_z_derivative1"] * np.pi / 180
+        mvreg["trans_x_power2"] = mvreg["trans_x"] ** 2
+
+        # get derivatives and powers
+        mvreg["trans_x_derivative1_power2"] = mvreg["trans_x_derivative1"] ** 2
+        mvreg["rot_x_power2"] = mvreg["rot_x"] ** 2
+        mvreg["rot_x_derivative1_power2"] = mvreg["rot_x_derivative1"] ** 2
+        mvreg["trans_y_power2"] = mvreg["trans_y"] ** 2
+        mvreg["trans_y_derivative1_power2"] = mvreg["trans_y_derivative1"] ** 2
+        mvreg["rot_y_power2"] = mvreg["rot_y"] ** 2
+        mvreg["rot_y_derivative1_power2"] = mvreg["rot_y_derivative1"] ** 2
+        mvreg["trans_z_power2"] = mvreg["trans_z"] ** 2
+        mvreg["trans_z_derivative1_power2"] = mvreg["trans_z_derivative1"] ** 2
+        mvreg["rot_z_power2"] = mvreg["rot_z"] ** 2
+        mvreg["rot_z_derivative1_power2"] = mvreg["rot_z_derivative1"] ** 2
 
         # use masks: brain,csf and wm mask to extract timeseries
         bolddata = k + "/" + filenamex + ".nii.gz"
@@ -180,7 +199,23 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
         brainreg = pd.DataFrame(
             {"global_signal": gsreg, "white_matter": wmreg, "csf": csfreg, "rmsd": rsmd}
         )
+
+        # get derivatives and powers
         regressors = pd.concat([mvreg, brainreg], axis=1)
+        regressors["global_signal_derivative1"] = pd.DataFrame(
+            np.diff(regressors["global_signal"].tonumpy(),
+                    prepend=0))
+        regressors["global_signal_derivative1_power2"] = regressors["global_signal_derivative1"]**2
+
+        regressors["white_matter_derivative1"] = pd.DataFrame(
+            np.diff(regressors["white_matter"].tonumpy(),
+                    prepend=0))
+        regressors["white_matter_derivative1_power2"] = regressors["white_matter_derivative1"]**2
+
+        regressors["csf_derivative1"] = pd.DataFrame(
+            np.diff(regressors["csf"].tonumpy(),
+                    prepend=0))
+        regressors["csf_derivative1_power2"] = regressors["csf_derivative1"]**2
 
         # write out the json
         # jsonreg = pd.DataFrame({'LR': [1, 2, 3]})  # just a fake json
