@@ -22,7 +22,7 @@
                     <div class="w3-col l1 label2">{{ title }}</div>
 
                     <div class="w3-col l11">
-                    {% if img != "None" %}
+                    {% if registration_file != "None" %}
                         {% set img_counter = img_counter + 1 %}
                         <img src="{{ registration_file }}" onclick="open_{{ img_type }}_slider_to_index(img_counter)">
                     {% else %}

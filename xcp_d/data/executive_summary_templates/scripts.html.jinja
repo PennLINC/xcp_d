@@ -17,7 +17,9 @@
 
     Not sure if this will work.
 -->
-<script src="brainsprite.js"></script>
+<script>
+{{ include_file("./brainsprite.js") }}
+</script>
 
 <!--
     2/3. JQuery imports.
@@ -50,7 +52,7 @@
 -->
 
 {% if "T1w" in structural_files.keys() %}
-    {{ build_sprite_loader_script("T1") }}
+    {{ build_sprite_loader_script("T1w") }}
 {% endif %}
 
 <!--
@@ -58,7 +60,7 @@
     Modify sprite_load_script template for each image type.
 -->
 {% if "T2w" in structural_files.keys() %}
-    {{ build_sprite_loader_script("T2") }}
+    {{ build_sprite_loader_script("T2w") }}
 {% endif %}
 
 <!--
@@ -96,18 +98,18 @@
     6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
 -->
 {% if "T1w" in structural_files.keys() %}
-    {{ build_slider_script("T1", "T1") }}
+    {{ build_slider_script("T1w", "T1w") }}
 {% endif %}
 
 <!--
     7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
 -->
 {% if "T2w" in structural_files.keys() %}
-    {{ build_slider_script("T2", "T2") }}
+    {{ build_slider_script("T2w", "T2w") }}
 {% endif %}
 
 <!--
     8. show_Images and open_img_modal_to_index
     Seems to be used on the BOLD carpet plots, but isn't present in constants.
 -->
-{% include 'modal_script.html.jinja' %}
+{% include "modal_script.html.jinja" %}
