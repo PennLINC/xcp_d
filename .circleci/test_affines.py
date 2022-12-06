@@ -1,9 +1,10 @@
 """Confirm affines are not changing."""
+import sys
+
 import nibabel as nb
-import os
 import numpy as np
 from bids import BIDSLayout
-import sys
+
 data_dir = sys.argv[1]
 out_dir = sys.argv[2]
 input_type = sys.argv[3]
@@ -71,7 +72,8 @@ def test_affines(data_dir, out_dir, input_type):
         assert nb.load(bold_file)._nifti_header.get_intent() == nb.load(
             denoised_file)._nifti_header.get_intent()
     else:
-        assert np.array_equal(nb.load(bold_file).affine, nb.load(denoised_file).affine)
+        if not np.array_equal(nb.load(bold_file).affine, nb.load(denoised_file).affine):
+            raise AssertionError(f"Affines do not match:\n\t{bold_file}\n\t{denoised_file}")
 
     print("No affines changed.")
 
