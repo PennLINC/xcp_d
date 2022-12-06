@@ -152,12 +152,21 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    layout = BIDSLayout(
-        str(bids_dir),
-        validate=bids_validate,
-        derivatives=True,
-        config=["bids", "derivatives"],
-    )
+    if input_type != 'hcp':
+        layout = BIDSLayout(
+            str(bids_dir),
+            validate=bids_validate,
+            derivatives=True,
+            config=["bids", "derivatives"],
+        )
+    else:
+        layout = BIDSLayout(
+            str(bids_dir),
+            validate=bids_validate,
+            derivatives=False,
+            config=["bids", "derivatives"],
+        )
+
     # TODO: Add and test fsaverage.
     default_allowed_spaces = {
         "cifti": ["fsLR"],
@@ -239,8 +248,6 @@ def collect_data(
 
     for space in allowed_spaces:
         queries["bold"]["space"] = space
-        if input_type == 'hcp':
-            queries["bold"]["suffix"] = "boldref"
         bold_data = layout.get(**queries["bold"])
         if bold_data:
             # will leave the best available space in the query
@@ -265,6 +272,9 @@ def collect_data(
         )["nifti"]
         for space in temp_allowed_spaces:
             temp_bold_query["space"] = space
+            if input_type == 'hcp':
+                temp_bold_query["desc"] = None
+                temp_bold_query["suffix"] = "boldref"
             nifti_bold_data = layout.get(**temp_bold_query)
             if nifti_bold_data:
                 queries["t1w_to_template_xform"]["to"] = space
@@ -289,8 +299,8 @@ def collect_data(
         queries["bold"]["density"] = densities[0]
 
     if input_type == 'hcp':
-            queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
-            queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
+        queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
+        queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
 
     subj_data = {
         dtype: sorted(
@@ -446,9 +456,9 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     if os.path.isfile(dataset_description):
         with open(dataset_description) as f:
             dataset_dict = json.load(f)
-
+    try:
         info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
-    else:
+    except:
         info_dict["version"] = "unknown"
 
     if input_type == "fmriprep":

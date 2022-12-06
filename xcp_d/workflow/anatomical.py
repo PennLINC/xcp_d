@@ -124,6 +124,17 @@ def init_t1w_wf(
                 (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
             ]
         )
+        nothingnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
+            name="nothingnode",
+        )
+
+        workflow.connect(
+            [(inputnode, nothingnode, [("t1w", "t1w")]),
+             (inputnode, nothingnode, [("t1seg", "t1seg")]),
+             ]
+        )
+
         # fmt:on
     else:
         # #TM: need to replace MNI92FSL xfm with the correct

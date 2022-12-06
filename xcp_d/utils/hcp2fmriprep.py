@@ -61,7 +61,6 @@ def hcp2fmriprep(hcpdir, outdir, sub_id=None):
 
 def hcpfmriprepx(hcp_dir, out_dir, sub_id):
     """Do the internal work for hcp2fmriprep."""
-    print(sub_id)
     anat_dirx = hcp_dir
     # make new directory for anat and func
 
