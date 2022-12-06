@@ -30,7 +30,7 @@
     Modify sprite_load_script template for each image type.
 -->
 {% if T1 %}
-    {% include 'sprite_load_script.html.jinja' T1 %}
+    {{ build_sprite_loader_script("T1") }}
 {% endif %}
 
 <!--
@@ -38,21 +38,21 @@
     Modify sprite_load_script template for each image type.
 -->
 {% if T2 %}
-    {% include 'sprite_load_script.html.jinja' T2 %}
+    {{ build_sprite_loader_script("T2") }}
 {% endif %}
 
 <!--
     6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
 -->
 {% if T1 %}
-    {% include 'slider_script.html.jinja' T1 %}
+    {{ build_slider_script("T1", "T1") }}
 {% endif %}
 
 <!--
     7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
 -->
 {% if T2 %}
-    {% include 'slider_script.html.jinja' T2 %}
+    {{ build_slider_script("T2", "T2") }}
 {% endif %}
 
 <!--

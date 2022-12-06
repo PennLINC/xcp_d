@@ -2,8 +2,8 @@
     Make a section for static anatomical registration images.
 
     Inputs:
-    - img_types
-    - all_imgs{img_type}[]
+    - image_types
+    - all_imgs{image_type}[]
     - titles
 -->
 <section id="Anat">
@@ -12,11 +12,12 @@
             <div class="w3-center"><h2>Anatomical Data</h2></div>
         </div>
 
-        {% for img_type in img_types %}
+        {% for img_type in image_types %}
 
             {% set imgs = all_imgs[img_type] %}
             {% set img_counter = 0 %}
-            {% for i_img, img in enumerate(imgs) %}
+            {% for i_img in range(imgs | length) %}
+                {% set img = imgs[i_img] %}
                 <div class="w3-row-padding">
                     <div class="w3-col l1 label2">{{ titles[i_img] }}</div>
 

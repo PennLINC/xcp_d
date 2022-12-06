@@ -2,27 +2,29 @@
     The slider scripts that will show the next or previous image in a given class.
     Needs the following values: modal_id, image_class.
 -->
-<script>
-    var {{ image_class }}Idx = 1;
-    show_{{ image_class }}({{ image_class }}Idx)
+{% macro build_slider_script(image_class, modal_id) %}
+    <script>
+        var {{ image_class }}Idx = 1;
+        show_{{ image_class }}({{ image_class }}Idx)
 
-    function change_{{ image_class }}(n) {
-        show_{{ image_class }}({{ image_class }}Idx += n)
-    }
-
-    function show_{{ image_class }}(n) {
-        var i;
-        var x = document.getElementsByClassName("{{ image_class }}");
-        if (n > x.length) { {{ image_class }}Idx = 1 }
-        if (n < 1) { {{ image_class }}Idx = x.length }
-        for (i = 0; i < x.length; i++) {
-            x[i].style.display = "none";
+        function change_{{ image_class }}(n) {
+            show_{{ image_class }}({{ image_class }}Idx += n)
         }
-        x[{{ image_class }}Idx-1].style.display = "block";
-    }
 
-    function open_{{ modal_id }}_slider_to_index(idx) {
-        show_{{ image_class }}({{ image_class }}Idx = idx)
-        document.getElementById("{{ modal_id }}").style.display='block'
-    }
-</script>
+        function show_{{ image_class }}(n) {
+            var i;
+            var x = document.getElementsByClassName("{{ image_class }}");
+            if (n > x.length) { {{ image_class }}Idx = 1 }
+            if (n < 1) { {{ image_class }}Idx = x.length }
+            for (i = 0; i < x.length; i++) {
+                x[i].style.display = "none";
+            }
+            x[{{ image_class }}Idx-1].style.display = "block";
+        }
+
+        function open_{{ modal_id }}_slider_to_index(idx) {
+            show_{{ image_class }}({{ image_class }}Idx = idx)
+            document.getElementById("{{ modal_id }}").style.display='block'
+        }
+    </script>
+{% endmacro %}
