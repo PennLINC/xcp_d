@@ -16,57 +16,55 @@ def test_affines(data_dir, out_dir, input_type):
     xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=False)
     if input_type == "cifti":  # Get the .dtseries.nii
         denoised_files = xcp_layout.get(
-            return_type="file",
-            run=1,
-            extension=".dtseries.nii",
             invalid_filters="allow",
             datatype="func",
+            run=1,
+            extension=".dtseries.nii",
         )
         space = denoised_files[0].get_entities()["space"]
         bold_files = fmri_layout.get(
+            invalid_filters="allow",
+            datatype="func",
             run=1,
             space=space,
-            return_type="file",
-            invalid_filters="allow",
             extension=".dtseries.nii",
-            datatype="func",
         )
 
     elif input_type == "nifti":  # Get the .nii.gz
         # Problem: it's collecting native-space data
         denoised_files = xcp_layout.get(
-            return_type="file", run=1, suffix="bold", extension=".nii.gz", datatype="func"
+            datatype="func",
+            run=1,
+            suffix="bold",
+            extension=".nii.gz",
         )
         space = denoised_files[0].get_entities()["space"]
         bold_files = fmri_layout.get(
-            return_type="file",
             invalid_filters="allow",
+            datatype="func",
             run=1,
             space=space,
             suffix="bold",
             extension=".nii.gz",
-            datatype="func",
         )
 
     else:  # Nibabies
         denoised_files = xcp_layout.get(
-            return_type="file",
-            suffix="bold",
-            space="MNIInfant",
-            extension=".nii.gz",
             datatype="func",
+            space="MNIInfant",
+            suffix="bold",
+            extension=".nii.gz",
         )
         bold_files = fmri_layout.get(
-            extension=".nii.gz",
-            suffix="bold",
-            return_type="file",
-            space="MNIInfant",
             invalid_filters="allow",
             datatype="func",
+            space="MNIInfant",
+            suffix="bold",
+            extension=".nii.gz",
         )
 
-    bold_file = bold_files[0]
-    denoised_file = denoised_files[0]
+    bold_file = bold_files[0].path
+    denoised_file = denoised_files[0].path
 
     if input_type == "cifti":
         assert (
