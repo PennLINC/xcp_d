@@ -31,6 +31,7 @@ def test_affines(data_dir, out_dir, input_type):
         )
 
     elif input_type == 'nifti':  # Get the .nii.gz
+        # Problem: it's collecting native-space data
         bold_file = fmri_layout.get(
             return_type="file",
             invalid_filters='allow',

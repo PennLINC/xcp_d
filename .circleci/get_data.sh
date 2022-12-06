@@ -212,6 +212,8 @@ get_bids_data() {
     # ds001419 fMRIPrep derivatives cloned from https://github.com/OpenNeuroDerivatives/ds001419-fmriprep
     # One subject, multiple runs, two tasks, AROMA confounds, FreeSurfer derivatives.
     # fMRIPrep version 22.0.0.
+    # We have shortened each run (except for run 00, which has 23 volumes) to the first 60 volumes.
+    # This includes niftis, ciftis, giftis, confounds files, and the AROMA mixing matrices.
     elif [[ ${DS} = "ds001419-fmriprep" ]]
     then
       dataset_dir="$TEST_DATA_DIR/ds001419-fmriprep"
