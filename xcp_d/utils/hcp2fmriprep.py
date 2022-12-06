@@ -225,7 +225,6 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
             np.diff(regressors["white_matter"].to_numpy(), prepend=0)
         )
         regressors["white_matter_derivative1_power2"] = regressors["white_matter_derivative1"] ** 2
-    
         regressors["white_matter_power2"] = regressors["white_matter"]**2
         regressors["csf_power2"] = regressors["csf"]**2
         regressors["csf_derivative1"] = pd.DataFrame(

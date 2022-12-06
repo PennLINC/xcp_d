@@ -152,7 +152,7 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    if input_type != "hcp" or "dcan":
+    if input_type != "hcp" or input_type != "dcan":
         layout = BIDSLayout(
             str(bids_dir),
             validate=bids_validate,
@@ -272,7 +272,7 @@ def collect_data(
         )["nifti"]
         for space in temp_allowed_spaces:
             temp_bold_query["space"] = space
-            if input_type == "hcp" or "dcan":
+            if input_type == "hcp" or input_type == "dcan":
                 temp_bold_query["desc"] = None
                 temp_bold_query["suffix"] = "boldref"
             nifti_bold_data = layout.get(**temp_bold_query)
@@ -298,7 +298,7 @@ def collect_data(
     if len(densities) > 1:
         queries["bold"]["density"] = densities[0]
 
-    if input_type == "hcp" or "dcan":
+    if input_type == "hcp" or input_type == "dcan":
         queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
         queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
 
@@ -358,7 +358,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti and input_type != "hcp" or "dcan":
+    if not cifti and (input_type != "hcp" or input_type != "dcan"):
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
@@ -378,7 +378,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             suffix="xfm",
         )
 
-    if not cifti and input_type == "hcp" or "dcan":
+    if not cifti and (input_type == "hcp" or input_type == "dcan"):
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
