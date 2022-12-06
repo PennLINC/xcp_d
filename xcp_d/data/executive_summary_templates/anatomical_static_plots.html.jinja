@@ -21,8 +21,8 @@
                     <div class="w3-col l1 label2">{{ titles[i_img] }}</div>
 
                     <div class="w3-col l11">
-                    {% if img is not None %}
-                        {% img_counter += 1 %}
+                    {% if img != "None" %}
+                        {% set img_counter = img_counter + 1 %}
                         <img src="{{ img }}" onclick="open_{{ img_type }}_slider_to_index(img_counter)">
                     {% else %}
                         <div class="w3-container w3-pale-red label3">Image Not Available</div>
