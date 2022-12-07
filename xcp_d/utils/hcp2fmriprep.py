@@ -258,7 +258,7 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
         )
 
         # functional files
-        hcp_ref = k + "/" + filenamex + "_SBRef.nii.gz"
+        hcp_ref = k + "/SBRef_dc.nii.gz"
         prep_ref = (
             funcdir
             + "/sub-"
