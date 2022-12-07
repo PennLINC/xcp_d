@@ -92,6 +92,7 @@ def init_boldpostprocess_wf(
                 output_dir=".",
                 fd_thresh=0.2,
                 n_runs=1,
+                input_type="fmriprep",
                 despike=False,
                 dcan_qc=False,
                 layout=None,
@@ -109,6 +110,8 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
+    input_type: str
+        type of input
     bold_file: str
         bold file for post processing
     %(head_radius)s
@@ -153,8 +156,6 @@ def init_boldpostprocess_wf(
         Fed from the subject workflow.
     fmriprep_confounds_tsv
         Loaded in this workflow.
-    input_type
-        Input type.
 
     References
     ----------

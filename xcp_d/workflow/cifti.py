@@ -92,9 +92,8 @@ def init_ciftipostprocess_wf(
                 despike=False,
                 dcan_qc=False,
                 n_runs=1,
-                input_type,
+                input_type="fmriprep",
                 layout=None,
-                input_type,
                 name='cifti_postprocess_wf',
             )
 
