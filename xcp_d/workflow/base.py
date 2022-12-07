@@ -502,7 +502,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, bold_postproc_wf, [
                 ('t1w', 'inputnode.t1w'),
-                ('t1w_seg', 'inputnode.t1seg'),
                 ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
             ]),
         ])
