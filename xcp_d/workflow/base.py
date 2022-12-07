@@ -431,7 +431,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # fmt:off
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
-                             ('t1w_seg', 'inputnode.t1seg'),
+                             ('t1w_seg', 'inputnode.t1w_seg'),
                              ('t1w_to_template_xform', 'inputnode.t1w_to_template')]),
     ])
     # fmt:on
@@ -450,7 +450,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # fmt:off
     workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                   ('t1w_seg', 'inputnode.t1seg')])])
+                                                   ('t1w_seg', 'inputnode.t1w_seg')])])
     # fmt:on
 
     if process_surfaces:

@@ -77,14 +77,14 @@ def init_t1w_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1seg : str
+    t1w_seg : str
         Path to the T1w segmentation file.
     %(t1w_to_template)s
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
+        niu.IdentityInterface(fields=["t1w", "t1w_seg", "t1w_to_template"]),
         name="inputnode",
     )
 
@@ -121,7 +121,7 @@ def init_t1w_wf(
         workflow.connect(
             [
                 (inputnode, ds_t1wmni, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+                (inputnode, ds_t1wseg, [("t1w_seg", "in_file")]),
             ]
         )
         # fmt:on
@@ -181,7 +181,7 @@ def init_t1w_wf(
             [
                 (inputnode, t1w_transform, [("t1w", "input_image"),
                                             ("t1w_to_template", "transforms")]),
-                (inputnode, seg_transform, [("t1seg", "input_image"),
+                (inputnode, seg_transform, [("t1w_seg", "input_image"),
                                             ("t1w_to_template", "transforms")]),
                 (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
                 (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
@@ -193,7 +193,7 @@ def init_t1w_wf(
     workflow.connect(
         [
             (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
+            (inputnode, ds_t1wseg, [("t1w_seg", "source_file")]),
         ]
     )
     # fmt:on

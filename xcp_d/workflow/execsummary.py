@@ -58,12 +58,12 @@ def init_brainsprite_wf(
     Inputs
     ------
     t1w
-    t1seg
+    t1w_seg
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        niu.IdentityInterface(fields=["t1w", "t1w_seg"]),
         name="inputnode",
     )
     ribbon2statmap = pe.Node(
@@ -150,7 +150,7 @@ def init_brainsprite_wf(
     if use_t1seg_as_ribbon:
         LOGGER.info("Using T1w segmentation for ribbon.")
         # fmt:off
-        workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
+        workflow.connect([(inputnode, ribbon2statmap, [("t1w_seg", "ribbon")])])
         # fmt:on
     else:
         ribbon2statmap.inputs.ribbon = ribbon
