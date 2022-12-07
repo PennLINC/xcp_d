@@ -281,7 +281,7 @@ def collect_data(
                     queries["template_to_t1w_xform"]["from"] = space
                     break
 
-        if input_type in ("hcp", "dcan"):  # HCP and DCAN files don't have
+        else:  # HCP and DCAN files don't have
             # nifti data, we will use the boldref
             temp_bold_query["desc"] = None
             temp_bold_query["suffix"] = "boldref"
