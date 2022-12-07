@@ -288,7 +288,7 @@ def collect_data(
             temp_bold_query["space"] = "MNI152NLin6Asym"
             queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
             queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
-     
+
         nifti_bold_data = layout.get(**temp_bold_query)
 
         if not nifti_bold_data:
