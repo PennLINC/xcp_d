@@ -271,6 +271,7 @@ def collect_data(
             input_type,
             default_allowed_spaces,
         )["nifti"]
+
         if input_type not in ("hcp", "dcan"):
             for space in temp_allowed_spaces:
                 temp_bold_query["space"] = space
@@ -284,8 +285,10 @@ def collect_data(
             # nifti data, we will use the boldref
             temp_bold_query["desc"] = None
             temp_bold_query["suffix"] = "boldref"
-            temp_bold_query["space"] = "MNI152NLin2009cAsym"
+            temp_bold_query["space"] = "MNI152NLin6Asym"
+
         nifti_bold_data = layout.get(**temp_bold_query)
+
         if nifti_bold_data:
             queries["t1w_to_template_xform"]["to"] = space
             queries["template_to_t1w_xform"]["from"] = space
