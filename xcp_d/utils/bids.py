@@ -309,101 +309,102 @@ def collect_data(
     return layout, subj_data
 
 
-def collect_freesurfer_data(preproc_dir,layout, input_type, participant_label):
-    from pathlib import Path
-    import fnmatch
+def collect_surface_data(layout, participant_label):
+    # Try to collect fsLR-space, 32k-resolution surface files.
+    # Default to native T1w-space files if necessary.
 
-    freesurfer_data = {}
+    # Surfaces to use for brainsprite and anatomical workflow
+    queries = {
+        "lh_inflated_surf": {
+            "hemi": "L",
+            "suffix": "inflated",
+        },
+        "rh_inflated_surf": {
+            "hemi": "R",
+            "suffix": "inflated",
+        },
+        "lh_midthickness_surf": {
+            "hemi": "L",
+            "suffix": "midthickness",
+        },
+        "rh_midthickness_surf": {
+            "hemi": "R",
+            "suffix": "midthickness",
+        },
+        "lh_pial_surf": {
+            "hemi": "L",
+            "suffix": "pial",
+        },
+        "rh_pial_surf": {
+            "hemi": "R",
+            "suffix": "pial",
+        },
+        "lh_smoothwm_surf": {
+            "hemi": "L",
+            "suffix": "smoothwm",
+        },
+        "rh_smoothwm_surf": {
+            "hemi": "R",
+            "suffix": "smoothwm",
+        },
+    }
 
-    if input_type in ("dcan", "hcp"):
-        # TODO: Replace with layout.get call(s). No reason to search through a list of strings.
-        all_files = list(layout.get_files())
-
-        L_inflated_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
-        )[0]
-        R_inflated_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-R_inflated.surf.gii"
-        )[0]
-        L_midthick_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-L_midthickness.surf.gii"
-        )[0]
-        R_midthick_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
-        )[0]
-        L_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii")[0]
-        R_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii")[0]
-        L_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii")[
-            0
-        ]
-        R_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii")[
-            0
-        ]
-        freesurfer_data["surf_lh_inflated"] = L_inflated_surf
-        freesurfer_data["surf_rh_inflated"] = R_inflated_surf
-        freesurfer_data["surf_lh_midthickness"] = L_midthick_surf
-        freesurfer_data["surf_rh_midthickness"] = R_midthick_surf
-        freesurfer_data["surf_lh_pial"] = L_pial_surf
-        freesurfer_data["surf_rh_pial"] = R_pial_surf
-        freesurfer_data["surf_lh_wm"] = L_wm_surf
-        freesurfer_data["surf_rh_wm"] = R_wm_surf
-
+    # First, try to grab the first file.
+    # If it's not available, switch to native T1w-space data.
+    temp_query = queries["lh_inflated_surf"]
+    temp_files = layout.get(
+        return_type="file",
+        subject=participant_label,
+        datatype="anat",
+        space="fsLR",
+        res="32k",
+        extension=".surf.gii",
+        **temp_query,
+    )
+    if len(temp_files) == 0:
+        LOGGER.info("No standard-space surfaces found.")
+        standard_space_surfaces = False
     else:
-        # verify freesurfer directory
-        preproc_path = Path(preproc_dir).absolute()
+        if len(temp_files) > 1:
+            LOGGER.warning("More than one standard-space surface found.")
 
-        # for fmriprep and nibabies versions before XXXX,
-        # the freesurfer dir was placed at the same level as the main derivatives
-        freesurfer_paths = [fp for fp in preproc_path.parent.glob("*freesurfer*") if fp.is_dir()]
-        if len(freesurfer_paths) == 0:
-            # for later versions, the freesurfer dir is placed in sourcedata
-            # within the main derivatives folder
-            freesurfer_paths = [
-                fp for fp in preproc_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
-            ]
+        standard_space_surfaces = True
 
-        if len(freesurfer_paths) == 0:
-            LOGGER.warning("No FreeSurfer derivatives found.")
+    if standard_space_surfaces:
+        query_extras = {
+            "space": "fsLR",
+            "res": "32k",
+        }
+    else:
+        query_extras = {
+            "space": None,
+        }
 
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                extension=".surf.gii",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in queries.items()
+    }
+
+    out_surface_files = {}
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 0:
+            out_surface_files[dtype] = None
         else:
-            freesurfer_path = freesurfer_paths[0]
-            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
+            if len(surface_files_) > 1:
+                LOGGER.warning("More than one surface found.")
 
-        if freesurfer_path is not None and os.path.isdir(freesurfer_path):
-            freesurfer_subject_path = os.path.join(freesurfer_path, participant_label)
+            out_surface_files[dtype] = surface_files_[0]
 
-            L_inflated_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
-            )[0]
-            R_inflated_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_inflated.surf.gii"
-            )[0]
-            L_midthick_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_midthickness.surf.gii"
-            )[0]
-            R_midthick_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
-            )[0]
-            L_pial_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii"
-            )[0]
-            R_pial_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii"
-            )[0]
-            L_wm_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii"
-            )[0]
-            R_wm_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii"
-            )[0]
-            freesurfer_data["surf_lh_inflated"] = L_inflated_surf
-            freesurfer_data["surf_rh_inflated"] = R_inflated_surf
-            freesurfer_data["surf_lh_midthickness"] = L_midthick_surf
-            freesurfer_data["surf_rh_midthickness"] = R_midthick_surf
-            freesurfer_data["surf_lh_pial"] = L_pial_surf
-            freesurfer_data["surf_rh_pial"] = R_pial_surf
-            freesurfer_data["surf_lh_wm"] = L_wm_surf
-            freesurfer_data["surf_rh_wm"] = R_wm_surf
+    return out_surface_files, standard_space_surfaces
 
 
 def collect_run_data(layout, bold_file, cifti=False):

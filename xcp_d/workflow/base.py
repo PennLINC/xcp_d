@@ -21,6 +21,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
+    collect_surface_files,
     get_preproc_pipeline_info,
     write_dataset_description,
 )
@@ -333,6 +334,18 @@ def init_subject_wf(
     )
     LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
+    surface_data, standard_space_surfaces, surfaces_found = collect_surface_files(
+        layout=layout,
+        participant_label=subject_id,
+    )
+    if surfaces_found:
+        LOGGER.debug(
+            "Collected surface data:\n"
+            f"{yaml.dump(surface_data, default_flow_style=False, indent=4)}"
+        )
+    else:
+        LOGGER.warning("No surface files found.")
+
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
     preproc_files = subj_data["bold"]
@@ -346,6 +359,15 @@ def init_subject_wf(
                 "t1w_seg",
                 "template_to_t1w_xform",
                 "t1w_to_template_xform",
+                # surface files
+                "lh_inflated_surf",
+                "rh_inflated_surf",
+                "lh_midthickness_surf",
+                "rh_midthickness_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+                "lh_smoothwm_surf",
+                "rh_smoothwm_surf",
             ],
         ),
         name="inputnode",
@@ -356,6 +378,16 @@ def init_subject_wf(
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
     inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
     inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
+
+    # surface files
+    inputnode.inputs.lh_inflated_surf = surface_data["lh_inflated_surf"]
+    inputnode.inputs.rh_inflated_surf = surface_data["rh_inflated_surf"]
+    inputnode.inputs.lh_midthickness_surf = surface_data["lh_midthickness_surf"]
+    inputnode.inputs.rh_midthickness_surf = surface_data["rh_midthickness_surf"]
+    inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
+    inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
+    inputnode.inputs.lh_smoothwm_surf = surface_data["lh_smoothwm_surf"]
+    inputnode.inputs.rh_smoothwm_surf = surface_data["rh_smoothwm_surf"]
 
     workflow = Workflow(name=name)
 
@@ -449,23 +481,54 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     # fmt:off
-    workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                   ('t1w_seg', 'inputnode.t1w_seg')])])
+    workflow.connect([
+        (inputnode, brainsprite_wf, [
+            ('t1w', 'inputnode.t1w'),
+        ]),
+    ])
     # fmt:on
 
-    if process_surfaces:
+    if surfaces_found and (process_surfaces or standard_space_surfaces):
         anatomical_wf = init_anatomical_wf(
             layout=layout,
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
             input_type=input_type,
+            warp_to_standard=~standard_space_surfaces,
             omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
         )
 
         # fmt:off
-        workflow.connect([(inputnode, anatomical_wf, [("t1w", "inputnode.t1w")])])
+        workflow.connect([
+            (inputnode, anatomical_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("lh_inflated_surf", "inputnode.lh_inflated_surf"),
+                ("rh_inflated_surf", "inputnode.rh_inflated_surf"),
+                ("lh_midthickness_surf", "inputnode.lh_midthickness_surf"),
+                ("rh_midthickness_surf", "inputnode.rh_midthickness_surf"),
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),
+                ("rh_smoothwm_surf", "inputnode.rh_smoothwm_surf"),
+            ]),
+        ])
+        # fmt:on
+
+        # fmt:off
+        workflow.connect([
+            (anatomical_wf, brainsprite_wf, [
+                ("outputnode.lh_inflated_surf", "inputnode.lh_inflated_surf"),
+                ("outputnode.rh_inflated_surf", "inputnode.rh_inflated_surf"),
+                ("outputnode.lh_midthickness_surf", "inputnode.lh_midthickness_surf"),
+                ("outputnode.rh_midthickness_surf", "inputnode.rh_midthickness_surf"),
+                ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("outputnode.lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),
+                ("outputnode.rh_smoothwm_surf", "inputnode.rh_smoothwm_surf"),
+            ]),
+        ])
         # fmt:on
 
     # loop over each bold run to be postprocessed
