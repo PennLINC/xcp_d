@@ -309,6 +309,103 @@ def collect_data(
     return layout, subj_data
 
 
+def collect_freesurfer_data(preproc_dir,layout, input_type, participant_label):
+    from pathlib import Path
+    import fnmatch
+
+    freesurfer_data = {}
+
+    if input_type in ("dcan", "hcp"):
+        # TODO: Replace with layout.get call(s). No reason to search through a list of strings.
+        all_files = list(layout.get_files())
+
+        L_inflated_surf = fnmatch.filter(
+            all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
+        )[0]
+        R_inflated_surf = fnmatch.filter(
+            all_files, "*sub-*" + subject_id + "*hemi-R_inflated.surf.gii"
+        )[0]
+        L_midthick_surf = fnmatch.filter(
+            all_files, "*sub-*" + subject_id + "*hemi-L_midthickness.surf.gii"
+        )[0]
+        R_midthick_surf = fnmatch.filter(
+            all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
+        )[0]
+        L_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii")[0]
+        R_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii")[0]
+        L_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii")[
+            0
+        ]
+        R_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii")[
+            0
+        ]
+        freesurfer_data["surf_lh_inflated"] = L_inflated_surf
+        freesurfer_data["surf_rh_inflated"] = R_inflated_surf
+        freesurfer_data["surf_lh_midthickness"] = L_midthick_surf
+        freesurfer_data["surf_rh_midthickness"] = R_midthick_surf
+        freesurfer_data["surf_lh_pial"] = L_pial_surf
+        freesurfer_data["surf_rh_pial"] = R_pial_surf
+        freesurfer_data["surf_lh_wm"] = L_wm_surf
+        freesurfer_data["surf_rh_wm"] = R_wm_surf
+
+    else:
+        # verify freesurfer directory
+        preproc_path = Path(preproc_dir).absolute()
+
+        # for fmriprep and nibabies versions before XXXX,
+        # the freesurfer dir was placed at the same level as the main derivatives
+        freesurfer_paths = [fp for fp in preproc_path.parent.glob("*freesurfer*") if fp.is_dir()]
+        if len(freesurfer_paths) == 0:
+            # for later versions, the freesurfer dir is placed in sourcedata
+            # within the main derivatives folder
+            freesurfer_paths = [
+                fp for fp in preproc_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
+            ]
+
+        if len(freesurfer_paths) == 0:
+            LOGGER.warning("No FreeSurfer derivatives found.")
+
+        else:
+            freesurfer_path = freesurfer_paths[0]
+            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
+
+        if freesurfer_path is not None and os.path.isdir(freesurfer_path):
+            freesurfer_subject_path = os.path.join(freesurfer_path, participant_label)
+
+            L_inflated_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
+            )[0]
+            R_inflated_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-R_inflated.surf.gii"
+            )[0]
+            L_midthick_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-L_midthickness.surf.gii"
+            )[0]
+            R_midthick_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
+            )[0]
+            L_pial_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii"
+            )[0]
+            R_pial_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii"
+            )[0]
+            L_wm_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii"
+            )[0]
+            R_wm_surf = fnmatch.filter(
+                all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii"
+            )[0]
+            freesurfer_data["surf_lh_inflated"] = L_inflated_surf
+            freesurfer_data["surf_rh_inflated"] = R_inflated_surf
+            freesurfer_data["surf_lh_midthickness"] = L_midthick_surf
+            freesurfer_data["surf_rh_midthickness"] = R_midthick_surf
+            freesurfer_data["surf_lh_pial"] = L_pial_surf
+            freesurfer_data["surf_rh_pial"] = R_pial_surf
+            freesurfer_data["surf_lh_wm"] = L_wm_surf
+            freesurfer_data["surf_rh_wm"] = R_wm_surf
+
+
 def collect_run_data(layout, bold_file, cifti=False):
     """Collect data associated with a given BOLD file.
 
