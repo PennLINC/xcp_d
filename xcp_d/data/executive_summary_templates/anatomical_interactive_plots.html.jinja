@@ -1,4 +1,4 @@
-<!--
+{#
     Make a section for T1 or T2.
     This will show the brainsprite viewer, with a label above it to identify T1 v T2,
     and a button that will open a modal window with a slider for the T1 or T2 pngs.
@@ -6,10 +6,10 @@
     Inputs:
     - structural_files{image_type}{"mosaic"}
     - structural_files{image_type}{"slices"}
--->
-<!--
+#}
+{#
     Loop over the modalities (T1/T2) and add their brainsprites.
--->
+#}
 {% for image_type in structural_files.keys() %}
     {% set mosaic_file = structural_files[image_type]["mosaic"] %}
     {% set slice_imgs = structural_files[image_type]["slices"] %}
@@ -37,7 +37,7 @@
 
     </section>
 
-    <!--Slice-wise PNGs-->
+    {#Slice-wise PNGs#}
     <div id="{{ image_type }}_modal" class="w3-modal">
         <div class="w3-modal-content">
             <div class="w3-content w3-display-container">

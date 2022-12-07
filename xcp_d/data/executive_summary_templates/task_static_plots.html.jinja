@@ -1,4 +1,4 @@
-<!--
+{#
     Start the tasks section and  put in the column headings for the task-specific data.
 
     Inputs:
@@ -10,7 +10,7 @@
     - task_files[]{"reference"}
     - task_files[]{"preproc_carpet"}
     - task_files[]{"postproc_carpet"}
--->
+#}
 <section id="Tasks">
     <div class="w3-container">
         <div class="w3-row-padding">
@@ -27,14 +27,14 @@
                     {% set preproc_carpet = run_dict["preproc_carpet"] %}
                     {% set postproc_carpet = run_dict["postproc_carpet"] %}
 
-                    <!--
+                    {#
                         Add the task name for the next few rows.
-                    -->
+                    #}
                     <div class="w3-row">
                         <div class="w3-left label2">task-{{ task }} run-{{ run }}:</div>
                     <div class="w3-row">
 
-                    <!--Full rows for registration files-->
+                    {#Full rows for registration files#}
                     {% for i_img in range(registration_files | length) %}
                         {% set registration_file = registration_files[i_img] %}
                         {% set registration_title = registration_titles[i_img] %}
@@ -53,8 +53,6 @@
                         </div>
                     {% endfor %}
 
-                    <!--START-->
-                    <!--Full Row-->
                     <div class="w3-row-padding">
                         <div class="w3-col l1 label2">T1 in Task</div>
                         <div class="w3-col l11">
@@ -66,13 +64,11 @@
                             {% endif %}
                         </div>
                     </div>
-                    <!--END-->
 
                     <div class="w3-row-padding">
                         <div class="w3-half">
 
-                            <!--START-->
-                            <!--Half Row-->
+                            {#Half rows for BOLD images#}
                             <div  class="w3-row-padding">
                                 <div class="w3-col l2 label2">BOLD</div>
                                 <div class="w3-col l9">
@@ -84,10 +80,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <!--END-->
 
-                            <!--START-->
-                            <!--Half Row-->
                             <div  class="w3-row-padding">
                                 <div class="w3-col l2 label2">Reference</div>
                                 <div class="w3-col l9">
@@ -99,12 +92,10 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <!--END-->
 
                         </div>
 
-                        <!--START-->
-                        <!--Quarter Row-->
+                        {#Quarter rows for carpet plots#}
                         <div class="w3-quarter">
                             <div class="w3-row w3-center label1">Pre-Regression</div>
                             <div class="w3-row">
@@ -116,10 +107,7 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <!--END-->
 
-                        <!--START-->
-                        <!--Quarter Row-->
                         <div class="w3-quarter">
                             <div class="w3-row w3-center label1">Post-Regression</div>
                             <div class="w3-row">
@@ -131,7 +119,6 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <!--END-->
                     </div>
 
                 {% endfor %}

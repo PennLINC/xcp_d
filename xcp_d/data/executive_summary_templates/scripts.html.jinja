@@ -1,4 +1,4 @@
-<!--
+{#
     Script sections with Javascript snippets.
     1. BrainSprite: brainsprite(params)
     2. jquery import
@@ -10,12 +10,12 @@
     8. show_Images and open_img_modal_to_index
     9. change_Registrations and show_Registrations and open_regs_modal_to_index
         Ignored bc I think slider_script and modal_script handle it.
--->
+#}
 
-<!--
+{#
     The slider scripts that will show the next or previous image in a given class.
     Needs the following values: modal_id, image_class.
--->
+#}
 {% macro build_slider_script(image_class, modal_id) %}
     var {{ image_class }}Idx = 1;
     show_{{ image_class }}({{ image_class }}Idx)
@@ -41,12 +41,12 @@
     }
 {% endmacro %}
 
-<!--
+{#
     The loader script to be run when then window loads. Put this
     with other scripts.
 
     TS: Seems to call the brainsprite function for a give image type.
--->
+#}
 {% macro build_sprite_loader_script(image_type) %}
     $( window ).load(function() {
         var brain{{ image_type }} = brainsprite({
@@ -58,10 +58,10 @@
     });
 {% endmacro %}
 
-<!--
+{#
     The modal scripts that will show the chosen image.
     Needs the following values: modal_id, image_class.
--->
+#}
 {% macro build_modal_script(image_class, modal_id) %}
     var {{ image_class }}Idx = 1;
     show_{{ image_class }}({{ image_class }}Idx)
@@ -87,25 +87,25 @@
     }
 {% endmacro %}
 
-<!--
+{#
     1. BrainSprite: brainsprite(params)
 
     Not sure if this will work.
--->
+#}
 <script>
 {{ include_file("./brainsprite.js") }}
 </script>
 
-<!--
+{#
     2/3. JQuery imports.
--->
+#}
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 
-<!--
+{#
     4. var brainT1 = brainsprite()
     Modify sprite_load_script template for each image type.
--->
+#}
 
 {% if "T1" in structural_files.keys() %}
     <script>
@@ -113,38 +113,38 @@
     </script>
 {% endif %}
 
-<!--
+{#
     5. var brainT2 = brainsprite()
     Modify sprite_load_script template for each image type.
--->
+#}
 {% if "T2" in structural_files.keys() %}
     <script>
     {{ build_sprite_loader_script("T2") }}
     </script>
 {% endif %}
 
-<!--
+{#
     6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
--->
+#}
 {% if "T1" in structural_files.keys() %}
     <script>
     {{ build_modal_script("T1pngs", "T1_modal") }}
     </script>
 {% endif %}
 
-<!--
+{#
     7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
--->
+#}
 {% if "T2" in structural_files.keys() %}
     <script>
     {{ build_modal_script("T2pngs", "T2_modal") }}
     </script>
 {% endif %}
 
-<!--
+{#
     8. show_Images and open_img_modal_to_index
     Seems to be used on the BOLD carpet plots, but isn't present in constants.
--->
+#}
 <script>
 {{ build_modal_script("Registrations", "regs_modal") }}
 </script>
