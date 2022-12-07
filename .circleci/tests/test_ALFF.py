@@ -165,7 +165,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
         (
             "compute_alff_wf/alff_compt/sub-color"
             "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_"
-            "bold_alff.dtseries.nii"
+            "bold_alff.dscalar.nii"
         )
     )
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
@@ -202,7 +202,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
 
     # Let's get the new ALFF mean
     new_alff = os.path.join(
-        tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dtseries.nii"
+        tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dscalar.nii"
     )
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()

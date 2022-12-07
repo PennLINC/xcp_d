@@ -62,7 +62,7 @@ def test_nifti_conn(data_dir, tmp_path_factory):
     fake_bold_file = filename
 
     # Let's define the inputs and create the node
-    mni_to_t1w = os.path.join(
+    template_to_t1w = os.path.join(
         data_dir,
         (
             "fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_"
@@ -75,7 +75,7 @@ def test_nifti_conn(data_dir, tmp_path_factory):
         name="fcons_ts_wf",
         omp_nthreads=2,
     )
-    fcon_ts_wf.inputs.inputnode.mni_to_t1w = mni_to_t1w
+    fcon_ts_wf.inputs.inputnode.template_to_t1w = template_to_t1w
     fcon_ts_wf.inputs.inputnode.t1w_to_native = _t12native(bold_file)
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
     fcon_ts_wf.inputs.inputnode.bold_file = bold_file
