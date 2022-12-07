@@ -390,7 +390,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             suffix="xfm",
         )
 
-    if not cifti and (input_type == "hcp" or input_type == "dcan"):
+    elif not cifti:
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
