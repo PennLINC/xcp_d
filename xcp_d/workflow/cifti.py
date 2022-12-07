@@ -129,7 +129,6 @@ def init_ciftipostprocess_wf(
         BIDS dataset layout
     %(name)s
         Default is 'cifti_postprocess_wf'.
-    input_type
 
     Inputs
     ------
