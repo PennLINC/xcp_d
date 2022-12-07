@@ -1,10 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
-import glob
-import os
-
-from nipype import logging
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
@@ -32,6 +29,43 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
+
+
+def get_freesurfer_dir(fmri_dir):
+    import glob
+    import os
+
+    # Find freesurfer directory
+    freesurfer_paths = glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*"))
+    if len(freesurfer_paths) == 0:
+        freesurfer_paths = glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+
+    if len(freesurfer_paths) > 0:
+        freesurfer_path = freesurfer_paths[0]
+    else:
+        freesurfer_path = None
+
+    if not freesurfer_path:
+        raise ValueError("No FreeSurfer derivatives found.")
+
+    return freesurfer_path
+
+
+def get_freesurfer_spheres(freesurfer_path, subject_id):
+    import os
+
+    if not subject_id.startswith("sub-"):
+        subject_id = "sub-" + subject_id
+
+    lh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/lh.sphere.reg")
+    rh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/rh.sphere.reg")
+
+    if not os.path.isfile(lh_sphere_raw):
+        raise FileNotFoundError(f"Left-hemisphere sphere file not found at '{lh_sphere_raw}'")
+    elif not os.path.isfile(rh_sphere_raw):
+        raise FileNotFoundError(f"Right-hemisphere sphere file not found at '{rh_sphere_raw}'")
+
+    return lh_sphere_raw, rh_sphere_raw
 
 
 @fill_doc
@@ -376,90 +410,134 @@ def init_anatomical_wf(
             get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[0]
         )
 
-        # Find freesurfer directory
-        freesurfer_paths = glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*"))
-        if len(freesurfer_paths) == 0:
-            freesurfer_paths = glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+        get_freesurfer_dir_node = pe.Node(
+            Function(
+                function=get_freesurfer_dir,
+                input_names=["fmri_dir"],
+                output_names=["freesurfer_path"],
+            ),
+            name="get_freesurfer_dir_node",
+        )
+        get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
 
-        if len(freesurfer_paths) > 0:
-            freesurfer_path = freesurfer_paths[0]
-        else:
-            freesurfer_path = None
+        get_freesurfer_spheres_node = pe.Node(
+            Function(
+                function=get_freesurfer_spheres,
+                input_names=["freesurfer_path", "subject_id"],
+                output_names=["lh_sphere_raw", "rh_sphere_raw"],
+            ),
+            name="get_freesurfer_spheres_node",
+        )
+        get_freesurfer_spheres_node.inputs.subject_id = subject_id
 
-        if not freesurfer_path:
-            raise ValueError("No FreeSurfer derivatives found.")
-
-        # get sphere surfaces to be converted
-        if not subject_id.startswith("sub-"):
-            subject_id = "sub-" + subject_id
-
-        lh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/lh.sphere.reg")
-        rh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/rh.sphere.reg")
+        workflow.connect([
+            (get_freesurfer_dir_node, get_freesurfer_spheres_node, [
+                ("freesurfer_path", "freesurfer_path"),
+            ])
+        ])
 
         update_xform_wf = init_update_xform_wf(name="update_xform_wf")
 
         # convert spheres (from FreeSurfer surf dir) to gifti
         lh_sphere_raw_mris = pe.Node(
-            MRIsConvert(out_datatype="gii", in_file=lh_sphere_raw),
+            MRIsConvert(out_datatype="gii"),
             name="lh_sphere_raw_mris",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # MB
+        )
         rh_sphere_raw_mris = pe.Node(
-            MRIsConvert(out_datatype="gii", in_file=rh_sphere_raw),
+            MRIsConvert(out_datatype="gii"),
             name="rh_sphere_raw_mris",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # MB
+        )
+
+        # fmt:off
+        workflow.connect([
+            (get_freesurfer_spheres_node, lh_sphere_raw_mris, [("lh_sphere_raw", "in_file")]),
+            (get_freesurfer_spheres_node, rh_sphere_raw_mris, [("rh_sphere_raw", "in_file")]),
+        ])
+        # fmt:on
+
+        collect_lh_surfaces = pe.Node(
+            niu.Merge(4),
+            name="collect_lh_surfaces",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, collect_lh_surfaces, [
+                ("lh_inflated_surf", "in1"),
+                ("lh_midthickness_surf", "in2"),
+                ("lh_pial_surf", "in3"),
+                ("lh_smoothwm_surf", "in4"),
+            ]),
+        ])
+        # fmt:on
+
+        collect_rh_surfaces = pe.Node(
+            niu.Merge(4),
+            name="collect_rh_surfaces",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, collect_rh_surfaces, [
+                ("rh_inflated_surf", "in1"),
+                ("rh_midthickness_surf", "in2"),
+                ("rh_pial_surf", "in3"),
+                ("rh_smoothwm_surf", "in4"),
+            ]),
+        ])
+        # fmt:on
 
         # apply affine to native surfs
-        lh_native_apply_affine = pe.Node(
+        lh_native_apply_affine = pe.MapNode(
             ApplyAffine(),
             name="lh_native_apply_affine",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
+            iterfield=["in_file"],
         )  # TM
-        lh_native_apply_affine.iterables = (
-            "in_file",
-            [L_midthick_surf, L_pial_surf, L_wm_surf],
-        )
 
         # fmt:off
         workflow.connect([
+            (collect_lh_surfaces, lh_native_apply_affine, [("out", "in_file")]),
             (update_xform_wf, lh_native_apply_affine, [("outputnode.world_xfm", "affine")]),
         ])
         # fmt:on
 
-        rh_native_apply_affine = pe.Node(
+        rh_native_apply_affine = pe.MapNode(
             ApplyAffine(),
             name="rh_native_apply_affine",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
+            iterfield=["in_file"],
         )  # TM
-        rh_native_apply_affine.iterables = (
-            "in_file",
-            [R_midthick_surf, R_pial_surf, R_wm_surf],
-        )
 
         # fmt:off
         workflow.connect([
+            (collect_rh_surfaces, rh_native_apply_affine, [("out", "in_file")]),
             (update_xform_wf, rh_native_apply_affine, [("outputnode.world_xfm", "affine")]),
         ])
         # fmt:on
 
         # apply FNIRT-format warpfield
-        lh_native_apply_warpfield = pe.Node(
+        # NOTE: There are no connections going from these nodes back into the workflow.
+        lh_native_apply_warpfield = pe.MapNode(
             ApplyWarpfield(),
             name="lh_native_apply_warpfield",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # TM
-        rh_native_apply_warpfield = pe.Node(
+            iterfield=["in_file"],
+        )
+        rh_native_apply_warpfield = pe.MapNode(
             ApplyWarpfield(),
             name="rh_native_apply_warpfield",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # TM
+            iterfield=["in_file"],
+        )
 
         # fmt:off
         workflow.connect([
@@ -503,7 +581,7 @@ def init_anatomical_wf(
         # fmt:on
 
         # resample the mid, pial, wm surfs to fsLR32k
-        lh_32k_resample_wf = pe.Node(
+        lh_32k_resample_wf = pe.MapNode(
             CiftiSurfaceResample(
                 new_sphere=lh_sphere_fsLR,
                 metric=" BARYCENTRIC ",
@@ -511,12 +589,9 @@ def init_anatomical_wf(
             name="lh_32k_resample_wf",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
+            iterfield=["in_file"],
         )
-        lh_32k_resample_wf.iterables = (
-            "in_file",
-            [L_midthick_surf, L_pial_surf, L_wm_surf],
-        )
-        rh_32k_resample_wf = pe.Node(
+        rh_32k_resample_wf = pe.MapNode(
             CiftiSurfaceResample(
                 new_sphere=rh_sphere_fsLR,
                 metric=" BARYCENTRIC ",
@@ -524,16 +599,19 @@ def init_anatomical_wf(
             name="rh_32k_resample_wf",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )
-        rh_32k_resample_wf.iterables = (
-            "in_file",
-            [R_midthick_surf, R_pial_surf, R_wm_surf],
+            iterfield=["in_file"],
         )
 
         # fmt:off
         workflow.connect([
+            (collect_lh_surfaces, lh_32k_resample_wf, [
+                ("out", "in_file"),
+            ]),
             (surface_sphere_project_unproject_lh, lh_32k_resample_wf, [
                 ("out_file", "current_sphere"),
+            ]),
+            (collect_rh_surfaces, rh_32k_resample_wf, [
+                ("out", "in_file"),
             ]),
             (surface_sphere_project_unproject_rh, rh_32k_resample_wf, [
                 ("out_file", "current_sphere"),
@@ -542,18 +620,20 @@ def init_anatomical_wf(
         # fmt:on
 
         # apply affine to 32k surfs
-        lh_32k_apply_affine = pe.Node(
+        lh_32k_apply_affine = pe.MapNode(
             ApplyAffine(),
             name="lh_32k_apply_affine",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # TM
-        rh_32k_apply_affine = pe.Node(
+            iterfield=["in_file"],
+        )
+        rh_32k_apply_affine = pe.MapNode(
             ApplyAffine(),
             name="rh_32k_apply_affine",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # TM
+            iterfield=["in_file"],
+        )
 
         # fmt:off
         workflow.connect([
@@ -565,18 +645,20 @@ def init_anatomical_wf(
         # fmt:on
 
         # apply FNIRT-format warpfield
-        lh_32k_apply_warpfield = pe.Node(
+        lh_32k_apply_warpfield = pe.MapNode(
             ApplyWarpfield(),
             name="lh_32k_apply_warpfield",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # TM
-        rh_32k_apply_warpfield = pe.Node(
+            iterfield=["in_file"],
+        )
+        rh_32k_apply_warpfield = pe.MapNode(
             ApplyWarpfield(),
             name="rh_32k_apply_warpfield",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-        )  # TM
+            iterfield=["in_file"],
+        )
 
         # fmt:off
         workflow.connect([
