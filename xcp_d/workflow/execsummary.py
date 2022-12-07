@@ -194,7 +194,6 @@ def init_execsummary_wf(
     Inputs
     ------
     t1w
-    t1seg
     regressed_data
     residual_data
     filtered_motion
@@ -210,7 +209,6 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
-                "t1seg",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",

@@ -707,7 +707,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([
             (downcast_data, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
             ]),
