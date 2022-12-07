@@ -70,7 +70,7 @@ class Regress(SimpleInterface):
         bold_arr = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         bold_arr = bold_arr.T  # transpose BOLD data to TxS
 
-        # Regress out the confounds via linear regression from sklearn
+        # Regress out the confounds via linear regression from numpy
         if bold_arr.shape[0] < confound_arr.shape[1]:
             LOGGER.warning(
                 "Warning: Regression might not be effective due to rank deficiency, "
