@@ -358,7 +358,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti and (input_type != "hcp" or input_type != "dcan"):
+    if not cifti and input_type not in ("hcp", "dcan"):
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
