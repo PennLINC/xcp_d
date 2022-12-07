@@ -152,7 +152,7 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    if input_type != "hcp" or input_type != "dcan":
+    if input_type not in ("dcan", "hcp"):
         layout = BIDSLayout(
             str(bids_dir),
             validate=bids_validate,
