@@ -255,8 +255,6 @@ def init_anatomical_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1seg : str
-        Path to the T1w segmentation file.
 
     Notes
     -----
@@ -269,7 +267,7 @@ def init_anatomical_wf(
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
+    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w"]), name="inputnode")
 
     mnitemplate = get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
 
@@ -1471,14 +1469,13 @@ def init_anatomical_wf(
             # This "nothingnode" exists just to allow the inputnode to connect to something.
             # TODO: Should we maybe raise an Exception instead?
             nothingnode = pe.Node(
-                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
+                niu.IdentityInterface(fields=["t1w"]),
                 name="nothingnode",
             )
             # fmt:off
             workflow.connect(
                 [
                     (inputnode, nothingnode, [("t1w", "t1w")]),
-                    (inputnode, nothingnode, [("t1seg", "t1seg")]),
                 ]
             )
             # fmt:on
