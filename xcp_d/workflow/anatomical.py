@@ -321,11 +321,13 @@ def init_anatomical_wf(
             niu.IdentityInterface(fields=["t1w", "t1seg"]),
             name="nothingnode",
         )
-        workflow.connect(
-            [(inputnode, nothingnode, [("t1w", "t1w")]),
-             (inputnode, nothingnode, [("t1seg", "t1seg")]),
-             ]
-        )
+        workflow.connect([
+            (inputnode, nothingnode, [
+                ("t1w", "t1w"),
+                ("t1seg", "t1seg"),
+            ]),
+        ])
+
         # fmt:on
 
     else:
