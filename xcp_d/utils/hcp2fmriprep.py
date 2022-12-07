@@ -184,9 +184,9 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
         mvreg["rot_x_derivative1"] = mvreg["rot_x_derivative1"] * np.pi / 180
         mvreg["rot_y_derivative1"] = mvreg["rot_y_derivative1"] * np.pi / 180
         mvreg["rot_z_derivative1"] = mvreg["rot_z_derivative1"] * np.pi / 180
-        mvreg["trans_x_power2"] = mvreg["trans_x"] ** 2
 
         # get derivatives and powers
+        mvreg["trans_x_power2"] = mvreg["trans_x"] ** 2
         mvreg["trans_x_derivative1_power2"] = mvreg["trans_x_derivative1"] ** 2
         mvreg["rot_x_power2"] = mvreg["rot_x"] ** 2
         mvreg["rot_x_derivative1_power2"] = mvreg["rot_x_derivative1"] ** 2
