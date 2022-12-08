@@ -378,7 +378,7 @@ def init_anatomical_wf(
             # Create native-space HCP-style midthickness surface file
             native_hcpmidthick = pe.Node(
                 SurfaceAverage(),
-                name="native_hcpmidthick",
+                name=f"native_hcpmidthick_{hemi}",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
@@ -424,7 +424,7 @@ def init_anatomical_wf(
             workflow.connect([
                 (get_freesurfer_dir_node, apply_transforms_wf, [
                     ("freesurfer_path", "inputnode.freesurfer_path"),
-                ])
+                ]),
                 (update_xform_wf, apply_transforms_wf, [
                     ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
                     ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
@@ -444,7 +444,7 @@ def init_anatomical_wf(
                         1,  # the HCP midthickness surface
                     ],
                 ),
-                name="split_out_hcp_surface",
+                name=f"split_out_hcp_surface_{hemi}",
             )
 
             # fmt:off
@@ -488,7 +488,7 @@ def init_anatomical_wf(
                         1,  # smoothwm
                     ],
                 ),
-                name="split_up_surfaces_fsLR_32k",
+                name=f"split_up_surfaces_fsLR_32k_{hemi}",
             )
 
             # fmt:off
@@ -505,7 +505,7 @@ def init_anatomical_wf(
             # Generate HCP-style very-inflated surface from standard-space midthickness surface.
             hcpinflated_surf_32k = pe.Node(
                 SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name="hcpinflated_surf_32k",
+                name=f"hcpinflated_surf_32k_{hemi}",
             )
 
             # fmt:off
@@ -1131,7 +1131,9 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     workflow.connect([
         (inputnode, resample_to_fsLR32k, [
             ("hemi_files", "in_file"),
-            ("current_sphere", "current_sphere"),
+        ]),
+        (surface_sphere_project_unproject, resample_to_fsLR32k, [
+            ("out_file", "current_sphere"),
         ]),
     ])
     # fmt:on
