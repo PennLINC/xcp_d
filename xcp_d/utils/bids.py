@@ -395,16 +395,18 @@ def collect_surface_data(layout, participant_label):
     }
 
     out_surface_files = {}
+    surfaces_found = True
     for dtype, surface_files_ in surface_files.items():
         if len(surface_files_) == 0:
             out_surface_files[dtype] = None
+            surfaces_found = False
         else:
             if len(surface_files_) > 1:
                 LOGGER.warning("More than one surface found.")
 
             out_surface_files[dtype] = surface_files_[0]
 
-    return out_surface_files, standard_space_surfaces
+    return out_surface_files, standard_space_surfaces, surfaces_found
 
 
 def collect_run_data(layout, bold_file, cifti=False):
