@@ -249,6 +249,17 @@ def init_anatomical_wf(
     ------
     t1w : str
         Path to the T1w file.
+        Only seems to be used for a stray branch of init_update_xform_wf.
+    t1w_to_template_xform
+    template_to_t1w_xform
+    lh_inflated_surf
+    rh_inflated_surf
+    lh_midthickness_surf
+    rh_midthickness_surf
+    lh_pial_surf
+    rh_pial_surf
+    lh_smoothwm_surf
+    rh_smoothwm_surf
 
     Notes
     -----
@@ -347,20 +358,6 @@ def init_anatomical_wf(
         ])
         # fmt:on
 
-        nothingnode = pe.Node(
-            niu.IdentityInterface(fields=["t1w", "t1seg"]),
-            name="nothingnode",
-        )
-        # fmt:off
-        workflow.connect([
-            (inputnode, nothingnode, [
-                ("t1w", "t1w"),
-                ("t1seg", "t1seg"),
-            ]),
-        ])
-
-        # fmt:on
-
     else:
         # Warp the surfaces to space-fsLR, den-32k
         get_freesurfer_dir_node = pe.Node(
@@ -382,6 +379,7 @@ def init_anatomical_wf(
         # fmt:off
         workflow.connect([
             (inputnode, update_xform_wf, [
+                ("t1w", "t1w"),
                 ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
                 ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
             ]),
@@ -644,6 +642,7 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
 
     Inputs
     ------
+    t1w
     t1w_to_template_xform
         fMRIPrep-style H5 transform from T1w image to template.
     template_to_t1w_xform
@@ -658,7 +657,7 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w_to_template_xform", "template_to_t1w_xform"]),
+        niu.IdentityInterface(fields=["t1w", "t1w_to_template_xform", "template_to_t1w_xform"]),
         name="inputnode",
     )
 
