@@ -554,7 +554,7 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_hcp_midthickness, [
-                    (f"{hemi}_midthickness_surf", "source_file"),
+                    (f"{hemi_label}_midthickness_surf", "source_file"),
                 ]),
                 (split_out_hcp_surface, ds_hcp_midthickness, [
                     ("out2", "in_file"),
