@@ -152,13 +152,13 @@ def collect_data(
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    if input_type not in ("dcan", "hcp"):
-        layout = BIDSLayout(
-            str(bids_dir),
-            validate=bids_validate,
-            derivatives=True,
-            config=["bids", "derivatives"],
-        )
+    layout = BIDSLayout(
+        str(bids_dir),
+        validate=bids_validate,
+        derivatives=True,
+        config=["bids", "derivatives"],
+    )
+
     # TODO: Add and test fsaverage.
     default_allowed_spaces = {
         "cifti": ["fsLR"],
