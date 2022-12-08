@@ -370,7 +370,9 @@ def concatenate_derivatives(
                             dvar[0] = np.mean(dvar)
                             dvar = dvar[runwise_dummy_scans[i_file] :]
                             raw_dvars.append(dvar)
+
                         raw_dvars = np.concatenate(raw_dvars)
+
                         # Censor DVARS
                         raw_dvars = raw_dvars[tmask_bool]
 
@@ -380,7 +382,9 @@ def concatenate_derivatives(
                             dvar = compute_dvars(read_ndata(denoised_file.path, mask))
                             dvar[0] = np.mean(dvar)
                             denoised_dvars.append(dvar)
+
                         denoised_dvars = np.concatenate(denoised_dvars)
+
                         # Censor DVARS
                         denoised_dvars = denoised_dvars[tmask_bool]
 
