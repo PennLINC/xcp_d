@@ -21,7 +21,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
-    collect_surface_files,
+    collect_surface_data,
     get_preproc_pipeline_info,
     write_dataset_description,
 )
@@ -334,7 +334,7 @@ def init_subject_wf(
     )
     LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
-    surface_data, standard_space_surfaces, surfaces_found = collect_surface_files(
+    surface_data, standard_space_surfaces, surfaces_found = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
