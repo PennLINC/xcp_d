@@ -690,3 +690,78 @@ def find_nifti_bold_files(bold_file, template_to_t1w):
         nifti_boldref_file = nifti_boldref_file[0]
 
     return nifti_bold_file, nifti_boldref_file
+
+
+def get_freesurfer_dir(fmri_dir):
+    """Find FreeSurfer derivatives associated with preprocessing pipeline.
+
+    Parameters
+    ----------
+    fmri_dir : str
+        Path to preprocessed derivatives.
+
+    Returns
+    -------
+    freesurfer_path : str
+        Path to FreeSurfer derivatives.
+
+    Raises
+    ------
+    ValueError
+        If no FreeSurfer derivatives are found.
+    """
+    import glob
+    import os
+
+    # Find freesurfer directory
+    freesurfer_paths = glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*"))
+    if len(freesurfer_paths) == 0:
+        freesurfer_paths = glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+
+    if len(freesurfer_paths) > 0:
+        freesurfer_path = freesurfer_paths[0]
+    else:
+        freesurfer_path = None
+
+    if not freesurfer_path:
+        raise ValueError("No FreeSurfer derivatives found.")
+
+    return freesurfer_path
+
+
+def get_freesurfer_spheres(freesurfer_path, subject_id):
+    """Find FreeSurfer sphere files.
+
+    Parameters
+    ----------
+    freesurfer_path : str
+        Path to the FreeSurfer derivatives.
+    subject_id : str
+        Subject ID. This may or may not be prefixed with "sub-".
+
+    Returns
+    -------
+    lh_sphere_raw : str
+        Left hemisphere sphere file.
+    rh_sphere_raw : str
+        Right hemisphere sphere file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If either of the sphere files cannot be found.
+    """
+    import os
+
+    if not subject_id.startswith("sub-"):
+        subject_id = "sub-" + subject_id
+
+    lh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/lh.sphere.reg")
+    rh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/rh.sphere.reg")
+
+    if not os.path.isfile(lh_sphere_raw):
+        raise FileNotFoundError(f"Left-hemisphere sphere file not found at '{lh_sphere_raw}'")
+    elif not os.path.isfile(rh_sphere_raw):
+        raise FileNotFoundError(f"Right-hemisphere sphere file not found at '{rh_sphere_raw}'")
+
+    return lh_sphere_raw, rh_sphere_raw

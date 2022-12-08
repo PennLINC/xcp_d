@@ -26,46 +26,10 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
+from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_spheres
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
-
-
-def get_freesurfer_dir(fmri_dir):
-    import glob
-    import os
-
-    # Find freesurfer directory
-    freesurfer_paths = glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*"))
-    if len(freesurfer_paths) == 0:
-        freesurfer_paths = glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
-
-    if len(freesurfer_paths) > 0:
-        freesurfer_path = freesurfer_paths[0]
-    else:
-        freesurfer_path = None
-
-    if not freesurfer_path:
-        raise ValueError("No FreeSurfer derivatives found.")
-
-    return freesurfer_path
-
-
-def get_freesurfer_spheres(freesurfer_path, subject_id):
-    import os
-
-    if not subject_id.startswith("sub-"):
-        subject_id = "sub-" + subject_id
-
-    lh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/lh.sphere.reg")
-    rh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/rh.sphere.reg")
-
-    if not os.path.isfile(lh_sphere_raw):
-        raise FileNotFoundError(f"Left-hemisphere sphere file not found at '{lh_sphere_raw}'")
-    elif not os.path.isfile(rh_sphere_raw):
-        raise FileNotFoundError(f"Right-hemisphere sphere file not found at '{rh_sphere_raw}'")
-
-    return lh_sphere_raw, rh_sphere_raw
 
 
 @fill_doc
@@ -461,11 +425,13 @@ def init_anatomical_wf(
         )
         get_freesurfer_spheres_node.inputs.subject_id = subject_id
 
+        # fmt:off
         workflow.connect([
             (get_freesurfer_dir_node, get_freesurfer_spheres_node, [
                 ("freesurfer_path", "freesurfer_path"),
             ])
         ])
+        # fmt:on
 
         update_xform_wf = init_update_xform_wf(
             mem_gb=mem_gb,
