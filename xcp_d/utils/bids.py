@@ -159,15 +159,6 @@ def collect_data(
             derivatives=True,
             config=["bids", "derivatives"],
         )
-    else:
-        layout = BIDSLayout(
-            str(bids_dir),
-            validate=bids_validate,
-            derivatives=False,  # HCP and DCAN files are already written into a derivatives
-            # directory
-            config=["bids", "derivatives"],
-        )
-
     # TODO: Add and test fsaverage.
     default_allowed_spaces = {
         "cifti": ["fsLR"],
@@ -391,10 +382,8 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             desc="brain",
         )
         run_data["t1w_to_native_xform"] = layout.get(
-            return_type="file",
-            datatype="anat",
-            suffix="xfm",
-        )[1]
+            return_type="file", datatype="anat", suffix="xfm", to="MNI152NLin2009cAsym"
+        )
 
     LOGGER.debug(
         f"Collected run data for {bold_file}:\n"
