@@ -835,7 +835,7 @@ def build_workflow(opts, retval):
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
         print(f"checking the {opts.input_type} files")
-        converted_fmri_dir = os.path.join(work_dir, "dcanhcp")
+        converted_fmri_dir = os.path.join(work_dir, "dcanhcp/derivatives")
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
         if opts.participant_label is not None:
