@@ -170,10 +170,41 @@ and provide a folder containing the custom confounds files for all of the subjec
 The individual confounds files should be tab-delimited, with one column for each regressor,
 and one row for each volume in the data being denoised.
 
-If you want to regress task-related signals out of your data, you can use the custom confounds option to do it.
+Signal Confounds for Non-Aggressive Denoising
+---------------------------------------------
+
+Let's say you have some nuisance regressors that are not necessarily orthogonal to some associated regressors that are ostensibly noise.
+For example, if you ran `tedana <https://tedana.readthedocs.io/en/stable/>`_ on multi-echo data,
+you would have a series of "rejected" (noise) and "accepted" (signal) ICA components.
+Because tedana uses a spatial ICA, these components' time series are not necessarily independent,
+and there can be shared variance between them.
+If you want to properly denoise your data using the noise components,
+you need to perform "non-aggressive" denoising so that variance from the signal components is not removed as well.
+In non-aggressive denoising, you fit a GLM using both the noise and signal regressors,
+then reconstruct the predicted data using just the noise regressors,
+and finally remove that predicted data from the real data.
+
+For more information about different types of denoising,
+see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.html>`_,
+`this NeuroStars topic <https://neurostars.org/t/aggressive-vs-nonaggressive-denoising/5612>`_,
+and/or `Pruim et al. (2015) <https://doi.org/10.1016/j.neuroimage.2015.02.064>`_.
+
+So how do we implement this in ``xcp_d``?
+In order to define regressors that should be treated as signal,
+and thus use non-aggressive denoising instead of the default aggressive denoising,
+you should include those regressors in your custom confounds file,
+with column names starting with ``signal__`` (lower-case "signal", followed by two underscores).
+
+.. important::
+
+   ``xcp_d`` will automatically perform non-aggressive denoising with any nuisance-regressor option that uses AROMA regressors
+   (e.g., ``aroma`` or ``aroma_gsr``).
+
 
 Task Regression
 ---------------
+
+If you want to regress task-related signals out of your data, you can use the custom confounds option to do it.
 
 Here we document how to include task effects as confounds.
 

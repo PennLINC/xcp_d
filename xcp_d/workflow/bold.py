@@ -5,7 +5,6 @@ import os
 
 import nibabel as nb
 import numpy as np
-import sklearn
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -23,10 +22,14 @@ from xcp_d.interfaces.prepostcleaning import (
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.bids import collect_run_data
+from xcp_d.utils.confounds import (
+    consolidate_confounds,
+    describe_regression,
+    get_customfile,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.plot import plot_design_matrix
-from xcp_d.utils.utils import consolidate_confounds, get_customfile, stringforparams
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -170,6 +173,15 @@ def init_boldpostprocess_wf(
     # and a new release is made, remove this.
     mask_file = check_binary_mask(run_data["boldmask"])
 
+    # Load custom confounds
+    # We need to run this function directly to access information in the confounds that is
+    # used for the boilerplate.
+    custom_confounds_file = get_customfile(
+        custom_confounds_folder,
+        run_data["confounds"],
+    )
+    regression_description = describe_regression(params, custom_confounds_file)
+
     workflow = Workflow(name=name)
 
     filter_str, filter_post_str = "", ""
@@ -214,10 +226,19 @@ def init_boldpostprocess_wf(
             "regressors were discarded, then "
         )
 
+    despike_str = ""
     if despike:
-        despike_str = "despiked, mean-centered, and linearly detrended"
-    else:
-        despike_str = "mean-centered and linearly detrended"
+        despike_str = (
+            "After censoring, but before nuisance regression, the BOLD data were despiked "
+            "with 3dDespike."
+        )
+
+    bandpass_str = ""
+    if bandpass_filter:
+        bandpass_str = (
+            "The interpolated timeseries were then band-pass filtered to retain signals within "
+            f"the {lower_bpf}-{upper_bpf} Hz frequency band."
+        )
 
     workflow.__desc__ = f"""\
 For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
@@ -227,14 +248,12 @@ In order to identify high-motion outlier volumes, {fd_str}.
 Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
 {fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
 {filter_post_str}
-Before nuisance regression, but after censoring, the BOLD data were {despike_str}.
-{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
-These nuisance regressors were regressed from the BOLD data using linear regression -
-as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
+{despike_str}
+Next, the BOLD data and confounds were mean-centered and linearly detrended.
+{regression_description}
 Any volumes censored earlier in the workflow were then interpolated in the residual time series
 produced by the regression.
-The interpolated timeseries were then band-pass filtered to retain signals within the
-{lower_bpf}-{upper_bpf} Hz frequency band.
+{bandpass_str}
 """
 
     inputnode = pe.Node(
@@ -243,7 +262,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "bold_file",
                 "ref_file",
                 "bold_mask",
-                "custom_confounds_folder",
+                "custom_confounds_file",
                 "template_to_t1w",
                 "t1w",
                 "t1seg",
@@ -259,7 +278,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.ref_file = run_data["boldref"]
     inputnode.inputs.bold_mask = mask_file
-    inputnode.inputs.custom_confounds_folder = custom_confounds_folder
+    inputnode.inputs.custom_confounds_file = custom_confounds_file
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
     inputnode.inputs.dummy_scans = dummy_scans
@@ -285,15 +304,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         ]),
     ])
     # fmt:on
-
-    get_custom_confounds_file = pe.Node(
-        Function(
-            input_names=["custom_confounds_folder", "fmriprep_confounds_file"],
-            output_names=["custom_confounds_file"],
-            function=get_customfile,
-        ),
-        name="get_custom_confounds_file",
-    )
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
         mem_gb=mem_gbx["timeseries"],
@@ -388,14 +398,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # Load and filter confounds
     # fmt:off
     workflow.connect([
-        (inputnode, get_custom_confounds_file, [
-            ("custom_confounds_folder", "custom_confounds_folder"),
-            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-        ]),
         (inputnode, consolidate_confounds_node, [
             ("bold_file", "img_file"),
-        ]),
-        (get_custom_confounds_file, consolidate_confounds_node, [
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
     ])
