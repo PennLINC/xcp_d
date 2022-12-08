@@ -394,7 +394,7 @@ def init_anatomical_wf(
             # Create native-space HCP-style midthickness surface file
             native_hcpmidthick = pe.Node(
                 SurfaceAverage(),
-                name=f"native_hcpmidthick_{hemi}",
+                name=f"native_hcpmidthick_{hemi_label}",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
@@ -411,7 +411,7 @@ def init_anatomical_wf(
             # Place the surfaces in a single node.
             collect_surfaces = pe.Node(
                 niu.Merge(5),
-                name=f"collect_surfaces_{hemi}",
+                name=f"collect_surfaces_{hemi_label}",
             )
 
             # fmt:off
@@ -432,7 +432,7 @@ def init_anatomical_wf(
                 hemisphere=hemi,
                 mem_gb=mem_gb,
                 omp_nthreads=omp_nthreads,
-                name=f"{hemi}_apply_transforms_wf",
+                name=f"{hemi_label}_apply_transforms_wf",
             )
             apply_transforms_wf.inputs.inputnode.participant_id = subject_id
 
@@ -460,7 +460,7 @@ def init_anatomical_wf(
                         1,  # the HCP midthickness surface
                     ],
                 ),
-                name=f"split_out_hcp_surface_{hemi}",
+                name=f"split_out_hcp_surface_{hemi_label}",
             )
 
             # fmt:off
@@ -477,7 +477,7 @@ def init_anatomical_wf(
                     space="fsLR",
                     den="32k",
                 ),
-                name=f"ds_standard_space_surfaces_{hemi}",
+                name=f"ds_standard_space_surfaces_{hemi_label}",
                 run_without_submitting=True,
                 mem_gb=1,
                 iterfield=["in_file", "source_file"],
@@ -504,7 +504,7 @@ def init_anatomical_wf(
                         1,  # smoothwm
                     ],
                 ),
-                name=f"split_up_surfaces_fsLR_32k_{hemi}",
+                name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
             )
 
             # fmt:off
@@ -524,7 +524,7 @@ def init_anatomical_wf(
             # Generate HCP-style very-inflated surface from standard-space midthickness surface.
             hcpinflated_surf_32k = pe.Node(
                 SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name=f"hcpinflated_surf_32k_{hemi}",
+                name=f"hcpinflated_surf_32k_{hemi_label}",
             )
 
             # fmt:off
@@ -546,7 +546,7 @@ def init_anatomical_wf(
                     suffix="midthickness",
                     extension=".surf.gii",
                 ),
-                name=f"ds_hcp_midthickness_{hemi}",
+                name=f"ds_hcp_midthickness_{hemi_label}",
                 run_without_submitting=False,
                 mem_gb=2,
             )
@@ -573,7 +573,7 @@ def init_anatomical_wf(
                     suffix="inflated",
                     extension=".surf.gii",
                 ),
-                name=f"ds_hcp_inflated_{hemi}",
+                name=f"ds_hcp_inflated_{hemi_label}",
                 run_without_submitting=False,
                 mem_gb=2,
             )
@@ -581,7 +581,7 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_hcp_inflated, [
-                    (f"{hemi}_inflated_surf", "source_file"),
+                    (f"{hemi_label}_inflated_surf", "source_file"),
                 ]),
                 (hcpinflated_surf_32k, ds_hcp_inflated, [
                     ("inflated_out_file", "in_file"),
@@ -600,7 +600,7 @@ def init_anatomical_wf(
                     suffix="vinflated",
                     extension=".surf.gii",
                 ),
-                name=f"ds_hcp_vinflated_{hemi}",
+                name=f"ds_hcp_vinflated_{hemi_label}",
                 run_without_submitting=False,
                 mem_gb=2,
             )
@@ -608,7 +608,7 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_hcp_vinflated, [
-                    (f"{hemi}_inflated_surf", "source_file"),
+                    (f"{hemi_label}_inflated_surf", "source_file"),
                 ]),
                 (hcpinflated_surf_32k, ds_hcp_vinflated, [
                     ("very_inflated_out_file", "in_file"),
