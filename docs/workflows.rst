@@ -60,4 +60,4 @@ BOLD Workflow
         name='bold_postprocess_wf',
     )
     wf.inputs.inputnode.t1w = t1w
-    wf.inputs.inputnode.t1seg = t1seg
+    wf.inputs.inputnode.t1seg = tseg
