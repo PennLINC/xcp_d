@@ -375,6 +375,8 @@ def init_anatomical_wf(
         # fmt:on
 
         for hemi in ["L", "R"]:
+            hemi_label = f"{hemi.lower()}h"
+
             # Create native-space HCP-style midthickness surface file
             native_hcpmidthick = pe.Node(
                 SurfaceAverage(),
@@ -386,8 +388,8 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, native_hcpmidthick, [
-                    ("lh_pial_surface", "surface_in1"),
-                    ("lh_wm_surface", "surface_in2"),
+                    (f"{hemi_label}_pial_surf", "surface_in1"),
+                    (f"{hemi_label}_smoothwm_surf", "surface_in2"),
                 ])
             ])
             # fmt:on
@@ -401,10 +403,10 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, collect_surfaces, [
-                    (f"{hemi.lower()}h_inflated_surf", "in1"),
-                    (f"{hemi.lower()}h_midthickness_surf", "in2"),
-                    (f"{hemi.lower()}h_pial_surf", "in3"),
-                    (f"{hemi.lower()}h_smoothwm_surf", "in4"),
+                    (f"{hemi_label}_inflated_surf", "in1"),
+                    (f"{hemi_label}_midthickness_surf", "in2"),
+                    (f"{hemi_label}_pial_surf", "in3"),
+                    (f"{hemi_label}_smoothwm_surf", "in4"),
                 ]),
                 (native_hcpmidthick, collect_surfaces, [
                     ("out_file", "in5"),
@@ -497,10 +499,10 @@ def init_anatomical_wf(
                     ("out1", "inlist"),
                 ]),
                 (split_up_surfaces_fsLR_32k, outputnode, [
-                    ("out1", f"{hemi.lower()}h_inflated_surf"),
-                    ("out2", f"{hemi.lower()}h_midthickness_surf"),
-                    ("out3", f"{hemi.lower()}h_pial_surf"),
-                    ("out4", f"{hemi.lower()}h_smoothwm_surf"),
+                    ("out1", f"{hemi_label}_inflated_surf"),
+                    ("out2", f"{hemi_label}_midthickness_surf"),
+                    ("out3", f"{hemi_label}_pial_surf"),
+                    ("out4", f"{hemi_label}_smoothwm_surf"),
                 ]),
             ])
             # fmt:on
