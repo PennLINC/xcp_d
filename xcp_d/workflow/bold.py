@@ -576,7 +576,7 @@ produced by the regression.
     workflow.connect([
         (inputnode, compute_reho_wf, [
             ("bold_file", "inputnode.bold_file"),
-        ])
+        ]),
         (downcast_data, compute_reho_wf, [
             ("bold_mask", "inputnode.bold_mask"),
         ]),
