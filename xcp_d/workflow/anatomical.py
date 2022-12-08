@@ -723,6 +723,8 @@ def init_anatomical_wf(
         ])
         # fmt:on
 
+        # TODO: At this point, I should probably feed the warped surfaces into the outputnode.
+
         # make "HCP-style" native midthickness and inflated
         lh_native_hcpmidthick_wf = pe.Node(
             SurfaceAverage(),

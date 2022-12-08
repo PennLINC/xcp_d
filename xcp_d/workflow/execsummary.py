@@ -63,7 +63,20 @@ def init_brainsprite_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        niu.IdentityInterface(
+            fields=[
+                "t1w",
+                "t1seg",
+                "lh_inflated_surf",
+                "rh_inflated_surf",
+                "lh_midthickness_surf",
+                "rh_midthickness_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+                "lh_smoothwm_surf",
+                "rh_smoothwm_surf",
+            ],
+        ),
         name="inputnode",
     )
     ribbon2statmap = pe.Node(
