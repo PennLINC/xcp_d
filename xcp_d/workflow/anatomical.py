@@ -439,7 +439,16 @@ def init_anatomical_wf(
             name="update_xform_wf",
         )
 
-        # convert spheres (from FreeSurfer surf dir) to gifti
+        # fmt:off
+        workflow.connect([
+            (inputnode, update_xform_wf, [
+                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
+                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+            ]),
+        ])
+        # fmt:on
+
+        # convert spheres from FreeSurfer surf dir to gifti
         lh_sphere_raw_mris = pe.Node(
             MRIsConvert(out_datatype="gii"),
             name="lh_sphere_raw_mris",
@@ -582,7 +591,7 @@ def init_anatomical_wf(
         ])
         # fmt:on
 
-        # resample the mid, pial, wm surfs to fsLR32k
+        # resample the surfaces to fsLR32k
         lh_resample_to_fsLR32k = pe.MapNode(
             CiftiSurfaceResample(
                 new_sphere=lh_sphere_fsLR,
