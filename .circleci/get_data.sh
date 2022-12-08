@@ -151,6 +151,8 @@ ds001419-fmriprep:
 ds001419 fMRIPrep derivatives cloned from https://github.com/OpenNeuroDerivatives/ds001419-fmriprep
 One subject, multiple runs, two tasks, AROMA confounds, FreeSurfer derivatives.
 fMRIPrep version 22.0.0.
+run-00 only has 23 volumes, so it is a good candidate to skip with a filter file.
+The other runs have been reduced to the first 60 volumes.
 
 nibabies:
 ---------
