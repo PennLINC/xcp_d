@@ -5,13 +5,13 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import logging
 import os
 import warnings
 
 import nibabel as nb
 import yaml
 from bids import BIDSLayout
+from nipype import logging
 from packaging.version import Version
 
 from xcp_d.utils.doc import fill_doc
@@ -757,16 +757,30 @@ def get_freesurfer_dir(fmri_dir):
 
     Raises
     ------
-    ValueError
+    NotADirectoryError
         If no FreeSurfer derivatives are found.
     """
     import glob
     import os
 
-    # Find freesurfer directory
-    freesurfer_paths = glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*"))
+    from nipype import logging
+
+    LOGGER = logging.getLogger("nipype.utils")
+
+    # for fMRIPrep/Nibabies versions >=20.2.1
+    freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
     if len(freesurfer_paths) == 0:
-        freesurfer_paths = glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+        # for fMRIPrep/Nibabies versions <20.2.1
+        freesurfer_paths = sorted(
+            glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+        )
+
+    if len(freesurfer_paths) > 1:
+        freesurfer_path_warning_str = "\n\t".join(freesurfer_paths)
+        LOGGER.warning(
+            "More than one candidate for FreeSurfer derivatives found. "
+            f"Using first of:\n\t{freesurfer_path_warning_str}"
+        )
 
     if len(freesurfer_paths) > 0:
         freesurfer_path = freesurfer_paths[0]
@@ -774,7 +788,7 @@ def get_freesurfer_dir(fmri_dir):
         freesurfer_path = None
 
     if not freesurfer_path:
-        raise ValueError("No FreeSurfer derivatives found.")
+        raise NotADirectoryError("No FreeSurfer derivatives found.")
 
     return freesurfer_path
 
