@@ -7,9 +7,8 @@ General Workflow
 
 Input data
 ----------
-The default inputs to `XCP-D` are the outputs of  `fMRIPrep` and `Nibabies`.
-`xcp_d` can also minimally process `HCP` data,
- whichs require the `input-type` flag ( `hcp` ).
+The default inputs to ``xcp_d`` are the outputs of  ``fMRIPrep`` and ``Nibabies``.
+``xcp_d`` can also minimally process ``HCP`` data, which requires the ``--input-type hcp`` flag.
 
 
 Processing Steps
@@ -96,12 +95,6 @@ Processing Steps
 
       In XCP-D versions prior to 0.3.1, the selected AROMA confounds were incorrect.
       We strongly advise users of these versions not to use the ``aroma`` or ``aroma_gsr`` options.
-
-    .. warning::
-
-      In XCP-D version 0.3.1, AROMA motion components are loaded without modification.
-      This means that XCP-D performs "aggressive" denoising.
-      This is a suboptimal approach to denoising, so we recommend against using the ``aroma`` or ``aroma_gsr`` options.
 
     After the selection of confound regressors,
     the respiratory effects can optionally be filtered out from the motion estimates with band-stop or low-pass filtering to improve fMRI data quality.
