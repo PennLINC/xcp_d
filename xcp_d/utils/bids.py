@@ -272,24 +272,19 @@ def collect_data(
             default_allowed_spaces,
         )["nifti"]
 
-        if input_type not in ("hcp", "dcan"):
-            for space in temp_allowed_spaces:
-                temp_bold_query["space"] = space
-                nifti_bold_data = layout.get(**temp_bold_query)
-                if nifti_bold_data:
-                    queries["t1w_to_template_xform"]["to"] = space
-                    queries["template_to_t1w_xform"]["from"] = space
-                    break
-
-        else:  # HCP and DCAN files don't have
-            # nifti data, we will use the boldref
+        if input_type in ("hcp", "dcan"):
+            temp_allowed_spaces = ["MNI152NLin2009cAsym"]
+            # HCP and DCAN files don't have nifti BOLD data, we will use the boldref
             temp_bold_query["desc"] = None
             temp_bold_query["suffix"] = "boldref"
-            temp_bold_query["space"] = "MNI152NLin6Asym"
-            queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
-            queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
 
-        nifti_bold_data = layout.get(**temp_bold_query)
+        for space in temp_allowed_spaces:
+            temp_bold_query["space"] = space
+            nifti_bold_data = layout.get(**temp_bold_query)
+            if nifti_bold_data:
+                queries["t1w_to_template_xform"]["to"] = space
+                queries["template_to_t1w_xform"]["from"] = space
+                break
 
         if not nifti_bold_data:
             allowed_space_str = ", ".join(temp_allowed_spaces)
