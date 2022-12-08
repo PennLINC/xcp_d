@@ -522,7 +522,7 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
-        (downcast_data, fcon_ts_wf[
+        (downcast_data, fcon_ts_wf, [
             ("bold_file", "inputnode.bold_file"),
             ("ref_file", "inputnode.ref_file"),
         ]),
