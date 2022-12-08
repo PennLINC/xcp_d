@@ -470,7 +470,7 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
             dataset_dict = json.load(f)
 
     info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
-    
+
     if "Version" in dataset_dict["GeneratedBy"][0].keys():
         info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
     else:
