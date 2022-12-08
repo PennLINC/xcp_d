@@ -310,6 +310,25 @@ def collect_data(
 
 
 def collect_surface_data(layout, participant_label):
+    """Collect surface files from preprocessed derivatives.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.BIDSLayout`
+        Layout object indexing the preprocessed derivatives.
+    participant_label : :obj:`str`
+        Subject ID.
+
+    Returns
+    -------
+    out_surface_files : :obj:`dict`
+        Dictionary of surface file identifiers and their paths.
+        If the surface files weren't found, then the paths will be Nones.
+    standard_space_surfaces : :obj:`bool`
+        True if standard-space surfaces were found. False if native-space surfaces were found.
+    surfaces_found : :obj:`bool`
+        True if surface files were found at all. False if they were not.
+    """
     # Try to collect fsLR-space, 32k-resolution surface files.
     # Default to native T1w-space files if necessary.
 
