@@ -493,6 +493,9 @@ def init_anatomical_wf(
 
             # fmt:off
             workflow.connect([
+                (split_out_hcp_surface, split_up_surfaces_fsLR_32k, [
+                    ("out1", "inlist"),
+                ]),
                 (split_up_surfaces_fsLR_32k, outputnode, [
                     ("out1", f"{hemi.lower()}h_inflated_surf"),
                     ("out2", f"{hemi.lower()}h_midthickness_surf"),
