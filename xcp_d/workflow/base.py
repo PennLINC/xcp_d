@@ -463,7 +463,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # fmt:off
     workflow.connect([
         (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
-                             ('t1w_seg', 'inputnode.t1w_seg'),
+                             ('t1w_seg', 'inputnode.t1seg'),
                              ('t1w_to_template_xform', 'inputnode.t1w_to_template')]),
     ])
     # fmt:on
@@ -481,11 +481,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     # fmt:off
-    workflow.connect([
-        (inputnode, brainsprite_wf, [
-            ('t1w', 'inputnode.t1w'),
-        ]),
-    ])
+    workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
+                                                   ('t1w_seg', 'inputnode.t1seg')])])
     # fmt:on
 
     if surfaces_found and (process_surfaces or standard_space_surfaces):
@@ -565,6 +562,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, bold_postproc_wf, [
                 ('t1w', 'inputnode.t1w'),
+                ('t1w_seg', 'inputnode.t1seg'),
                 ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
             ]),
         ])

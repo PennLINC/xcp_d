@@ -146,6 +146,8 @@ def init_boldpostprocess_wf(
         Fed from the subject workflow.
     t1w
         Fed from the subject workflow.
+    t1seg
+        Fed from the subject workflow.
     t1w_mask
         Fed from the subject workflow.
     fmriprep_confounds_tsv
@@ -240,6 +242,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "custom_confounds_folder",
                 "template_to_t1w",
                 "t1w",
+                "t1seg",
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
                 "t1w_to_native",
@@ -273,6 +276,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ("ref_file", "ref_file"),
             ("bold_mask", "bold_mask"),
             ("t1w", "t1w"),
+            ("t1seg", "t1seg"),
             ("t1w_mask", "t1w_mask"),
         ]),
     ])
@@ -703,6 +707,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         workflow.connect([
             (downcast_data, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
+                ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
             ]),

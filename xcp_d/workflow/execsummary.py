@@ -58,12 +58,12 @@ def init_brainsprite_wf(
     Inputs
     ------
     t1w
-    t1w_seg
+    t1seg
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1w_seg"]),
+        niu.IdentityInterface(fields=["t1w", "t1seg"]),
         name="inputnode",
     )
     ribbon2statmap = pe.Node(
@@ -104,6 +104,7 @@ def init_brainsprite_wf(
         name="ds_brainspriteplot",
     )
 
+    use_t1seg_as_ribbon = False
     if input_type in ("dcan", "hcp"):
         # The dcan2fmriprep/hcp2fmriprep functions copy the ribbon file to the derivatives dset.
         ribbon = layout.get(
@@ -114,6 +115,7 @@ def init_brainsprite_wf(
         )
         if len(ribbon) != 1:
             LOGGER.warning(f"{len(ribbon)} matches found for the ribbon file: {ribbon}")
+            use_t1seg_as_ribbon = True
         else:
             ribbon = ribbon[0]
 
@@ -139,14 +141,16 @@ def init_brainsprite_wf(
 
             if not ribbon.is_file():
                 LOGGER.warning(f"File DNE: {ribbon}")
+                use_t1seg_as_ribbon = True
 
         else:
             LOGGER.info("No Freesurfer derivatives found.")
+            use_t1seg_as_ribbon = True
 
     if use_t1seg_as_ribbon:
         LOGGER.info("Using T1w segmentation for ribbon.")
         # fmt:off
-        workflow.connect([(inputnode, ribbon2statmap, [("t1w_seg", "ribbon")])])
+        workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
         # fmt:on
     else:
         ribbon2statmap.inputs.ribbon = ribbon
@@ -190,6 +194,7 @@ def init_execsummary_wf(
     Inputs
     ------
     t1w
+    t1seg
     regressed_data
     residual_data
     filtered_motion
@@ -205,6 +210,7 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
+                "t1seg",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",

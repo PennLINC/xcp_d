@@ -56,6 +56,13 @@ class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         usedefault=True,
     )
+    t1seg = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-space segmentation file",
+        mandatory=False,
+        usedefault=True,
+    )
     t1w_mask = traits.Either(
         None,
         File(exists=True),
@@ -90,6 +97,12 @@ class _ConvertTo32OutputSpec(TraitedSpec):
         desc="T1-weighted anatomical file",
         mandatory=False,
     )
+    t1seg = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-space segmentation file",
+        mandatory=False,
+    )
     t1w_mask = traits.Either(
         None,
         File(exists=True),
@@ -109,6 +122,7 @@ class ConvertTo32(SimpleInterface):
         self._results["ref_file"] = downcast_to_32(self.inputs.ref_file)
         self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
         self._results["t1w"] = downcast_to_32(self.inputs.t1w)
+        self._results["t1seg"] = downcast_to_32(self.inputs.t1seg)
         self._results["t1w_mask"] = downcast_to_32(self.inputs.t1w_mask)
 
         return runtime

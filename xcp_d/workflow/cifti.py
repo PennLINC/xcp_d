@@ -133,6 +133,7 @@ def init_ciftipostprocess_wf(
     custom_confounds_folder
         custom regressors
     t1w
+    t1seg
     %(template_to_t1w)s
     fmriprep_confounds_tsv
 
@@ -217,6 +218,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
                 "bold_file",
                 "custom_confounds_folder",
                 "t1w",
+                "t1seg",
                 "template_to_t1w",
                 "fmriprep_confounds_tsv",
                 "dummy_scans",
@@ -244,6 +246,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
             ("t1w", "t1w"),
+            ("t1seg", "t1seg"),
         ]),
     ])
     # fmt:on
@@ -650,6 +653,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
             ]),
             (downcast_data, executivesummary_wf, [
                 ('t1w', 'inputnode.t1w'),
+                ('t1seg', 'inputnode.t1seg'),
                 ('bold_file', 'inputnode.bold_file'),
             ]),
             (regression_wf, executivesummary_wf, [

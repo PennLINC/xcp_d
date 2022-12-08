@@ -31,8 +31,8 @@ BOLD Workflow
     )
     custom_confounds_folder = pkgrf('xcp_d', 'data/fmriprep/sub-colornest001/ses-1/func/')
 
-    t1w = pkgrf('xcp_d', 'data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_desc-preproc_T1w.nii.gz')
-    t1w_seg = pkgrf('xcp_d', 'data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_dseg.nii.gz')
+    tseg = pkgrf('xcp_d', 'data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_desc-preproc_T1w.nii.gz')
+    t1w = pkgrf('xcp_d', 'data/fmriprep/sub-colornest001/ses-1/anat/sub-colornest001_ses-1_rec-refaced_dseg.nii.gz')
 
     wf = init_boldpostprocess_wf(
         bold_file=bold_file,
@@ -60,4 +60,4 @@ BOLD Workflow
         name='bold_postprocess_wf',
     )
     wf.inputs.inputnode.t1w = t1w
-    wf.inputs.inputnode.t1w_seg = t1w_seg
+    wf.inputs.inputnode.t1seg = t1seg
