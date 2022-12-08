@@ -347,6 +347,20 @@ def init_anatomical_wf(
         ])
         # fmt:on
 
+        nothingnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t1seg"]),
+            name="nothingnode",
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, nothingnode, [
+                ("t1w", "t1w"),
+                ("t1seg", "t1seg"),
+            ]),
+        ])
+
+        # fmt:on
+
     else:
         # Warp the surfaces to space-fsLR, den-32k
         get_freesurfer_dir_node = pe.Node(
