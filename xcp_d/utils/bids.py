@@ -312,6 +312,10 @@ def collect_data(
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
+    This function will try to collect fsLR-space, 32k-resolution surface files first.
+    If these standard-spave surface files aren't available, it will default to native T1w-space
+    files.
+
     Parameters
     ----------
     layout : :obj:`bids.BIDSLayout`
@@ -329,9 +333,6 @@ def collect_surface_data(layout, participant_label):
     surfaces_found : :obj:`bool`
         True if surface files were found at all. False if they were not.
     """
-    # Try to collect fsLR-space, 32k-resolution surface files.
-    # Default to native T1w-space files if necessary.
-
     # Surfaces to use for brainsprite and anatomical workflow
     queries = {
         "lh_inflated_surf": {
