@@ -534,6 +534,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             workflow.connect([
                 (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
             ])
+
         # fmt:on
 
     # fmt:off

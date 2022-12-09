@@ -20,7 +20,6 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.execsummary import (
     get_n_frames,
     get_png_image_names,
-    make_brainsprite_html,
     make_mosaic,
     modify_brainsprite_scene_template,
     modify_pngs_scene_template,
@@ -46,7 +45,7 @@ def init_brainsprite_mini_wf(
             fields=[
                 "anat_file",
                 "image_type",  # T1 or T2
-                "t1w_seg",
+                "t1seg",
                 "lh_wm_surf",
                 "rh_wm_surf",
                 "lh_pial_surf",
@@ -56,15 +55,6 @@ def init_brainsprite_mini_wf(
         name="inputnode",
     )
     inputnode.inputs.image_type = image_type
-
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "brainsprite",
-            ]
-        ),
-        name="outputnode",
-    )
 
     # Modify template scene file with file paths
     modify_brainsprite_template_scene = pe.Node(
@@ -307,7 +297,7 @@ def init_brainsprite_wf(
     Inputs
     ------
     t1w
-    t1w_seg
+    t1seg
     """
     workflow = Workflow(name=name)
 
@@ -316,7 +306,7 @@ def init_brainsprite_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1w_seg",
+                "t1seg",
                 "lh_wm_surf",
                 "rh_wm_surf",
                 "lh_pial_surf",
@@ -355,7 +345,7 @@ def init_brainsprite_wf(
         workflow.connect([
             (inputnode, brainsprite_mini_t1w_wf, [
                 ("t1w", "inputnode.anat_file"),
-                ("t1w_seg", "inputnode.t1w_seg"),
+                ("t1seg", "inputnode.t1seg"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
@@ -381,7 +371,7 @@ def init_brainsprite_wf(
             workflow.connect([
                 (inputnode, brainsprite_mini_t2w_wf, [
                     ("t2w", "inputnode.anat_file"),
-                    ("t1w_seg", "inputnode.t1w_seg"),
+                    ("t1seg", "inputnode.t1seg"),
                     ("lh_wm_surf", "inputnode.lh_wm_surf"),
                     ("rh_wm_surf", "inputnode.rh_wm_surf"),
                     ("lh_pial_surf", "inputnode.lh_pial_surf"),
@@ -459,7 +449,7 @@ def init_brainsprite_wf(
         if use_t1seg_as_ribbon:
             LOGGER.info("Using T1w segmentation for ribbon.")
             # fmt:off
-            workflow.connect([(inputnode, ribbon2statmap, [("t1w_seg", "ribbon")])])
+            workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
             # fmt:on
         else:
             ribbon2statmap.inputs.ribbon = ribbon
@@ -548,7 +538,7 @@ def init_execsummary_wf(
     Inputs
     ------
     t1w
-    t1w_seg
+    t1seg
     regressed_data
     residual_data
     filtered_motion
@@ -564,7 +554,7 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
-                "t1w_seg",
+                "t1seg",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",

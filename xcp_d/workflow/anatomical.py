@@ -93,9 +93,15 @@ def init_t1w_wf(
         name="outputnode",
     )
 
+    # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
     mnitemplate = str(
         get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
     )
+    # mnitemplatemask = str(
+    #     get_template(
+    #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
+    #     )
+    # )
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
