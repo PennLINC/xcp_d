@@ -7,13 +7,13 @@
     - structural_files{image_type}{"mosaic"}
     - structural_files{image_type}{"slices"}
 #}
-{#
-    Loop over the modalities (T1/T2) and add their brainsprites.
-#}
+{# The jquery scripts must be loaded before the macros are run. #}
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+
 {% from "macros.html.jinja" import build_brainsprite, build_cycler, build_modal_script, build_sprite_loader_script %}
 
+{# Loop over the modalities (T1/T2) and add their brainsprites. #}
 {% for image_type in structural_files.keys() %}
     {% set mosaic_file = structural_files[image_type]["mosaic"] %}
     {% set cycler_files = structural_files[image_type]["slices"] %}
@@ -27,6 +27,7 @@
 
 {% endfor %}
 
+{# Include BrainSprite JavaScript code only once. #}
 <script>
 {{ include_file("./brainsprite.js") }}
 </script>
