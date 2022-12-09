@@ -463,6 +463,7 @@ def init_anatomical_wf(
                         3,  # number of ingested and warped surfaces, with inflated dropped
                         1,  # the HCP midthickness surface
                     ],
+                    squeeze=True,
                 ),
                 name=f"split_out_hcp_surface_{hemi_label}",
             )
@@ -507,6 +508,7 @@ def init_anatomical_wf(
                         1,  # smoothwm
                         1,  # midthickness (unused)
                     ],
+                    squeeze=True,
                 ),
                 name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
             )
