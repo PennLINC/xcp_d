@@ -289,12 +289,10 @@ def init_anatomical_wf(
         ),
         name="inputnode",
     )
-
+    # Feed only the pial and white matter surfaces to the outputnode for the brainsprite.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "lh_midthickness_surf",
-                "rh_midthickness_surf",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_smoothwm_surf",
@@ -324,10 +322,8 @@ def init_anatomical_wf(
                 ("rh_smoothwm_surf", "in8"),
             ]),
             (inputnode, outputnode, [
-                ("lh_midthickness_surf", "lh_midthickness_surf"),
                 ("lh_pial_surf", "lh_pial_surf"),
                 ("lh_smoothwm_surf", "lh_smoothwm_surf"),
-                ("rh_midthickness_surf", "rh_midthickness_surf"),
                 ("rh_pial_surf", "rh_pial_surf"),
                 ("rh_smoothwm_surf", "rh_smoothwm_surf"),
             ]),
@@ -417,11 +413,12 @@ def init_anatomical_wf(
             )
 
             # fmt:off
+            # NOTE: Must match order of split_up_surfaces_fsLR_32k.
             workflow.connect([
                 (inputnode, collect_surfaces, [
-                    (f"{hemi_label}_midthickness_surf", "in1"),
-                    (f"{hemi_label}_pial_surf", "in2"),
-                    (f"{hemi_label}_smoothwm_surf", "in3"),
+                    (f"{hemi_label}_pial_surf", "in1"),
+                    (f"{hemi_label}_smoothwm_surf", "in2"),
+                    (f"{hemi_label}_midthickness_surf", "in3"),
                 ]),
                 (native_hcpmidthick, collect_surfaces, [
                     ("out_file", "in4"),
@@ -496,12 +493,13 @@ def init_anatomical_wf(
             # fmt:on
 
             # Split up the normal surfaces as well
+            # NOTE: Must match order of collect_surfaces
             split_up_surfaces_fsLR_32k = pe.Node(
                 niu.Split(
                     splits=[
-                        1,  # midthickness
                         1,  # pial
                         1,  # smoothwm
+                        1,  # midthickness (unused)
                     ],
                 ),
                 name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
@@ -513,9 +511,8 @@ def init_anatomical_wf(
                     ("out1", "inlist"),
                 ]),
                 (split_up_surfaces_fsLR_32k, outputnode, [
-                    ("out1", f"{hemi_label}_midthickness_surf"),
-                    ("out2", f"{hemi_label}_pial_surf"),
-                    ("out3", f"{hemi_label}_smoothwm_surf"),
+                    ("out1", f"{hemi_label}_pial_surf"),
+                    ("out2", f"{hemi_label}_smoothwm_surf"),
                 ]),
             ])
             # fmt:on
@@ -540,7 +537,7 @@ def init_anatomical_wf(
                     check_hdr=False,
                     space="fsLR",
                     den="32k",
-                    hemi="L",
+                    hemi=hemi,
                     desc="hcp",
                     suffix="midthickness",
                     extension=".surf.gii",
@@ -567,7 +564,7 @@ def init_anatomical_wf(
                     check_hdr=False,
                     space="fsLR",
                     den="32k",
-                    hemi="L",
+                    hemi=hemi,
                     desc="hcp",
                     suffix="inflated",
                     extension=".surf.gii",
@@ -594,7 +591,7 @@ def init_anatomical_wf(
                     check_hdr=False,
                     space="fsLR",
                     den="32k",
-                    hemi="L",
+                    hemi=hemi,
                     desc="hcp",
                     suffix="vinflated",
                     extension=".surf.gii",
