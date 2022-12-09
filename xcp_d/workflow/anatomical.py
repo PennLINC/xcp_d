@@ -379,7 +379,7 @@ def init_anatomical_wf(
         # fmt:off
         workflow.connect([
             (inputnode, update_xform_wf, [
-                ("t1w", "t1w"),
+                ("t1w", "inputnode.t1w"),
                 ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
                 ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
             ]),
