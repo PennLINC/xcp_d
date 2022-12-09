@@ -105,6 +105,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     fsaverage_dir_orig = os.path.join(in_dir, "fsaverage_LR32k")
 
+    # NOTE: Why glob? Do we not know the full filenames? Are there multiple files?
     rh_midthickness_orig = glob.glob(
         os.path.join(fsaverage_dir_orig, "*R.midthickness.32k_fs_LR.surf.gii")
     )[0]
@@ -326,6 +327,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             copyfileobj_example(file_orig, file_fmriprep)
 
     # Write the dataset description out last
+    # TODO: Add "unknown" version to dictionary.
     dataset_description_dict = {
         "Name": "HCP",
         "DatasetType": "derivative",
@@ -335,3 +337,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     }
     dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
     writejson(dataset_description_dict, dataset_description_fmriprep)
+
+    # Write out the mapping from HCP to fMRIPrep
+    mapping_fmriprep = os.path.join(out_dir, "file_mapping.json")
+    writejson(mapping_fmriprep, copy_dictionary)
