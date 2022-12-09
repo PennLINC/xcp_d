@@ -339,5 +339,5 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     writejson(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from HCP to fMRIPrep
-    mapping_fmriprep = os.path.join(out_dir, "file_mapping.json")
+    mapping_fmriprep = os.path.join(subject_dir_fmriprep, "file_mapping.json")
     writejson(mapping_fmriprep, copy_dictionary)
