@@ -272,33 +272,6 @@ def init_brainsprite_mini_wf(
     ])
     # fmt:on
 
-    # Create the brainsprite file
-    make_brainsprite = pe.Node(
-        Function(
-            function=make_brainsprite_html,
-            input_names=["mosaic_file", "selected_png_files", "image_type"],
-            output_names=["out_file"],
-        ),
-        name="make_brainsprite",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, make_brainsprite, [
-            ("image_type", "image_type"),
-        ]),
-        (make_mosaic_node, make_brainsprite, [
-            ("mosaic_file", "mosaic_file"),
-        ]),
-        (ds_scenewise_pngs, make_brainsprite, [
-            ("out_file", "selected_png_files"),
-        ]),
-        (make_brainsprite, outputnode, [
-            ("out_file", "brainsprite"),
-        ])
-    ])
-    # fmt:on
-
     return workflow
 
 
