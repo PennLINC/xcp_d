@@ -293,8 +293,6 @@ def init_anatomical_wf(
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "lh_inflated_surf",
-                "rh_inflated_surf",
                 "lh_midthickness_surf",
                 "rh_midthickness_surf",
                 "lh_pial_surf",
@@ -307,6 +305,7 @@ def init_anatomical_wf(
     )
 
     if not warp_to_standard:
+        # The files are already available, so we just map them to the outputnode and DataSinks.
         merge_files_to_list = pe.Node(
             niu.Merge(8),
             name="merge_files_to_list",
@@ -325,11 +324,9 @@ def init_anatomical_wf(
                 ("rh_smoothwm_surf", "in8"),
             ]),
             (inputnode, outputnode, [
-                ("lh_inflated_surf", "lh_inflated_surf"),
                 ("lh_midthickness_surf", "lh_midthickness_surf"),
                 ("lh_pial_surf", "lh_pial_surf"),
                 ("lh_smoothwm_surf", "lh_smoothwm_surf"),
-                ("rh_inflated_surf", "rh_inflated_surf"),
                 ("rh_midthickness_surf", "rh_midthickness_surf"),
                 ("rh_pial_surf", "rh_pial_surf"),
                 ("rh_smoothwm_surf", "rh_smoothwm_surf"),
@@ -358,7 +355,14 @@ def init_anatomical_wf(
         # fmt:on
 
     else:
-        # Warp the surfaces to space-fsLR, den-32k
+        # Warp the surfaces to space-fsLR, den-32k.
+        # We want the following output surfaces:
+        # 1. Pial
+        # 2. Smoothed white matter
+        # 3. Normal (non-HCP-style) midthickness
+        # 4. HCP-style midthickness
+        # 5. HCP-style inflated (but not normal inflated)
+        # 6. HCP-style very-inflated
         get_freesurfer_dir_node = pe.Node(
             Function(
                 function=get_freesurfer_dir,
@@ -369,6 +373,7 @@ def init_anatomical_wf(
         )
         get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
 
+        # First, we create the Connectome WorkBench-compatible transform files.
         update_xform_wf = init_update_xform_wf(
             mem_gb=mem_gb,
             omp_nthreads=omp_nthreads,
@@ -407,20 +412,19 @@ def init_anatomical_wf(
 
             # Place the surfaces in a single node.
             collect_surfaces = pe.Node(
-                niu.Merge(5),
+                niu.Merge(4),
                 name=f"collect_surfaces_{hemi_label}",
             )
 
             # fmt:off
             workflow.connect([
                 (inputnode, collect_surfaces, [
-                    (f"{hemi_label}_inflated_surf", "in1"),
-                    (f"{hemi_label}_midthickness_surf", "in2"),
-                    (f"{hemi_label}_pial_surf", "in3"),
-                    (f"{hemi_label}_smoothwm_surf", "in4"),
+                    (f"{hemi_label}_midthickness_surf", "in1"),
+                    (f"{hemi_label}_pial_surf", "in2"),
+                    (f"{hemi_label}_smoothwm_surf", "in3"),
                 ]),
                 (native_hcpmidthick, collect_surfaces, [
-                    ("out_file", "in5"),
+                    ("out_file", "in4"),
                 ]),
             ])
             # fmt:on
@@ -453,7 +457,7 @@ def init_anatomical_wf(
             split_out_hcp_surface = pe.Node(
                 niu.Split(
                     splits=[
-                        4,  # number of ingested and warped surfaces
+                        3,  # number of ingested and warped surfaces, with inflated dropped
                         1,  # the HCP midthickness surface
                     ],
                 ),
@@ -495,7 +499,6 @@ def init_anatomical_wf(
             split_up_surfaces_fsLR_32k = pe.Node(
                 niu.Split(
                     splits=[
-                        1,  # inflated
                         1,  # midthickness
                         1,  # pial
                         1,  # smoothwm
@@ -510,10 +513,9 @@ def init_anatomical_wf(
                     ("out1", "inlist"),
                 ]),
                 (split_up_surfaces_fsLR_32k, outputnode, [
-                    ("out1", f"{hemi_label}_inflated_surf"),
-                    ("out2", f"{hemi_label}_midthickness_surf"),
-                    ("out3", f"{hemi_label}_pial_surf"),
-                    ("out4", f"{hemi_label}_smoothwm_surf"),
+                    ("out1", f"{hemi_label}_midthickness_surf"),
+                    ("out2", f"{hemi_label}_pial_surf"),
+                    ("out3", f"{hemi_label}_smoothwm_surf"),
                 ]),
             ])
             # fmt:on
@@ -578,7 +580,7 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_hcp_inflated, [
-                    (f"{hemi_label}_inflated_surf", "source_file"),
+                    (f"{hemi_label}_midthickness_surf", "source_file"),
                 ]),
                 (hcpinflated_surf_32k, ds_hcp_inflated, [
                     ("inflated_out_file", "in_file"),
@@ -605,7 +607,7 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_hcp_vinflated, [
-                    (f"{hemi_label}_inflated_surf", "source_file"),
+                    (f"{hemi_label}_midthickness_surf", "source_file"),
                 ]),
                 (hcpinflated_surf_32k, ds_hcp_vinflated, [
                     ("very_inflated_out_file", "in_file"),
