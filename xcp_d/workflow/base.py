@@ -364,7 +364,7 @@ def init_subject_wf(
     workflow.__desc__ = f"""
 ### Post-processing of {input_type} outputs
 The eXtensible Connectivity Pipeline (XCP) [@mitigating_2018;@satterthwaite_2013]
-was used to post-process the outputs of {input_type} version {info_dict["version"]}
+was used to post-process the outputs of {info_dict["name"]} version {info_dict["version"]}
 {info_dict["references"]}.
 XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
@@ -496,6 +496,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     preproc_files = []
     for i_run, bold_file in enumerate(preproc_files):
         bold_postproc_wf = postproc_wf_function(
+            input_type=input_type,
             bold_file=bold_file,
             lower_bpf=lower_bpf,
             upper_bpf=upper_bpf,
