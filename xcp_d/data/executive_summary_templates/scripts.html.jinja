@@ -13,81 +13,6 @@
 #}
 
 {#
-    The slider scripts that will show the next or previous image in a given class.
-    Needs the following values: modal_id, image_class.
-#}
-{% macro build_slider_script(image_class, modal_id) %}
-    var {{ image_class }}Idx = 1;
-    show_{{ image_class }}({{ image_class }}Idx)
-
-    function change_{{ image_class }}(n) {
-        show_{{ image_class }}({{ image_class }}Idx += n)
-    }
-
-    function show_{{ image_class }}(n) {
-        var i;
-        var x = document.getElementsByClassName("{{ image_class }}");
-        if (n > x.length) { {{ image_class }}Idx = 1 }
-        if (n < 1) { {{ image_class }}Idx = x.length }
-        for (i = 0; i < x.length; i++) {
-            x[i].style.display = "none";
-        }
-        x[{{ image_class }}Idx-1].style.display = "block";
-    }
-
-    function open_{{ modal_id }}_slider_to_index(idx) {
-        show_{{ image_class }}({{ image_class }}Idx = idx)
-        document.getElementById("{{ modal_id }}").style.display='block'
-    }
-{% endmacro %}
-
-{#
-    The loader script to be run when then window loads. Put this
-    with other scripts.
-
-    TS: Seems to call the brainsprite function for a give image type.
-#}
-{% macro build_sprite_loader_script(image_type) %}
-    $( window ).load(function() {
-        var brain{{ image_type }} = brainsprite({
-            canvas: "{{ image_type }}-viewer",
-            sprite: "{{ image_type }}-spriteImg",
-            nbSlice: { 'Y':218 , 'Z':218 },
-            flagCoordinates: true,
-        });
-    });
-{% endmacro %}
-
-{#
-    The modal scripts that will show the chosen image.
-    Needs the following values: modal_id, image_class.
-#}
-{% macro build_modal_script(image_class, modal_id) %}
-    var {{ image_class }}Idx = 1;
-    show_{{ image_class }}({{ image_class }}Idx)
-
-    function change_{{ image_class }}(n) {
-        show_{{ image_class }}({{ image_class }}Idx += n)
-    }
-
-    function show_{{ image_class }}(n) {
-        var i;
-        var x = document.getElementsByClassName("{{ image_class }}");
-        if (n > x.length) { {{ image_class }}Idx = 1 }
-        if (n < 1) { {{ image_class }}Idx = x.length }
-        for (i = 0; i < x.length; i++) {
-            x[i].style.display = "none";
-        }
-        x[{{ image_class }}Idx-1].style.display = "block";
-    }
-
-    function open_{{ modal_id }}_to_index(idx) {
-        show_{{ image_class }}({{ image_class }}Idx = idx)
-        document.getElementById("{{ modal_id }}").style.display='block'
-    }
-{% endmacro %}
-
-{#
     1. BrainSprite: brainsprite(params)
 
     Not sure if this will work.
@@ -106,11 +31,9 @@
     4. var brainT1 = brainsprite()
     Modify sprite_load_script template for each image type.
 #}
-
+{% from "macros.html.jinja" import build_sprite_loader_script %}
 {% if "T1" in structural_files.keys() %}
-    <script>
     {{ build_sprite_loader_script("T1") }}
-    </script>
 {% endif %}
 
 {#
@@ -118,33 +41,5 @@
     Modify sprite_load_script template for each image type.
 #}
 {% if "T2" in structural_files.keys() %}
-    <script>
     {{ build_sprite_loader_script("T2") }}
-    </script>
 {% endif %}
-
-{#
-    6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
-#}
-{% if "T1" in structural_files.keys() %}
-    <script>
-    {{ build_modal_script("T1pngs", "T1_modal") }}
-    </script>
-{% endif %}
-
-{#
-    7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
-#}
-{% if "T2" in structural_files.keys() %}
-    <script>
-    {{ build_modal_script("T2pngs", "T2_modal") }}
-    </script>
-{% endif %}
-
-{#
-    8. show_Images and open_img_modal_to_index
-    Seems to be used on the BOLD carpet plots, but isn't present in constants.
-#}
-<script>
-{{ build_modal_script("Registrations", "regs_modal") }}
-</script>

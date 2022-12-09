@@ -4,12 +4,18 @@
     Inputs:
     - structural_files{image_type}{"registration_files"}[]
     - structural_files{image_type}{"registration_titles"}[]
+
+    Also uses the namespace ns.registrations_counter to keep track of the
+    number of registration images to loop over.
 #}
 <section id="Anat">
     <div class="w3-container">
         <div class="w3-row-padding">
             <div class="w3-center"><h2>Anatomical Data</h2></div>
         </div>
+        {# modal_id and image_class are parameters to build_modal_script macro #}
+        {% set image_class = "Registrations" %}
+        {% set modal_id = "regs_modal" %}
         {% for img_type in structural_files.keys() %}
 
             {% set registration_files = structural_files[img_type]["registration_files"] %}
@@ -21,7 +27,7 @@
 
                     <div class="w3-col l11">
                     {% if registration_file != "None" %}
-                        <img src="{{ registration_file }}" onclick="open_regs_modal_to_index({{ ns.registrations_counter }})">
+                        <img src="{{ registration_file }}" onclick="open_{{ modal_id }}_to_index({{ ns.registrations_counter }})">
                         {% set ns.registrations_counter = ns.registrations_counter + 1 %}
                     {% else %}
                         <div class="w3-container w3-pale-red label3">Image Not Available</div>
@@ -34,13 +40,13 @@
 
         {% endfor %}
 
-        <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_Registrations(-1)">
+        <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_{{ image_class }}(-1)">
             <i class="fas fa-angle-left"></i>
         </button>
-        <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_Registrations(1)">
+        <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_{{ image_class }}(1)">
             <i class="fas fa-angle-right"></i>
         </button>
-        <button class="w3-btn w3-red w3-display-topright w3-large" onclick="document.getElementById('regs_modal').style.display='none'">
+        <button class="w3-btn w3-red w3-display-topright w3-large" onclick="document.getElementById({{ modal_id }}).style.display='none'">
             <i class="fa fa-close"></i>
         </button>
 

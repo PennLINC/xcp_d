@@ -37,31 +37,33 @@
     header, footer, section, article, nav, aside { display: block; }
     h1, h2, h3, body, button, p, w3-btn { font-family: Verdana, Helvetica, Arial, Bookman, sans-serif; }
     h1 { text-align: center; font-size: 2.5em; }
-    h2{ text-align: center; font-size: 2.00em; }
-    h3{ text-align: left; font-size: 2.5em; }
-    p{ font-size: 1.0em; }
-    body{ font-size: 1.0em; }
-    img{ width: 100%; padding: 2px; }
-    .label1, .label2, .label3, .label4{ font-family: Verdana, Helvetica, Arial, Bookman, sans-serif }
+    h2 { text-align: center; font-size: 2.00em; }
+    h3 { text-align: left; font-size: 2.5em; }
+    p { font-size: 1.0em; }
+    body { font-size: 1.0em; }
+    img { width: 100%; padding: 2px; }
+    .label1, .label2, .label3, .label4 { font-family: Verdana, Helvetica, Arial, Bookman, sans-serif }
     .label1 { font-size: 1.25em; text-align: center; }
     .label2 { font-size: 1.25em; text-align: right; }
     .label3 { font-size: 1.25em; text-align: left; }
     .label4 { font-size: 1.00em; text-align: center; }
     .grid-container { grid-gap: 2px; padding: 2px; }
-    .T1pngs, .T2pngs, .Registrations, .Images { display: none; }
+    .T1pngs, .T2pngs, .Registrations, .Carpets { display: none; }
     .modal { vertical-align: top; margin-top:0; border-top-style:none; padding-top:0; top:0; height: 100%; width: auto; }
-    .Images{ height: 100%; width: auto; }
+    .Images { display: none; height: 100%; width: auto; }
 </style>
 <body>
     {#
-        Make the html 'title' (what will be seen on the tab, etc.),
+        Make the html "title" (what will be seen on the tab, etc.),
         as well as the page header.
     #}
     <title>Executive Summary: {{ subject }} {{ session }}</title>
     <header> <h1>{{ subject }}/{{ session }}</h1> </header>
 
-    {#Compile a list of all registration files and their titles.#}
-    {% set ns = namespace(registration_files = [], registrations_counter = 1) %}
+    {# Define namespace variables to track across templates #}
+    {% set ns = namespace(registration_files = [], carpet_files = [], image_files = [], registrations_counter = 1, carpets_counter = 1, images_counter = 1) %}
+
+    {# Compile a list of all structural registration files. #}
     {% for img_type in structural_files.keys() %}
         {% set modality_structural_files = structural_files[img_type] %}
         {% for reg_file in modality_structural_files["registration_files"] %}
@@ -71,20 +73,43 @@
         {% endfor %}
     {% endfor %}
 
-    {% for run_dict in task_files %}
-        {% set registration_files_ = run_dict["registration_files"] %}
+    {% if concatenated_rest_files["preproc_carpet"] != "None" %}
+        {{ ns.carpet_files.append(concatenated_rest_files["preproc_carpet"]) or "" }}
+    {% endif %}
+    {% if concatenated_rest_files["postproc_carpet"] != "None" %}
+        {{ ns.carpet_files.append(concatenated_rest_files["postproc_carpet"]) or "" }}
+    {% endif %}
 
-        {% for reg_file in registration_files_ %}
+    {% for run_dict in task_files %}
+        {# Collect functional registration files first #}
+        {# registrations_counter is iterated in the relevant templates later #}
+        {% for reg_file in run_dict["registration_files"] %}
             {% if reg_file != "None" %}
                 {{ ns.registration_files.append(reg_file) or "" }}
             {% endif %}
         {% endfor %}
+
+        {# Collect carpet plots next #}
+        {% if run_dict["preproc_carpet"] != "None" %}
+            {{ ns.carpet_files.append(run_dict["preproc_carpet"]) or "" }}
+        {% endif %}
+        {% if run_dict["postproc_carpet"] != "None" %}
+            {{ ns.carpet_files.append(run_dict["postproc_carpet"]) or "" }}
+        {% endif %}
+
+        {# Collect other plots last #}
+        {% if run_dict["bold"] != "None" %}
+            {{ ns.image_files.append(run_dict["bold"]) or "" }}
+        {% endif %}
+        {% if run_dict["reference"] != "None" %}
+            {{ ns.image_files.append(run_dict["reference"]) or "" }}
+        {% endif %}
     {% endfor %}
 
     {#
         Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons.
     #}
-    {% include 'anatomical_interactive_plots.html.jinja' %}
+    {% include "anatomical_interactive_plots.html.jinja" %}
 
     {#
         "Anatomical Data" section, with static gif files showing segmentations.
@@ -93,12 +118,12 @@
         3. Atlas in Subcorticals (nibabies only)
         4. Subcorticals in Atlas (nibabies only)
     #}
-    {% include 'anatomical_static_plots.html.jinja' %}
+    {% include "anatomical_static_plots.html.jinja" %}
 
     {#
         Carpet/line plot for pre- and post-regression, concatenate across runs.
     #}
-    {% include 'concatenated_task_static_plots.html.jinja' %}
+    {% include "concatenated_task_static_plots.html.jinja" %}
 
     {#
         Task static plots. One section per run of each task.
@@ -108,11 +133,12 @@
         4. BOLD reference image on the left
         3/4. Pre and post regression carpet/line plots on right.
     #}
-    {% include 'task_static_plots.html.jinja' %}
+    {% include "task_static_plots.html.jinja" %}
 
-    {% include "image_cycler.html.jinja" %}
-
-    {% include "registration_cycler.html.jinja" %}
+    {#
+        Generate scripts and list of images for different mode-specific cyclers.
+    #}
+    {% include "cyclers.html.jinja" %}
 
     {#
         Script sections with Javascript snippets.
@@ -126,7 +152,7 @@
         8. show_Images and open_img_modal_to_index
         9. change_Registrations and show_Registrations and open_regs_modal_to_index
     #}
-    {% include 'scripts.html.jinja' %}
+    {% include "scripts.html.jinja" %}
 
 </body>
 </html>
