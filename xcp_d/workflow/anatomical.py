@@ -4,7 +4,6 @@
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
 from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -1030,44 +1029,6 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
             suffix="sphere",
         )
     )
-
-    native_apply_affine = pe.MapNode(
-        ApplyAffine(),
-        name="native_apply_affine",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["in_file"],
-    )  # TM
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, native_apply_affine, [
-            ("hemi_files", "in_file"),
-            ("world_xform", "affine"),
-        ]),
-    ])
-    # fmt:on
-
-    # NOTE: No outward-bound connections here.
-    native_apply_warpfield = pe.MapNode(
-        ApplyWarpfield(),
-        name="native_apply_warpfield",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["in_file"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (native_apply_affine, native_apply_warpfield, [
-            ("out_file", "in_file"),
-        ]),
-        (inputnode, native_apply_warpfield, [
-            ("merged_warpfield", "forward_warp"),
-            ("merged_inv_warpfield", "warpfield"),
-        ]),
-    ])
-    # fmt:on
 
     # resample the surfaces to fsLR32k
     resample_to_fsLR32k = pe.MapNode(
