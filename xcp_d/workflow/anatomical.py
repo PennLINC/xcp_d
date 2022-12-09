@@ -251,14 +251,24 @@ def init_anatomical_wf(
         Only seems to be used for a stray branch of init_update_xform_wf.
     t1w_to_template_xform
     template_to_t1w_xform
-    lh_inflated_surf
-    rh_inflated_surf
-    lh_midthickness_surf
-    rh_midthickness_surf
-    lh_pial_surf
-    rh_pial_surf
-    lh_smoothwm_surf
-    rh_smoothwm_surf
+    lh_inflated_surf, rh_inflated_surf
+        Left- and right-hemisphere inflated surface files.
+        Written out to derivatives if already in standard space, but unused otherwise.
+    lh_midthickness_surf, rh_midthickness_surf
+        Left- and right-hemisphere midthickness surface files.
+        Warped to standard space and written out to derivatives, but unused otherwise.
+    lh_pial_surf, rh_pial_surf
+        Left- and right-hemisphere pial surface files.
+        Warped to standard space, written out to derivatives,
+        and returned via outputnode for use in brainsprite.
+        Also used to generate HCP-style midthickness, inflated, and veryinflated surfaces
+        if they're not already available.
+    lh_smoothwm_surf, rh_smoothwm_surf
+        Left- and right-hemisphere smoothed white matter surface files.
+        Warped to standard space, written out to derivatives,
+        and returned via outputnode for use in brainsprite.
+        Also used to generate HCP-style midthickness, inflated, and veryinflated surfaces
+        if they're not already available.
 
     Notes
     -----

@@ -469,6 +469,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # fmt:on
 
     # Plot the ribbon on the brain in a brainsprite figure
+    # TODO: Give the brainsprite workflow the standard-space T1w, pial, and smoothwm files if
+    # available/requested via --warp-surfaces-native2std flag.
+    # Give it native-space versions if available and no flag.
+    # Otherwise, if no surfaces are available, *don't run it at all*.
     brainsprite_wf = init_brainsprite_wf(
         layout=layout,
         fmri_dir=fmri_dir,
