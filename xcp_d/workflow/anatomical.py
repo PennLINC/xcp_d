@@ -77,7 +77,7 @@ def init_t1w_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1w_seg : str
+    t1seg : str
         Path to the T1w segmentation file.
     %(t1w_to_template)s
     """
@@ -89,7 +89,7 @@ def init_t1w_wf(
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1w_seg"]),
+        niu.IdentityInterface(fields=["t1w", "t1seg"]),
         name="outputnode",
     )
 
@@ -120,7 +120,7 @@ def init_t1w_wf(
         workflow.connect(
             [
                 (inputnode, ds_t1wmni, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg, [("t1w_seg", "in_file")]),
+                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
             ]
         )
         # fmt:on
@@ -191,9 +191,9 @@ def init_t1w_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-        (inputnode, ds_t1wseg, [("t1w_seg", "source_file")]),
+        (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
         (ds_t1wmni, outputnode, [("out_file", "t1w")]),
-        (ds_t1wseg, outputnode, [("out_file", "t1w_seg")]),
+        (ds_t1wseg, outputnode, [("out_file", "t1seg")]),
     ])
     # fmt:on
 
@@ -254,7 +254,7 @@ def init_anatomical_wf(
     ------
     t1w : str
         Path to the T1w file.
-    t1w_seg : str
+    t1seg : str
         Path to the T1w segmentation file.
 
     Notes
@@ -268,7 +268,7 @@ def init_anatomical_wf(
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1w_seg"]), name="inputnode")
+    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -1528,7 +1528,7 @@ def init_anatomical_wf(
             workflow.connect(
                 [
                     (inputnode, nothingnode, [("t1w", "t1w")]),
-                    (inputnode, nothingnode, [("t1w_seg", "t1w_seg")]),
+                    (inputnode, nothingnode, [("t1seg", "t1seg")]),
                 ]
             )
             # fmt:on
