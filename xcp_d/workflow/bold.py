@@ -153,7 +153,7 @@ def init_boldpostprocess_wf(
         Fed from the subject workflow.
     t1w
         Fed from the subject workflow.
-    t1w_seg
+    t1seg
         Fed from the subject workflow.
     t1w_mask
         Fed from the subject workflow.
@@ -265,7 +265,7 @@ produced by the regression.
                 "custom_confounds_file",
                 "template_to_t1w",
                 "t1w",
-                "t1w_seg",
+                "t1seg",
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
                 "t1w_to_native",
@@ -715,7 +715,7 @@ produced by the regression.
         workflow.connect([
             (downcast_data, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("t1w_seg", "inputnode.t1w_seg"),
+                ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
             ]),

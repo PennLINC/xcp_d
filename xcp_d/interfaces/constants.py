@@ -79,54 +79,14 @@ TX_SECTION_START = """
 </section>
         """
 
-BRAINSPRITE_CODE = """
-<div class="w3-container">
-    <div class="w3-cell w3-left label3">{image_type}</div>
-    <div class="w3-cell w3-right">
-        {anat_pngs_button}
-    </div>
-</div>
-<div class="w3-container">
-    {anat_brainsprite}
-</div>
-"""
-
 T1X_SECTION = """
-<section id="{tx1}">
-    <div class="w3-container">
-        <div class="w3-cell w3-left label3">{tx1}</div>
-        <div class="w3-cell w3-right">
-            {t1_pngs_button}
-        </div>
-    </div>
-    <div class="w3-container">
-        {t1wbrainplot}
-    </div>
-</section>
-"""
-
-T2X_SECTION = """
-<section id="{tx2}">
-    <div class="w3-container">
-        <div class="w3-cell w3-left label3">{tx2}</div>
-        <div class="w3-cell w3-right">
-            {t2_pngs_button}
-        </div>
-    </div>
-    <div class="w3-container">
-        {t2wbrainplot}
-    </div>
-</section>
-"""
-
-_T1X_SECTION = """
 <section id="{tx1}">
     <div class="w3-col l1 label2"> {tx1} </div>
     <div  {t1wbrainplot} </div>
 </section>
 """
 
-_T2X_SECTION = """
+T2X_SECTION = """
 <section id="{tx2}">
     <div class="w3-col l1 label2"> {tx2} </div>
     <div {t2wbrainplot} </div>

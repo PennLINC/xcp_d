@@ -105,8 +105,8 @@ def init_xcpd_wf(
                 fd_thresh=0.2,
                 process_surfaces=False,
                 dcan_qc=False,
-                input_type="fmriprep",
-                name="xcpd_wf",
+                input_type='fmriprep',
+                name='xcpd_wf',
             )
 
     Parameters
@@ -493,7 +493,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
-    preproc_files = []
+    preproc_files = []  # NOTE: to skip BOLD processing in CI. Remember to remove.
     for i_run, bold_file in enumerate(preproc_files):
         bold_postproc_wf = postproc_wf_function(
             input_type=input_type,
@@ -532,20 +532,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         if not cifti:
             workflow.connect([
-                (inputnode, bold_postproc_wf, [
-                    ("t1w_mask", "inputnode.t1w_mask"),
-                ]),
+                (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
             ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (summary, ds_report_summary, [
-            ("out_report", "in_file"),
-        ]),
-        (about, ds_report_about, [
-            ("out_report", "in_file"),
-        ]),
+        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
+                          (about, ds_report_about, [('out_report', 'in_file')])])
     ])
     # fmt:on
 

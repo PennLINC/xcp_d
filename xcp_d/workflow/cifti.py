@@ -661,7 +661,7 @@ produced by the regression.
             ]),
             (downcast_data, executivesummary_wf, [
                 ('t1w', 'inputnode.t1w'),
-                ('t1w_seg', 'inputnode.t1w_seg'),
+                ('t1seg', 'inputnode.t1seg'),
                 ('bold_file', 'inputnode.bold_file'),
             ]),
             (regression_wf, executivesummary_wf, [
