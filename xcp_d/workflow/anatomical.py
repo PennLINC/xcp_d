@@ -666,13 +666,6 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
         name="outputnode",
     )
 
-    mnitemplate = get_template(
-        template="MNI152NLin6Asym",
-        resolution=2,
-        desc=None,
-        suffix="T1w",
-    )
-
     # Now we can start the actual workflow.
     # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
     disassemble_h5 = pe.Node(
@@ -748,63 +741,6 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
     # fmt:off
     workflow.connect([
         (change_xfm_type, convert_xfm2world, [("out_transform", "in_file")]),
-    ])
-    # fmt:on
-
-    # merge new components
-    merge_xfms_list = pe.Node(
-        niu.Merge(2),
-        name="merge_xfms_list",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-    merge_inv_xfms_list = pe.Node(
-        niu.Merge(2),
-        name="merge_inv_xfms_list",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (disassemble_h5, merge_xfms_list, [("displacement_field", "in1")]),
-        (disassemble_h5, merge_xfms_list, [("affine_transform", "in2")]),
-        (disassemble_h5_inv, merge_inv_xfms_list, [("displacement_field", "in2")]),
-        (disassemble_h5_inv, merge_inv_xfms_list, [("affine_transform", "in1")]),
-    ])
-    # fmt:on
-
-    # combine the affine and warpfield xfms from the
-    # disassembled h5 into a single warpfield xfm
-    combine_xfms = pe.Node(
-        ApplyTransforms(
-            reference_image=mnitemplate,
-            interpolation="LanczosWindowedSinc",
-            print_out_composite_warp_file=True,
-            output_image="ants_composite_xfm.nii.gz",
-        ),
-        name="combine_xfms",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-    combine_inv_xfms = pe.Node(
-        ApplyTransforms(
-            reference_image=mnitemplate,
-            interpolation="LanczosWindowedSinc",
-            print_out_composite_warp_file=True,
-            output_image="ants_composite_inv_xfm.nii.gz",
-        ),
-        name="combine_inv_xfms",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, combine_xfms, [("t1w", "input_image")]),
-        (merge_xfms_list, combine_xfms, [("out", "transforms")]),
-        (inputnode, combine_inv_xfms, [("t1w", "input_image")]),
-        (merge_inv_xfms_list, combine_inv_xfms, [("out", "transforms")]),
     ])
     # fmt:on
 
