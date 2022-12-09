@@ -246,9 +246,6 @@ def init_anatomical_wf(
 
     Inputs
     ------
-    t1w : str
-        Path to the T1w file.
-        Only seems to be used for a stray branch of init_update_xform_wf.
     t1w_to_template_xform
     template_to_t1w_xform
     lh_inflated_surf, rh_inflated_surf
@@ -275,16 +272,16 @@ def init_anatomical_wf(
     If "hcp" or "dcan" input type, pre-generated surface files will be collected from the
     converted preprocessed derivatives.
     However, these derivatives do not include HCP-style surfaces.
+    Unless maybe they *are* HCP-style surfaces already?
 
-    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from the
-    associated Freesurfer directory (if available), and warped to fsLR space.
+    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from
+    the associated Freesurfer directory (if available), and warped to fsLR space.
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "t1w",
                 "t1w_to_template_xform",
                 "template_to_t1w_xform",
                 "lh_inflated_surf",
@@ -389,7 +386,6 @@ def init_anatomical_wf(
         # fmt:off
         workflow.connect([
             (inputnode, update_xform_wf, [
-                ("t1w", "inputnode.t1w"),
                 ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
                 ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
             ]),
@@ -650,7 +646,6 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
 
     Inputs
     ------
-    t1w
     t1w_to_template_xform
         fMRIPrep-style H5 transform from T1w image to template.
     template_to_t1w_xform
@@ -665,7 +660,7 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1w_to_template_xform", "template_to_t1w_xform"]),
+        niu.IdentityInterface(fields=["t1w_to_template_xform", "template_to_t1w_xform"]),
         name="inputnode",
     )
 
@@ -1000,17 +995,16 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     ])
     # fmt:on
 
-    # convert sphere from FreeSurfer surf dir to gifti
-    sphere_raw_mris = pe.Node(
+    sphere_to_surf_gii = pe.Node(
         MRIsConvert(out_datatype="gii"),
-        name="sphere_raw_mris",
+        name="sphere_to_surf_gii",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
 
     # fmt:off
     workflow.connect([
-        (get_freesurfer_sphere_node, sphere_raw_mris, [("sphere_raw", "in_file")]),
+        (get_freesurfer_sphere_node, sphere_to_surf_gii, [("sphere_raw", "in_file")]),
     ])
     # fmt:on
 
@@ -1024,7 +1018,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
 
     # fmt:off
     workflow.connect([
-        (sphere_raw_mris, surface_sphere_project_unproject, [("converted", "in_file")]),
+        (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
     ])
     # fmt:on
 

@@ -503,7 +503,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # fmt:off
         workflow.connect([
             (inputnode, anatomical_wf, [
-                ("t1w", "inputnode.t1w"),
                 ("lh_inflated_surf", "inputnode.lh_inflated_surf"),
                 ("rh_inflated_surf", "inputnode.rh_inflated_surf"),
                 ("lh_midthickness_surf", "inputnode.lh_midthickness_surf"),
