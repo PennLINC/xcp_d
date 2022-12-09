@@ -538,10 +538,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # fmt:on
 
     # fmt:off
-    workflow.connect([
-        workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
-                          (about, ds_report_about, [('out_report', 'in_file')])])
-    ])
+    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
+                      (about, ds_report_about, [('out_report', 'in_file')])])
     # fmt:on
 
     for node in workflow.list_node_names():
