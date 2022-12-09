@@ -25,7 +25,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_spheres
+from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -983,7 +983,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     )
     get_freesurfer_sphere_node = pe.Node(
         Function(
-            function=get_freesurfer_spheres,
+            function=get_freesurfer_sphere,
             input_names=["freesurfer_path", "subject_id", "hemisphere"],
             output_names=["sphere_raw"],
         ),

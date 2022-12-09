@@ -793,8 +793,8 @@ def get_freesurfer_dir(fmri_dir):
     return freesurfer_path
 
 
-def get_freesurfer_spheres(freesurfer_path, subject_id):
-    """Find FreeSurfer sphere files.
+def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
+    """Find FreeSurfer sphere file.
 
     Parameters
     ----------
@@ -802,30 +802,34 @@ def get_freesurfer_spheres(freesurfer_path, subject_id):
         Path to the FreeSurfer derivatives.
     subject_id : str
         Subject ID. This may or may not be prefixed with "sub-".
+    hemisphere : {"L", "R"}
+        The hemisphere to grab.
 
     Returns
     -------
-    lh_sphere_raw : str
-        Left hemisphere sphere file.
-    rh_sphere_raw : str
-        Right hemisphere sphere file.
+    sphere_raw : str
+        Sphere file for the requested subject and hemisphere.
 
     Raises
     ------
     FileNotFoundError
-        If either of the sphere files cannot be found.
+        If the sphere file cannot be found.
     """
     import os
+
+    assert hemisphere in ("L", "R"), hemisphere
 
     if not subject_id.startswith("sub-"):
         subject_id = "sub-" + subject_id
 
-    lh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/lh.sphere.reg")
-    rh_sphere_raw = os.path.join(freesurfer_path, subject_id, "surf/rh.sphere.reg")
+    sphere_raw = os.path.join(
+        freesurfer_path,
+        subject_id,
+        "surf",
+        f"{hemisphere.lower()}h.sphere.reg",
+    )
 
-    if not os.path.isfile(lh_sphere_raw):
-        raise FileNotFoundError(f"Left-hemisphere sphere file not found at '{lh_sphere_raw}'")
-    elif not os.path.isfile(rh_sphere_raw):
-        raise FileNotFoundError(f"Right-hemisphere sphere file not found at '{rh_sphere_raw}'")
+    if not os.path.isfile(sphere_raw):
+        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
 
-    return lh_sphere_raw, rh_sphere_raw
+    return sphere_raw
