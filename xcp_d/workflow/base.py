@@ -515,10 +515,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # fmt:off
         workflow.connect([
             (anatomical_wf, brainsprite_wf, [
-                ("outputnode.lh_inflated_surf", "inputnode.lh_inflated_surf"),
-                ("outputnode.rh_inflated_surf", "inputnode.rh_inflated_surf"),
-                ("outputnode.lh_midthickness_surf", "inputnode.lh_midthickness_surf"),
-                ("outputnode.rh_midthickness_surf", "inputnode.rh_midthickness_surf"),
                 ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("outputnode.lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),

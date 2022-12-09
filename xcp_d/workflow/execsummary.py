@@ -59,6 +59,10 @@ def init_brainsprite_wf(
     ------
     t1w
     t1seg
+    lh_pial_surf
+    rh_pial_surf
+    lh_smoothwm_surf
+    rh_smoothwm_surf
     """
     workflow = Workflow(name=name)
 
@@ -67,10 +71,6 @@ def init_brainsprite_wf(
             fields=[
                 "t1w",
                 "t1seg",
-                "lh_inflated_surf",
-                "rh_inflated_surf",
-                "lh_midthickness_surf",
-                "rh_midthickness_surf",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_smoothwm_surf",
