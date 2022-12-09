@@ -109,7 +109,7 @@
     {#
         Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons.
     #}
-    {% include "anatomical_interactive_plots.html.jinja" %}
+    {% include "brainsprite_with_pngs.html.jinja" %}
 
     {#
         "Anatomical Data" section, with static gif files showing segmentations.
@@ -139,20 +139,6 @@
         Generate scripts and list of images for different mode-specific cyclers...
     #}
     {% include "cyclers.html.jinja" %}
-
-    {#
-        Script sections with Javascript snippets.
-        1. BrainSprite: brainsprite(params)
-        2. jquery import
-        3. another jquery import
-        4. var brainT1 = brainsprite()
-        5. var brainT2 = brainsprite()
-        6. change_T1pngs and show_T1pngs and open_T1_modal_to_index
-        7. change_T2pngs and show_T2pngs and open_T2_modal_to_index
-        8. show_Images and open_img_modal_to_index
-        9. change_Registrations and show_Registrations and open_regs_modal_to_index
-    #}
-    {% include "scripts.html.jinja" %}
 
 </body>
 </html>

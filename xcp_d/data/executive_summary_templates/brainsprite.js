@@ -3,8 +3,6 @@
 // This contant is only needed once (thank goodness) and does not need
 // any values inserted. Just include it in the HTML whereever you have
 // your scripts.
-// TS: Gotta love code no one understands and you can't touch or it'll break.
-// Very good for long-term maintainability.
 function brainsprite(params) {
 
     // Function to add nearest neighbour interpolation to a canvas

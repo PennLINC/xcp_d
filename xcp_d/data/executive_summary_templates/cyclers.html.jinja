@@ -5,14 +5,6 @@
 {# modal_id and image_class are parameters to build_modal_script macro #}
 {% from "macros.html.jinja" import build_modal_script, build_cycler %}
 
-{% if "T1" in structural_files.keys() %}
-    {{ build_modal_script("T1pngs", "T1_modal") }}
-{% endif %}
-
-{% if "T2" in structural_files.keys() %}
-    {{ build_modal_script("T2pngs", "T2_modal") }}
-{% endif %}
-
 {% set image_class = "Carpets" %}
 {% set modal_id = "carpets_modal" %}
 {% set cycler_files = ns.carpet_files %}

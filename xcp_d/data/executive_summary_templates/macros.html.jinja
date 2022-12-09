@@ -1,4 +1,28 @@
 {#
+    Build the BrainSprite.
+#}
+{% macro build_brainsprite(image_type, modal_id, mosaic_file) %}
+    <section id="{{ image_type }}">
+
+        <div class="w3-container">
+            <div class="w3-cell w3-left label3">BrainSprite Viewer: {{ image_type }}</div>
+            <div class="w3-cell w3-right">
+                <button class="w3-btn w3-teal" onclick="open_{{ modal_id }}_to_index(1)">
+                    View {{ image_type }} pngs
+                </button>
+            </div>
+        </div>
+        <div class="w3-container">
+            <div w3-row w3-hide-small>
+                <canvas id="{{ image_type }}-viewer" style="max-width: 100%">
+                <img id="{{ image_type }}-spriteImg" class="hidden" src="{{ mosaic_file }}">
+            </div>
+        </div>
+
+    </section>
+{% endmacro %}
+
+{#
     The modal scripts that will show the chosen image and
     let users click across image from the same mode.
     Needs the following values: modal_id, image_class.
