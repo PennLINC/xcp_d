@@ -413,6 +413,10 @@ def init_anatomical_wf(
             # fmt:on
 
             # Place the surfaces in a single node.
+            collect_original_surfaces = pe.Node(
+                niu.Merge(3),
+                name=f"collect_original_surfaces_{hemi_label}",
+            )
             collect_surfaces = pe.Node(
                 niu.Merge(4),
                 name=f"collect_surfaces_{hemi_label}",
@@ -421,6 +425,11 @@ def init_anatomical_wf(
             # fmt:off
             # NOTE: Must match order of split_up_surfaces_fsLR_32k.
             workflow.connect([
+                (inputnode, collect_original_surfaces, [
+                    (f"{hemi_label}_pial_surf", "in1"),
+                    (f"{hemi_label}_smoothwm_surf", "in2"),
+                    (f"{hemi_label}_midthickness_surf", "in3"),
+                ]),
                 (inputnode, collect_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
                     (f"{hemi_label}_smoothwm_surf", "in2"),
@@ -481,6 +490,7 @@ def init_anatomical_wf(
                     base_directory=output_dir,
                     space="fsLR",
                     den="32k",
+                    extension=".surf.gii",  # the extension is taken from the in_file by default
                 ),
                 name=f"ds_standard_space_surfaces_{hemi_label}",
                 run_without_submitting=True,
@@ -490,7 +500,7 @@ def init_anatomical_wf(
 
             # fmt:off
             workflow.connect([
-                (collect_surfaces, ds_standard_space_surfaces, [
+                (collect_original_surfaces, ds_standard_space_surfaces, [
                     ("out", "source_file"),
                 ]),
                 (split_out_hcp_surface, ds_standard_space_surfaces, [
