@@ -6,7 +6,7 @@
 
     anatomical_interactive_plots:
     - structural_files{image_type}{"mosaic"}
-    - structural_files{image_type}{"slices"}
+    - structural_files{image_type}{"slices"}[]
 
     anatomical_static_plots:
     - structural_files{image_type}{"registration_files"}[]
@@ -53,15 +53,19 @@
     .Images { display: none; height: 100%; width: auto; }
 </style>
 <body>
-    {#
-        Make the html "title" (what will be seen on the tab, etc.),
-        as well as the page header.
-    #}
+    {# Make the html "title" (what will be seen on the tab, etc.), as well as the page header. #}
     <title>Executive Summary: {{ subject }} {{ session }}</title>
     <header> <h1>{{ subject }}/{{ session }}</h1> </header>
 
     {# Define namespace variables to track across templates #}
-    {% set ns = namespace(registration_files = [], carpet_files = [], image_files = [], registrations_counter = 1, carpets_counter = 1, images_counter = 1) %}
+    {% set ns = namespace(
+        registration_files = [],
+        carpet_files = [],
+        image_files = [],
+        registrations_counter = 1,
+        carpets_counter = 1,
+        images_counter = 1,
+    ) %}
 
     {# Compile a list of all structural registration files. #}
     {% for img_type in structural_files.keys() %}
@@ -82,7 +86,7 @@
 
     {% for run_dict in task_files %}
         {# Collect functional registration files first #}
-        {# registrations_counter is iterated in the relevant templates later #}
+        {# counters are iterated in the relevant templates later #}
         {% for reg_file in run_dict["registration_files"] %}
             {% if reg_file != "None" %}
                 {{ ns.registration_files.append(reg_file) or "" }}
@@ -106,9 +110,7 @@
         {% endif %}
     {% endfor %}
 
-    {#
-        Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons.
-    #}
+    {# Brainsprite viewer for T1w and T2w, along with the "View T1w/T2w PNGs" buttons. #}
     {% include "brainsprite_with_pngs.html.jinja" %}
 
     {#
@@ -118,11 +120,9 @@
         3. Atlas in Subcorticals (nibabies only)
         4. Subcorticals in Atlas (nibabies only)
     #}
-    {% include "anatomical_static_plots.html.jinja" %}
+    {% include "anatomical_registration_plots.html.jinja" %}
 
-    {#
-        Carpet/line plot for pre- and post-regression, concatenate across runs.
-    #}
+    {# Carpet/line plot for pre- and post-regression, concatenate across runs. #}
     {% include "concatenated_task_static_plots.html.jinja" %}
 
     {#
@@ -135,9 +135,7 @@
     #}
     {% include "task_static_plots.html.jinja" %}
 
-    {#
-        Generate scripts and list of images for different mode-specific cyclers...
-    #}
+    {# Generate scripts and list of images for different mode-specific cyclers. #}
     {% include "cyclers.html.jinja" %}
 
 </body>
