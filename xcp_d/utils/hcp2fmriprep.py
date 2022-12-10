@@ -99,9 +99,34 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     # get old files
     t1w_orig = os.path.join(in_dir, "T1w_restore.nii.gz")
+    t1w_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-preproc_T1w.nii.gz")
+    copy_dictionary[t1w_orig] = [t1w_fmriprep]
+
+    # NOTE: We're using the T1w image as a transform. This doesn't make sense.
+    t1w_to_template_fmriprep = os.path.join(
+        anat_dir_fmriprep,
+        f"{sub_id}_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.txt",
+    )
+    copy_dictionary[t1w_orig].append(t1w_to_template_fmriprep)
+
+    # NOTE: We're using the T1w image as a transform. This doesn't make sense.
+    template_to_t1w_fmriprep = os.path.join(
+        anat_dir_fmriprep,
+        f"{sub_id}_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.txt",
+    )
+    copy_dictionary[t1w_orig].append(template_to_t1w_fmriprep)
+
     brainmask_orig = os.path.join(in_dir, "brainmask_fs.nii.gz")
+    brainmask_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-brain_mask.nii.gz")
+    copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
+
     ribbon_orig = os.path.join(in_dir, "ribbon.nii.gz")
+    ribbon_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-ribbon_T1w.nii.gz")
+    copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
+
     dseg_orig = os.path.join(in_dir, "aparc+aseg.nii.gz")
+    dseg_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_dseg.nii.gz")
+    copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
     fsaverage_dir_orig = os.path.join(in_dir, "fsaverage_LR32k")
 
@@ -109,66 +134,48 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     rh_midthickness_orig = glob.glob(
         os.path.join(fsaverage_dir_orig, "*R.midthickness.32k_fs_LR.surf.gii")
     )[0]
-    lh_midthickness_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*L.midthickness.32k_fs_LR.surf.gii")
-    )[0]
-    rh_inflated_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*R.inflated.32k_fs_LR.surf.gii")
-    )[0]
-    lh_inflated_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*L.inflated.32k_fs_LR.surf.gii")
-    )[0]
-
-    rh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.pial.32k_fs_LR.surf.gii"))[0]
-    lh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.pial.32k_fs_LR.surf.gii"))[0]
-
-    rh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.white.32k_fs_LR.surf.gii"))[0]
-    lh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.white.32k_fs_LR.surf.gii"))[0]
-
-    # to fmriprep directory
-    t1w_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-preproc_T1w.nii.gz")
-    copy_dictionary[t1w_orig] = [t1w_fmriprep]
-    dseg_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_dseg.nii.gz")
-    copy_dictionary[dseg_orig] = [dseg_fmriprep]
-    ribbon_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-ribbon_T1w.nii.gz")
-    copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
-    brainmask_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-brain_mask.nii.gz")
-    copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
-    t1w_to_template_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.txt",
-    )
-    copy_dictionary[t1w_orig].append(t1w_to_template_fmriprep)
-    template_to_t1w_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.txt",
-    )
-    copy_dictionary[t1w_orig].append(template_to_t1w_fmriprep)
-
     rh_midthickness_fmriprep = os.path.join(
         anat_dir_fmriprep, f"{sub_id}_hemi-R_midthickness.surf.gii"
     )
     copy_dictionary[rh_midthickness_orig] = [rh_midthickness_fmriprep]
+
+    lh_midthickness_orig = glob.glob(
+        os.path.join(fsaverage_dir_orig, "*L.midthickness.32k_fs_LR.surf.gii")
+    )[0]
     lh_midthickness_fmriprep = os.path.join(
         anat_dir_fmriprep, f"{sub_id}_hemi-L_midthickness.surf.gii"
     )
     copy_dictionary[lh_midthickness_orig] = [lh_midthickness_fmriprep]
+
+    rh_inflated_orig = glob.glob(
+        os.path.join(fsaverage_dir_orig, "*R.inflated.32k_fs_LR.surf.gii")
+    )[0]
     rh_inflated_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_hemi-R_inflated.surf.gii")
     copy_dictionary[rh_inflated_orig] = [rh_inflated_fmriprep]
+
+    lh_inflated_orig = glob.glob(
+        os.path.join(fsaverage_dir_orig, "*L.inflated.32k_fs_LR.surf.gii")
+    )[0]
     lh_inflated_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_hemi-L_inflated.surf.gii")
     copy_dictionary[lh_inflated_orig] = [lh_inflated_fmriprep]
 
+    rh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.pial.32k_fs_LR.surf.gii"))[0]
     rh_pial_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_hemi-R_pial.surf.gii")
     copy_dictionary[rh_pial_orig] = [rh_pial_fmriprep]
+
+    lh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.pial.32k_fs_LR.surf.gii"))[0]
     lh_pial_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_hemi-L_pial.surf.gii")
     copy_dictionary[lh_pial_orig] = [lh_pial_fmriprep]
 
+    rh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.white.32k_fs_LR.surf.gii"))[0]
     rh_wm_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_hemi-R_smoothwm.surf.gii")
     copy_dictionary[rh_wm_orig] = [rh_wm_fmriprep]
+
+    lh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.white.32k_fs_LR.surf.gii"))[0]
     lh_wm_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_hemi-L_smoothwm.surf.gii")
     copy_dictionary[lh_wm_orig] = [lh_wm_fmriprep]
 
-    print("finished converting anat files")
+    print("finished collecting anat files")
 
     # get the task files
     subject_task_folders = sorted(glob.glob(os.path.join(in_dir, "Results", "*")))
@@ -183,18 +190,17 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         # Find original task files
         bold_nifti_orig = os.path.join(subject_task_folder, f"{filenamex}.nii.gz")
         brainmask_orig_temp = os.path.join(subject_task_folder, "brainmask_fs.2.nii.gz")
-        boldref_orig = os.path.join(subject_task_folder, "SBRef_dc.nii.gz")
-        bold_cifti_orig = os.path.join(
-            subject_task_folder, f"{filenamex}_Atlas_MSMAll.dtseries.nii"
-        )
 
-        # Construct fMRIPrep task filenames
+        boldref_orig = os.path.join(subject_task_folder, "SBRef_dc.nii.gz")
         boldref_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_id}_task-{task_name}_acq-{acq_label}_space-MNI152NLin6Asym_boldref.nii.gz",
         )
         copy_dictionary[boldref_orig] = [boldref_fmriprep]
 
+        bold_cifti_orig = os.path.join(
+            subject_task_folder, f"{filenamex}_Atlas_MSMAll.dtseries.nii"
+        )
         bold_cifti_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_id}_task-{task_name}_acq-{acq_label}_space-fsLR_den-91k_bold.dtseries.nii",
