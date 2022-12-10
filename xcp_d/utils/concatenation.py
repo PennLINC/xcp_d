@@ -165,10 +165,14 @@ def concatenate_derivatives(
                             f"{motion_files}"
                         )
 
+                # Infer some entities from the detected files
+                runs = layout_xcpd.get_runs(absolute_paths=motion_files)
+
                 # Get TR from one of the preproc files
+                # NOTE: We're assuming that the TR is the same across runs.
                 preproc_files = layout_fmriprep.get(
                     desc=["preproc", None],
-                    run=Query.ANY,
+                    run=runs,
                     suffix="bold",
                     extension=img_extensions,
                     **task_entities,
@@ -196,7 +200,7 @@ def concatenate_derivatives(
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
-                    run=Query.ANY,
+                    run=runs,
                     desc=None,
                     suffix="outliers",
                     extension=".tsv",
@@ -211,7 +215,7 @@ def concatenate_derivatives(
 
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
-                    run=Query.ANY,
+                    run=runs,
                     desc="denoised",
                     suffix="bold",
                     extension=img_extensions,
@@ -225,7 +229,7 @@ def concatenate_derivatives(
 
                     # Concatenate denoised BOLD files
                     denoised_files = layout_xcpd.get(
-                        run=Query.ANY,
+                        run=runs,
                         desc="denoised",
                         suffix="bold",
                         extension=img_extensions,
@@ -237,7 +241,7 @@ def concatenate_derivatives(
 
                     # Concatenate smoothed BOLD files if they exist
                     smooth_denoised_files = layout_xcpd.get(
-                        run=Query.ANY,
+                        run=runs,
                         desc="denoisedSmoothed",
                         suffix="bold",
                         extension=img_extensions,
@@ -263,7 +267,7 @@ def concatenate_derivatives(
 
                         # Concatenate preprocessed BOLD files
                         preproc_files = layout_fmriprep.get(
-                            run=Query.ANY,
+                            run=runs,
                             desc=["preproc", None],
                             suffix="bold",
                             extension=img_extensions,
@@ -366,7 +370,9 @@ def concatenate_derivatives(
                             dvar[0] = np.mean(dvar)
                             dvar = dvar[runwise_dummy_scans[i_file] :]
                             raw_dvars.append(dvar)
+
                         raw_dvars = np.concatenate(raw_dvars)
+
                         # Censor DVARS
                         raw_dvars = raw_dvars[tmask_bool]
 
@@ -376,7 +382,9 @@ def concatenate_derivatives(
                             dvar = compute_dvars(read_ndata(denoised_file.path, mask))
                             dvar[0] = np.mean(dvar)
                             denoised_dvars.append(dvar)
+
                         denoised_dvars = np.concatenate(denoised_dvars)
+
                         # Censor DVARS
                         denoised_dvars = denoised_dvars[tmask_bool]
 
@@ -433,7 +441,7 @@ def concatenate_derivatives(
                     for atlas in atlases:
                         LOGGER.debug(f"Concatenating time series files for atlas {atlas}")
                         atlas_timeseries_files = layout_xcpd.get(
-                            run=Query.ANY,
+                            run=runs,
                             atlas=atlas,
                             suffix="timeseries",
                             extension=tsv_extensions,
