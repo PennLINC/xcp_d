@@ -70,6 +70,7 @@ def init_qc_report_wf(
     Inputs
     ------
     preprocessed_bold_file
+        Used for naming outputs and finding related files.
     boldref
     bold_mask
     t1w_mask

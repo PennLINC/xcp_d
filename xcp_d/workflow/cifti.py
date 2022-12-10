@@ -412,7 +412,7 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
-        (downcast_data, qc_report_wf, [
+        (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
         ]),
     ])
@@ -656,10 +656,10 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
                 ('template_to_t1w', 'inputnode.template_to_t1w'),
-            ]),
-            (downcast_data, executivesummary_wf, [
                 ('t1w', 'inputnode.t1w'),
                 ('t1seg', 'inputnode.t1seg'),
                 ('bold_file', 'inputnode.bold_file'),
