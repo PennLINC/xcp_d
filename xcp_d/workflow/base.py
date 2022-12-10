@@ -451,7 +451,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, anatomical_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("t1w_seg", "inputnode.t1w_seg"),
+                ("t1w_seg", "inputnode.t1seg"),
             ]),
         ])
         # fmt:on
