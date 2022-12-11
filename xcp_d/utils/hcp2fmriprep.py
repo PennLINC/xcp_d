@@ -130,7 +130,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
 
     dseg_orig = os.path.join(in_dir, "aparc+aseg.nii.gz")
-    dseg_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_dseg.nii.gz")
+    dseg_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-aparcaseg_dseg.nii.gz")
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
     fsaverage_dir_orig = os.path.join(in_dir, "fsaverage_LR32k")
