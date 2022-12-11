@@ -281,57 +281,46 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             "rot_z_derivative1",
         ]
         # convert rotations from degrees to radians
-        mvreg["rot_x"] = mvreg["rot_x"] * np.pi / 180
-        mvreg["rot_y"] = mvreg["rot_y"] * np.pi / 180
-        mvreg["rot_z"] = mvreg["rot_z"] * np.pi / 180
-        mvreg["rot_x_derivative1"] = mvreg["rot_x_derivative1"] * np.pi / 180
-        mvreg["rot_y_derivative1"] = mvreg["rot_y_derivative1"] * np.pi / 180
-        mvreg["rot_z_derivative1"] = mvreg["rot_z_derivative1"] * np.pi / 180
+        rot_columns = [c for c in mvreg.columns if c.startswith("rot")]
+        for col in rot_columns:
+            mvreg[col] = mvreg[col] * np.pi / 180
 
-        # get derivatives and powers
-        mvreg["trans_x_power2"] = mvreg["trans_x"] ** 2
-        mvreg["trans_x_derivative1_power2"] = mvreg["trans_x_derivative1"] ** 2
-        mvreg["rot_x_power2"] = mvreg["rot_x"] ** 2
-        mvreg["rot_x_derivative1_power2"] = mvreg["rot_x_derivative1"] ** 2
-        mvreg["trans_y_power2"] = mvreg["trans_y"] ** 2
-        mvreg["trans_y_derivative1_power2"] = mvreg["trans_y_derivative1"] ** 2
-        mvreg["rot_y_power2"] = mvreg["rot_y"] ** 2
-        mvreg["rot_y_derivative1_power2"] = mvreg["rot_y_derivative1"] ** 2
-        mvreg["trans_z_power2"] = mvreg["trans_z"] ** 2
-        mvreg["trans_z_derivative1_power2"] = mvreg["trans_z_derivative1"] ** 2
-        mvreg["rot_z_power2"] = mvreg["rot_z"] ** 2
-        mvreg["rot_z_derivative1_power2"] = mvreg["rot_z_derivative1"] ** 2
+        # set first row of derivative columns to nan, for fMRIPrep compatibility
+        deriv_columns = [c for c in mvreg.columns if c.endwith("derivative1")]
+        for col in deriv_columns:
+            mvreg.loc[0, col] = None
 
-        # use masks: brain,csf and wm mask to extract timeseries
+        # get powers
+        columns = mvreg.columns.tolist()
+        for col in columns:
+            mvreg[f"{col}_power2"] = mvreg[col] ** 2
+
+        # use masks: brain, csf, and wm mask to extract timeseries
         gsreg = extractreg(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
         csfreg = extractreg(mask=csf_mask, nifti=bold_nifti_orig)
         wmreg = extractreg(mask=wm_mask, nifti=bold_nifti_orig)
+        rmsd = np.loadtxt(os.path.join(subject_task_folder, "Movement_AbsoluteRMS.txt"))
 
-        rsmd = np.loadtxt(os.path.join(subject_task_folder, "Movement_AbsoluteRMS.txt"))
         brainreg = pd.DataFrame(
-            {"global_signal": gsreg, "white_matter": wmreg, "csf": csfreg, "rmsd": rsmd}
+            {"global_signal": gsreg, "white_matter": wmreg, "csf": csfreg, "rmsd": rmsd}
         )
 
         # get derivatives and powers
-        regressors = pd.concat([mvreg, brainreg], axis=1)
-        regressors["global_signal_derivative1"] = pd.DataFrame(
-            np.diff(regressors["global_signal"].to_numpy(), prepend=0)
-        )
-        regressors["global_signal_derivative1_power2"] = (
-            regressors["global_signal_derivative1"] ** 2
-        )
-        regressors["global_signal_power2"] = regressors["global_signal"] ** 2
+        brainreg["global_signal_derivative1"] = brainreg["global_signal"].diff()
+        brainreg["white_matter_derivative1"] = brainreg["white_matter"].diff()
+        brainreg["csf_derivative1"] = brainreg["csf"].diff()
 
-        regressors["white_matter_derivative1"] = pd.DataFrame(
-            np.diff(regressors["white_matter"].to_numpy(), prepend=0)
-        )
-        regressors["white_matter_derivative1_power2"] = regressors["white_matter_derivative1"] ** 2
-        regressors["white_matter_power2"] = regressors["white_matter"] ** 2
-        regressors["csf_power2"] = regressors["csf"] ** 2
-        regressors["csf_derivative1"] = pd.DataFrame(
-            np.diff(regressors["csf"].to_numpy(), prepend=0)
-        )
-        regressors["csf_derivative1_power2"] = regressors["csf_derivative1"] ** 2
+        brainreg["global_signal_derivative1_power2"] = brainreg["global_signal_derivative1"] ** 2
+        brainreg["global_signal_power2"] = brainreg["global_signal"] ** 2
+
+        brainreg["white_matter_derivative1_power2"] = brainreg["white_matter_derivative1"] ** 2
+        brainreg["white_matter_power2"] = brainreg["white_matter"] ** 2
+
+        brainreg["csf_derivative1_power2"] = brainreg["csf_derivative1"] ** 2
+        brainreg["csf_power2"] = brainreg["csf"] ** 2
+
+        # Merge the two DataFrames
+        regressors = pd.concat([mvreg, brainreg], axis=1)
 
         # write out the json
         regressors_file_base = (
@@ -341,7 +330,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             func_dir_fmriprep,
             f"{regressors_file_base}.tsv",
         )
-        regressors.to_csv(regressors_tsv_fmriprep, index=False, sep="\t")
+        regressors.to_csv(regressors_tsv_fmriprep, index=False, sep="\t", na_rep="n/a")
 
         # NOTE: Is this JSON any good?
         regressors_json_fmriprep = os.path.join(func_dir_fmriprep, f"{regressors_file_base}.json")
