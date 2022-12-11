@@ -246,6 +246,8 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 
         bold_cifti_json_dict = {
+            "RepetitionTime": float(TR),
+            "TaskName": task_name,
             "grayordinates": "91k",
             "space": "HCP grayordinates",
             "surface": "fsLR",
@@ -254,7 +256,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         }
         bold_cifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_id}_task-{task_name}_acq-{acq_label}_space-fsLR_den-91k_bold.dtseries.json",
+            f"{sub_id}_task-{task_name}_acq-{acq_label}_space-fsLR_den-91k_bold.json",
         )
         writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
