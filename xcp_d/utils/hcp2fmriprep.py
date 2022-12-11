@@ -93,6 +93,11 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     os.makedirs(anat_dir_fmriprep, exist_ok=True)
     os.makedirs(func_dir_fmriprep, exist_ok=True)
 
+    # Get necessary files
+    # TODO: Find out space and resolution to give these better names.
+    csf_mask = pkgrf("xcp_d", "/data/masks/csf.nii.gz")
+    wm_mask = pkgrf("xcp_d", "/data/masks/wm.nii.gz")
+
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
@@ -201,8 +206,6 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     subject_task_folders = sorted(glob.glob(os.path.join(in_dir, "Results", "*")))
     subject_task_folders = [task for task in subject_task_folders if task.endswith(["RL", "LR"])]
 
-    csf_mask = pkgrf("xcp_d", "/data/masks/csf.nii.gz")
-    wm_mask = pkgrf("xcp_d", "/data/masks/wm.nii.gz")
     for subject_task_folder in subject_task_folders:
         _, task_name, acq_label = os.path.basename(subject_task_folder).split("_")
         filenamex = os.path.basename(subject_task_folder)
