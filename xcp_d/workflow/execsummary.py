@@ -305,6 +305,10 @@ def init_brainsprite_wf(
     ------
     t1w
     t1seg
+    lh_wm_surf
+    rh_wm_surf
+    lh_pial_surf
+    rh_pial_surf
     """
     from pkg_resources import resource_filename as pkgrf
 
