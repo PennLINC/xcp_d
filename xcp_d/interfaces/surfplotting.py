@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Surface plotting interfaces."""
 import os
-from pkg_resources import resource_filename as pkgrf
 
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader, Markup
@@ -14,6 +13,7 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
+from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.execsummary import generate_brain_sprite, ribbon_to_statmap
 from xcp_d.utils.filemanip import fname_presuffix
@@ -35,10 +35,7 @@ class _GenerateBrainspriteHTMLInputSpec:
             "This should only be True for the *last* figure."
         ),
     )
-    image_type = traits.Enum(
-        ("T1", "T2"),
-        desc="The image type of the brainsprite."
-    )
+    image_type = traits.Enum(("T1", "T2"), desc="The image type of the brainsprite.")
     mosaic = File(exists=True, mandatory=True, desc="plot image")
     scenewise_pngs = File(exists=True, mandatory=True, desc="plot image")
 

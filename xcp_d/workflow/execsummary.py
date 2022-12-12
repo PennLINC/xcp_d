@@ -12,7 +12,11 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import GenerateBrainspriteHTML, PlotImage, PlotSVGData
+from xcp_d.interfaces.surfplotting import (
+    GenerateBrainspriteHTML,
+    PlotImage,
+    PlotSVGData,
+)
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.bids import find_nifti_bold_files
 from xcp_d.utils.doc import fill_doc
@@ -383,6 +387,8 @@ def init_brainsprite_wf(
                 add_jquery=image_type == image_types[0],
                 add_javascript=image_type == image_types[-1],
             ),
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
             name=f"generate_brainsprite_html_{image_type}",
         )
 
