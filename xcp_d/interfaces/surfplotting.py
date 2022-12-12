@@ -1,7 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Surface plotting interfaces."""
+import os
+from pkg_resources import resource_filename as pkgrf
 
+from bs4 import BeautifulSoup
+from jinja2 import Environment, FileSystemLoader, Markup
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -16,6 +20,82 @@ from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plot import plot_svgx, plotimage
 
 LOGGER = logging.getLogger("nipype.interface")
+
+
+class _GenerateBrainspriteHTMLInputSpec:
+    add_jquery = traits.Bool(
+        desc=(
+            "Whether to include the JQuery JavaScript code or not. "
+            "This should only be True for the *first* figure."
+        ),
+    )
+    add_javascript = traits.Bool(
+        desc=(
+            "Whether to include the BrainSprite JavaScript code or not. "
+            "This should only be True for the *last* figure."
+        ),
+    )
+    image_type = traits.Enum(
+        ("T1", "T2"),
+        desc="The image type of the brainsprite."
+    )
+    mosaic = File(exists=True, mandatory=True, desc="plot image")
+    scenewise_pngs = File(exists=True, mandatory=True, desc="plot image")
+
+
+class _GenerateBrainspriteHTMLOutputSpec:
+    out_file = File(exists=True, desc="out image")
+
+
+class GenerateBrainspriteHTML:
+    """Make the HTML for a BrainSprite figure."""
+
+    input_spec = _GenerateBrainspriteHTMLInputSpec
+    output_spec = _GenerateBrainspriteHTMLOutputSpec
+
+    def _run_interface(self, runtime):
+        jinja_template_folder = pkgrf(
+            "xcp_d",
+            "data/executive_summary_templates",
+        )
+        jinja_template_file = pkgrf(
+            "xcp_d",
+            "data/executive_summary_templates/brainsprite_with_pngs_single.html.jinja",
+        )
+
+        loader = FileSystemLoader(jinja_template_folder)
+        environment = Environment(loader=loader)
+
+        def include_file(name):
+            return Markup(loader.get_source(environment, name)[0])
+
+        environment.filters["basename"] = os.path.basename
+        environment.globals["include_file"] = include_file
+        jinja_template = environment.get_template(jinja_template_file)
+
+        # NOTE: Probably need to get relative paths for images.
+        html = jinja_template.render(
+            mosaic_file=self.inputs.mosaic,
+            cycler_files=self.inputs.scenewise_pngs,
+            image_type=self.inputs.image_type,
+            add_jquery=self.inputs.add_jquery,
+            add_javascript=self.inputs.add_javascript,
+        )
+
+        soup = BeautifulSoup(html)  # make BeautifulSoup
+        html = soup.prettify()  # prettify the html
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.mosaic,
+            suffix="_brainsprite.html",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        with open(self._results["out_file"], "w") as fo:
+            fo.write(html)
+
+        return runtime
 
 
 class _PlotImageInputSpec(BaseInterfaceInputSpec):
