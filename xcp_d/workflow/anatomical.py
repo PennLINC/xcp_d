@@ -296,7 +296,8 @@ def init_anatomical_wf(
         ),
         name="inputnode",
     )
-    # Feed only the pial and white matter surfaces to the outputnode for the brainsprite.
+    # Feed only the standard-space pial and white matter surfaces to the outputnode for the
+    # brainsprite.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -356,6 +357,25 @@ def init_anatomical_wf(
             ])
         ])
         # fmt:on
+
+        # Create and write out very-inflated surface file
+        for hemi in ["lh", "rh"]:
+            inflate_surfaces_wf = init_inflate_surfaces_wf(
+                save_inflated=False,
+                output_dir=output_dir,
+                mem_gb=mem_gb,
+                omp_nthreads=omp_nthreads,
+                name=f"{hemi}_inflate_surfaces_wf",
+            )
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, inflate_surfaces_wf, [
+                    (f"{hemi}_midthickness_surf", "midthickness_surf"),
+                    (f"{hemi}_midthickness_surf", "name_source"),
+                ]),
+            ])
+            # fmt:on
 
     else:
         # Warp the surfaces to space-fsLR, den-32k.
@@ -535,20 +555,6 @@ def init_anatomical_wf(
             ])
             # fmt:on
 
-            # Generate HCP-style very-inflated surface from standard-space midthickness surface.
-            hcpinflated_surf_32k = pe.Node(
-                SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name=f"hcpinflated_surf_32k_{hemi_label}",
-            )
-
-            # fmt:off
-            workflow.connect([
-                (split_out_hcp_surface, hcpinflated_surf_32k, [
-                    ("out2", "anatomical_surface_in"),
-                ]),
-            ])
-            # fmt:on
-
             ds_hcp_midthickness = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -576,59 +582,144 @@ def init_anatomical_wf(
             ])
             # fmt:on
 
-            ds_hcp_inflated = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    space="fsLR",
-                    den="32k",
-                    hemi=hemi,
-                    desc="hcp",
-                    suffix="inflated",
-                    extension=".surf.gii",
-                ),
-                name=f"ds_hcp_inflated_{hemi_label}",
-                run_without_submitting=False,
-                mem_gb=2,
+            inflate_surfaces_wf = init_inflate_surfaces_wf(
+                save_inflated=True,
+                output_dir=output_dir,
+                mem_gb=mem_gb,
+                omp_nthreads=omp_nthreads,
+                name=f"{hemi_label}_inflate_surfaces_wf",
             )
 
             # fmt:off
             workflow.connect([
-                (inputnode, ds_hcp_inflated, [
-                    (f"{hemi_label}_midthickness_surf", "source_file"),
+                (split_out_hcp_surface, inflate_surfaces_wf, [
+                    ("out2", "midthickness_surf"),
                 ]),
-                (hcpinflated_surf_32k, ds_hcp_inflated, [
-                    ("inflated_out_file", "in_file"),
+                (ds_hcp_midthickness, inflate_surfaces_wf, [
+                    ("out_file", "name_source"),
                 ]),
             ])
             # fmt:on
 
-            ds_hcp_vinflated = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    space="fsLR",
-                    den="32k",
-                    hemi=hemi,
-                    desc="hcp",
-                    suffix="vinflated",
-                    extension=".surf.gii",
-                ),
-                name=f"ds_hcp_vinflated_{hemi_label}",
-                run_without_submitting=False,
-                mem_gb=2,
+    return workflow
+
+
+@fill_doc
+def init_inflate_surfaces_wf(
+    save_inflated,
+    output_dir,
+    mem_gb,
+    omp_nthreads,
+    name="inflate_surfaces_wf",
+):
+    """Generate inflated and very-inflated HCP-style surfaces.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_inflate_surfaces_wf
+            wf = init_inflate_surfaces_wf(
+                save_inflated=True,
+                output_dir=".",
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="inflate_surfaces_wf",
             )
 
-            # fmt:off
-            workflow.connect([
-                (inputnode, ds_hcp_vinflated, [
-                    (f"{hemi_label}_midthickness_surf", "source_file"),
-                ]),
-                (hcpinflated_surf_32k, ds_hcp_vinflated, [
-                    ("very_inflated_out_file", "in_file"),
-                ]),
-            ])
-            # fmt:on
+    Parameters
+    ----------
+    save_inflated : :obj:`bool`
+        Whether to save the inflated file or not.
+        If not, only the very-inflated file will be saved.
+    output_dir
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "inflate_surfaces_wf".
+
+    Inputs
+    ------
+    name_source : str
+        Path to the file that will be used as the source_file for datasinks.
+    midthickness_surf : str
+        The surface file to inflate.
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "name_source",
+                "midthickness_surf",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    # Generate (very-)inflated surface from standard-space midthickness surface.
+    inflate_surface = pe.Node(
+        SurfaceGenerateInflated(iterations_scale_value=0.75),
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
+        name="inflate_surface",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, inflate_surface, [
+            ("midthickness_surf", "anatomical_surface_in"),
+        ]),
+    ])
+    # fmt:on
+
+    if save_inflated:
+        ds_inflated = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                check_hdr=False,
+                suffix="inflated",
+                extension=".surf.gii",
+            ),
+            name="ds_inflated",
+            run_without_submitting=False,
+            mem_gb=2,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_inflated, [
+                ("name_source", "source_file"),
+            ]),
+            (inflate_surface, ds_inflated, [
+                ("inflated_out_file", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
+    ds_vinflated = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            suffix="vinflated",
+            extension=".surf.gii",
+        ),
+        name="ds_vinflated",
+        run_without_submitting=False,
+        mem_gb=2,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_vinflated, [
+            ("name_source", "source_file"),
+        ]),
+        (inflate_surface, ds_vinflated, [
+            ("very_inflated_out_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
 
     return workflow
 
