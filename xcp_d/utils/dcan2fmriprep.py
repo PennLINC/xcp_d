@@ -54,32 +54,34 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_id)
 
-    copy_dictionary = {}
-
     # get session ids
     session_folders = sorted(glob.glob(os.path.join(in_dir, sub_id, "s*")))
     session_folders = [
         os.path.basename(ses_dir) for ses_dir in session_folders if os.path.isdir(ses_dir)
     ]
+    # NOTE: Why split ses- out if you add it right back in?
     session_ids = [ses_dir.split("ses-")[1] for ses_dir in session_folders]
+    session_ids = [f"ses-{session_id}" for session_id in session_ids]
 
-    for session_id in session_ids:
-        ses_id = f"ses-{session_id}"
+    # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
+    # Values will be lists, to allow one-to-many mappings.
+    copy_dictionary = {}
+
+    for ses_id in session_ids:
+        session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_id)
 
         anat_dir_orig = os.path.join(in_dir, sub_id, ses_id, "files", "MNINonLinear")
-        anat_dir_fmriprep = os.path.join(out_dir, sub_id, ses_id, "anat")
+        anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
         os.makedirs(anat_dir_fmriprep, exist_ok=True)
 
-        # NOTE: Why is this set to the *first* session only?
-        func_dir_orig = os.path.join(
-            in_dir,
-            sub_id,
-            f"ses-{session_ids[0]}",
-            "files/MNINonLinear/Results/",
-        )
-        func_dir_fmriprep = os.path.join(out_dir, sub_id, ses_id, "func")
+        # NOTE: Why *was* this set to the *first* session only? (I fixed it)
+        # AFAICT, this would copy the first session's files from DCAN into *every*
+        # session of the output directory.
+        func_dir_orig = os.path.join(anat_dir_orig, "Results")
+        func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
         os.makedirs(func_dir_fmriprep, exist_ok=True)
 
+        # Collect anatomical files to copy
         t1w_orig = os.path.join(anat_dir_orig, "T1w.nii.gz")
         t1w_fmriprep = os.path.join(
             anat_dir_fmriprep, f"{sub_id}_{ses_id}_desc-preproc_T1w.nii.gz"
@@ -120,6 +122,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
+        # NOTE: Why glob? Do we not know the full filenames? Are there multiple files?
         rh_midthickness_orig = glob.glob(
             os.path.join(fsaverage_dir_orig, "*R.midthickness.32k_fs_LR.surf.gii")
         )[0]
@@ -182,7 +185,10 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         )
         copy_dictionary[lh_wm_orig] = [lh_wm_fmriprep]
 
+        print("finished collecting anat files")
+
         # get masks and transforms
+        # NOTE: Why glob? Do we not know the full filenames? Are there multiple files?
         wmmask = glob.glob(os.path.join(anat_dir_orig, "wm_2mm_*_mask_eroded.nii.gz"))[0]
         csfmask = glob.glob(os.path.join(anat_dir_orig, "vent_2mm_*_mask_eroded.nii.gz"))[0]
 
@@ -190,49 +196,51 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         t1w_to_native_orig = wmmask
         copy_dictionary[t1w_to_native_orig] = []
 
-        task_folders_orig = sorted(glob.glob(func_dir_orig + "task-*"))
-        task_folders_orig = [task_dir for task_dir in task_folders_orig if os.path.isdir(task_dir)]
-        task_names = [os.path.basename(task_dir).split("-")[1] for task_dir in task_folders_orig]
+        # Collect functional files to copy
+        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "task-*")))
+        task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
+        task_names = [os.path.basename(task_dir).split("-")[1] for task_dir in task_dirs_orig]
 
         for task_name in task_names:
             task_id = f"task-{task_name}"
+            task_dir_orig = os.path.join(func_dir_orig, task_id)
 
             # NOTE: Why are there regular expressions?
             taskname = re.split(r"(\d+)", task_name)[0]
-            run_id = "_run-" + str(int(re.split(r"(\d+)", task_name)[1]))
-            task_dir_fmriprep = func_dir_orig + task_id
+            run_id = "run-" + str(int(re.split(r"(\d+)", task_name)[1]))
 
             # Find original task files
-            brainmask_orig_temp = os.path.join(task_dir_fmriprep, "brainmask_fs.2.0.nii.gz")
+            brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.0.nii.gz")
 
-            sbref_orig = os.path.join(task_dir_fmriprep, f"{task_id}_SBRef.nii.gz")
+            sbref_orig = os.path.join(task_dir_orig, f"{task_id}_SBRef.nii.gz")
             boldref_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_task-{taskname}{run_id}_space-MNI152NLin6Asym_boldref.nii.gz",
+                f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_space-MNI152NLin6Asym_boldref.nii.gz",
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
-            bold_nifti_orig = os.path.join(task_dir_fmriprep, f"{task_id}.nii.gz")
+            bold_nifti_orig = os.path.join(task_dir_orig, f"{task_id}.nii.gz")
             bold_nifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_task-{taskname}{run_id}_"
+                    f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_"
                     "space-MNI152NLin6Asym_desc-preproc_bold.nii.gz"
                 ),
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-            bold_cifti_orig = os.path.join(task_dir_fmriprep, f"{task_id}_Atlas.dtseries.nii")
+            bold_cifti_orig = os.path.join(task_dir_orig, f"{task_id}_Atlas.dtseries.nii")
             bold_cifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_task-{taskname}{run_id}_space-fsLR_den-91k_bold.dtseries.nii",
+                f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_space-fsLR_den-91k_bold.dtseries.nii",
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
+            # NOTE: We're using the white matter mask as a transform. This doesn't make sense.
             native_to_t1w_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_task-{taskname}{run_id}_"
+                    f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_"
                     "from-scanner_to-T1w_mode-image_xfm.txt"
                 ),
             )
@@ -241,7 +249,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             t1w_to_native_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_task-{taskname}{run_id}_"
+                    f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_"
                     "from-T1w_to-scanner_mode-image_xfm.txt"
                 ),
             )
@@ -265,7 +273,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             bold_nifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_task-{taskname}{run_id}_"
+                    f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_"
                     "space-MNI152NLin6Asym_desc-preproc_bold.json"
                 ),
             )
@@ -273,7 +281,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             bold_cifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_task-{taskname}{run_id}_"
+                    f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_"
                     "space-fsLR_den-91k_bold.dtseries.json"
                 ),
             )
@@ -283,7 +291,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
             # Create confound regressors
             mvreg = pd.read_csv(
-                os.path.join(task_dir_fmriprep, "Movement_Regressors.txt"),
+                os.path.join(task_dir_orig, "Movement_Regressors.txt"),
                 header=None,
                 delimiter=r"\s+",
             )
@@ -311,7 +319,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             gsreg = extractreg(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
             csfreg = extractreg(mask=csfmask, nifti=bold_nifti_orig)
             wmreg = extractreg(mask=wmmask, nifti=bold_nifti_orig)
-            rsmd = np.loadtxt(os.path.join(task_dir_fmriprep, "Movement_AbsoluteRMS.txt"))
+            rsmd = np.loadtxt(os.path.join(task_dir_orig, "Movement_AbsoluteRMS.txt"))
 
             brainreg = pd.DataFrame(
                 {"global_signal": gsreg, "white_matter": wmreg, "csf": csfreg, "rmsd": rsmd}
@@ -338,7 +346,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
             # write out the confounds
             regressors_file_base = (
-                f"{sub_id}_{ses_id}_task-{task_name}{run_id}_desc-confounds_timeseries"
+                f"{sub_id}_{ses_id}_task-{task_name}_{run_id}_desc-confounds_timeseries"
             )
             regressors_tsv_fmriprep = os.path.join(
                 func_dir_fmriprep,
@@ -354,11 +362,11 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             writejson(bold_cifti_json_dict, regressors_json_fmriprep)
 
             # Make figures
-            figdir = os.path.join(out_dir, sub_id, "figures")
+            figdir = os.path.join(subject_dir_fmriprep, "figures")
             os.makedirs(figdir, exist_ok=True)
             bbref_fig_fmriprep = os.path.join(
                 figdir,
-                f"{sub_id}_{ses_id}_task-{taskname}{run_id}_desc-bbregister_bold.svg",
+                f"{sub_id}_{ses_id}_task-{taskname}_{run_id}_desc-bbregister_bold.svg",
             )
             bbref_fig_fmriprep = bbregplot(
                 fixed_image=t1w_orig,
@@ -386,7 +394,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
                 "Name": "DCAN",
                 "Version": "0.0.4",
                 "CodeURL": "https://github.com/DCAN-Labs/abcd-hcp-pipeline",
-            }
+            },
         ],
     }
     dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")

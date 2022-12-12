@@ -98,7 +98,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
 
-    # get old files
+    # Collect anatomical files to copy
     t1w_orig = os.path.join(in_dir, "T1w_restore.nii.gz")
     t1w_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-preproc_T1w.nii.gz")
     copy_dictionary[t1w_orig] = [t1w_fmriprep]
@@ -198,7 +198,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     print("finished collecting anat files")
 
-    # get the task files
+    # Collect functional files to copy
     subject_task_folders = sorted(glob.glob(os.path.join(in_dir, "Results", "*")))
     subject_task_folders = [task for task in subject_task_folders if task.endswith(["RL", "LR"])]
 
