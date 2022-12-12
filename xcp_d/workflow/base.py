@@ -438,12 +438,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # Plot the ribbon on the brain in a brainsprite figure
     brainsprite_wf = init_brainsprite_wf(
-        layout=layout,
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
         output_dir=output_dir,
-        dcan_qc=dcan_qc,
-        input_type=input_type,
         t2w_available=False,
         omp_nthreads=omp_nthreads,
         mem_gb=5,
