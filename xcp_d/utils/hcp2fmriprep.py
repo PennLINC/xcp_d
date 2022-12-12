@@ -343,17 +343,28 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             copyfileobj_example(file_orig, file_fmriprep)
 
     # Write the dataset description out last
-    # TODO: Add "unknown" version to dictionary.
     dataset_description_dict = {
         "Name": "HCP",
         "DatasetType": "derivative",
         "GeneratedBy": [
-            {"Name": "HCP"},
+            {
+                "Name": "HCP",
+                "Version": "unknown",
+                "CodeURL": "https://github.com/Washington-University/HCPpipelines",
+            },
         ],
     }
     dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
-    writejson(dataset_description_dict, dataset_description_fmriprep)
+    if not os.path.isfile(dataset_description_fmriprep):
+        writejson(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from HCP to fMRIPrep
-    mapping_fmriprep = os.path.join(subject_dir_fmriprep, "file_mapping.json")
-    writejson(mapping_fmriprep, copy_dictionary)
+    scans_dict = {}
+    for key, values in copy_dictionary.items():
+        for item in values:
+            scans_dict[item] = key
+
+    scans_tuple = tuple(scans_dict.items())
+    scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
+    scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_id}_scans.tsv")
+    scans_df.to_csv(scans_tsv, sep="\t", index=False)
