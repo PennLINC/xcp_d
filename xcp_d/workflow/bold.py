@@ -713,13 +713,13 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (downcast_data, executivesummary_wf, [
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
+            (inputnode, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
                 ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
-            ]),
-            (inputnode, executivesummary_wf, [
                 ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [
