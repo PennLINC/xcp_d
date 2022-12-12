@@ -8,20 +8,10 @@ from nilearn.glm.first_level import make_first_level_design_matrix
 from xcp_d.utils.confounds import load_confound_matrix
 
 
-def test_custom_confounds(data_dir, tmp_path_factory):
+def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Ensure that custom confounds can be loaded without issue."""
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
-
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
-
-    bold_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        (
-            "sub-colornest001_ses-1_task-rest_run-1"
-            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-        ),
-    )
+    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
 
     N_VOLUMES = 184
     TR = 2.5
@@ -47,7 +37,7 @@ def test_custom_confounds(data_dir, tmp_path_factory):
     # Save to file
     custom_confounds_file = os.path.join(
         tempdir,
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv",
+        "sub-01_task-rest_desc-confounds_timeseries.tsv",
     )
     custom_confounds.to_csv(custom_confounds_file, sep="\t", index=False)
 

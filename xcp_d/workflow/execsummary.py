@@ -248,7 +248,7 @@ def init_execsummary_wf(
     # check if there is a bb_registration_file or coregister file
     patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
     registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
-    #  Get the T1w registration file
+    # Get the T1w registration file
     bold_t1w_registration_file = fnmatch.filter(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]

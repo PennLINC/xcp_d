@@ -9,21 +9,14 @@ from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.write_save import read_ndata
 
 
-def test_regression_nifti(data_dir, tmp_path_factory):
+def test_regression_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test NIFTI regression."""
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
     temp_dir = tmp_path_factory.mktemp("test_regression_nifti")
 
     # Specify inputs
     TR = 0.5
-    in_file = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    )
-    mask = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-    )
+    in_file = fmriprep_with_freesurfer_data["nifti_file"]
+    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Read in confounds. Confounds must be selected before running Regress.
     df = load_confound_matrix(img_file=in_file, params="36P")
@@ -63,23 +56,14 @@ def test_regression_nifti(data_dir, tmp_path_factory):
     assert (max(regressed_correlations)) < 0.01
 
 
-def test_regression_cifti(data_dir, tmp_path_factory):
+def test_regression_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test CIFTI regression."""
     # Specify inputs
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
     temp_dir = tmp_path_factory.mktemp("test_regression_cifti")
 
     TR = 0.5
-    in_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
-    )
-    mask = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz",
-    )
+    in_file = fmriprep_with_freesurfer_data["cifti_file"]
+    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Read in confounds. Confounds must be selected before running Regress.
     df = load_confound_matrix(img_file=in_file, params="36P")

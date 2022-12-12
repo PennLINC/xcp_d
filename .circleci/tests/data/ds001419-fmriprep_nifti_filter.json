@@ -1,0 +1,8 @@
+{
+    "bold": {
+        "task": ["imagery", "rest"],
+        "run": ["01", "02", null],
+        "space": "MNI152NLin2009cAsym",
+        "res": "2"
+    }
+}
