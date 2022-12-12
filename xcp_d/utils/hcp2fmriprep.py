@@ -329,7 +329,10 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         regressors.to_csv(regressors_tsv_fmriprep, index=False, sep="\t", na_rep="n/a")
 
         # NOTE: Is this JSON any good?
-        regressors_json_fmriprep = os.path.join(func_dir_fmriprep, f"{regressors_file_base}.json")
+        regressors_json_fmriprep = os.path.join(
+            func_dir_fmriprep,
+            f"{regressors_file_base}.json",
+        )
         regressors.to_json(regressors_json_fmriprep)
 
     # Copy HCP files to fMRIPrep folder

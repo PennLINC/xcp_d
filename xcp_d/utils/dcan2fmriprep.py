@@ -357,7 +357,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             # NOTE: Is this JSON any good?
             regressors_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{regressors_file_base}.json"
+                f"{regressors_file_base}.json",
             )
             writejson(bold_cifti_json_dict, regressors_json_fmriprep)
 
