@@ -11,15 +11,16 @@ import pandas as pd
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
+from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger("hcp")
 
 
-def hcp2fmriprep(hcpdir, outdir, participant_ids=None):
+def hcp2fmriprep(in_dir, out_dir, participant_ids=None):
     """Convert HCP-format data to fMRIPrep format."""
-    LOGGER.warning("This is an experimental function and has not been tested yet.")
-    hcpdir = os.path.abspath(hcpdir)
-    outdir = os.path.abspath(outdir)
+    LOGGER.warning("This is an experimental function.")
+    in_dir = os.path.abspath(in_dir)
+    out_dir = os.path.abspath(out_dir)
 
     EXCLUDE_LIST = [  # a list of folders that are not subject identifiers
         "BiasField",
@@ -42,7 +43,7 @@ def hcp2fmriprep(hcpdir, outdir, participant_ids=None):
     ]
 
     if participant_ids is None:
-        subject_folders = sorted(glob.glob(os.path.join(hcpdir, "*")))
+        subject_folders = sorted(glob.glob(os.path.join(in_dir, "*")))
         subject_folders = [
             subject_folder for subject_folder in subject_folders if os.path.isdir(subject_folder)
         ]
@@ -56,21 +57,16 @@ def hcp2fmriprep(hcpdir, outdir, participant_ids=None):
             participant_ids = all_subject_ids
 
         if len(participant_ids) == 0:
-            raise ValueError(f"No subject found in {hcpdir}")
-
-        if len(participant_ids) > 0:
-            for subject_id in participant_ids:
-                convert_hcp_to_fmriprep_single_subject(
-                    in_dir=hcpdir,
-                    out_dir=outdir,
-                    sub_id=subject_id,
-                )
+            raise ValueError(f"No subject found in {in_dir}")
 
     else:
+        participant_ids = ensure_list(participant_ids)
+
+    for subject_id in participant_ids:
         convert_hcp_to_fmriprep_single_subject(
-            in_dir=hcpdir,
-            out_dir=outdir,
-            sub_id=participant_ids,
+            in_dir=in_dir,
+            out_dir=out_dir,
+            sub_id=subject_id,
         )
 
     return participant_ids
@@ -322,7 +318,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         # Merge the two DataFrames
         regressors = pd.concat([mvreg, brainreg], axis=1)
 
-        # write out the json
+        # write out the confounds
         regressors_file_base = (
             f"{sub_id}_task-{task_name}_acq-{acq_label}_desc-confounds_timeseries"
         )
