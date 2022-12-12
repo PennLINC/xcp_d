@@ -128,7 +128,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         )[0]
         rh_midthickness_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_hemi-R_midthickness.surf.gii",
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_desc-hcp_midthickness.surf.gii",
         )
         copy_dictionary[rh_midthickness_orig] = [rh_midthickness_fmriprep]
 
@@ -137,7 +137,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         )[0]
         lh_midthickness_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_hemi-L_midthickness.surf.gii",
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii",
         )
         copy_dictionary[lh_midthickness_orig] = [lh_midthickness_fmriprep]
 
@@ -146,7 +146,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         )[0]
         rh_inflated_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_hemi-R_inflated.surf.gii",
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_desc-hcp_inflated.surf.gii",
         )
         copy_dictionary[rh_inflated_orig] = [rh_inflated_fmriprep]
 
@@ -155,33 +155,35 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         )[0]
         lh_inflated_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_hemi-L_inflated.surf.gii",
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii",
         )
         copy_dictionary[lh_inflated_orig] = [lh_inflated_fmriprep]
 
         rh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.pial.32k_fs_LR.surf.gii"))[0]
         rh_pial_fmriprep = os.path.join(
-            anat_dir_fmriprep, f"{sub_id}_{ses_id}_hemi-R_pial.surf.gii"
+            anat_dir_fmriprep,
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_pial.surf.gii",
         )
         copy_dictionary[rh_pial_orig] = [rh_pial_fmriprep]
 
         lh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.pial.32k_fs_LR.surf.gii"))[0]
         lh_pial_fmriprep = os.path.join(
-            anat_dir_fmriprep, f"{sub_id}_{ses_id}_hemi-L_pial.surf.gii"
+            anat_dir_fmriprep,
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_pial.surf.gii",
         )
         copy_dictionary[lh_pial_orig] = [lh_pial_fmriprep]
 
         rh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.white.32k_fs_LR.surf.gii"))[0]
         rh_wm_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_hemi-R_smoothwm.surf.gii",
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii",
         )
         copy_dictionary[rh_wm_orig] = [rh_wm_fmriprep]
 
         lh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.white.32k_fs_LR.surf.gii"))[0]
         lh_wm_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_hemi-L_smoothwm.surf.gii",
+            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_smoothwm.surf.gii",
         )
         copy_dictionary[lh_wm_orig] = [lh_wm_fmriprep]
 
@@ -258,18 +260,9 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             # Extract metadata for JSON files
             TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
             bold_nifti_json_dict = {
-                "RepetitionTime": np.float(TR),
+                "RepetitionTime": float(TR),
                 "TaskName": taskname,
             }
-
-            bold_cifti_json_dict = {
-                "grayordinates": "91k",
-                "space": "HCP grayordinates",
-                "surface": "fsLR",
-                "surface_density": "32k",
-                "bold_nifti_orig": "MNI152NLin6Asym",
-            }
-
             bold_nifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
@@ -277,7 +270,17 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
                     "space-MNI152NLin6Asym_desc-preproc_bold.json"
                 ),
             )
+            writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 
+            bold_cifti_json_dict = {
+                "RepetitionTime": float(TR),
+                "TaskName": taskname,
+                "grayordinates": "91k",
+                "space": "HCP grayordinates",
+                "surface": "fsLR",
+                "surface_density": "32k",
+                "volume": "MNI152NLin6Asym",
+            }
             bold_cifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
@@ -286,7 +289,6 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
                 ),
             )
 
-            writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
             writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
             # Create confound regressors
