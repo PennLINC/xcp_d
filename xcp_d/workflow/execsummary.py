@@ -3,7 +3,6 @@
 """Workflows for generating the executive summary."""
 import fnmatch
 import os
-from pathlib import Path
 
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
@@ -19,7 +18,7 @@ from xcp_d.interfaces.surfplotting import (
     PlotSVGData,
     RibbontoStatmap,
 )
-from xcp_d.utils.bids import find_nifti_bold_files
+from xcp_d.utils.bids import find_nifti_bold_files, get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import _t12native, get_std2bold_xforms
@@ -120,31 +119,14 @@ def init_brainsprite_wf(
             ribbon = ribbon[0]
 
     else:
-        # verify freesurfer directory
-        fmri_path = Path(fmri_dir).absolute()
+        fmri_dir = os.path.abspath(fmri_dir)
 
-        # for fmriprep and nibabies versions before XXXX,
-        # the freesurfer dir was placed at the same level as the main derivatives
-        freesurfer_paths = [fp for fp in fmri_path.parent.glob("*freesurfer*") if fp.is_dir()]
-        if len(freesurfer_paths) == 0:
-            # for later versions, the freesurfer dir is placed in sourcedata
-            # within the main derivatives folder
-            freesurfer_paths = [
-                fp for fp in fmri_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
-            ]
+        freesurfer_dir = get_freesurfer_dir(fmri_dir)
 
-        if len(freesurfer_paths) > 0:
-            freesurfer_path = freesurfer_paths[0]
-            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
-            ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
-            LOGGER.info(f"Using {ribbon} for ribbon.")
-
-            if not ribbon.is_file():
-                LOGGER.warning(f"File DNE: {ribbon}")
-                use_t1seg_as_ribbon = True
-
-        else:
-            LOGGER.info("No Freesurfer derivatives found.")
+        ribbon = os.path.join(freesurfer_dir, f"sub-{subject_id}", "mri", "ribbon.mgz")
+        LOGGER.info(f"Using {ribbon} for ribbon.")
+        if not os.path.isfile(ribbon):
+            LOGGER.warning(f"File DNE: {ribbon}")
             use_t1seg_as_ribbon = True
 
     if use_t1seg_as_ribbon:
