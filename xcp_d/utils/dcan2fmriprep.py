@@ -401,7 +401,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     if not os.path.isfile(dataset_description_fmriprep):
         writejson(dataset_description_dict, dataset_description_fmriprep)
 
-    # Write out the mapping from HCP to fMRIPrep
+    # Write out the mapping from DCAN to fMRIPrep
     scans_dict = {}
     for key, values in copy_dictionary.items():
         for item in values:
