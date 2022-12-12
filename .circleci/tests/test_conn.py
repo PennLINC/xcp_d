@@ -33,16 +33,15 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     fake_signal = np.random.randint(bold_data.min(), bold_data.max(), size=bold_data.shape)
 
     # Let's write that out
-    filename = os.path.join(tempdir, "fake_signal_file.nii.gz")
+    fake_bold_file = os.path.join(tempdir, "fake_signal_file.nii.gz")
     write_ndata(
         fake_signal,
         template=bold_file,
         mask=bold_mask,
         TR=_get_tr(nb.load(bold_file)),
-        filename=filename,
+        filename=fake_bold_file,
     )
-    assert os.path.isfile(filename)
-    fake_bold_file = filename
+    assert os.path.isfile(fake_bold_file)
 
     # Let's define the inputs and create the node
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
@@ -67,10 +66,10 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     for file_ in files:
         if fnmatch.fnmatch(file_, "*matrix*"):
-            out_file = file_
+            corr_mat_file = file_
 
     # Read that into a df
-    df = pd.read_table(out_file, header=None)
+    df = pd.read_table(corr_mat_file, header=None)
     xcp_array = df.to_numpy()
 
     # Now let's get the ground truth. First, we should locate the atlas
@@ -87,15 +86,15 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     atlas = nb.load(atlas)
 
     # Masking img
-    masker = NiftiLabelsMasker(atlas, standardize=False)
+    masker = NiftiLabelsMasker(atlas, smoothing_fwhm=None, standardize=False)
     # Fitting mask
     masker.fit(fake_bold_file)
     signals = masker.transform(fake_bold_file)
 
     # The "ground truth" matrix
     ground_truth = np.corrcoef(signals.T)
-    # This is what's failing.
-    assert np.allclose(xcp_array, ground_truth, atol=0.01)
+    # ds001491 data doesn't have complete coverage, so we must allow NaNs here.
+    assert np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True)
 
 
 def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
