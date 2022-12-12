@@ -320,7 +320,7 @@ def init_brainsprite_wf(
                 "rh_wm_surf",
                 "lh_pial_surf",
                 "rh_pial_surf",
-            ]
+            ],
         ),
         name="inputnode",
     )
@@ -332,7 +332,7 @@ def init_brainsprite_wf(
                 "T1w_scenewise_pngs",
                 "T2w_mosaic",
                 "T2w_scenewise_pngs",
-            ]
+            ],
         ),
         name="outputnode",
     )

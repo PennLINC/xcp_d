@@ -436,26 +436,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
-    if process_surfaces:
-        anatomical_wf = init_anatomical_wf(
-            layout=layout,
-            fmri_dir=fmri_dir,
-            subject_id=subject_id,
-            output_dir=output_dir,
-            input_type=input_type,
-            omp_nthreads=omp_nthreads,
-            mem_gb=5,  # RF: need to change memory size
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, anatomical_wf, [
-                ("t1w", "inputnode.t1w"),
-                ("t1w_seg", "inputnode.t1seg"),
-            ]),
-        ])
-        # fmt:on
-
     # Plot the ribbon on the brain in a brainsprite figure
     brainsprite_wf = init_brainsprite_wf(
         layout=layout,
@@ -469,23 +449,47 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         mem_gb=5,
     )
 
-    # fmt:off
-    workflow.connect([
-        (t1w_wf, brainsprite_wf, [
-            ("outputnode.t1w", "inputnode.t1w"),
-            ("outputnode.t1w_seg", "inputnode.t1w_seg"),
-        ]),
-    ])
-    # fmt:on
-
     if process_surfaces:
+        anatomical_wf = init_anatomical_wf(
+            layout=layout,
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            output_dir=output_dir,
+            input_type=input_type,
+            omp_nthreads=omp_nthreads,
+            mem_gb=5,  # RF: need to change memory size
+        )
+
+        # Use standard-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
+            (inputnode, anatomical_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1w_seg", "inputnode.t1seg"),
+            ]),
+            (t1w_wf, brainsprite_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.t1w_seg", "inputnode.t1w_seg"),
+            ]),
             (anatomical_wf, brainsprite_wf, [
                 ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+            ]),
+        ])
+        # fmt:on
+    else:
+        # Use native-space T1w and surfaces for brainsprite.
+        # fmt:off
+        workflow.connect([
+            (inputnode, brainsprite_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1w_seg", "inputnode.t1seg"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
             ]),
         ])
         # fmt:on
