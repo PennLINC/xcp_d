@@ -371,8 +371,8 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, inflate_surfaces_wf, [
-                    (f"{hemi}_midthickness_surf", "midthickness_surf"),
-                    (f"{hemi}_midthickness_surf", "name_source"),
+                    (f"{hemi}_midthickness_surf", "inputnode.midthickness_surf"),
+                    (f"{hemi}_midthickness_surf", "inputnode.name_source"),
                 ]),
             ])
             # fmt:on
@@ -593,10 +593,10 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (split_out_hcp_surface, inflate_surfaces_wf, [
-                    ("out2", "midthickness_surf"),
+                    ("out2", "inputnode.midthickness_surf"),
                 ]),
                 (ds_hcp_midthickness, inflate_surfaces_wf, [
-                    ("out_file", "name_source"),
+                    ("out_file", "inputnode.name_source"),
                 ]),
             ])
             # fmt:on
