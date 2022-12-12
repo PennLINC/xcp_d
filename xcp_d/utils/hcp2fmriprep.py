@@ -121,6 +121,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     brainmask_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-brain_mask.nii.gz")
     copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
 
+    # NOTE: What is this file for?
     ribbon_orig = os.path.join(in_dir, "ribbon.nii.gz")
     ribbon_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-ribbon_T1w.nii.gz")
     copy_dictionary[ribbon_orig] = [ribbon_fmriprep]

@@ -109,15 +109,19 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         )
         copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
 
+        # NOTE: What is this file for?
         ribbon_orig = os.path.join(anat_dir_orig, "ribbon_orig.nii.gz")
         ribbon_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_desc-ribbon_orig.nii.gz",
+            f"{sub_id}_{ses_id}_desc-ribbon_T1w.nii.gz",
         )
         copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
 
         dseg_orig = os.path.join(anat_dir_orig, "aparc+aseg.nii.gz")
-        dseg_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_{ses_id}_dseg.nii.gz")
+        dseg_fmriprep = os.path.join(
+            anat_dir_fmriprep,
+            f"{sub_id}_{ses_id}_desc-aparcaseg_dseg.nii.gz",
+        )
         copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
