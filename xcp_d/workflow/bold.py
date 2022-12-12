@@ -461,7 +461,7 @@ produced by the regression.
         remove_dummy_scans = pe.Node(
             RemoveTR(),
             name="remove_dummy_scans",
-            mem_gb=0.1 * mem_gbx["timeseries"],
+            mem_gb=2 * mem_gbx["timeseries"],  # assume it takes a lot of memory
         )
 
         # fmt:off
