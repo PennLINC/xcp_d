@@ -1,7 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Regression interfaces."""
+import numpy as np
 import pandas as pd
+from nilearn import signal
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -11,8 +13,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.utils import demean_detrend_data, linear_regression
+from xcp_d.utils.filemanip import fname_presuffix, split_filename
 from xcp_d.utils.write_save import despikedatacifti, read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -53,43 +54,97 @@ class Regress(SimpleInterface):
 
         # Get the confound matrix
         confound = pd.read_table(self.inputs.confounds)
+        confound_arr = confound.to_numpy()
 
-        confound = confound.to_numpy().T  # Transpose confounds matrix to line up with bold matrix
-        # Get the nifti/cifti matrix
-        bold_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
-
-        # Demean and detrend the data
-
-        demeaned_detrended_data = demean_detrend_data(data=bold_matrix)
-
-        # Regress out the confounds via linear regression from sklearn
-        if demeaned_detrended_data.shape[1] < confound.shape[0]:
-            print(
-                "Warning: Regression might not be effective due to rank deficiency, i.e:"
-                "the number of volumes in the bold file is much smaller than the number of"
-                " egressors."
+        # Any columns starting with "signal__" are assumed to be signal regressors
+        cols = confound.columns.tolist()
+        signal_columns = [c for c in cols if c.startswith("signal__")]
+        if signal_columns:
+            LOGGER.info(
+                "Performing nonaggressive denoising using the following signal columns: "
+                f"{', '.join(signal_columns)}"
             )
-        residualized_data = linear_regression(data=demeaned_detrended_data, confound=confound)
+            noise_reg_idx = [i for i, c in enumerate(cols) if c not in signal_columns]
+
+        # Get the nifti/cifti matrix
+        bold_arr = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        bold_arr = bold_arr.T  # transpose BOLD data to TxS
+
+        # Regress out the confounds via linear regression from numpy
+        if bold_arr.shape[0] < confound_arr.shape[1]:
+            LOGGER.warning(
+                "Warning: Regression might not be effective due to rank deficiency, "
+                "i.e., the number of volumes in the bold file is smaller than the number "
+                "of regressors."
+            )
+
+        if signal_columns:
+            # Perform non-aggressive denoising.
+            # First, mean-center and detrend BOLD data
+            bold_arr = signal.clean(
+                signals=bold_arr,
+                detrend=True,  # this mean-centers and linearly detrends the data
+                standardize=False,
+                confounds=None,
+                filter=None,
+                ensure_finite=True,
+            )
+
+            # Mean-center and detrend the regressors in the same manner.
+            # If we don't, the regression could reintroduce trends (see Lindquist2019).
+            # Later bandpass filtering should deal with these trends if they are reintroduced,
+            # but users can disable the filter, so we shouldn't rely on that.
+            confound_arr = signal.clean(
+                signals=confound_arr,
+                detrend=True,  # this mean-centers and linearly detrends the data
+                standardize=False,
+                confounds=None,
+                filter=None,
+                ensure_finite=True,
+            )
+
+            # Fit to all regressors, including signal ones.
+            # NOTE: Could we replace with nilearn.glm.first_level.run_glm?
+            betas = np.linalg.lstsq(confound_arr, bold_arr, rcond=None)[0]
+
+            # Use the parameter estimates from the full fit to remove the *noise* only
+            pred_noise_data = np.dot(confound_arr[:, noise_reg_idx], betas[noise_reg_idx, :])
+            residuals = bold_arr - pred_noise_data
+
+        else:
+            # Denoise the data the regular way
+            residuals = signal.clean(
+                signals=bold_arr,
+                detrend=True,  # this mean-centers and linearly detrends the data
+                standardize=False,
+                sample_mask=None,
+                confounds=confound,
+                standardize_confounds=False,  # do we want to set this to True?
+                filter=None,
+                low_pass=None,
+                high_pass=None,
+                t_r=None,  # unneeded unless we do temporal filtering
+                ensure_finite=True,
+            )
 
         # Write out the data
-        if self.inputs.in_file.endswith(".dtseries.nii"):  # If cifti
-            suffix = "_residualized.dtseries.nii"
-        elif self.inputs.in_file.endswith(".nii.gz"):  # If nifti
-            suffix = "_residualized.nii.gz"
-
-        # write the output out
+        _, _, extension = split_filename(self.inputs.in_file)
+        suffix = "_residualized" + extension
         self._results["res_file"] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
             use_ext=False,
         )
-        self._results["res_file"] = write_ndata(
-            data_matrix=residualized_data,
+
+        residuals = residuals.T  # transpose residual BOLD data back to SxT
+        write_ndata(
+            data_matrix=residuals,
             template=self.inputs.in_file,
             filename=self._results["res_file"],
             mask=self.inputs.mask,
         )
+
         return runtime
 
 

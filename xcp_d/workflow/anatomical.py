@@ -316,6 +316,20 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
+        nothingnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t1seg"]),
+            name="nothingnode",
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, nothingnode, [
+                ("t1w", "t1w"),
+                ("t1seg", "t1seg"),
+            ]),
+        ])
+
+        # fmt:on
+
     else:
         all_files = list(layout.get_files())
 

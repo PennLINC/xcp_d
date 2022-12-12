@@ -160,9 +160,9 @@ def generate_reports(
             from xcp_d.utils.concatenation import concatenate_derivatives
 
             if input_type == "dcan":
-                fmri_dir = str(work_dir) + "/dcanhcp"
+                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
             elif input_type == "hcp":
-                fmri_dir = str(work_dir) + "/hcp/hcp"
+                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
             print("Concatenating bold files ...")
             concatenate_derivatives(
                 subjects=subject_list,
