@@ -464,7 +464,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ]),
             (t1w_wf, brainsprite_wf, [
                 ("outputnode.t1w", "inputnode.t1w"),
-                ("outputnode.t1w_seg", "inputnode.t1w_seg"),
             ]),
             (anatomical_wf, brainsprite_wf, [
                 ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
@@ -480,7 +479,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, brainsprite_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("t1w_seg", "inputnode.t1seg"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),

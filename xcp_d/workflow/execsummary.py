@@ -37,7 +37,7 @@ def init_brainsprite_mini_wf(
     image_type,
     brainsprite_scene_template,
     pngs_scene_template,
-    name="init_brainsprite_mini_wf",
+    name="brainsprite_mini_wf",
 ):
     """Create an executive summary-style brainsprite file."""
     workflow = Workflow(name=name)
@@ -308,7 +308,6 @@ def init_brainsprite_wf(
     Inputs
     ------
     t1w
-    t1seg
     lh_wm_surf
     rh_wm_surf
     lh_pial_surf
@@ -323,7 +322,6 @@ def init_brainsprite_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1seg",
                 "lh_wm_surf",
                 "rh_wm_surf",
                 "lh_pial_surf",
@@ -367,7 +365,6 @@ def init_brainsprite_wf(
         workflow.connect([
             (inputnode, brainsprite_mini_wf, [
                 (f"{image_type.lower()}w", "inputnode.anat_file"),
-                ("t1seg", "inputnode.t1seg"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
@@ -419,7 +416,7 @@ def init_brainsprite_wf(
                 (f"{image_type.lower()}w", "source_file"),
             ]),
             (generate_brainsprite_html, ds_brainsprite_html, [
-                ("outputnode.html_file", "in_file"),
+                ("out_file", "in_file"),
             ]),
         ])
         # fmt:on
@@ -452,7 +449,6 @@ def init_execsummary_wf(
     Inputs
     ------
     t1w
-    t1seg
     regressed_data
     residual_data
     filtered_motion
@@ -468,7 +464,6 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
-                "t1seg",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",

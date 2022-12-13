@@ -22,7 +22,7 @@ from xcp_d.utils.plot import plot_svgx, plotimage
 LOGGER = logging.getLogger("nipype.interface")
 
 
-class _GenerateBrainspriteHTMLInputSpec:
+class _GenerateBrainspriteHTMLInputSpec(BaseInterfaceInputSpec):
     add_jquery = traits.Bool(
         desc=(
             "Whether to include the JQuery JavaScript code or not. "
@@ -40,11 +40,11 @@ class _GenerateBrainspriteHTMLInputSpec:
     scenewise_pngs = File(exists=True, mandatory=True, desc="plot image")
 
 
-class _GenerateBrainspriteHTMLOutputSpec:
+class _GenerateBrainspriteHTMLOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="out image")
 
 
-class GenerateBrainspriteHTML:
+class GenerateBrainspriteHTML(SimpleInterface):
     """Make the HTML for a BrainSprite figure."""
 
     input_spec = _GenerateBrainspriteHTMLInputSpec
