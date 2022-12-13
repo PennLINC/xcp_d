@@ -269,9 +269,7 @@ def collect_data(
         nifti_bold_data = layout.get(**temp_bold_query)
 
         if not nifti_bold_data:
-            raise FileNotFoundError(
-                f"No nifti BOLD data found in allowed space ({volspace})"
-            )
+            raise FileNotFoundError(f"No nifti BOLD data found in allowed space ({volspace})")
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
