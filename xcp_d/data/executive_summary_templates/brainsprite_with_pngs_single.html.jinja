@@ -26,11 +26,10 @@
 {{ build_sprite_loader_script(image_type) }}
 {{ build_modal_script(image_class, modal_id) }}
 
-{% endfor %}
-
 {% if add_javascript %}
     {# Include BrainSprite JavaScript code only once. #}
     <script>
     {{ include_file("./brainsprite.js") }}
     </script>
 {% endif %}
+</body>

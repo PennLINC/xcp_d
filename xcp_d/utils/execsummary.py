@@ -73,11 +73,16 @@ def make_mosaic(png_files):
     from PIL import Image  # for BrainSprite
 
     mosaic_file = os.path.abspath("mosaic.jpg")
-    files = sorted(png_files)  # just in case they get shuffled
-    files = files[::-1]  # we want last first, I guess?
+    files = png_files[::-1]  # we want last first, I guess?
 
     image_dim = 218
     images_per_side = int(np.sqrt(len(files)))
+    n_images_to_plot = images_per_side ** 2
+    if n_images_to_plot != len(files):
+        print(f"{n_images_to_plot}/{len(files)} files will be plotted.")
+
+    files = files[:n_images_to_plot]
+
     square_dim = image_dim * images_per_side
     result = Image.new("RGB", (square_dim, square_dim))
 

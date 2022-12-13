@@ -9,6 +9,7 @@ from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
+    InputMultiPath,
     SimpleInterface,
     TraitedSpec,
     traits,
@@ -37,7 +38,11 @@ class _GenerateBrainspriteHTMLInputSpec(BaseInterfaceInputSpec):
     )
     image_type = traits.Enum(("T1", "T2"), desc="The image type of the brainsprite.")
     mosaic = File(exists=True, mandatory=True, desc="plot image")
-    scenewise_pngs = File(exists=True, mandatory=True, desc="plot image")
+    scenewise_pngs = InputMultiPath(
+        File(exists=True),
+        mandatory=True,
+        desc="plot image",
+    )
 
 
 class _GenerateBrainspriteHTMLOutputSpec(TraitedSpec):
@@ -55,10 +60,7 @@ class GenerateBrainspriteHTML(SimpleInterface):
             "xcp_d",
             "data/executive_summary_templates",
         )
-        jinja_template_file = pkgrf(
-            "xcp_d",
-            "data/executive_summary_templates/brainsprite_with_pngs_single.html.jinja",
-        )
+        jinja_template_file = "brainsprite_with_pngs_single.html.jinja"
 
         loader = FileSystemLoader(jinja_template_folder)
         environment = Environment(loader=loader)
@@ -79,7 +81,7 @@ class GenerateBrainspriteHTML(SimpleInterface):
             add_javascript=self.inputs.add_javascript,
         )
 
-        soup = BeautifulSoup(html)  # make BeautifulSoup
+        soup = BeautifulSoup(html, features="html.parser")  # make BeautifulSoup
         html = soup.prettify()  # prettify the html
 
         self._results["out_file"] = fname_presuffix(
