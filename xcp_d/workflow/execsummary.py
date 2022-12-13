@@ -287,6 +287,7 @@ def init_execsummary_wf(
     # fmt:on
 
     # Get the transform file to native space
+    # NOTE: Is this actually native space? It should the BOLD file's standard space.
     get_std2native_transform = pe.Node(
         Function(
             input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
@@ -307,7 +308,8 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Transform the file to native space
+    # Transform the standard-space carpet-specific dseg to native space
+    # NOTE: Is this actually going to be native space though?
     resample_parc = pe.Node(
         ApplyTransformsx(
             dimension=3,

@@ -178,6 +178,10 @@ def collect_data(
         },
     }
 
+    VOLSPACE_FOR_CIFTIS = {
+        "fsLR": "MNI152NLin6Asym",
+    }
+
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
@@ -253,37 +257,20 @@ def collect_data(
         queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
         queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
     else:
-        # Select the best *volumetric* space, based on available nifti BOLD files.
-        # This space will be used in the executive summary and T1w/T2w workflows.
+        volspace = VOLSPACE_FOR_CIFTIS[queries["bold"]["space"]]
+        queries["t1w_to_template_xform"]["to"] = volspace
+        queries["template_to_t1w_xform"]["from"] = volspace
+
+        # Look for NIFTI file in the right space
+        # NOTE: Do we really need a NIFTI file?
         temp_bold_query = queries["bold"].copy()
         temp_bold_query["extension"] = ".nii.gz"
-        temp_allowed_spaces = input_type_allowed_spaces.get(
-            input_type,
-            default_allowed_spaces,
-        )["nifti"]
-
-        for space in temp_allowed_spaces:
-            temp_bold_query["space"] = space
-            nifti_bold_data = layout.get(**temp_bold_query)
-            if nifti_bold_data:
-                queries["t1w_to_template_xform"]["to"] = space
-                queries["template_to_t1w_xform"]["from"] = space
-                break
-
-        if input_type in ("hcp", "dcan"):
-            temp_allowed_spaces = ["MNI152NLin6Asym"]
-            # HCP and DCAN files don't have nifti BOLD data, we will use the boldref
-            temp_bold_query["desc"] = None
-            temp_bold_query["suffix"] = "boldref"
-            temp_bold_query["space"] = "MNI152NLin6Asym"
-            queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
-            queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
-            nifti_bold_data = layout.get(**temp_bold_query)
+        temp_bold_query["space"] = volspace
+        nifti_bold_data = layout.get(**temp_bold_query)
 
         if not nifti_bold_data:
-            allowed_space_str = ", ".join(temp_allowed_spaces)
             raise FileNotFoundError(
-                f"No nifti BOLD data found in allowed spaces ({allowed_space_str})"
+                f"No nifti BOLD data found in allowed space ({volspace})"
             )
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
@@ -558,6 +545,8 @@ def _get_tr(img):
 
 def find_nifti_bold_files(bold_file, template_to_t1w):
     """Find nifti bold and boldref files associated with a given input file.
+
+    TODO: If CIFTI, just use the volumetric space associated with the CIFTI space.
 
     Parameters
     ----------

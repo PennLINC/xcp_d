@@ -63,7 +63,8 @@ def get_segfile(bold_file):
 
     Notes
     -----
-    Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
+    Only used in concatenation code for NIFTI inputs and should be dropped in favor of BIDSLayout
+    methods ASAP.
     """
     # get transform files
     dd = Path(os.path.dirname(bold_file))
