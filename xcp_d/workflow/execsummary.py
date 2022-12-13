@@ -121,12 +121,16 @@ def init_brainsprite_wf(
     else:
         fmri_dir = os.path.abspath(fmri_dir)
 
-        freesurfer_dir = get_freesurfer_dir(fmri_dir)
+        # NOTE: I try to avoid try/except statements, but this will be replaced very soon.
+        try:
+            freesurfer_dir = get_freesurfer_dir(fmri_dir)
 
-        ribbon = os.path.join(freesurfer_dir, f"sub-{subject_id}", "mri", "ribbon.mgz")
-        LOGGER.info(f"Using {ribbon} for ribbon.")
-        if not os.path.isfile(ribbon):
-            LOGGER.warning(f"File DNE: {ribbon}")
+            ribbon = os.path.join(freesurfer_dir, f"sub-{subject_id}", "mri", "ribbon.mgz")
+            LOGGER.info(f"Using {ribbon} for ribbon.")
+            if not os.path.isfile(ribbon):
+                LOGGER.warning(f"File DNE: {ribbon}")
+                use_t1seg_as_ribbon = True
+        except NotADirectoryError:
             use_t1seg_as_ribbon = True
 
     if use_t1seg_as_ribbon:
