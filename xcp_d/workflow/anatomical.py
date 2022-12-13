@@ -15,6 +15,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
+from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -196,39 +197,39 @@ def init_t1w_wf(
 
 
 @fill_doc
-def init_anatomical_wf(
+def init_warp_surfaces_to_template_wf(
     fmri_dir,
     subject_id,
     output_dir,
     warp_to_standard,
     omp_nthreads,
     mem_gb,
-    name="anatomical_wf",
+    name="warp_surfaces_to_template_wf",
 ):
     """Transform surfaces from native to standard fsLR-32k space.
 
     For the ``hcp`` and ``dcan`` preprocessing workflows,
-    the fsLR-32k space surfaces already exist, and will simply be copied to the output directory.
+    the fsLR-32k-space surfaces already exist and will simply be copied to the output directory.
 
-    For other preprocessing workflows, the native space surfaces are present in the Freesurfer
-    directory (if Freesurfer was run), and must be transformed to standard space.
-    If Freesurfer derivatives are not available, then a warning will be raised and
-    no output files will be generated.
+    For other preprocessing workflows, the native space surfaces are present in the preprocessed
+    derivatives directory (if Freesurfer was run), and must be transformed to standard space.
+    The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
+    If Freesurfer derivatives are not available, then an error will be raised.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_anatomical_wf
-            wf = init_anatomical_wf(
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+            wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
                 subject_id="01",
                 output_dir=".",
                 warp_to_standard=True,
                 omp_nthreads=1,
                 mem_gb=0.1,
-                name="anatomical_wf",
+                name="warp_surfaces_to_template_wf",
             )
 
     Parameters
@@ -242,56 +243,102 @@ def init_anatomical_wf(
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
-        Default is "anatomical_wf".
+        Default is "warp_surfaces_to_template_wf".
 
     Inputs
     ------
-    t1w_to_template_xform
-    template_to_t1w_xform
-    lh_inflated_surf, rh_inflated_surf
-        Left- and right-hemisphere inflated surface files.
-        Written out to derivatives if already in standard space, but unused otherwise.
-    lh_midthickness_surf, rh_midthickness_surf
-        Left- and right-hemisphere midthickness surface files.
-        Warped to standard space and written out to derivatives, but unused otherwise.
-    lh_pial_surf, rh_pial_surf
+    t1w_to_template_xform : str
+        The transform from T1w space to template space.
+
+        The template in question should match the volumetric space of the BOLD CIFTI files
+        being processed by the main xcpd workflow.
+        For example, MNI152NLin6Asym for fsLR-space CIFTIs.
+
+        If ``warp_to_standard`` is False, this file is unused.
+    template_to_t1w_xform : str
+        The transform from template space to T1w space.
+
+        The template in question should match the volumetric space of the BOLD CIFTI files
+        being processed by the main xcpd workflow.
+        For example, MNI152NLin6Asym for fsLR-space CIFTIs.
+
+        If ``warp_to_standard`` is False, this file is unused.
+    lh_pial_surf, rh_pial_surf : str
         Left- and right-hemisphere pial surface files.
-        Warped to standard space, written out to derivatives,
-        and returned via outputnode for use in brainsprite.
-        Also used to generate HCP-style midthickness, inflated, and veryinflated surfaces
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory and returned via outputnode for use in a brainsprite.
+
+        If ``warp_to_standard`` is True, then it is also warped to standard space and used
+        to generate HCP-style midthickness, inflated, and veryinflated surfaces
         if they're not already available.
-    lh_smoothwm_surf, rh_smoothwm_surf
+    lh_smoothwm_surf, rh_smoothwm_surf : str
         Left- and right-hemisphere smoothed white matter surface files.
-        Warped to standard space, written out to derivatives,
-        and returned via outputnode for use in brainsprite.
-        Also used to generate HCP-style midthickness, inflated, and veryinflated surfaces
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory and returned via outputnode for use in a brainsprite.
+
+        If ``warp_to_standard`` is True, then it is also warped to standard space and used
+        to generate HCP-style midthickness, inflated, and veryinflated surfaces
         if they're not already available.
+    lh_midthickness_surf, rh_midthickness_surf : str
+        Left- and right-hemisphere midthickness surface files.
+
+        If ``warp_to_standard`` is False, then this is an fMRIPrep-style file,
+        and it will be ignored, as an HCP-style version will be created from the pial and wm
+        files.
+
+        If ``warp_to_standard`` is True, then it is an HCP-style file,
+        and it will be written out to the output directory.
+    lh_inflated_surf, rh_inflated_surf : str
+        Left- and right-hemisphere inflated surface files.
+
+        If ``warp_to_standard`` is False, then this is an fMRIPrep-style file,
+        and it will be ignored, as an HCP-style version will be created from the pial and wm
+        files.
+
+        If ``warp_to_standard`` is True, then it is an HCP-style file,
+        and it will be written out to the output directory.
+    lh_vinflated_surf, rh_vinflated_surf : str
+        Left- and right-hemisphere very-inflated surface files.
+
+        If ``warp_to_standard`` is False, then this is an fMRIPrep-style file,
+        and it will be ignored, as an HCP-style version will be created from the pial and wm
+        files.
+
+        If ``warp_to_standard`` is True, then it is an HCP-style file,
+        and it will be written out to the output directory.
 
     Notes
     -----
-    If "hcp" or "dcan" input type, pre-generated surface files will be collected from the
+    If "hcp" or "dcan" input type, standard-space surface files will be collected from the
     converted preprocessed derivatives.
-    However, these derivatives do not include HCP-style surfaces.
-    Unless maybe they *are* HCP-style surfaces already?
+    This includes the HCP-style surfaces (midthickness, inflated, and vinflated).
 
     If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from
-    the associated Freesurfer directory (if available), and warped to fsLR space.
+    the preprocessed derivatives and will be warped to standard space.
+    The HCP-style surfaces will also be generated.
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "t1w_to_template_xform",
-                "template_to_t1w_xform",
-                "lh_inflated_surf",
-                "rh_inflated_surf",
-                "lh_midthickness_surf",
-                "rh_midthickness_surf",
+                # required surfaces
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_smoothwm_surf",
                 "rh_smoothwm_surf",
+                # optional HCP-style surfaces
+                "lh_midthickness_surf",
+                "rh_midthickness_surf",
+                "lh_inflated_surf",
+                "rh_inflated_surf",
+                "lh_vinflated_surf",
+                "rh_vinflated_surf",
+                # transforms (only used if warp_to_standard is True)
+                "t1w_to_template_xform",
+                "template_to_t1w_xform",
             ],
         ),
         name="inputnode",
@@ -313,21 +360,23 @@ def init_anatomical_wf(
     if not warp_to_standard:
         # The files are already available, so we just map them to the outputnode and DataSinks.
         merge_files_to_list = pe.Node(
-            niu.Merge(8),
+            niu.Merge(10),
             name="merge_files_to_list",
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, merge_files_to_list, [
-                ("lh_inflated_surf", "in1"),
-                ("rh_inflated_surf", "in2"),
-                ("lh_midthickness_surf", "in3"),
-                ("rh_midthickness_surf", "in4"),
-                ("lh_pial_surf", "in5"),
-                ("rh_pial_surf", "in6"),
-                ("lh_smoothwm_surf", "in7"),
-                ("rh_smoothwm_surf", "in8"),
+                ("lh_pial_surf", "in1"),
+                ("rh_pial_surf", "in2"),
+                ("lh_smoothwm_surf", "in3"),
+                ("rh_smoothwm_surf", "in4"),
+                ("lh_midthickness_surf", "in5"),
+                ("rh_midthickness_surf", "in6"),
+                ("lh_inflated_surf", "in7"),
+                ("rh_inflated_surf", "in8"),
+                ("lh_vinflated_surf", "in9"),
+                ("rh_vinflated_surf", "in10"),
             ]),
             (inputnode, outputnode, [
                 ("lh_pial_surf", "lh_pial_surf"),
@@ -335,6 +384,21 @@ def init_anatomical_wf(
                 ("rh_pial_surf", "rh_pial_surf"),
                 ("rh_smoothwm_surf", "rh_smoothwm_surf"),
             ]),
+        ])
+        # fmt:on
+
+        # The DataSink will fail if source_file or in_file is undefined/None,
+        # so we must filter out any undefined inputs.
+        filter_out_missing_surfaces = pe.Node(
+            FilterUndefined(),
+            name="filter_out_missing_surfaces",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (merge_files_to_list, filter_out_missing_surfaces, [
+                ("out", "inlist"),
+            ])
         ])
         # fmt:on
 
@@ -351,41 +415,21 @@ def init_anatomical_wf(
 
         # fmt:off
         workflow.connect([
-            (merge_files_to_list, ds_standard_space_surfaces, [
-                ("out", "in_file"),
-                ("out", "source_file"),
+            (filter_out_missing_surfaces, ds_standard_space_surfaces, [
+                ("outlist", "in_file"),
+                ("outlist", "source_file"),
             ])
         ])
         # fmt:on
-
-        # Create and write out very-inflated surface file
-        for hemi in ["lh", "rh"]:
-            inflate_surfaces_wf = init_inflate_surfaces_wf(
-                save_inflated=False,
-                output_dir=output_dir,
-                mem_gb=mem_gb,
-                omp_nthreads=omp_nthreads,
-                name=f"{hemi}_inflate_surfaces_wf",
-            )
-
-            # fmt:off
-            workflow.connect([
-                (inputnode, inflate_surfaces_wf, [
-                    (f"{hemi}_midthickness_surf", "inputnode.midthickness_surf"),
-                    (f"{hemi}_midthickness_surf", "inputnode.name_source"),
-                ]),
-            ])
-            # fmt:on
 
     else:
         # Warp the surfaces to space-fsLR, den-32k.
         # We want the following output surfaces:
         # 1. Pial
         # 2. Smoothed white matter
-        # 3. Normal (non-HCP-style) midthickness
-        # 4. HCP-style midthickness
-        # 5. HCP-style inflated (but not normal inflated)
-        # 6. HCP-style very-inflated
+        # 3. HCP-style midthickness
+        # 4. HCP-style inflated
+        # 5. HCP-style very-inflated
         get_freesurfer_dir_node = pe.Node(
             Function(
                 function=get_freesurfer_dir,
@@ -412,6 +456,7 @@ def init_anatomical_wf(
         ])
         # fmt:on
 
+        # TODO: It would be nice to replace this for loop with MapNodes or iterables some day.
         for hemi in ["L", "R"]:
             hemi_label = f"{hemi.lower()}h"
 
@@ -428,17 +473,17 @@ def init_anatomical_wf(
                 (inputnode, native_hcpmidthick, [
                     (f"{hemi_label}_pial_surf", "surface_in1"),
                     (f"{hemi_label}_smoothwm_surf", "surface_in2"),
-                ])
+                ]),
             ])
             # fmt:on
 
             # Place the surfaces in a single node.
             collect_original_surfaces = pe.Node(
-                niu.Merge(3),
+                niu.Merge(2),
                 name=f"collect_original_surfaces_{hemi_label}",
             )
             collect_surfaces = pe.Node(
-                niu.Merge(4),
+                niu.Merge(3),
                 name=f"collect_surfaces_{hemi_label}",
             )
 
@@ -448,15 +493,13 @@ def init_anatomical_wf(
                 (inputnode, collect_original_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
                     (f"{hemi_label}_smoothwm_surf", "in2"),
-                    (f"{hemi_label}_midthickness_surf", "in3"),
                 ]),
                 (inputnode, collect_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
                     (f"{hemi_label}_smoothwm_surf", "in2"),
-                    (f"{hemi_label}_midthickness_surf", "in3"),
                 ]),
                 (native_hcpmidthick, collect_surfaces, [
-                    ("out_file", "in4"),
+                    ("out_file", "in3"),
                 ]),
             ])
             # fmt:on
@@ -489,7 +532,7 @@ def init_anatomical_wf(
             split_out_hcp_surface = pe.Node(
                 niu.Split(
                     splits=[
-                        3,  # number of ingested and warped surfaces, with inflated dropped
+                        2,  # number of ingested and warped surfaces, with inflated dropped
                         1,  # the HCP midthickness surface
                     ],
                     squeeze=True,
@@ -536,7 +579,6 @@ def init_anatomical_wf(
                     splits=[
                         1,  # pial
                         1,  # smoothwm
-                        1,  # midthickness (unused)
                     ],
                     squeeze=True,
                 ),
@@ -574,7 +616,7 @@ def init_anatomical_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_hcp_midthickness, [
-                    (f"{hemi_label}_midthickness_surf", "source_file"),
+                    (f"{hemi_label}_pial_surf", "source_file"),
                 ]),
                 (split_out_hcp_surface, ds_hcp_midthickness, [
                     ("out2", "in_file"),
@@ -830,11 +872,6 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
     # fmt:off
     workflow.connect([
         (convert_ants_transform, change_xfm_type, [("out_transform", "in_transform")]),
-    ])
-    # fmt:on
-
-    # fmt:off
-    workflow.connect([
     ])
     # fmt:on
 

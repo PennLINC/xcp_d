@@ -344,44 +344,34 @@ def collect_surface_data(layout, participant_label):
         True if surface files were found at all. False if they were not.
     """
     # Surfaces to use for brainsprite and anatomical workflow
-    queries = {
-        "lh_inflated_surf": {
-            "hemi": "L",
-            "suffix": "inflated",
-        },
-        "rh_inflated_surf": {
-            "hemi": "R",
-            "suffix": "inflated",
-        },
-        "lh_midthickness_surf": {
-            "hemi": "L",
-            "suffix": "midthickness",
-        },
-        "rh_midthickness_surf": {
-            "hemi": "R",
-            "suffix": "midthickness",
-        },
+    # The base surfaces can be used to generate the derived surfaces.
+    # The base surfaces may be in native or standard space.
+    surface_queries = {
         "lh_pial_surf": {
             "hemi": "L",
+            "desc": None,
             "suffix": "pial",
         },
         "rh_pial_surf": {
             "hemi": "R",
+            "desc": None,
             "suffix": "pial",
         },
         "lh_smoothwm_surf": {
             "hemi": "L",
+            "desc": None,
             "suffix": "smoothwm",
         },
         "rh_smoothwm_surf": {
             "hemi": "R",
+            "desc": None,
             "suffix": "smoothwm",
         },
     }
 
-    # First, try to grab the first file.
+    # First, try to grab the first base surface file in standard space.
     # If it's not available, switch to native T1w-space data.
-    temp_query = queries["lh_inflated_surf"]
+    temp_query = surface_queries["lh_pial_surf"]
     temp_files = layout.get(
         return_type="file",
         subject=participant_label,
@@ -410,6 +400,7 @@ def collect_surface_data(layout, participant_label):
             "space": None,
         }
 
+    # Find the required files first
     surface_files = {
         dtype: sorted(
             layout.get(
@@ -421,20 +412,96 @@ def collect_surface_data(layout, participant_label):
                 **query_extras,
             )
         )
-        for dtype, query in queries.items()
+        for dtype, query in surface_queries.items()
     }
 
     out_surface_files = {}
     surfaces_found = True
     for dtype, surface_files_ in surface_files.items():
-        if len(surface_files_) == 0:
+        if len(surface_files_) == 1:
+            out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
             out_surface_files[dtype] = None
             surfaces_found = False
-        else:
-            if len(surface_files_) > 1:
-                LOGGER.warning("More than one surface found.")
 
+        else:
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {surface_queries[dtype]}"
+            )
+
+    # Now let's try finding the optional surfaces
+    # The optional surfaces may be in native or standard space.
+    # We only want HCP-style (desc = hcp) versions of these files.
+    surface_queries = {
+        "lh_midthickness_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "midthickness",
+        },
+        "rh_midthickness_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "midthickness",
+        },
+        "lh_inflated_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "inflated",
+        },
+        "rh_inflated_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "inflated",
+        },
+        "lh_vinflated_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "vinflated",
+        },
+        "rh_vinflated_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "vinflated",
+        },
+    }
+
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                extension=".surf.gii",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in surface_queries.items()
+    }
+
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 1:
             out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            out_surface_files[dtype] = None
+
+        else:
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {surface_queries[dtype]}"
+            )
+
+    LOGGER.debug(
+        f"Collected surface data:\n"
+        f"{yaml.dump(out_surface_files, default_flow_style=False, indent=4)}"
+    )
 
     return out_surface_files, standard_space_surfaces, surfaces_found
 
