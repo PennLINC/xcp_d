@@ -423,7 +423,7 @@ produced by the regression.
         remove_dummy_scans = pe.Node(
             RemoveTR(),
             name="remove_dummy_scans",
-            mem_gb=0.1 * mem_gbx["timeseries"],
+            mem_gb=mem_gbx["timeseries"],
         )
 
         # fmt:off
@@ -655,6 +655,8 @@ produced by the regression.
         )
 
         # fmt:off
+        # Use inputnode for executive summary instead of downcast_data
+        # because T1w is used as name source.
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.

@@ -79,20 +79,13 @@ def test_RemoveTR_nifti(data_dir, tmp_path_factory):
             raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
-def test_RemoveTR_cifti(data_dir, tmp_path_factory):
+def test_RemoveTR_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test RemoveTR() for CIFTI input data."""
     # Define inputs
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
     temp_dir = tmp_path_factory.mktemp("test_RemoveTR_cifti")
 
-    boldfile = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
-    )
-    confounds_file = (
-        data_dir + "/fmriprep/sub-colornest001/ses-1/func/"
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv"
-    )
+    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
 
     # Find the original number of volumes acc. to cifti & confounds timeseries
     original_confounds = pd.read_table(confounds_file)
@@ -148,11 +141,9 @@ def test_RemoveTR_cifti(data_dir, tmp_path_factory):
 # Testing with CUSTOM CONFOUNDS
 # Note: I had to test this locally as I don't have the permissions to share the
 # data I used here at the moment.
-# def test_fd_interface_cifti_custom(data_dir):  # Checking results
-#     boldfile = data_dir + '/fmriprep/sub-colornest001/ses-1/func/sub-col'\
-#         'ornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii'
-#     confounds_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-#         "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv"
+# def test_fd_interface_cifti_custom(fmriprep_with_freesurfer_data):  # Checking results
+#     boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+#     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
 #     custom_confounds_tsv = data_dir + "/fmriprep/sub-colornest001/ses-1/func/customcifti.tsv"
 
 #     # Run workflow
