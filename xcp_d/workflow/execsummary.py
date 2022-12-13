@@ -67,11 +67,30 @@ def init_brainsprite_mini_wf(
         name="outputnode",
     )
 
+    # Create frame-wise PNGs
+    get_number_of_frames = pe.Node(
+        Function(
+            function=get_n_frames,
+            input_names=["anat_file"],
+            output_names=["frame_numbers"],
+        ),
+        name="get_number_of_frames",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_number_of_frames, [
+            ("anat_file", "anat_file"),
+        ]),
+    ])
+    # fmt:on
+
     # Modify template scene file with file paths
-    modify_brainsprite_template_scene = pe.Node(
+    modify_brainsprite_template_scene = pe.MapNode(
         Function(
             function=modify_brainsprite_scene_template,
             input_names=[
+                "slice_number",
                 "anat_file",
                 "rh_pial_file",
                 "lh_pial_file",
@@ -82,6 +101,7 @@ def init_brainsprite_mini_wf(
             output_names=["out_file"],
         ),
         name="modify_brainsprite_template_scene",
+        iterfield=["slice_number"],
     )
     modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
 
@@ -94,23 +114,8 @@ def init_brainsprite_mini_wf(
             ("lh_pial_surf", "lh_pial_file"),
             ("rh_pial_surf", "rh_pial_file"),
         ]),
-    ])
-    # fmt:on
-
-    # Create slice-wise PNGs
-    get_number_of_frames = pe.Node(
-        Function(
-            function=get_n_frames,
-            input_names=["scene_file"],
-            output_names=["frame_numbers"],
-        ),
-        name="get_number_of_frames",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (modify_brainsprite_template_scene, get_number_of_frames, [
-            ("out_file", "scene_file"),
+        (get_number_of_frames, modify_brainsprite_template_scene, [
+            ("frame_numbers", "slice_number"),
         ]),
     ])
     # fmt:on
@@ -121,7 +126,7 @@ def init_brainsprite_mini_wf(
             image_height=800,
         ),
         name="create_framewise_pngs",
-        iterfield=["scene_name_or_number"],
+        iterfield=["scene_file", "scene_name_or_number"],
     )
 
     # fmt:off
@@ -185,7 +190,6 @@ def init_brainsprite_mini_wf(
             function=modify_pngs_scene_template,
             input_names=[
                 "anat_file",
-                "image_type",
                 "rh_pial_file",
                 "lh_pial_file",
                 "rh_white_file",
@@ -202,7 +206,6 @@ def init_brainsprite_mini_wf(
     workflow.connect([
         (inputnode, modify_pngs_template_scene, [
             ("anat_file", "anat_file"),
-            ("image_type", "image_type"),
             ("lh_wm_surf", "lh_white_file"),
             ("rh_wm_surf", "rh_white_file"),
             ("lh_pial_surf", "lh_pial_file"),
@@ -344,8 +347,11 @@ def init_brainsprite_wf(
     )
 
     # Load template scene file
-    brainsprite_scene_template = pkgrf("xcp_d", "data/parasagittal_Tx_169_template.scene.gz")
-    pngs_scene_template = pkgrf("xcp_d", "data/image_template_temp.scene.gz")
+    brainsprite_scene_template = pkgrf(
+        "xcp_d",
+        "data/executive_summary_scenes/brainsprite_template.scene.gz",
+    )
+    pngs_scene_template = pkgrf("xcp_d", "data/executive_summary_scenes/pngs_template.scene.gz")
 
     if t2w_available:
         image_types = ["T1", "T2"]

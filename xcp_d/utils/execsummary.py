@@ -103,6 +103,7 @@ def make_mosaic(png_files):
 
 
 def modify_brainsprite_scene_template(
+    slice_number,
     anat_file,
     rh_pial_file,
     lh_pial_file,
@@ -116,10 +117,10 @@ def modify_brainsprite_scene_template(
 
     paths = {
         "TX_IMG": anat_file,
-        "R_PIAL": rh_pial_file,
-        "L_PIAL": lh_pial_file,
-        "R_WHITE": rh_white_file,
-        "L_WHITE": lh_white_file,
+        "RPIAL": rh_pial_file,
+        "LPIAL": lh_pial_file,
+        "RWHITE": rh_white_file,
+        "LWHITE": lh_white_file,
     }
 
     out_file = os.path.abspath("modified_scene.scene")
@@ -131,10 +132,13 @@ def modify_brainsprite_scene_template(
         with open(scene_template, "r") as fo:
             data = fo.read()
 
+    data = data.replace("XAXIS_COORDINATE", str(slice_number))
+
     for template, path in paths.items():
-        # Replace templated pathnames and filenames in local copy.
-        data = data.replace(f"{template}_NAME_and_PATH", path)
         filename = os.path.basename(path)
+
+        # Replace templated pathnames and filenames in local copy.
+        data = data.replace(f"{template}_PATH", path)
         data = data.replace(f"{template}_NAME", filename)
 
     with open(out_file, "w") as fo:
@@ -145,7 +149,6 @@ def modify_brainsprite_scene_template(
 
 def modify_pngs_scene_template(
     anat_file,
-    image_type,
     rh_pial_file,
     lh_pial_file,
     rh_white_file,
@@ -157,7 +160,7 @@ def modify_pngs_scene_template(
     import os
 
     paths = {
-        f"{image_type}_IMG": anat_file,
+        "TX_IMG": anat_file,
         "RPIAL": rh_pial_file,
         "LPIAL": lh_pial_file,
         "RWHITE": rh_white_file,
@@ -174,9 +177,10 @@ def modify_pngs_scene_template(
             data = fo.read()
 
     for template, path in paths.items():
+        filename = os.path.basename(path)
+
         # Replace templated pathnames and filenames in local copy.
         data = data.replace(f"{template}_PATH", path)
-        filename = os.path.basename(path)
         data = data.replace(f"{template}_NAME", filename)
 
     with open(out_file, "w") as fo:
@@ -185,13 +189,21 @@ def modify_pngs_scene_template(
     return out_file
 
 
-def get_n_frames(scene_file):
-    """Infer the number of frames from a scene file."""
-    with open(scene_file, "r") as fo:
-        data = fo.read()
+def get_n_frames(anat_file):
+    """Infer the number of frames from an image."""
+    import nibabel as nb
 
-    total_frames = data.count("SceneInfo Index=")
-    frame_numbers = list(range(1, total_frames + 1))
+    img = nb.load(anat_file)
+
+    # Get number of slices in x axis.
+    n_slices = img.shape[0]
+
+    frame_numbers = np.arange(1, n_slices + 1, dtype=int)
+    ijk = np.ones((n_slices, 3), dtype=int)
+    frame_numbers = list(range(1, n_slices + 1))
+    ijk[:, 0] = frame_numbers
+    xyz = nb.affines.apply_affine(img.affine, ijk)
+    frame_numbers = xyz[:, 0].tolist()
 
     return frame_numbers
 
