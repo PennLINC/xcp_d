@@ -208,7 +208,7 @@ def get_n_frames(anat_file):
     return frame_numbers
 
 
-def get_png_image_names(image_type):
+def get_png_image_names():
     """Get a list of scene names for which to produce PNGs."""
     image_descriptions = [
         "AxialInferiorTemporalCerebellum",

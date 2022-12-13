@@ -218,19 +218,10 @@ def init_brainsprite_mini_wf(
     get_png_scene_names = pe.Node(
         Function(
             function=get_png_image_names,
-            input_names=["image_type"],
             output_names=["scene_index", "scene_descriptions"],
         ),
         name="get_png_scene_names",
     )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_png_scene_names, [
-            ("image_type", "image_type"),
-        ]),
-    ])
-    # fmt:on
 
     create_scenewise_pngs = pe.MapNode(
         ShowScene(image_width=900, image_height=800),
