@@ -77,7 +77,7 @@ def make_mosaic(png_files):
 
     image_dim = 218
     images_per_side = int(np.sqrt(len(files)))
-    n_images_to_plot = images_per_side ** 2
+    n_images_to_plot = images_per_side**2
     if n_images_to_plot != len(files):
         print(f"{n_images_to_plot}/{len(files)} files will be plotted.")
 
@@ -222,9 +222,7 @@ def get_png_image_names(image_type):
         "SagittalInsulaTemporalHippocampalSulcus",
     ]
 
-    scene_index = list(range(1, len(image_descriptions) * 2, 2))
-    if image_type == "T2":
-        scene_index = [i + 1 for i in scene_index]
+    scene_index = list(range(1, image_descriptions + 1))
 
     return scene_index, image_descriptions
 
