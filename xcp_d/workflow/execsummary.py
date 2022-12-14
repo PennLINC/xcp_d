@@ -19,7 +19,7 @@ from xcp_d.interfaces.surfplotting import (
     PlotSVGData,
     RibbontoStatmap,
 )
-from xcp_d.utils.bids import find_nifti_bold_files
+from xcp_d.utils.bids import find_nifti_boldref_file
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import _t12native, get_std2bold_xforms
@@ -196,6 +196,11 @@ def init_execsummary_wf(
 
     Inputs
     ------
+    bold_file
+        Set from the parameter.
+    boldref_file
+        The boldref file associated with the BOLD file.
+        This should only be defined (and used) for NIFTI inputs.
     t1w
     regressed_data
     residual_data
@@ -211,15 +216,18 @@ def init_execsummary_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                "bold_file",
                 "t1w",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",
                 "tmask",
                 "rawdata",
-                "mask",
                 "template_to_t1w",
                 "dummy_scans",
+                # nifti-only inputs
+                "boldref_file",
+                "mask",
             ]
         ),
         name="inputnode",
@@ -242,30 +250,8 @@ def init_execsummary_wf(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]
 
-    find_nifti_files = pe.Node(
-        Function(
-            function=find_nifti_bold_files,
-            input_names=["bold_file", "template_to_t1w"],
-            output_names=["nifti_bold_file", "nifti_boldref_file"],
-        ),
-        name="find_nifti_files",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, find_nifti_files, [
-            ("bold_file", "bold_file"),
-            ("template_to_t1w", "template_to_t1w"),
-        ]),
-    ])
-    # fmt:on
-
     # Plot the reference bold image
     plot_boldref = pe.Node(PlotImage(), name="plot_boldref")
-
-    # fmt:off
-    workflow.connect([(find_nifti_files, plot_boldref, [("nifti_boldref_file", "in_file")])])
-    # fmt:on
 
     if not cifti:
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
@@ -283,7 +269,7 @@ def init_execsummary_wf(
 
         # fmt:off
         workflow.connect([
-            (find_nifti_files, find_t1_to_native, [("nifti_bold_file", "fname")]),
+            (inputnode, find_t1_to_native, [("bold_file", "fname")]),
         ])
         # fmt:on
 
@@ -300,8 +286,10 @@ def init_execsummary_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, get_mni_to_bold_xforms, [("template_to_t1w", "template_to_t1w")]),
-            (find_nifti_files, get_mni_to_bold_xforms, [("nifti_bold_file", "bold_file")]),
+            (inputnode, get_mni_to_bold_xforms, [
+                ("template_to_t1w", "template_to_t1w"),
+                ("bold_file", "bold_file"),
+            ]),
             (find_t1_to_native, get_mni_to_bold_xforms, [
                 ("t1w_to_native_xform", "t1w_to_native"),
             ]),
@@ -330,8 +318,30 @@ def init_execsummary_wf(
 
         # fmt:off
         workflow.connect([
-            (find_nifti_files, warp_dseg_to_bold, [("nifti_boldref_file", "reference_image")]),
+            (inputnode, warp_dseg_to_bold, [("bold_file", "reference_image")]),
             (get_mni_to_bold_xforms, warp_dseg_to_bold, [("transform_list", "transforms")]),
+            (inputnode, plot_boldref, [("boldref_file", "in_file")]),
+        ])
+        # fmt:on
+    else:
+        find_nifti_boldref = pe.Node(
+            Function(
+                function=find_nifti_boldref_file,
+                input_names=["bold_file", "template_to_t1w"],
+                output_names=["nifti_boldref_file"],
+            ),
+            name="find_nifti_boldref",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, find_nifti_boldref, [
+                ("bold_file", "bold_file"),
+                ("template_to_t1w", "template_to_t1w"),
+            ]),
+            (find_nifti_boldref, plot_boldref, [
+                ("nifti_boldref_file", "in_file"),
+            ]),
         ])
         # fmt:on
 
@@ -349,7 +359,6 @@ def init_execsummary_wf(
             ("filtered_motion", "filtered_motion"),
             ("regressed_data", "regressed_data"),
             ("residual_data", "residual_data"),
-            ("mask", "mask"),
             ("bold_file", "rawdata"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
@@ -360,6 +369,7 @@ def init_execsummary_wf(
     if not cifti:
         # fmt:off
         workflow.connect([
+            (inputnode, plot_carpets, [("mask", "mask")]),
             (warp_dseg_to_bold, plot_carpets, [("output_image", "seg_data")]),
         ])
         # fmt:on

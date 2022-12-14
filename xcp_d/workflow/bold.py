@@ -719,6 +719,7 @@ produced by the regression.
             (inputnode, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
                 ("bold_file", "inputnode.bold_file"),
+                ("ref_file", "inputnode.boldref_file"),
                 ("bold_mask", "inputnode.mask"),
                 ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),

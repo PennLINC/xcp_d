@@ -556,7 +556,7 @@ def _get_tr(img):
     raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
-def find_nifti_bold_files(bold_file, template_to_t1w):
+def find_nifti_boldref_file(bold_file, template_to_t1w):
     """Find nifti bold and boldref files associated with a given input file.
 
     Parameters
@@ -574,8 +574,6 @@ def find_nifti_bold_files(bold_file, template_to_t1w):
 
     Returns
     -------
-    nifti_bold_file : str
-        Path to the volumetric (nifti) preprocessed BOLD file.
     nifti_boldref_file : str
         Path to the volumetric (nifti) BOLD reference file associated with nifti_bold_file.
     """
@@ -583,40 +581,27 @@ def find_nifti_bold_files(bold_file, template_to_t1w):
     import os
     import re
 
-    # Get the nifti reference file
-    if bold_file.endswith(".nii.gz"):
-        nifti_bold_file = bold_file
-        nifti_boldref_file = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
-        if not os.path.isfile(nifti_boldref_file):
-            raise FileNotFoundError(f"boldref file not found: {nifti_boldref_file}")
+    if not bold_file.endswith(".dtseries.nii"):
+        raise ValueError("This function should only be run on CIFTI inputs.")
 
-    else:  # Get the cifti reference file
-        # Infer the volumetric space from the transform
-        nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(template_to_t1w))[0]
-        if "+" in nifti_template:
-            nifti_template, cohort = nifti_template.split("+")
-            search_substring = f"space-{nifti_template}_cohort-{cohort}"
-        else:
-            search_substring = f"space-{nifti_template}"
+    # Infer the volumetric space from the transform
+    nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(template_to_t1w))[0]
+    if "+" in nifti_template:
+        nifti_template, cohort = nifti_template.split("+")
+        search_substring = f"space-{nifti_template}_cohort-{cohort}"
+    else:
+        search_substring = f"space-{nifti_template}"
 
-        bb_file_prefix = bold_file.split("space-fsLR_den-91k_bold.dtseries.nii")[0]
+    bb_file_prefix = bold_file.split("space-fsLR_den-91k_bold.dtseries.nii")[0]
 
-        # Find the appropriate _bold file.
-        bold_search_str = bb_file_prefix + search_substring + "*preproc_bold.nii.gz"
-        nifti_bold_file = sorted(glob.glob(bold_search_str))
-        if len(nifti_bold_file) > 1:
-            LOGGER.warn(f"More than one nifti bold file found: {', '.join(nifti_bold_file)}")
-        elif len(nifti_bold_file) == 0:
-            raise FileNotFoundError(f"bold file not found: {bold_search_str}")
-        nifti_bold_file = nifti_bold_file[0]
+    # Find the associated _boldref file.
+    boldref_search_str = bb_file_prefix + search_substring + "*boldref.nii.gz"
+    nifti_boldref_file = sorted(glob.glob(boldref_search_str))
+    if len(nifti_boldref_file) > 1:
+        LOGGER.warn(f"More than one nifti boldref found: {', '.join(nifti_boldref_file)}")
+    elif len(nifti_boldref_file) == 0:
+        raise FileNotFoundError(f"boldref file not found: {boldref_search_str}")
 
-        # Find the associated _boldref file.
-        boldref_search_str = bb_file_prefix + search_substring + "*boldref.nii.gz"
-        nifti_boldref_file = sorted(glob.glob(boldref_search_str))
-        if len(nifti_boldref_file) > 1:
-            LOGGER.warn(f"More than one nifti boldref found: {', '.join(nifti_boldref_file)}")
-        elif len(nifti_boldref_file) == 0:
-            raise FileNotFoundError(f"boldref file not found: {boldref_search_str}")
-        nifti_boldref_file = nifti_boldref_file[0]
+    nifti_boldref_file = nifti_boldref_file[0]
 
-    return nifti_bold_file, nifti_boldref_file
+    return nifti_boldref_file

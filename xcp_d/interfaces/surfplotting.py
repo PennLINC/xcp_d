@@ -84,10 +84,12 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
+    TR = traits.Float(default_value=1, desc="Repetition time")
+
+    # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
     tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
-    TR = traits.Float(default_value=1, desc="Repetition time")
     dummy_scans = traits.Int(
         0,
         usedefault=True,
