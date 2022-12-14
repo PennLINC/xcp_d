@@ -171,24 +171,24 @@ def init_brainsprite_wf(
 
 @fill_doc
 def init_execsummary_wf(
-    omp_nthreads,
     bold_file,
     output_dir,
     TR,
-    mem_gb,
     layout,
+    mem_gb,
+    omp_nthreads,
     name="execsummary_wf",
 ):
-    """Generate an executive summary.
+    """Generate the figures for an executive summary.
 
     Parameters
     ----------
-    %(omp_nthreads)s
     bold_file
     %(output_dir)s
     TR
-    %(mem_gb)s
     layout
+    %(mem_gb)s
+    %(omp_nthreads)s
     %(name)s
 
     Inputs
@@ -327,7 +327,7 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Plot the SVG files
+    # Generate preprocessing and postprocessing carpet plots.
     plot_carpets = pe.Node(
         PlotSVGData(TR=TR),
         name="plot_carpets",
@@ -350,8 +350,7 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Write out the necessary files:
-    # Reference file
+    # Write out the figures.
     ds_boldref_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -370,7 +369,6 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Plot SVG before
     ds_preproc_carpet = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -381,7 +379,7 @@ def init_execsummary_wf(
         name="ds_preproc_carpet",
         run_without_submitting=True,
     )
-    # Plot SVG after
+
     ds_postproc_carpet = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -402,7 +400,6 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Bold T1 registration file
     ds_registration_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
