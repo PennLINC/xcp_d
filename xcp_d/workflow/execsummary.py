@@ -346,38 +346,38 @@ def init_execsummary_wf(
 
     # Write out the necessary files:
     # Reference file
-    ds_plot_bold_reference_file_wf = pe.Node(
+    ds_boldref_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir, dismiss_entities=["den"], datatype="figures", desc="boldref"
         ),
-        name="ds_plot_bold_reference_file_wf",
+        name="ds_boldref_figure",
         run_without_submitting=True,
     )
 
     # Plot SVG before
-    ds_plot_svg_before_wf = pe.Node(
+    ds_preproc_carpet = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["den"],
             datatype="figures",
             desc="precarpetplot",
         ),
-        name="plot_svgxbe",
+        name="ds_preproc_carpet",
         run_without_submitting=True,
     )
     # Plot SVG after
-    ds_plot_svg_after_wf = pe.Node(
+    ds_postproc_carpet = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["den"],
             datatype="figures",
             desc="postcarpetplot",
         ),
-        name="plot_svgx_after",
+        name="ds_postproc_carpet",
         run_without_submitting=True,
     )
     # Bold T1 registration file
-    ds_registration_wf = pe.Node(
+    ds_registration_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             in_file=bold_t1w_registration_file,
@@ -385,14 +385,14 @@ def init_execsummary_wf(
             datatype="figures",
             desc="bbregister",
         ),
-        name="bb_registration_file",
+        name="ds_registration_figure",
         run_without_submitting=True,
     )
 
     # Connect all the workflows
     # fmt:off
     workflow.connect([
-        (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
+        (plotrefbold_wf, ds_boldref_figure, [('out_file', 'in_file')]),
         (inputnode, plot_svgx_wf, [
             ('filtered_motion', 'filtered_motion'),
             ('regressed_data', 'regressed_data'),
@@ -405,12 +405,12 @@ def init_execsummary_wf(
         (inputnode, get_mni_to_bold_xforms, [('template_to_t1w', 'template_to_t1w')]),
         (get_mni_to_bold_xforms, warp_dseg_to_bold, [('transform_list', 'transforms')]),
         (warp_dseg_to_bold, plot_svgx_wf, [('output_image', 'seg_data')]),
-        (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
-        (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
-        (inputnode, ds_plot_svg_before_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_plot_svg_after_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_plot_bold_reference_file_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_registration_wf, [('bold_file', 'source_file')]),
+        (plot_svgx_wf, ds_preproc_carpet, [('before_process', 'in_file')]),
+        (plot_svgx_wf, ds_postproc_carpet, [('after_process', 'in_file')]),
+        (inputnode, ds_preproc_carpet, [('bold_file', 'source_file')]),
+        (inputnode, ds_postproc_carpet, [('bold_file', 'source_file')]),
+        (inputnode, ds_boldref_figure, [('bold_file', 'source_file')]),
+        (inputnode, ds_registration_figure, [('bold_file', 'source_file')]),
     ])
     # fmt:on
 
