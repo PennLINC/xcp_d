@@ -208,9 +208,16 @@ def init_execsummary_wf(
     residual_data
         BOLD data after regression and filtering.
     filtered_motion
+        File containing the filtered motion parameters used for censoring.
     tmask
+        File containing the temporal mask used for censoring.
     mask
+        This should only be defined (and used) for NIFTI inputs.
     %(template_to_t1w)s
+        For NIFTI data, this is used to warp the MNI152NLin6-space tissue-type segmentation
+        file to T1w or native space, which should never happen.
+
+        For CIFTI data, this is used to identify the appropriate boldref file to plot.
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
