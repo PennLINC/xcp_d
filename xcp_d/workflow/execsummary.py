@@ -277,9 +277,7 @@ def init_execsummary_wf(
 
     # fmt:off
     workflow.connect([
-        (find_nifti_files, find_t1_to_native, [
-            ("nifti_bold_file", "fname"),
-        ]),
+        (find_nifti_files, find_t1_to_native, [("nifti_bold_file", "fname")]),
     ])
     # fmt:on
 
