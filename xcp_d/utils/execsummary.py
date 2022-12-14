@@ -192,6 +192,7 @@ def modify_pngs_scene_template(
 def get_n_frames(anat_file):
     """Infer the number of frames from an image."""
     import nibabel as nb
+    import numpy as np
 
     img = nb.load(anat_file)
 
@@ -222,7 +223,7 @@ def get_png_image_names():
         "SagittalInsulaTemporalHippocampalSulcus",
     ]
 
-    scene_index = list(range(1, image_descriptions + 1))
+    scene_index = list(range(1, len(image_descriptions) + 1))
 
     return scene_index, image_descriptions
 
