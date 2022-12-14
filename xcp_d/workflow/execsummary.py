@@ -257,11 +257,11 @@ def init_execsummary_wf(
     # fmt:on
 
     # Plot the reference bold image
-    plotrefbold_wf = pe.Node(PlotImage(), name="plotrefbold_wf")
+    plot_boldref = pe.Node(PlotImage(), name="plot_boldref")
 
     # fmt:off
     workflow.connect([
-        (find_nifti_files, plotrefbold_wf, [
+        (find_nifti_files, plot_boldref, [
             ("nifti_boldref_file", "in_file"),
         ]),
     ])
@@ -337,9 +337,9 @@ def init_execsummary_wf(
     # fmt:on
 
     # Plot the SVG files
-    plot_svgx_wf = pe.Node(
+    plot_carpets = pe.Node(
         PlotSVGData(TR=TR),
-        name="plot_svgx_wf",
+        name="plot_carpets",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
@@ -392,8 +392,8 @@ def init_execsummary_wf(
     # Connect all the workflows
     # fmt:off
     workflow.connect([
-        (plotrefbold_wf, ds_boldref_figure, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [
+        (plot_boldref, ds_boldref_figure, [('out_file', 'in_file')]),
+        (inputnode, plot_carpets, [
             ('filtered_motion', 'filtered_motion'),
             ('regressed_data', 'regressed_data'),
             ('residual_data', 'residual_data'),
@@ -404,9 +404,9 @@ def init_execsummary_wf(
         ]),
         (inputnode, get_mni_to_bold_xforms, [('template_to_t1w', 'template_to_t1w')]),
         (get_mni_to_bold_xforms, warp_dseg_to_bold, [('transform_list', 'transforms')]),
-        (warp_dseg_to_bold, plot_svgx_wf, [('output_image', 'seg_data')]),
-        (plot_svgx_wf, ds_preproc_carpet, [('before_process', 'in_file')]),
-        (plot_svgx_wf, ds_postproc_carpet, [('after_process', 'in_file')]),
+        (warp_dseg_to_bold, plot_carpets, [('output_image', 'seg_data')]),
+        (plot_carpets, ds_preproc_carpet, [('before_process', 'in_file')]),
+        (plot_carpets, ds_postproc_carpet, [('after_process', 'in_file')]),
         (inputnode, ds_preproc_carpet, [('bold_file', 'source_file')]),
         (inputnode, ds_postproc_carpet, [('bold_file', 'source_file')]),
         (inputnode, ds_boldref_figure, [('bold_file', 'source_file')]),
