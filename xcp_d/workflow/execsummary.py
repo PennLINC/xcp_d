@@ -299,6 +299,7 @@ def init_execsummary_wf(
 
     # fmt:off
     workflow.connect([
+        (inputnode, get_mni_to_bold_xforms, [('template_to_t1w', 'template_to_t1w')]),
         (find_nifti_files, get_mni_to_bold_xforms, [
             ("nifti_bold_file", "bold_file"),
         ]),
@@ -333,6 +334,7 @@ def init_execsummary_wf(
         (find_nifti_files, warp_dseg_to_bold, [
             ("nifti_boldref_file", "reference_image"),
         ]),
+        (get_mni_to_bold_xforms, warp_dseg_to_bold, [('transform_list', 'transforms')]),
     ])
     # fmt:on
 
@@ -344,6 +346,21 @@ def init_execsummary_wf(
         n_procs=omp_nthreads,
     )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, plot_carpets, [
+            ('filtered_motion', 'filtered_motion'),
+            ('regressed_data', 'regressed_data'),
+            ('residual_data', 'residual_data'),
+            ('mask', 'mask'),
+            ('bold_file', 'rawdata'),
+            ('tmask', 'tmask'),
+            ('dummy_scans', 'dummy_scans'),
+        ]),
+        (warp_dseg_to_bold, plot_carpets, [('output_image', 'seg_data')]),
+    ])
+    # fmt:on
+
     # Write out the necessary files:
     # Reference file
     ds_boldref_figure = pe.Node(
@@ -353,6 +370,13 @@ def init_execsummary_wf(
         name="ds_boldref_figure",
         run_without_submitting=True,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_boldref_figure, [('bold_file', 'source_file')]),
+        (plot_boldref, ds_boldref_figure, [('out_file', 'in_file')]),
+    ])
+    # fmt:on
 
     # Plot SVG before
     ds_preproc_carpet = pe.Node(
@@ -376,6 +400,16 @@ def init_execsummary_wf(
         name="ds_postproc_carpet",
         run_without_submitting=True,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_preproc_carpet, [('bold_file', 'source_file')]),
+        (inputnode, ds_postproc_carpet, [('bold_file', 'source_file')]),
+        (plot_carpets, ds_preproc_carpet, [('before_process', 'in_file')]),
+        (plot_carpets, ds_postproc_carpet, [('after_process', 'in_file')]),
+    ])
+    # fmt:on
+
     # Bold T1 registration file
     ds_registration_figure = pe.Node(
         DerivativesDataSink(
@@ -389,27 +423,8 @@ def init_execsummary_wf(
         run_without_submitting=True,
     )
 
-    # Connect all the workflows
     # fmt:off
     workflow.connect([
-        (plot_boldref, ds_boldref_figure, [('out_file', 'in_file')]),
-        (inputnode, plot_carpets, [
-            ('filtered_motion', 'filtered_motion'),
-            ('regressed_data', 'regressed_data'),
-            ('residual_data', 'residual_data'),
-            ('mask', 'mask'),
-            ('bold_file', 'rawdata'),
-            ('tmask', 'tmask'),
-            ('dummy_scans', 'dummy_scans'),
-        ]),
-        (inputnode, get_mni_to_bold_xforms, [('template_to_t1w', 'template_to_t1w')]),
-        (get_mni_to_bold_xforms, warp_dseg_to_bold, [('transform_list', 'transforms')]),
-        (warp_dseg_to_bold, plot_carpets, [('output_image', 'seg_data')]),
-        (plot_carpets, ds_preproc_carpet, [('before_process', 'in_file')]),
-        (plot_carpets, ds_postproc_carpet, [('after_process', 'in_file')]),
-        (inputnode, ds_preproc_carpet, [('bold_file', 'source_file')]),
-        (inputnode, ds_postproc_carpet, [('bold_file', 'source_file')]),
-        (inputnode, ds_boldref_figure, [('bold_file', 'source_file')]),
         (inputnode, ds_registration_figure, [('bold_file', 'source_file')]),
     ])
     # fmt:on
