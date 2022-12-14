@@ -717,7 +717,6 @@ produced by the regression.
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
-                ("t1w", "inputnode.t1w"),
                 ("bold_file", "inputnode.bold_file"),
                 ("ref_file", "inputnode.boldref_file"),
                 ("bold_mask", "inputnode.mask"),

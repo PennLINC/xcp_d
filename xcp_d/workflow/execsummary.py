@@ -203,14 +203,12 @@ def init_execsummary_wf(
     boldref_file
         The boldref file associated with the BOLD file.
         This should only be defined (and used) for NIFTI inputs.
-    t1w
     regressed_data
         BOLD data after regression, but before filtering.
     residual_data
         BOLD data after regression and filtering.
     filtered_motion
     tmask
-    rawdata
     mask
     %(template_to_t1w)s
     %(dummy_scans)s
@@ -221,12 +219,10 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
-                "t1w",
                 "regressed_data",
                 "residual_data",
                 "filtered_motion",
                 "tmask",
-                "rawdata",
                 "template_to_t1w",
                 "dummy_scans",
                 # nifti-only inputs
