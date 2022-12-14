@@ -306,7 +306,7 @@ def init_execsummary_wf(
     # fmt:on
 
     # Transform the file to native space
-    resample_parc = pe.Node(
+    warp_dseg_to_bold = pe.Node(
         ApplyTransformsx(
             dimension=3,
             input_image=str(
@@ -320,14 +320,14 @@ def init_execsummary_wf(
             ),
             interpolation="MultiLabel",
         ),
-        name="resample_parc",
+        name="warp_dseg_to_bold",
         n_procs=omp_nthreads,
         mem_gb=mem_gb * 3 * omp_nthreads,
     )
 
     # fmt:off
     workflow.connect([
-        (find_nifti_files, resample_parc, [
+        (find_nifti_files, warp_dseg_to_bold, [
             ("nifti_boldref_file", "reference_image"),
         ]),
     ])
@@ -400,8 +400,8 @@ def init_execsummary_wf(
             ('dummy_scans', 'dummy_scans'),
         ]),
         (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
-        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
-        (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
+        (get_std2native_transform, warp_dseg_to_bold, [('transform_list', 'transforms')]),
+        (warp_dseg_to_bold, plot_svgx_wf, [('output_image', 'seg_data')]),
         (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
         (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
         (inputnode, ds_plot_svg_before_wf, [('bold_file', 'source_file')]),
