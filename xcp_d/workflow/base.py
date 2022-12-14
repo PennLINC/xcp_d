@@ -490,7 +490,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
-    preproc_files = []  # NOTE: to skip BOLD processing in CI. Remember to remove.
     for i_run, bold_file in enumerate(preproc_files):
         bold_postproc_wf = postproc_wf_function(
             input_type=input_type,
