@@ -286,7 +286,7 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Get the set of transforms from MNI152NLin2009cAsym (the dseg) to the BOLD space.
+    # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
     # Given that xcp-d doesn't process native-space data, this transform will never be used.
     get_mni_to_bold_xforms = pe.Node(
         Function(
@@ -314,7 +314,7 @@ def init_execsummary_wf(
             dimension=3,
             input_image=str(
                 get_template(
-                    "MNI152NLin2009cAsym",
+                    "MNI152NLin6Asym",
                     resolution=1,
                     desc="carpet",
                     suffix="dseg",
