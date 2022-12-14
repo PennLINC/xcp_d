@@ -650,8 +650,9 @@ produced by the regression.
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            omp_nthreads=omp_nthreads,
+            cifti=True,
             mem_gb=mem_gbx["timeseries"],
+            omp_nthreads=omp_nthreads,
         )
 
         # fmt:off

@@ -706,8 +706,9 @@ produced by the regression.
             TR=TR,
             bold_file=bold_file,
             layout=layout,
-            mem_gb=mem_gbx["timeseries"],
             output_dir=output_dir,
+            cifti=False,
+            mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
         )
 

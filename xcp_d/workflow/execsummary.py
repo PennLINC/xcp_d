@@ -175,6 +175,7 @@ def init_execsummary_wf(
     output_dir,
     TR,
     layout,
+    cifti,
     mem_gb,
     omp_nthreads,
     name="execsummary_wf",
@@ -187,6 +188,8 @@ def init_execsummary_wf(
     %(output_dir)s
     TR
     layout
+    %(cifti)s
+        The dseg file will not be loaded or transformed to BOLD space for CIFTI data.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -264,68 +267,73 @@ def init_execsummary_wf(
     workflow.connect([(find_nifti_files, plot_boldref, [("nifti_boldref_file", "in_file")])])
     # fmt:on
 
-    # Get the transform file to native space
-    # Given that xcp-d doesn't process native-space data, this transform will never be used.
-    find_t1_to_native = pe.Node(
-        Function(
-            function=_t12native,
-            input_names=["fname"],
-            output_names=["t1w_to_native_xform"],
-        ),
-        name="find_t1_to_native",
-    )
+    if not cifti:
+        # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
 
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, find_t1_to_native, [("nifti_bold_file", "fname")]),
-    ])
-    # fmt:on
-
-    # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
-    # Given that xcp-d doesn't process native-space data, this transform will never be used.
-    get_mni_to_bold_xforms = pe.Node(
-        Function(
-            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
-            output_names=["transform_list"],
-            function=get_std2bold_xforms,
-        ),
-        name="get_std2native_transform",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_mni_to_bold_xforms, [("template_to_t1w", "template_to_t1w")]),
-        (find_nifti_files, get_mni_to_bold_xforms, [("nifti_bold_file", "bold_file")]),
-        (find_t1_to_native, get_mni_to_bold_xforms, [("t1w_to_native_xform", "t1w_to_native")]),
-    ])
-    # fmt:on
-
-    # Transform a dseg file to the same space as the BOLD data
-    warp_dseg_to_bold = pe.Node(
-        ApplyTransformsx(
-            dimension=3,
-            input_image=str(
-                get_template(
-                    "MNI152NLin6Asym",
-                    resolution=1,
-                    desc="carpet",
-                    suffix="dseg",
-                    extension=[".nii", ".nii.gz"],
-                )
+        # Get the transform file to native space
+        # Given that xcp-d doesn't process native-space data, this transform will never be used.
+        find_t1_to_native = pe.Node(
+            Function(
+                function=_t12native,
+                input_names=["fname"],
+                output_names=["t1w_to_native_xform"],
             ),
-            interpolation="MultiLabel",
-        ),
-        name="warp_dseg_to_bold",
-        n_procs=omp_nthreads,
-        mem_gb=mem_gb * 3 * omp_nthreads,
-    )
+            name="find_t1_to_native",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, warp_dseg_to_bold, [("nifti_boldref_file", "reference_image")]),
-        (get_mni_to_bold_xforms, warp_dseg_to_bold, [("transform_list", "transforms")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (find_nifti_files, find_t1_to_native, [("nifti_bold_file", "fname")]),
+        ])
+        # fmt:on
+
+        # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
+        # Given that xcp-d doesn't process native-space data, this transform will never be used.
+        get_mni_to_bold_xforms = pe.Node(
+            Function(
+                input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
+                output_names=["transform_list"],
+                function=get_std2bold_xforms,
+            ),
+            name="get_std2native_transform",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, get_mni_to_bold_xforms, [("template_to_t1w", "template_to_t1w")]),
+            (find_nifti_files, get_mni_to_bold_xforms, [("nifti_bold_file", "bold_file")]),
+            (find_t1_to_native, get_mni_to_bold_xforms, [
+                ("t1w_to_native_xform", "t1w_to_native"),
+            ]),
+        ])
+        # fmt:on
+
+        # Transform a dseg file to the same space as the BOLD data
+        warp_dseg_to_bold = pe.Node(
+            ApplyTransformsx(
+                dimension=3,
+                input_image=str(
+                    get_template(
+                        "MNI152NLin6Asym",
+                        resolution=1,
+                        desc="carpet",
+                        suffix="dseg",
+                        extension=[".nii", ".nii.gz"],
+                    )
+                ),
+                interpolation="MultiLabel",
+            ),
+            name="warp_dseg_to_bold",
+            n_procs=omp_nthreads,
+            mem_gb=mem_gb * 3 * omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (find_nifti_files, warp_dseg_to_bold, [("nifti_boldref_file", "reference_image")]),
+            (get_mni_to_bold_xforms, warp_dseg_to_bold, [("transform_list", "transforms")]),
+        ])
+        # fmt:on
 
     # Generate preprocessing and postprocessing carpet plots.
     plot_carpets = pe.Node(
@@ -346,9 +354,15 @@ def init_execsummary_wf(
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
         ]),
-        (warp_dseg_to_bold, plot_carpets, [("output_image", "seg_data")]),
     ])
     # fmt:on
+
+    if not cifti:
+        # fmt:off
+        workflow.connect([
+            (warp_dseg_to_bold, plot_carpets, [("output_image", "seg_data")]),
+        ])
+        # fmt:on
 
     # Write out the figures.
     ds_boldref_figure = pe.Node(
