@@ -200,11 +200,11 @@ def get_n_frames(anat_file):
     n_slices = img.shape[0]
 
     frame_numbers = np.arange(1, n_slices + 1, dtype=int)
-    ijk = np.ones((n_slices, 3), dtype=int)
-    frame_numbers = list(range(1, n_slices + 1))
-    ijk[:, 0] = frame_numbers
+    ijk = np.ones((2, 3), dtype=int)
+    ijk[:, 0] = [0, n_slices]
     xyz = nb.affines.apply_affine(img.affine, ijk)
-    frame_numbers = xyz[:, 0].tolist()
+    first_slice, last_slice = xyz[:, 0].astype(int)
+    frame_numbers = list(np.arange(first_slice, last_slice + 1, dtype=int))
 
     return frame_numbers
 

@@ -122,20 +122,18 @@ def init_brainsprite_mini_wf(
 
     create_framewise_pngs = pe.MapNode(
         ShowScene(
+            scene_name_or_number=1,
             image_width=900,
             image_height=800,
         ),
         name="create_framewise_pngs",
-        iterfield=["scene_file", "scene_name_or_number"],
+        iterfield=["scene_file"],
     )
 
     # fmt:off
     workflow.connect([
         (modify_brainsprite_template_scene, create_framewise_pngs, [
             ("out_file", "scene_file"),
-        ]),
-        (get_number_of_frames, create_framewise_pngs, [
-            ("frame_numbers", "scene_name_or_number"),
         ]),
     ])
     # fmt:on
