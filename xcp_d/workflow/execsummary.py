@@ -185,6 +185,7 @@ def init_execsummary_wf(
     Parameters
     ----------
     bold_file
+        BOLD data before post-processing.
     %(output_dir)s
     TR
     layout
@@ -197,13 +198,16 @@ def init_execsummary_wf(
     Inputs
     ------
     bold_file
+        BOLD data before post-processing.
         Set from the parameter.
     boldref_file
         The boldref file associated with the BOLD file.
         This should only be defined (and used) for NIFTI inputs.
     t1w
     regressed_data
+        BOLD data after regression, but before filtering.
     residual_data
+        BOLD data after regression and filtering.
     filtered_motion
     tmask
     rawdata
