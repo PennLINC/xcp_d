@@ -267,6 +267,8 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
+    # Get the transform file to native space
+    # Given that xcp-d doesn't process native-space data, this transform will never be used.
     find_t1_to_native = pe.Node(
         Function(
             function=_t12native,
@@ -284,8 +286,9 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    # Get the transform file to native space
-    get_std2native_transform = pe.Node(
+    # Get the set of transforms from MNI152NLin2009cAsym (the dseg) to the BOLD space.
+    # Given that xcp-d doesn't process native-space data, this transform will never be used.
+    get_mni_to_bold_xforms = pe.Node(
         Function(
             input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
             output_names=["transform_list"],
@@ -296,16 +299,16 @@ def init_execsummary_wf(
 
     # fmt:off
     workflow.connect([
-        (find_nifti_files, get_std2native_transform, [
+        (find_nifti_files, get_mni_to_bold_xforms, [
             ("nifti_bold_file", "bold_file"),
         ]),
-        (find_t1_to_native, get_std2native_transform, [
+        (find_t1_to_native, get_mni_to_bold_xforms, [
             ("t1w_to_native_xform", "t1w_to_native"),
         ]),
     ])
     # fmt:on
 
-    # Transform the file to native space
+    # Transform a dseg file to the same space as the BOLD data
     warp_dseg_to_bold = pe.Node(
         ApplyTransformsx(
             dimension=3,
@@ -399,8 +402,8 @@ def init_execsummary_wf(
             ('tmask', 'tmask'),
             ('dummy_scans', 'dummy_scans'),
         ]),
-        (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
-        (get_std2native_transform, warp_dseg_to_bold, [('transform_list', 'transforms')]),
+        (inputnode, get_mni_to_bold_xforms, [('template_to_t1w', 'template_to_t1w')]),
+        (get_mni_to_bold_xforms, warp_dseg_to_bold, [('transform_list', 'transforms')]),
         (warp_dseg_to_bold, plot_svgx_wf, [('output_image', 'seg_data')]),
         (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
         (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
