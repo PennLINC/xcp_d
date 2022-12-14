@@ -663,7 +663,6 @@ produced by the regression.
             (inputnode, executivesummary_wf, [
                 ('template_to_t1w', 'inputnode.template_to_t1w'),
                 ('t1w', 'inputnode.t1w'),
-                ('t1seg', 'inputnode.t1seg'),
                 ('bold_file', 'inputnode.bold_file'),
             ]),
             (regression_wf, executivesummary_wf, [

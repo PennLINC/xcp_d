@@ -717,7 +717,6 @@ produced by the regression.
             # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
                 ("template_to_t1w", "inputnode.template_to_t1w"),
