@@ -293,19 +293,47 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
+    # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
+    dseg_file = str(
+        get_template(
+            "MNI152NLin2009cAsym",
+            resolution=1,
+            desc="carpet",
+            suffix="dseg",
+            extension=[".nii", ".nii.gz"],
+        )
+    )
+
+    # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
+    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
+        get_template(
+            template="MNI152NLin6Asym",
+            mode="image",
+            suffix="xfm",
+            extension=".h5",
+            **{"from": "MNI152NLin2009cAsym"},
+        ),
+    )
+
+    # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
+    # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
+    add_xform_to_nlin6asym = pe.Node(
+        niu.Merge(2),
+        name="add_xform_to_nlin6asym",
+    )
+    add_xform_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
+
+    # fmt:off
+    workflow.connect([
+        (get_std2native_transform, add_xform_to_nlin6asym, [("transform_list", "in1")]),
+    ])
+    # fmt:on
+
     # Transform the file to native space
     resample_parc = pe.Node(
         ApplyTransformsx(
             dimension=3,
-            input_image=str(
-                get_template(
-                    "MNI152NLin2009cAsym",
-                    resolution=1,
-                    desc="carpet",
-                    suffix="dseg",
-                    extension=[".nii", ".nii.gz"],
-                )
-            ),
+            input_image=dseg_file,
             interpolation="MultiLabel",
         ),
         name="resample_parc",
@@ -317,6 +345,9 @@ def init_execsummary_wf(
     workflow.connect([
         (find_nifti_files, resample_parc, [
             ("nifti_boldref_file", "reference_image"),
+        ]),
+        (add_xform_to_nlin6asym, resample_parc, [
+            ("out", "transforms"),
         ]),
     ])
     # fmt:on
@@ -388,7 +419,6 @@ def init_execsummary_wf(
             ('dummy_scans', 'dummy_scans'),
         ]),
         (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
-        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
         (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
         (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
         (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
