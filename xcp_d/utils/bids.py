@@ -824,15 +824,13 @@ def get_freesurfer_dir(fmri_dir):
 
     Raises
     ------
+    ValueError
+        If more than one potential FreeSurfer derivative folder is found.
     NotADirectoryError
         If no FreeSurfer derivatives are found.
     """
     import glob
     import os
-
-    from nipype import logging
-
-    LOGGER = logging.getLogger("nipype.utils")
 
     # for fMRIPrep/Nibabies versions >=20.2.1
     freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
@@ -842,19 +840,19 @@ def get_freesurfer_dir(fmri_dir):
             glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
         )
 
-    if len(freesurfer_paths) > 1:
-        freesurfer_path_warning_str = "\n\t".join(freesurfer_paths)
-        LOGGER.warning(
+    if len(freesurfer_paths) == 1:
+        freesurfer_path = freesurfer_paths[0]
+
+    elif len(freesurfer_paths) > 1:
+        freesurfer_paths_str = "\n\t".join(freesurfer_paths)
+        raise ValueError(
             "More than one candidate for FreeSurfer derivatives found. "
-            f"Using first of:\n\t{freesurfer_path_warning_str}"
+            "We recommend mounting only one FreeSurfer directory in your Docker/Singularity "
+            "image. "
+            f"Detected candidates:\n\t{freesurfer_paths_str}"
         )
 
-    if len(freesurfer_paths) > 0:
-        freesurfer_path = freesurfer_paths[0]
     else:
-        freesurfer_path = None
-
-    if not freesurfer_path:
         raise NotADirectoryError("No FreeSurfer derivatives found.")
 
     return freesurfer_path
