@@ -293,7 +293,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, resample_parc, [("boldref", "reference_image")]),
-            (add_xform_to_nlin6asym, resample_parc, [("transform_list", "transforms")]),
+            (add_xform_to_nlin6asym, resample_parc, [("out", "transforms")]),
         ])
         # fmt:on
 
