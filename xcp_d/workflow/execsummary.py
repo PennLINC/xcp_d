@@ -339,7 +339,7 @@ def init_execsummary_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_dseg_to_bold, [("bold_file", "reference_image")]),
+            (inputnode, warp_dseg_to_bold, [("boldref_file", "reference_image")]),
             (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
             (inputnode, plot_boldref, [("boldref_file", "in_file")]),
         ])
