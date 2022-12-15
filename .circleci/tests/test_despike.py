@@ -25,8 +25,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     after despiking.
     """
     # Read in the necessary inputs
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithoutfreesurfer/fmriprep/")
+    data_dir = os.path.join(data_dir, "fmriprepwithoutfreesurfer/fmriprep/")
     tempdir = tmp_path_factory.mktemp("test_despike_nifti")
     boldfile = os.path.join(
         data_dir,
@@ -94,23 +93,14 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
 
-def test_cifti_despike(data_dir, tmp_path_factory):
+def test_cifti_despike(fmriprep_with_freesurfer_data, tmp_path_factory):
     """
     Test Cifti despiking.
 
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
-    boldfile = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_task-rest_run-1_space-"
-            "fsLR_den-91k_bold.dtseries.nii"
-        )
-    )
+    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
 
     # Let's add some noise
     file_data = read_ndata(boldfile)

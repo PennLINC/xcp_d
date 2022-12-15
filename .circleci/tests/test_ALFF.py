@@ -12,33 +12,16 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflow.restingstate import init_compute_alff_wf
 
 
-def test_nifti_alff(data_dir, tmp_path_factory):
-    """
-    Test ALFF computations as done for Niftis.
+def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test ALFF computations as done for Niftis.
 
     Get the FFT of a Nifti, add to the amplitude of its lower frequencies
     and confirm the mean ALFF after addition to lower frequencies
     has increased.
     """
     # Get the file names
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
-    bold_file = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_task-rest_run-1"
-            "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-        )
-    )
-    bold_mask = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_task-rest_run-1_"
-            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-        )
-    )
+    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Let's initialize the ALFF node
     tempdir = tmp_path_factory.mktemp("test_ALFF_nifti")
@@ -64,11 +47,9 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     # Let's get the mean of the ALFF for later comparison
     original_alff = os.path.join(
         tempdir,
-        (
-            "compute_alff_wf/alff_compt/"
-            "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
-            "preproc_bold_alff.nii.gz"
-        )
+        "compute_alff_wf",
+        "alff_compt",
+        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold_alff.nii.gz",
     )
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
@@ -90,9 +71,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     original_bold_data[2, :] = changed_voxel_data
     # Let's write this out
     filename = os.path.join(tempdir, "editedfile.nii.gz")
-    write_ndata(
-        original_bold_data, template=bold_file, mask=bold_mask, filename=filename
-    )
+    write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
 
     # Now let's compute ALFF for the new file and see how it compares
     # to the original ALFF - it should increase since we increased
@@ -104,9 +83,7 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean
-    new_alff = os.path.join(
-        tempdir, "compute_alff_wf/alff_compt/editedfile_alff.nii.gz"
-    )
+    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/editedfile_alff.nii.gz")
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
@@ -114,30 +91,15 @@ def test_nifti_alff(data_dir, tmp_path_factory):
     assert new_alff_data_mean > original_alff_data_mean
 
 
-def test_cifti_alff(data_dir, tmp_path_factory):
-    """
-    Test ALFF computations as done for Ciftis.
+def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test ALFF computations as done for Ciftis.
 
     Get the FFT of a Cifti, add to the amplitude of its lower frequencies
     and confirm the ALFF after addition to lower frequencies
     has changed in the expected direction.
     """
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
-    bold_file = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_task-rest_run-2_space-fsLR_den-91k_bold.dtseries.nii"
-        )
-    )
-    bold_mask = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_task-rest_run-1_"
-            "space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-        )
-    )
+    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
@@ -163,11 +125,9 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     # Let's get the mean of the data for later comparison
     original_alff = os.path.join(
         tempdir,
-        (
-            "compute_alff_wf/alff_compt/sub-color"
-            "nest001_ses-1_task-rest_run-2_space-fsLR_den-91k_"
-            "bold_alff.dscalar.nii"
-        )
+        "compute_alff_wf",
+        "alff_compt",
+        "sub-01_task-rest_space-fsLR_den-91k_bold_alff.dscalar.nii",
     )
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
@@ -187,12 +147,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
 
     # Let's write this out
     filename = os.path.join(tempdir, "editedfile.dtseries.nii")
-    write_ndata(
-        original_bold_data,
-        template=bold_file,
-        mask=bold_mask,
-        filename=filename
-    )
+    write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
 
     # Now let's compute ALFF for the new file and see how it compares
     tempdir = tmp_path_factory.mktemp("test_ALFF_cifti_dir2")
@@ -202,9 +157,7 @@ def test_cifti_alff(data_dir, tmp_path_factory):
     alff_compute_wf.run()
 
     # Let's get the new ALFF mean
-    new_alff = os.path.join(
-        tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dscalar.nii"
-    )
+    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dscalar.nii")
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 

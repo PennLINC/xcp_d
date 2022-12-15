@@ -26,31 +26,17 @@ def _add_noise(image):
     return noisy_img
 
 
-def test_nifti_reho(data_dir, tmp_path_factory):
+def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test Nifti ReHo Computation.
 
     Confirm that ReHo decreases after adding noise to a
     Nifti image.
     """
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
     tempdir = tmp_path_factory.mktemp("test_REHO_nifti")
+
     # Get the names of the files
-    bold_file = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_"
-            "task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-        ),
-    )
-    bold_mask = os.path.join(
-        data_dir,
-        (
-            "fmriprep/sub-colornest001/ses-1/func/"
-            "sub-colornest001_ses-1_"
-            "task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-        ),
-    )
+    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Set up and run the ReHo wf in a tempdir
     reho_wf = init_nifti_reho_wf(
@@ -93,20 +79,16 @@ def test_nifti_reho(data_dir, tmp_path_factory):
     assert new_reho_mean < original_reho_mean
 
 
-def test_cifti_reho(data_dir, tmp_path_factory):
+def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test Cifti ReHo Computation.
 
     Confirm that ReHo decreases after adding noise to a
     Cifti image.
     """
     # Get the names of the files
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
     tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
-    source_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
-    )
+    source_file = fmriprep_with_freesurfer_data["cifti_file"]
+
     # Create a copy of the BOLD file to control the filename
     orig_bold_file = os.path.join(tempdir, "original.dtseries.nii")
     shutil.copyfile(source_file, orig_bold_file)

@@ -55,6 +55,7 @@ def init_ciftipostprocess_wf(
     output_dir,
     custom_confounds_folder,
     omp_nthreads,
+    input_type,
     dummytime,
     dummy_scans,
     fd_thresh,
@@ -94,6 +95,7 @@ def init_ciftipostprocess_wf(
                 despike=False,
                 dcan_qc=False,
                 n_runs=1,
+                input_type="fmriprep",
                 layout=None,
                 name="cifti_postprocess_wf",
             )
@@ -101,6 +103,7 @@ def init_ciftipostprocess_wf(
     Parameters
     ----------
     bold_file
+    input_type
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -144,7 +147,7 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, bold_file)
+    run_data = collect_run_data(layout, input_type, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
     mem_gbx = _create_mem_gb(bold_file)
@@ -314,7 +317,7 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
-        (downcast_data, qc_report_wf, [
+        (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
         ]),
     ])
@@ -341,7 +344,7 @@ produced by the regression.
         remove_dummy_scans = pe.Node(
             RemoveTR(),
             name="remove_dummy_scans",
-            mem_gb=0.1 * mem_gbx["timeseries"],
+            mem_gb=mem_gbx["timeseries"],
         )
 
         # fmt:off
@@ -631,11 +634,13 @@ produced by the regression.
         )
 
         # fmt:off
+        # Use inputnode for executive summary instead of downcast_data
+        # because T1w is used as name source.
         workflow.connect([
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
                 ("template_to_t1w", "inputnode.template_to_t1w"),
-            ]),
-            (downcast_data, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
                 ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),

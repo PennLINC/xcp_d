@@ -58,6 +58,7 @@ def init_boldpostprocess_wf(
     omp_nthreads,
     dummytime,
     dummy_scans,
+    input_type,
     output_dir,
     fd_thresh,
     n_runs,
@@ -94,6 +95,7 @@ def init_boldpostprocess_wf(
                 output_dir=".",
                 fd_thresh=0.2,
                 n_runs=1,
+                input_type="fmriprep",
                 despike=False,
                 dcan_qc=False,
                 layout=None,
@@ -111,6 +113,8 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
+    input_type: str
+        type of input
     bold_file: str
         bold file for post processing
     %(head_radius)s
@@ -160,7 +164,7 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, bold_file)
+    run_data = collect_run_data(layout, input_type, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
     mem_gbx = _create_mem_gb(bold_file)
@@ -376,7 +380,7 @@ produced by the regression.
         remove_dummy_scans = pe.Node(
             RemoveTR(),
             name="remove_dummy_scans",
-            mem_gb=0.1 * mem_gbx["timeseries"],
+            mem_gb=2 * mem_gbx["timeseries"],  # assume it takes a lot of memory
         )
 
         # fmt:off
@@ -706,13 +710,13 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (downcast_data, executivesummary_wf, [
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
+            (inputnode, executivesummary_wf, [
                 ("t1w", "inputnode.t1w"),
                 ("t1seg", "inputnode.t1seg"),
                 ("bold_file", "inputnode.bold_file"),
                 ("bold_mask", "inputnode.mask"),
-            ]),
-            (inputnode, executivesummary_wf, [
                 ("template_to_t1w", "inputnode.template_to_t1w"),
             ]),
             (regression_wf, executivesummary_wf, [

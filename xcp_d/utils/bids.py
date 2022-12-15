@@ -158,7 +158,6 @@ def collect_data(
         derivatives=True,
         config=["bids", "derivatives"],
     )
-
     # TODO: Add and test fsaverage.
     default_allowed_spaces = {
         "cifti": ["fsLR"],
@@ -262,6 +261,7 @@ def collect_data(
             input_type,
             default_allowed_spaces,
         )["nifti"]
+
         for space in temp_allowed_spaces:
             temp_bold_query["space"] = space
             nifti_bold_data = layout.get(**temp_bold_query)
@@ -269,6 +269,16 @@ def collect_data(
                 queries["t1w_to_template_xform"]["to"] = space
                 queries["template_to_t1w_xform"]["from"] = space
                 break
+
+        if input_type in ("hcp", "dcan"):
+            temp_allowed_spaces = ["MNI152NLin6Asym"]
+            # HCP and DCAN files don't have nifti BOLD data, we will use the boldref
+            temp_bold_query["desc"] = None
+            temp_bold_query["suffix"] = "boldref"
+            temp_bold_query["space"] = "MNI152NLin6Asym"
+            queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
+            queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
+            nifti_bold_data = layout.get(**temp_bold_query)
 
         if not nifti_bold_data:
             allowed_space_str = ", ".join(temp_allowed_spaces)
@@ -309,7 +319,7 @@ def collect_data(
     return layout, subj_data
 
 
-def collect_run_data(layout, bold_file, cifti=False):
+def collect_run_data(layout, input_type, bold_file, cifti=False):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -321,6 +331,8 @@ def collect_run_data(layout, bold_file, cifti=False):
     cifti : :obj:`bool`, optional
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
         Default is False.
+    input_type: :obj:`str`
+        Input type.
 
     Returns
     -------
@@ -341,7 +353,7 @@ def collect_run_data(layout, bold_file, cifti=False):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti:
+    if not cifti and input_type not in ("hcp", "dcan"):
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
@@ -359,6 +371,21 @@ def collect_run_data(layout, bold_file, cifti=False):
             **{"from": "T1w"},  # "from" is protected Python kw
             to="scanner",
             suffix="xfm",
+        )
+
+    elif not cifti:
+        run_data["boldref"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            suffix="boldref",
+        )
+        run_data["boldmask"] = layout.get(
+            return_type="file",
+            suffix="mask",
+            desc="brain",
+        )
+        run_data["t1w_to_native_xform"] = layout.get(
+            return_type="file", datatype="anat", suffix="xfm", to="MNI152NLin2009cAsym"
         )
 
     LOGGER.debug(
@@ -442,10 +469,11 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         with open(dataset_description) as f:
             dataset_dict = json.load(f)
 
-        info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
+    info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
+
+    if "Version" in dataset_dict["GeneratedBy"][0].keys():
         info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
     else:
-        info_dict["name"] = input_type
         info_dict["version"] = "unknown"
 
     if input_type == "fmriprep":
@@ -592,3 +620,52 @@ def find_nifti_bold_files(bold_file, template_to_t1w):
         nifti_boldref_file = nifti_boldref_file[0]
 
     return nifti_bold_file, nifti_boldref_file
+
+
+def get_freesurfer_dir(fmri_dir):
+    """Find FreeSurfer derivatives associated with preprocessing pipeline.
+
+    Parameters
+    ----------
+    fmri_dir : str
+        Path to preprocessed derivatives.
+
+    Returns
+    -------
+    freesurfer_path : str
+        Path to FreeSurfer derivatives.
+
+    Raises
+    ------
+    ValueError
+        If more than one potential FreeSurfer derivative folder is found.
+    NotADirectoryError
+        If no FreeSurfer derivatives are found.
+    """
+    import glob
+    import os
+
+    # for fMRIPrep/Nibabies versions >=20.2.1
+    freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
+    if len(freesurfer_paths) == 0:
+        # for fMRIPrep/Nibabies versions <20.2.1
+        freesurfer_paths = sorted(
+            glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+        )
+
+    if len(freesurfer_paths) == 1:
+        freesurfer_path = freesurfer_paths[0]
+
+    elif len(freesurfer_paths) > 1:
+        freesurfer_paths_str = "\n\t".join(freesurfer_paths)
+        raise ValueError(
+            "More than one candidate for FreeSurfer derivatives found. "
+            "We recommend mounting only one FreeSurfer directory in your Docker/Singularity "
+            "image. "
+            f"Detected candidates:\n\t{freesurfer_paths_str}"
+        )
+
+    else:
+        raise NotADirectoryError("No FreeSurfer derivatives found.")
+
+    return freesurfer_path
