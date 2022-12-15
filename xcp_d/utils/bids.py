@@ -605,3 +605,52 @@ def find_nifti_boldref_file(bold_file, template_to_t1w):
     nifti_boldref_file = nifti_boldref_file[0]
 
     return nifti_boldref_file
+
+
+def get_freesurfer_dir(fmri_dir):
+    """Find FreeSurfer derivatives associated with preprocessing pipeline.
+
+    Parameters
+    ----------
+    fmri_dir : str
+        Path to preprocessed derivatives.
+
+    Returns
+    -------
+    freesurfer_path : str
+        Path to FreeSurfer derivatives.
+
+    Raises
+    ------
+    ValueError
+        If more than one potential FreeSurfer derivative folder is found.
+    NotADirectoryError
+        If no FreeSurfer derivatives are found.
+    """
+    import glob
+    import os
+
+    # for fMRIPrep/Nibabies versions >=20.2.1
+    freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
+    if len(freesurfer_paths) == 0:
+        # for fMRIPrep/Nibabies versions <20.2.1
+        freesurfer_paths = sorted(
+            glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+        )
+
+    if len(freesurfer_paths) == 1:
+        freesurfer_path = freesurfer_paths[0]
+
+    elif len(freesurfer_paths) > 1:
+        freesurfer_paths_str = "\n\t".join(freesurfer_paths)
+        raise ValueError(
+            "More than one candidate for FreeSurfer derivatives found. "
+            "We recommend mounting only one FreeSurfer directory in your Docker/Singularity "
+            "image. "
+            f"Detected candidates:\n\t{freesurfer_paths_str}"
+        )
+
+    else:
+        raise NotADirectoryError("No FreeSurfer derivatives found.")
+
+    return freesurfer_path
