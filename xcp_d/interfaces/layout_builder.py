@@ -8,9 +8,8 @@ the DCAN-Labs fMRI pipelines.
 
 __version__ = "2.0.0"
 
-import glob as glob
+import glob
 import os
-import re
 from pathlib import Path
 
 from xcp_d.interfaces import constants
@@ -212,30 +211,23 @@ class TxSection(Section):
 
     def run(self):
         """Run the object."""
-        values = constants.IMAGE_INFO["t1w_brainplot"]
-        tx_file = Path(find_one_file(self.img_path, values["pattern"]))
-        t1wbrainplot = (
-            re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
-            .findall((tx_file).read_text())[0]
-            .strip()
+        t1w_brainsprite_info = constants.IMAGE_INFO["t1w_brainplot"]
+        t1w_brainsprite_file_candidates = sorted(
+            glob.glob(os.path.join(self.img_path, t1w_brainsprite_info["pattern"]))
         )
-        values2 = constants.IMAGE_INFO["t2w_brainplot"]
-        tx2_file = Path(find_one_file(self.img_path, values2["pattern"]))
-        t2wbrainplot = (
-            re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
-            .findall((tx2_file).read_text())[0]
-            .strip()
-        )
-        self.section += constants.TX_SECTION_START.format(txx="t1w")
+        if len(t1w_brainsprite_file_candidates) == 1:
+            t1w_brainsprite_file = Path(t1w_brainsprite_file_candidates[0])
+            t1w_brainsprite_html = t1w_brainsprite_file.read_text().strip()
+            self.section += t1w_brainsprite_html
 
-        src1 = Path(tx_file)
-        t1wbrainplot = src1.read_text().strip()
-        src2 = Path(tx2_file)
-        t2wbrainplot = src2.read_text().strip()
-        self.section += constants.T1X_SECTION.format(tx1="T1w", t1wbrainplot=t1wbrainplot)
-        self.section += constants.T2X_SECTION.format(tx2="T2w", t2wbrainplot=t2wbrainplot)
-        # self.section += T2X_SECTION.format(tx='T2w',t2wbrainplot=t2wbrainplot)
-        self.section += constants.TX_SECTION_END.format()
+        t2w_brainsprite_info = constants.IMAGE_INFO["t2w_brainplot"]
+        t2w_brainsprite_file_candidates = sorted(
+            glob.glob(os.path.join(self.img_path, t2w_brainsprite_info["pattern"]))
+        )
+        if len(t2w_brainsprite_file_candidates) == 1:
+            t2w_brainsprite_file = Path(t2w_brainsprite_file_candidates[0])
+            t2w_brainsprite_html = t2w_brainsprite_file.read_text().strip()
+            self.section += t2w_brainsprite_html
 
 
 class TasksSection(Section):

@@ -1,10 +1,10 @@
 """Constants to be used by interfaces."""
 IMAGE_INFO = {
-    "t1w_brainplot": {"pattern": "*desc-brainplot_T1w.html", "title": "T1w BrainSprite"},
-    "t2w_brainplot": {"pattern": "*desc-brainplot_T1w.html", "title": "T2w BrainSprite"},
-    "task_pre_reg_gray": {"pattern": "*%s*desc-precarpetplot*bold.svg", "title": "Pre-Regression"},
+    "t1w_brainplot": {"pattern": "*desc-brainsprite_T1w.html", "title": "T1w BrainSprite"},
+    "t2w_brainplot": {"pattern": "*desc-brainsprite_T1w.html", "title": "T2w BrainSprite"},
+    "task_pre_reg_gray": {"pattern": "*%s*desc-precarpetplot_bold.svg", "title": "Pre-Regression"},
     "task_post_reg_gray": {
-        "pattern": "*%s*desc-postcarpetplot*bold.svg",
+        "pattern": "*%s*desc-postcarpetplot_bold.svg",
         "title": "Post-Regression",
     },
     "bold_t1w_reg": {"pattern": "*%s*desc-bbregister*bold.svg", "title": "Bold T1w registration"},
