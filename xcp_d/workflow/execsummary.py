@@ -303,19 +303,47 @@ def init_execsummary_wf(
         ])
         # fmt:on
 
-        # Transform a dseg file to the same space as the BOLD data
+        # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
+        dseg_file = str(
+            get_template(
+                "MNI152NLin2009cAsym",
+                resolution=1,
+                desc="carpet",
+                suffix="dseg",
+                extension=[".nii", ".nii.gz"],
+            )
+        )
+
+        # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
+        MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
+            get_template(
+                template="MNI152NLin6Asym",
+                mode="image",
+                suffix="xfm",
+                extension=".h5",
+                **{"from": "MNI152NLin2009cAsym"},
+            ),
+        )
+
+        # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
+        # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
+        add_xform_to_nlin6asym = pe.Node(
+            niu.Merge(2),
+            name="add_xform_to_nlin6asym",
+        )
+        add_xform_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
+
+        # fmt:off
+        workflow.connect([
+            (get_mni_to_bold_xforms, add_xform_to_nlin6asym, [("transform_list", "in1")]),
+        ])
+        # fmt:on
+
+        # Transform MNI152NLin2009cAsym dseg file to the same space as the BOLD data.
         warp_dseg_to_bold = pe.Node(
             ApplyTransformsx(
                 dimension=3,
-                input_image=str(
-                    get_template(
-                        "MNI152NLin6Asym",
-                        resolution=1,
-                        desc="carpet",
-                        suffix="dseg",
-                        extension=[".nii", ".nii.gz"],
-                    )
-                ),
+                input_image=dseg_file,
                 interpolation="MultiLabel",
             ),
             name="warp_dseg_to_bold",
@@ -326,10 +354,11 @@ def init_execsummary_wf(
         # fmt:off
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("bold_file", "reference_image")]),
-            (get_mni_to_bold_xforms, warp_dseg_to_bold, [("transform_list", "transforms")]),
+            (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
             (inputnode, plot_boldref, [("boldref_file", "in_file")]),
         ])
         # fmt:on
+
     else:
         find_nifti_boldref = pe.Node(
             Function(
