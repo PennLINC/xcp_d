@@ -345,7 +345,7 @@ def init_qc_report_wf(
         # Generate preprocessing and postprocessing carpet plots.
         plot_executive_summary_carpets = pe.Node(
             PlotSVGData(TR=TR),
-            name="plot_carpets",
+            name="plot_executive_summary_carpets",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )

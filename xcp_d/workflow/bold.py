@@ -439,6 +439,7 @@ produced by the regression.
         head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        dcan_qc=dcan_qc,
         cifti=False,
         name="qc_report_wf",
     )
