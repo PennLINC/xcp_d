@@ -140,7 +140,6 @@ def init_ciftipostprocess_wf(
         custom regressors
     t1w
     t1seg
-    %(template_to_t1w)s
     fmriprep_confounds_tsv
 
     References
@@ -242,7 +241,6 @@ produced by the regression.
                 "custom_confounds_file",
                 "t1w",
                 "t1seg",
-                "template_to_t1w",
                 "fmriprep_confounds_tsv",
                 "dummy_scans",
             ],
@@ -662,7 +660,6 @@ produced by the regression.
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
-                ('template_to_t1w', 'inputnode.template_to_t1w'),
                 ('bold_file', 'inputnode.bold_file'),
             ]),
             (regression_wf, executivesummary_wf, [

@@ -18,7 +18,7 @@ from xcp_d.interfaces.surfplotting import (
     PlotSVGData,
     RibbontoStatmap,
 )
-from xcp_d.utils.bids import find_nifti_boldref_file, get_freesurfer_dir
+from xcp_d.utils.bids import get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
 from xcp_d.utils.utils import get_std2bold_xforms
@@ -202,8 +202,7 @@ def init_execsummary_wf(
     %(template_to_t1w)s
         For NIFTI data, this is used to warp the MNI152NLin6-space tissue-type segmentation
         file to T1w or native space, which should never happen.
-
-        For CIFTI data, this is used to identify the appropriate boldref file to plot.
+        This should only be defined (and used) for NIFTI inputs.
     t1w_to_native_xform
         For NIFTI data, this is used to warp the MNI152NLin6-space tissue-type segmentation
         file to T1w or native space, which should never happen.
@@ -220,11 +219,11 @@ def init_execsummary_wf(
                 "residual_data",
                 "filtered_motion",
                 "tmask",
-                "template_to_t1w",
                 "dummy_scans",
+                "boldref_file",  # a nifti boldref
                 # nifti-only inputs
-                "boldref_file",
                 "mask",
+                "template_to_t1w",
                 "t1w_to_native_xform",
             ]
         ),
@@ -251,6 +250,12 @@ def init_execsummary_wf(
 
     # Plot the reference bold image
     plot_boldref = pe.Node(PlotImage(), name="plot_boldref")
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, plot_boldref, [("boldref_file", "in_file")]),
+    ])
+    # fmt:on
 
     if not cifti:
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
@@ -327,29 +332,6 @@ def init_execsummary_wf(
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref_file", "reference_image")]),
             (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
-            (inputnode, plot_boldref, [("boldref_file", "in_file")]),
-        ])
-        # fmt:on
-
-    else:
-        find_nifti_boldref = pe.Node(
-            Function(
-                function=find_nifti_boldref_file,
-                input_names=["bold_file", "template_to_t1w"],
-                output_names=["nifti_boldref_file"],
-            ),
-            name="find_nifti_boldref",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, find_nifti_boldref, [
-                ("bold_file", "bold_file"),
-                ("template_to_t1w", "template_to_t1w"),
-            ]),
-            (find_nifti_boldref, plot_boldref, [
-                ("nifti_boldref_file", "in_file"),
-            ]),
         ])
         # fmt:on
 

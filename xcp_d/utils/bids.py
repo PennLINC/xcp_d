@@ -19,6 +19,26 @@ from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger("nipype.utils")
 
+# TODO: Add and test fsaverage.
+DEFAULT_ALLOWED_SPACES = {
+    "cifti": ["fsLR"],
+    "nifti": [
+        "MNI152NLin6Asym",
+        "MNI152NLin2009cAsym",
+        "MNIInfant",
+    ],
+}
+INPUT_TYPE_ALLOWED_SPACES = {
+    "nibabies": {
+        "cifti": ["fsLR"],
+        "nifti": [
+            "MNIInfant",
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+        ],
+    },
+}
+
 
 class BIDSError(ValueError):
     """A generic error related to BIDS datasets.
@@ -158,25 +178,6 @@ def collect_data(
         derivatives=True,
         config=["bids", "derivatives"],
     )
-    # TODO: Add and test fsaverage.
-    default_allowed_spaces = {
-        "cifti": ["fsLR"],
-        "nifti": [
-            "MNI152NLin6Asym",
-            "MNI152NLin2009cAsym",
-            "MNIInfant",
-        ],
-    }
-    input_type_allowed_spaces = {
-        "nibabies": {
-            "cifti": ["fsLR"],
-            "nifti": [
-                "MNIInfant",
-                "MNI152NLin6Asym",
-                "MNI152NLin2009cAsym",
-            ],
-        },
-    }
 
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
@@ -233,9 +234,10 @@ def collect_data(
         # but we'll grab the first one with available data if they did.
         allowed_spaces = ensure_list(queries["bold"]["space"])
     else:
-        allowed_spaces = input_type_allowed_spaces.get(input_type, default_allowed_spaces)[
-            "cifti" if cifti else "nifti"
-        ]
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["cifti" if cifti else "nifti"]
 
     for space in allowed_spaces:
         queries["bold"]["space"] = space
@@ -255,35 +257,24 @@ def collect_data(
     else:
         # Select the best *volumetric* space, based on available nifti BOLD files.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_bold_query = queries["bold"].copy()
-        temp_bold_query["extension"] = ".nii.gz"
-        temp_allowed_spaces = input_type_allowed_spaces.get(
+        temp_query = queries["t1w_to_template_xform"].copy()
+        temp_allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
             input_type,
-            default_allowed_spaces,
+            DEFAULT_ALLOWED_SPACES,
         )["nifti"]
 
         for space in temp_allowed_spaces:
-            temp_bold_query["space"] = space
-            nifti_bold_data = layout.get(**temp_bold_query)
-            if nifti_bold_data:
+            temp_query["to"] = space
+            transform_files = layout.get(**temp_query)
+            if transform_files:
                 queries["t1w_to_template_xform"]["to"] = space
                 queries["template_to_t1w_xform"]["from"] = space
                 break
 
-        if input_type in ("hcp", "dcan"):
-            temp_allowed_spaces = ["MNI152NLin6Asym"]
-            # HCP and DCAN files don't have nifti BOLD data, we will use the boldref
-            temp_bold_query["desc"] = None
-            temp_bold_query["suffix"] = "boldref"
-            temp_bold_query["space"] = "MNI152NLin6Asym"
-            queries["t1w_to_template_xform"]["to"] = "MNI152NLin2009cAsym"
-            queries["template_to_t1w_xform"]["from"] = "MNI152NLin2009cAsym"
-            nifti_bold_data = layout.get(**temp_bold_query)
-
-        if not nifti_bold_data:
+        if not transform_files:
             allowed_space_str = ", ".join(temp_allowed_spaces)
             raise FileNotFoundError(
-                f"No nifti BOLD data found in allowed spaces ({allowed_space_str})"
+                f"No nifti transforms found to allowed spaces ({allowed_space_str})"
             )
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
@@ -353,7 +344,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti and input_type not in ("hcp", "dcan"):
+    if not cifti:
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
@@ -372,20 +363,16 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             to="scanner",
             suffix="xfm",
         )
-
-    elif not cifti:
+    else:
+        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["nifti"]
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
+            space=allowed_nifti_spaces,
             suffix="boldref",
-        )
-        run_data["boldmask"] = layout.get(
-            return_type="file",
-            suffix="mask",
-            desc="brain",
-        )
-        run_data["t1w_to_native_xform"] = layout.get(
-            return_type="file", datatype="anat", suffix="xfm", to="MNI152NLin2009cAsym"
         )
 
     LOGGER.debug(
@@ -554,57 +541,6 @@ def _get_tr(img):
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
     raise RuntimeError("Could not extract TR - unknown data structure type")
-
-
-def find_nifti_boldref_file(bold_file, template_to_t1w):
-    """Find nifti bold and boldref files associated with a given input file.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the preprocessed BOLD file that XCPD will denoise elsewhere.
-        If this is a cifti file, then the appropriate nifti file will be determined based on
-        entities in this file, as well as the space and, potentially, cohort in the
-        template_to_t1w file.
-        When this is a nifti file, it is returned without modification.
-    template_to_t1w : str
-        The transform from standard space to T1w space.
-        This is used to determine the volumetric template when bold_file is a cifti file.
-        When bold_file is a nifti file, this is not used.
-
-    Returns
-    -------
-    nifti_boldref_file : str
-        Path to the volumetric (nifti) BOLD reference file associated with nifti_bold_file.
-    """
-    import glob
-    import os
-    import re
-
-    if not bold_file.endswith(".dtseries.nii"):
-        raise ValueError("This function should only be run on CIFTI inputs.")
-
-    # Infer the volumetric space from the transform
-    nifti_template = re.findall("from-([a-zA-Z0-9+]+)", os.path.basename(template_to_t1w))[0]
-    if "+" in nifti_template:
-        nifti_template, cohort = nifti_template.split("+")
-        search_substring = f"space-{nifti_template}_cohort-{cohort}"
-    else:
-        search_substring = f"space-{nifti_template}"
-
-    bb_file_prefix = bold_file.split("space-fsLR_den-91k_bold.dtseries.nii")[0]
-
-    # Find the associated _boldref file.
-    boldref_search_str = bb_file_prefix + search_substring + "*boldref.nii.gz"
-    nifti_boldref_file = sorted(glob.glob(boldref_search_str))
-    if len(nifti_boldref_file) > 1:
-        LOGGER.warn(f"More than one nifti boldref found: {', '.join(nifti_boldref_file)}")
-    elif len(nifti_boldref_file) == 0:
-        raise FileNotFoundError(f"boldref file not found: {boldref_search_str}")
-
-    nifti_boldref_file = nifti_boldref_file[0]
-
-    return nifti_boldref_file
 
 
 def get_freesurfer_dir(fmri_dir):
