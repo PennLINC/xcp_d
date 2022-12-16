@@ -24,6 +24,7 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _GenerateBrainspriteHTMLInputSpec(BaseInterfaceInputSpec):
+    output_dir = traits.Str()
     add_jquery = traits.Bool(
         desc=(
             "Whether to include the JQuery JavaScript code or not. "
@@ -72,10 +73,17 @@ class GenerateBrainspriteHTML(SimpleInterface):
         environment.globals["include_file"] = include_file
         jinja_template = environment.get_template(jinja_template_file)
 
+        # Get relative path to files from output directory
+        deriv_dir = os.path.join(self.inputs.output_dir, "xcp_d")
+        mosaic_file_relative = os.path.relpath(self.inputs.mosaic, deriv_dir)
+        scenewise_pngs_relative = [
+            os.path.relpath(f, deriv_dir) for f in self.inputs.scenewise_pngs
+        ]
+
         # NOTE: Probably need to get relative paths for images.
         html = jinja_template.render(
-            mosaic_file=self.inputs.mosaic,
-            cycler_files=self.inputs.scenewise_pngs,
+            mosaic_file=mosaic_file_relative,
+            cycler_files=scenewise_pngs_relative,
             image_type=self.inputs.image_type,
             add_jquery=self.inputs.add_jquery,
             add_javascript=self.inputs.add_javascript,

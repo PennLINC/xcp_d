@@ -11,7 +11,7 @@ from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
 
-from xcp_d.interfaces.layout_builder import LayoutBuilder
+from xcp_d.interfaces.layout_builder import ExecutiveSummary
 from xcp_d.utils.bids import _getsesid
 from xcp_d.utils.doc import fill_doc
 
@@ -186,7 +186,7 @@ def generate_reports(
                         "figures/*_bold.svg",
                     ),
                 )[0]
-                LayoutBuilder(
+                ExecutiveSummary(
                     html_path=str(Path(output_dir)) + "/xcp_d/",
                     subject_id=subject_label,
                     session_id=_getsesid(brainplotfile),

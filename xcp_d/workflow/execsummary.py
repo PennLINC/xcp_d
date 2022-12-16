@@ -375,6 +375,7 @@ def init_brainsprite_wf(
         # Create brainsprite HTMLs, but only append BrainSprite JS to the latter of them.
         generate_brainsprite_html = pe.Node(
             GenerateBrainspriteHTML(
+                output_dir=output_dir,
                 image_type=image_type,
                 add_jquery=image_type == image_types[0],
                 add_javascript=image_type == image_types[-1],

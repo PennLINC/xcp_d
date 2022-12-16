@@ -1,12 +1,15 @@
 #! /usr/bin/env python
 """Classes for building an executive summary file."""
-import glob
 import os
-from pathlib import Path
+
+from bids.layout import BIDSLayout, Query
+from bs4 import BeautifulSoup
+from jinja2 import Environment, FileSystemLoader, Markup
+from pkg_resources import resource_filename as pkgrf
 
 
-class LayoutBuilder(object):
-    """A LayoutBuilder object.
+class ExecutiveSummary(object):
+    """A class to build an executive summary.
 
     Parameters
     ----------
@@ -26,52 +29,23 @@ class LayoutBuilder(object):
         else:
             self.session_id = None
 
-        self.summary_path = html_path + "/" + self.subject_id + "/figures/"
-        self.files_path = html_path + "/" + self.subject_id + "/figures/"
-        self.images_path = html_path + "/" + self.subject_id + "/figures/"
-        images_path = self.images_path
+        images_path = os.path.join(html_path, self.subject_id, "figures")
+
+        self.layout = BIDSLayout(html_path, validate=False, derivatives=True)
 
         # For the directory where the images used by the HTML are stored,  use
-        # the relative path only, as the HTML will need to access it's images
+        # the relative path only, as the HTML will need to access its images
         # using the relative path.
         self.images_path = os.path.relpath(images_path, html_path)
 
-        self.setup()
-        self.run()
-        self.teardown()
+        if self.session_id:
+            out_file = f"{self.subject_id}_{self.session_id}_executive_summary.html"
+        else:
+            out_file = f"{self.subject_id}_executive_summary.html"
 
-    def setup(self):
-        """Prepare to write the HTML by changing the directory to the html_path.
+        out_file = os.path.join(html_path, out_file)
 
-        As we write the HTML, we use the relative paths to the image files that
-        the HTML will reference. Therefore, best to be in the directory to which
-        the HTML will be written.
-        """
-        os.chdir(self.html_path)
-
-    def teardown(self):
-        """Go back to the path where we started."""
-        os.chdir(self.working_dir)
-
-    def get_list_of_tasks(self):
-        """Walk through the MNINonLinear/Results directory to find all paths containing 'task-'.
-
-        This is the preferred method.
-        If there is no MNINonLinear/Results directory, uses the files directory in the same way.
-        """
-        taskset = set()
-
-        # use_path = os.path.join(self.files_path)
-        if os.path.isdir(self.files_path):
-            print("\n All tasks completed")
-
-        filex = glob.glob(self.files_path + "/*bbregister_bold.svg")
-
-        for name in filex:
-            taskbase = os.path.basename(name)
-            taskset.add(taskbase.split("_task-")[1].split("_desc")[0])
-
-        return sorted(taskset)
+        self.generate_report(out_file)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
@@ -83,114 +57,167 @@ class LayoutBuilder(object):
         filename : str
             name of html file.
         """
-        filepath = os.path.join(os.getcwd(), filename)
-        try:
-            fd = open(filepath, "w")
-        except OSError as err:
-            print(f"Unable to open {filepath} for write.\n")
-            print(f"Error: {err}")
+        soup = BeautifulSoup(document)  # make BeautifulSoup
+        html = soup.prettify()  # prettify the html
 
-        fd.writelines(document)
-        print(f"\nExecutive summary can be found in path:\n\t{os.getcwd()}/{filename}")
-        fd.close()
+        filepath = os.path.join(self.html_path, filename)
+        with open(filepath, "w") as fo:
+            fo.write(html)
 
-    def collect_inputs(self):
-        IMAGE_INFO = {
-            "t1w_brainsprite": {
-                "pattern": "*desc-brainsprite_T1w.html",
-                "title": "T1w BrainSprite",
-            },
-            "t2w_brainsprite": {
-                "pattern": "*desc-brainsprite_T2w.html",
-                "title": "T2w BrainSprite",
-            },
-            "task_pre_reg_gray": {
-                "pattern": "*%s*desc-precarpetplot_bold.svg",
-                "title": "Pre-Regression",
-            },
-            "task_post_reg_gray": {
-                "pattern": "*%s*desc-postcarpetplot_bold.svg",
-                "title": "Post-Regression",
-            },
-            "bold_t1w_reg": {
-                "pattern": "*%s*desc-bbregister*bold.svg",
-                "title": "Bold T1w registration",
-            },
-            "ref": {
-                "pattern": "*%s*desc-boldref*bold.svg",
-                "title": "Reference",
-            },
+    def get_bids_file(self, query):
+        files = self.layout.get(**query)
+        if len(files) == 1:
+            found_file = files[0].path
+        else:
+            found_file = "None"
+
+        return found_file
+
+    def generate_report(self, out_file):
+        ANAT_REGISTRATION_DESCS = [
+            "AtlasInT1w",
+            "T1wInAtlas",
+            "AtlasInSubcorticals",
+            "SubcorticalsInAtlas",
+        ]
+        ANAT_REGISTRATION_TITLES = [
+            "Atlas In T1w",
+            "T1w In Atlas",
+            "Atlas in Subcorticals",
+            "Subcorticals in Atlas",
+        ]
+        TASK_REGISTRATION_DESCS = ["TaskInT1", "T1InTask"]
+        TASK_REGISTRATION_TITLES = ["Task in T1", "T1 in Task"]
+        ORDERING = [
+            "session",
+            "task",
+            "acquisition",
+            "ceagent",
+            "reconstruction",
+            "direction",
+            "run",
+            "echo",
+        ]
+
+        query = {
+            "subject": self.subject_id,
         }
 
         structural_files = {}
+        for modality in ["T1w", "T2w"]:
+            structural_files[modality] = {}
+            query["suffix"] = modality
+            query["extension"] = ".html"
 
-        t1w_brainsprite_info = IMAGE_INFO["t1w_brainsprite"]
-        t1w_brainsprite_file_candidates = sorted(
-            glob.glob(os.path.join(self.img_path, t1w_brainsprite_info["pattern"]))
+            brainsprite = self.get_bids_file(query)
+            if brainsprite != "None":
+                with open(brainsprite, "r") as fo:
+                    brainsprite = fo.read()
+
+            structural_files[modality]["brainsprite"] = brainsprite
+
+            structural_files[modality]["registration_files"] = []
+            structural_files[modality]["REGISTRATION_TITLES"] = ANAT_REGISTRATION_TITLES
+            for registration_desc in ANAT_REGISTRATION_DESCS:
+                query["desc"] = registration_desc
+                found_file = self.get_bids_file(query)
+
+                structural_files[modality]["registration_files"].append(found_file)
+
+        # Determine the unique entity-sets for the task data.
+        postproc_files = self.layout.get(
+            subject=self.subject_id,
+            datatype="func",
+            suffix="bold",
+            extension=[".dtseries.nii", ".nii.gz"],
         )
-        if len(t1w_brainsprite_file_candidates) == 1:
-            t1w_brainsprite_file = Path(t1w_brainsprite_file_candidates[0])
-            structural_files["T1"]["brainsprite"] = t1w_brainsprite_file
+        unique_entity_sets = []
+        for postproc_file in postproc_files:
+            entities = postproc_file.entities
+            entities = {k: v for k, v in entities.items() if k in ORDERING}
+            unique_entity_sets.append(entities)
 
-        t2w_brainsprite_info = IMAGE_INFO["t2w_brainsprite"]
-        t2w_brainsprite_file_candidates = sorted(
-            glob.glob(os.path.join(self.img_path, t2w_brainsprite_info["pattern"]))
+        # From https://www.geeksforgeeks.org/python-unique-dictionary-filter-in-list/
+        # Unique dictionary filter in list
+        # Using map() + set() + items() + sorted() + tuple()
+        unique_entity_sets = list(
+            map(dict, set(tuple(sorted(sub.items())) for sub in unique_entity_sets))
         )
-        if len(t2w_brainsprite_file_candidates) == 1:
-            t2w_brainsprite_file = Path(t2w_brainsprite_file_candidates[0])
-            structural_files["T2"]["brainsprite"] = t2w_brainsprite_file
+        task_entity_sets = []
+        for entity_set in unique_entity_sets:
+            for entity in ORDERING:
+                entity_set[entity] = entity_set.get(entity, Query.NONE)
 
-        structural_files = {
-            "T1": {
-                "mosaic": "img/T1_mosaic.jpg",
-                "slices": sorted(glob("img/sub-3840308617_T1-*.png")),
-                "registration_files": sorted(glob("img/sub-3840308617_desc-*.gif")) + ["None", "None"],
-                "registration_titles": ["Atlas In T1w", "T1w In Atlas", "Atlas in Subcorticals", "Subcorticals in Atlas"],
-            },
-            "T2": {
-                "mosaic": "img/T1_mosaic.jpg",
-                "slices": sorted(glob("img/sub-3840308617_T1-*.png")),
-                "registration_files": sorted(glob("img/sub-3840308617_desc-*.gif")) + ["None", "None"],
-                "registration_titles": ["Atlas In T2w", "T2w In Atlas", "Atlas in Subcorticals", "Subcorticals in Atlas"],
-            },
+            task_entity_sets.append(entity_set)
+
+        concatenated_rest_files = {}
+
+        query = {
+            "subject": self.subject_id,
+            "task": "rest",
+            "run": Query.NONE,
+            "desc": "precarpetplot",
+            "suffix": "bold",
+            "extension": ".svg",
         }
-        concatenated_rest_files = {
-            "preproc_carpet": "img/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-preprocessing_bold.svg",
-            "postproc_carpet": "img/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-postprocessing_bold.svg",
-        }
-        task_files = [
-            {
-                "task": "rest",
-                "run": "01",
-                "registration_files": [
-                    "img/sub-3840308617_task-idemo01_desc-TaskInT1.gif",
-                    "img/sub-3840308617_task-idemo01_desc-T1InTask.gif",
-                ],
-                "registration_titles": ["Task in T1", "T1 in Task"],
-                "bold": "img/sub-3840308617_ses-PNC1_task-idemo_bold.png",
-                "reference": "img/sub-3840308617_task-frac2back01_ref.png",
-                "preproc_carpet": "img/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_desc-preprocessing_bold.svg",
-                "postproc_carpet": "img/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_desc-postprocessing_bold.svg",
-            },
-            {
-                "task": "rest",
-                "run": "02",
-                "registration_files": [
-                    "None",
-                    "None",
-                ],
-                "registration_titles": ["Task in T1", "T1 in Task"],
-                "bold": "None",
-                "reference": "None",
-                "preproc_carpet": "None",
-                "postproc_carpet": "None",
-            },
-        ]
+        concatenated_rest_files["preproc_carpet"] = self.get_bids_file(query)
+
+        query["desc"] = "postcarpetplot"
+        concatenated_rest_files["postproc_carpet"] = self.get_bids_file(query)
+
+        task_files = []
+
+        for task_entity_set in task_entity_sets:
+            task_file_figures = task_entity_set.copy()
+
+            query = {
+                "subject": self.subject_id,
+                "desc": "precarpetplot",
+                "suffix": "bold",
+                "extension": ".svg",
+                **task_entity_set,
+            }
+
+            task_file_figures["preproc_carpet"] = self.get_bids_file(query)
+
+            query["desc"] = "postcarpetplot"
+            task_file_figures["postproc_carpet"] = self.get_bids_file(query)
+
+            query["desc"] = "boldref"
+            task_file_figures["reference"] = self.get_bids_file(query)
+
+            query["desc"] = "mean"
+            task_file_figures["bold"] = self.get_bids_file(query)
+
+            task_file_figures["registration_files"] = []
+            task_file_figures["REGISTRATION_TITLES"] = TASK_REGISTRATION_TITLES
+            for registration_desc in TASK_REGISTRATION_DESCS:
+                query["desc"] = registration_desc
+                found_file = self.get_bids_file(query)
+
+                task_file_figures["registration_files"].append(found_file)
+
+            task_files.append(task_file_figures)
+
+        # Fill in the template
+
+        def include_file(name):
+            return Markup(loader.get_source(environment, name)[0])
+
+        template_folder = pkgrf("xcp_d", "/data/executive_summary_templates/")
+        loader = FileSystemLoader(template_folder)
+        environment = Environment(loader=loader)
+        environment.filters["basename"] = os.path.basename
+        environment.globals["include_file"] = include_file
+
+        template = environment.get_template("template_pregen_brainsprite.html.jinja")
 
         html = template.render(
-            subject="sub-01",
+            subject=self.subject_id,
             session="ses-01",
             structural_files=structural_files,
             concatenated_rest_files=concatenated_rest_files,
             task_files=task_files,
         )
+
+        self.write_html(html, out_file)
