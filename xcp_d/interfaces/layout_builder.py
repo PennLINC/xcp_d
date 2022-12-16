@@ -23,13 +23,13 @@ class ExecutiveSummary(object):
         self.working_dir = os.getcwd()
 
         self.html_path = html_path
-        self.subject_id = "sub-" + subject_id
+        self.subject_id = subject_id
         if session_id:
-            self.session_id = "ses-" + session_id
+            self.session_id = session_id
         else:
             self.session_id = None
 
-        images_path = os.path.join(html_path, self.subject_id, "figures")
+        images_path = os.path.join(html_path, f"sub-{self.subject_id}", "figures")
 
         self.layout = BIDSLayout(html_path, validate=False, derivatives=True)
 
@@ -37,15 +37,6 @@ class ExecutiveSummary(object):
         # the relative path only, as the HTML will need to access its images
         # using the relative path.
         self.images_path = os.path.relpath(images_path, html_path)
-
-        if self.session_id:
-            out_file = f"{self.subject_id}_{self.session_id}_executive_summary.html"
-        else:
-            out_file = f"{self.subject_id}_executive_summary.html"
-
-        out_file = os.path.join(html_path, out_file)
-
-        self.generate_report(out_file)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
@@ -57,14 +48,14 @@ class ExecutiveSummary(object):
         filename : str
             name of html file.
         """
-        soup = BeautifulSoup(document)  # make BeautifulSoup
+        soup = BeautifulSoup(document, features="lxml")
         html = soup.prettify()  # prettify the html
 
         filepath = os.path.join(self.html_path, filename)
         with open(filepath, "w") as fo:
             fo.write(html)
 
-    def get_bids_file(self, query):
+    def _get_bids_file(self, query):
         files = self.layout.get(**query)
         if len(files) == 1:
             found_file = files[0].path
@@ -73,7 +64,8 @@ class ExecutiveSummary(object):
 
         return found_file
 
-    def generate_report(self, out_file):
+    def collect_inputs(self):
+        """Collect inputs."""
         ANAT_REGISTRATION_DESCS = [
             "AtlasInT1w",
             "T1wInAtlas",
@@ -109,7 +101,7 @@ class ExecutiveSummary(object):
             query["suffix"] = modality
             query["extension"] = ".html"
 
-            brainsprite = self.get_bids_file(query)
+            brainsprite = self._get_bids_file(query)
             if brainsprite != "None":
                 with open(brainsprite, "r") as fo:
                     brainsprite = fo.read()
@@ -117,12 +109,14 @@ class ExecutiveSummary(object):
             structural_files[modality]["brainsprite"] = brainsprite
 
             structural_files[modality]["registration_files"] = []
-            structural_files[modality]["REGISTRATION_TITLES"] = ANAT_REGISTRATION_TITLES
+            structural_files[modality]["registration_titles"] = ANAT_REGISTRATION_TITLES
             for registration_desc in ANAT_REGISTRATION_DESCS:
                 query["desc"] = registration_desc
-                found_file = self.get_bids_file(query)
+                found_file = self._get_bids_file(query)
 
                 structural_files[modality]["registration_files"].append(found_file)
+
+        self.structural_files_ = structural_files
 
         # Determine the unique entity-sets for the task data.
         postproc_files = self.layout.get(
@@ -160,10 +154,12 @@ class ExecutiveSummary(object):
             "suffix": "bold",
             "extension": ".svg",
         }
-        concatenated_rest_files["preproc_carpet"] = self.get_bids_file(query)
+        concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
 
         query["desc"] = "postcarpetplot"
-        concatenated_rest_files["postproc_carpet"] = self.get_bids_file(query)
+        concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
+
+        self.concatenated_rest_files_ = concatenated_rest_files
 
         task_files = []
 
@@ -178,28 +174,38 @@ class ExecutiveSummary(object):
                 **task_entity_set,
             }
 
-            task_file_figures["preproc_carpet"] = self.get_bids_file(query)
+            task_file_figures["preproc_carpet"] = self._get_bids_file(query)
 
             query["desc"] = "postcarpetplot"
-            task_file_figures["postproc_carpet"] = self.get_bids_file(query)
+            task_file_figures["postproc_carpet"] = self._get_bids_file(query)
 
             query["desc"] = "boldref"
-            task_file_figures["reference"] = self.get_bids_file(query)
+            task_file_figures["reference"] = self._get_bids_file(query)
 
             query["desc"] = "mean"
-            task_file_figures["bold"] = self.get_bids_file(query)
+            task_file_figures["bold"] = self._get_bids_file(query)
 
             task_file_figures["registration_files"] = []
-            task_file_figures["REGISTRATION_TITLES"] = TASK_REGISTRATION_TITLES
+            task_file_figures["registration_titles"] = TASK_REGISTRATION_TITLES
             for registration_desc in TASK_REGISTRATION_DESCS:
                 query["desc"] = registration_desc
-                found_file = self.get_bids_file(query)
+                found_file = self._get_bids_file(query)
 
                 task_file_figures["registration_files"].append(found_file)
 
             task_files.append(task_file_figures)
 
-        # Fill in the template
+        self.task_files_ = task_files
+
+    def generate_report(self, out_file=None):
+        """Generate the report."""
+        if out_file is None:
+            if self.session_id:
+                out_file = f"sub-{self.subject_id}_ses-{self.session_id}_executive_summary.html"
+            else:
+                out_file = f"sub-{self.subject_id}_executive_summary.html"
+
+            out_file = os.path.join(self.html_path, out_file)
 
         def include_file(name):
             return Markup(loader.get_source(environment, name)[0])
@@ -213,11 +219,11 @@ class ExecutiveSummary(object):
         template = environment.get_template("template_pregen_brainsprite.html.jinja")
 
         html = template.render(
-            subject=self.subject_id,
-            session="ses-01",
-            structural_files=structural_files,
-            concatenated_rest_files=concatenated_rest_files,
-            task_files=task_files,
+            subject=f"sub-{self.subject_id}",
+            session=f"ses-{self.session_id}",
+            structural_files=self.structural_files_,
+            concatenated_rest_files=self.concatenated_rest_files_,
+            task_files=self.task_files_,
         )
 
         self.write_html(html, out_file)
