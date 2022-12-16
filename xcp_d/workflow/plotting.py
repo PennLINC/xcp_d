@@ -156,17 +156,17 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
-    if not cifti:
-        nlin2009casym_brain_mask = str(
-            get_template(
-                "MNI152NLin2009cAsym",
-                resolution=2,
-                desc="brain",
-                suffix="mask",
-                extension=[".nii", ".nii.gz"],
-            )
+    nlin2009casym_brain_mask = str(
+        get_template(
+            "MNI152NLin2009cAsym",
+            resolution=2,
+            desc="brain",
+            suffix="mask",
+            extension=[".nii", ".nii.gz"],
         )
+    )
 
+    if not cifti:
         # We need the BOLD mask in T1w and standard spaces for QC metric calculation.
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
@@ -256,7 +256,7 @@ def init_qc_report_wf(
             (inputnode, get_mni_to_bold_xforms, [
                 ("preprocessed_bold_file", "bold_file"),
                 ("template_to_t1w", "template_to_t1w"),
-                ("t1w_to_native_xform", "t1w_to_native"),
+                ("t1w_to_native", "t1w_to_native"),
             ]),
         ])
         # fmt:on
