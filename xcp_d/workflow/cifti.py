@@ -249,6 +249,7 @@ produced by the regression.
     )
 
     inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.ref_file = run_data["boldref"]
     inputnode.inputs.custom_confounds_file = custom_confounds_file
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
@@ -413,6 +414,9 @@ produced by the regression.
         (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
         ]),
+        (regression_wf, qc_report_wf, [
+            ("res_file", "inputnode.cleaned_unfiltered_file"),
+        ]),
     ])
     # fmt:on
 
@@ -539,7 +543,10 @@ produced by the regression.
     # qc report
     workflow.connect([
         (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
-        (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
+        (censor_scrub, qc_report_wf, [
+            ("tmask", "inputnode.tmask"),
+            ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
     ])
 
     # write derivatives
@@ -644,11 +651,9 @@ produced by the regression.
     # executive summary workflow
     if dcan_qc:
         executivesummary_wf = init_execsummary_wf(
-            TR=TR,
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            cifti=True,
             mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
         )
@@ -661,16 +666,7 @@ produced by the regression.
             # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
                 ('bold_file', 'inputnode.bold_file'),
-            ]),
-            (regression_wf, executivesummary_wf, [
-                ('res_file', 'inputnode.regressed_data'),
-            ]),
-            (filtering_wf, executivesummary_wf, [
-                ('filtered_file', 'inputnode.residual_data'),
-            ]),
-            (censor_scrub, executivesummary_wf, [
-                ('filtered_motion', 'inputnode.filtered_motion'),
-                ('tmask', 'inputnode.tmask'),
+                ("ref_file", "inputnode.boldref"),
             ]),
         ])
         # fmt:on

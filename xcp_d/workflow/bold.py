@@ -453,6 +453,9 @@ produced by the regression.
             ("template_to_t1w", "inputnode.template_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),
         ]),
+        (regression_wf, qc_report_wf, [
+            ("res_file", "inputnode.cleaned_unfiltered_file"),
+        ]),
     ])
     # fmt:on
 
@@ -595,7 +598,10 @@ produced by the regression.
     # qc report
     workflow.connect([
         (filtering_wf, qc_report_wf, [('filtered_file', 'inputnode.cleaned_file')]),
-        (censor_scrub, qc_report_wf, [('tmask', 'inputnode.tmask')]),
+        (censor_scrub, qc_report_wf, [
+            ('tmask', 'inputnode.tmask'),
+            ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
     ])
     # fmt:on
 
@@ -703,13 +709,12 @@ produced by the regression.
     # executive summary workflow
     if dcan_qc:
         executivesummary_wf = init_execsummary_wf(
-            TR=TR,
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            cifti=False,
             mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
+            name="execsummary_wf",
         )
 
         # fmt:off
@@ -719,39 +724,9 @@ produced by the regression.
             (inputnode, executivesummary_wf, [
                 ("bold_file", "inputnode.bold_file"),
                 ("ref_file", "inputnode.boldref_file"),
-                ("bold_mask", "inputnode.mask"),
-                ("template_to_t1w", "inputnode.template_to_t1w"),
-                ("t1w_to_native", "inputnode.t1w_to_native_xform"),
-            ]),
-            (regression_wf, executivesummary_wf, [
-                ("res_file", "inputnode.regressed_data"),
-            ]),
-            (filtering_wf, executivesummary_wf, [
-                ("filtered_file", "inputnode.residual_data"),
-            ]),
-            (censor_scrub, executivesummary_wf, [
-                ("filtered_motion", "inputnode.filtered_motion"),
-                ("tmask", "inputnode.tmask"),
             ]),
         ])
         # fmt:on
-
-        if dummy_scans:
-            # fmt:off
-            workflow.connect([
-                (remove_dummy_scans, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (inputnode, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
 
     return workflow
 

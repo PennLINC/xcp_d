@@ -9,6 +9,7 @@ from templateflow.api import get as get_template
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.interfaces.surfplotting import PlotSVGData
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
@@ -26,6 +27,7 @@ def init_qc_report_wf(
     mem_gb,
     omp_nthreads,
     cifti,
+    dcan_qc,
     name="qc_report_wf",
 ):
     """Generate quality control figures and a QC file.
@@ -48,6 +50,7 @@ def init_qc_report_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
                 cifti=False,
+                dcan_qc=True,
                 name="qc_report_wf",
             )
 
@@ -64,6 +67,8 @@ def init_qc_report_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
+    dcan_qc : bool
+        Whether to generate figures for the executive summary or not.
     %(name)s
         Default is "qc_report_wf".
 
@@ -71,16 +76,21 @@ def init_qc_report_wf(
     ------
     preprocessed_bold_file
         Used for naming outputs and finding related files.
+    cleaned_unfiltered_file
+    cleaned_file
     boldref
+        Only used with non-CIFTI data.
     bold_mask
+        Only used with non-CIFTI data.
     t1w_mask
+        Only used with non-CIFTI data.
     %(template_to_t1w)s
         Only used with non-CIFTI data.
     t1w_to_native
         Only used with non-CIFTI data.
     %(dummy_scans)s
-    cleaned_file
     tmask
+    filtered_motion
 
     Outputs
     -------
@@ -92,14 +102,17 @@ def init_qc_report_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold_file",
-                "boldref",
+                "cleaned_file",
+                "cleaned_unfiltered_file",
+                "dummy_scans",
+                "filtered_motion",
+                "tmask",
+                # nifti-only inputs
                 "bold_mask",
                 "t1w_mask",
+                "boldref",
                 "template_to_t1w",
                 "t1w_to_native",
-                "dummy_scans",
-                "cleaned_file",
-                "tmask",
             ],
         ),
         name="inputnode",
@@ -112,16 +125,6 @@ def init_qc_report_wf(
             ],
         ),
         name="outputnode",
-    )
-
-    brain_mask_template = str(
-        get_template(
-            "MNI152NLin2009cAsym",
-            resolution=2,
-            desc="brain",
-            suffix="mask",
-            extension=[".nii", ".nii.gz"],
-        )
     )
 
     censor_report = pe.Node(
@@ -150,6 +153,16 @@ def init_qc_report_wf(
     # fmt:on
 
     if not cifti:
+        nlin2009casym_brain_mask = str(
+            get_template(
+                "MNI152NLin2009cAsym",
+                resolution=2,
+                desc="brain",
+                suffix="mask",
+                extension=[".nii", ".nii.gz"],
+            )
+        )
+
         # We need the BOLD mask in T1w and standard spaces for QC metric calculation.
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
@@ -202,7 +215,7 @@ def init_qc_report_wf(
         warp_boldmask_to_mni = pe.Node(
             ApplyTransforms(
                 dimension=3,
-                reference_image=brain_mask_template,
+                reference_image=nlin2009casym_brain_mask,
                 interpolation="NearestNeighbor",
             ),
             name="warp_boldmask_to_mni",
@@ -222,8 +235,10 @@ def init_qc_report_wf(
         ])
         # fmt:on
 
-        # Obtain transforms for QC report
-        get_std2native_transform = pe.Node(
+        # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
+        # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
+        # Given that xcp-d doesn't process native-space data, this transform will never be used.
+        get_mni_to_bold_xforms = pe.Node(
             Function(
                 input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
                 output_names=["transform_list"],
@@ -234,13 +249,24 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, get_std2native_transform, [
+            (inputnode, get_mni_to_bold_xforms, [
                 ("preprocessed_bold_file", "bold_file"),
                 ("template_to_t1w", "template_to_t1w"),
-                ("t1w_to_native", "t1w_to_native"),
+                ("t1w_to_native_xform", "t1w_to_native"),
             ]),
         ])
         # fmt:on
+
+        # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
+        dseg_file = str(
+            get_template(
+                "MNI152NLin2009cAsym",
+                resolution=1,
+                desc="carpet",
+                suffix="dseg",
+                extension=[".nii", ".nii.gz"],
+            )
+        )
 
         # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
         MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
@@ -263,44 +289,33 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (get_std2native_transform, add_xform_to_nlin6asym, [("transform_list", "in1")]),
+            (get_mni_to_bold_xforms, add_xform_to_nlin6asym, [("transform_list", "in1")]),
         ])
         # fmt:on
 
-        # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
-        dseg_file = str(
-            get_template(
-                "MNI152NLin2009cAsym",
-                resolution=1,
-                desc="carpet",
-                suffix="dseg",
-                extension=[".nii", ".nii.gz"],
-            )
-        )
-
-        # Resample segmentation file from MNI152NLin2009cAsym to BOLD space.
-        resample_parc = pe.Node(
+        # Transform MNI152NLin2009cAsym dseg file to the same space as the BOLD data.
+        warp_dseg_to_bold = pe.Node(
             ApplyTransforms(
                 dimension=3,
                 input_image=dseg_file,
                 interpolation="MultiLabel",
             ),
-            name="resample_parc",
+            name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=mem_gb * 3 * omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_parc, [("boldref", "reference_image")]),
-            (add_xform_to_nlin6asym, resample_parc, [("out", "transforms")]),
+            (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
+            (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
         ])
         # fmt:on
 
     qcreport = pe.Node(
         QCPlot(
             TR=TR,
-            template_mask=brain_mask_template,
+            template_mask=nlin2009casym_brain_mask,
             head_radius=head_radius,
         ),
         name="qc_report",
@@ -322,6 +337,79 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
+    if dcan_qc:
+        # Generate preprocessing and postprocessing carpet plots.
+        plot_executive_summary_carpets = pe.Node(
+            PlotSVGData(TR=TR),
+            name="plot_carpets",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_executive_summary_carpets, [
+                ("preprocessed_bold_file", "rawdata")
+                ("cleaned_unfiltered_file", "regressed_data"),  # need to get
+                ("cleaned_file", "residual_data"),
+                ("filtered_motion", "filtered_motion"),  # need to get
+                ("tmask", "tmask"),
+                ("dummy_scans", "dummy_scans"),
+            ]),
+        ])
+        # fmt:on
+
+        if not cifti:
+            # fmt:off
+            workflow.connect([
+                (inputnode, plot_executive_summary_carpets, [
+                    ("mask", "mask"),
+                ]),
+                (warp_dseg_to_bold, plot_executive_summary_carpets, [
+                    ("output_image", "seg_data"),
+                ]),
+            ])
+            # fmt:on
+
+        ds_preproc_executive_summary_carpet = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="precarpetplot",
+            ),
+            name="ds_preproc_executive_summary_carpet",
+            run_without_submitting=True,
+        )
+
+        ds_postproc_executive_summary_carpet = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="postcarpetplot",
+            ),
+            name="ds_postproc_executive_summary_carpet",
+            run_without_submitting=True,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_preproc_executive_summary_carpet, [
+                ("preprocessed_bold_file", "source_file"),
+            ]),
+            (inputnode, ds_postproc_executive_summary_carpet, [
+                ("preprocessed_bold_file", "source_file"),
+            ]),
+            (plot_executive_summary_carpets, ds_preproc_executive_summary_carpet, [
+                ("before_process", "in_file"),
+            ]),
+            (plot_executive_summary_carpets, ds_postproc_executive_summary_carpet, [
+                ("after_process", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
     if not cifti:
         # fmt:off
         workflow.connect([
@@ -329,7 +417,7 @@ def init_qc_report_wf(
                 ("t1w_mask", "t1w_mask"),
                 ("bold_mask", "mask_file"),
             ]),
-            (resample_parc, qcreport, [
+            (warp_dseg_to_bold, qcreport, [
                 ("output_image", "seg_file"),
             ]),
             (warp_boldmask_to_t1w, qcreport, [

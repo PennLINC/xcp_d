@@ -8,20 +8,12 @@ from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import (
-    BrainPlotx,
-    PlotImage,
-    PlotSVGData,
-    RibbontoStatmap,
-)
+from xcp_d.interfaces.surfplotting import BrainPlotx, PlotImage, RibbontoStatmap
 from xcp_d.utils.bids import get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
-from xcp_d.utils.utils import get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -159,9 +151,7 @@ def init_brainsprite_wf(
 def init_execsummary_wf(
     bold_file,
     output_dir,
-    TR,
     layout,
-    cifti,
     mem_gb,
     omp_nthreads,
     name="execsummary_wf",
@@ -173,10 +163,7 @@ def init_execsummary_wf(
     bold_file
         BOLD data before post-processing.
     %(output_dir)s
-    TR
     layout
-    %(cifti)s
-        The dseg file will not be loaded or transformed to BOLD space for CIFTI data.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -189,25 +176,6 @@ def init_execsummary_wf(
     boldref_file
         The boldref file associated with the BOLD file.
         This should only be defined (and used) for NIFTI inputs.
-    regressed_data
-        BOLD data after regression, but before filtering.
-    residual_data
-        BOLD data after regression and filtering.
-    filtered_motion
-        File containing the filtered motion parameters used for censoring.
-    tmask
-        File containing the temporal mask used for censoring.
-    mask
-        This should only be defined (and used) for NIFTI inputs.
-    %(template_to_t1w)s
-        For NIFTI data, this is used to warp the MNI152NLin6-space tissue-type segmentation
-        file to T1w or native space, which should never happen.
-        This should only be defined (and used) for NIFTI inputs.
-    t1w_to_native_xform
-        For NIFTI data, this is used to warp the MNI152NLin6-space tissue-type segmentation
-        file to T1w or native space, which should never happen.
-        This should only be defined for NIFTI inputs.
-    %(dummy_scans)s
     """
     workflow = Workflow(name=name)
 
@@ -215,16 +183,7 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
-                "regressed_data",
-                "residual_data",
-                "filtered_motion",
-                "tmask",
-                "dummy_scans",
                 "boldref_file",  # a nifti boldref
-                # nifti-only inputs
-                "mask",
-                "template_to_t1w",
-                "t1w_to_native_xform",
             ]
         ),
         name="inputnode",
@@ -257,113 +216,6 @@ def init_execsummary_wf(
     ])
     # fmt:on
 
-    if not cifti:
-        # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
-        # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
-        # Given that xcp-d doesn't process native-space data, this transform will never be used.
-        get_mni_to_bold_xforms = pe.Node(
-            Function(
-                input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
-                output_names=["transform_list"],
-                function=get_std2bold_xforms,
-            ),
-            name="get_std2native_transform",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, get_mni_to_bold_xforms, [
-                ("template_to_t1w", "template_to_t1w"),
-                ("bold_file", "bold_file"),
-                ("t1w_to_native_xform", "t1w_to_native"),
-            ]),
-        ])
-        # fmt:on
-
-        # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
-        dseg_file = str(
-            get_template(
-                "MNI152NLin2009cAsym",
-                resolution=1,
-                desc="carpet",
-                suffix="dseg",
-                extension=[".nii", ".nii.gz"],
-            )
-        )
-
-        # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
-        MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-            get_template(
-                template="MNI152NLin6Asym",
-                mode="image",
-                suffix="xfm",
-                extension=".h5",
-                **{"from": "MNI152NLin2009cAsym"},
-            ),
-        )
-
-        # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
-        # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
-        add_xform_to_nlin6asym = pe.Node(
-            niu.Merge(2),
-            name="add_xform_to_nlin6asym",
-        )
-        add_xform_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
-
-        # fmt:off
-        workflow.connect([
-            (get_mni_to_bold_xforms, add_xform_to_nlin6asym, [("transform_list", "in1")]),
-        ])
-        # fmt:on
-
-        # Transform MNI152NLin2009cAsym dseg file to the same space as the BOLD data.
-        warp_dseg_to_bold = pe.Node(
-            ApplyTransformsx(
-                dimension=3,
-                input_image=dseg_file,
-                interpolation="MultiLabel",
-            ),
-            name="warp_dseg_to_bold",
-            n_procs=omp_nthreads,
-            mem_gb=mem_gb * 3 * omp_nthreads,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_dseg_to_bold, [("boldref_file", "reference_image")]),
-            (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
-        ])
-        # fmt:on
-
-    # Generate preprocessing and postprocessing carpet plots.
-    plot_carpets = pe.Node(
-        PlotSVGData(TR=TR),
-        name="plot_carpets",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, plot_carpets, [
-            ("filtered_motion", "filtered_motion"),
-            ("regressed_data", "regressed_data"),
-            ("residual_data", "residual_data"),
-            ("bold_file", "rawdata"),
-            ("tmask", "tmask"),
-            ("dummy_scans", "dummy_scans"),
-        ]),
-    ])
-    # fmt:on
-
-    if not cifti:
-        # fmt:off
-        workflow.connect([
-            (inputnode, plot_carpets, [("mask", "mask")]),
-            (warp_dseg_to_bold, plot_carpets, [("output_image", "seg_data")]),
-        ])
-        # fmt:on
-
     # Write out the figures.
     ds_boldref_figure = pe.Node(
         DerivativesDataSink(
@@ -380,37 +232,6 @@ def init_execsummary_wf(
     workflow.connect([
         (inputnode, ds_boldref_figure, [("bold_file", "source_file")]),
         (plot_boldref, ds_boldref_figure, [("out_file", "in_file")]),
-    ])
-    # fmt:on
-
-    ds_preproc_carpet = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="precarpetplot",
-        ),
-        name="ds_preproc_carpet",
-        run_without_submitting=True,
-    )
-
-    ds_postproc_carpet = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="postcarpetplot",
-        ),
-        name="ds_postproc_carpet",
-        run_without_submitting=True,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_preproc_carpet, [("bold_file", "source_file")]),
-        (inputnode, ds_postproc_carpet, [("bold_file", "source_file")]),
-        (plot_carpets, ds_preproc_carpet, [("before_process", "in_file")]),
-        (plot_carpets, ds_postproc_carpet, [("after_process", "in_file")]),
     ])
     # fmt:on
 
