@@ -654,8 +654,7 @@ produced by the regression.
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
+            name="execsummary_wf",
         )
 
         # fmt:off

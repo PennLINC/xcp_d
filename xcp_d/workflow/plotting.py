@@ -76,8 +76,12 @@ def init_qc_report_wf(
     ------
     preprocessed_bold_file
         Used for naming outputs and finding related files.
+        Also used for carpet plots.
     cleaned_unfiltered_file
+        Used for carpet plots.
+        Only used if dcan_qc is True.
     cleaned_file
+        Used for carpet plots.
     boldref
         Only used with non-CIFTI data.
     bold_mask
@@ -349,10 +353,10 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_executive_summary_carpets, [
-                ("preprocessed_bold_file", "rawdata")
-                ("cleaned_unfiltered_file", "regressed_data"),  # need to get
+                ("preprocessed_bold_file", "rawdata"),
+                ("cleaned_unfiltered_file", "regressed_data"),
                 ("cleaned_file", "residual_data"),
-                ("filtered_motion", "filtered_motion"),  # need to get
+                ("filtered_motion", "filtered_motion"),
                 ("tmask", "tmask"),
                 ("dummy_scans", "dummy_scans"),
             ]),

@@ -152,8 +152,6 @@ def init_execsummary_wf(
     bold_file,
     output_dir,
     layout,
-    mem_gb,
-    omp_nthreads,
     name="execsummary_wf",
 ):
     """Generate the figures for an executive summary.
@@ -164,8 +162,6 @@ def init_execsummary_wf(
         BOLD data before post-processing.
     %(output_dir)s
     layout
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
 
     Inputs
