@@ -242,19 +242,47 @@ def init_qc_report_wf(
         ])
         # fmt:on
 
-        # Resample discrete segmentation for QCPlot into the appropriate space.
+        # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
+        MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
+            get_template(
+                template="MNI152NLin6Asym",
+                mode="image",
+                suffix="xfm",
+                extension=".h5",
+                **{"from": "MNI152NLin2009cAsym"},
+            ),
+        )
+
+        # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
+        # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
+        add_xform_to_nlin6asym = pe.Node(
+            niu.Merge(2),
+            name="add_xform_to_nlin6asym",
+        )
+        add_xform_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
+
+        # fmt:off
+        workflow.connect([
+            (get_std2native_transform, add_xform_to_nlin6asym, [("transform_list", "in1")]),
+        ])
+        # fmt:on
+
+        # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
+        dseg_file = str(
+            get_template(
+                "MNI152NLin2009cAsym",
+                resolution=1,
+                desc="carpet",
+                suffix="dseg",
+                extension=[".nii", ".nii.gz"],
+            )
+        )
+
+        # Resample segmentation file from MNI152NLin2009cAsym to BOLD space.
         resample_parc = pe.Node(
             ApplyTransforms(
                 dimension=3,
-                input_image=str(
-                    get_template(
-                        "MNI152NLin2009cAsym",
-                        resolution=1,
-                        desc="carpet",
-                        suffix="dseg",
-                        extension=[".nii", ".nii.gz"],
-                    )
-                ),
+                input_image=dseg_file,
                 interpolation="MultiLabel",
             ),
             name="resample_parc",
@@ -265,7 +293,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, resample_parc, [("boldref", "reference_image")]),
-            (get_std2native_transform, resample_parc, [("transform_list", "transforms")]),
+            (add_xform_to_nlin6asym, resample_parc, [("out", "transforms")]),
         ])
         # fmt:on
 
