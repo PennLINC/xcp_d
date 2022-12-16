@@ -186,11 +186,13 @@ def generate_reports(
                         "figures/*_bold.svg",
                     ),
                 )[0]
-                ExecutiveSummary(
+                exsumm = ExecutiveSummary(
                     html_path=str(Path(output_dir)) + "/xcp_d/",
                     subject_id=subject_label,
                     session_id=_getsesid(brainplotfile),
                 )
+                exsumm.collect_inputs()
+                exsumm.generate_report()
 
         print("Reports generated successfully")
     return errno
