@@ -21,7 +21,7 @@ from xcp_d.interfaces.surfplotting import (
 from xcp_d.utils.bids import find_nifti_boldref_file, get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
-from xcp_d.utils.utils import _t12native, get_std2bold_xforms
+from xcp_d.utils.utils import get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -204,6 +204,10 @@ def init_execsummary_wf(
         file to T1w or native space, which should never happen.
 
         For CIFTI data, this is used to identify the appropriate boldref file to plot.
+    t1w_to_native_xform
+        For NIFTI data, this is used to warp the MNI152NLin6-space tissue-type segmentation
+        file to T1w or native space, which should never happen.
+        This should only be defined for NIFTI inputs.
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
@@ -221,6 +225,7 @@ def init_execsummary_wf(
                 # nifti-only inputs
                 "boldref_file",
                 "mask",
+                "t1w_to_native_xform",
             ]
         ),
         name="inputnode",
@@ -228,6 +233,7 @@ def init_execsummary_wf(
     inputnode.inputs.bold_file = bold_file
 
     # Get bb_registration_file prefix from fmriprep
+    # TODO: Replace with interfaces.
     all_files = list(layout.get_files())
     current_bold_file = os.path.basename(bold_file)
     if "_space" in current_bold_file:
@@ -248,24 +254,6 @@ def init_execsummary_wf(
 
     if not cifti:
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
-
-        # Get the transform file to native space
-        # Given that xcp-d doesn't process native-space data, this transform will never be used.
-        find_t1_to_native = pe.Node(
-            Function(
-                function=_t12native,
-                input_names=["fname"],
-                output_names=["t1w_to_native_xform"],
-            ),
-            name="find_t1_to_native",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, find_t1_to_native, [("bold_file", "fname")]),
-        ])
-        # fmt:on
-
         # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
         # Given that xcp-d doesn't process native-space data, this transform will never be used.
         get_mni_to_bold_xforms = pe.Node(
@@ -282,8 +270,6 @@ def init_execsummary_wf(
             (inputnode, get_mni_to_bold_xforms, [
                 ("template_to_t1w", "template_to_t1w"),
                 ("bold_file", "bold_file"),
-            ]),
-            (find_t1_to_native, get_mni_to_bold_xforms, [
                 ("t1w_to_native_xform", "t1w_to_native"),
             ]),
         ])

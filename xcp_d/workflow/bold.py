@@ -721,6 +721,7 @@ produced by the regression.
                 ("ref_file", "inputnode.boldref_file"),
                 ("bold_mask", "inputnode.mask"),
                 ("template_to_t1w", "inputnode.template_to_t1w"),
+                ("t1w_to_native", "inputnode.t1w_to_native_xform"),
             ]),
             (regression_wf, executivesummary_wf, [
                 ("res_file", "inputnode.regressed_data"),
