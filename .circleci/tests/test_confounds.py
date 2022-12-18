@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 from nilearn.glm.first_level import make_first_level_design_matrix
 
 from xcp_d.utils.confounds import load_confound_matrix
@@ -51,6 +52,16 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert "condition01" in combined_confounds.columns
     assert "condition02" in combined_confounds.columns
 
+    custom_confounds = load_confound_matrix(
+        params="custom",
+        img_file=bold_file,
+        custom_confounds=custom_confounds_file,
+    )
+    # We expect 2 (one for each condition in custom confounds)
+    assert combined_confounds.shape == (N_VOLUMES, 26)
+    assert "condition01" in combined_confounds.columns
+    assert "condition02" in combined_confounds.columns
+
 
 def test_confounds_strategies(fmriprep_with_freesurfer_data):
     """Ensure that xcp_d loads the right confounds."""
@@ -78,3 +89,9 @@ def test_confounds_strategies(fmriprep_with_freesurfer_data):
 
     confounds_df = load_confound_matrix(params="aroma_gsr", img_file=bold_file)
     assert confounds_df.shape == (N_VOLUMES, 49)
+
+    with pytest.raises(ValueError, match="Unrecognized parameter string"):
+        load_confound_matrix(params="test", img_file=bold_file)
+
+    with pytest.raises(ValueError):
+        load_confound_matrix(params="custom", img_file=bold_file)
