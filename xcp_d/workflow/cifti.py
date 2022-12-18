@@ -666,7 +666,7 @@ produced by the regression.
             # because T1w is used as name source.
             (inputnode, executivesummary_wf, [
                 ('bold_file', 'inputnode.bold_file'),
-                ("ref_file", "inputnode.boldref"),
+                ("ref_file", "inputnode.boldref_file"),
             ]),
         ])
         # fmt:on
