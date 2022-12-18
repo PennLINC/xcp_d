@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from nilearn.glm.first_level import make_first_level_design_matrix
 
-from xcp_d.utils.confounds import load_confound_matrix
+from xcp_d.utils.confounds import describe_regression, load_confound_matrix
 
 
 def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -62,8 +62,61 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert "condition01" in combined_confounds.columns
     assert "condition02" in combined_confounds.columns
 
+    desc = describe_regression(
+        params="24P",
+        custom_confounds_file=custom_confounds_file,
+    )
+    assert isinstance(desc, str)
+    assert "custom confounds were also included" in desc
+    assert "24 nuisance regressors were selected" in desc
 
-def test_confounds_strategies(fmriprep_with_freesurfer_data):
+    desc = describe_regression(
+        params="custom",
+        custom_confounds_file=custom_confounds_file,
+    )
+    assert isinstance(desc, str)
+    assert "A custom set of regressors was used" in desc
+
+
+def test_describe_regression():
+    """Ensure that xcp_d loads the right confounds."""
+    desc = describe_regression(params="24P", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "24 nuisance regressors were selected" in desc
+
+    desc = describe_regression(params="27P", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "27 nuisance regressors were selected" in desc
+
+    desc = describe_regression(params="36P", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "36 nuisance regressors were selected" in desc
+
+    desc = describe_regression(params="acompcor", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "The top 5 aCompCor principal components" in desc
+
+    desc = describe_regression(params="acompcor_gsr", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "The top 5 aCompCor principal components" in desc
+
+    desc = describe_regression(params="aroma", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "AROMA motion-labeled components" in desc
+
+    desc = describe_regression(params="aroma_gsr", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "AROMA motion-labeled components" in desc
+
+    with pytest.raises(ValueError, match="Unrecognized parameter string"):
+        describe_regression(params="test", custom_confounds_file=None)
+
+    desc = describe_regression(params="custom", custom_confounds_file=None)
+    assert isinstance(desc, str)
+    assert "A custom set of regressors was used" in desc
+
+
+def test_load_confounds(fmriprep_with_freesurfer_data):
     """Ensure that xcp_d loads the right confounds."""
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
 
