@@ -651,11 +651,11 @@ produced by the regression.
 
     # executive summary workflow
     if dcan_qc:
-        executivesummary_wf = init_execsummary_wf(
+        executive_summary_wf = init_execsummary_wf(
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            name="execsummary_wf",
+            name="executive_summary_wf",
         )
 
         # fmt:off
@@ -664,29 +664,12 @@ produced by the regression.
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
-            (inputnode, executivesummary_wf, [
+            (inputnode, executive_summary_wf, [
                 ('bold_file', 'inputnode.bold_file'),
                 ("ref_file", "inputnode.boldref_file"),
             ]),
         ])
         # fmt:on
-
-        if dummy_scans:
-            # fmt:off
-            workflow.connect([
-                (remove_dummy_scans, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ])
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (inputnode, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
 
     return workflow
 

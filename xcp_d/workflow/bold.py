@@ -709,18 +709,18 @@ produced by the regression.
 
     # executive summary workflow
     if dcan_qc:
-        executivesummary_wf = init_execsummary_wf(
+        executive_summary_wf = init_execsummary_wf(
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            name="execsummary_wf",
+            name="executive_summary_wf",
         )
 
         # fmt:off
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
-            (inputnode, executivesummary_wf, [
+            (inputnode, executive_summary_wf, [
                 ("bold_file", "inputnode.bold_file"),
                 ("ref_file", "inputnode.boldref_file"),
             ]),
