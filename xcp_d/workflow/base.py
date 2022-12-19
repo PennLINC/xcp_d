@@ -9,7 +9,6 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
-import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -332,7 +331,11 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
-    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+
+    surface_data, _, _ = collect_surface_data(
+        layout=layout,
+        participant_label=subject_id,
+    )
 
     surface_data, standard_space_surfaces, surfaces_found = collect_surface_data(
         layout=layout,
