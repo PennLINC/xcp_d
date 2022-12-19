@@ -131,3 +131,4 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoised
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_qc.csv
+xcp_d/sub-01_executive_summary.html
