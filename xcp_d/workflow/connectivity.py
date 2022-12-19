@@ -77,7 +77,14 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["bold_file", "ref_file", "clean_bold", "template_to_t1w", "t1w_to_native"],
+            fields=[
+                "bold_file",
+                "bold_mask",
+                "ref_file",
+                "clean_bold",
+                "template_to_t1w",
+                "t1w_to_native",
+            ],
         ),
         name="inputnode",
     )
@@ -145,7 +152,10 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
                                                    ("template_to_t1w", "template_to_t1w"),
                                                    ("t1w_to_native", "t1w_to_native")]),
         (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
-        (inputnode, nifti_connect, [("clean_bold", "filtered_file")]),
+        (inputnode, nifti_connect, [
+            ("clean_bold", "filtered_file"),
+            ("bold_mask", "mask"),
+        ]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),

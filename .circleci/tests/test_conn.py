@@ -53,6 +53,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     fcon_ts_wf.inputs.inputnode.t1w_to_native = t1w_to_native_xform
     fcon_ts_wf.inputs.inputnode.clean_bold = fake_bold_file
     fcon_ts_wf.inputs.inputnode.bold_file = bold_file
+    fcon_ts_wf.inputs.inputnode.bold_mask = bold_mask
     fcon_ts_wf.inputs.inputnode.ref_file = boldref
     fcon_ts_wf.base_dir = tmp_path_factory.mktemp("fcon_nifti_test_2")
     fcon_ts_wf.run()
@@ -86,7 +87,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     atlas = nb.load(atlas)
 
     # Masking img
-    masker = NiftiLabelsMasker(atlas, smoothing_fwhm=None, standardize=False)
+    masker = NiftiLabelsMasker(atlas, mask_img=bold_mask, smoothing_fwhm=None, standardize=False)
     # Fitting mask
     masker.fit(fake_bold_file)
     signals = masker.transform(fake_bold_file)
