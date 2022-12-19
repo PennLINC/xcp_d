@@ -519,7 +519,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-    else:
+    elif process_surfaces:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
