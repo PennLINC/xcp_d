@@ -66,6 +66,17 @@ class ExecutiveSummary(object):
 
     def collect_inputs(self):
         """Collect inputs."""
+        ANAT_SLICEWISE_PNG_DESCS = [
+            "AxialBasalGangliaPutamen",
+            "AxialInferiorTemporalCerebellum",
+            "AxialSuperiorFrontal",
+            "CoronalCaudateAmygdala",
+            "CoronalOrbitoFrontal",
+            "CoronalPosteriorParietalLingual",
+            "SagittalCorpusCallosum",
+            "SagittalInsulaFrontoTemporal",
+            "SagittalInsulaTemporalHippocampalSulcus",
+        ]
         ANAT_REGISTRATION_DESCS = [
             "AtlasInT1w",
             "T1wInAtlas",
@@ -98,16 +109,24 @@ class ExecutiveSummary(object):
         structural_files = {}
         for modality in ["T1w", "T2w"]:
             structural_files[modality] = {}
+
+            # Get mosaic file for brainsprite.
+            query["desc"] = "mosaic"
             query["suffix"] = modality
-            query["extension"] = ".html"
+            query["extension"] = ".svg"
+            mosaic = self._get_bids_file(query)
+            structural_files[modality]["mosaic"] = mosaic
 
-            brainsprite = self._get_bids_file(query)
-            if brainsprite != "None":
-                with open(brainsprite, "r") as fo:
-                    brainsprite = fo.read()
+            # Get slicewise PNG files for brainsprite.
+            query["extension"] = ".png"
+            structural_files[modality]["slices"] = []
+            for slicewise_png_desc in ANAT_SLICEWISE_PNG_DESCS:
+                query["desc"] = slicewise_png_desc
+                slicewise_pngs = self._get_bids_file(query)
 
-            structural_files[modality]["brainsprite"] = brainsprite
+                structural_files[modality]["slices"].append(slicewise_pngs)
 
+            # Get structural registration files.
             structural_files[modality]["registration_files"] = []
             structural_files[modality]["registration_titles"] = ANAT_REGISTRATION_TITLES
             for registration_desc in ANAT_REGISTRATION_DESCS:

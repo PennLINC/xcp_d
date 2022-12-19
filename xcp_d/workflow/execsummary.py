@@ -8,15 +8,12 @@ from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import (
-    GenerateBrainspriteHTML,
-    PlotImage,
-    PlotSVGData,
-)
+from xcp_d.interfaces.surfplotting import PlotImage, PlotSVGData
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.bids import find_nifti_bold_files
 from xcp_d.utils.doc import fill_doc
@@ -32,281 +29,52 @@ from xcp_d.utils.utils import _t12native, get_std2bold_xforms
 LOGGER = logging.getLogger("nipype.workflow")
 
 
-def init_brainsprite_mini_wf(
-    output_dir,
-    image_type,
-    brainsprite_scene_template,
-    pngs_scene_template,
-    name="brainsprite_mini_wf",
-):
-    """Create an executive summary-style brainsprite file."""
-    workflow = Workflow(name=name)
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "anat_file",
-                "image_type",  # T1w or T2w
-                "lh_wm_surf",
-                "rh_wm_surf",
-                "lh_pial_surf",
-                "rh_pial_surf",
-            ]
-        ),
-        name="inputnode",
-    )
-    inputnode.inputs.image_type = image_type
-
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "scenewise_pngs",
-                "mosaic",
-            ]
-        ),
-        name="outputnode",
-    )
-
-    # Create frame-wise PNGs
-    get_number_of_frames = pe.Node(
-        Function(
-            function=get_n_frames,
-            input_names=["anat_file"],
-            output_names=["frame_numbers"],
-        ),
-        name="get_number_of_frames",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_number_of_frames, [
-            ("anat_file", "anat_file"),
-        ]),
-    ])
-    # fmt:on
-
-    # Modify template scene file with file paths
-    modify_brainsprite_template_scene = pe.MapNode(
-        Function(
-            function=modify_brainsprite_scene_template,
-            input_names=[
-                "slice_number",
-                "anat_file",
-                "rh_pial_file",
-                "lh_pial_file",
-                "rh_white_file",
-                "lh_white_file",
-                "scene_template",
-            ],
-            output_names=["out_file"],
-        ),
-        name="modify_brainsprite_template_scene",
-        iterfield=["slice_number"],
-    )
-    modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, modify_brainsprite_template_scene, [
-            ("anat_file", "anat_file"),
-            ("lh_wm_surf", "lh_white_file"),
-            ("rh_wm_surf", "rh_white_file"),
-            ("lh_pial_surf", "lh_pial_file"),
-            ("rh_pial_surf", "rh_pial_file"),
-        ]),
-        (get_number_of_frames, modify_brainsprite_template_scene, [
-            ("frame_numbers", "slice_number"),
-        ]),
-    ])
-    # fmt:on
-
-    create_framewise_pngs = pe.MapNode(
-        ShowScene(
-            scene_name_or_number=1,
-            image_width=900,
-            image_height=800,
-        ),
-        name="create_framewise_pngs",
-        iterfield=["scene_file"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (modify_brainsprite_template_scene, create_framewise_pngs, [
-            ("out_file", "scene_file"),
-        ]),
-    ])
-    # fmt:on
-
-    # Make mosaic
-    make_mosaic_node = pe.Node(
-        Function(
-            function=make_mosaic,
-            input_names=["png_files"],
-            output_names=["mosaic_file"],
-        ),
-        name="make_mosaic_node",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (create_framewise_pngs, make_mosaic_node, [
-            ("out_file", "png_files"),
-        ]),
-    ])
-    # fmt:on
-
-    ds_mosaic_file = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["desc"],
-            desc="mosaic",
-            datatype="figures",
-            suffix=f"{image_type}w",
-        ),
-        name="ds_mosaic_file",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_mosaic_file, [
-            ("anat_file", "source_file"),
-        ]),
-        (make_mosaic_node, ds_mosaic_file, [
-            ("mosaic_file", "in_file"),
-        ]),
-        (ds_mosaic_file, outputnode, [
-            ("out_file", "mosaic"),
-        ]),
-    ])
-    # fmt:on
-
-    # Start working on the selected PNG images for the button
-    modify_pngs_template_scene = pe.Node(
-        Function(
-            function=modify_pngs_scene_template,
-            input_names=[
-                "anat_file",
-                "rh_pial_file",
-                "lh_pial_file",
-                "rh_white_file",
-                "lh_white_file",
-                "scene_template",
-            ],
-            output_names=["out_file"],
-        ),
-        name="modify_pngs_template_scene",
-    )
-    modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, modify_pngs_template_scene, [
-            ("anat_file", "anat_file"),
-            ("lh_wm_surf", "lh_white_file"),
-            ("rh_wm_surf", "rh_white_file"),
-            ("lh_pial_surf", "lh_pial_file"),
-            ("rh_pial_surf", "rh_pial_file"),
-        ])
-    ])
-    # fmt:on
-
-    # Create specific PNGs for button
-    get_png_scene_names = pe.Node(
-        Function(
-            function=get_png_image_names,
-            output_names=["scene_index", "scene_descriptions"],
-        ),
-        name="get_png_scene_names",
-    )
-
-    create_scenewise_pngs = pe.MapNode(
-        ShowScene(image_width=900, image_height=800),
-        name="create_scenewise_pngs",
-        iterfield=["scene_name_or_number"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (modify_pngs_template_scene, create_scenewise_pngs, [
-            ("out_file", "scene_file"),
-        ]),
-        (get_png_scene_names, create_scenewise_pngs, [
-            ("scene_index", "scene_name_or_number"),
-        ]),
-    ])
-    # fmt:on
-
-    # What about relative paths?
-    # Do I need the HTML file to contain relative paths from itself?
-    # Or from the report HTML file's path?
-    ds_scenewise_pngs = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["desc"],
-            datatype="figures",
-            suffix=f"{image_type}w",
-        ),
-        name="ds_scenewise_pngs",
-        run_without_submitting=False,
-        iterfield=["desc", "in_file"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_scenewise_pngs, [
-            ("anat_file", "source_file"),
-        ]),
-        (get_png_scene_names, ds_scenewise_pngs, [
-            ("scene_descriptions", "desc"),
-        ]),
-        (create_scenewise_pngs, ds_scenewise_pngs, [
-            ("out_file", "in_file"),
-        ]),
-        (ds_scenewise_pngs, outputnode, [
-            ("out_file", "scenewise_pngs"),
-        ]),
-    ])
-    # fmt:on
-
-    return workflow
-
-
 @fill_doc
-def init_brainsprite_wf(
+def init_brainsprite_figures_wf(
     output_dir,
     t2w_available,
     mem_gb,
     omp_nthreads,
-    name="init_brainsprite_wf",
+    name="init_brainsprite_figures_wf",
 ):
-    """Create a brainsprite figure from stuff.
+    """Create mosaic and PNG files for executive summary brainsprite.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.connectivity import init_brainsprite_figures_wf
+
+            wf = init_brainsprite_figures_wf(
+                output_dir=".",
+                t2w_available=True,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="brainsprite_figures_wf",
+            )
 
     Parameters
     ----------
-    %(layout)s
-    %(fmri_dir)s
-    %(subject_id)s
     %(output_dir)s
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
-    %(input_type)s
+    t2w_available : bool
+        True if a T2w image is available.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "init_brainsprite_wf".
+        Default is "init_brainsprite_figures_wf".
 
     Inputs
     ------
     t1w
+        Path to T1w image.
+    t2w
+        Path to T2w image. Optional. Should only be defined if ``t2w_available`` is True.
     lh_wm_surf
     rh_wm_surf
     lh_pial_surf
     rh_pial_surf
     """
-    from pkg_resources import resource_filename as pkgrf
-
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -323,18 +91,6 @@ def init_brainsprite_wf(
         name="inputnode",
     )
 
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "T1w_mosaic",
-                "T1w_scenewise_pngs",
-                "T2w_mosaic",
-                "T2w_scenewise_pngs",
-            ],
-        ),
-        name="outputnode",
-    )
-
     # Load template scene file
     brainsprite_scene_template = pkgrf(
         "xcp_d",
@@ -348,72 +104,195 @@ def init_brainsprite_wf(
         image_types = ["T1"]
 
     for image_type in image_types:
-        brainsprite_mini_wf = init_brainsprite_mini_wf(
-            output_dir=output_dir,
-            image_type=image_type,
-            brainsprite_scene_template=brainsprite_scene_template,
-            pngs_scene_template=pngs_scene_template,
-            name=f"brainsprite_mini_{image_type}_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, brainsprite_mini_wf, [
-                (f"{image_type.lower()}w", "inputnode.anat_file"),
-                ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("rh_pial_surf", "inputnode.rh_pial_surf"),
-            ]),
-            (brainsprite_mini_wf, outputnode, [
-                ("outputnode.mosaic", f"{image_type}w_mosaic"),
-                ("outputnode.scenewise_pngs", f"{image_type}w_scenewise_pngs"),
-            ]),
-        ])
-        # fmt:on
-
-        # Create brainsprite HTMLs, but only append BrainSprite JS to the latter of them.
-        generate_brainsprite_html = pe.Node(
-            GenerateBrainspriteHTML(
-                output_dir=output_dir,
-                image_type=image_type,
-                add_jquery=image_type == image_types[0],
-                add_javascript=image_type == image_types[-1],
+        # Create frame-wise PNGs
+        get_number_of_frames = pe.Node(
+            Function(
+                function=get_n_frames,
+                input_names=["anat_file"],
+                output_names=["frame_numbers"],
             ),
+            name=f"get_number_of_frames_{image_type}",
             mem_gb=mem_gb,
             omp_nthreads=omp_nthreads,
-            name=f"generate_brainsprite_html_{image_type}",
         )
 
         # fmt:off
         workflow.connect([
-            (brainsprite_mini_wf, generate_brainsprite_html, [
-                ("outputnode.mosaic", "mosaic"),
-                ("outputnode.scenewise_pngs", "scenewise_pngs"),
+            (inputnode, get_number_of_frames, [("anat_file", "anat_file")]),
+        ])
+        # fmt:on
+
+        # Modify template scene file with file paths
+        modify_brainsprite_template_scene = pe.MapNode(
+            Function(
+                function=modify_brainsprite_scene_template,
+                input_names=[
+                    "slice_number",
+                    "anat_file",
+                    "rh_pial_file",
+                    "lh_pial_file",
+                    "rh_white_file",
+                    "lh_white_file",
+                    "scene_template",
+                ],
+                output_names=["out_file"],
+            ),
+            name=f"modify_brainsprite_template_scene_{image_type}",
+            iterfield=["slice_number"],
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+        modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, modify_brainsprite_template_scene, [
+                ("anat_file", "anat_file"),
+                ("lh_wm_surf", "lh_white_file"),
+                ("rh_wm_surf", "rh_white_file"),
+                ("lh_pial_surf", "lh_pial_file"),
+                ("rh_pial_surf", "rh_pial_file"),
+            ]),
+            (get_number_of_frames, modify_brainsprite_template_scene, [
+                ("frame_numbers", "slice_number"),
             ]),
         ])
         # fmt:on
 
-        ds_brainsprite_html = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                check_hdr=False,
-                dismiss_entities=["desc"],
-                datatype="figures",
-                desc="brainsprite",
-                suffix=f"{image_type}w",
+        create_framewise_pngs = pe.MapNode(
+            ShowScene(
+                scene_name_or_number=1,
+                image_width=900,
+                image_height=800,
             ),
-            name=f"ds_brainsprite_html_{image_type}",
+            name=f"create_framewise_pngs_{image_type}",
+            iterfield=["scene_file"],
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_brainsprite_html, [
-                (f"{image_type.lower()}w", "source_file"),
+            (modify_brainsprite_template_scene, create_framewise_pngs, [
+                ("out_file", "scene_file"),
             ]),
-            (generate_brainsprite_html, ds_brainsprite_html, [
-                ("out_file", "in_file"),
+        ])
+        # fmt:on
+
+        # Make mosaic
+        make_mosaic_node = pe.Node(
+            Function(
+                function=make_mosaic,
+                input_names=["png_files"],
+                output_names=["mosaic_file"],
+            ),
+            name=f"make_mosaic_{image_type}",
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")]),
+        ])
+        # fmt:on
+
+        ds_mosaic_file = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["desc"],
+                desc="mosaic",
+                datatype="figures",
+                suffix=f"{image_type}w",
+            ),
+            name=f"ds_mosaic_file_{image_type}",
+            run_without_submitting=False,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_mosaic_file, [("anat_file", "source_file")]),
+            (make_mosaic_node, ds_mosaic_file, [("mosaic_file", "in_file")]),
+        ])
+        # fmt:on
+
+        # Start working on the selected PNG images for the button
+        modify_pngs_template_scene = pe.Node(
+            Function(
+                function=modify_pngs_scene_template,
+                input_names=[
+                    "anat_file",
+                    "rh_pial_file",
+                    "lh_pial_file",
+                    "rh_white_file",
+                    "lh_white_file",
+                    "scene_template",
+                ],
+                output_names=["out_file"],
+            ),
+            name=f"modify_pngs_template_scene_{image_type}",
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+        modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, modify_pngs_template_scene, [
+                ("anat_file", "anat_file"),
+                ("lh_wm_surf", "lh_white_file"),
+                ("rh_wm_surf", "rh_white_file"),
+                ("lh_pial_surf", "lh_pial_file"),
+                ("rh_pial_surf", "rh_pial_file"),
+            ])
+        ])
+        # fmt:on
+
+        # Create specific PNGs for button
+        get_png_scene_names = pe.Node(
+            Function(
+                function=get_png_image_names,
+                output_names=["scene_index", "scene_descriptions"],
+            ),
+            name=f"get_png_scene_names_{image_type}",
+        )
+
+        create_scenewise_pngs = pe.MapNode(
+            ShowScene(image_width=900, image_height=800),
+            name=f"create_scenewise_pngs_{image_type}",
+            iterfield=["scene_name_or_number"],
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (modify_pngs_template_scene, create_scenewise_pngs, [
+                ("out_file", "scene_file"),
             ]),
+            (get_png_scene_names, create_scenewise_pngs, [
+                ("scene_index", "scene_name_or_number"),
+            ]),
+        ])
+        # fmt:on
+
+        ds_scenewise_pngs = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["desc"],
+                datatype="figures",
+                suffix=f"{image_type}w",
+            ),
+            name=f"ds_scenewise_pngs_{image_type}",
+            run_without_submitting=False,
+            iterfield=["desc", "in_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_scenewise_pngs, [("anat_file", "source_file")]),
+            (get_png_scene_names, ds_scenewise_pngs, [("scene_descriptions", "desc")]),
+            (create_scenewise_pngs, ds_scenewise_pngs, [("out_file", "in_file")]),
         ])
         # fmt:on
 
