@@ -12,6 +12,7 @@ from nipype.interfaces.base import (
     InputMultiPath,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 from pkg_resources import resource_filename as pkgrf
@@ -171,10 +172,12 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
+    TR = traits.Float(default_value=1, desc="Repetition time")
+
+    # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
     tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
-    TR = traits.Float(default_value=1, desc="Repetition time")
     dummy_scans = traits.Int(
         0,
         usedefault=True,
@@ -215,6 +218,12 @@ class PlotSVGData(SimpleInterface):
             use_ext=False,
         )
 
+        mask_file = self.inputs.mask
+        mask_file = mask_file if isdefined(mask_file) else None
+
+        segmentation_file = self.inputs.seg_data
+        segmentation_file = segmentation_file if isdefined(segmentation_file) else None
+
         self._results["before_process"], self._results["after_process"] = plot_svgx(
             preprocessed_file=self.inputs.rawdata,
             residuals_file=self.inputs.regressed_data,
@@ -222,9 +231,9 @@ class PlotSVGData(SimpleInterface):
             tmask=self.inputs.tmask,
             dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
-            mask=self.inputs.mask,
+            mask=mask_file,
             filtered_motion=self.inputs.filtered_motion,
-            seg_data=self.inputs.seg_data,
+            seg_data=segmentation_file,
             processed_filename=after_process_fn,
             unprocessed_filename=before_process_fn,
         )

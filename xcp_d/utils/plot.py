@@ -589,7 +589,11 @@ def plot_svgx(
     unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
     confoundplotx(
-        time_series=DVARS_timeseries, grid_spec_ts=grid[0], TR=TR, ylabel="DVARS", hide_x=True
+        time_series=DVARS_timeseries,
+        grid_spec_ts=grid[0],
+        TR=TR,
+        ylabel="DVARS",
+        hide_x=True,
     )
     confoundplotx(
         time_series=unprocessed_data_timeseries,
@@ -794,6 +798,7 @@ def plot_carpet(
     atlaslabels : numpy.ndarray, optional
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
+        Unused if ``func`` is a CIFTI.
     detrend : bool, optional
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
@@ -807,8 +812,7 @@ def plot_carpet(
         are .png, .pdf, .svg. If output_file is not None, the plot
         is saved to a file, and the display is closed.
     legend : bool
-        Whether to render the average functional series with ``atlaslabels`` as
-        overlay.
+        Whether to render the average functional series with ``atlaslabels`` as overlay.
     TR : float, optional
         Specify the TR, if specified it uses this value. If left as None,
         # of frames is plotted instead of time.
