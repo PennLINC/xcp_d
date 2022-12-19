@@ -316,7 +316,196 @@ def collect_data(
 
             subj_data[field] = filenames[0]
 
+    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+
     return layout, subj_data
+
+
+def collect_surface_data(layout, participant_label):
+    """Collect surface files from preprocessed derivatives.
+
+    This function will try to collect fsLR-space, 32k-resolution surface files first.
+    If these standard-spave surface files aren't available, it will default to native T1w-space
+    files.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.BIDSLayout`
+        Layout object indexing the preprocessed derivatives.
+    participant_label : :obj:`str`
+        Subject ID.
+
+    Returns
+    -------
+    out_surface_files : :obj:`dict`
+        Dictionary of surface file identifiers and their paths.
+        If the surface files weren't found, then the paths will be Nones.
+    standard_space_surfaces : :obj:`bool`
+        True if standard-space surfaces were found. False if native-space surfaces were found.
+    surfaces_found : :obj:`bool`
+        True if surface files were found at all. False if they were not.
+    """
+    # Surfaces to use for brainsprite and anatomical workflow
+    # The base surfaces can be used to generate the derived surfaces.
+    # The base surfaces may be in native or standard space.
+    surface_queries = {
+        "lh_pial_surf": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "pial",
+        },
+        "rh_pial_surf": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "pial",
+        },
+        "lh_smoothwm_surf": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "smoothwm",
+        },
+        "rh_smoothwm_surf": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "smoothwm",
+        },
+    }
+
+    # First, try to grab the first base surface file in standard space.
+    # If it's not available, switch to native T1w-space data.
+    temp_query = surface_queries["lh_pial_surf"]
+    temp_files = layout.get(
+        return_type="file",
+        subject=participant_label,
+        datatype="anat",
+        space="fsLR",
+        res="32k",
+        extension=".surf.gii",
+        **temp_query,
+    )
+    if len(temp_files) == 0:
+        LOGGER.info("No standard-space surfaces found.")
+        standard_space_surfaces = False
+    else:
+        if len(temp_files) > 1:
+            LOGGER.warning("More than one standard-space surface found.")
+
+        standard_space_surfaces = True
+
+    if standard_space_surfaces:
+        query_extras = {
+            "space": "fsLR",
+            "res": "32k",
+        }
+    else:
+        query_extras = {
+            "space": None,
+        }
+
+    # Find the required files first
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                extension=".surf.gii",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in surface_queries.items()
+    }
+
+    out_surface_files = {}
+    surfaces_found = True
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 1:
+            out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            out_surface_files[dtype] = None
+            surfaces_found = False
+
+        else:
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {surface_queries[dtype]}"
+            )
+
+    # Now let's try finding the optional surfaces
+    # The optional surfaces may be in native or standard space.
+    # We only want HCP-style (desc = hcp) versions of these files.
+    surface_queries = {
+        "lh_midthickness_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "midthickness",
+        },
+        "rh_midthickness_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "midthickness",
+        },
+        "lh_inflated_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "inflated",
+        },
+        "rh_inflated_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "inflated",
+        },
+        "lh_vinflated_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "vinflated",
+        },
+        "rh_vinflated_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "vinflated",
+        },
+    }
+
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                extension=".surf.gii",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in surface_queries.items()
+    }
+
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 1:
+            out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            out_surface_files[dtype] = None
+
+        else:
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {surface_queries[dtype]}"
+            )
+
+    LOGGER.debug(
+        f"Collected surface data:\n"
+        f"{yaml.dump(out_surface_files, default_flow_style=False, indent=4)}"
+    )
+
+    return out_surface_files, standard_space_surfaces, surfaces_found
 
 
 def collect_run_data(layout, input_type, bold_file, cifti=False):

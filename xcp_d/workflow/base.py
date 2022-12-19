@@ -9,7 +9,6 @@ import nibabel as nb
 import numpy as np
 import scipy
 import templateflow
-import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -21,6 +20,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
+    collect_surface_data,
     get_preproc_pipeline_info,
     write_dataset_description,
 )
@@ -331,7 +331,11 @@ def init_subject_wf(
         bids_validate=False,
         cifti=cifti,
     )
-    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+
+    surface_data, _, _ = collect_surface_data(
+        layout=layout,
+        participant_label=subject_id,
+    )
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
@@ -346,6 +350,18 @@ def init_subject_wf(
                 "t1w_seg",
                 "template_to_t1w_xform",
                 "t1w_to_template_xform",
+                # surface files
+                "lh_pial_surf",
+                "rh_pial_surf",
+                "lh_smoothwm_surf",
+                "rh_smoothwm_surf",
+                # hcp-style surface files
+                "lh_midthickness_surf",
+                "rh_midthickness_surf",
+                "lh_inflated_surf",
+                "rh_inflated_surf",
+                "lh_vinflated_surf",
+                "rh_vinflated_surf",
             ],
         ),
         name="inputnode",
@@ -356,6 +372,20 @@ def init_subject_wf(
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
     inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
     inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
+
+    # surface files (required for brainsprite/warp workflows)
+    inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
+    inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
+    inputnode.inputs.lh_smoothwm_surf = surface_data["lh_smoothwm_surf"]
+    inputnode.inputs.rh_smoothwm_surf = surface_data["rh_smoothwm_surf"]
+
+    # optional surface files
+    inputnode.inputs.lh_midthickness_surf = surface_data["lh_midthickness_surf"]
+    inputnode.inputs.rh_midthickness_surf = surface_data["rh_midthickness_surf"]
+    inputnode.inputs.lh_inflated_surf = surface_data["lh_inflated_surf"]
+    inputnode.inputs.rh_inflated_surf = surface_data["rh_inflated_surf"]
+    inputnode.inputs.lh_inflated_surf = surface_data["lh_vinflated_surf"]
+    inputnode.inputs.rh_inflated_surf = surface_data["rh_vinflated_surf"]
 
     workflow = Workflow(name=name)
 
