@@ -28,7 +28,7 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
-from xcp_d.workflow.execsummary import init_brainsprite_wf
+from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -467,7 +467,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # fmt:on
 
     # Plot the ribbon on the brain in a brainsprite figure
-    brainsprite_wf = init_brainsprite_wf(
+    brainsprite_wf = init_brainsprite_figures_wf(
         output_dir=output_dir,
         t2w_available=False,
         omp_nthreads=omp_nthreads,
