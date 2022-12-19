@@ -367,7 +367,7 @@ def init_qc_report_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, plot_executive_summary_carpets, [
-                    ("mask", "mask"),
+                    ("bold_mask", "mask"),
                 ]),
                 (warp_dseg_to_bold, plot_executive_summary_carpets, [
                     ("output_image", "seg_data"),
