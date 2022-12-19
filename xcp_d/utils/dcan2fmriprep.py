@@ -52,6 +52,8 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     assert isinstance(out_dir, str)
     assert isinstance(sub_id, str)
 
+    sub_id_orig = sub_id.replace("sub-", "")
+
     subject_dir_fmriprep = os.path.join(out_dir, sub_id)
 
     # get session ids
@@ -126,65 +128,80 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
-        # NOTE: Why glob? Do we not know the full filenames? Are there multiple files?
-        rh_midthickness_orig = glob.glob(
-            os.path.join(fsaverage_dir_orig, "*R.midthickness.32k_fs_LR.surf.gii")
-        )[0]
+        rh_midthickness_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.R.midthickness.32k_fs_LR.surf.gii",
+        )
         rh_midthickness_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_desc-hcp_midthickness.surf.gii",
         )
         copy_dictionary[rh_midthickness_orig] = [rh_midthickness_fmriprep]
 
-        lh_midthickness_orig = glob.glob(
-            os.path.join(fsaverage_dir_orig, "*L.midthickness.32k_fs_LR.surf.gii")
-        )[0]
+        lh_midthickness_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.L.midthickness.32k_fs_LR.surf.gii",
+        )
         lh_midthickness_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii",
         )
         copy_dictionary[lh_midthickness_orig] = [lh_midthickness_fmriprep]
 
-        rh_inflated_orig = glob.glob(
-            os.path.join(fsaverage_dir_orig, "*R.inflated.32k_fs_LR.surf.gii")
-        )[0]
+        rh_inflated_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.R.inflated.32k_fs_LR.surf.gii",
+        )
         rh_inflated_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_desc-hcp_inflated.surf.gii",
         )
         copy_dictionary[rh_inflated_orig] = [rh_inflated_fmriprep]
 
-        lh_inflated_orig = glob.glob(
-            os.path.join(fsaverage_dir_orig, "*L.inflated.32k_fs_LR.surf.gii")
-        )[0]
+        lh_inflated_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.L.inflated.32k_fs_LR.surf.gii",
+        )
         lh_inflated_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii",
         )
         copy_dictionary[lh_inflated_orig] = [lh_inflated_fmriprep]
 
-        rh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.pial.32k_fs_LR.surf.gii"))[0]
+        rh_pial_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.R.pial.32k_fs_LR.surf.gii",
+        )
         rh_pial_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_pial.surf.gii",
         )
         copy_dictionary[rh_pial_orig] = [rh_pial_fmriprep]
 
-        lh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.pial.32k_fs_LR.surf.gii"))[0]
+        lh_pial_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.L.pial.32k_fs_LR.surf.gii",
+        )
         lh_pial_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_pial.surf.gii",
         )
         copy_dictionary[lh_pial_orig] = [lh_pial_fmriprep]
 
-        rh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.white.32k_fs_LR.surf.gii"))[0]
+        rh_wm_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.R.white.32k_fs_LR.surf.gii",
+        )
         rh_wm_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii",
         )
         copy_dictionary[rh_wm_orig] = [rh_wm_fmriprep]
 
-        lh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.white.32k_fs_LR.surf.gii"))[0]
+        lh_wm_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id_orig}.L.white.32k_fs_LR.surf.gii",
+        )
         lh_wm_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_smoothwm.surf.gii",
@@ -194,9 +211,8 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         print("finished collecting anat files")
 
         # get masks and transforms
-        # NOTE: Why glob? Do we not know the full filenames? Are there multiple files?
-        wmmask = glob.glob(os.path.join(anat_dir_orig, "wm_2mm_*_mask_eroded.nii.gz"))[0]
-        csfmask = glob.glob(os.path.join(anat_dir_orig, "vent_2mm_*_mask_eroded.nii.gz"))[0]
+        wmmask = os.path.join(anat_dir_orig, f"wm_2mm_{sub_id_orig}_mask_eroded.nii.gz")
+        csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id_orig}_mask_eroded.nii.gz")
 
         # NOTE: We're using the white matter mask as a transform. This doesn't make sense.
         t1w_to_native_orig = wmmask
@@ -216,6 +232,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             run_id = "run-" + str(int(re.split(r"(\d+)", task_name)[1]))
 
             # Find original task files
+            # This file is the anatomical brain mask downsampled to 2mm3.
             brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.0.nii.gz")
 
             sbref_orig = os.path.join(task_dir_orig, f"{task_id}_SBRef.nii.gz")
