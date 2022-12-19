@@ -332,11 +332,6 @@ def init_subject_wf(
         cifti=cifti,
     )
 
-    surface_data, _, _ = collect_surface_data(
-        layout=layout,
-        participant_label=subject_id,
-    )
-
     surface_data, standard_space_surfaces, surfaces_found = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
