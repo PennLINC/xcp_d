@@ -54,7 +54,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     sub_id_orig = sub_id.replace("sub-", "")
 
-    volspace = "XXXX"
+    volspace = "MNI152NLin6Asym"
     volspace_ent = f"space-{volspace}"
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_id)
