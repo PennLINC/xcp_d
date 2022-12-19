@@ -316,6 +316,8 @@ def collect_data(
 
             subj_data[field] = filenames[0]
 
+    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+
     return layout, subj_data
 
 
