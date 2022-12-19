@@ -235,7 +235,7 @@ class ExecutiveSummary(object):
         environment.filters["basename"] = os.path.basename
         environment.globals["include_file"] = include_file
 
-        template = environment.get_template("template_pregen_brainsprite.html.jinja")
+        template = environment.get_template("executive_summary.html.jinja")
 
         html = template.render(
             subject=f"sub-{self.subject_id}",
