@@ -40,7 +40,7 @@ def init_brainsprite_figures_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.connectivity import init_brainsprite_figures_wf
+            from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
 
             wf = init_brainsprite_figures_wf(
                 output_dir=".",
