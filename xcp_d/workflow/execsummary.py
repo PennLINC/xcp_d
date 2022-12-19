@@ -100,6 +100,7 @@ def init_brainsprite_figures_wf(
         image_types = ["T1"]
 
     for image_type in image_types:
+        inputnode_anat_name = f"{image_type.lower()}w"
         # Create frame-wise PNGs
         get_number_of_frames = pe.Node(
             Function(
@@ -114,7 +115,7 @@ def init_brainsprite_figures_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, get_number_of_frames, [("anat_file", "anat_file")]),
+            (inputnode, get_number_of_frames, [(inputnode_anat_name, "anat_file")]),
         ])
         # fmt:on
 
@@ -143,7 +144,7 @@ def init_brainsprite_figures_wf(
         # fmt:off
         workflow.connect([
             (inputnode, modify_brainsprite_template_scene, [
-                ("anat_file", "anat_file"),
+                (inputnode_anat_name, "anat_file"),
                 ("lh_smoothwm_surf", "lh_white_file"),
                 ("rh_smoothwm_surf", "rh_white_file"),
                 ("lh_pial_surf", "lh_pial_file"),
@@ -207,7 +208,7 @@ def init_brainsprite_figures_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_mosaic_file, [("anat_file", "source_file")]),
+            (inputnode, ds_mosaic_file, [(inputnode_anat_name, "source_file")]),
             (make_mosaic_node, ds_mosaic_file, [("mosaic_file", "in_file")]),
         ])
         # fmt:on
@@ -235,7 +236,7 @@ def init_brainsprite_figures_wf(
         # fmt:off
         workflow.connect([
             (inputnode, modify_pngs_template_scene, [
-                ("anat_file", "anat_file"),
+                (inputnode_anat_name, "anat_file"),
                 ("lh_smoothwm_surf", "lh_white_file"),
                 ("rh_smoothwm_surf", "rh_white_file"),
                 ("lh_pial_surf", "lh_pial_file"),
@@ -286,7 +287,7 @@ def init_brainsprite_figures_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_scenewise_pngs, [("anat_file", "source_file")]),
+            (inputnode, ds_scenewise_pngs, [(inputnode_anat_name, "source_file")]),
             (get_png_scene_names, ds_scenewise_pngs, [("scene_descriptions", "desc")]),
             (create_scenewise_pngs, ds_scenewise_pngs, [("out_file", "in_file")]),
         ])
