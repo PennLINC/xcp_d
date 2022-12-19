@@ -589,6 +589,12 @@ def main():
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
+    # Track start of workflow with sentry
+    if not opts.notrack:
+        from xcp_d.utils.sentry import start_ping
+
+        start_ping(run_uuid, len(subject_list))
+
     errno = 1  # Default is error exit unless otherwise set
     try:
         xcpd_wf.run(**plugin_settings)
