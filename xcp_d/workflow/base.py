@@ -332,7 +332,7 @@ def init_subject_wf(
         cifti=cifti,
     )
 
-    surface_data, _, _ = collect_surface_data(
+    surface_data, _, surfaces_found = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -466,15 +466,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
-    # Plot the ribbon on the brain in a brainsprite figure
-    brainsprite_wf = init_brainsprite_figures_wf(
-        output_dir=output_dir,
-        t2w_available=False,
-        omp_nthreads=omp_nthreads,
-        mem_gb=5,
-    )
+    if surfaces_found:
+        # Plot the white and pial surfaces on the brain in a brainsprite figure.
+        brainsprite_wf = init_brainsprite_figures_wf(
+            output_dir=output_dir,
+            t2w_available=False,
+            omp_nthreads=omp_nthreads,
+            mem_gb=5,
+        )
 
-    if process_surfaces:
+    if process_surfaces and surfaces_found:
         anatomical_wf = init_anatomical_wf(
             layout=layout,
             fmri_dir=fmri_dir,
@@ -503,7 +504,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ]),
         ])
         # fmt:on
-    else:
+
+    elif surfaces_found:
         # Use native-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
@@ -516,6 +518,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ]),
         ])
         # fmt:on
+
+    else:
+        raise ValueError(
+            "No surfaces found. "
+            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
+        )
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
