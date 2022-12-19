@@ -348,7 +348,7 @@ def init_subject_wf(
                 "t1w",
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
-                "template_to_t1w_xform",
+                "template_to_t1w_xform",  # not used by cifti workflow
                 "t1w_to_template_xform",
                 # surface files
                 "lh_pial_surf",
@@ -537,14 +537,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             (inputnode, bold_postproc_wf, [
                 ('t1w', 'inputnode.t1w'),
                 ('t1w_seg', 'inputnode.t1seg'),
-                ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
             ]),
         ])
         if not cifti:
             workflow.connect([
-                (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
+                (inputnode, bold_postproc_wf, [
+                    ('t1w_mask', 'inputnode.t1w_mask'),
+                    ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
+                ]),
             ])
-
         # fmt:on
 
     # fmt:off

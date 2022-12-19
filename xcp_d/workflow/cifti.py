@@ -140,7 +140,6 @@ def init_ciftipostprocess_wf(
         custom regressors
     t1w
     t1seg
-    %(template_to_t1w)s
     fmriprep_confounds_tsv
 
     References
@@ -242,7 +241,6 @@ produced by the regression.
                 "custom_confounds_file",
                 "t1w",
                 "t1seg",
-                "template_to_t1w",
                 "fmriprep_confounds_tsv",
                 "dummy_scans",
             ],
@@ -251,6 +249,7 @@ produced by the regression.
     )
 
     inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.ref_file = run_data["boldref"]
     inputnode.inputs.custom_confounds_file = custom_confounds_file
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
@@ -406,6 +405,7 @@ produced by the regression.
         head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        dcan_qc=dcan_qc,
         cifti=True,
         name="qc_report_wf",
     )
@@ -414,6 +414,9 @@ produced by the regression.
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
+        ]),
+        (regression_wf, qc_report_wf, [
+            ("res_file", "inputnode.cleaned_unfiltered_file"),
         ]),
     ])
     # fmt:on
@@ -541,7 +544,10 @@ produced by the regression.
     # qc report
     workflow.connect([
         (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
-        (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
+        (censor_scrub, qc_report_wf, [
+            ("tmask", "inputnode.tmask"),
+            ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
     ])
 
     # write derivatives
@@ -645,13 +651,11 @@ produced by the regression.
 
     # executive summary workflow
     if dcan_qc:
-        executivesummary_wf = init_execsummary_wf(
-            TR=TR,
+        executive_summary_wf = init_execsummary_wf(
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            omp_nthreads=omp_nthreads,
-            mem_gb=mem_gbx["timeseries"],
+            name="executive_summary_wf",
         )
 
         # fmt:off
@@ -660,41 +664,12 @@ produced by the regression.
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
-            (inputnode, executivesummary_wf, [
-                ('template_to_t1w', 'inputnode.template_to_t1w'),
-                ('t1w', 'inputnode.t1w'),
-                ('t1seg', 'inputnode.t1seg'),
+            (inputnode, executive_summary_wf, [
                 ('bold_file', 'inputnode.bold_file'),
-            ]),
-            (regression_wf, executivesummary_wf, [
-                ('res_file', 'inputnode.regressed_data'),
-            ]),
-            (filtering_wf, executivesummary_wf, [
-                ('filtered_file', 'inputnode.residual_data'),
-            ]),
-            (censor_scrub, executivesummary_wf, [
-                ('filtered_motion', 'inputnode.filtered_motion'),
-                ('tmask', 'inputnode.tmask'),
+                ("ref_file", "inputnode.boldref_file"),
             ]),
         ])
         # fmt:on
-
-        if dummy_scans:
-            # fmt:off
-            workflow.connect([
-                (remove_dummy_scans, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ])
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (inputnode, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
 
     return workflow
 
