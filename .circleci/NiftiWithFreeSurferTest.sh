@@ -42,7 +42,6 @@ XCPD_CMD="$BASE_XCPD_CMD \
     -vvv \
     --motion-filter-type notch --band-stop-min 12 --band-stop-max 18 \
     --dcan_qc \
-    --warp-surfaces-native2std \
     --nthreads 1 \
     --omp-nthreads 1"
 
