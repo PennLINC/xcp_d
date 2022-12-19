@@ -66,8 +66,8 @@ def init_brainsprite_figures_wf(
         Path to T1w image.
     t2w
         Path to T2w image. Optional. Should only be defined if ``t2w_available`` is True.
-    lh_wm_surf
-    rh_wm_surf
+    lh_smoothwm_surf
+    rh_smoothwm_surf
     lh_pial_surf
     rh_pial_surf
     """
@@ -78,8 +78,8 @@ def init_brainsprite_figures_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "lh_wm_surf",
-                "rh_wm_surf",
+                "lh_smoothwm_surf",
+                "rh_smoothwm_surf",
                 "lh_pial_surf",
                 "rh_pial_surf",
             ],
@@ -144,8 +144,8 @@ def init_brainsprite_figures_wf(
         workflow.connect([
             (inputnode, modify_brainsprite_template_scene, [
                 ("anat_file", "anat_file"),
-                ("lh_wm_surf", "lh_white_file"),
-                ("rh_wm_surf", "rh_white_file"),
+                ("lh_smoothwm_surf", "lh_white_file"),
+                ("rh_smoothwm_surf", "rh_white_file"),
                 ("lh_pial_surf", "lh_pial_file"),
                 ("rh_pial_surf", "rh_pial_file"),
             ]),
@@ -236,8 +236,8 @@ def init_brainsprite_figures_wf(
         workflow.connect([
             (inputnode, modify_pngs_template_scene, [
                 ("anat_file", "anat_file"),
-                ("lh_wm_surf", "lh_white_file"),
-                ("rh_wm_surf", "rh_white_file"),
+                ("lh_smoothwm_surf", "lh_white_file"),
+                ("rh_smoothwm_surf", "rh_white_file"),
                 ("lh_pial_surf", "lh_pial_file"),
                 ("rh_pial_surf", "rh_pial_file"),
             ])
