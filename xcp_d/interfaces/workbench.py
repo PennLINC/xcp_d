@@ -954,3 +954,61 @@ class CiftiCreateDenseScalar(WBCommand):
     input_spec = _CiftiCreateDenseScalarInputSpec
     output_spec = _CiftiCreateDenseScalarOutputSpec
     _cmd = "wb_command -cifti-create-dense-scalar"
+
+
+class _CiftiConvertInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiConvert command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=2,
+        desc="The input file.",
+    )
+    out_file = File(
+        exists=False,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The output file.",
+    )
+    to = traits.Enum(
+        "nifti",
+        "cifti",
+        mandatory=True,
+        position=1,
+        argstr="-to-%s",
+        desc="Convert to something.",
+    )
+    TR = traits.Float(
+        mandatory=False,
+        desc="repetition time in seconds",
+        position=3,
+        argstr="-reset-timepoints %s 0",
+    )
+
+
+class _CiftiConvertOutputSpec(TraitedSpec):
+    """Output specification for the CiftiConvert command."""
+
+    out_file = File(exists=True, desc="The output file.")
+
+
+class CiftiConvert(WBCommand):
+    """Convert between CIFTI and NIFTI file formats.
+
+    Examples
+    --------
+    >>> cifticonvert = CiftiConvert()
+    >>> cifticonvert.inputs.in_file = 'sub-01_task-rest_bold.dscalar.nii'
+    >>> cifticonvert.inputs.out_file = 'sub-01_task-rest_bold.nii.gz'
+    >>> cifticonvert.to = "nifti"
+    >>> cifticonvert.cmdline
+    wb_command -cifti-convert -to-nifti 'sub-01_task-rest_bold.dscalar.nii' \
+        'sub-01_task-rest_bold.nii.gz'
+    """
+
+    input_spec = _CiftiConvertInputSpec
+    output_spec = _CiftiConvertOutputSpec
+    _cmd = "wb_command -cifti-convert"
