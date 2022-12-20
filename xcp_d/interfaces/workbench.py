@@ -966,24 +966,17 @@ class _CiftiConvertInputSpec(CommandLineInputSpec):
         position=2,
         desc="The input file.",
     )
-    out_file = File(
-        exists=False,
-        mandatory=True,
-        argstr="%s",
-        position=0,
-        desc="The output file.",
-    )
-    to = traits.Enum(
-        "nifti",
-        "cifti",
+    target = traits.Enum(
+        "from",
+        "to",
         mandatory=True,
         position=1,
-        argstr="-to-%s",
-        desc="Convert to something.",
+        argstr="-%s-nifti",
+        desc="Convert either to or from nifti.",
     )
     TR = traits.Float(
         mandatory=False,
-        desc="repetition time in seconds",
+        desc="Repetition time in seconds. Used to reset timepoints.",
         position=3,
         argstr="-reset-timepoints %s 0",
     )
@@ -992,7 +985,11 @@ class _CiftiConvertInputSpec(CommandLineInputSpec):
 class _CiftiConvertOutputSpec(TraitedSpec):
     """Output specification for the CiftiConvert command."""
 
-    out_file = File(exists=True, desc="The output file.")
+    out_file = File(
+        exists=True,
+        genfile=True,
+        desc="The output file.",
+    )
 
 
 class CiftiConvert(WBCommand):
@@ -1002,13 +999,28 @@ class CiftiConvert(WBCommand):
     --------
     >>> cifticonvert = CiftiConvert()
     >>> cifticonvert.inputs.in_file = 'sub-01_task-rest_bold.dscalar.nii'
-    >>> cifticonvert.inputs.out_file = 'sub-01_task-rest_bold.nii.gz'
-    >>> cifticonvert.to = "nifti"
+    >>> cifticonvert.target = "to"
     >>> cifticonvert.cmdline
     wb_command -cifti-convert -to-nifti 'sub-01_task-rest_bold.dscalar.nii' \
-        'sub-01_task-rest_bold.nii.gz'
+        'sub-01_task-rest_bold_converted.nii.gz'
     """
 
     input_spec = _CiftiConvertInputSpec
     output_spec = _CiftiConvertOutputSpec
     _cmd = "wb_command -cifti-convert"
+
+    def _gen_filename(self, name):
+        if name == "out_file":
+            temp = os.path.basename(self.inputs.in_file)
+            temp = temp.split(".")[0]
+            if self.inputs.target == "from":
+                # if we want to support other cifti outputs, we'll need to change this.
+                extension = ".dtseries.nii"
+            else:
+                extension = ".nii.gz"
+
+            temp = f"{temp}_converted{extension}"
+            return temp
+
+        else:
+            return None

@@ -486,10 +486,10 @@ produced by the regression.
     ])
     # fmt:on
 
-    if despike:  # If we despike
+    if despike:
         # first, convert the cifti to a nifti
         convert_to_nifti = pe.Node(
-            CiftiConvert(to="nifti"),
+            CiftiConvert(target="to"),
             name="convert_to_nifti",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,
@@ -505,7 +505,7 @@ produced by the regression.
 
         # finally, convert the despiked nifti back to cifti
         convert_to_cifti = pe.Node(
-            CiftiConvert(to="cifti", TR=TR),
+            CiftiConvert(target="from", TR=TR),
             name="convert_to_cifti",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,
