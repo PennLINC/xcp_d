@@ -29,14 +29,7 @@ class ExecutiveSummary(object):
         else:
             self.session_id = None
 
-        images_path = os.path.join(html_path, f"sub-{self.subject_id}", "figures")
-
         self.layout = BIDSLayout(html_path, validate=False, derivatives=True)
-
-        # For the directory where the images used by the HTML are stored,  use
-        # the relative path only, as the HTML will need to access its images
-        # using the relative path.
-        self.images_path = os.path.relpath(images_path, html_path)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
@@ -59,6 +52,7 @@ class ExecutiveSummary(object):
         files = self.layout.get(**query)
         if len(files) == 1:
             found_file = files[0].path
+            found_file = os.path.relpath(found_file, self.html_path)
         else:
             found_file = "None"
 
@@ -113,7 +107,7 @@ class ExecutiveSummary(object):
             # Get mosaic file for brainsprite.
             query["desc"] = "mosaic"
             query["suffix"] = modality
-            query["extension"] = ".svg"
+            query["extension"] = ".png"
             mosaic = self._get_bids_file(query)
             structural_files[modality]["mosaic"] = mosaic
 

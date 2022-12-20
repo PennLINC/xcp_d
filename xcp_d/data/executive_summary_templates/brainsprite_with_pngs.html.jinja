@@ -20,10 +20,13 @@
     {% set image_class = image_type + "pngs" %}
     {% set modal_id = image_type + "_modal" %}
 
-    {{ build_brainsprite(image_type, modal_id, mosaic_file) }}
-    {{ build_cycler(image_class, modal_id, cycler_files) }}
-    {{ build_sprite_loader_script(image_type) }}
-    {{ build_modal_script(image_class, modal_id) }}
+    {# Only render brainsprite if the mosaic file is defined. #}
+    {% if mosaic_file != "None" %}
+        {{ build_brainsprite(image_type, modal_id, mosaic_file) }}
+        {{ build_cycler(image_class, modal_id, cycler_files) }}
+        {{ build_sprite_loader_script(image_type) }}
+        {{ build_modal_script(image_class, modal_id) }}
+    {% endif %}
 
 {% endfor %}
 
