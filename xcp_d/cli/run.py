@@ -87,10 +87,6 @@ class _DeprecatedStoreAction(Action):
         setattr(namespace, self.dest, values)
 
 
-class _DeprecatedStoreAction030(_DeprecatedStoreAction):
-    __version__ = "0.3.0"
-
-
 class _DeprecatedStoreAction040(_DeprecatedStoreAction):
     __version__ = "0.4.0"
 
