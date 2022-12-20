@@ -1,4 +1,6 @@
 """Custom wb_command interfaces."""
+import os
+
 import nibabel as nb
 from nipype import logging
 from nipype.interfaces.base import (
