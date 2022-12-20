@@ -577,8 +577,11 @@ produced by the regression.
 
     # functional connect workflow
     workflow.connect([
-        (downcast_data, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
-                                     ('ref_file', 'inputnode.ref_file')]),
+        (downcast_data, fcon_ts_wf, [
+            ('bold_file', 'inputnode.bold_file'),
+            ("bold_mask", "inputnode.bold_mask"),
+            ('ref_file', 'inputnode.ref_file'),
+        ]),
         (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
