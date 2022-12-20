@@ -87,10 +87,6 @@ class _DeprecatedStoreAction(Action):
         setattr(namespace, self.dest, values)
 
 
-class _DeprecatedStoreAction030(_DeprecatedStoreAction):
-    __version__ = "0.3.0"
-
-
 class _DeprecatedStoreAction040(_DeprecatedStoreAction):
     __version__ = "0.4.0"
 
@@ -588,6 +584,12 @@ def main():
 
     # Clean up master process before running workflow, which may create forks
     gc.collect()
+
+    # Track start of workflow with sentry
+    if not opts.notrack:
+        from xcp_d.utils.sentry import start_ping
+
+        start_ping(run_uuid, len(subject_list))
 
     errno = 1  # Default is error exit unless otherwise set
     try:
