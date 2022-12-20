@@ -1013,16 +1013,15 @@ class CiftiConvert(WBCommand):
 
     def _gen_filename(self, name):
         if name == "out_file":
-            temp = os.path.basename(self.inputs.in_file)
-            temp = temp.split(".")[0]
-            if self.inputs.target == "from":
-                # if we want to support other cifti outputs, we'll need to change this.
-                extension = ".dtseries.nii"
-            else:
-                extension = ".nii.gz"
-
-            temp = f"{temp}_converted{extension}"
-            return temp
-
+            _, fname, ext = split_filename(self.inputs.in_file)
+            # if we want to support other cifti outputs, we'll need to change this.
+            ext = ".dtseries.nii" if self.inputs.target == "from" else ".nii.gz"
+            output = fname + "_converted" + ext
+            return output
         else:
             return None
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
