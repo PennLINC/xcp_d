@@ -132,70 +132,29 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     fsaverage_dir_orig = os.path.join(in_dir, "fsaverage_LR32k")
 
-    # NOTE: Why glob? Do we not know the full filenames? Are there multiple files?
-    rh_midthickness_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*R.midthickness.32k_fs_LR.surf.gii")
-    )[0]
-    rh_midthickness_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-R_desc-hcp_midthickness.surf.gii",
-    )
-    copy_dictionary[rh_midthickness_orig] = [rh_midthickness_fmriprep]
+    SURFACE_DICT = {
+        "R.midthickness": "hemi-R_desc-hcp_midthickness",
+        "L.midthickness": "hemi-L_desc-hcp_midthickness",
+        "R.inflated": "hemi-R_desc-hcp_inflated",
+        "L.inflated": "hemi-L_desc-hcp_inflated",
+        "R.very_inflated": "hemi-R_desc-hcp_vinflated",
+        "L.very_inflated": "hemi-L_desc-hcp_vinflated",
+        "R.pial": "hemi-R_pial",
+        "L.pial": "hemi-L_pial",
+        "R.white": "hemi-R_smoothwm",
+        "L.white": "hemi-L_smoothwm",
+    }
 
-    lh_midthickness_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*L.midthickness.32k_fs_LR.surf.gii")
-    )[0]
-    lh_midthickness_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii",
-    )
-    copy_dictionary[lh_midthickness_orig] = [lh_midthickness_fmriprep]
-
-    rh_inflated_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*R.inflated.32k_fs_LR.surf.gii")
-    )[0]
-    rh_inflated_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-R_desc-hcp_inflated.surf.gii",
-    )
-    copy_dictionary[rh_inflated_orig] = [rh_inflated_fmriprep]
-
-    lh_inflated_orig = glob.glob(
-        os.path.join(fsaverage_dir_orig, "*L.inflated.32k_fs_LR.surf.gii")
-    )[0]
-    lh_inflated_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii",
-    )
-    copy_dictionary[lh_inflated_orig] = [lh_inflated_fmriprep]
-
-    rh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.pial.32k_fs_LR.surf.gii"))[0]
-    rh_pial_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-    )
-    copy_dictionary[rh_pial_orig] = [rh_pial_fmriprep]
-
-    lh_pial_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.pial.32k_fs_LR.surf.gii"))[0]
-    lh_pial_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-    )
-    copy_dictionary[lh_pial_orig] = [lh_pial_fmriprep]
-
-    rh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*R.white.32k_fs_LR.surf.gii"))[0]
-    rh_wm_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii",
-    )
-    copy_dictionary[rh_wm_orig] = [rh_wm_fmriprep]
-
-    lh_wm_orig = glob.glob(os.path.join(fsaverage_dir_orig, "*L.white.32k_fs_LR.surf.gii"))[0]
-    lh_wm_fmriprep = os.path.join(
-        anat_dir_fmriprep,
-        f"{sub_id}_space-fsLR_den-32k_hemi-L_smoothwm.surf.gii",
-    )
-    copy_dictionary[lh_wm_orig] = [lh_wm_fmriprep]
+    for in_str, out_str in SURFACE_DICT.items():
+        surf_orig = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
+        )
+        surf_fmriprep = os.path.join(
+            fsaverage_dir_orig,
+            f"{sub_id}_space-fsLR_den-32k_{out_str}.surf.gii",
+        )
+        copy_dictionary[surf_orig] = [surf_fmriprep]
 
     print("finished collecting anat files")
 

@@ -56,6 +56,7 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     volspace = "MNI152NLin6Asym"
     volspace_ent = f"space-{volspace}"
+    res_ent = "res-2"
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_id)
 
@@ -85,6 +86,8 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         func_dir_orig = os.path.join(anat_dir_orig, "Results")
         func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
         os.makedirs(func_dir_fmriprep, exist_ok=True)
+
+        xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
 
         # Collect anatomical files to copy
         t1w_orig = os.path.join(anat_dir_orig, "T1w.nii.gz")
@@ -132,85 +135,29 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
-        rh_midthickness_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.R.midthickness.32k_fs_LR.surf.gii",
-        )
-        rh_midthickness_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_desc-hcp_midthickness.surf.gii",
-        )
-        copy_dictionary[rh_midthickness_orig] = [rh_midthickness_fmriprep]
+        SURFACE_DICT = {
+            "R.midthickness": "hemi-R_desc-hcp_midthickness",
+            "L.midthickness": "hemi-L_desc-hcp_midthickness",
+            "R.inflated": "hemi-R_desc-hcp_inflated",
+            "L.inflated": "hemi-L_desc-hcp_inflated",
+            "R.very_inflated": "hemi-R_desc-hcp_vinflated",
+            "L.very_inflated": "hemi-L_desc-hcp_vinflated",
+            "R.pial": "hemi-R_pial",
+            "L.pial": "hemi-L_pial",
+            "R.white": "hemi-R_smoothwm",
+            "L.white": "hemi-L_smoothwm",
+        }
 
-        lh_midthickness_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.L.midthickness.32k_fs_LR.surf.gii",
-        )
-        lh_midthickness_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii",
-        )
-        copy_dictionary[lh_midthickness_orig] = [lh_midthickness_fmriprep]
-
-        rh_inflated_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.R.inflated.32k_fs_LR.surf.gii",
-        )
-        rh_inflated_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_desc-hcp_inflated.surf.gii",
-        )
-        copy_dictionary[rh_inflated_orig] = [rh_inflated_fmriprep]
-
-        lh_inflated_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.L.inflated.32k_fs_LR.surf.gii",
-        )
-        lh_inflated_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii",
-        )
-        copy_dictionary[lh_inflated_orig] = [lh_inflated_fmriprep]
-
-        rh_pial_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.R.pial.32k_fs_LR.surf.gii",
-        )
-        rh_pial_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        )
-        copy_dictionary[rh_pial_orig] = [rh_pial_fmriprep]
-
-        lh_pial_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.L.pial.32k_fs_LR.surf.gii",
-        )
-        lh_pial_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        )
-        copy_dictionary[lh_pial_orig] = [lh_pial_fmriprep]
-
-        rh_wm_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.R.white.32k_fs_LR.surf.gii",
-        )
-        rh_wm_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii",
-        )
-        copy_dictionary[rh_wm_orig] = [rh_wm_fmriprep]
-
-        lh_wm_orig = os.path.join(
-            fsaverage_dir_orig,
-            f"{sub_id_orig}.L.white.32k_fs_LR.surf.gii",
-        )
-        lh_wm_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_space-fsLR_den-32k_hemi-L_smoothwm.surf.gii",
-        )
-        copy_dictionary[lh_wm_orig] = [lh_wm_fmriprep]
+        for in_str, out_str in SURFACE_DICT.items():
+            surf_orig = os.path.join(
+                fsaverage_dir_orig,
+                f"{sub_id_orig}.{in_str}.32k_fs_LR.surf.gii",
+            )
+            surf_fmriprep = os.path.join(
+                fsaverage_dir_orig,
+                f"{sub_id}_{ses_id}_space-fsLR_den-32k_{out_str}.surf.gii",
+            )
+            copy_dictionary[surf_orig] = [surf_fmriprep]
 
         print("finished collecting anat files")
 
@@ -239,14 +186,17 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             sbref_orig = os.path.join(task_dir_orig, f"{task_id}_SBRef.nii.gz")
             boldref_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_boldref.nii.gz",
+                f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_{res_ent}_boldref.nii.gz",
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
             bold_nifti_orig = os.path.join(task_dir_orig, f"{task_id}.nii.gz")
             bold_nifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_desc-preproc_bold.nii.gz",
+                (
+                    f"{sub_id}_{ses_id}_{task_id}_{run_id}_"
+                    f"{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz"
+                ),
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
@@ -257,16 +207,16 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
-            # NOTE: We're using the white matter mask as a transform. This doesn't make sense.
-            native_to_t1w_orig = wmmask
+            # TODO: Find actual native-to-T1w transform
+            native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_id}2T1w.nii.gz")
             native_to_t1w_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{sub_id}_{ses_id}_{task_id}_{run_id}_from-scanner_to-T1w_mode-image_xfm.txt",
             )
             copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
-            # NOTE: We're using the white matter mask as a transform. This doesn't make sense.
-            t1w_to_native_orig = wmmask
+            # TODO: Find actual T1w-to-native transform
+            t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_id}.nii.gz")
             t1w_to_native_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{sub_id}_{ses_id}_{task_id}_{run_id}_from-T1w_to-scanner_mode-image_xfm.txt",
