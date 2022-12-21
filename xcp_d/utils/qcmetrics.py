@@ -46,7 +46,9 @@ def dc(input1, input2):
     objects in twom j images.
 
     The metric is defined as
+
     .. math::
+
         DC=\frac{2|A\cap B|}{|A|+|B|}
 
     , where :math:`A` is the first and :math:`B` the second set of samples (here: binary objects).

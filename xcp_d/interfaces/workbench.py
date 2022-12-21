@@ -155,14 +155,16 @@ class _ApplyAffineOutputSpec(TraitedSpec):
 class ApplyAffine(WBCommand):
     """Interface for wb_command's -surface-apply-affine command.
 
-    wb_command -surface-apply-affine
-       <in-surf> - the surface to transform
-       <affine> - the affine file
-       <out-surf> - output - the output transformed surface
+    .. code-block::
 
-       [-flirt] - MUST be used if affine is a flirt affine
-          <source-volume> - the source volume used when generating the affine
-          <target-volume> - the target volume used when generating the affine
+        wb_command -surface-apply-affine
+            <in-surf> - the surface to transform
+            <affine> - the affine file
+            <out-surf> - output - the output transformed surface
+
+            [-flirt] - MUST be used if affine is a flirt affine
+                <source-volume> - the source volume used when generating the affine
+                <target-volume> - the target volume used when generating the affine
 
     For flirt matrices, you must use the -flirt option, because flirt
     matrices are not a complete description of the coordinate transform they
@@ -219,13 +221,15 @@ class _ApplyWarpfieldOutputSpec(TraitedSpec):
 class ApplyWarpfield(WBCommand):
     """Apply warpfield to surface file.
 
-    wb_command -surface-apply-warpfield
-        <in-surf> - the surface to transform
-        <warpfield> - the INVERSE warpfield
-        <out-surf> - output - the output transformed surface
+    .. code-block::
 
-        [-fnirt] - MUST be used if using a fnirt warpfield
-            <forward-warp> - the forward warpfield
+        wb_command -surface-apply-warpfield
+            <in-surf> - the surface to transform
+            <warpfield> - the INVERSE warpfield
+            <out-surf> - output - the output transformed surface
+
+            [-fnirt] - MUST be used if using a fnirt warpfield
+                <forward-warp> - the forward warpfield
 
     Warping a surface requires the INVERSE of the warpfield used to warp the volume it lines up
     with.
@@ -287,11 +291,13 @@ class _SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
 class SurfaceSphereProjectUnproject(WBCommand):
     """Copy registration deformations to different sphere.
 
-    wb_command -surface-sphere-project-unproject
-    <sphere-in> - a sphere with the desired output mesh
-    <sphere-project-to> - a sphere that aligns with sphere-in
-    <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
-    <sphere-out> - output - the output sphere
+    .. code-block::
+
+        wb_command -surface-sphere-project-unproject
+            <sphere-in> - a sphere with the desired output mesh
+            <sphere-project-to> - a sphere that aligns with sphere-in
+            <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
+            <sphere-out> - output - the output sphere
     """
 
     input_spec = _SurfaceSphereProjectUnprojectInputSpec
@@ -366,17 +372,18 @@ class _SurfaceAverageOutputSpec(TraitedSpec):
 class SurfaceAverage(WBCommand):
     """Average surface files together.
 
-    wb_command -surface-average
-    <surface-out> - output - the output averaged surface
-    [-stddev] - compute 3D sample standard deviation
-       <stddev-metric-out> - output - the output metric for 3D sample
-          standard deviation
-    [-uncertainty] - compute caret5 'uncertainty'
-       <uncert-metric-out> - output - the output metric for uncertainty
-    [-surf] - repeatable - specify a surface to include in the average
-       <surface> - a surface file to average
-       [-weight] - specify a weighted average
-          <weight> - the weight to use (default 1)
+    .. code-block::
+
+        wb_command -surface-average
+            <surface-out> - output - the output averaged surface
+            [-stddev] - compute 3D sample standard deviation
+                <stddev-metric-out> - output - the output metric for 3D sample standard deviation
+            [-uncertainty] - compute caret5 'uncertainty'
+                <uncert-metric-out> - output - the output metric for uncertainty
+            [-surf] - repeatable - specify a surface to include in the average
+                <surface> - a surface file to average
+            [-weight] - specify a weighted average
+                <weight> - the weight to use (default 1)
 
     The 3D sample standard deviation is computed as
     'sqrt(sum(squaredlength(xyz - mean(xyz)))/(n - 1))'.
@@ -440,19 +447,21 @@ class _SurfaceGenerateInflatedOutputSpec(TraitedSpec):
 class SurfaceGenerateInflated(WBCommand):
     """Generate inflated surface.
 
-    wb_command -surface-generate-inflated
-       <anatomical-surface-in> - the anatomical surface
-       <inflated-surface-out> - output - the output inflated surface
-       <very-inflated-surface-out> - output - the output very inflated surface
+    .. code-block::
 
-       [-iterations-scale] - optional iterations scaling
-          <iterations-scale-value> - iterations-scale value
+        wb_command -surface-generate-inflated
+        <anatomical-surface-in> - the anatomical surface
+        <inflated-surface-out> - output - the output inflated surface
+        <very-inflated-surface-out> - output - the output very inflated surface
 
-       Generate inflated and very inflated surfaces. The output surfaces are
-       'matched' (have same XYZ range) to the anatomical surface. In most cases,
-       an iterations-scale of 1.0 (default) is sufficient.  However, if the
-       surface contains a large number of vertices (150,000), try an
-       iterations-scale of 2.5.
+        [-iterations-scale] - optional iterations scaling
+            <iterations-scale-value> - iterations-scale value
+
+    Generate inflated and very inflated surfaces. The output surfaces are
+    'matched' (have same XYZ range) to the anatomical surface. In most cases,
+    an iterations-scale of 1.0 (default) is sufficient.  However, if the
+    surface contains a large number of vertices (150,000), try an
+    iterations-scale of 2.5.
     """
 
     input_spec = _SurfaceGenerateInflatedInputSpec
