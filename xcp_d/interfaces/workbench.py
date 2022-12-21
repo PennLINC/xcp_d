@@ -961,26 +961,34 @@ class CiftiCreateDenseScalar(WBCommand):
 class _CiftiConvertInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiConvert command."""
 
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        argstr="%s",
-        position=2,
-        desc="The input file.",
-    )
     target = traits.Enum(
         "from",
         "to",
         mandatory=True,
-        position=1,
+        position=0,
         argstr="-%s-nifti",
         desc="Convert either to or from nifti.",
+    )
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="The input file.",
     )
     TR = traits.Float(
         mandatory=False,
         desc="Repetition time in seconds. Used to reset timepoints.",
-        position=3,
+        position=2,
         argstr="-reset-timepoints %s 0",
+    )
+    out_file = File(
+        exists=True,
+        mandatory=True,
+        genfile=True,
+        argstr="%s",
+        position=3,
+        desc="The output file.",
     )
 
 
@@ -989,7 +997,6 @@ class _CiftiConvertOutputSpec(TraitedSpec):
 
     out_file = File(
         exists=True,
-        genfile=True,
         desc="The output file.",
     )
 
