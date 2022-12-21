@@ -439,6 +439,7 @@ produced by the regression.
         head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        dcan_qc=dcan_qc,
         cifti=False,
         name="qc_report_wf",
     )
@@ -453,6 +454,9 @@ produced by the regression.
             ("template_to_t1w", "inputnode.template_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),
         ]),
+        (regression_wf, qc_report_wf, [
+            ("res_file", "inputnode.cleaned_unfiltered_file"),
+        ]),
     ])
     # fmt:on
 
@@ -461,7 +465,7 @@ produced by the regression.
         remove_dummy_scans = pe.Node(
             RemoveTR(),
             name="remove_dummy_scans",
-            mem_gb=0.1 * mem_gbx["timeseries"],
+            mem_gb=2 * mem_gbx["timeseries"],  # assume it takes a lot of memory
         )
 
         # fmt:off
@@ -573,8 +577,11 @@ produced by the regression.
 
     # functional connect workflow
     workflow.connect([
-        (downcast_data, fcon_ts_wf, [('bold_file', 'inputnode.bold_file'),
-                                     ('ref_file', 'inputnode.ref_file')]),
+        (downcast_data, fcon_ts_wf, [
+            ('bold_file', 'inputnode.bold_file'),
+            ("bold_mask", "inputnode.bold_mask"),
+            ('ref_file', 'inputnode.ref_file'),
+        ]),
         (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
         (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
@@ -595,7 +602,10 @@ produced by the regression.
     # qc report
     workflow.connect([
         (filtering_wf, qc_report_wf, [('filtered_file', 'inputnode.cleaned_file')]),
-        (censor_scrub, qc_report_wf, [('tmask', 'inputnode.tmask')]),
+        (censor_scrub, qc_report_wf, [
+            ('tmask', 'inputnode.tmask'),
+            ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
     ])
     # fmt:on
 
@@ -702,55 +712,23 @@ produced by the regression.
 
     # executive summary workflow
     if dcan_qc:
-        executivesummary_wf = init_execsummary_wf(
-            TR=TR,
+        executive_summary_wf = init_execsummary_wf(
             bold_file=bold_file,
             layout=layout,
-            mem_gb=mem_gbx["timeseries"],
             output_dir=output_dir,
-            omp_nthreads=omp_nthreads,
+            name="executive_summary_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (downcast_data, executivesummary_wf, [
-                ("t1w", "inputnode.t1w"),
-                ("t1seg", "inputnode.t1seg"),
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
+            (inputnode, executive_summary_wf, [
                 ("bold_file", "inputnode.bold_file"),
-                ("bold_mask", "inputnode.mask"),
-            ]),
-            (inputnode, executivesummary_wf, [
-                ("template_to_t1w", "inputnode.template_to_t1w"),
-            ]),
-            (regression_wf, executivesummary_wf, [
-                ("res_file", "inputnode.regressed_data"),
-            ]),
-            (filtering_wf, executivesummary_wf, [
-                ("filtered_file", "inputnode.residual_data"),
-            ]),
-            (censor_scrub, executivesummary_wf, [
-                ("filtered_motion", "inputnode.filtered_motion"),
-                ("tmask", "inputnode.tmask"),
+                ("ref_file", "inputnode.boldref_file"),
             ]),
         ])
         # fmt:on
-
-        if dummy_scans:
-            # fmt:off
-            workflow.connect([
-                (remove_dummy_scans, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (inputnode, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
 
     return workflow
 

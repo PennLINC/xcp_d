@@ -2,10 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
 import fnmatch
-import glob
 import os
 import shutil
-from pathlib import Path
 
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -32,7 +30,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import _getsesid
+from xcp_d.utils.bids import _getsesid, get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -333,19 +331,8 @@ def init_anatomical_wf(
     else:
         all_files = list(layout.get_files())
 
-        # verify freesurfer directory
-        p = Path(fmri_dir)
-
-        freesurfer_paths = glob.glob(str(p.parent) + "/*freesurfer*")  # for fmriprep and nibabies
-        if len(freesurfer_paths) == 0:
-            freesurfer_paths = glob.glob(str(p) + "/sourcedata/*freesurfer*")  # nibabies
-
-        if len(freesurfer_paths) > 0 and "freesurfer" in os.path.basename(freesurfer_paths[0]):
-            freesurfer_path = freesurfer_paths[0]
-        else:
-            freesurfer_path = None
-
-        if freesurfer_path is not None and os.path.isdir(freesurfer_path):
+        freesurfer_dir = get_freesurfer_dir(fmri_dir)
+        if freesurfer_dir is not None:
 
             L_inflated_surf = fnmatch.filter(
                 all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
@@ -385,8 +372,8 @@ def init_anatomical_wf(
                 get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[0]
             )
 
-            lh_sphere_raw = str(freesurfer_path) + "/" + subid + "/surf/lh.sphere.reg"  # MB, TM
-            rh_sphere_raw = str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"  # MB, TM
+            lh_sphere_raw = str(freesurfer_dir) + "/" + subid + "/surf/lh.sphere.reg"  # MB, TM
+            rh_sphere_raw = str(freesurfer_dir) + "/" + subid + "/surf/rh.sphere.reg"  # MB, TM
 
             # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
             h5_file = fnmatch.filter(

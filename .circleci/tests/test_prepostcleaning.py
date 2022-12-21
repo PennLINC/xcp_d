@@ -8,24 +8,13 @@ import pytest
 from xcp_d.interfaces.prepostcleaning import ConvertTo32
 
 
-def test_conversion_to_32bit_nifti(data_dir, tmp_path_factory):
+def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Convert nifti files to 32-bit."""
     tmpdir = tmp_path_factory.mktemp("test_conversion_to_32bit")
 
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
-    float_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        (
-            "sub-colornest001_ses-1_task-rest_run-1_"
-            "space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-        ),
-    )
-    int_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz",
-    )
+    float_file = fmriprep_with_freesurfer_data["nifti_file"]
+    int_file = fmriprep_with_freesurfer_data["brain_mask_file"]
+
     float64_file = os.path.join(tmpdir, "float64.nii.gz")
     int64_file = os.path.join(tmpdir, "int64.nii.gz")
 
@@ -72,16 +61,12 @@ def test_conversion_to_32bit_nifti(data_dir, tmp_path_factory):
 
 
 @pytest.mark.skip(reason="Cannot make a cifti with float64 data.")
-def test_conversion_to_32bit_cifti(data_dir, tmp_path_factory):
+def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Convert nifti files to 32-bit."""
     tmpdir = tmp_path_factory.mktemp("test_conversion_to_32bit")
 
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
-    float_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
-    )
+    float_file = fmriprep_with_freesurfer_data["cifti_file"]
+
     float64_file = os.path.join(tmpdir, "float64.nii.gz")
     int64_file = os.path.join(tmpdir, "int64.nii.gz")
 

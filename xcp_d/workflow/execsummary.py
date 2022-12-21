@@ -3,26 +3,17 @@
 """Workflows for generating the executive summary."""
 import fnmatch
 import os
-from pathlib import Path
 
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import (
-    BrainPlotx,
-    PlotImage,
-    PlotSVGData,
-    RibbontoStatmap,
-)
-from xcp_d.utils.bids import find_nifti_bold_files
+from xcp_d.interfaces.surfplotting import BrainPlotx, PlotImage, RibbontoStatmap
+from xcp_d.utils.bids import get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_ribbon_svg
-from xcp_d.utils.utils import _t12native, get_std2bold_xforms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -120,31 +111,18 @@ def init_brainsprite_wf(
             ribbon = ribbon[0]
 
     else:
-        # verify freesurfer directory
-        fmri_path = Path(fmri_dir).absolute()
+        fmri_dir = os.path.abspath(fmri_dir)
 
-        # for fmriprep and nibabies versions before XXXX,
-        # the freesurfer dir was placed at the same level as the main derivatives
-        freesurfer_paths = [fp for fp in fmri_path.parent.glob("*freesurfer*") if fp.is_dir()]
-        if len(freesurfer_paths) == 0:
-            # for later versions, the freesurfer dir is placed in sourcedata
-            # within the main derivatives folder
-            freesurfer_paths = [
-                fp for fp in fmri_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
-            ]
+        # NOTE: I try to avoid try/except statements, but this will be replaced very soon.
+        try:
+            freesurfer_dir = get_freesurfer_dir(fmri_dir)
 
-        if len(freesurfer_paths) > 0:
-            freesurfer_path = freesurfer_paths[0]
-            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
-            ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
+            ribbon = os.path.join(freesurfer_dir, f"sub-{subject_id}", "mri", "ribbon.mgz")
             LOGGER.info(f"Using {ribbon} for ribbon.")
-
-            if not ribbon.is_file():
+            if not os.path.isfile(ribbon):
                 LOGGER.warning(f"File DNE: {ribbon}")
                 use_t1seg_as_ribbon = True
-
-        else:
-            LOGGER.info("No Freesurfer derivatives found.")
+        except NotADirectoryError:
             use_t1seg_as_ribbon = True
 
     if use_t1seg_as_ribbon:
@@ -171,60 +149,45 @@ def init_brainsprite_wf(
 
 @fill_doc
 def init_execsummary_wf(
-    omp_nthreads,
     bold_file,
     output_dir,
-    TR,
-    mem_gb,
     layout,
     name="execsummary_wf",
 ):
-    """Generate an executive summary.
+    """Generate the figures for an executive summary.
 
     Parameters
     ----------
-    %(omp_nthreads)s
     bold_file
+        BOLD data before post-processing.
     %(output_dir)s
-    TR
-    %(mem_gb)s
     layout
     %(name)s
 
     Inputs
     ------
-    t1w
-    t1seg
-    regressed_data
-    residual_data
-    filtered_motion
-    tmask
-    rawdata
-    mask
-    %(template_to_t1w)s
-    %(dummy_scans)s
+    bold_file
+        BOLD data before post-processing.
+        Set from the parameter.
+    boldref_file
+        The boldref file associated with the BOLD file.
+        This should only be defined (and used) for NIFTI inputs.
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "t1w",
-                "t1seg",
-                "regressed_data",
-                "residual_data",
-                "filtered_motion",
-                "tmask",
-                "rawdata",
-                "mask",
-                "template_to_t1w",
-                "dummy_scans",
+                "bold_file",
+                "boldref_file",  # a nifti boldref
             ]
         ),
         name="inputnode",
     )
     inputnode.inputs.bold_file = bold_file
+
     # Get bb_registration_file prefix from fmriprep
+    # TODO: Replace with interfaces.
     all_files = list(layout.get_files())
     current_bold_file = os.path.basename(bold_file)
     if "_space" in current_bold_file:
@@ -235,148 +198,40 @@ def init_execsummary_wf(
     # check if there is a bb_registration_file or coregister file
     patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
     registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
-    #  Get the T1w registration file
+    # Get the T1w registration file
     bold_t1w_registration_file = fnmatch.filter(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]
 
-    find_nifti_files = pe.Node(
-        Function(
-            function=find_nifti_bold_files,
-            input_names=["bold_file", "template_to_t1w"],
-            output_names=["nifti_bold_file", "nifti_boldref_file"],
-        ),
-        name="find_nifti_files",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, find_nifti_files, [
-            ("bold_file", "bold_file"),
-            ("template_to_t1w", "template_to_t1w"),
-        ]),
-    ])
-    # fmt:on
-
     # Plot the reference bold image
-    plotrefbold_wf = pe.Node(PlotImage(), name="plotrefbold_wf")
+    plot_boldref = pe.Node(PlotImage(), name="plot_boldref")
 
     # fmt:off
     workflow.connect([
-        (find_nifti_files, plotrefbold_wf, [
-            ("nifti_boldref_file", "in_file"),
-        ]),
+        (inputnode, plot_boldref, [("boldref_file", "in_file")]),
     ])
     # fmt:on
 
-    find_t1_to_native = pe.Node(
-        Function(
-            function=_t12native,
-            input_names=["fname"],
-            output_names=["t1w_to_native_xform"],
-        ),
-        name="find_t1_to_native",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, find_t1_to_native, [
-            ("nifti_bold_file", "fname"),
-        ]),
-    ])
-    # fmt:on
-
-    # Get the transform file to native space
-    get_std2native_transform = pe.Node(
-        Function(
-            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
-            output_names=["transform_list"],
-            function=get_std2bold_xforms,
-        ),
-        name="get_std2native_transform",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, get_std2native_transform, [
-            ("nifti_bold_file", "bold_file"),
-        ]),
-        (find_t1_to_native, get_std2native_transform, [
-            ("t1w_to_native_xform", "t1w_to_native"),
-        ]),
-    ])
-    # fmt:on
-
-    # Transform the file to native space
-    resample_parc = pe.Node(
-        ApplyTransformsx(
-            dimension=3,
-            input_image=str(
-                get_template(
-                    "MNI152NLin2009cAsym",
-                    resolution=1,
-                    desc="carpet",
-                    suffix="dseg",
-                    extension=[".nii", ".nii.gz"],
-                )
-            ),
-            interpolation="MultiLabel",
-        ),
-        name="resample_parc",
-        n_procs=omp_nthreads,
-        mem_gb=mem_gb * 3 * omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, resample_parc, [
-            ("nifti_boldref_file", "reference_image"),
-        ]),
-    ])
-    # fmt:on
-
-    # Plot the SVG files
-    plot_svgx_wf = pe.Node(
-        PlotSVGData(TR=TR),
-        name="plot_svgx_wf",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # Write out the necessary files:
-    # Reference file
-    ds_plot_bold_reference_file_wf = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir, dismiss_entities=["den"], datatype="figures", desc="boldref"
-        ),
-        name="ds_plot_bold_reference_file_wf",
-        run_without_submitting=True,
-    )
-
-    # Plot SVG before
-    ds_plot_svg_before_wf = pe.Node(
+    # Write out the figures.
+    ds_boldref_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["den"],
             datatype="figures",
-            desc="precarpetplot",
+            desc="boldref",
         ),
-        name="plot_svgxbe",
+        name="ds_boldref_figure",
         run_without_submitting=True,
     )
-    # Plot SVG after
-    ds_plot_svg_after_wf = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="postcarpetplot",
-        ),
-        name="plot_svgx_after",
-        run_without_submitting=True,
-    )
-    # Bold T1 registration file
-    ds_registration_wf = pe.Node(
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_boldref_figure, [("bold_file", "source_file")]),
+        (plot_boldref, ds_boldref_figure, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_registration_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             in_file=bold_t1w_registration_file,
@@ -384,32 +239,13 @@ def init_execsummary_wf(
             datatype="figures",
             desc="bbregister",
         ),
-        name="bb_registration_file",
+        name="ds_registration_figure",
         run_without_submitting=True,
     )
 
-    # Connect all the workflows
     # fmt:off
     workflow.connect([
-        (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [
-            ('filtered_motion', 'filtered_motion'),
-            ('regressed_data', 'regressed_data'),
-            ('residual_data', 'residual_data'),
-            ('mask', 'mask'),
-            ('bold_file', 'rawdata'),
-            ('tmask', 'tmask'),
-            ('dummy_scans', 'dummy_scans'),
-        ]),
-        (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
-        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
-        (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
-        (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
-        (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
-        (inputnode, ds_plot_svg_before_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_plot_svg_after_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_plot_bold_reference_file_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_registration_wf, [('bold_file', 'source_file')]),
+        (inputnode, ds_registration_figure, [("bold_file", "source_file")]),
     ])
     # fmt:on
 
