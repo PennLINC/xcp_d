@@ -1,10 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Handling filtering.
-
-.. testsetup::
-# will comeback
-"""
+"""Handling filtering."""
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -36,22 +32,7 @@ class _FilteringDataOutputSpec(TraitedSpec):
 
 
 class FilteringData(SimpleInterface):
-    """Filter the data with scipy.signal.
-
-    .. testsetup::
-    from tempfile import TemporaryDirectory
-    tmpdir = TemporaryDirectory()
-    os.chdir(tmpdir.name)
-    .. doctest::
-    filt=FilteringData()
-    filt.inputs.in_file = reg._results['res_file']
-    filt.inputs.TR = 3
-    filt.inputs.lowpass = 0.08
-    filt.inputs.highpass = 0.01
-    filt.run()
-    .. testcleanup::
-    tmpdir.cleanup()
-    """
+    """Filter the data with scipy.signal."""
 
     input_spec = _FilteringDataInputSpec
     output_spec = _FilteringDataOutputSpec

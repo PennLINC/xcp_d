@@ -111,25 +111,7 @@ class _ComputeALFFOutputSpec(TraitedSpec):
 
 
 class ComputeALFF(SimpleInterface):
-    """Compute ALFF.
-
-    Examples
-    --------
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    computealffwf = ComputeALFF()
-    computealffwf.inputs.in_file = datafile
-    computealffwf.inputs.lowpass = 0.1
-    computealffwf.inputs.highpass = 0.01
-    computealffwf.inputs.TR = TR
-    computealffwf.inputs.mask_file = mask
-    computealffwf.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-    """
+    """Compute ALFF."""
 
     input_spec = _ComputeALFFInputSpec
     output_spec = _ComputeALFFOutputSpec
