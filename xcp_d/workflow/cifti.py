@@ -19,7 +19,9 @@ from xcp_d.interfaces.prepostcleaning import (
     Interpolate,
     RemoveTR,
 )
-from xcp_d.interfaces.regression import CiftiDespike, Regress
+from xcp_d.interfaces.regression import Regress
+from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,
@@ -505,18 +507,38 @@ produced by the regression.
     ])
     # fmt:on
 
-    if despike:  # If we despike
+    if despike:
+        # first, convert the cifti to a nifti
+        convert_to_nifti = pe.Node(
+            CiftiConvert(target="to"),
+            name="convert_to_nifti",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
+
+        # next, run 3dDespike
         despike3d = pe.Node(
-            CiftiDespike(TR=TR),
-            name="cifti_despike",
+            DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
+            name="despike3d",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
+
+        # finally, convert the despiked nifti back to cifti
+        convert_to_cifti = pe.Node(
+            CiftiConvert(target="from", TR=TR),
+            name="convert_to_cifti",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (censor_scrub, despike3d, [("bold_censored", "in_file")]),
-            (despike3d, regression_wf, [("des_file", "in_file")]),
+            (censor_scrub, convert_to_nifti, [("bold_censored", "in_file")]),
+            (convert_to_nifti, despike3d, [("out_file", "in_file")]),
+            (censor_scrub, convert_to_cifti, [("bold_censored", "cifti_template")]),
+            (despike3d, convert_to_cifti, [("out_file", "in_file")]),
+            (convert_to_cifti, regression_wf, [("out_file", "in_file")]),
         ])
         # fmt:on
 
