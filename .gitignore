@@ -3,10 +3,13 @@
 
 # documentation
 docs/api/
+docs/generated/
 docs/_build
 docs/*.dot
 docs/etc/
 docs/args.txt
+xcp_d/data/ds001419-example/
+xcp_d/data/ds001419-example.tar.gz
 
 # other stuff
 xcp_surface/.DS_Store

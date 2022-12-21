@@ -17,5 +17,4 @@ Contents
    generalworkflow
    output
    api
-   workflows
    dev_guide
