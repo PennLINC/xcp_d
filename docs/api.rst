@@ -39,11 +39,11 @@ xcp_d-combineqc
 :mod:`xcp_d.interfaces`: Nipype Interfaces
 ------------------------------------------
 
-.. automodule:: xcp_d
+.. automodule:: xcp_d.interfaces
    :no-members:
    :no-inherited-members:
 
-.. currentmodule:: xcp_d.interfaces
+.. currentmodule:: xcp_d
 
 .. autosummary::
    :toctree: generated/
