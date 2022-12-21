@@ -515,6 +515,7 @@ produced by the regression.
         workflow.connect([
             (censor_scrub, convert_to_nifti, [("bold_censored", "in_file")]),
             (convert_to_nifti, despike3d, [("out_file", "in_file")]),
+            (censor_scrub, convert_to_cifti, [("bold_censored", "cifti_template")]),
             (despike3d, convert_to_cifti, [("out_file", "in_file")]),
             (convert_to_cifti, regression_wf, [("out_file", "in_file")]),
         ])

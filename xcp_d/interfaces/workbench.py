@@ -976,15 +976,22 @@ class _CiftiConvertInputSpec(CommandLineInputSpec):
         position=1,
         desc="The input file.",
     )
+    cifti_template = File(
+        exists=True,
+        mandatory=False,
+        argstr="%s",
+        position=2,
+        desc="A cifti file with the dimension(s) and mapping(s) that should be used.",
+    )
     TR = traits.Float(
         mandatory=False,
         desc="Repetition time in seconds. Used to reset timepoints.",
-        position=2,
+        position=4,
         argstr="-reset-timepoints %s 0",
     )
     out_file = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         genfile=True,
         argstr="%s",
         position=3,
