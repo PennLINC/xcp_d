@@ -43,7 +43,7 @@ extensions = [
     "recommonmark",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
-    # "sphinx.ext.autosummary",  # standard
+    "sphinx.ext.autosummary",  # standard
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     # "sphinx.ext.graphviz",

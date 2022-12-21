@@ -3,6 +3,7 @@
 
 # documentation
 docs/api/
+docs/generated/
 docs/_build
 docs/*.dot
 docs/etc/
