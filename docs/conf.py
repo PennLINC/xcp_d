@@ -378,10 +378,7 @@ _python_version_str = f"{sys.version_info.major}.{sys.version_info.minor}"
 _python_doc_base = f"https://docs.python.org/{_python_version_str}"
 intersphinx_mapping = {
     "python": (_python_doc_base, None),
-    "numpy": (
-        "https://numpy.org/doc/stable/",
-        (None, "./_intersphinx/numpy-objects.inv"),
-    ),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": (
         "https://docs.scipy.org/doc/scipy/reference",
         (None, "./_intersphinx/scipy-objects.inv"),

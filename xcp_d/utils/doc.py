@@ -422,3 +422,38 @@ def fill_doc(f):
         funcname = docstring.split("\n")[0] if funcname is None else funcname
         raise RuntimeError(f"Error documenting {funcname}:\n{str(exp)}")
     return f
+
+
+def download_example_data(out_dir=None, overwrite=False):
+    """Download example data from Box."""
+    import os
+    import tarfile
+
+    import requests
+    from pkg_resources import resource_filename as pkgrf
+
+    if not out_dir:
+        out_dir = pkgrf("xcp_d", "data")
+
+    out_dir = os.path.abspath(out_dir)
+
+    url = "https://upenn.box.com/shared/static/1dd4u115invn60cr3qm8xl8p5axho5dp"
+    target_path = os.path.join(out_dir, "ds001419-example")
+
+    if overwrite or not os.path.isdir(target_path):
+        target_file = os.path.join(out_dir, "ds001419-example.tar.gz")
+
+        if overwrite or not os.path.isfile(target_file):
+            response = requests.get(url, stream=True)
+            if response.status_code == 200:
+                with open(target_file, "wb") as fo:
+                    fo.write(response.raw.read())
+
+        if not os.path.isfile(target_file):
+            raise FileNotFoundError(f"File DNE: {target_file}")
+
+        # Expand the file
+        with tarfile.open(target_file, "r:gz") as fo:
+            fo.extractall(out_dir)
+
+    return target_path
