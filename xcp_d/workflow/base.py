@@ -35,32 +35,32 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_xcpd_wf(
-    layout,
+    fmri_dir,
+    output_dir,
+    work_dir,
+    subject_list,
+    analysis_level,
+    task_id,
+    bids_filters,
+    bandpass_filter,
     lower_bpf,
     upper_bpf,
-    despike,
     bpf_order,
+    fd_thresh,
     motion_filter_type,
     motion_filter_order,
     band_stop_min,
     band_stop_max,
-    bandpass_filter,
-    fmri_dir,
-    omp_nthreads,
-    cifti,
-    task_id,
-    bids_filters,
+    despike,
     head_radius,
     params,
-    subject_list,
-    analysis_level,
     smoothing,
     custom_confounds_folder,
-    output_dir,
-    work_dir,
     dummytime,
     dummy_scans,
-    fd_thresh,
+    cifti,
+    omp_nthreads,
+    layout=None,
     process_surfaces=False,
     dcan_qc=False,
     input_type="fmriprep",
@@ -75,44 +75,55 @@ def init_xcpd_wf(
             :graph2use: orig
             :simple_form: yes
 
+            import os
+            import tempfile
+
             from xcp_d.workflow.base import init_xcpd_wf
+            from xcp_d.utils.doc import download_example_data
+
+            fmri_dir = download_example_data()
+            out_dir = tempfile.mkdtemp()
+
+            # Create xcp_d derivatives folder.
+            os.mkdir(os.path.join(out_dir, "xcp_d"))
+
             wf = init_xcpd_wf(
-                layout=None,
+                fmri_dir=fmri_dir,
+                output_dir=out_dir,
+                work_dir=".",
+                subject_list=["01"],
+                analysis_level="participant",
+                task_id="imagery",
+                bids_filters=None,
+                bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
-                despike=False,
                 bpf_order=2,
+                fd_thresh=0.2,
                 motion_filter_type=None,
                 motion_filter_order=4,
-                band_stop_min=0.,
-                band_stop_max=0.,
-                bandpass_filter=True,
-                fmri_dir=".",
-                omp_nthreads=1,
-                cifti=False,
-                task_id="rest",
-                bids_filters=None,
+                band_stop_min=12,
+                band_stop_max=20,
+                despike=True,
                 head_radius=50.,
                 params="36P",
-                subject_list=["sub-01", "sub-02"],
-                analysis_level="participant",
                 smoothing=6,
                 custom_confounds_folder=None,
-                output_dir=".",
-                work_dir=".",
                 dummytime=0,
                 dummy_scans=0,
-                fd_thresh=0.2,
+                cifti=False,
+                omp_nthreads=1,
+                layout=None,
                 process_surfaces=False,
                 dcan_qc=False,
-                input_type='fmriprep',
-                name='xcpd_wf',
+                input_type="fmriprep",
+                name="xcpd_wf",
             )
 
     Parameters
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
-        BIDS dataset layout
+        BIDS dataset layout or None.
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -247,33 +258,37 @@ def init_subject_wf(
             :simple_form: yes
 
             from xcp_d.workflow.base import init_subject_wf
+            from xcp_d.utils.doc import download_example_data
+
+            fmri_dir = download_example_data()
+
             wf = init_subject_wf(
-                layout=None,
+                fmri_dir=fmri_dir,
+                output_dir=".",
+                subject_id="01",
+                task_id="imagery",
+                bids_filters=None,
                 bandpass_filter=True,
                 lower_bpf=0.009,
                 upper_bpf=0.08,
                 bpf_order=2,
                 motion_filter_type=None,
-                band_stop_min=0,
-                band_stop_max=0,
                 motion_filter_order=4,
-                fmri_dir=".",
-                omp_nthreads=1,
-                subject_id="01",
+                band_stop_min=12,
+                band_stop_max=20,
                 cifti=False,
-                despike=False,
+                despike=True,
                 head_radius=50,
                 params="36P",
                 dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
-                task_id="rest",
-                bids_filters=None,
                 smoothing=6.,
                 custom_confounds_folder=None,
                 process_surfaces=False,
+                omp_nthreads=1,
+                layout=None,
                 dcan_qc=False,
-                output_dir=".",
                 input_type="fmriprep",
                 name="single_subject_sub-01_wf",
             )
@@ -281,7 +296,7 @@ def init_subject_wf(
     Parameters
     ----------
     layout : BIDSLayout object
-        BIDS dataset layout
+        BIDS dataset layout or None.
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -330,6 +345,7 @@ def init_subject_wf(
         bids_filters=bids_filters,
         bids_validate=False,
         cifti=cifti,
+        layout=layout,
     )
 
     surface_data, _, surfaces_found = collect_surface_data(

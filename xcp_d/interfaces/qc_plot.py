@@ -63,6 +63,7 @@ class CensoringPlot(SimpleInterface):
 
     This is a line plot showing both the raw and filtered framewise displacement time series,
     with vertical lines/bands indicating volumes removed by the post-processing workflow.
+
     """
 
     input_spec = _CensoringPlotInputSpec

@@ -154,6 +154,7 @@ def collect_data(
     bids_validate=False,
     bids_filters=None,
     cifti=False,
+    layout=None,
 ):
     """Collect data from a BIDS dataset.
 
@@ -166,18 +167,20 @@ def collect_data(
     bids_validate
     bids_filters
     %(cifti)s
+    layout
 
     Returns
     -------
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    layout = BIDSLayout(
-        str(bids_dir),
-        validate=bids_validate,
-        derivatives=True,
-        config=["bids", "derivatives"],
-    )
+    if not isinstance(layout, BIDSLayout):
+        layout = BIDSLayout(
+            str(bids_dir),
+            validate=bids_validate,
+            derivatives=True,
+            config=["bids", "derivatives"],
+        )
 
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
