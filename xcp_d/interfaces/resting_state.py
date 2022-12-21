@@ -163,6 +163,7 @@ class BrainPlot(SimpleInterface):
     """Create a brainsprite figure from a NIFTI file.
 
     The image will first be normalized (z-scored) before the figure is generated.
+
     """
 
     input_spec = _BrainPlotInputSpec

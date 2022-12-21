@@ -120,7 +120,6 @@ def init_ciftipostprocess_wf(
             )
             wf.inputs.inputnode.t1w = subj_data["t1w"]
             wf.inputs.inputnode.t1seg = subj_data["t1w_seg"]
-            wf.inputs.inputnode.template_to_t1w = subj_data["template_to_t1w_xform"]
 
     Parameters
     ----------
