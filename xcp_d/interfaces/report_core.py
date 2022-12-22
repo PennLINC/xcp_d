@@ -187,7 +187,7 @@ def generate_reports(
                     ),
                 )[0]
                 exsumm = ExecutiveSummary(
-                    html_path=str(Path(output_dir)) + "/xcp_d/",
+                    xcpd_path=os.path.join(output_dir, "xcp_d"),
                     subject_id=subject_label,
                     session_id=_getsesid(brainplotfile),
                 )

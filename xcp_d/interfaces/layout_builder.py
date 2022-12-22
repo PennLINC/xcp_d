@@ -13,23 +13,23 @@ class ExecutiveSummary(object):
 
     Parameters
     ----------
-    html_path : str
+    xcpd_path : str
+        Path to the xcp-d derivatives.
     subject_id : str
+        Subject ID.
     session_id : None or str, optional
+        Session ID.
     """
 
-    def __init__(self, html_path, subject_id, session_id=None):
-
-        self.working_dir = os.getcwd()
-
-        self.html_path = html_path
+    def __init__(self, xcpd_path, subject_id, session_id=None):
+        self.xcpd_path = xcpd_path
         self.subject_id = subject_id
         if session_id:
             self.session_id = session_id
         else:
             self.session_id = None
 
-        self.layout = BIDSLayout(html_path, validate=False, derivatives=True)
+        self.layout = BIDSLayout(xcpd_path, validate=False, derivatives=True)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
@@ -44,7 +44,7 @@ class ExecutiveSummary(object):
         soup = BeautifulSoup(document, features="lxml")
         html = soup.prettify()  # prettify the html
 
-        filepath = os.path.join(self.html_path, filename)
+        filepath = os.path.join(self.xcpd_path, filename)
         with open(filepath, "w") as fo:
             fo.write(html)
 
@@ -52,7 +52,7 @@ class ExecutiveSummary(object):
         files = self.layout.get(**query)
         if len(files) == 1:
             found_file = files[0].path
-            found_file = os.path.relpath(found_file, self.html_path)
+            found_file = os.path.relpath(found_file, self.xcpd_path)
         else:
             found_file = "None"
 
@@ -218,7 +218,7 @@ class ExecutiveSummary(object):
             else:
                 out_file = f"sub-{self.subject_id}_executive_summary.html"
 
-            out_file = os.path.join(self.html_path, out_file)
+            out_file = os.path.join(self.xcpd_path, out_file)
 
         def include_file(name):
             return Markup(loader.get_source(environment, name)[0])
@@ -233,7 +233,7 @@ class ExecutiveSummary(object):
 
         html = template.render(
             subject=f"sub-{self.subject_id}",
-            session=f"ses-{self.session_id}",
+            session=f"ses-{self.session_id}" if self.session_id else None,
             structural_files=self.structural_files_,
             concatenated_rest_files=self.concatenated_rest_files_,
             task_files=self.task_files_,
