@@ -231,7 +231,10 @@ def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
             }
             bold_nifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_desc-preproc_bold.json",
+                (
+                    f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_"
+                    f"{res_ent}_desc-preproc_bold.json"
+                ),
             )
             writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 

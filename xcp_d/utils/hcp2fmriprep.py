@@ -83,6 +83,10 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     if not sub_id.startswith("sub-"):
         sub_id = f"sub-{sub_id}"
 
+    volspace = "MNI152NLin6Asym"
+    volspace_ent = f"space-{volspace}"
+    res_ent = "res-2"
+
     subject_dir_fmriprep = os.path.join(out_dir, sub_id)
     anat_dir_fmriprep = os.path.join(subject_dir_fmriprep, "anat")
     func_dir_fmriprep = os.path.join(subject_dir_fmriprep, "func")
@@ -100,34 +104,46 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
     # Collect anatomical files to copy
     t1w_orig = os.path.join(in_dir, "T1w_restore.nii.gz")
-    t1w_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-preproc_T1w.nii.gz")
+    t1w_fmriprep = os.path.join(
+        anat_dir_fmriprep,
+        f"{sub_id}_{volspace_ent}_{res_ent}_desc-preproc_T1w.nii.gz",
+    )
     copy_dictionary[t1w_orig] = [t1w_fmriprep]
 
     # NOTE: We're using the T1w image as a transform. This doesn't make sense.
     t1w_to_template_fmriprep = os.path.join(
         anat_dir_fmriprep,
-        f"{sub_id}_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.txt",
+        f"{sub_id}_from-T1w_to-{volspace}_mode-image_xfm.txt",
     )
     copy_dictionary[t1w_orig].append(t1w_to_template_fmriprep)
 
     # NOTE: We're using the T1w image as a transform. This doesn't make sense.
     template_to_t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
-        f"{sub_id}_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.txt",
+        f"{sub_id}_from-{volspace}_to-T1w_mode-image_xfm.txt",
     )
     copy_dictionary[t1w_orig].append(template_to_t1w_fmriprep)
 
     brainmask_orig = os.path.join(in_dir, "brainmask_fs.nii.gz")
-    brainmask_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-brain_mask.nii.gz")
+    brainmask_fmriprep = os.path.join(
+        anat_dir_fmriprep,
+        f"{sub_id}_{volspace_ent}_{res_ent}_desc-brain_mask.nii.gz",
+    )
     copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
 
     # NOTE: What is this file for?
     ribbon_orig = os.path.join(in_dir, "ribbon.nii.gz")
-    ribbon_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-ribbon_T1w.nii.gz")
+    ribbon_fmriprep = os.path.join(
+        anat_dir_fmriprep,
+        f"{sub_id}_{volspace_ent}_{res_ent}_desc-ribbon_T1w.nii.gz",
+    )
     copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
 
     dseg_orig = os.path.join(in_dir, "aparc+aseg.nii.gz")
-    dseg_fmriprep = os.path.join(anat_dir_fmriprep, f"{sub_id}_desc-aparcaseg_dseg.nii.gz")
+    dseg_fmriprep = os.path.join(
+        anat_dir_fmriprep,
+        f"{sub_id}_{volspace_ent}_{res_ent}_desc-aparcaseg_dseg.nii.gz",
+    )
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
     fsaverage_dir_orig = os.path.join(in_dir, "fsaverage_LR32k")
@@ -163,26 +179,34 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     subject_task_folders = [task for task in subject_task_folders if task.endswith(["RL", "LR"])]
 
     for subject_task_folder in subject_task_folders:
-        _, task_name, acq_label = os.path.basename(subject_task_folder).split("_")
+        _, task_name, dir_label = os.path.basename(subject_task_folder).split("_")
+        task_id = f"task-{task_name}"
+        dir_id = f"dir-{dir_label}"
         filenamex = os.path.basename(subject_task_folder)
 
         # Find original task files
-        bold_nifti_orig = os.path.join(subject_task_folder, f"{filenamex}.nii.gz")
         brainmask_orig_temp = os.path.join(subject_task_folder, "brainmask_fs.2.nii.gz")
+
+        bold_nifti_orig = os.path.join(subject_task_folder, f"{filenamex}.nii.gz")
+        bold_nifti_fmriprep = os.path.join(
+            func_dir_fmriprep,
+            f"{sub_id}_{task_id}_{dir_id}_{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz",
+        )
+        copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
         boldref_orig = os.path.join(subject_task_folder, "SBRef_dc.nii.gz")
         boldref_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_id}_task-{task_name}_acq-{acq_label}_space-MNI152NLin6Asym_boldref.nii.gz",
+            f"{sub_id}_{task_id}_{dir_id}_{volspace_ent}_{res_ent}_boldref.nii.gz",
         )
         copy_dictionary[boldref_orig] = [boldref_fmriprep]
 
         bold_cifti_orig = os.path.join(
-            subject_task_folder, f"{filenamex}_Atlas_MSMAll.dtseries.nii"
+            subject_task_folder, f"{filenamex}_Atlas_MSMAll.dtseries.nii",
         )
         bold_cifti_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_id}_task-{task_name}_acq-{acq_label}_space-fsLR_den-91k_bold.dtseries.nii",
+            f"{sub_id}_{task_id}_{dir_id}_space-fsLR_den-91k_bold.dtseries.nii",
         )
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
@@ -194,10 +218,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         }
         bold_nifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
-            (
-                f"{sub_id}_task-{task_name}_acq-{acq_label}_"
-                "space-MNI152NLin6Asym_desc-preproc_bold.json"
-            ),
+            f"{sub_id}_{task_id}_{dir_id}_{volspace_ent}_{res_ent}_desc-preproc_bold.json",
         )
         writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 
@@ -212,7 +233,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         }
         bold_cifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_id}_task-{task_name}_acq-{acq_label}_space-fsLR_den-91k_bold.json",
+            f"{sub_id}_{task_id}_{dir_id}_space-fsLR_den-91k_bold.json",
         )
         writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
@@ -280,7 +301,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
 
         # write out the confounds
         regressors_file_base = (
-            f"{sub_id}_task-{task_name}_acq-{acq_label}_desc-confounds_timeseries"
+            f"{sub_id}_{task_id}_{dir_id}_desc-confounds_timeseries"
         )
         regressors_tsv_fmriprep = os.path.join(
             func_dir_fmriprep,
