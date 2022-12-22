@@ -934,8 +934,6 @@ Running xcp_d version {__version__}:
         name="xcpd_wf",
     )
 
-    retval["return_code"] = 0
-
     logs_path = Path(output_dir) / "xcp_d" / "logs"
     boilerplate = retval["workflow"].visit_desc()
 
@@ -961,6 +959,9 @@ Running xcp_d version {__version__}:
             f"include the following boilerplate:\n\n{boilerplate}"
         ),
     )
+
+    retval["return_code"] = 0
+
     return retval
 
 
