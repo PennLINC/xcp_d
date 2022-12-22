@@ -489,9 +489,8 @@ def main():
 
         sentry_setup(opts, exec_env)
 
-    # Retrieve logging level
+    # Retrieve and set logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-    # Set logging
     logger.setLevel(log_level)
 
     # Call build_workflow(opts, retval)
