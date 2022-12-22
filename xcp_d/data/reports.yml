@@ -3,26 +3,6 @@ sections:
 - name: Summary
   reportlets:
   - bids: {datatype: figures, desc: summary, suffix: bold}
-- name: Anatomical Data
-  reportlets:
-  # T1w brainsprite must always go before T2w brainsprite,
-  # because the BrainSprite JS code will only be embedded in the second one.
-  - bids:
-      datatype: figures
-      desc: brainplot
-      extension: [.html]
-      suffix: T1w
-    title: White Matter and Pial Ribbons
-    caption: This panel is an interactive figure rendering the white matter and pial surfaces on the T1w image.
-    static: false
-  - bids:
-      datatype: figures
-      desc: brainplot
-      extension: [.html]
-      suffix: T2w
-    title: White Matter and Pial Ribbons
-    caption: This panel is an interactive figure rendering the white matter and pial surfaces on the T1w image.
-    static: false
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
