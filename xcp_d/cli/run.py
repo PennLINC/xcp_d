@@ -60,7 +60,7 @@ def get_parser():
     parser.add_argument(
         "analysis_level",
         action="store",
-        type=str,
+        choices=["participant"],
         help='the analysis level for xcp_d, must be specified as "participant".',
     )
 
