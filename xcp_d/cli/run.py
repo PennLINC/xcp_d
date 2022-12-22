@@ -539,7 +539,9 @@ def main():
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-            crashfolders = [output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list]
+            crashfolders = [
+                output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
+            ]
             for crashfolder in crashfolders:
                 for crashfile in crashfolder.glob("crash*.*"):
                     process_crashfile(crashfile)
