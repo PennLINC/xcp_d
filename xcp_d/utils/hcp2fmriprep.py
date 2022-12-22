@@ -202,7 +202,8 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         copy_dictionary[boldref_orig] = [boldref_fmriprep]
 
         bold_cifti_orig = os.path.join(
-            subject_task_folder, f"{filenamex}_Atlas_MSMAll.dtseries.nii",
+            subject_task_folder,
+            f"{filenamex}_Atlas_MSMAll.dtseries.nii",
         )
         bold_cifti_fmriprep = os.path.join(
             func_dir_fmriprep,
@@ -300,9 +301,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
         regressors = pd.concat([mvreg, brainreg], axis=1)
 
         # write out the confounds
-        regressors_file_base = (
-            f"{sub_id}_{task_id}_{dir_id}_desc-confounds_timeseries"
-        )
+        regressors_file_base = f"{sub_id}_{task_id}_{dir_id}_desc-confounds_timeseries"
         regressors_tsv_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{regressors_file_base}.tsv",
