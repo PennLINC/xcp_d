@@ -17,8 +17,25 @@ from xcp_d.utils.filemanip import ensure_list
 LOGGER = logging.getLogger("dcan")
 
 
-def dcan2fmriprep(in_dir, out_dir, participant_ids=None):
-    """Loop over all subjects in dcan dir and convert to fmriprep format."""
+def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
+    """Convert DCAN derivatives to BIDS-compliant derivatives.
+
+    Parameters
+    ----------
+    in_dir : str
+        Path to DCAN derivatives.
+    out_dir : str
+        Path to the output BIDS-compliant derivatives folder.
+    participant_ids : None or list of str
+        List of participant IDs to run conversion on.
+        The participant IDs must not have the "sub-" prefix.
+        If None, the function will search for all subjects in ``in_dir`` and convert all of them.
+
+    Returns
+    -------
+    participant_ids : list of str
+        The list of subjects whose derivatives were converted.
+    """
     LOGGER.warning("This is an experimental function.")
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
@@ -29,6 +46,8 @@ def dcan2fmriprep(in_dir, out_dir, participant_ids=None):
             subject_folder for subject_folder in subject_folders if os.path.isdir(subject_folder)
         ]
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
+        # Remove sub- prefix.
+        participant_ids = [participant_ids.replace("sub-", "")]
         if len(participant_ids) == 0:
             raise ValueError(f"No subject found in {in_dir}")
 
@@ -36,7 +55,7 @@ def dcan2fmriprep(in_dir, out_dir, participant_ids=None):
         participant_ids = ensure_list(participant_ids)
 
     for subject_id in participant_ids:
-        convert_dcan_to_fmriprep_single_subject(
+        convert_dcan_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
             sub_id=subject_id,
@@ -45,8 +64,18 @@ def dcan2fmriprep(in_dir, out_dir, participant_ids=None):
     return participant_ids
 
 
-def convert_dcan_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
-    """Convert dcan data to fmriprep format."""
+def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
+    """Convert DCAN derivatives to BIDS-compliant derivatives for a single subject.
+
+    Parameters
+    ----------
+    in_dir : str
+        Path to the subject's DCAN derivatives.
+    out_dir : str
+        Path to the output BIDS-compliant derivatives folder.
+    sub_id : str
+        Subject identifier, with "sub-" prefix.
+    """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
     assert isinstance(out_dir, str)

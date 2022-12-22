@@ -16,8 +16,25 @@ from xcp_d.utils.filemanip import ensure_list
 LOGGER = logging.getLogger("hcp")
 
 
-def hcp2fmriprep(in_dir, out_dir, participant_ids=None):
-    """Convert HCP-format data to fMRIPrep format."""
+def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
+    """Convert HCP derivatives to BIDS-compliant derivatives.
+
+    Parameters
+    ----------
+    in_dir : str
+        Path to HCP derivatives.
+    out_dir : str
+        Path to the output BIDS-compliant derivatives folder.
+    participant_ids : None or list of str
+        List of participant IDs to run conversion on.
+        The participant IDs must not have the "sub-" prefix.
+        If None, the function will search for all subjects in ``in_dir`` and convert all of them.
+
+    Returns
+    -------
+    participant_ids : list of str
+        The list of subjects whose derivatives were converted.
+    """
     LOGGER.warning("This is an experimental function.")
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
@@ -63,7 +80,7 @@ def hcp2fmriprep(in_dir, out_dir, participant_ids=None):
         participant_ids = ensure_list(participant_ids)
 
     for subject_id in participant_ids:
-        convert_hcp_to_fmriprep_single_subject(
+        convert_hcp_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
             sub_id=subject_id,
@@ -72,16 +89,24 @@ def hcp2fmriprep(in_dir, out_dir, participant_ids=None):
     return participant_ids
 
 
-def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
-    """Do the internal work for hcp2fmriprep."""
+def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_id):
+    """Convert HCP derivatives to BIDS-compliant derivatives for a single subject.
+
+    Parameters
+    ----------
+    in_dir : str
+        Path to the subject's HCP derivatives.
+    out_dir : str
+        Path to the output fMRIPrep-style derivatives folder.
+    sub_id : str
+        Subject identifier, with "sub-" prefix.
+    """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
     assert isinstance(out_dir, str)
     assert isinstance(sub_id, str)
 
-    # make new directory for anat and func
-    if not sub_id.startswith("sub-"):
-        sub_id = f"sub-{sub_id}"
+    sub_id_orig = sub_id.replace("sub-", "")
 
     volspace = "MNI152NLin6Asym"
     volspace_ent = f"space-{volspace}"
@@ -164,7 +189,7 @@ def convert_hcp_to_fmriprep_single_subject(in_dir, out_dir, sub_id):
     for in_str, out_str in SURFACE_DICT.items():
         surf_orig = os.path.join(
             fsaverage_dir_orig,
-            f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
+            f"{sub_id_orig}.{in_str}.32k_fs_LR.surf.gii",
         )
         surf_fmriprep = os.path.join(
             fsaverage_dir_orig,
