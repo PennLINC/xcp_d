@@ -1081,6 +1081,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
         name="inputnode",
     )
 
+    # Load the fsaverage-164k sphere
     # NOTE: Why do we need the fsaverage mesh?
     fsaverage_mesh = str(
         get_template(
@@ -1161,7 +1162,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
         )
     )
 
-    # resample the surfaces to fsLR32k
+    # resample the surfaces to fsLR-32k
     # NOTE: Does that mean the data are in fsLR-164k before this?
     resample_to_fsLR32k = pe.MapNode(
         CiftiSurfaceResample(
@@ -1218,7 +1219,9 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
             ("merged_warpfield", "forward_warp"),
             ("merged_inv_warpfield", "warpfield"),
         ]),
-        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [("out_file", "in_file")]),
+        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [
+            ("out_file", "in_file"),
+        ]),
     ])
     # fmt:on
 
@@ -1229,9 +1232,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
 
     # fmt:off
     workflow.connect([
-        (apply_warpfield_to_fsLR32k, outputnode, [
-            ("out_file", "warped_hemi_files"),
-        ]),
+        (apply_warpfield_to_fsLR32k, outputnode, [("out_file", "warped_hemi_files")]),
     ])
     # fmt:on
 
