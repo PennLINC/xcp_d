@@ -12,7 +12,7 @@ from pathlib import Path
 from niworkflows.reports.core import Report as _Report
 
 from xcp_d.interfaces.layout_builder import ExecutiveSummary
-from xcp_d.utils.bids import _getsesid
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("cli")
@@ -189,7 +189,7 @@ def generate_reports(
                 exsumm = ExecutiveSummary(
                     xcpd_path=os.path.join(output_dir, "xcp_d"),
                     subject_id=subject_label,
-                    session_id=_getsesid(brainplotfile),
+                    session_id=get_entity(brainplotfile, "ses"),
                 )
                 exsumm.collect_inputs()
                 exsumm.generate_report()

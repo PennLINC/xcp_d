@@ -30,7 +30,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import _getsesid, get_freesurfer_dir
+from xcp_d.utils.bids import get_entity, get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -312,7 +312,7 @@ def init_anatomical_wf(
         ]
 
         # All of the converted dcan and hcp files should have a session entity/folder
-        ses_id = _getsesid(R_wm_surf)
+        ses_id = get_entity(R_wm_surf, "ses")
         anatdir = os.path.join(output_dir, "xcp_d", f"sub-{subject_id}", f"ses-{ses_id}", "anat")
         os.makedirs(anatdir, exist_ok=True)
 
