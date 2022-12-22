@@ -396,9 +396,7 @@ def init_warp_surfaces_to_template_wf(
 
         # fmt:off
         workflow.connect([
-            (merge_files_to_list, filter_out_missing_surfaces, [
-                ("out", "inlist"),
-            ])
+            (merge_files_to_list, filter_out_missing_surfaces, [("out", "inlist")]),
         ])
         # fmt:on
 
@@ -441,7 +439,7 @@ def init_warp_surfaces_to_template_wf(
         get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
 
         # First, we create the Connectome WorkBench-compatible transform files.
-        update_xform_wf = init_update_xform_wf(
+        update_xform_wf = init_ants_xform_to_fsl_wf(
             mem_gb=mem_gb,
             omp_nthreads=omp_nthreads,
             name="update_xform_wf",
@@ -615,12 +613,8 @@ def init_warp_surfaces_to_template_wf(
 
             # fmt:off
             workflow.connect([
-                (inputnode, ds_hcp_midthickness, [
-                    (f"{hemi_label}_pial_surf", "source_file"),
-                ]),
-                (split_out_hcp_surface, ds_hcp_midthickness, [
-                    ("out2", "in_file"),
-                ]),
+                (inputnode, ds_hcp_midthickness, [(f"{hemi_label}_pial_surf", "source_file")]),
+                (split_out_hcp_surface, ds_hcp_midthickness, [("out2", "in_file")]),
             ])
             # fmt:on
 
@@ -648,7 +642,6 @@ def init_warp_surfaces_to_template_wf(
 
 @fill_doc
 def init_inflate_surfaces_wf(
-    save_inflated,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -663,7 +656,6 @@ def init_inflate_surfaces_wf(
 
             from xcp_d.workflow.anatomical import init_inflate_surfaces_wf
             wf = init_inflate_surfaces_wf(
-                save_inflated=True,
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -672,9 +664,6 @@ def init_inflate_surfaces_wf(
 
     Parameters
     ----------
-    save_inflated : :obj:`bool`
-        Whether to save the inflated file or not.
-        If not, only the very-inflated file will be saved.
     output_dir
     %(mem_gb)s
     %(omp_nthreads)s
@@ -710,35 +699,28 @@ def init_inflate_surfaces_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, inflate_surface, [
-            ("midthickness_surf", "anatomical_surface_in"),
-        ]),
+        (inputnode, inflate_surface, [("midthickness_surf", "anatomical_surface_in")]),
     ])
     # fmt:on
 
-    if save_inflated:
-        ds_inflated = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                check_hdr=False,
-                suffix="inflated",
-                extension=".surf.gii",
-            ),
-            name="ds_inflated",
-            run_without_submitting=False,
-            mem_gb=2,
-        )
+    ds_inflated = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            suffix="inflated",
+            extension=".surf.gii",
+        ),
+        name="ds_inflated",
+        run_without_submitting=False,
+        mem_gb=2,
+    )
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_inflated, [
-                ("name_source", "source_file"),
-            ]),
-            (inflate_surface, ds_inflated, [
-                ("inflated_out_file", "in_file"),
-            ]),
-        ])
-        # fmt:on
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_inflated, [("name_source", "source_file")]),
+        (inflate_surface, ds_inflated, [("inflated_out_file", "in_file")]),
+    ])
+    # fmt:on
 
     ds_vinflated = pe.Node(
         DerivativesDataSink(
@@ -754,12 +736,8 @@ def init_inflate_surfaces_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_vinflated, [
-            ("name_source", "source_file"),
-        ]),
-        (inflate_surface, ds_vinflated, [
-            ("very_inflated_out_file", "in_file"),
-        ]),
+        (inputnode, ds_vinflated, [("name_source", "source_file")]),
+        (inflate_surface, ds_vinflated, [("very_inflated_out_file", "in_file")]),
     ])
     # fmt:on
 
@@ -767,19 +745,19 @@ def init_inflate_surfaces_wf(
 
 
 @fill_doc
-def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
-    """Modify fMRIPrep transforms to work with FSL FNIRT.
+def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf"):
+    """Modify ANTS-style fMRIPrep transforms to work with Connectome Workbench/FSL FNIRT.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_update_xform_wf
-            wf = init_update_xform_wf(
+            from xcp_d.workflow.anatomical import init_ants_xform_to_fsl_wf
+            wf = init_ants_xform_to_fsl_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="update_xform_wf",
+                name="ants_xform_to_fsl_wf",
             )
 
     Parameters
@@ -787,20 +765,23 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "update_xform_wf".
+        Default is "ants_xform_to_fsl_wf".
 
     Inputs
     ------
     t1w_to_template_xform
-        fMRIPrep-style H5 transform from T1w image to template.
+        ANTS/fMRIPrep-style H5 transform from T1w image to template.
     template_to_t1w_xform
-        fMRIPrep-style H5 transform from template to T1w image.
+        ANTS/fMRIPrep-style H5 transform from template to T1w image.
 
     Outputs
     -------
     world_xform
+        TODO: Add description.
     merged_warpfield
+        TODO: Add description.
     merged_inv_warpfield
+        TODO: Add description.
     """
     workflow = Workflow(name=name)
 
@@ -992,32 +973,32 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
     ])
     # fmt:on
 
-    # merge new components
-    merge_new_components = pe.Node(
+    # Collect new warpfield components in individual nodes
+    collect_new_components = pe.Node(
         niu.Merge(3),
-        name="merge_new_components",
+        name="collect_new_components",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-    merge_new_inv_components = pe.Node(
+    collect_new_inv_components = pe.Node(
         niu.Merge(3),
-        name="merge_new_inv_components",
+        name="collect_new_inv_components",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
 
     # fmt:off
     workflow.connect([
-        (select_x_component, merge_new_components, [("out", "in1")]),
-        (reverse_y_component, merge_new_components, [("out_file", "in2")]),
-        (select_z_component, merge_new_components, [("out", "in3")]),
-        (select_inv_x_component, merge_new_inv_components, [("out", "in1")]),
-        (reverse_inv_y_component, merge_new_inv_components, [("out_file", "in2")]),
-        (select_inv_z_component, merge_new_inv_components, [("out", "in3")]),
+        (select_x_component, collect_new_components, [("out", "in1")]),
+        (reverse_y_component, collect_new_components, [("out_file", "in2")]),
+        (select_z_component, collect_new_components, [("out", "in3")]),
+        (select_inv_x_component, collect_new_inv_components, [("out", "in1")]),
+        (reverse_inv_y_component, collect_new_inv_components, [("out_file", "in2")]),
+        (select_inv_z_component, collect_new_inv_components, [("out", "in3")]),
     ])
     # fmt:on
 
-    # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
+    # Merge warpfield components in FSL FNIRT format, with the reversed y-component from above
     remerge_warpfield = pe.Node(
         Merge(),
         name="remerge_warpfield",
@@ -1033,8 +1014,8 @@ def init_update_xform_wf(mem_gb, omp_nthreads, name="update_xform_wf"):
 
     # fmt:off
     workflow.connect([
-        (merge_new_components, remerge_warpfield, [("out", "in_files")]),
-        (merge_new_inv_components, remerge_inv_warpfield, [("out", "in_files")]),
+        (collect_new_components, remerge_warpfield, [("out", "in_files")]),
+        (collect_new_inv_components, remerge_inv_warpfield, [("out", "in_files")]),
         (convert_xfm2world, outputnode, [("out_file", "world_xform")]),
         (remerge_warpfield, outputnode, [("out_file", "merged_warpfield")]),
         (remerge_inv_warpfield, outputnode, [("out_file", "merged_inv_warpfield")]),
@@ -1071,11 +1052,13 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
 
     Inputs
     ------
-    hemi_files
+    hemi_files : list of str
+        A list of surface files for the requested hemisphere, in fsnative space.
     world_xform
     merged_warpfield
     merged_inv_warpfield
     freesurfer_path
+        Path to FreeSurfer derivatives. Used to load the subject's sphere file.
     participant_id
 
     Outputs
@@ -1098,6 +1081,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
         name="inputnode",
     )
 
+    # NOTE: Why do we need the fsaverage mesh?
     fsaverage_mesh = str(
         get_template(
             template="fsaverage",
@@ -1108,6 +1092,8 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
             suffix="sphere",
         )
     )
+
+    # NOTE: Can we upload these to templateflow?
     fs_hemisphere_to_fsLR = pkgrf(
         "xcp_d",
         (
@@ -1135,6 +1121,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     ])
     # fmt:on
 
+    # NOTE: What does this step do?
     sphere_to_surf_gii = pe.Node(
         MRIsConvert(out_datatype="gii"),
         name="sphere_to_surf_gii",
@@ -1148,6 +1135,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     ])
     # fmt:on
 
+    # NOTE: What does this step do?
     surface_sphere_project_unproject = pe.Node(
         SurfaceSphereProjectUnproject(
             sphere_project_to=fsaverage_mesh,
@@ -1174,6 +1162,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     )
 
     # resample the surfaces to fsLR32k
+    # NOTE: Does that mean the data are in fsLR-164k before this?
     resample_to_fsLR32k = pe.MapNode(
         CiftiSurfaceResample(
             new_sphere=fsLR_sphere,
@@ -1197,6 +1186,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     # fmt:on
 
     # apply affine to 32k surfs
+    # NOTE: What does this step do? Aren't the data in fsLR-32k from resample_to_fsLR32k?
     apply_affine_to_fsLR32k = pe.MapNode(
         ApplyAffine(),
         name="apply_affine_to_fsLR32k",
@@ -1213,6 +1203,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     # fmt:on
 
     # apply FNIRT-format warpfield
+    # NOTE: What does this step do?
     apply_warpfield_to_fsLR32k = pe.MapNode(
         ApplyWarpfield(),
         name="apply_warpfield_to_fsLR32k",
