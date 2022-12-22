@@ -619,7 +619,6 @@ def init_warp_surfaces_to_template_wf(
             # fmt:on
 
             inflate_surfaces_wf = init_inflate_surfaces_wf(
-                save_inflated=True,
                 output_dir=output_dir,
                 mem_gb=mem_gb,
                 omp_nthreads=omp_nthreads,
