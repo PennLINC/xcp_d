@@ -20,7 +20,6 @@ from niworkflows import NIWORKFLOWS_LOG
 from xcp_d.cli.parser_utils import (
     _DeprecatedStoreAction040,
     _int_or_auto,
-    _warn_redirect,
     check_deps,
     json_file,
 )
@@ -471,13 +470,13 @@ By default, this workflow is disabled.
     return parser
 
 
-def main():
+def main(args=None):
     """Run the main workflow."""
     from multiprocessing import Manager, Process, set_start_method
 
     set_start_method("forkserver")
-    warnings.showwarning = _warn_redirect
-    opts = get_parser().parse_args()
+    # warnings.showwarning = _warn_redirect
+    opts = get_parser().parse_args(args)
 
     exec_env = os.name
 
