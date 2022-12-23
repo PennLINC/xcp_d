@@ -7,6 +7,7 @@ import nibabel as nb
 import numpy as np
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
+from nipype.interfaces.afni.preprocess import Despike
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
@@ -20,7 +21,6 @@ from xcp_d.interfaces.prepostcleaning import (
     RemoveTR,
 )
 from xcp_d.interfaces.regression import Regress
-from xcp_d.interfaces.resting_state import Despike
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,

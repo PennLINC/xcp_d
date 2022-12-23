@@ -10,9 +10,9 @@ import os
 
 import nibabel as nb
 import numpy as np
+from nipype.interfaces.afni.preprocess import Despike
 from nipype.pipeline import engine as pe
 
-from xcp_d.interfaces.resting_state import Despike
 from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
