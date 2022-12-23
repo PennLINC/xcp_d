@@ -20,7 +20,7 @@ from xcp_d.interfaces.prepostcleaning import (
     RemoveTR,
 )
 from xcp_d.interfaces.regression import Regress
-from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.resting_state import Despike
 from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
@@ -518,7 +518,11 @@ produced by the regression.
 
         # next, run 3dDespike
         despike3d = pe.Node(
-            DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
+            Despike(
+                outputtype="NIFTI_GZ",
+                args="-nomask -NEW",
+                out_file="despiked",
+            ),
             name="despike3d",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,

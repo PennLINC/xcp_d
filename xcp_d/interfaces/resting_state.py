@@ -10,7 +10,6 @@ import shutil
 
 from nilearn.plotting import view_img
 from nipype import logging
-from nipype.interfaces.afni.preprocess import Despike, DespikeInputSpec
 from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -237,42 +236,3 @@ class ReHoNamePatch(SimpleInterface):
 
         os.system(f"3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}")
         self._results["out_file"] = out_file
-
-
-class _DespikePatchInputSpec(DespikeInputSpec):
-    out_file = File(
-        mandatory=False,
-        genfile=True,
-        desc="output image file name",
-        argstr="-prefix %s",
-    )
-
-
-class DespikePatch(Despike):
-    """Remove 'spikes' from the 3D+time input dataset.
-
-    For complete details, see the `3dDespike Documentation.
-    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html>`_
-
-    Examples
-    --------
-    >>> from nipype.interfaces import afni
-    >>> despike = afni.Despike()
-    >>> despike.inputs.in_file = 'functional.nii'
-    >>> despike.cmdline
-    '3dDespike -prefix functional_despike functional.nii'
-    >>> res = despike.run()  # doctest: +SKIP
-    """
-
-    input_spec = _DespikePatchInputSpec
-
-    def _gen_filename(self, name):
-        if name == "out_file":
-            return "inset.nii.gz"
-        else:
-            return None
-
-    def _list_outputs(self):
-        outputs = self.output_spec().get()
-        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
-        return outputs

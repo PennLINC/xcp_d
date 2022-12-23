@@ -20,7 +20,7 @@ from xcp_d.interfaces.prepostcleaning import (
     RemoveTR,
 )
 from xcp_d.interfaces.regression import Regress
-from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.resting_state import Despike
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,
@@ -552,7 +552,11 @@ produced by the regression.
         # and data, and different from temporal censoring. It can be added to the
         # command line arguments with --despike.
         despike3d = pe.Node(
-            DespikePatch(outputtype="NIFTI_GZ", args="-NEW"),
+            Despike(
+                outputtype="NIFTI_GZ",
+                args="-NEW",
+                out_file="despiked",
+            ),
             name="despike3d",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,

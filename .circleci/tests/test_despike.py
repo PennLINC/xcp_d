@@ -12,7 +12,7 @@ import nibabel as nb
 import numpy as np
 from nipype.pipeline import engine as pe
 
-from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.resting_state import Despike
 from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -67,7 +67,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
     )
 
     # Let's despike the image and write it out to a temp file
-    despike_nifti = pe.Node(DespikePatch(outputtype="NIFTI_GZ", args="-NEW"), name="Despike")
+    despike_nifti = pe.Node(Despike(outputtype="NIFTI_GZ", args="-NEW"), name="Despike")
     despike_nifti.inputs.in_file = spikedfile
     res = despike_nifti.run()
     despiked_file = res.outputs.out_file
@@ -126,7 +126,7 @@ def test_cifti_despike(fmriprep_with_freesurfer_data, tmp_path_factory):
     convert_to_nifti_results = convert_to_nifti.run(cwd=tempdir)
 
     # next, run 3dDespike
-    despike3d = DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW")
+    despike3d = Despike(outputtype="NIFTI_GZ", args="-nomask -NEW")
     despike3d.inputs.in_file = convert_to_nifti_results.outputs.out_file
     despike3d_results = despike3d.run(cwd=tempdir)
 
