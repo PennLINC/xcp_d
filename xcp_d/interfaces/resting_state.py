@@ -6,18 +6,15 @@
 
 """
 import os
-import shutil
 
 from nilearn.plotting import view_img
 from nipype import logging
-from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
     SimpleInterface,
     TraitedSpec,
     traits,
-    traits_extension,
 )
 
 from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
@@ -197,42 +194,3 @@ class BrainPlot(SimpleInterface):
 
         html_view.save_as_html(self._results["nifti_html"])
         return runtime
-
-
-class ReHoNamePatch(SimpleInterface):
-    """Compute ReHo for a given neighbourhood, based on a local neighborhood of that voxel.
-
-    For complete details, see the `3dReHo Documentation.
-    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dReHo.html>`_
-
-    Examples
-    --------
-    >>> from nipype.interfaces import afni
-    >>> reho = afni.ReHo()
-    >>> reho.inputs.in_file = 'functional.nii'
-    >>> reho.inputs.out_file = 'reho.nii.gz'
-    >>> reho.inputs.neighborhood = 'vertices'
-    >>> reho.cmdline
-    '3dReHo -prefix reho.nii.gz -inset functional.nii -nneigh 27'
-    >>> res = reho.run()  # doctest: +SKIP
-    """
-
-    _cmd = "3dReHo"
-    input_spec = ReHoInputSpec
-    output_spec = ReHoOutputSpec
-
-    def _run_interface(self, runtime):
-        out_file = os.path.join(runtime.cwd, "reho.nii.gz")
-
-        in_file = os.path.join(runtime.cwd, "inset.nii.gz")
-        shutil.copyfile(self.inputs.in_file, in_file)
-
-        if traits_extension.isdefined(self.inputs.mask_file):
-            mask_file = os.path.join(runtime.cwd, "mask.nii.gz")
-            shutil.copyfile(self.inputs.mask_file, mask_file)
-            mask_cmd = f"-mask {mask_file}"
-        else:
-            mask_cmd = ""
-
-        os.system(f"3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}")
-        self._results["out_file"] = out_file

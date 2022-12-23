@@ -3,13 +3,14 @@
 """Workflows for calculating resting state-specific metrics."""
 from nipype import Function
 from nipype.interfaces import utility as niu
+from nipype.interfaces.afni.utils import ReHo
 from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
-from xcp_d.interfaces.resting_state import ComputeALFF, ReHoNamePatch, SurfaceReHo
+from xcp_d.interfaces.resting_state import ComputeALFF, SurfaceReHo
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseScalar,
     CiftiSeparateMetric,
@@ -291,7 +292,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHoNamePatch(neighborhood="vertices"),
+        ReHo(neighborhood="vertices", out_file="subcortical_reho"),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -393,7 +394,10 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
-        ReHoNamePatch(neighborhood="vertices"), name="reho_3d", mem_gb=mem_gb, n_procs=omp_nthreads
+        ReHo(neighborhood="vertices", out_file="reho"),
+        name="reho_3d",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
     )
     # Get the svg
     reho_plot = pe.Node(
