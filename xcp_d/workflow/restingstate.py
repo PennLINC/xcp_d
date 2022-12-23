@@ -292,7 +292,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
-        ReHo(neighborhood="vertices", out_file="subcortical_reho"),
+        ReHo(neighborhood="vertices", out_file="subcortical_reho.nii.gz"),
         name="reho_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -395,7 +395,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
         ReHo(neighborhood="vertices", out_file="reho"),
-        name="reho_3d",
+        name="reho_3d.nii.gz",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )

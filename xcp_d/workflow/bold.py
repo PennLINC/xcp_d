@@ -555,7 +555,7 @@ produced by the regression.
             Despike(
                 outputtype="NIFTI_GZ",
                 args="-NEW",
-                out_file="despiked",
+                out_file="despiked.nii.gz",
             ),
             name="despike3d",
             mem_gb=mem_gbx["timeseries"],
