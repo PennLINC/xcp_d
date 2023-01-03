@@ -7,9 +7,8 @@ General Workflow
 
 Input data
 ----------
-The default inputs to `XCP-D` are the outputs of  `fMRIPrep` and `Nibabies`.
-`xcp_d` can also process `ABCD-DCAN` and minimal processing of `HCP` data,
-both of which require their respective `input-type` flags ( `dcan`` or `hcp` ).
+The default inputs to ``xcp_d`` are the outputs of  ``fMRIPrep`` and ``Nibabies``.
+``xcp_d`` can also minimally process ``HCP`` data, which requires the ``--input-type hcp`` flag.
 
 
 Processing Steps
@@ -92,6 +91,11 @@ Processing Steps
 
     For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
 
+    .. warning::
+
+      In XCP-D versions prior to 0.3.1, the selected AROMA confounds were incorrect.
+      We strongly advise users of these versions not to use the ``aroma`` or ``aroma_gsr`` options.
+
     After the selection of confound regressors,
     the respiratory effects can optionally be filtered out from the motion estimates with band-stop or low-pass filtering to improve fMRI data quality.
     Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020removal` for more information.
@@ -151,7 +155,7 @@ Processing Steps
     ``XCP-D`` implements a Butterworth bandpass filter to filter BOLD signal after regression.
     The bandpass filter parameters are set to 0.009 to 0.08 Hz with order of 2 by default and can be modified in the command line.
     If there are any flagged volumes or timepoints during Temporal Censoring, these volumes are interpolated before bandpass filtering.
-    This can be set to `true` or `false` (the default being `true`) in the command line arguments with ``--bandpass_filter``.
+    This can be disabled in the command line arguments with ``--disable-bandpass-filter``.
 
 7.  Functional timeseries and connectivity matrices:
     ``XCP-D`` implements  a module that extracts voxelwise timeseries with brain atlases.

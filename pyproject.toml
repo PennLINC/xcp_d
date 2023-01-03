@@ -3,5 +3,27 @@ requires = ["setuptools==58.2.0", "wheel"]
 
 [tool.isort]
 profile = "black"
+multi_line_output = 3
 src_paths = ["isort", "test"]
 known_local_folder = ["xcp_d"]
+
+[tool.black]
+line-length = 99
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.github
+    | \.hg
+    | \.pytest_cache
+    | _build
+    | build
+    | dist
+  )/
+  | versioneer.py
+  | xcp_d/_version.py
+)
+'''

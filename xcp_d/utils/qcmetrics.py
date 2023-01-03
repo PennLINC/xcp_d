@@ -27,14 +27,14 @@ def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, templat
         Quality control measures between different inputs.
     """
     reg_qc = {
-        'coregDice': [dc(bold2t1w_mask, t1w_mask)],
-        'coregJaccard': [jc(bold2t1w_mask, t1w_mask)],
-        'coregCrossCorr': [crosscorr(bold2t1w_mask, t1w_mask)],
-        'coregCoverag': [coverage(bold2t1w_mask, t1w_mask)],
-        'normDice': [dc(bold2template_mask, template_mask)],
-        'normJaccard': [jc(bold2template_mask, template_mask)],
-        'normCrossCorr': [crosscorr(bold2template_mask, template_mask)],
-        'normCoverage': [coverage(bold2template_mask, template_mask)],
+        "coregDice": [dc(bold2t1w_mask, t1w_mask)],
+        "coregJaccard": [jc(bold2t1w_mask, t1w_mask)],
+        "coregCrossCorr": [crosscorr(bold2t1w_mask, t1w_mask)],
+        "coregCoverag": [coverage(bold2t1w_mask, t1w_mask)],
+        "normDice": [dc(bold2template_mask, template_mask)],
+        "normJaccard": [jc(bold2template_mask, template_mask)],
+        "normCrossCorr": [crosscorr(bold2template_mask, template_mask)],
+        "normCoverage": [coverage(bold2template_mask, template_mask)],
     }
     return reg_qc
 
@@ -46,7 +46,9 @@ def dc(input1, input2):
     objects in twom j images.
 
     The metric is defined as
+
     .. math::
+
         DC=\frac{2|A\cap B|}{|A|+|B|}
 
     , where :math:`A` is the first and :math:`B` the second set of samples (here: binary objects).
@@ -79,7 +81,7 @@ def dc(input1, input2):
     size_i2 = np.count_nonzero(input2)
 
     try:
-        dc = 2. * intersection / float(size_i1 + size_i2)
+        dc = 2.0 * intersection / float(size_i1 + size_i2)
     except ZeroDivisionError:
         dc = 0.0
 

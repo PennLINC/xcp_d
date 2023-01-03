@@ -13,6 +13,14 @@ sections:
     title: White Matter and Pial Ribbons
     caption: This panel is an interactive figure rendering the white matter and pial surfaces on the T1w image.
     static: false
+  - bids:
+      datatype: figures
+      desc: brainplot
+      extension: [.svg]
+      suffix: T1w
+    title: White Matter and Pial Ribbons
+    caption: This panel shows the white matter and pial surfaces on the T1w image.
+    static: true
 - name: Processing Summary
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
@@ -43,9 +51,9 @@ sections:
       datatype: figures
       desc: alffVolumetricPlot
       suffix: bold
-    caption: ALFF, or amplitude of low frequency fluctuations. Overlaid on T1W image with same entities as the original image. 
+    caption: ALFF, or amplitude of low frequency fluctuations. Overlaid on T1W image with same entities as the original image.
     subtitle: ALFF
-  - bids: 
+  - bids:
       datatype: figures
       desc: rehoVolumetricPlot
       suffix: bold

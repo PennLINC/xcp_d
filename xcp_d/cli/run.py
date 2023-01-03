@@ -5,7 +5,9 @@
 xcp_d preprocessing workflow
 ============================
 """
+import argparse
 import gc
+import json
 import logging
 import os
 import sys
@@ -24,6 +26,18 @@ logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
 
 
+def json_file(file_):
+    """Load a JSON file and return it."""
+    if file_ is None:
+        return file_
+    elif os.path.isfile(file_):
+        with open(file_, "r") as fo:
+            data = json.load(fo)
+        return data
+    else:
+        raise ValueError(f"Not supported: {file_}")
+
+
 def _warn_redirect(message, category):
     logger.warning("Captured warning (%s): %s", category, message)
 
@@ -35,26 +49,46 @@ def check_deps(workflow):
     return sorted(
         (node.interface.__class__.__name__, node.interface._cmd)
         for node in workflow._get_all_nodes()
-        if (
-            hasattr(node.interface, "_cmd")
-            and which(node.interface._cmd.split()[0]) is None
-        )
+        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
     )
 
 
-class DeprecatedStoreAction(Action):
+def _int_or_auto(string, is_parser=True):
+    """Check if argument is an integer >= 0 or the string "auto"."""
+    if string == "auto":
+        return string
+
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        intarg = int(string)
+    except ValueError:
+        msg = "Argument must be a nonnegative integer or 'auto'."
+        raise error(msg)
+
+    if intarg < 0:
+        raise error("Int argument must be nonnegative.")
+    return intarg
+
+
+class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 
     Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
     """
 
+    __version__ = ""
+
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.3.0. "
-            "Please use '--nuisance-regressors' or '-p'."
+            f"Argument '{option_string}' is deprecated and will be removed in version "
+            f"{self.__version__}. "
         )
         setattr(namespace, self.dest, values)
+
+
+class _DeprecatedStoreAction040(_DeprecatedStoreAction):
+    __version__ = "0.4.0"
 
 
 def get_parser():
@@ -92,8 +126,8 @@ def get_parser():
     # optional arguments
     parser.add_argument("--version", action="version", version=verstr)
 
-    g_bidx = parser.add_argument_group("Options for filtering BIDS queries")
-    g_bidx.add_argument(
+    g_bids = parser.add_argument_group("Options for filtering BIDS queries")
+    g_bids.add_argument(
         "--participant_label",
         "--participant-label",
         action="store",
@@ -103,13 +137,22 @@ def get_parser():
             "identifier (the sub- prefix can be removed)"
         ),
     )
-    g_bidx.add_argument(
+    g_bids.add_argument(
         "-t",
         "--task-id",
         action="store",
         help="select a specific task to be selected for the postprocessing ",
     )
-    g_bidx.add_argument(
+    g_bids.add_argument(
+        "--bids-filter-file",
+        dest="bids_filters",
+        action="store",
+        type=json_file,
+        default=None,
+        metavar="FILE",
+        help="A JSON file defining BIDS input filters using PyBIDS.",
+    )
+    g_bids.add_argument(
         "-m",
         "--combineruns",
         action="store_true",
@@ -170,8 +213,8 @@ def get_parser():
     g_outputoption.add_argument(
         "--input-type",
         required=False,
-        default='fmriprep',
-        choices=['fmriprep', 'dcan', 'hpc', 'nibabies'],
+        default="fmriprep",
+        choices=["fmriprep", "dcan", "hcp", "nibabies"],
         help=(
             "The pipeline used to generate the preprocessed derivatives. "
             "The default pipeline is 'fmriprep'. "
@@ -194,33 +237,7 @@ def get_parser():
         default=False,
         help="despike the nifti/cifti before postprocessing",
     )
-
-    nuisance_params = g_param.add_mutually_exclusive_group()
-    nuisance_params.add_argument(
-        "--nuissance-regressors",
-        dest="nuisance_regressors",
-        action=DeprecatedStoreAction,
-        required=False,
-        default="36P",
-        choices=[
-            "27P",
-            "36P",
-            "24P",
-            "acompcor",
-            "aroma",
-            "acompcor_gsr",
-            "aroma_gsr",
-            "custom",
-        ],
-        type=str,
-        help=(
-            "Nuisance parameters to be selected, other options include 24P and 36P acompcor and "
-            "aroma. See Ciric et. al (2007) for more information about regression strategies. "
-            "This parameter is deprecated and will be removed in version 0.3.0. "
-            "Please use ``-p`` or ``--nuisance-regressors``."
-        ),
-    )
-    nuisance_params.add_argument(
+    g_param.add_argument(
         "-p",
         "--nuisance-regressors",
         dest="nuisance_regressors",
@@ -235,6 +252,7 @@ def get_parser():
             "aroma_gsr",
             "custom",
         ],
+        default="36P",
         type=str,
         help="Nuisance parameters to be selected. See Ciric et. al (2007).",
     )
@@ -244,20 +262,44 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help="Custom confound to be added to nuisance regressors.",
+        help=(
+            "Custom confound to be added to nuisance regressors. "
+            "Must be a folder containing confounds files, "
+            "in which case the file with the name matching the fMRIPrep confounds "
+            "file will be selected. "
+        ),
     )
-    g_param.add_argument(
+
+    dummyvols = g_param.add_mutually_exclusive_group()
+    dummyvols.add_argument(
         "-d",
         "--dummytime",
         default=0,
         type=float,
-        help="first volume in seconds to be removed or skipped before postprocessing",
+        action=_DeprecatedStoreAction040,
+        help=(
+            "Number of seconds to remove from the beginning of each run. "
+            "This value will be rounded up to the nearest TR. "
+            "This parameter is deprecated and will be removed in version 0.4.0. "
+            "Please use ``--dummy-scans``."
+        ),
+    )
+    dummyvols.add_argument(
+        "--dummy-scans",
+        dest="dummy_scans",
+        default=0,
+        type=_int_or_auto,
+        metavar="{{auto,INT}}",
+        help=(
+            "Number of volumes to remove from the beginning of each run. "
+            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "preprocessing derivatives' confounds file."
+        ),
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
 
-    bandpass_filter_params = g_filter.add_mutually_exclusive_group()
-    bandpass_filter_params.add_argument(
+    g_filter.add_argument(
         "--disable-bandpass-filter",
         "--disable_bandpass_filter",
         dest="bandpass_filter",
@@ -267,20 +309,6 @@ def get_parser():
             "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
         ),
     )
-    bandpass_filter_params.add_argument(
-        "--bandpass_filter",
-        dest="bandpass_filter",
-        action=DeprecatedStoreAction,
-        type=bool,
-        help=(
-            "Whether to Butterworth bandpass filter the data or not. "
-            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated. "
-            "This parameter is deprecated and will be removed in version 0.3.0. "
-            "Bandpass filtering is performed by default, and if you wish to disable it, "
-            "please use `--disable-bandpass-filter``."
-        ),
-    )
-
     g_filter.add_argument(
         "--lower-bpf",
         action="store",
@@ -315,7 +343,7 @@ If not set, no filter will be applied.
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
 must be defined.
 If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
-"""
+""",
     )
     g_filter.add_argument(
         "--band-stop-min",
@@ -355,7 +383,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
 
 When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-used value for
 this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
-"""
+""",
     )
     g_filter.add_argument(
         "--band-stop-max",
@@ -391,7 +419,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         - 28
     *   - > 80
         - 30
-"""
+""",
     )
     g_filter.add_argument(
         "--motion-filter-order",
@@ -406,10 +434,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head_radius",
         default=50,
         type=float,
-        help=(
-            "head radius for computing FD, default is 50mm, "
-            "35mm is recommended for baby"
-        ),
+        help=("head radius for computing FD, default is 50mm, 35mm is recommended for baby"),
     )
     g_censor.add_argument(
         "-f",
@@ -450,10 +475,10 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="Opt-out of sending tracking information",
     )
 
-    g_experimental = parser.add_argument_group('Experimental options')
+    g_experimental = parser.add_argument_group("Experimental options")
     g_experimental.add_argument(
-        '--warp-surfaces-native2std',
-        action='store_true',
+        "--warp-surfaces-native2std",
+        action="store_true",
         dest="process_surfaces",
         default=False,
         help="""\
@@ -491,7 +516,15 @@ By default, this workflow is disabled.
       - A very-inflated midthicknesss surface (also for visualization).
         This is derived from the HCP midthickness file.
         This file is only created if the input type is "fmriprep" or "nibabies".
-"""
+""",
+    )
+    g_experimental.add_argument(
+        "--dcan-qc",
+        "--dcan_qc",
+        action="store_true",
+        dest="dcan_qc",
+        default=False,
+        help="Run DCAN QC, including executive summary generation.",
     )
 
     return parser
@@ -552,6 +585,12 @@ def main():
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
+    # Track start of workflow with sentry
+    if not opts.notrack:
+        from xcp_d.utils.sentry import start_ping
+
+        start_ping(run_uuid, len(subject_list))
+
     errno = 1  # Default is error exit unless otherwise set
     try:
         xcpd_wf.run(**plugin_settings)
@@ -560,9 +599,7 @@ def main():
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-        crashfolders = [
-            output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
-        ]
+        crashfolders = [output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list]
         for crashfolder in crashfolders:
             for crashfile in crashfolder.glob("crash*.*"):
                 process_crashfile(crashfile)
@@ -611,9 +648,7 @@ def main():
             try:
                 check_call(cmd, timeout=10)
             except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(
-                    f"Could not generate CITATION.html file:\n{' '.join(cmd)}"
-                )
+                logger.warning(f"Could not generate CITATION.html file:\n{' '.join(cmd)}")
 
             # Generate LaTex file resolving citations
             cmd = [
@@ -630,9 +665,7 @@ def main():
             try:
                 check_call(cmd, timeout=10)
             except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(
-                    f"Could not generate CITATION.tex file:\n{' '.join(cmd)}"
-                )
+                logger.warning(f"Could not generate CITATION.tex file:\n{' '.join(cmd)}")
             else:
                 copyfile(pkgrf("xcp_d", "data/boilerplate.bib"), citation_files["bib"])
 
@@ -645,15 +678,17 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            dummytime=opts.dummytime,
             subject_list=subject_list,
             fmri_dir=fmri_dir,
             work_dir=work_dir,
             output_dir=output_dir,
             run_uuid=run_uuid,
-            combineruns=opts.combineruns,
-            input_type=opts.input_type,
             cifti=opts.cifti,
+            dummy_scans=opts.dummy_scans,
+            dummytime=opts.dummytime,
+            combineruns=opts.combineruns,
+            dcan_qc=opts.dcan_qc,
+            input_type=opts.input_type,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
         )
@@ -802,7 +837,7 @@ def build_workflow(opts, retval):
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
         print(f"checking the {opts.input_type} files")
-        converted_fmri_dir = os.path.join(work_dir, "dcanhcp")
+        converted_fmri_dir = os.path.join(work_dir, "dcanhcp/derivatives")
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
         if opts.participant_label is not None:
@@ -939,6 +974,7 @@ Running xcp_d version {__version__}:
         subject_list=subject_list,
         work_dir=str(work_dir),
         task_id=opts.task_id,
+        bids_filters=opts.bids_filters,
         despike=opts.despike,
         smoothing=opts.smoothing,
         params=opts.nuisance_regressors,
@@ -946,10 +982,12 @@ Running xcp_d version {__version__}:
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_confounds=opts.custom_confounds,
+        custom_confounds_folder=opts.custom_confounds,
         dummytime=opts.dummytime,
+        dummy_scans=opts.dummy_scans,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
+        dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
         name="xcpd_wf",
     )

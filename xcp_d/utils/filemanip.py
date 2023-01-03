@@ -22,11 +22,12 @@ fmlogger = logging.getLogger("nipype.utils")
 
 related_filetype_sets = [(".hdr", ".img", ".mat"), (".nii", ".mat"), (".BRIK", ".HEAD")]
 
-# TODO: Fix non-binary mask bug in Nibabel 22.1.3
-
 
 def check_binary_mask(mask_file):
-    """Check if the mask is binary."""
+    """Check if the mask is binary.
+
+    TODO: Fix non-binary mask bug in nibabies 22.1.3
+    """
     is_binary = 1
     if len(np.unique(nb.load(mask_file).get_fdata())) > 2:
         is_binary = 0
@@ -107,7 +108,10 @@ def split_filename(fname):
         ".dpconn.nii",
         ".dtraj.nii",
         ".pconnseries.nii",
-        ".pconnscalar.nii"
+        ".pconnscalar.nii",
+        ".dfan.nii",
+        ".dfibersamp.nii",
+        ".dfansamp.nii",
     ]
 
     pth = op.dirname(fname)
@@ -246,11 +250,7 @@ def _parse_mount_table(exit_code, output):
         if match is None:
             fmlogger.debug("Cannot parse mount line: '%s'", line)
 
-    return [
-        mount
-        for mount in mount_info
-        if any(mount[0].startswith(path) for path in cifs_paths)
-    ]
+    return [mount for mount in mount_info if any(mount[0].startswith(path) for path in cifs_paths)]
 
 
 def _generate_cifs_table():
@@ -395,15 +395,11 @@ def copyfile(
             else:
                 raise AttributeError("Unknown hash method found:", hashmethod)
             newhash = hashfn(newfile)
-            fmlogger.debug(
-                "File: %s already exists,%s, copy:%d", newfile, newhash, copy
-            )
+            fmlogger.debug("File: %s already exists,%s, copy:%d", newfile, newhash, copy)
             orighash = hashfn(originalfile)
             keep = newhash == orighash
         if keep:
-            fmlogger.debug(
-                "File: %s already exists, not overwriting, copy:%d", newfile, copy
-            )
+            fmlogger.debug("File: %s already exists, not overwriting, copy:%d", newfile, copy)
         else:
             os.unlink(newfile)
 
@@ -441,8 +437,7 @@ def copyfile(
     # Associated files
     if copy_related_files:
         related_file_pairs = (
-            get_related_files(f, include_this_file=False)
-            for f in (originalfile, newfile)
+            get_related_files(f, include_this_file=False) for f in (originalfile, newfile)
         )
         for alt_ofile, alt_nfile in zip(*related_file_pairs):
             if op.exists(alt_ofile):
@@ -589,13 +584,9 @@ def relpath(path, start=None):
         unc_path, rest = op.splitunc(path)
         unc_start, rest = op.splitunc(start)
         if bool(unc_path) ^ bool(unc_start):
-            raise ValueError(
-                ("Cannot mix UNC and non-UNC paths " "(%s and %s)") % (path, start)
-            )
+            raise ValueError(("Cannot mix UNC and non-UNC paths (%s and %s)") % (path, start))
         else:
-            raise ValueError(
-                f"path is on drive {path_list[0]}, start on drive {start_list[0]}"
-            )
+            raise ValueError(f"path is on drive {path_list[0]}, start on drive {start_list[0]}")
     # Work out how much of the filepath is shared by start and path.
     for i in range(min(len(start_list), len(path_list))):
         if start_list[i].lower() != path_list[i].lower():
@@ -645,8 +636,7 @@ def find_and_copy_files(seek_dir, pattern, output_dir):
     for found_file in glob.glob(glob_pattern):
         # TODO: change name to BIDS name?
         filename = os.path.basename(found_file)
-        rel_path = os.path.relpath(os.path.join(output_dir, filename),
-                                   os.getcwd())
+        rel_path = os.path.relpath(os.path.join(output_dir, filename), os.getcwd())
         shutil.copy(found_file, rel_path)
         rel_paths.append(rel_path)
 

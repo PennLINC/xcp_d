@@ -108,9 +108,7 @@ DEFAULT_DTYPES = defaultdict(
 
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
-    base_directory = traits.Directory(
-        desc="Path to the base directory for storing data."
-    )
+    base_directory = traits.Directory(desc="Path to the base directory for storing data.")
     check_hdr = traits.Bool(True, usedefault=True, desc="fix headers of NIfTI outputs")
     compress = InputMultiObject(
         traits.Either(None, traits.Bool),
@@ -119,17 +117,14 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
         "or left unmodified (None, default).",
     )
     data_dtype = Str(
-        desc="NumPy datatype to coerce NIfTI data to, or `source` to"
-        "match the input file dtype"
+        desc="NumPy datatype to coerce NIfTI data to, or `source` to match the input file dtype"
     )
     dismiss_entities = InputMultiObject(
         traits.Either(None, Str),
         usedefault=True,
         desc="a list entities that will not be propagated from the source file",
     )
-    in_file = InputMultiObject(
-        File(exists=True), mandatory=True, desc="the object to be saved"
-    )
+    in_file = InputMultiObject(File(exists=True), mandatory=True, desc="the object to be saved")
     meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
     source_file = InputMultiObject(
         File(exists=False), mandatory=True, desc="the source file(s) to extract entities from")
@@ -167,9 +162,7 @@ class DerivativesDataSink(SimpleInterface):
 
     def __init__(self, allowed_entities=None, out_path_base=None, **inputs):
         """Initialize the SimpleInterface and extend inputs with custom entities."""
-        self._allowed_entities = set(allowed_entities or []).union(
-            self._allowed_entities
-        )
+        self._allowed_entities = set(allowed_entities or []).union(self._allowed_entities)
         if out_path_base:
             self.out_path_base = out_path_base
 
@@ -266,8 +259,7 @@ class DerivativesDataSink(SimpleInterface):
             # Example: f"{key}-{{{key}}}" -> "task-{task}"
             custom_pat = "_".join(f"{key}-{{{key}}}" for key in sorted(custom_entities))
             patterns = [
-                pat.replace("_{suffix", "_".join(("", custom_pat, "{suffix")))
-                for pat in patterns
+                pat.replace("_{suffix", "_".join(("", custom_pat, "{suffix"))) for pat in patterns
             ]
 
         # Prepare SimpleInterface outputs object
@@ -297,9 +289,9 @@ class DerivativesDataSink(SimpleInterface):
             # still None when it's time to write, just copy.
             new_data, new_header = None, None
 
-            is_nifti = out_file.name.endswith(
-                (".nii", ".nii.gz")
-            ) and not out_file.name.endswith((".dtseries.nii", ".dtseries.nii.gz"))
+            is_nifti = out_file.name.endswith((".nii", ".nii.gz")) and not out_file.name.endswith(
+                (".dtseries.nii", ".dtseries.nii.gz")
+            )
             data_dtype = self.inputs.data_dtype or DEFAULT_DTYPES[self.inputs.suffix]
             if is_nifti and any((self.inputs.check_hdr, data_dtype)):
                 nii = nb.load(orig_file)
@@ -318,9 +310,7 @@ class DerivativesDataSink(SimpleInterface):
                     )
                     xcodes = (1, 1)  # Derivative in its original scanner space
                     if self.inputs.space:
-                        xcodes = (
-                            (4, 4) if self.inputs.space in STANDARD_SPACES else (2, 2)
-                        )
+                        xcodes = (4, 4) if self.inputs.space in STANDARD_SPACES else (2, 2)
 
                     curr_zooms = zooms = hdr.get_zooms()
                     if "RepetitionTime" in self.inputs.get():
@@ -383,11 +373,7 @@ class DerivativesDataSink(SimpleInterface):
         if len(self._results["out_file"]) == 1:
             meta_fields = self.inputs.copyable_trait_names()
             self._metadata.update(
-                {
-                    k: getattr(self.inputs, k)
-                    for k in meta_fields
-                    if k not in self._static_traits
-                }
+                {k: getattr(self.inputs, k) for k in meta_fields if k not in self._static_traits}
             )
             if self._metadata:
                 sidecar = out_file.parent / f"{out_file.name.split('.', 1)[0]}.json"

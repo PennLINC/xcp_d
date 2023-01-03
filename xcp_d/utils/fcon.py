@@ -9,13 +9,15 @@ from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 
-def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
+def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     """Use Nilearn NiftiLabelsMasker to extract timeseries.
 
     Parameters
     ----------
     in_file : str
         bold file timeseries
+    mask : str
+        BOLD file's associated brain mask file.
     atlas : str
         atlas in the same space with bold
     timeseries : str
@@ -30,11 +32,16 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
     fconmatrix : str
         functional connectivity matrix filename
     """
-    masker = NiftiLabelsMasker(labels_img=atlas,
-                               smoothing_fwhm=None,
-                               standardize=False)
+    masker = NiftiLabelsMasker(
+        labels_img=atlas,
+        mask_img=mask,
+        smoothing_fwhm=None,
+        standardize=False,
+    )
+
     # Use nilearn for time_series
     time_series = masker.fit_transform(in_file)
+
     # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
 
@@ -75,12 +82,15 @@ def compute_2d_reho(datat, adjacency_matrix):
         neigbor, timepoint = neidata.shape[0], neidata.shape[1]
 
         for j in range(neidata.shape[0]):  # loop through each neighbour
-            rankeddata[j, :] = rankdata(neidata[j, ])  # assign ranks to timepoints for each voxel
+            rankeddata[j, :] = rankdata(
+                neidata[
+                    j,
+                ]
+            )  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # KC is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
-        KC = np.sum(np.power(rankmean, 2)) - \
-            timepoint * np.power(np.mean(rankmean), 2)
+        KC = np.sum(np.power(rankmean, 2)) - timepoint * np.power(np.mean(rankmean), 2)
         # square number of neighbours, multiply by (cubed timepoint - timepoint)
         denom = np.power(neigbor, 2) * (np.power(timepoint, 3) - timepoint)
         # the voxel value is 12*KC divided by denom
@@ -104,16 +114,13 @@ def mesh_adjacency(hemi):
         Adjacency matrix.
     """
     surf = str(
-        get_template("fsLR",
-                     space='fsaverage',
-                     hemi=hemi,
-                     suffix='sphere',
-                     density='32k'))  # Get relevant template
+        get_template("fsLR", space="fsaverage", hemi=hemi, suffix="sphere", density="32k")
+    )  # Get relevant template
 
     surf = nb.load(surf)  # load via nibabel
     #  Aggregate GIFTI data arrays into an ndarray or tuple of ndarray
     # select the arrays in a specific order
-    vertices_faces = surf.agg_data(('pointset', 'triangle'))
+    vertices_faces = surf.agg_data(("pointset", "triangle"))
     vertices = vertices_faces[0]  # the first array of the tuple
     faces = vertices_faces[1]  # the second array in the tuples
     # create an array of 0s = voxel*voxel
@@ -156,20 +163,20 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     # number of voxels
     for ii in range(data_matrix.shape[0]):  # Loop through the voxels
         # get array of sample frequencies + power spectrum density
-        array_of_sample_frequencies, power_spec_density = signal.periodogram(data_matrix[ii, :],
-                                                                             fs,
-                                                                             scaling='spectrum')
+        array_of_sample_frequencies, power_spec_density = signal.periodogram(
+            data_matrix[ii, :], fs, scaling="spectrum"
+        )
         # square root of power spectrum density
         power_spec_density_sqrt = np.sqrt(power_spec_density)
         # get the position of the arguments closest to high_pass and low_pass, respectively
         ff_alff = [
             np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
-            np.argmin(np.abs(array_of_sample_frequencies - low_pass))
+            np.argmin(np.abs(array_of_sample_frequencies - low_pass)),
         ]
         # alff for that voxel is 2 * the mean of the sqrt of the power spec density
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0]:ff_alff[1]])
+        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
     # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
     alff = np.reshape(alff, [len(alff), 1])
     return alff
