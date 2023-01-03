@@ -272,7 +272,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         n_procs=omp_nthreads,
     )
     subcortical_nifti = pe.Node(
-        CiftiSeparateVolumeAll(direction="COLUMN"),
+        CiftiSeparateVolumeAll(direction="COLUMN", out_file="subcortical.nii.gz"),
         name="separate_subcortical",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,

@@ -7,6 +7,8 @@ Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
 import os
+import random
+import string
 
 import nibabel as nb
 import numpy as np
@@ -34,6 +36,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
             "_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
         ),
     )
+
     maskfile = os.path.join(
         data_dir,
         (
@@ -57,7 +60,8 @@ def test_nifti_despike(data_dir, tmp_path_factory):
 
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
-    spikedfile = os.path.join(tempdir, "spikedfile.nii.gz")
+    test_filename = "".join(random.choices(string.ascii_lowercase, k=100))
+    spikedfile = os.path.join(tempdir, f"{test_filename}.nii.gz")
     write_ndata(
         data_matrix=file_data,
         mask=maskfile,
