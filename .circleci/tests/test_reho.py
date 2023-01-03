@@ -102,6 +102,12 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
         "merge_cifti",
         "reho_combined.dscalar.nii",
     )
+    if not os.path.isfile(original_reho):
+        raise FileNotFoundError(os.path.listdir(os.path.join(
+            tempdir,
+            "orig_reho_wf",
+            "merge_cifti",
+        )))
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
 
     # Add some noise to the original data and write it out

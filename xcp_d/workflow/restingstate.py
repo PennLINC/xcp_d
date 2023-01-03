@@ -315,6 +315,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     )
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
+
     # Write out results
     # fmt:off
     workflow.connect([
@@ -394,7 +395,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
-        ReHo(neighborhood="vertices", out_file="reho_3d.nii.gz"),
+        ReHo(neighborhood="vertices", out_file="reho.nii.gz"),
         name="reho_3d",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
