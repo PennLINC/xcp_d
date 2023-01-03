@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Surface plotting interfaces."""
-
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -12,7 +11,6 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.execsummary import generate_brain_sprite, ribbon_to_statmap
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plot import plot_svgx, plotimage
 
@@ -39,39 +37,6 @@ class PlotImage(SimpleInterface):
         )
 
         self._results["out_file"] = plotimage(self.inputs.in_file, self._results["out_file"])
-
-        return runtime
-
-
-class _BrainPlotxInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="stats file")
-    template = File(exists=True, mandatory=True, desc="mask file ")
-
-
-class _BrainPlotxOutputSpec(TraitedSpec):
-    plot_file = File(exists=True, mandatory=True, desc="zscore html")
-
-
-class BrainPlotx(SimpleInterface):
-    """This class create brainsprite with overlay as stats image."""
-
-    input_spec = _BrainPlotxInputSpec
-    output_spec = _BrainPlotxOutputSpec
-
-    def _run_interface(self, runtime):
-
-        self._results["plot_file"] = fname_presuffix(
-            "brainsprite_out_",
-            suffix="file.html",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-
-        self._results["plot_file"] = generate_brain_sprite(
-            template_image=self.inputs.template,
-            stat_map=self.inputs.in_file,
-            out_file=self._results["plot_file"],
-        )
 
         return runtime
 
@@ -149,34 +114,6 @@ class PlotSVGData(SimpleInterface):
             seg_data=segmentation_file,
             processed_filename=after_process_fn,
             unprocessed_filename=before_process_fn,
-        )
-
-        return runtime
-
-
-class _RibbontoStatmapInputSpec(BaseInterfaceInputSpec):
-    ribbon = File(exists=True, mandatory=True, desc="ribbon ")
-    # other settings or files will be added later from T2 ##
-
-
-class _RibbontoStatmapOutputSpec(TraitedSpec):
-    out_file = File(exists=True, mandatory=True, desc="ribbon > pial and white")
-
-
-class RibbontoStatmap(SimpleInterface):
-    """Convert cortical ribbon to stat map."""
-
-    input_spec = _RibbontoStatmapInputSpec
-    output_spec = _RibbontoStatmapOutputSpec
-
-    def _run_interface(self, runtime):
-
-        self._results["out_file"] = fname_presuffix(
-            "pial_white_", suffix=".nii.gz", newpath=runtime.cwd, use_ext=False
-        )
-
-        self._results["out_file"] = ribbon_to_statmap(
-            ribbon=self.inputs.ribbon, outfile=self._results["out_file"]
         )
 
         return runtime

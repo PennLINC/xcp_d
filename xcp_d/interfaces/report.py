@@ -17,6 +17,8 @@ from nipype.interfaces.base import (
     traits,
 )
 
+from xcp_d.utils.bids import get_entity
+
 SUBJECT_TEMPLATE = """\
 \t<ul class="elem-desc">
 \t\t<li>Subject ID: {subject_id}</li>
@@ -133,7 +135,7 @@ class FunctionalSummary(SummaryInterface):
     #   Get information from the QC file and return it
 
     def _generate_segment(self):
-        space = get_space(self.inputs.bold_file)
+        space = get_entity(self.inputs.bold_file, "space")
         TR = self.inputs.TR
         qcfile = pd.read_csv(self.inputs.qc_file)
         meanFD = f"{round(qcfile['meanFD'][0], 4)} "
@@ -177,30 +179,3 @@ class AboutSummary(SummaryInterface):
             command=self.inputs.command,
             date=time.strftime("%Y-%m-%d %H:%M:%S %z"),
         )
-
-
-def get_space(bold_file):
-    """Extract space from bold/cifti via string manipulation.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the BOLD file.
-
-    Returns
-    -------
-    space : str
-        The BOLD file's space.
-    """
-    bold_file = os.path.basename(bold_file)
-    if bold_file.endswith(".dtseries.nii"):
-        return "fsLR"
-    else:
-        if "space" not in bold_file:
-            return "native"
-        elif "space" in bold_file:
-            bold_file_space = bold_file.split("_")
-
-            for bold_file_name_component in bold_file_space:
-                if "space" in bold_file_name_component:
-                    return bold_file_name_component.split("-")[1]
