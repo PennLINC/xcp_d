@@ -60,7 +60,7 @@ def test_nifti_despike(data_dir, tmp_path_factory):
 
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
-    test_filename = "".join(random.choices(string.ascii_lowercase, k=1000))
+    test_filename = "".join(random.choices(string.ascii_lowercase, k=257))
     spikedfile = os.path.join(tempdir, f"{test_filename}.nii.gz")
     write_ndata(
         data_matrix=file_data,
