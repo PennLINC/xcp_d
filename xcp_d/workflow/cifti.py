@@ -19,7 +19,9 @@ from xcp_d.interfaces.prepostcleaning import (
     Interpolate,
     RemoveTR,
 )
-from xcp_d.interfaces.regression import CiftiDespike, Regress
+from xcp_d.interfaces.regression import Regress
+from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,
@@ -41,12 +43,12 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_ciftipostprocess_wf(
     bold_file,
+    bandpass_filter,
     lower_bpf,
     upper_bpf,
     bpf_order,
     motion_filter_type,
     motion_filter_order,
-    bandpass_filter,
     band_stop_min,
     band_stop_max,
     smoothing,
@@ -54,7 +56,6 @@ def init_ciftipostprocess_wf(
     params,
     output_dir,
     custom_confounds_folder,
-    omp_nthreads,
     input_type,
     dummytime,
     dummy_scans,
@@ -62,6 +63,7 @@ def init_ciftipostprocess_wf(
     despike,
     dcan_qc,
     n_runs,
+    omp_nthreads,
     layout=None,
     name="cifti_process_wf",
 ):
@@ -72,33 +74,54 @@ def init_ciftipostprocess_wf(
             :graph2use: orig
             :simple_form: yes
 
+            import os
+
+            from xcp_d.utils.bids import collect_data
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
+            from xcp_d.utils.doc import download_example_data
+
+            fmri_dir = download_example_data()
+
+            layout, subj_data = collect_data(
+                bids_dir=fmri_dir,
+                input_type="fmriprep",
+                participant_label="01",
+                task="imagery",
+                bids_validate=False,
+                cifti=True,
+            )
+
+            bold_file = subj_data["bold"][0]
+            custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
+
             wf = init_ciftipostprocess_wf(
-                bold_file="/path/to/cifti.dtseries.nii",
+                bold_file=bold_file,
                 bandpass_filter=True,
-                lower_bpf=0.009,
+                lower_bpf=0.01,
                 upper_bpf=0.08,
                 bpf_order=2,
-                motion_filter_type=None,
+                motion_filter_type="notch",
                 motion_filter_order=4,
-                band_stop_min=0,
-                band_stop_max=0,
+                band_stop_min=12,
+                band_stop_max=20,
                 smoothing=6,
-                head_radius=50,
-                params="36P",
+                head_radius=50.,
+                params="27P",
                 output_dir=".",
-                custom_confounds_folder=None,
-                omp_nthreads=1,
-                dummytime=0,
-                dummy_scans=0,
-                fd_thresh=0.2,
-                despike=False,
-                dcan_qc=False,
-                n_runs=1,
+                custom_confounds_folder=custom_confounds_folder,
                 input_type="fmriprep",
-                layout=None,
-                name='cifti_postprocess_wf',
+                dummy_scans=0,
+                dummytime=0,
+                fd_thresh=0.2,
+                despike=True,
+                dcan_qc=True,
+                n_runs=1,
+                omp_nthreads=1,
+                layout=layout,
+                name="cifti_postprocess_wf",
             )
+            wf.inputs.inputnode.t1w = subj_data["t1w"]
+            wf.inputs.inputnode.t1seg = subj_data["t1w_seg"]
 
     Parameters
     ----------
@@ -484,18 +507,38 @@ produced by the regression.
     ])
     # fmt:on
 
-    if despike:  # If we despike
+    if despike:
+        # first, convert the cifti to a nifti
+        convert_to_nifti = pe.Node(
+            CiftiConvert(target="to"),
+            name="convert_to_nifti",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
+
+        # next, run 3dDespike
         despike3d = pe.Node(
-            CiftiDespike(TR=TR),
-            name="cifti_despike",
+            DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
+            name="despike3d",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
+
+        # finally, convert the despiked nifti back to cifti
+        convert_to_cifti = pe.Node(
+            CiftiConvert(target="from", TR=TR),
+            name="convert_to_cifti",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (censor_scrub, despike3d, [("bold_censored", "in_file")]),
-            (despike3d, regression_wf, [("des_file", "in_file")]),
+            (censor_scrub, convert_to_nifti, [("bold_censored", "in_file")]),
+            (convert_to_nifti, despike3d, [("out_file", "in_file")]),
+            (censor_scrub, convert_to_cifti, [("bold_censored", "cifti_template")]),
+            (despike3d, convert_to_cifti, [("out_file", "in_file")]),
+            (convert_to_cifti, regression_wf, [("out_file", "in_file")]),
         ])
         # fmt:on
 
