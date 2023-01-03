@@ -74,11 +74,11 @@ def _get_tf_resolution(space: str, resolution: str) -> str:
     'Unknown'
     """
     metadata = tf.api.get_metadata(space)
-    resolutions = metadata.get('res', {})
+    resolutions = metadata.get("res", {})
     res_meta = None
 
     # Due to inconsistencies, resolution keys may or may not be zero-padded
-    padded_res = f'{str(resolution):0>2}'
+    padded_res = f"{str(resolution):0>2}"
     for r in (resolution, padded_res):
         if r in resolutions:
             res_meta = resolutions[r]
@@ -127,7 +127,8 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     in_file = InputMultiObject(File(exists=True), mandatory=True, desc="the object to be saved")
     meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
     source_file = InputMultiObject(
-        File(exists=False), mandatory=True, desc="the source file(s) to extract entities from")
+        File(exists=False), mandatory=True, desc="the source file(s) to extract entities from"
+    )
 
 
 class _DerivativesDataSinkOutputSpec(TraitedSpec):
@@ -208,8 +209,11 @@ class DerivativesDataSink(SimpleInterface):
             parse_file_entities(str(relative_to_root(source_file)))
             for source_file in self.inputs.source_file
         ]
-        out_entities = {k: v for k, v in in_entities[0].items()
-                        if all(ent.get(k) == v for ent in in_entities[1:])}
+        out_entities = {
+            k: v
+            for k, v in in_entities[0].items()
+            if all(ent.get(k) == v for ent in in_entities[1:])
+        }
         for drop_entity in listify(self.inputs.dismiss_entities or []):
             out_entities.pop(drop_entity, None)
 
@@ -247,7 +251,7 @@ class DerivativesDataSink(SimpleInterface):
                 res = _get_tf_resolution(space, resolution)
             else:  # TODO: Nonstandard?
                 res = "Unknown"
-            self._metadata['Resolution'] = res
+            self._metadata["Resolution"] = res
 
         if len(set(out_entities["extension"])) == 1:
             out_entities["extension"] = out_entities["extension"][0]
@@ -362,11 +366,9 @@ class DerivativesDataSink(SimpleInterface):
                 else:
                     # Without this, we would be writing nans
                     # This is our punishment for hacking around nibabel defaults
-                    new_header.set_slope_inter(slope=1., inter=0.)
+                    new_header.set_slope_inter(slope=1.0, inter=0.0)
                 unsafe_write_nifti_header_and_data(
-                    fname=out_file,
-                    header=new_header,
-                    data=new_data
+                    fname=out_file, header=new_header, data=new_data
                 )
                 del orig_img
 
