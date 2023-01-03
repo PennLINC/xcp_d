@@ -119,9 +119,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_id):
     os.makedirs(func_dir_fmriprep, exist_ok=True)
 
     # Get necessary files
-    # TODO: Find out space and resolution to give these better names.
-    csf_mask = pkgrf("xcp_d", "/data/masks/csf.nii.gz")
-    wm_mask = pkgrf("xcp_d", "/data/masks/wm.nii.gz")
+    csf_mask = pkgrf("xcp_d", f"/data/masks/{volspace_ent}_{res_ent}_label-CSF_mask.nii.gz")
+    wm_mask = pkgrf("xcp_d", f"/data/masks/{volspace_ent}_{res_ent}_label-WM_mask.nii.gz")
 
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
