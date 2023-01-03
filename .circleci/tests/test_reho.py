@@ -103,7 +103,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
         "reho_combined.dscalar.nii",
     )
     if not os.path.isfile(original_reho):
-        raise FileNotFoundError(os.path.listdir(os.path.join(
+        raise FileNotFoundError(os.listdir(os.path.join(
             tempdir,
             "orig_reho_wf",
             "merge_cifti",
