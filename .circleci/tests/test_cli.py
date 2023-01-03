@@ -103,8 +103,6 @@ def test_nibabies(datasets, output_dir, working_dir):
         out_dir,
         "participant",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         "--input-type=nibabies",
         "--nuisance-regressors=27P",
         "--despike",
