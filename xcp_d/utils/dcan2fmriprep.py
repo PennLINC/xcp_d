@@ -126,21 +126,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[t1w_orig] = [t1w_fmriprep]
 
-        # Grab transforms
-        t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
-        t1w_to_template_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
-        )
-        copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
-
-        template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
-        template_to_t1w_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
-        )
-        copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
-
         brainmask_orig = os.path.join(anat_dir_orig, "brainmask_fs.nii.gz")
         brainmask_fmriprep = os.path.join(
             anat_dir_fmriprep,
@@ -163,6 +148,22 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
+        # Grab transforms
+        t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
+        t1w_to_template_fmriprep = os.path.join(
+            anat_dir_fmriprep,
+            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
+        )
+        copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
+
+        template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
+        template_to_t1w_fmriprep = os.path.join(
+            anat_dir_fmriprep,
+            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
+        )
+        copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
+
+        # Grab surface morphometry files
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
         SURFACE_DICT = {
