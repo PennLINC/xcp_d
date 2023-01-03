@@ -341,10 +341,13 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_id):
 
     # Copy HCP files to fMRIPrep folder
     for file_orig, files_fmriprep in copy_dictionary.items():
-        if not isinstance(files_fmriprep):
+        if not isinstance(files_fmriprep, list):
             raise ValueError(
                 f"Entry for {file_orig} should be a list, but is a {type(files_fmriprep)}"
             )
+
+        if len(files_fmriprep) > 1:
+            print(f"File used for more than one output: {file_orig}")
 
         for file_fmriprep in files_fmriprep:
             copyfileobj_example(file_orig, file_fmriprep)
