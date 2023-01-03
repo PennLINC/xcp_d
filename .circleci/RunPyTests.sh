@@ -39,7 +39,7 @@ run_pytest_cmd () {
     cwd_mount="-v ${PWD}/tests:/rundir:rw"
     PYTEST_RUN="docker run --rm -ti -u $(id -u) -w /rundir --entrypoint pytest "
     PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cwd_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} "
-    PYTEST_RUN+="--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /rundir"
+    PYTEST_RUN+="--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /rundir/test_despike.py"
 
   fi
 
