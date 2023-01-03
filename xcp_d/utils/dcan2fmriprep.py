@@ -58,13 +58,13 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         convert_dcan_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
-            sub_id=subject_id,
+            sub_ent=subject_id,
         )
 
     return participant_ids
 
 
-def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
+def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     """Convert DCAN derivatives to BIDS-compliant derivatives for a single subject.
 
     Parameters
@@ -73,39 +73,39 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         Path to the subject's DCAN derivatives.
     out_dir : str
         Path to the output BIDS-compliant derivatives folder.
-    sub_id : str
+    sub_ent : str
         Subject identifier, with "sub-" prefix.
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
     assert isinstance(out_dir, str)
-    assert isinstance(sub_id, str)
+    assert isinstance(sub_ent, str)
 
-    sub_id_orig = sub_id.replace("sub-", "")
+    sub_id = sub_ent.replace("sub-", "")
 
     volspace = "MNI152NLin6Asym"
     volspace_ent = f"space-{volspace}"
     res_ent = "res-2"
 
-    subject_dir_fmriprep = os.path.join(out_dir, sub_id)
+    subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
 
     # get session ids
-    session_folders = sorted(glob.glob(os.path.join(in_dir, sub_id, "s*")))
+    session_folders = sorted(glob.glob(os.path.join(in_dir, sub_ent, "s*")))
     session_folders = [
         os.path.basename(ses_dir) for ses_dir in session_folders if os.path.isdir(ses_dir)
     ]
     # NOTE: Why split ses- out if you add it right back in?
-    session_ids = [ses_dir.split("ses-")[1] for ses_dir in session_folders]
-    session_ids = [f"ses-{session_id}" for session_id in session_ids]
+    ses_entities = [ses_dir.split("ses-")[1] for ses_dir in session_folders]
+    ses_entities = [f"ses-{ses_id}" for ses_id in ses_entities]
 
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
 
-    for ses_id in session_ids:
-        session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_id)
+    for ses_ent in ses_entities:
+        session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_ent)
 
-        anat_dir_orig = os.path.join(in_dir, sub_id, ses_id, "files", "MNINonLinear")
+        anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
         anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
         os.makedirs(anat_dir_fmriprep, exist_ok=True)
 
@@ -122,28 +122,29 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         t1w_orig = os.path.join(anat_dir_orig, "T1w.nii.gz")
         t1w_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_{volspace_ent}_desc-preproc_T1w.nii.gz",
+            f"{sub_ent}_{ses_ent}_{volspace_ent}_desc-preproc_T1w.nii.gz",
         )
         copy_dictionary[t1w_orig] = [t1w_fmriprep]
 
-        # NOTE: We're using the T1w image as a transform. This doesn't make sense.
+        # Grab transforms
+        t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
         t1w_to_template_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_from-T1w_to-{volspace}_mode-image_xfm.h5",
+            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
         )
-        copy_dictionary[t1w_orig].append(t1w_to_template_fmriprep)
+        copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
 
-        # NOTE: We're using the T1w image as a transform. This doesn't make sense.
+        template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
         template_to_t1w_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_from-{volspace}_to-T1w_mode-image_xfm.h5",
+            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
         )
-        copy_dictionary[t1w_orig].append(template_to_t1w_fmriprep)
+        copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
 
         brainmask_orig = os.path.join(anat_dir_orig, "brainmask_fs.nii.gz")
         brainmask_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_{volspace_ent}_desc-brain_mask.nii.gz",
+            f"{sub_ent}_{ses_ent}_{volspace_ent}_desc-brain_mask.nii.gz",
         )
         copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
 
@@ -151,14 +152,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         ribbon_orig = os.path.join(anat_dir_orig, "ribbon_orig.nii.gz")
         ribbon_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_{volspace_ent}_desc-ribbon_T1w.nii.gz",
+            f"{sub_ent}_{ses_ent}_{volspace_ent}_desc-ribbon_T1w.nii.gz",
         )
         copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
 
         dseg_orig = os.path.join(anat_dir_orig, "aparc+aseg.nii.gz")
         dseg_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_id}_{ses_id}_{volspace_ent}_desc-aparcaseg_dseg.nii.gz",
+            f"{sub_ent}_{ses_ent}_{volspace_ent}_desc-aparcaseg_dseg.nii.gz",
         )
         copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
@@ -180,75 +181,84 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         for in_str, out_str in SURFACE_DICT.items():
             surf_orig = os.path.join(
                 fsaverage_dir_orig,
-                f"{sub_id_orig}.{in_str}.32k_fs_LR.surf.gii",
+                f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
             )
             surf_fmriprep = os.path.join(
                 fsaverage_dir_orig,
-                f"{sub_id}_{ses_id}_space-fsLR_den-32k_{out_str}.surf.gii",
+                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
             )
             copy_dictionary[surf_orig] = [surf_fmriprep]
 
         print("finished collecting anat files")
 
         # get masks and transforms
-        wmmask = os.path.join(anat_dir_orig, f"wm_2mm_{sub_id_orig}_mask_eroded.nii.gz")
-        csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id_orig}_mask_eroded.nii.gz")
+        wmmask = os.path.join(anat_dir_orig, f"wm_2mm_{sub_id}_mask_eroded.nii.gz")
+        csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id}_mask_eroded.nii.gz")
 
         # Collect functional files to copy
         task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "task-*")))
         task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
         task_names = [os.path.basename(task_dir).split("-")[1] for task_dir in task_dirs_orig]
 
-        for task_name in task_names:
+        for task_id in task_names:
             # NOTE: Why are there regular expressions?
-            taskname, run_id = re.split(r"(\d+)", task_name)
+            taskname, run_id = re.split(r"(\d+)", task_id)
 
-            run_id = f"run-{int(run_id)}"
-            task_id = f"task-{task_name}"
+            run_ent = f"run-{int(run_id)}"
+            task_ent = f"task-{task_id}"
 
-            task_dir_orig = os.path.join(func_dir_orig, task_name)
+            task_dir_orig = os.path.join(func_dir_orig, task_id)
 
             # Find original task files
             # This file is the anatomical brain mask downsampled to 2mm3.
             brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.0.nii.gz")
 
-            sbref_orig = os.path.join(task_dir_orig, f"{task_id}_SBRef.nii.gz")
+            sbref_orig = os.path.join(task_dir_orig, f"{task_ent}_SBRef.nii.gz")
             boldref_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_{res_ent}_boldref.nii.gz",
+                (
+                    f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_{volspace_ent}_"
+                    f"{res_ent}_boldref.nii.gz"
+                ),
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
-            bold_nifti_orig = os.path.join(task_dir_orig, f"{task_id}.nii.gz")
+            bold_nifti_orig = os.path.join(task_dir_orig, f"{task_ent}.nii.gz")
             bold_nifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_{task_id}_{run_id}_"
+                    f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
                     f"{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz"
                 ),
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-            bold_cifti_orig = os.path.join(task_dir_orig, f"{task_id}_Atlas.dtseries.nii")
+            bold_cifti_orig = os.path.join(task_dir_orig, f"{task_ent}_Atlas.dtseries.nii")
             bold_cifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_space-fsLR_den-91k_bold.dtseries.nii",
+                f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.nii",
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
             # TODO: Find actual native-to-T1w transform
-            native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_id}2T1w.nii.gz")
+            native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_ent}2T1w.nii.gz")
             native_to_t1w_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_from-scanner_to-T1w_mode-image_xfm.txt",
+                (
+                    f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
+                    "from-scanner_to-T1w_mode-image_xfm.nii.gz"
+                ),
             )
             copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
             # TODO: Find actual T1w-to-native transform
-            t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_id}.nii.gz")
+            t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_ent}.nii.gz")
             t1w_to_native_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_from-T1w_to-scanner_mode-image_xfm.txt",
+                (
+                    f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
+                    "from-T1w_to-scanner_mode-image_xfm.nii.gz"
+                ),
             )
             copy_dictionary[t1w_to_native_orig] = [t1w_to_native_fmriprep]
 
@@ -261,7 +271,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             bold_nifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
-                    f"{sub_id}_{ses_id}_{task_id}_{run_id}_{volspace_ent}_"
+                    f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_{volspace_ent}_"
                     f"{res_ent}_desc-preproc_bold.json"
                 ),
             )
@@ -278,7 +288,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             }
             bold_cifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_space-fsLR_den-91k_bold.dtseries.json",
+                f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
             )
 
             writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
@@ -340,7 +350,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
 
             # write out the confounds
             regressors_file_base = (
-                f"{sub_id}_{ses_id}_task-{task_name}_{run_id}_desc-confounds_timeseries"
+                f"{sub_ent}_{ses_ent}_task-{task_id}_{run_ent}_desc-confounds_timeseries"
             )
             regressors_tsv_fmriprep = os.path.join(
                 func_dir_fmriprep,
@@ -360,7 +370,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             os.makedirs(figdir, exist_ok=True)
             bbref_fig_fmriprep = os.path.join(
                 figdir,
-                f"{sub_id}_{ses_id}_{task_id}_{run_id}_desc-bbregister_bold.svg",
+                f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_desc-bbregister_bold.svg",
             )
             bbref_fig_fmriprep = bbregplot(
                 fixed_image=t1w_orig,
@@ -371,10 +381,13 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
 
     # Copy HCP files to fMRIPrep folder
     for file_orig, files_fmriprep in copy_dictionary.items():
-        if not isinstance(files_fmriprep):
+        if not isinstance(files_fmriprep, list):
             raise ValueError(
                 f"Entry for {file_orig} should be a list, but is a {type(files_fmriprep)}"
             )
+
+        if len(files_fmriprep) > 1:
+            print(f"File used for more than one output: {file_orig}")
 
         for file_fmriprep in files_fmriprep:
             copyfileobj_example(file_orig, file_fmriprep)
@@ -403,7 +416,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
 
     scans_tuple = tuple(scans_dict.items())
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
-    scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_id}_scans.tsv")
+    scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_ent}_scans.tsv")
     scans_df.to_csv(scans_tsv, sep="\t", index=False)
 
 
