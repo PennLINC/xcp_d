@@ -1,0 +1,38 @@
+{#
+    Make a section for concatenated resting-state data.
+
+    Inputs:
+    - concatenated_rest_files{"preproc_carpet"}
+    - concatenated_rest_files{"postproc_carpet"}
+#}
+{% set carpets_image_class = "Carpet" %}
+{% set carpets_modal_id = "carpets_modal" %}
+<section id="Concatenated BOLD">
+    <div class="w3-row-padding">
+        <div class="w3-col l1 label2"><br>Combined Resting State Data</div>
+
+            <div class="w3-quarter">
+                <div class="w3-row w3-center label1">Pre-Regression</div>
+                {% if concatenated_rest_files["preproc_carpet"] != "None" %}
+                    <img src="{{ concatenated_rest_files['preproc_carpet'] }}" onclick="open_{{ carpets_modal_id }}_to_index({{ ns.carpets_counter }})">
+                    {% set ns.carpets_counter = ns.carpets_counter + 1 %}
+                {% else %}
+                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                    <div class="w3-container w3-pale-red label3"><br></div>
+                {% endif %}
+            </div>
+
+            <div class="w3-quarter">
+                <div class="w3-row w3-center label1">Post-Regression</div>
+                {% if concatenated_rest_files["postproc_carpet"] != "None" %}
+                    <img src="{{ concatenated_rest_files['postproc_carpet'] }}" onclick="open_{{ carpets_modal_id }}_to_index({{ ns.carpets_counter }})">
+                    {% set ns.carpets_counter = ns.carpets_counter + 1 %}
+                {% else %}
+                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                    <div class="w3-container w3-pale-red label3"><br></div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</section>

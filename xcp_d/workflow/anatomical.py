@@ -26,7 +26,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
+from xcp_d.utils.bids import get_entity, get_freesurfer_dir, get_freesurfer_sphere
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -81,6 +81,11 @@ def init_t1w_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
         name="inputnode",
+    )
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        name="outputnode",
     )
 
     # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
@@ -185,12 +190,12 @@ def init_t1w_wf(
         # fmt:on
 
     # fmt:off
-    workflow.connect(
-        [
-            (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
-        ]
-    )
+    workflow.connect([
+        (inputnode, ds_t1wmni, [("t1w", "source_file")]),
+        (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
+        (ds_t1wmni, outputnode, [("out_file", "t1w")]),
+        (ds_t1wseg, outputnode, [("out_file", "t1seg")]),
+    ])
     # fmt:on
 
     return workflow
@@ -350,8 +355,8 @@ def init_warp_surfaces_to_template_wf(
             fields=[
                 "lh_pial_surf",
                 "rh_pial_surf",
-                "lh_smoothwm_surf",
-                "rh_smoothwm_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
             ],
         ),
         name="outputnode",

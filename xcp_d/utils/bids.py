@@ -687,32 +687,6 @@ def _add_subject_prefix(subid):
     return "-".join(("sub", subid))
 
 
-def _getsesid(filename):
-    """Get session id from filename if available.
-
-    Parameters
-    ----------
-    filename : str
-        The BIDS filename from which to extract the session ID.
-
-    Returns
-    -------
-    ses_id : str or None
-        The session ID in the filename.
-        If the file does not have a session entity, ``None`` will be returned.
-    """
-    ses_id = None
-    base_filename = os.path.basename(filename)
-
-    file_id = base_filename.split("_")
-    for k in file_id:
-        if "ses" in k:
-            ses_id = k.split("-")[1]
-            break
-
-    return ses_id
-
-
 def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
@@ -824,3 +798,38 @@ def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
         raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
 
     return sphere_raw
+
+
+def get_entity(filename, entity):
+    """Extract space from bold/cifti via string manipulation.
+
+    Parameters
+    ----------
+    bold_file : str
+        Path to the BOLD file.
+
+    Returns
+    -------
+    space : str
+        The BOLD file's space.
+    """
+    import re
+
+    folder, file_base = os.path.split(filename)
+
+    entity_values = re.findall(f"{entity}-([a-zA-Z0-9]+)", file_base)
+    if len(entity_values) < 1:
+        entity_value = None
+    else:
+        entity_value = entity_values[0]
+
+    if entity == "space" and entity_value is None:
+        foldername = os.path.basename(folder)
+        if foldername == "anat":
+            entity_value = "T1w"
+        elif foldername == "func":
+            entity_value = "native"
+        else:
+            raise ValueError(f"Unknown space for {filename}")
+
+    return entity_value
