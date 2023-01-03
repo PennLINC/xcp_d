@@ -30,35 +30,47 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    There are two summary reports - a Nipreps-style participant summary and an executive summary per session (if ``--dcan-qc`` is used).
    The executive summary is based on the DCAN lab's `ExecutiveSummary tool <https://github.com/DCAN-Labs/ExecutiveSummary>`_.
 
-       xcp_d/sub-<label>.html
-       xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
+   .. code-block::
+
+     xcp_d/
+          sub-<label>.html
+          sub-<label>[_ses-<label>]_executive_summary.html
 
 2. Anatomical outputs: Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI spaces::
 
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
+     xcp_d/
+          sub-<label>/[ses-<label>/]
+               anat/
+                    <source_entities>_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
+                    <source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
 
    If the ``--warp-surfaces-native2std`` option is selected, and reconstructed surfaces are available in the preprocessed dataset,
    then these surfaces will be warped to fsLR space at 32k density::
 
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
-        xcp_d/sub-<label>/[ses-<label>/]anat/<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
+     xcp_d/
+          sub-<label>/[ses-<label>/]
+               anat/
+                    <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
+                    <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
+                    <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii
+                    <source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii
+                    <source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
+                    <source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
 
 3. Functional outputs: Functional outputs consist of processed/denoised BOLD data, timeseries, functional connectivity matrices, and resting-state derivatives.
 
    a. Denoised or residual BOLD data::
 
-       # Nifti
-       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-denoised_bold.nii.gz
-       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-denoised_bold.json
+          xcp_d/
+               sub-<label>/[ses-<label>/]
+                    func/
+                         # Nifti
+                         <source_entities>_space-<label>_desc-denoised_bold.nii.gz
+                         <source_entities>_space-<label>_desc-denoised_bold.json
 
-       # Cifti
-       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
-       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-denoised_bold.json
+                         # Cifti
+                         <source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
+                         <source_entities>_space-fsLR_den-91k_desc-denoised_bold.json
 
       The json/sidecar contains parameters of the data and processing steps.
 
@@ -74,25 +86,31 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
    b. Functional timeseries and connectivity matrices::
 
-        #Nifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_atlas-<label>_timeseries.tsv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
+          xcp_d/
+               sub-<label>/[ses-<label>/]
+                    func/
+                         # Nifti
+                         <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
+                         <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
 
-        #Cifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+                         # Cifti
+                         <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
+                         <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 
    c. Resting-state derivatives (Regional Homogeneity and ALFF)::
 
-        # Nifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_reho.nii.gz
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_alff.nii.gz
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-smooth_alff.nii.gz
+          xcp_d/
+               sub-<label>/[ses-<label>/]
+                    func/
+                         # Nifti
+                         <source_entities>_space-<label>_reho.nii.gz
+                         <source_entities>_space-<label>_alff.nii.gz
+                         <source_entities>_space-<label>_desc-smooth_alff.nii.gz
 
-        # Cifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_reho.dscalar.nii
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_alff.dscalar.nii
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
+                         # Cifti
+                         <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
+                         <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
+                         <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 
      .. important::
           The smoothed ALFF image will only be generated is smoothing is enabled
@@ -104,17 +122,20 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
    d. Other outputs include quality control, framewise displacement, and confounds files::
 
-        # Nifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_qc.csv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_design.tsv
+          xcp_d/
+               sub-<label>/[ses-<label>/]
+                    func/
+                         # Nifti
+                         <source_entities>_space-<label>_qc.csv
+                         <source_entities>[_desc-filtered]_motion.tsv
+                         <source_entities>_outliers.tsv
+                         <source_entities>_design.tsv
 
-        # Cifti
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_qc.csv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>[_desc-filtered]_motion.tsv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_outliers.tsv
-        xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_design.tsv
+                         # Cifti
+                         <source_entities>_space-fsLR_qc.csv
+                         <source_entities>[_desc-filtered]_motion.tsv
+                         <source_entities>_outliers.tsv
+                         <source_entities>_design.tsv
 
       The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;
       one for each of the six filtered motion parameters, as well as "framewise_displacement".
@@ -123,18 +144,21 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    e. DCAN style scrubbing file (if ``--dcan-qc`` is used).
       This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps::
 
-          # Nifti
-          xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-framewisedisplacement_bold-DCAN.hdf5
+          xcp_d/
+               sub-<label>/[ses-<label>/]
+                    func/
+                         # Nifti
+                         <source_entities>_space-<label>_desc-framewisedisplacement_bold-DCAN.hdf5
 
-          # Cifti
-          xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
+                         # Cifti
+                         <source_entities>_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
 
-      These files have the following keys::
+      These files have the following keys:
 
-          1. ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
-          2. ``frame_removal``: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0)
-          3. ``format_string`` (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
-          4. ``total_frame_count``: a whole number that represents the total number of frames in the concatenated series
-          5. ``remaining_frame_count``: a whole number that represents the number of remaining frames in the concatenated series
-          6. ``remaining_seconds``: a whole number that represents the amount of time remaining after thresholding
-          7. ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the remaining frames
+      1. ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
+      2. ``frame_removal``: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0)
+      3. ``format_string`` (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
+      4. ``total_frame_count``: a whole number that represents the total number of frames in the concatenated series
+      5. ``remaining_frame_count``: a whole number that represents the number of remaining frames in the concatenated series
+      6. ``remaining_seconds``: a whole number that represents the amount of time remaining after thresholding
+      7. ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the remaining frames
