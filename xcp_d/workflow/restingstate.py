@@ -394,8 +394,8 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
-        ReHo(neighborhood="vertices", out_file="reho"),
-        name="reho_3d.nii.gz",
+        ReHo(neighborhood="vertices", out_file="reho_3d.nii.gz"),
+        name="reho_3d",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
