@@ -27,10 +27,11 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
      If you discover a problem with the BIDS compliance of ``xcp_d``'s derivatives, please open an issue in the ``xcp_d`` repository.
 
 1. Summary reports:
-   There are two summary reports - an executive summary per session (if ``--dcan-qc`` is used) and a participant summary::
+   There are two summary reports - a Nipreps-style participant summary and an executive summary per session (if ``--dcan-qc`` is used).
+   The executive summary is based on the DCAN lab's `ExecutiveSummary tool <https://github.com/DCAN-Labs/ExecutiveSummary>`_.
 
-       xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
        xcp_d/sub-<label>.html
+       xcp_d/sub-<label>[_ses-<label>]_executive_summary.html
 
 2. Anatomical outputs: Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI spaces::
 
@@ -120,20 +121,20 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
       If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
 
    e. DCAN style scrubbing file (if ``--dcan-qc`` is used).
-      This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps.
-      At each step the following variables are present::
+      This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0 to 1mm FD in 0.01 steps::
 
-       # Nifti
-       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-framewisedisplacement_bold-DCAN.hdf5
+          # Nifti
+          xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-<label>_desc-framewisedisplacement_bold-DCAN.hdf5
 
-       # Cifti
-       xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
+          # Cifti
+          xcp_d/sub-<label>/[ses-<label>/]func/<source_entities>_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
 
-       These files have the following keys:
-       1. FD_threshold: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
-       2. frame_removal: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0)
-       3. format_string (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
-       4. total_frame_count: a whole number that represents the total number of frames in the concatenated series
-       5. remaining_frame_count: a whole number that represents the number of remaining frames in the concatenated series
-       6. remaining_seconds: a whole number that represents the amount of time remaining after thresholding
-       7. remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the remaining frames
+      These files have the following keys::
+
+          1. ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate the metrics in this list
+          2. ``frame_removal``: a binary vector/array the same length as the number of frames in the concatenated time series, indicates whether a frame is removed (1) or not (0)
+          3. ``format_string`` (legacy): a string that denotes how the frames were excluded -- uses a notation devised by Avi Snyder
+          4. ``total_frame_count``: a whole number that represents the total number of frames in the concatenated series
+          5. ``remaining_frame_count``: a whole number that represents the number of remaining frames in the concatenated series
+          6. ``remaining_seconds``: a whole number that represents the amount of time remaining after thresholding
+          7. ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the remaining frames
