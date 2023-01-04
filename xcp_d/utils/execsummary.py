@@ -40,10 +40,10 @@ def make_mosaic(png_files):
 def modify_brainsprite_scene_template(
     slice_number,
     anat_file,
-    rh_pial_file,
-    lh_pial_file,
-    rh_white_file,
-    lh_white_file,
+    rh_pial_surf,
+    lh_pial_surf,
+    rh_wm_surf,
+    lh_wm_surf,
     scene_template,
 ):
     """Create modified .scene text file to be used for creating brainsprite PNGs later."""
@@ -52,10 +52,10 @@ def modify_brainsprite_scene_template(
 
     paths = {
         "TX_IMG": anat_file,
-        "RPIAL": rh_pial_file,
-        "LPIAL": lh_pial_file,
-        "RWHITE": rh_white_file,
-        "LWHITE": lh_white_file,
+        "RPIAL": rh_pial_surf,
+        "LPIAL": lh_pial_surf,
+        "RWHITE": rh_wm_surf,
+        "LWHITE": lh_wm_surf,
     }
 
     out_file = os.path.abspath("modified_scene.scene")
@@ -84,10 +84,10 @@ def modify_brainsprite_scene_template(
 
 def modify_pngs_scene_template(
     anat_file,
-    rh_pial_file,
-    lh_pial_file,
-    rh_white_file,
-    lh_white_file,
+    rh_pial_surf,
+    lh_pial_surf,
+    rh_wm_surf,
+    lh_wm_surf,
     scene_template,
 ):
     """Create modified .scene text file to be used for creating PNGs later."""
@@ -96,10 +96,10 @@ def modify_pngs_scene_template(
 
     paths = {
         "TX_IMG": anat_file,
-        "RPIAL": rh_pial_file,
-        "LPIAL": lh_pial_file,
-        "RWHITE": rh_white_file,
-        "LWHITE": lh_white_file,
+        "RPIAL": rh_pial_surf,
+        "LPIAL": lh_pial_surf,
+        "RWHITE": rh_wm_surf,
+        "LWHITE": lh_wm_surf,
     }
 
     out_file = os.path.abspath("modified_scene.scene")
