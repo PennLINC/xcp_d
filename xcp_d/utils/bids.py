@@ -353,12 +353,12 @@ def collect_surface_data(layout, participant_label):
             "desc": None,
             "suffix": "pial",
         },
-        "lh_smoothwm_surf": {
+        "lh_wm_surf": {
             "hemi": "L",
             "desc": None,
             "suffix": "smoothwm",
         },
-        "rh_smoothwm_surf": {
+        "rh_wm_surf": {
             "hemi": "R",
             "desc": None,
             "suffix": "smoothwm",

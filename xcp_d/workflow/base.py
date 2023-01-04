@@ -369,8 +369,8 @@ def init_subject_wf(
                 # surface files
                 "lh_pial_surf",
                 "rh_pial_surf",
-                "lh_smoothwm_surf",
-                "rh_smoothwm_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
                 # hcp-style surface files
                 "lh_midthickness_surf",
                 "rh_midthickness_surf",
@@ -392,8 +392,8 @@ def init_subject_wf(
     # surface files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
     inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
-    inputnode.inputs.lh_smoothwm_surf = surface_data["lh_smoothwm_surf"]
-    inputnode.inputs.rh_smoothwm_surf = surface_data["rh_smoothwm_surf"]
+    inputnode.inputs.lh_wm_surf = surface_data["lh_wm_surf"]
+    inputnode.inputs.rh_wm_surf = surface_data["rh_wm_surf"]
 
     # optional surface files
     inputnode.inputs.lh_midthickness_surf = surface_data["lh_midthickness_surf"]
@@ -508,8 +508,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             (inputnode, warp_surfaces_to_template_wf, [
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),
-                ("rh_smoothwm_surf", "inputnode.rh_smoothwm_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("lh_midthickness_surf", "inputnode.lh_midthickness_surf"),
                 ("rh_midthickness_surf", "inputnode.rh_midthickness_surf"),
                 ("lh_inflated_surf", "inputnode.lh_inflated_surf"),
@@ -544,8 +544,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("t1w", "inputnode.t1w"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_smoothwm_surf", "inputnode.lh_wm_surf"),
-                ("rh_smoothwm_surf", "inputnode.rh_wm_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
             ]),
         ])
         # fmt:on

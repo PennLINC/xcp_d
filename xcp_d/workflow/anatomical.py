@@ -277,7 +277,7 @@ def init_warp_surfaces_to_template_wf(
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
         to generate HCP-style midthickness, inflated, and veryinflated surfaces
         if they're not already available.
-    lh_smoothwm_surf, rh_smoothwm_surf : str
+    lh_wm_surf, rh_wm_surf : str
         Left- and right-hemisphere smoothed white matter surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -332,8 +332,8 @@ def init_warp_surfaces_to_template_wf(
                 # required surfaces
                 "lh_pial_surf",
                 "rh_pial_surf",
-                "lh_smoothwm_surf",
-                "rh_smoothwm_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
                 # optional HCP-style surfaces
                 "lh_midthickness_surf",
                 "rh_midthickness_surf",
@@ -374,8 +374,8 @@ def init_warp_surfaces_to_template_wf(
             (inputnode, merge_files_to_list, [
                 ("lh_pial_surf", "in1"),
                 ("rh_pial_surf", "in2"),
-                ("lh_smoothwm_surf", "in3"),
-                ("rh_smoothwm_surf", "in4"),
+                ("lh_wm_surf", "in3"),
+                ("rh_wm_surf", "in4"),
                 ("lh_midthickness_surf", "in5"),
                 ("rh_midthickness_surf", "in6"),
                 ("lh_inflated_surf", "in7"),
@@ -385,9 +385,9 @@ def init_warp_surfaces_to_template_wf(
             ]),
             (inputnode, outputnode, [
                 ("lh_pial_surf", "lh_pial_surf"),
-                ("lh_smoothwm_surf", "lh_smoothwm_surf"),
+                ("lh_wm_surf", "lh_wm_surf"),
                 ("rh_pial_surf", "rh_pial_surf"),
-                ("rh_smoothwm_surf", "rh_smoothwm_surf"),
+                ("rh_wm_surf", "rh_wm_surf"),
             ]),
         ])
         # fmt:on
@@ -475,7 +475,7 @@ def init_warp_surfaces_to_template_wf(
             workflow.connect([
                 (inputnode, native_hcpmidthick, [
                     (f"{hemi_label}_pial_surf", "surface_in1"),
-                    (f"{hemi_label}_smoothwm_surf", "surface_in2"),
+                    (f"{hemi_label}_wm_surf", "surface_in2"),
                 ]),
             ])
             # fmt:on
@@ -495,11 +495,11 @@ def init_warp_surfaces_to_template_wf(
             workflow.connect([
                 (inputnode, collect_original_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
-                    (f"{hemi_label}_smoothwm_surf", "in2"),
+                    (f"{hemi_label}_wm_surf", "in2"),
                 ]),
                 (inputnode, collect_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
-                    (f"{hemi_label}_smoothwm_surf", "in2"),
+                    (f"{hemi_label}_wm_surf", "in2"),
                 ]),
                 (native_hcpmidthick, collect_surfaces, [
                     ("out_file", "in3"),
@@ -581,7 +581,7 @@ def init_warp_surfaces_to_template_wf(
                 niu.Split(
                     splits=[
                         1,  # pial
-                        1,  # smoothwm
+                        1,  # wm
                     ],
                     squeeze=True,
                 ),
@@ -595,7 +595,7 @@ def init_warp_surfaces_to_template_wf(
                 ]),
                 (split_up_surfaces_fsLR_32k, outputnode, [
                     ("out1", f"{hemi_label}_pial_surf"),
-                    ("out2", f"{hemi_label}_smoothwm_surf"),
+                    ("out2", f"{hemi_label}_wm_surf"),
                 ]),
             ])
             # fmt:on
