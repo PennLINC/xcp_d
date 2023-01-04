@@ -524,14 +524,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         # fmt:off
         workflow.connect([
+            (t1w_wf, brainsprite_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+            ]),
             (warp_surfaces_to_template_wf, brainsprite_wf, [
                 ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("outputnode.lh_wm_surf", "inputnode.lh_smoothwm_surf"),
-                ("outputnode.rh_wm_surf", "inputnode.rh_smoothwm_surf"),
-            ]),
-            (t1w_wf, brainsprite_wf, [
-                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
             ]),
         ])
         # fmt:on
@@ -542,10 +542,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, brainsprite_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),
-                ("rh_smoothwm_surf", "inputnode.rh_smoothwm_surf"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_smoothwm_surf", "inputnode.lh_wm_surf"),
+                ("rh_smoothwm_surf", "inputnode.rh_wm_surf"),
             ]),
         ])
         # fmt:on
