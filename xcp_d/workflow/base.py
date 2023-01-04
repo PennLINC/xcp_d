@@ -493,7 +493,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     if process_surfaces and surfaces_found:
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
-            layout=layout,
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,

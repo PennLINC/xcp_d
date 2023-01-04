@@ -26,7 +26,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_entity, get_freesurfer_dir, get_freesurfer_sphere
+from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
