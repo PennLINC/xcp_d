@@ -226,6 +226,8 @@ jobs:
           key: ds001419-fmriprep-05
       - restore_cache:
           key: fmriprepwithoutfreesurfer-01
+      - restore_cache:
+          key: nibabies-01
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory
