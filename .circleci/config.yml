@@ -165,7 +165,7 @@ jobs:
           name: Run full xcp_d on nibabies
           no_output_timeout: 1h
           command: |
-            pytest -m "nibabies" xcp_d
+            pytest -m "nibabies --data_dir=/bids-input/data --output_dir=/out --working_dir=/work" xcp_d
       - store_artifacts:
           path: /src/xcp_d/run_pytest/derivatives/xcp_d/
 
