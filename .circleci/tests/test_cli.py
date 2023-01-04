@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from xcp_d.cli.run import main
+from xcp_d.cli.run import build_workflow, get_parser, main
 
 
 @pytest.mark.skip(reason="Not set up yet.")
@@ -112,3 +112,28 @@ def test_nibabies(datasets, output_dir, working_dir):
         "-vv",
     ]
     main(parameters)
+
+
+def test_nibabies_bw(datasets, output_dir, working_dir):
+    """Run xcp_d on Nibabies derivatives, with nifti options."""
+    test_name = "test_nibabies_bw"
+
+    data_dir = datasets["nibabies"]
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+    parameters = [
+        data_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--input-type=nibabies",
+        "--nuisance-regressors=27P",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "--fd-thresh=100",
+        "-vv",
+    ]
+    opts = get_parser().parse_args(parameters)
+    retval = {}
+    build_workflow(opts, retval=retval)
