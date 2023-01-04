@@ -1,10 +1,10 @@
 """Command-line interface tests."""
 import os
-from glob import glob
 
 import pytest
 
 from xcp_d.cli.run import build_workflow, get_parser
+from xcp_d.tests.utils import check_generated_files, get_test_data_path
 
 
 @pytest.mark.skip(reason="Not set up yet.")
@@ -41,6 +41,9 @@ def test_ds001491_nifti(datasets, output_dir, working_dir):
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
+
+    output_list_file = os.path.join(get_test_data_path(), "nifti_with_freesurfer_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
 
 
 @pytest.mark.skip(reason="Not set up yet.")
@@ -79,11 +82,14 @@ def test_ds001491_cifti(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
+    output_list_file = os.path.join(get_test_data_path(), "cifti_with_freesurfer_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
+
 
 @pytest.mark.skip(reason="Not set up yet.")
 def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options."""
-    test_name = "test_nibabies"
+    test_name = "test_fmriprep_without_freesurfer"
 
     data_dir = datasets["fmriprep_without_freesurfer"]
     out_dir = os.path.join(output_dir, test_name)
@@ -111,6 +117,9 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
+
+    output_list_file = os.path.join(get_test_data_path(), "nifti_without_freesurfer_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
 
 
 def test_nibabies(datasets, output_dir, working_dir):
@@ -140,6 +149,5 @@ def test_nibabies(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
-    xcpd_dir = os.path.join(out_dir, "xcp_d")
-    files = sorted(glob(os.path.join(xcpd_dir, "**/*"), recursive=True))
-    raise Exception("\n".join(files))
+    output_list_file = os.path.join(get_test_data_path(), "nibabies_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
