@@ -165,18 +165,9 @@ jobs:
           name: Run full xcp_d on nibabies
           no_output_timeout: 1h
           command: |
-            cd /src/xcp_d/.circleci
-            bash Nibabies.sh
+            pytest -m "nibabies" xcp_d
       - store_artifacts:
-          path: /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/
-      - run:
-          name: Check outputs of xcp_d run
-          command: |
-            mkdir -p /tmp/nibabies/test
-            CHECK_OUTPUTS_FILE="nibabies_outputs.txt"
-            find /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nibabies/derivatives/++ | grep -v sourcedata | sort > /tmp/nibabies/test/outputs.out
-            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nibabies/test/outputs.out)
-            exit $?
+          path: /src/xcp_d/run_pytest/derivatives/xcp_d/
 
   cifti_with_freesurfer:
     <<: *dockersetup

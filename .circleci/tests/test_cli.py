@@ -15,6 +15,9 @@ def test_ds001491_nifti(datasets, output_dir, working_dir):
     data_dir = datasets["ds001491"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
     parameters = [
         data_dir,
         out_dir,
@@ -22,7 +25,7 @@ def test_ds001491_nifti(datasets, output_dir, working_dir):
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
-        "--bids-filter-file=data/ds001419-fmriprep_nifti_filter.json",
+        f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=aroma_gsr",
         "--despike",
         "--dummytime=8",
@@ -42,7 +45,7 @@ def test_ds001491_nifti(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
-    output_list_file = os.path.join(get_test_data_path(), "nifti_with_freesurfer_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
 
@@ -54,6 +57,9 @@ def test_ds001491_cifti(datasets, output_dir, working_dir):
     data_dir = datasets["ds001491"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
     parameters = [
         data_dir,
         out_dir,
@@ -61,7 +67,7 @@ def test_ds001491_cifti(datasets, output_dir, working_dir):
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
-        "--bids-filter-file=data/ds001419-fmriprep_cifti_filter.json",
+        f"--bids-filter-file={filter_file}",
         "--despike",
         "--head_radius=40",
         "--smoothing=6",
@@ -82,7 +88,7 @@ def test_ds001491_cifti(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
-    output_list_file = os.path.join(get_test_data_path(), "cifti_with_freesurfer_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
 
@@ -122,6 +128,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     check_generated_files(out_dir, output_list_file)
 
 
+@pytest.mark.nibabies
 def test_nibabies(datasets, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
