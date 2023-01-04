@@ -470,12 +470,18 @@ By default, this workflow is disabled.
     return parser
 
 
-def main(args=None):
-    """Run the main workflow."""
-    from multiprocessing import Manager, Process, set_start_method
+def _main(args=None):
+    from multiprocessing import set_start_method
 
     set_start_method("forkserver")
-    # warnings.showwarning = _warn_redirect
+
+    main(args=args)
+
+
+def main(args=None):
+    """Run the main workflow."""
+    from multiprocessing import Manager, Process
+
     opts = get_parser().parse_args(args)
 
     exec_env = os.name
