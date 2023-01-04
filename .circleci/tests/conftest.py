@@ -34,7 +34,7 @@ def output_dir(request):
 def datasets(data_dir):
     dsets = {}
     dsets["ds001419"] = os.path.join(data_dir, "ds001419-fmriprep")
-    dsets["nibabies"] = os.path.join(data_dir, "nibabies_test_data")
+    dsets["nibabies"] = os.path.join(data_dir, "nibabies_test_data/derivatives/nibabies")
     dsets["fmriprep_without_freesurfer"] = os.path.join(data_dir, "fmriprep_without_freesurfer")
     return dsets
 

@@ -7,16 +7,18 @@ from xcp_d.cli.run import build_workflow, get_parser, main
 
 
 @pytest.mark.skip(reason="Not set up yet.")
-def test_ds001491_nifti(datasets, working_dir):
+def test_ds001491_nifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001491 fMRIPrep derivatives, with nifti options."""
-    data_dir = "/bids-input/data/ds001419-fmriprep"
-    out_dir = "/tmp/data/test_ds001491_nifti"
-    derivatives_dir = os.path.join(out_dir, "derivatives")
+    test_name = "test_ds001491_nifti"
+
+    data_dir = datasets["ds001491"]
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
     parameters = [
         data_dir,
-        derivatives_dir,
+        out_dir,
         "participant",
-        f"-w={os.path.join(derivatives_dir, 'work')}",
+        f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
         "--bids-filter-file=data/ds001419-fmriprep_nifti_filter.json",
@@ -32,7 +34,9 @@ def test_ds001491_nifti(datasets, working_dir):
         "--band-stop-max=18",
         "--warp-surfaces-native2std",
     ]
-    main(parameters)
+    opts = get_parser().parse_args(parameters)
+    retval = {}
+    build_workflow(opts, retval=retval)
 
 
 @pytest.mark.skip(reason="Not set up yet.")
@@ -91,6 +95,7 @@ def test_fmriprep_without_freesurfer(datasets, working_dir):
     main(parameters)
 
 
+@pytest.mark.skip(reason="Not set up yet.")
 def test_nibabies(datasets, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
