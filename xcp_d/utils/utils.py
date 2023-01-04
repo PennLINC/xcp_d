@@ -142,22 +142,16 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     Only used for QCReport in init_boldpostprocess_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    import os
-    import re
-
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.utils.bids import get_entity
+
     # Extract the space of the BOLD file
-    file_base = os.path.basename(bold_file)
-    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not bold_space:
-        bold_space = "native"
-    else:
-        bold_space = bold_space[0]
+    bold_space = get_entity(bold_file, "space")
 
     if bold_space in ("native", "T1w"):
-        base_std_space = re.findall("from-([a-zA-Z0-9]+)", template_to_t1w)[0]
+        base_std_space = get_entity(template_to_t1w, "from")
     elif f"from-{bold_space}" not in template_to_t1w:
         raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
 
@@ -276,22 +270,18 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
     Can easily be added in the future.
     """
     import os
-    import re
 
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.utils.bids import get_entity
+
     # Extract the space of the BOLD file
-    file_base = os.path.basename(bold_file)
-    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not bold_space:
-        bold_space = "native"
-    else:
-        bold_space = bold_space[0]
+    bold_space = get_entity(bold_file, "space")
 
     # Check that the MNI-to-T1w xform is from the right space
     if bold_space in ("native", "T1w"):
-        base_std_space = re.findall("from-([a-zA-Z0-9]+)", template_to_t1w)[0]
+        base_std_space = get_entity(template_to_t1w, "from")
     elif f"from-{bold_space}" not in template_to_t1w:
         raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
 
@@ -360,6 +350,7 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
             transform_list = [t1w_to_native, template_to_t1w]
 
     else:
+        file_base = os.path.basename(bold_file)
         raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
 
     return transform_list

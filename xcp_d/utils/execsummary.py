@@ -1,86 +1,163 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for generating the executive summary."""
-import nibabel as nb
-import nilearn.image as nlimage
-import numpy as np
-from nilearn.plotting import view_img
-from skimage import measure
 
 
-def generate_brain_sprite(template_image, stat_map, out_file):
-    """Generate a brainsprite HTML file."""
-    html_view = view_img(
-        stat_map_img=stat_map,
-        cmap="hsv",
-        symmetric_cmap=False,
-        black_bg=True,
-        vmin=-1,
-        vmax=3,
-        colorbar=False,
-        bg_img=template_image,
-    )
+def make_mosaic(png_files):
+    """Take path to .png anatomical slices, create a mosaic, and save to file.
 
-    html_view.save_as_html(out_file)
+    The mosaic will be usable in a BrainSprite viewer.
+    """
+    import os
+
+    import numpy as np
+    from PIL import Image  # for BrainSprite
+
+    mosaic_file = os.path.abspath("mosaic.png")
+    files = png_files[::-1]  # we want last first, I guess?
+
+    IMAGE_DIM = 218
+    images_per_side = int(np.ceil(np.sqrt(len(files))))
+    square_dim = IMAGE_DIM * images_per_side
+    result = Image.new("RGB", (square_dim, square_dim), color=1)
+
+    for index, file_ in enumerate(files):
+        # Get relative path to file, from user's home folder
+        path = os.path.expanduser(file_)
+        with Image.open(path) as img:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img.thumbnail((IMAGE_DIM, IMAGE_DIM), resample=Image.ANTIALIAS)
+
+            x = index % images_per_side * IMAGE_DIM
+            y = index // images_per_side * IMAGE_DIM
+            w, h = img.size
+            result.paste(img, (x, y, x + w, y + h))
+
+    result.save(mosaic_file, "PNG", quality=95)
+    return mosaic_file
+
+
+def modify_brainsprite_scene_template(
+    slice_number,
+    anat_file,
+    rh_pial_file,
+    lh_pial_file,
+    rh_white_file,
+    lh_white_file,
+    scene_template,
+):
+    """Create modified .scene text file to be used for creating brainsprite PNGs later."""
+    import gzip
+    import os
+
+    paths = {
+        "TX_IMG": anat_file,
+        "RPIAL": rh_pial_file,
+        "LPIAL": lh_pial_file,
+        "RWHITE": rh_white_file,
+        "LWHITE": lh_white_file,
+    }
+
+    out_file = os.path.abspath("modified_scene.scene")
+
+    if scene_template.endswith(".gz"):
+        with gzip.open(scene_template, mode="rt") as fo:
+            data = fo.read()
+    else:
+        with open(scene_template, "r") as fo:
+            data = fo.read()
+
+    data = data.replace("XAXIS_COORDINATE", str(slice_number))
+
+    for template, path in paths.items():
+        filename = os.path.basename(path)
+
+        # Replace templated pathnames and filenames in local copy.
+        data = data.replace(f"{template}_PATH", path)
+        data = data.replace(f"{template}_NAME", filename)
+
+    with open(out_file, "w") as fo:
+        fo.write(data)
 
     return out_file
 
 
-def ribbon_to_statmap(ribbon, outfile):
-    """Convert a ribbon to a volumetric statistical map."""
-    # chek if the data is ribbon or seg_data files
+def modify_pngs_scene_template(
+    anat_file,
+    rh_pial_file,
+    lh_pial_file,
+    rh_white_file,
+    lh_white_file,
+    scene_template,
+):
+    """Create modified .scene text file to be used for creating PNGs later."""
+    import gzip
+    import os
 
-    ngbdata = nb.load(ribbon)
+    paths = {
+        "TX_IMG": anat_file,
+        "RPIAL": rh_pial_file,
+        "LPIAL": lh_pial_file,
+        "RWHITE": rh_white_file,
+        "LWHITE": lh_white_file,
+    }
 
-    if ngbdata.get_fdata().max() > 5:  # that is ribbon
-        contour_data = ngbdata.get_fdata() % 39
-        white = nlimage.new_img_like(ngbdata, contour_data == 2)
-        pial = nlimage.new_img_like(ngbdata, contour_data >= 2)
+    out_file = os.path.abspath("modified_scene.scene")
+
+    if scene_template.endswith(".gz"):
+        with gzip.open(scene_template, mode="rt") as fo:
+            data = fo.read()
     else:
-        contour_data = ngbdata.get_fdata()
-        white = nlimage.new_img_like(ngbdata, contour_data == 2)
-        pial = nlimage.new_img_like(ngbdata, contour_data == 1)
+        with open(scene_template, "r") as fo:
+            data = fo.read()
 
-    datapial = _get_contour(pial.get_fdata())
-    datawhite = _get_contour(white.get_fdata())
+    for template, path in paths.items():
+        filename = os.path.basename(path)
 
-    datax = 2 * datapial + datawhite
+        # Replace templated pathnames and filenames in local copy.
+        data = data.replace(f"{template}_PATH", path)
+        data = data.replace(f"{template}_NAME", filename)
 
-    # save the output
-    ngbdatax = nb.Nifti1Image(datax, ngbdata.affine, ngbdata.header)
-    ngbdatax.to_filename(outfile)
+    with open(out_file, "w") as fo:
+        fo.write(data)
 
-    return outfile
+    return out_file
 
 
-def _get_contour(datax):
-    """Get contour in each plane."""
-    dims = datax.shape
+def get_n_frames(anat_file):
+    """Infer the number of frames from an image."""
+    import nibabel as nb
+    import numpy as np
 
-    contour = np.zeros_like(datax)
+    img = nb.load(anat_file)
 
-    # get y-z plane
-    for i in range(dims[2]):
-        con = measure.find_contours(datax[:, :, i], fully_connected="low")
-        conx = np.zeros_like(datax[:, :, i])
-        for cx in con:
-            conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])] = 1
-        contour[:, :, i] = conx
+    # Get number of slices in x axis.
+    n_slices = img.shape[0]
 
-        # for xz plane
-        # for i in range(dims[1]):
-        # con = measure.find_contours(datax[:,i,:],fully_connected='low')
-        # conx =np.zeros_like(datax[:,i,:])
-        # for cx in con:
-        # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1 # +0.5 to avoid the 0.5 offset
-        # contour[:,i,:]= conx
+    frame_numbers = np.arange(1, n_slices + 1, dtype=int)
+    ijk = np.ones((2, 3), dtype=int)
+    ijk[:, 0] = [0, n_slices]
+    xyz = nb.affines.apply_affine(img.affine, ijk)
+    first_slice, last_slice = xyz[:, 0].astype(int)
+    frame_numbers = list(np.arange(first_slice, last_slice + 1, dtype=int))
 
-    # for yz plane
-    # for i in range(dims[2]):
-    # con = measure.find_contours(datax[:,:,i],fully_connected='low')
-    # conx =np.zeros_like(datax[:,:,i])
-    # for cx in con:
-    # conx[np.int64(cx[:, 0]), np.int64(cx[:, 1])]=1
-    # contour[:,:,i]= conx
+    return frame_numbers
 
-    return contour
+
+def get_png_image_names():
+    """Get a list of scene names for which to produce PNGs."""
+    image_descriptions = [
+        "AxialInferiorTemporalCerebellum",
+        "AxialBasalGangliaPutamen",
+        "AxialSuperiorFrontal",
+        "CoronalPosteriorParietalLingual",
+        "CoronalCaudateAmygdala",
+        "CoronalOrbitoFrontal",
+        "SagittalInsulaFrontoTemporal",
+        "SagittalCorpusCallosum",
+        "SagittalInsulaTemporalHippocampalSulcus",
+    ]
+
+    scene_index = list(range(1, len(image_descriptions) + 1))
+
+    return scene_index, image_descriptions

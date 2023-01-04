@@ -1,0 +1,36 @@
+{#
+    Make a section for T1 or T2.
+    This will show the brainsprite viewer, with a label above it to identify T1 v T2,
+    and a button that will open a modal window with a slider for the T1 or T2 pngs.
+
+    Inputs:
+    - structural_files{image_type}{"mosaic"}
+    - structural_files{image_type}{"slices"}
+#}
+{# The jquery scripts must be loaded before the macros are run. #}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+
+{% from "macros.html.jinja" import build_brainsprite, build_cycler, build_modal_script, build_sprite_loader_script %}
+
+{# Loop over the modalities (T1/T2) and add their brainsprites. #}
+{% for image_type in structural_files.keys() %}
+    {% set mosaic_file = structural_files[image_type]["mosaic"] %}
+    {% set cycler_files = structural_files[image_type]["slices"] %}
+    {% set image_class = image_type + "pngs" %}
+    {% set modal_id = image_type + "_modal" %}
+
+    {# Only render brainsprite if the mosaic file is defined. #}
+    {% if mosaic_file != "None" %}
+        {{ build_brainsprite(image_type, modal_id, mosaic_file) }}
+        {{ build_cycler(image_class, modal_id, cycler_files) }}
+        {{ build_sprite_loader_script(image_type) }}
+        {{ build_modal_script(image_class, modal_id) }}
+    {% endif %}
+
+{% endfor %}
+
+{# Include BrainSprite JavaScript code only once. #}
+<script>
+{{ include_file("./brainsprite.js") }}
+</script>
