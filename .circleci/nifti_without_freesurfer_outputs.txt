@@ -96,4 +96,3 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_d
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.nii.gz
-xcp_d/sub-01_executive_summary.html

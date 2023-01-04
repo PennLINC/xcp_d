@@ -22,3 +22,4 @@ xcp_surface/.DS_Store
 *.egg-info
 .vscode
 xcp_d/notebooks/.ipynb_checkpoints/restingstate-checkpoint.ipynb
+xcp_d/data/*.scene.gz

@@ -1,437 +1,35 @@
 #! /usr/bin/env python
-"""Classes for manipulating BIDS-format derivatives."""
-
-__doc__ = """
-Builds the layout for the Executive Summary of the bids-formatted output from
-the DCAN-Labs fMRI pipelines.
-"""
-
-__version__ = "2.0.0"
-
-import glob as glob
+"""Classes for building an executive summary file."""
 import os
-import re
-from pathlib import Path
 
-from xcp_d.interfaces import constants
-from xcp_d.utils.filemanip import find_and_copy_files, find_one_file
+from bids.layout import BIDSLayout, Query
+from bs4 import BeautifulSoup
+from jinja2 import Environment, FileSystemLoader, Markup
+from pkg_resources import resource_filename as pkgrf
 
 
-class ModalContainer(object):
-    """A modal container (with a close button) and a button to display the container.
-
-    A ModalContainer object must be created with these steps:
-
-        1. Instantiate the object with an id and image class.
-        2. Add the images to be shown in the container.
-        3. Get the HTML for the container at the point in the document at which you want to insert
-           the HTML.
-
-    The steps are necessary so that buttons can be created
-    after all of the images have been added. Else, the images
-    hide the button.
-
-    The modal id must be unique to this container, so that
-    buttons or clickable images or whatever, can display the
-    correct container.
+class ExecutiveSummary(object):
+    """A class to build an executive summary.
 
     Parameters
     ----------
-    modal_id
-    image_class
-    """
-
-    def __init__(self, modal_id, image_class):
-
-        self.modal_id = modal_id
-        self.modal_container = constants.MODAL_START.format(modal_id=self.modal_id)
-        self.button = ""
-
-        self.image_class = image_class
-        self.image_class_idx = 0
-
-        self.scripts = ""
-
-        self.state = "open"
-
-    def get_modal_id(self):
-        """Get modal ID."""
-        return self.modal_id
-
-    def get_image_class(self):
-        """Get image class."""
-        return self.image_class
-
-    def get_button(self, btn_label):
-        """Return HTML to create a button that displays the modal container."""
-        self.button += constants.DISPLAY_MODAL_BUTTON.format(
-            modal_id=self.modal_id, btn_label=btn_label
-        )
-        return self.button
-
-    def get_container(self):
-        """Add the close button after all images have been added.
-
-        This ensures the button does not get covered by the image.
-        """
-        self.state = "closed"
-
-        # Close up the elements.
-        self.modal_container += constants.MODAL_END.format(modal_id=self.modal_id)
-
-        # Return the HTML.
-        return self.modal_container
-
-    def get_scripts(self):
-        """Get modal scripts.
-
-        The container needs the scripts to show the correct image when the container is opened.
-        """
-        self.scripts += constants.MODAL_SCRIPTS % {
-            "modal_id": self.modal_id,
-            "image_class": self.image_class,
-        }
-
-        return self.scripts
-
-    def add_images(self, image_list):
-        """Add each image in the list to the slider."""
-        for image_file in image_list:
-            self.add_image(image_file)
-
-        # Return the final index.
-        return self.image_class_idx
-
-    def add_image(self, image_file):
-        """Add image to container."""
-        if self.state != "open":
-            print("ERROR: Cannot add images after the HTML has been written.")
-            return 0
-
-        # Will display the name of the file on the image,
-        # so get the filename by itself.
-        display_name = os.path.basename(image_file)
-
-        # Add the image to container, and assign the class.
-        self.modal_container += constants.IMAGE_WITH_CLASS.format(
-            modal_id=self.modal_id,
-            image_class=self.image_class,
-            image_file=image_file,
-            display_name=display_name,
-        )
-
-        self.image_class_idx += 1
-        return self.image_class_idx
-
-
-class ModalSlider(ModalContainer):
-    """A modal container that contains a carousel/slider and a button to display the container.
-
-    The slider will show each of the images in the list,
-    with its filename in the upper left,
-    previous and next buttons in the lower left and right respectively,
-    and a close button in the upper right.
-
-    The image class must be unique to this slider so that the scripts can find the images used by
-    the slider.
-
-    Parameters
-    ----------
-    modal_id
-    image_class
-    """
-
-    def __init__(self, modal_id, image_class):
-        ModalContainer.__init__(self, modal_id, image_class)
-
-    def get_container(self):
-        """Get container."""
-        # Must add buttons after all images have been added.
-        self.state = "closed"
-
-        # Add the buttons and close up the elements.
-        self.modal_container += constants.SLIDER_END.format(image_class=self.image_class)
-        self.modal_container += constants.MODAL_END.format(modal_id=self.modal_id)
-        # Return the HTML.
-        return self.modal_container
-
-    def get_scripts(self):
-        """Ger scripts."""
-        # The slider needs the scripts to go along with the
-        # right and left buttons.
-        self.scripts += constants.SLIDER_SCRIPTS % {
-            "modal_id": self.modal_id,
-            "image_class": self.image_class,
-        }
-        return self.scripts
-
-
-class Section(object):
-    """A Section object.
-
-    Parameters
-    ----------
-    img_path : str, optional
-    regs_slider : None or str, optional
-    img_modal : None or str, optional
-    """
-
-    def __init__(self, img_path="./", regs_slider=None, img_modal=None):
-        self.section = ""
-        self.scripts = ""
-        self.img_path = img_path
-        self.regs_slider = regs_slider
-        self.img_modal = img_modal
-
-    def get_section(self):
-        """Get section."""
-        return self.section
-
-    def get_scripts(self):
-        """Get scripts."""
-        return self.scripts
-
-
-class TxSection(Section):
-    """A TxSection object.
-
-    Parameters
-    ----------
-    tx : str, optional
-    img_path : str, optional
-    kwargs : dict, optional
-    """
-
-    def __init__(self, tx="", img_path="", **kwargs):
-        Section.__init__(self, **kwargs)
-
-        self.tx = tx
-        self.img_path = img_path
-
-        self.run()
-
-    def run(self):
-        """Run the object."""
-        values = constants.IMAGE_INFO["t1w_brainplot"]
-        tx_file = Path(find_one_file(self.img_path, values["pattern"]))
-        t1wbrainplot = (
-            re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
-            .findall((tx_file).read_text())[0]
-            .strip()
-        )
-        values2 = constants.IMAGE_INFO["t2w_brainplot"]
-        tx2_file = Path(find_one_file(self.img_path, values2["pattern"]))
-        t2wbrainplot = (
-            re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
-            .findall((tx2_file).read_text())[0]
-            .strip()
-        )
-        self.section += constants.TX_SECTION_START.format(txx="t1w")
-
-        src1 = Path(tx_file)
-        t1wbrainplot = src1.read_text().strip()
-        src2 = Path(tx2_file)
-        t2wbrainplot = src2.read_text().strip()
-        self.section += constants.T1X_SECTION.format(tx1="T1w", t1wbrainplot=t1wbrainplot)
-        self.section += constants.T2X_SECTION.format(tx2="T2w", t2wbrainplot=t2wbrainplot)
-        # self.section += T2X_SECTION.format(tx='T2w',t2wbrainplot=t2wbrainplot)
-        self.section += constants.TX_SECTION_END.format()
-
-
-class TasksSection(Section):
-    """A TasksSection object.
-
-    Parameters
-    ----------
-    tasks : list of str, optional
-    img_path : str, optional
-    kwargs : dict, optional
-    """
-
-    def __init__(self, tasks=[], img_path="./figures", **kwargs):
-        Section.__init__(self, **kwargs)
-
-        self.img_path = img_path
-
-        self.run(tasks)
-
-    def write_t1_reg_rows(self, task_name, task_num):
-        """Write T1w rows."""
-        # Write the header for the next few rows.
-        self.section += constants.TASK_LABEL_ROW.format(task_name=task_name, task_num=task_num)
-
-        row_data = {}
-        row_data["row_modal"] = self.regs_slider.get_modal_id()
-
-        # Using glob patterns to find the files for this task; start
-        # with a pattern for the task/run itself.
-        task_pattern = task_name
-
-        # For the processed files, it's as simple as looking for the pattern in
-        # the source-directory. When found and copied to the directory of images,
-        # add the row.
-
-        for key in ["bold_t1w_reg"]:
-            values = constants.IMAGE_INFO[key]
-            pattern = values["pattern"] % task_pattern
-            task_file = find_one_file(self.img_path, pattern)
-            if task_file:
-                # Add image to data and to slider.
-                row_data["row_label"] = values["title"]
-                row_data["row_img"] = task_file
-                row_data["row_idx"] = self.regs_slider.add_image(task_file)
-                self.section += constants.LAYOUT_ROW.format(**row_data)
-            else:
-                self.section += constants.PLACEHOLDER_ROW.format(row_label=values["title"])
-
-    def write_bold_gray_row(self, task_name):
-        """Write BOLD row."""
-        bold_data = {}
-        bold_data["row_modal"] = self.img_modal.get_modal_id()
-
-        # Using glob patterns to find the files for this task; start
-        # with a pattern for the task/run itself.
-        task_pattern = task_name
-
-        # Make the first half of the row - bold and ref data.
-        self.section += constants.BOLD_GRAY_START
-
-        # For bold and ref files, may include run number or not.
-        for key in ["ref"]:
-            values = constants.IMAGE_INFO[key]
-            pattern = values["pattern"] % task_pattern
-            task_file = find_one_file(self.img_path, pattern)
-            if task_file:
-                # Add image to data, and to the 'generic' images container.
-                bold_data["row_label"] = values["title"]
-                bold_data["row_img"] = task_file
-                bold_data["row_idx"] = self.img_modal.add_image(task_file)
-                self.section += constants.LAYOUT_HALF_ROW.format(**bold_data)
-            else:
-                # File was not found with both task name and run number.
-                # Try again with task name only (no run number).
-                pattern = values["pattern"] % task_name
-                task_file = find_one_file(self.img_path, pattern)
-                if task_file:
-                    # Add image to data, and to the 'generic' images container.
-                    bold_data["row_label"] = values["title"]
-                    bold_data["row_img"] = task_file
-                    bold_data["row_idx"] = self.img_modal.add_image(task_file)
-                    self.section += constants.LAYOUT_HALF_ROW.format(**bold_data)
-                else:
-                    self.section += constants.PLACEHOLDER_HALF_ROW.format(
-                        row_label=values["title"]
-                    )
-
-        self.section += constants.BOLD_GRAY_SPLIT
-
-        # For each gray-plot, there is only one name to look for.
-        for key in ["task_pre_reg_gray", "task_post_reg_gray"]:
-            values = constants.IMAGE_INFO[key]
-            pattern = values["pattern"] % task_pattern
-            task_file = find_one_file(self.img_path, pattern)
-            if task_file:
-                # Add image to data, and to the 'generic' images container.
-                bold_data["row_label"] = values["title"]
-                bold_data["row_img"] = task_file
-                bold_data["row_idx"] = self.img_modal.add_image(task_file)
-                self.section += constants.LAYOUT_QUARTER_ROW.format(**bold_data)
-            else:
-                self.section += constants.PLACEHOLDER_QUARTER_ROW.format(row_label=values["title"])
-
-        self.section += constants.BOLD_GRAY_END
-
-    def run(self, tasks):
-        """Run the section."""
-        if len(tasks) == 0:
-            print("No tasks were found.")
-            return
-
-        # Write the column headings.
-        self.section += constants.TASKS_SECTION_START
-
-        # Each entry in task_entries is a tuple of the task-name (without
-        # task-) and run number (without run-).
-        for task_name in tasks:
-            if "run-" in task_name:
-                task_num = task_name.split("_run-")[1].split("_")[0]
-            else:
-                task_num = "ALL"
-
-            self.write_t1_reg_rows(task_name, task_num)
-            self.write_bold_gray_row(task_name)
-
-        # Add the end of the tasks section.
-        self.section += constants.TASKS_SECTION_END
-
-
-class LayoutBuilder(object):
-    """A LayoutBuilder object.
-
-    Parameters
-    ----------
-    html_path : str
+    xcpd_path : str
+        Path to the xcp-d derivatives.
     subject_id : str
+        Subject ID.
     session_id : None or str, optional
+        Session ID.
     """
 
-    def __init__(self, html_path, subject_id, session_id=None):
-
-        self.working_dir = os.getcwd()
-
-        self.html_path = html_path
-        self.subject_id = "sub-" + subject_id
+    def __init__(self, xcpd_path, subject_id, session_id=None):
+        self.xcpd_path = xcpd_path
+        self.subject_id = subject_id
         if session_id:
-            self.session_id = "ses-" + session_id
+            self.session_id = session_id
         else:
             self.session_id = None
 
-        self.summary_path = html_path + "/" + self.subject_id + "/figures/"
-        self.files_path = html_path + "/" + self.subject_id + "/figures/"
-        self.images_path = html_path + "/" + self.subject_id + "/figures/"
-        images_path = self.images_path
-
-        # For the directory where the images used by the HTML are stored,  use
-        # the relative path only, as the HTML will need to access it's images
-        # using the relative path.
-        self.images_path = os.path.relpath(images_path, html_path)
-
-        self.setup()
-        self.run()
-        self.teardown()
-
-    def setup(self):
-        """Prepare to write the HTML by changing the directory to the html_path.
-
-        As we write the HTML, we use the relative paths to the image files that
-        the HTML will reference. Therefore, best to be in the directory to which
-        the HTML will be written.
-        """
-        os.chdir(self.html_path)
-
-    def teardown(self):
-        """Go back to the path where we started."""
-        os.chdir(self.working_dir)
-
-    def get_list_of_tasks(self):
-        """Walk through the MNINonLinear/Results directory to find all paths containing 'task-'.
-
-        This is the preferred method.
-        If there is no MNINonLinear/Results directory, uses the files directory in the same way.
-        """
-        taskset = set()
-
-        # use_path = os.path.join(self.files_path)
-        if os.path.isdir(self.files_path):
-            print("\n All tasks completed")
-
-        filex = glob.glob(self.files_path + "/*bbregister_bold.svg")
-
-        for name in filex:
-            taskbase = os.path.basename(name)
-            taskset.add(taskbase.split("_task-")[1].split("_desc")[0])
-
-        return sorted(taskset)
+        self.layout = BIDSLayout(xcpd_path, validate=False, derivatives=True)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
@@ -443,80 +41,202 @@ class LayoutBuilder(object):
         filename : str
             name of html file.
         """
-        filepath = os.path.join(os.getcwd(), filename)
-        try:
-            fd = open(filepath, "w")
-        except OSError as err:
-            print(f"Unable to open {filepath} for write.\n")
-            print(f"Error: {err}")
+        soup = BeautifulSoup(document, features="lxml")
+        html = soup.prettify()  # prettify the html
 
-        fd.writelines(document)
-        print(f"\nExecutive summary can be found in path:\n\t{os.getcwd()}/{filename}")
-        fd.close()
+        filepath = os.path.join(self.xcpd_path, filename)
+        with open(filepath, "w") as fo:
+            fo.write(html)
 
-    def run(self):
-        """Run the LayoutBuilder."""
-        # Copy gray plot pngs, generated by DCAN-BOLD processing, to the
-        # directory of images used by the HTML.
-        find_and_copy_files(self.summary_path, "*DVARS_and_FD*.png", self.images_path)
-
-        # Start building the HTML document, and put the subject and session
-        # into the title and page header.
-        head = constants.HTML_START
-        if self.session_id is None:
-            head += constants.TITLE.format(subject=self.subject_id, sep="", session="")
+    def _get_bids_file(self, query):
+        files = self.layout.get(**query)
+        if len(files) == 1:
+            found_file = files[0].path
+            found_file = os.path.relpath(found_file, self.xcpd_path)
         else:
-            head += constants.TITLE.format(
-                subject=self.subject_id, sep=": ", session=self.session_id
-            )
-        body = ""
+            found_file = "None"
 
-        # Images included in the Registrations slider and the Images container
-        # are found in multiple sections. Create the objects now and add the files
-        # as we get them.
-        regs_slider = ModalSlider("regs_modal", "Registrations")
+        return found_file
 
-        # Any image that is not shown in the sliders will be shown in a modal
-        # container when clicked. Create that container now.
-        img_modal = ModalContainer("img_modal", "Images")
+    def collect_inputs(self):
+        """Collect inputs."""
+        ANAT_SLICEWISE_PNG_DESCS = [
+            "AxialBasalGangliaPutamen",
+            "AxialInferiorTemporalCerebellum",
+            "AxialSuperiorFrontal",
+            "CoronalCaudateAmygdala",
+            "CoronalOrbitoFrontal",
+            "CoronalPosteriorParietalLingual",
+            "SagittalCorpusCallosum",
+            "SagittalInsulaFrontoTemporal",
+            "SagittalInsulaTemporalHippocampalSulcus",
+        ]
+        ANAT_REGISTRATION_DESCS = [
+            "AtlasInT1w",
+            "T1wInAtlas",
+            "AtlasInSubcorticals",
+            "SubcorticalsInAtlas",
+        ]
+        ANAT_REGISTRATION_TITLES = [
+            "Atlas In T1w",
+            "T1w In Atlas",
+            "Atlas in Subcorticals",
+            "Subcorticals in Atlas",
+        ]
+        TASK_REGISTRATION_DESCS = ["TaskInT1", "T1InTask"]
+        TASK_REGISTRATION_TITLES = ["Task in T1", "T1 in Task"]
+        ORDERING = [
+            "session",
+            "task",
+            "acquisition",
+            "ceagent",
+            "reconstruction",
+            "direction",
+            "run",
+            "echo",
+        ]
 
-        # Some sections require more args, but most will need these:
-        kwargs = {"img_path": self.images_path, "regs_slider": regs_slider, "img_modal": img_modal}
+        query = {
+            "subject": self.subject_id,
+        }
 
-        # Make sections for 'T1' and 'T2' images. Include pngs slider and
-        # BrainSprite for each.
+        structural_files = {}
+        for modality in ["T1w", "T2w"]:
+            structural_files[modality] = {}
 
-        # Data for this subject/session: i.e., concatenated gray plots and atlas
-        # images. (The atlas images will be added to the Registrations slider.)
-        # anat_section = AnatSection(**kwargs)
-        # body += anat_section.get_section()
+            # Get mosaic file for brainsprite.
+            query["desc"] = "mosaic"
+            query["suffix"] = modality
+            query["extension"] = ".png"
+            mosaic = self._get_bids_file(query)
+            structural_files[modality]["mosaic"] = mosaic
 
-        # Tasks section: data specific to each task/run. Get a list of tasks processed
-        # for this subject. (The <task>-in-T1 and T1-in-<task> images will be added to
-        # the Registrations slider.)
+            # Get slicewise PNG files for brainsprite.
+            query["extension"] = ".png"
+            structural_files[modality]["slices"] = []
+            for slicewise_png_desc in ANAT_SLICEWISE_PNG_DESCS:
+                query["desc"] = slicewise_png_desc
+                slicewise_pngs = self._get_bids_file(query)
 
-        body += TxSection(**kwargs).get_section()
+                structural_files[modality]["slices"].append(slicewise_pngs)
 
-        tasks_list = self.get_list_of_tasks()
-        tasks_section = TasksSection(tasks=tasks_list, **kwargs)
-        body += tasks_section.get_section()
+            # Get structural registration files.
+            structural_files[modality]["registration_files"] = []
+            structural_files[modality]["registration_titles"] = ANAT_REGISTRATION_TITLES
+            for registration_desc in ANAT_REGISTRATION_DESCS:
+                query["desc"] = registration_desc
+                found_file = self._get_bids_file(query)
 
-        # Close up the Registrations elements and get the HTML.
-        body += img_modal.get_container() + regs_slider.get_container()
+                structural_files[modality]["registration_files"].append(found_file)
 
-        # There are a bunch of scripts used in this page. Keep their HTML together.
-        # scripts = t1_section.get_scripts() + t2_section.get_scripts()
-        scripts = img_modal.get_scripts() + regs_slider.get_scripts()
+        self.structural_files_ = structural_files
 
-        # src1 = ' <div class="boiler-html"> ' + src11 + ' </div>'
-        # src2 = ' <div class="boiler-html"> ' + src22 + ' </div>'
-        # t1_section = TxSection(tx='T1',brainplot=src1)
-        # t2_section = TxSection(tx='T2',brainplot=src2)
-        # Assemble and write the document.
-        html_doc = head + body + scripts + constants.HTML_END
-        if self.session_id is None:
-            self.write_html(html_doc, f"{self.subject_id}_executive_summary.html")
-        else:
-            self.write_html(
-                html_doc, f"{self.subject_id}_{self.session_id}_executive_summary.html"
-            )
+        # Determine the unique entity-sets for the task data.
+        postproc_files = self.layout.get(
+            subject=self.subject_id,
+            datatype="func",
+            suffix="bold",
+            extension=[".dtseries.nii", ".nii.gz"],
+        )
+        unique_entity_sets = []
+        for postproc_file in postproc_files:
+            entities = postproc_file.entities
+            entities = {k: v for k, v in entities.items() if k in ORDERING}
+            unique_entity_sets.append(entities)
+
+        # From https://www.geeksforgeeks.org/python-unique-dictionary-filter-in-list/
+        # Unique dictionary filter in list
+        # Using map() + set() + items() + sorted() + tuple()
+        unique_entity_sets = list(
+            map(dict, set(tuple(sorted(sub.items())) for sub in unique_entity_sets))
+        )
+        task_entity_sets = []
+        for entity_set in unique_entity_sets:
+            for entity in ORDERING:
+                entity_set[entity] = entity_set.get(entity, Query.NONE)
+
+            task_entity_sets.append(entity_set)
+
+        concatenated_rest_files = {}
+
+        query = {
+            "subject": self.subject_id,
+            "task": "rest",
+            "run": Query.NONE,
+            "desc": "precarpetplot",
+            "suffix": "bold",
+            "extension": ".svg",
+        }
+        concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
+
+        query["desc"] = "postcarpetplot"
+        concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
+
+        self.concatenated_rest_files_ = concatenated_rest_files
+
+        task_files = []
+
+        for task_entity_set in task_entity_sets:
+            task_file_figures = task_entity_set.copy()
+
+            query = {
+                "subject": self.subject_id,
+                "desc": "precarpetplot",
+                "suffix": "bold",
+                "extension": ".svg",
+                **task_entity_set,
+            }
+
+            task_file_figures["preproc_carpet"] = self._get_bids_file(query)
+
+            query["desc"] = "postcarpetplot"
+            task_file_figures["postproc_carpet"] = self._get_bids_file(query)
+
+            query["desc"] = "boldref"
+            task_file_figures["reference"] = self._get_bids_file(query)
+
+            query["desc"] = "mean"
+            task_file_figures["bold"] = self._get_bids_file(query)
+
+            task_file_figures["registration_files"] = []
+            task_file_figures["registration_titles"] = TASK_REGISTRATION_TITLES
+            for registration_desc in TASK_REGISTRATION_DESCS:
+                query["desc"] = registration_desc
+                found_file = self._get_bids_file(query)
+
+                task_file_figures["registration_files"].append(found_file)
+
+            task_files.append(task_file_figures)
+
+        self.task_files_ = task_files
+
+    def generate_report(self, out_file=None):
+        """Generate the report."""
+        if out_file is None:
+            if self.session_id:
+                out_file = f"sub-{self.subject_id}_ses-{self.session_id}_executive_summary.html"
+            else:
+                out_file = f"sub-{self.subject_id}_executive_summary.html"
+
+            out_file = os.path.join(self.xcpd_path, out_file)
+
+        def include_file(name):
+            return Markup(loader.get_source(environment, name)[0])
+
+        template_folder = pkgrf("xcp_d", "/data/executive_summary_templates/")
+        loader = FileSystemLoader(template_folder)
+        environment = Environment(loader=loader)
+        environment.filters["basename"] = os.path.basename
+        environment.globals["include_file"] = include_file
+
+        template = environment.get_template("executive_summary.html.jinja")
+
+        html = template.render(
+            subject=f"sub-{self.subject_id}",
+            session=f"ses-{self.session_id}" if self.session_id else None,
+            structural_files=self.structural_files_,
+            concatenated_rest_files=self.concatenated_rest_files_,
+            task_files=self.task_files_,
+        )
+
+        self.write_html(html, out_file)

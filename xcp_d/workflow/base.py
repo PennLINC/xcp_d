@@ -28,7 +28,7 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
-from xcp_d.workflow.execsummary import init_brainsprite_wf
+from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -348,7 +348,7 @@ def init_subject_wf(
         layout=layout,
     )
 
-    surface_data, _, _ = collect_surface_data(
+    surface_data, _, surfaces_found = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -482,24 +482,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
-    # Plot the ribbon on the brain in a brainsprite figure
-    brainsprite_wf = init_brainsprite_wf(
-        layout=layout,
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        output_dir=output_dir,
-        dcan_qc=dcan_qc,
-        input_type=input_type,
-        omp_nthreads=omp_nthreads,
-        mem_gb=5,
-    )
+    if surfaces_found:
+        # Plot the white and pial surfaces on the brain in a brainsprite figure.
+        brainsprite_wf = init_brainsprite_figures_wf(
+            output_dir=output_dir,
+            t2w_available=False,
+            omp_nthreads=omp_nthreads,
+            mem_gb=5,
+        )
 
-    # fmt:off
-    workflow.connect([(inputnode, brainsprite_wf, [('t1w', 'inputnode.t1w'),
-                                                   ('t1w_seg', 'inputnode.t1seg')])])
-    # fmt:on
-
-    if process_surfaces:
+    if process_surfaces and surfaces_found:
         anatomical_wf = init_anatomical_wf(
             layout=layout,
             fmri_dir=fmri_dir,
@@ -510,12 +502,44 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,  # RF: need to change memory size
         )
 
+        # Use standard-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
-            (inputnode, anatomical_wf, [('t1w', 'inputnode.t1w'),
-                                        ('t1w_seg', 'inputnode.t1seg')]),
+            (inputnode, anatomical_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t1w_seg", "inputnode.t1seg"),
+            ]),
+            (t1w_wf, brainsprite_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+            ]),
+            (anatomical_wf, brainsprite_wf, [
+                ("outputnode.lh_wm_surf", "inputnode.lh_smoothwm_surf"),
+                ("outputnode.rh_wm_surf", "inputnode.rh_smoothwm_surf"),
+                ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+            ]),
         ])
         # fmt:on
+
+    elif surfaces_found:
+        # Use native-space T1w and surfaces for brainsprite.
+        # fmt:off
+        workflow.connect([
+            (inputnode, brainsprite_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),
+                ("rh_smoothwm_surf", "inputnode.rh_smoothwm_surf"),
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+            ]),
+        ])
+        # fmt:on
+
+    elif process_surfaces:
+        raise ValueError(
+            "No surfaces found. "
+            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
+        )
 
     # loop over each bold run to be postprocessed
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
