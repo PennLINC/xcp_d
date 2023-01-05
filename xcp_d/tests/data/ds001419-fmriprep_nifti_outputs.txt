@@ -5,7 +5,6 @@ xcp_d/logs/CITATION.bib
 xcp_d/logs/CITATION.html
 xcp_d/logs/CITATION.md
 xcp_d/logs/CITATION.tex
-xcp_d/sub-01.html
 xcp_d/sub-01
 xcp_d/sub-01/anat
 xcp_d/sub-01/anat/sub-01_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
