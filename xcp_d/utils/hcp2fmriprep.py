@@ -35,7 +35,7 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     participant_ids : list of str
         The list of subjects whose derivatives were converted.
     """
-    LOGGER.warning("This is an experimental function.")
+    LOGGER.warning("convert_hcp2bids is an experimental function.")
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
 

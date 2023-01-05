@@ -840,7 +840,7 @@ def build_workflow(opts, retval):
 
         convert_to_bids(
             fmri_dir,
-            outdir=converted_fmri_dir,
+            out_dir=converted_fmri_dir,
             participant_ids=opts.participant_label,
         )
 

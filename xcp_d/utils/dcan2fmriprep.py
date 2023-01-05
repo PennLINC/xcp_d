@@ -14,7 +14,7 @@ from nilearn.input_data import NiftiMasker
 
 from xcp_d.utils.filemanip import ensure_list
 
-LOGGER = logging.getLogger("dcan")
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
@@ -36,7 +36,7 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
     participant_ids : list of str
         The list of subjects whose derivatives were converted.
     """
-    LOGGER.warning("This is an experimental function.")
+    LOGGER.warning("convert_dcan2bids is an experimental function.")
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
 
@@ -47,7 +47,7 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         ]
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
         # Remove sub- prefix.
-        participant_ids = [participant_ids.replace("sub-", "")]
+        participant_ids = [sub_id.replace("sub-", "") for sub_id in participant_ids]
         if len(participant_ids) == 0:
             raise ValueError(f"No subject found in {in_dir}")
 
@@ -58,13 +58,13 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         convert_dcan_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
-            sub_ent=subject_id,
+            sub_id=subject_id,
         )
 
     return participant_ids
 
 
-def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
+def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     """Convert DCAN derivatives to BIDS-compliant derivatives for a single subject.
 
     Parameters
@@ -73,15 +73,15 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         Path to the subject's DCAN derivatives.
     out_dir : str
         Path to the output BIDS-compliant derivatives folder.
-    sub_ent : str
-        Subject identifier, with "sub-" prefix.
+    sub_id : str
+        Subject identifier, without "sub-" prefix.
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
     assert isinstance(out_dir, str)
-    assert isinstance(sub_ent, str)
+    assert isinstance(sub_id, str)
 
-    sub_id = sub_ent.replace("sub-", "")
+    sub_ent = f"sub-{sub_id}"
 
     volspace = "MNI152NLin6Asym"
     volspace_ent = f"space-{volspace}"
@@ -134,7 +134,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[brainmask_orig] = [brainmask_fmriprep]
 
         # NOTE: What is this file for?
-        ribbon_orig = os.path.join(anat_dir_orig, "ribbon_orig.nii.gz")
+        ribbon_orig = os.path.join(anat_dir_orig, "ribbon.nii.gz")
         ribbon_fmriprep = os.path.join(
             anat_dir_fmriprep,
             f"{sub_ent}_{ses_ent}_{volspace_ent}_desc-ribbon_T1w.nii.gz",
@@ -199,22 +199,30 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         # Collect functional files to copy
         task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "task-*")))
         task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
-        task_names = [os.path.basename(task_dir).split("-")[1] for task_dir in task_dirs_orig]
+        task_names = [os.path.basename(task_dir) for task_dir in task_dirs_orig]
 
-        for task_id in task_names:
-            # NOTE: Why are there regular expressions?
-            taskname, run_id = re.split(r"(\d+)", task_id)
+        for base_task_name in task_names:
+            # We assume that the task name doesn't end with a number,
+            # so all trailing numbers are treated as run numbers.
+            found_task_info = re.findall(r"task-([0-9a-zA-Z]+[a-zA-Z]+)(\d+)", base_task_name)
+            if len(found_task_info) != 1:
+                print(
+                    f"Task name and run number could not be inferred for {base_task_name}. "
+                    "Skipping."
+                )
+                continue
 
-            run_ent = f"run-{int(run_id)}"
+            task_id, run_id = found_task_info[0]
+            run_ent = f"run-{run_id}"
             task_ent = f"task-{task_id}"
 
-            task_dir_orig = os.path.join(func_dir_orig, task_id)
+            task_dir_orig = os.path.join(func_dir_orig, base_task_name)
 
             # Find original task files
             # This file is the anatomical brain mask downsampled to 2mm3.
             brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.0.nii.gz")
 
-            sbref_orig = os.path.join(task_dir_orig, f"{task_ent}_SBRef.nii.gz")
+            sbref_orig = os.path.join(task_dir_orig, f"{base_task_name}_SBRef.nii.gz")
             boldref_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
@@ -224,7 +232,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
-            bold_nifti_orig = os.path.join(task_dir_orig, f"{task_ent}.nii.gz")
+            bold_nifti_orig = os.path.join(task_dir_orig, f"{base_task_name}.nii.gz")
             bold_nifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
@@ -267,7 +275,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
             bold_nifti_json_dict = {
                 "RepetitionTime": float(TR),
-                "TaskName": taskname,
+                "TaskName": task_id,
             }
             bold_nifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
@@ -280,7 +288,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
             bold_cifti_json_dict = {
                 "RepetitionTime": float(TR),
-                "TaskName": taskname,
+                "TaskName": task_id,
                 "grayordinates": "91k",
                 "space": "HCP grayordinates",
                 "surface": "fsLR",
@@ -375,7 +383,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             bbref_fig_fmriprep = bbregplot(
                 fixed_image=t1w_orig,
-                moving_image=boldref_fmriprep,
+                moving_image=sbref_orig,
                 out_file=bbref_fig_fmriprep,
                 contour=ribbon_orig,
             )
