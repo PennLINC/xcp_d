@@ -91,14 +91,9 @@ def generate_reports(
     work_dir,
     output_dir,
     run_uuid,
-    dummy_scans,
-    dummytime=0,
-    cifti=False,
     config=None,
     packagename=None,
-    combineruns=False,
     dcan_qc=False,
-    input_type="fmriprep",
 ):
     """Execute run_reports on a list of subjects.
 
@@ -112,19 +107,12 @@ def generate_reports(
         The path to the output directory.
     run_uuid : str
         The UUID of the run for which the report will be generated.
-    %(dummy_scans)s
-    %(dummytime)s
-    %(cifti)s
     config : None or str, optional
         Configuration file.
     packagename : None or str, optional
         The name of the package.
-    combineruns : bool, optional
-        Whether to concatenate runs or not. Default is False.
     dcan_qc : bool, optional
         Whether to perform DCAN QC steps or not. Default is False.
-    input_type : {'fmriprep', 'dcan', 'hcp'}, optional
-        Default is 'fmriprep'.
     """
     # reportlets_dir = None
     if work_dir is not None:
