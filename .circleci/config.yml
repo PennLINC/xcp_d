@@ -132,7 +132,7 @@ jobs:
           name: Run full xcp_d on nifti with freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -m "ds001491_nifti" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -m "ds001419_nifti" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/nifti_with_freesurfer/derivatives/xcp_d/
       - run:
@@ -186,7 +186,7 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -m "ds001491_cifti" --data_dir=/bids-input/data --output_dir=/out --working_dir=/work xcp_d
+            pytest -m "ds001419_cifti" --data_dir=/bids-input/data --output_dir=/out --working_dir=/work xcp_d
       - store_artifacts:
           path: /src/xcp_d/.circleci/cifti_with_freesurfer/derivatives/xcp_d/
       - run:

@@ -30,8 +30,8 @@ exclude = '''
 
 [tool.pytest.ini_options]
 markers = [
-    "ds001491_nifti: mark integration test for fMRIPrep derivatives with NIFTI settings",
-    "ds001491_cifti: mark integration test for fMRIPrep derivatives with CIFTI settings",
+    "ds001419_nifti: mark integration test for fMRIPrep derivatives with NIFTI settings",
+    "ds001419_cifti: mark integration test for fMRIPrep derivatives with CIFTI settings",
     "fmriprep_without_freesurfer: mark integration test for fMRIPrep derivatives without FreeSurfer",
     "nibabies: mark integration test for nibabies derivatives",
 ]

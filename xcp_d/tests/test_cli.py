@@ -7,12 +7,12 @@ from xcp_d.cli.run import build_workflow, get_parser
 from xcp_d.tests.utils import check_generated_files, get_test_data_path
 
 
-@pytest.mark.ds001491_nifti
-def test_ds001491_nifti(datasets, output_dir, working_dir):
-    """Run xcp_d on ds001491 fMRIPrep derivatives, with nifti options."""
-    test_name = "test_ds001491_nifti"
+@pytest.mark.ds001419_nifti
+def test_ds001419_nifti(datasets, output_dir, working_dir):
+    """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
+    test_name = "test_ds001419_nifti"
 
-    data_dir = datasets["ds001491"]
+    data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
@@ -49,12 +49,12 @@ def test_ds001491_nifti(datasets, output_dir, working_dir):
     check_generated_files(out_dir, output_list_file)
 
 
-@pytest.mark.ds001491_cifti
-def test_ds001491_cifti(datasets, output_dir, working_dir):
-    """Run xcp_d on ds001491 fMRIPrep derivatives, with cifti options."""
-    test_name = "test_ds001491_cifti"
+@pytest.mark.ds001419_cifti
+def test_ds001419_cifti(datasets, output_dir, working_dir):
+    """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
+    test_name = "test_ds001419_cifti"
 
-    data_dir = datasets["ds001491"]
+    data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
