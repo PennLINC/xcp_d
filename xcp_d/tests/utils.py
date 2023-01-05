@@ -28,8 +28,14 @@ def check_generated_files(out_dir, output_list_file):
     if sorted(found_files) != sorted(expected_files):
         expected_not_found = sorted(list(set(expected_files) - set(found_files)))
         found_not_expected = sorted(list(set(found_files) - set(expected_files)))
-        msg = "Expected but not found:\n\t"
-        msg += "\n\t".join(expected_not_found)
-        msg += "\n\tFound but not expected:\n\t"
-        msg += "\n\t".join(found_not_expected)
+
+        msg = ""
+        if expected_not_found:
+            msg += "Expected but not found:\n\t"
+            msg += "\n\t".join(expected_not_found)
+            msg += "\n"
+
+        if found_not_expected:
+            msg += "Found but not expected:\n\t"
+            msg += "\n\t".join(found_not_expected)
         raise ValueError(msg)
