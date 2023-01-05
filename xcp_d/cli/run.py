@@ -967,6 +967,23 @@ Running xcp_d version {__version__}:
 
     retval["return_code"] = 0
 
+    # concate cifi and nifti here for multiple runs
+    if opts.combineruns:
+        from xcp_d.utils.concatenation import concatenate_derivatives
+
+        print("Concatenating bold files ...")
+        concatenate_derivatives(
+            subjects=subject_list,
+            fmridir=str(fmri_dir),
+            outputdir=str(Path(str(output_dir)) / "xcp_d/"),
+            work_dir=work_dir,
+            cifti=opts.cifti,
+            dcan_qc=opts.dcan_qc,
+            dummy_scans=opts.dummy_scans,
+            dummytime=opts.dummytime,
+        )
+        print("Concatenation complete!")
+
     return retval
 
 

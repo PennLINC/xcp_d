@@ -155,27 +155,6 @@ def generate_reports(
             error_list,
         )
     else:
-        # concate cifi and nifti here for multiple runs
-        if combineruns:
-            from xcp_d.utils.concatenation import concatenate_derivatives
-
-            if input_type == "dcan":
-                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
-            elif input_type == "hcp":
-                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
-            print("Concatenating bold files ...")
-            concatenate_derivatives(
-                subjects=subject_list,
-                fmridir=str(fmri_dir),
-                outputdir=str(Path(str(output_dir)) / "xcp_d/"),
-                work_dir=work_dir,
-                cifti=cifti,
-                dcan_qc=dcan_qc,
-                dummy_scans=dummy_scans,
-                dummytime=dummytime,
-            )
-            print("Concatenation complete!")
-
         if dcan_qc:
             LOGGER.info("Generating executive summary.")
             for subject_label in subject_list:
