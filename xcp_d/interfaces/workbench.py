@@ -76,7 +76,7 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
 
     fromwhat = traits.Str(
         mandatory=True,
-        argstr="-from-%s ",
+        argstr="-from-%s",
         position=0,
         desc="world, itk, or flirt",
     )
@@ -84,14 +84,14 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="The input file",
     )
 
     towhat = traits.Str(
         mandatory=True,
-        argstr="-to-%s ",
+        argstr="-to-%s",
         position=2,
         desc="world, itk, or flirt",
     )
@@ -115,7 +115,7 @@ class ConvertAffine(WBCommand):
 
     input_spec = _ConvertAffineInputSpec
     output_spec = _ConvertAffineOutputSpec
-    _cmd = "wb_command -convert-affine "
+    _cmd = "wb_command -convert-affine"
 
 
 class _ApplyAffineInputSpec(CommandLineInputSpec):
@@ -175,7 +175,7 @@ class ApplyAffine(WBCommand):
 
     input_spec = _ApplyAffineInputSpec
     output_spec = _ApplyAffineOutputSpec
-    _cmd = "wb_command -surface-apply-affine "
+    _cmd = "wb_command -surface-apply-affine"
 
 
 class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
@@ -192,7 +192,7 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     warpfield = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="The warpfield file",
     )
@@ -206,7 +206,7 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     )
 
     forward_warp = File(
-        argstr="-fnirt %s ",
+        argstr="-fnirt %s",
         position=3,
         desc="fnirt forward warpfield",
     )
@@ -242,7 +242,7 @@ class ApplyWarpfield(WBCommand):
 
     input_spec = _ApplyWarpfieldInputSpec
     output_spec = _ApplyWarpfieldOutputSpec
-    _cmd = "wb_command -surface-apply-warpfield "
+    _cmd = "wb_command -surface-apply-warpfield"
 
 
 class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
@@ -251,7 +251,7 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="a sphere with the desired output mesh",
     )
@@ -259,7 +259,7 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     sphere_project_to = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="a sphere that aligns with sphere-in",
     )
@@ -267,7 +267,7 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     sphere_unproject_from = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=2,
         desc="deformed to the desired output space",
     )
@@ -302,7 +302,7 @@ class SurfaceSphereProjectUnproject(WBCommand):
 
     input_spec = _SurfaceSphereProjectUnprojectInputSpec
     output_spec = _SurfaceSphereProjectUnprojectOutputSpec
-    _cmd = "wb_command -surface-sphere-project-unproject "
+    _cmd = "wb_command -surface-sphere-project-unproject"
 
 
 class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
@@ -340,7 +340,7 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
     surface_in1 = File(
         exists=True,
         mandatory=True,
-        argstr="-surf %s ",
+        argstr="-surf %s",
         position=1,
         desc="specify a surface to include in the average",
     )
@@ -348,7 +348,7 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
     surface_in2 = File(
         exists=True,
         mandatory=True,
-        argstr="-surf %s ",
+        argstr="-surf %s",
         position=2,
         desc="specify a surface to include in the average",
     )
@@ -357,7 +357,7 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
         name_source="surface_in1",
         keep_extension=False,
         name_template="%s-avg.surf.gii",
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="output - the output averaged surface",
     )
@@ -397,7 +397,7 @@ class SurfaceAverage(WBCommand):
 
     input_spec = _SurfaceAverageInputSpec
     output_spec = _SurfaceAverageOutputSpec
-    _cmd = "wb_command -surface-average "
+    _cmd = "wb_command -surface-average"
 
 
 class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
@@ -406,7 +406,7 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     anatomical_surface_in = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="the anatomical surface",
     )
@@ -415,7 +415,7 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         name_source="anatomical_surface_in",
         keep_extension=False,
         name_template="%s-hcpinflated.surf.gii",
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="output - the output inflated surface",
     )
@@ -424,14 +424,14 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         name_source="anatomical_surface_in",
         keep_extension=False,
         name_template="%s-hcpveryinflated.surf.gii",
-        argstr="%s ",
+        argstr="%s",
         position=2,
         desc="output - the output very inflated surface",
     )
 
     iterations_scale_value = traits.Float(
         mandatory=False,
-        argstr="-iterations-scale %f ",
+        argstr="-iterations-scale %f",
         position=3,
         desc="iterations-scale value",
     )
@@ -466,7 +466,7 @@ class SurfaceGenerateInflated(WBCommand):
 
     input_spec = _SurfaceGenerateInflatedInputSpec
     output_spec = _SurfaceGenerateInflatedOutputSpec
-    _cmd = "wb_command -surface-generate-inflated "
+    _cmd = "wb_command -surface-generate-inflated"
 
 
 class _CiftiCorrelationInputSpec(CommandLineInputSpec):
@@ -475,7 +475,7 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="The input ptseries or dense series",
     )
@@ -483,71 +483,71 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
         name_source=["in_file"],
         name_template="correlation_matrix_%s.nii",
         keep_extension=True,
-        argstr=" %s",
+        argstr="%s",
         position=1,
         desc="The output CIFTI",
     )
 
     roi_override = traits.Bool(
-        argstr="-roi-override %s ",
+        argstr="-roi-override %s",
         position=2,
-        desc=" perform correlation from a subset of rows to all rows",
+        desc="perform correlation from a subset of rows to all rows",
     )
 
     left_roi = File(
         exists=True,
         position=3,
         argstr="-left-roi %s",
-        desc="Specify the left roi metric  to use",
+        desc="use an roi for left hempsphere",
     )
 
     right_roi = File(
         exists=True,
         position=5,
         argstr="-right-roi %s",
-        desc="Specify the right  roi metric  to use",
+        desc="use an roi for right hempsphere",
     )
     cerebellum_roi = File(
         exists=True,
         position=6,
         argstr="-cerebellum-roi %s",
-        desc="specify the cerebellum meytric to use",
+        desc="use an roi for cerebellum",
     )
 
     vol_roi = File(
         exists=True,
         position=7,
         argstr="-vol-roi %s",
-        desc="volume roi to use",
+        desc="use an roi for volume",
     )
 
     cifti_roi = File(
         exists=True,
         position=8,
         argstr="-cifti-roi %s",
-        desc="cifti roi to use",
+        desc="use a cifti file for combined rois",
     )
     weights_file = File(
         exists=True,
         position=9,
         argstr="-weights %s",
-        desc="specify the cerebellum surface  metricto use",
+        desc="specify column weights",
     )
 
     fisher_ztrans = traits.Bool(
         position=10,
         argstr="-fisher-z",
-        desc=" fisherz transfrom",
+        desc="apply fisher small z transform (ie, artanh) to correlation",
     )
     no_demean = traits.Bool(
         position=11,
-        argstr="-fisher-z",
-        desc=" fisherz transfrom",
+        argstr="-no-demean",
+        desc="instead of correlation, do dot product of rows, then normalize by diagonal",
     )
     compute_covariance = traits.Bool(
         position=12,
-        argstr="-covariance ",
-        desc=" compute covariance instead of correlation",
+        argstr="-covariance",
+        desc="compute covariance instead of correlation",
     )
 
 
