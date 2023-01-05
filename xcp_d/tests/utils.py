@@ -31,11 +31,10 @@ def check_generated_files(out_dir, output_list_file):
 
         msg = ""
         if expected_not_found:
-            msg += "Expected but not found:\n\t"
+            msg += "\nExpected but not found:\n\t"
             msg += "\n\t".join(expected_not_found)
-            msg += "\n"
 
         if found_not_expected:
-            msg += "Found but not expected:\n\t"
+            msg += "\nFound but not expected:\n\t"
             msg += "\n\t".join(found_not_expected)
         raise ValueError(msg)
