@@ -17,7 +17,9 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
+
     parameters = [
         data_dir,
         out_dir,
@@ -59,7 +61,9 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
+
     parameters = [
         data_dir,
         out_dir,
@@ -100,7 +104,9 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     data_dir = datasets["fmriprep_without_freesurfer"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
-    os.environ["FS_LICENSE"] = os.path.join(get_test_data_path(), "license.txt")
+
+    test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     parameters = [
         data_dir,
@@ -126,7 +132,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
-    output_list_file = os.path.join(get_test_data_path(), "nifti_without_freesurfer_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
 
@@ -138,6 +144,10 @@ def test_nibabies(datasets, output_dir, working_dir):
     data_dir = datasets["nibabies"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
+
     parameters = [
         data_dir,
         out_dir,
@@ -158,7 +168,7 @@ def test_nibabies(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
-    output_list_file = os.path.join(get_test_data_path(), "nibabies_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "nibabies_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     test_affines(data_dir, out_dir, input_type="nibabies")
