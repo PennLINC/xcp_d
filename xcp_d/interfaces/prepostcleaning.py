@@ -581,7 +581,7 @@ class CiftiZerosToNaNs(SimpleInterface):
             nifti_header=cifti_obj.nifti_header,
         )
 
-        self._results["out_file"] = self.inputs.out_file
+        self._results["out_file"] = os.path.abspath(self.inputs.out_file)
         img.to_filename(self._results["out_file"])
 
         return runtime
