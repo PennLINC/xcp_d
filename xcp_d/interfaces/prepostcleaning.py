@@ -568,7 +568,13 @@ class CiftiZerosToNaNs(SimpleInterface):
         # nan > 0 == False, nan <= 0 == False
         zero_std = ~(stdevs > 0)
         zero_values = ~(data[0, :] > 0)
-        bad_vertex_idx = np.where(np.logical_and(zero_std, zero_values))
+        bad_vertex_idx = np.where(np.logical_and(zero_std, zero_values))[0]
+
+        if bad_vertex_idx.size:
+            LOGGER.warning(
+                f"{bad_vertex_idx.size} vertices have missing data. "
+                "Filling these vertices with NaNs so they will be ignored by parcellation step."
+            )
 
         # replace the bad vertices' values with NaNs
         data[:, bad_vertex_idx] = np.nan
