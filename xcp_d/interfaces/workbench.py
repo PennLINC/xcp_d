@@ -584,7 +584,7 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="The cifti file to parcellate",
     )
@@ -598,15 +598,15 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         "ROW",
         "COLUMN",
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=2,
         desc="Which mapping to parcellate (integer, ROW, or COLUMN)",
     )
     out_file = File(
         name_source=["in_file"],
-        name_template="parcelated_%s.nii",
+        name_template="parcellated_%s.nii",
         keep_extension=True,
-        argstr=" %s",
+        argstr="%s",
         position=3,
         desc="Output cifti file",
     )

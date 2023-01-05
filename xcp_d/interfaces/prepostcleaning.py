@@ -529,3 +529,59 @@ class Interpolate(SimpleInterface):
         )
 
         return runtime
+
+
+class _CiftiZerosToNaNsInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc="CIFTI file to modify.")
+    out_file = File(
+        "modified_data.dtseries.nii",
+        usedefault=True,
+        exists=False,
+        desc="The name of the modified file to write out. modified_data.dtseries.nii by default.",
+    )
+
+
+class _CiftiZerosToNaNsOutputSpec(TraitedSpec):
+    out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+
+
+class CiftiZerosToNaNs(SimpleInterface):
+    """Convert all all-zero vertices' time series to NaNs in a CIFTI file.
+
+    This is done so that these vertices will be flagged as missing data by wb_command.
+    This interface is only designed to work with dtseries CIFTIs where the first axis is time and
+    the second is space.
+    """
+
+    input_spec = _CiftiZerosToNaNsInputSpec
+    output_spec = _CiftiZerosToNaNsOutputSpec
+
+    def _run_interface(self, runtime):
+        cifti_obj = nb.load(self.inputs.in_file)
+        # load data as memmap
+        data = cifti_obj.get_fdata()
+        # load it in memory
+        data = np.array(data)
+
+        # find all vertices with all zeros
+        stdevs = np.std(data, axis=0)
+        # nan > 0 == False, nan <= 0 == False
+        zero_std = ~(stdevs > 0)
+        zero_values = ~(data[0, :] > 0)
+        bad_vertex_idx = np.where(np.logical_and(zero_std, zero_values))
+
+        # replace the bad vertices' values with NaNs
+        data[:, bad_vertex_idx] = np.nan
+
+        # make the modified img object
+        img = nb.Cifti2Image(
+            dataobj=data,
+            header=cifti_obj.header,
+            file_map=cifti_obj.file_map,
+            nifti_header=cifti_obj.nifti_header,
+        )
+
+        self._results["out_file"] = self.inputs.out_file
+        img.to_filename(self._results["out_file"])
+
+        return runtime
