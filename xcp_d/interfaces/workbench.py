@@ -95,7 +95,7 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
         position=2,
         desc="world, itk, or flirt",
     )
-    out_file = traits.File(
+    out_file = File(
         argstr="%s",
         name_source="in_file",
         name_template="%s_world.nii.gz",
@@ -306,11 +306,11 @@ class SurfaceSphereProjectUnproject(WBCommand):
 
 
 class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
-    in_transform = traits.File(exists=True, argstr="%s", mandatory=True, position=0)
+    in_transform = File(exists=True, argstr="%s", mandatory=True, position=0)
 
 
 class _ChangeXfmTypeOutputSpec(TraitedSpec):
-    out_transform = traits.File(exists=True)
+    out_transform = File(exists=True)
 
 
 class ChangeXfmType(SimpleInterface):
@@ -586,13 +586,13 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         mandatory=True,
         argstr="%s ",
         position=0,
-        desc="The input CIFTI file",
+        desc="The cifti file to parcellate",
     )
-    atlas_label = traits.File(
+    atlas_label = File(
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
-        desc="atlas label, in mm",
+        desc="A cifti label file to use for the parcellation",
     )
     direction = traits.Enum(
         "ROW",
@@ -600,7 +600,7 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         mandatory=True,
         argstr="%s ",
         position=2,
-        desc="which dimension to smooth along, ROW or COLUMN",
+        desc="Which mapping to parcellate (integer, ROW, or COLUMN)",
     )
     out_file = File(
         name_source=["in_file"],
@@ -608,22 +608,22 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         keep_extension=True,
         argstr=" %s",
         position=3,
-        desc="The output CIFTI",
+        desc="Output cifti file",
     )
 
+    # NOTE: These are not organized well.
+    # -spatial-weights should appear before any in this group.
     spatial_weights = traits.Str(
-        argstr="-spatial-weights ",
+        argstr="-spatial-weights",
         position=4,
-        desc=" spatial weight file",
+        desc="Use voxel volume and either vertex areas or metric files as weights",
     )
-
     left_area_surf = File(
         exists=True,
         position=5,
         argstr="-left-area-surface %s",
         desc="Specify the left surface to use",
     )
-
     right_area_surf = File(
         exists=True,
         position=6,
@@ -636,14 +636,12 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         argstr="-cerebellum-area-surf %s",
         desc="specify the cerebellum surface to use",
     )
-
     left_area_metric = File(
         exists=True,
         position=8,
         argstr="-left-area-metric %s",
         desc="Specify the left surface metric to use",
     )
-
     right_area_metric = File(
         exists=True,
         position=9,
@@ -661,13 +659,34 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         exists=True,
         position=11,
         argstr="-cifti-weights %s",
-        desc="cifti file containing weights",
+        desc="Use a cifti file containing weights",
     )
-    cor_method = traits.Str(
+    cor_method = traits.Enum(
+        "MEAN",
+        "MAX",
+        "MIN",
+        "INDEXMAX",
+        "INDEXMIN",
+        "SUM",
+        "PRODUCT",
+        "STDEV",
+        "SAMPSTDEV",
+        "VARIANCE",
+        "TSNR",
+        "COV",
+        "L2NORM",
+        "MEDIAN",
+        "MODE",
+        "COUNT_NONZERO",
         position=12,
-        default="MEAN ",
+        default="MEAN",
         argstr="-method %s",
-        desc=" correlation method, option inlcude MODE",
+        desc="Specify method of parcellation (default MEAN, or MODE if label data)",
+    )
+    only_numeric = traits.Bool(
+        position=13,
+        argstr="-only-numeric",
+        desc="Exclude non-numeric values",
     )
 
 
