@@ -103,7 +103,7 @@ jobs:
           command: |
             pytest -m "fmriprep_without_freesurfer" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
       - store_artifacts:
-          path: /src/xcp_d/.circleci/test_fmriprep_without_freesurfer/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/test_fmriprep_without_freesurfer/xcp_d/
 
   nifti_with_freesurfer:
     <<: *dockersetup
@@ -126,7 +126,7 @@ jobs:
           command: |
             pytest -m "ds001419_nifti" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
       - store_artifacts:
-          path: /src/xcp_d/.circleci/test_ds001419_nifti/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/test_ds001419_nifti/xcp_d/
 
   nibabies:
     <<: *dockersetup
@@ -149,7 +149,7 @@ jobs:
           command: |
             pytest -m "nibabies" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
       - store_artifacts:
-          path: /src/xcp_d/.circleci/test_nibabies/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/test_nibabies/xcp_d/
 
   cifti_with_freesurfer:
     <<: *dockersetup
@@ -172,7 +172,7 @@ jobs:
           command: |
             pytest -m "ds001419_cifti" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
       - store_artifacts:
-          path: /src/xcp_d/.circleci/test_ds001419_cifti/derivatives/xcp_d/
+          path: /src/xcp_d/.circleci/test_ds001419_cifti/xcp_d/
 
   pytests:
     <<: *dockersetup
