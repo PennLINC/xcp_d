@@ -101,7 +101,7 @@ jobs:
           name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -m "fmriprep_without_freesurfer" --data_dir=/bids-input/data --output_dir=/out --working_dir=/work xcp_d
+            pytest -m "fmriprep_without_freesurfer" --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
       - store_artifacts:
           path: /src/xcp_d/.circleci/nifti_without_freesurfer/derivatives/xcp_d/
       - run:

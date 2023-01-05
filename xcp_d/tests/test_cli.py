@@ -4,7 +4,7 @@ import os
 import pytest
 
 from xcp_d.cli.run import build_workflow, get_parser
-from xcp_d.tests.utils import check_generated_files, get_test_data_path
+from xcp_d.tests.utils import check_generated_files, get_test_data_path, test_affines
 
 
 @pytest.mark.ds001419_nifti
@@ -100,6 +100,8 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     data_dir = datasets["fmriprep_without_freesurfer"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
+    os.environ["FS_LICENSE"] = os.path.join(get_test_data_path(), "license.txt")
+
     parameters = [
         data_dir,
         out_dir,
@@ -158,3 +160,5 @@ def test_nibabies(datasets, output_dir, working_dir):
 
     output_list_file = os.path.join(get_test_data_path(), "nibabies_outputs.txt")
     check_generated_files(out_dir, output_list_file)
+
+    test_affines(data_dir, out_dir, input_type="nibabies")
