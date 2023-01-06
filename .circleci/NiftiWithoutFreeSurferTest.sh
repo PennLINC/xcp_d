@@ -33,7 +33,8 @@ XCPD_CMD="$BASE_XCPD_CMD \
     -vv \
     --nuisance-regressors 27P \
     --disable-bandpass-filter \
-    --dummy-scans 1"
+    --dummy-scans 1 \
+    --dcan_qc"
 
 echo $XCPD_CMD
 
