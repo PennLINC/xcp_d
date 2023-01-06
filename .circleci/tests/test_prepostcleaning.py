@@ -6,7 +6,8 @@ import numpy as np
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.interfaces.prepostcleaning import ConvertTo32
+from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs, ConvertTo32
+from xcp_d.interfaces.workbench import CiftiParcellate
 
 
 def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -113,6 +114,7 @@ def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_facto
 
 
 def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Check that the CIFTI parcellation approach """
     tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation")
 
     atlas_file = pkgrf(
@@ -125,14 +127,126 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
     atlas_img = nb.load(atlas_file)
 
     cifti_data = cifti_img.get_fdata()
-    atlas_data = atlas_img.get_fdata()
+    atlas_data = atlas_img.get_fdata()[0, :]
 
     # Select half of the vertices in node 5
-    node_5 = np.where(atlas_data == 5)[0][::2]
+    node_5 = np.where(atlas_data == 5)[0]
+    node_5_good = node_5[::2]
+    node_5_bad = node_5[1::2]
     # Select all of the vertices in node 10
     node_10 = np.where(atlas_data == 10)[0]
 
+    cifti_data = np.random.randint(1, 100, size=cifti_data.shape)
     cifti_data_zeros = cifti_data.copy()
     cifti_data_nans = cifti_data.copy()
     cifti_data_500s = cifti_data.copy()
 
+    cifti_data_zeros[:, node_5_bad] = 0
+    cifti_data_zeros[:, node_10] = 0
+    cifti_data_nans[:, node_5_bad] = np.nan
+    cifti_data_nans[:, node_10] = np.nan
+    cifti_data_500s[:, node_5_bad] = 500
+    cifti_data_500s[:, node_10] = 500
+
+    node_5_good_mean = np.mean(cifti_data[:, node_5_good], axis=1)
+    node_5_500s_mean = np.mean(cifti_data_500s[:, node_5], axis=1)
+    node_10_zeros_mean = np.zeros(cifti_data.shape[0])
+    node_10_500s_mean = np.full(cifti_data.shape[0], 500)
+
+    cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
+    cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
+    cifti_file_500s = os.path.join(tmpdir, "cifti_500s.dtseries.nii")
+
+    cifti_img_zeros = nb.Cifti2Image(
+        dataobj=cifti_data_zeros,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_zeros.to_filename(cifti_file_zeros)
+    cifti_img_nans = nb.Cifti2Image(
+        dataobj=cifti_data_nans,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_nans.to_filename(cifti_file_nans)
+    cifti_img_500s = nb.Cifti2Image(
+        dataobj=cifti_data_500s,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_500s.to_filename(cifti_file_500s)
+
+    # Parcellate the original file
+    replace_empty_vertices = CiftiZerosToNaNs()
+    replace_empty_vertices.inputs.in_file = cifti_file
+    replace_results = replace_empty_vertices.run(cwd=tmpdir)
+    parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
+    parcellate_data.inputs.in_file = replace_results.outputs.out_file
+    parcellate_data.inputs.atlas_label = atlas_file
+    parc_results = parcellate_data.run(cwd=tmpdir)
+
+    orig_cifti_parc = parc_results.outputs.out_file
+    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
+    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
+    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    assert not np.allclose(node_5_good_mean, orig_cifti_node_5)
+    assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
+    assert not np.allclose(node_10_zeros_mean, orig_cifti_node_10)
+    assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
+
+    # Parcellate and check the zeroed-out file
+    replace_empty_vertices = CiftiZerosToNaNs()
+    replace_empty_vertices.inputs.in_file = cifti_file_zeros
+    replace_results = replace_empty_vertices.run(cwd=tmpdir)
+    parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
+    parcellate_data.inputs.in_file = replace_results.outputs.out_file
+    parcellate_data.inputs.atlas_label = atlas_file
+    parc_results = parcellate_data.run(cwd=tmpdir)
+
+    orig_cifti_parc = parc_results.outputs.out_file
+    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
+    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
+    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    assert np.allclose(node_5_good_mean, orig_cifti_node_5)
+    assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
+    assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
+    assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
+
+    # Parcellate and check the NaNed-out file
+    replace_empty_vertices = CiftiZerosToNaNs()
+    replace_empty_vertices.inputs.in_file = cifti_file_nans
+    replace_results = replace_empty_vertices.run(cwd=tmpdir)
+    parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
+    parcellate_data.inputs.in_file = replace_results.outputs.out_file
+    parcellate_data.inputs.atlas_label = atlas_file
+    parc_results = parcellate_data.run(cwd=tmpdir)
+
+    orig_cifti_parc = parc_results.outputs.out_file
+    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
+    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
+    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    assert np.allclose(node_5_good_mean, orig_cifti_node_5)
+    assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
+    assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
+    assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
+
+    # Parcellate and check the 500-filled file
+    replace_empty_vertices = CiftiZerosToNaNs()
+    replace_empty_vertices.inputs.in_file = cifti_file_500s
+    replace_results = replace_empty_vertices.run(cwd=tmpdir)
+    parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
+    parcellate_data.inputs.in_file = replace_results.outputs.out_file
+    parcellate_data.inputs.atlas_label = atlas_file
+    parc_results = parcellate_data.run(cwd=tmpdir)
+
+    orig_cifti_parc = parc_results.outputs.out_file
+    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
+    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
+    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    assert not np.allclose(node_5_good_mean, orig_cifti_node_5)
+    assert np.allclose(node_5_500s_mean, orig_cifti_node_5)
+    assert not np.allclose(node_10_zeros_mean, orig_cifti_node_10)
+    assert np.allclose(node_10_500s_mean, orig_cifti_node_10)
