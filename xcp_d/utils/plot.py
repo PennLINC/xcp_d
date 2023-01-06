@@ -263,6 +263,7 @@ def plot_confounds_es(
     ylims=None,
     ylabel=None,
     FD=False,
+    whole_brain=False,
     work_dir=None,
 ):
     """Create confounds plot for the executive summary."""
@@ -279,7 +280,11 @@ def plot_confounds_es(
 
     # Define nested GridSpec
     grid_specification = mgs.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=grid_spec_ts, width_ratios=[1, 100], wspace=0.0
+        1,
+        2,
+        subplot_spec=grid_spec_ts,
+        width_ratios=[1, 100],
+        wspace=0.0,
     )
 
     time_series_axis = plt.subplot(grid_specification[1])
@@ -308,14 +313,14 @@ def plot_confounds_es(
     if work_dir is not None:
         time_series.to_csv(f"/{work_dir}/{ylabel}_tseries.npy")
     columns = time_series.columns
-    maximum_value = []
-    minimum_value = []
+    maximum_values = []
+    minimum_values = []
 
-    if FD is True:
+    if FD:
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=3, color="black")
-            maximum_value.append(max(time_series[c]))
-            minimum_value.append(min(time_series[c]))
+            maximum_values.append(max(time_series[c]))
+            minimum_values.append(min(time_series[c]))
 
             # Threshold fd at 0.1, 0.2 and 0.5 and plot
             time_series_axis.axhline(
@@ -410,24 +415,57 @@ def plot_confounds_es(
                 transform=time_series_axis.transAxes,
                 fontsize=30,
             )
+    elif whole_brain:
+        # Plot the whole brain mean and std.
+        # Mean scale on the left, std scale on the right.
+        mean_line = time_series_axis.plot(
+            time_series["Mean"], label="Mean", linewidth=10, alpha=0.5
+        )
+        maximum_values.append(max(time_series["Mean"]))
+        minimum_values.append(min(time_series["Mean"]))
+        ax_right = time_series_axis.twinx()
+        std_line = ax_right.plot(
+            time_series["Std"], label="Std", color="orange", linewidth=10, alpha=0.5
+        )
+        std_mean = np.mean(time_series["Std"])
+        ax_right.set_ylim(
+            (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
+            (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
+        )
+        ax_right.yaxis.label.set_fontsize(30)
+        for item in ax_right.get_yticklabels():
+            item.set_fontsize(30)
+
+        lines = mean_line + std_line
+        line_labels = [l.get_label() for l in lines]
+        time_series_axis.legend(lines, line_labels, fontsize=40)
+
     else:  # If no thresholding
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=10, alpha=0.5)
-            maximum_value.append(max(time_series[c]))
-            minimum_value.append(min(time_series[c]))
+            maximum_values.append(max(time_series[c]))
+            minimum_values.append(min(time_series[c]))
 
     # Set limits and format
-    minimum_x_value = [abs(x) for x in minimum_value]
+    minimum_x_value = [abs(x) for x in minimum_values]
 
     time_series_axis.set_xlim((0, ntsteps - 1))
-    time_series_axis.legend(fontsize=40)
     if FD is True:
+        time_series_axis.legend(fontsize=40)
         time_series_axis.set_ylim(0, 1.1)
         time_series_axis.set_yticks([0, 0.05, 0.1, 0.2, 0.5, 1])
     elif ylims:
+        time_series_axis.legend(fontsize=40)
         time_series_axis.set_ylim(ylims)
+    elif whole_brain:
+        mean_mean = np.mean(time_series["Mean"])
+        time_series_axis.set_ylim(
+            (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
+            (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
+        )
     else:
-        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_value)])
+        time_series_axis.legend(fontsize=40)
+        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
 
     for item in (
         [time_series_axis.title, time_series_axis.xaxis.label, time_series_axis.yaxis.label]
@@ -540,7 +578,10 @@ def plot_fmri_es(
 
     # The mean and standard deviation of raw data
     unprocessed_data_timeseries = pd.DataFrame(
-        {"Mean": np.nanmean(raw_data_arr, axis=0), "Std": np.nanstd(raw_data_arr, axis=0)}
+        {
+            "Mean": np.nanmean(raw_data_arr, axis=0),
+            "Std": np.nanstd(raw_data_arr, axis=0),
+        }
     )
 
     # The mean and standard deviation of filtered data
@@ -601,6 +642,7 @@ def plot_fmri_es(
         TR=TR,
         hide_x=True,
         ylabel="WB",
+        whole_brain=True,
     )
     plot_carpet(
         func=scaled_raw_file,
@@ -644,6 +686,7 @@ def plot_fmri_es(
         hide_x=True,
         ylabel="WB",
         work_dir=work_dir,
+        whole_brain=True,
     )
 
     plot_carpet(
