@@ -190,8 +190,8 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     orig_cifti_parc = parc_results.outputs.out_file
     orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
-    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
+    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
     assert not np.allclose(node_5_good_mean, orig_cifti_node_5)
     assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
     assert not np.allclose(node_10_zeros_mean, orig_cifti_node_10)
@@ -208,8 +208,8 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     orig_cifti_parc = parc_results.outputs.out_file
     orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
-    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
+    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
     assert np.allclose(node_5_good_mean, orig_cifti_node_5)
     assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
     assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
@@ -226,8 +226,8 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     orig_cifti_parc = parc_results.outputs.out_file
     orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
-    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
+    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
     assert np.allclose(node_5_good_mean, orig_cifti_node_5)
     assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
     assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
@@ -244,8 +244,8 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     orig_cifti_parc = parc_results.outputs.out_file
     orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = np.mean(orig_cifti_parc_data[:, node_5], axis=1)
-    orig_cifti_node_10 = np.mean(orig_cifti_parc_data[:, node_10], axis=1)
+    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
+    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
     assert not np.allclose(node_5_good_mean, orig_cifti_node_5)
     assert np.allclose(node_5_500s_mean, orig_cifti_node_5)
     assert not np.allclose(node_10_zeros_mean, orig_cifti_node_10)
