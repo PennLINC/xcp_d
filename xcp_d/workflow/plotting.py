@@ -7,9 +7,9 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
+from xcp_d.interfaces.plotting import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.interfaces.surfplotting import PlotSVGData
+from xcp_d.interfaces.plotting import QCPlotsES
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
@@ -344,7 +344,7 @@ def init_qc_report_wf(
     if dcan_qc:
         # Generate preprocessing and postprocessing carpet plots.
         plot_executive_summary_carpets = pe.Node(
-            PlotSVGData(TR=TR),
+            QCPlotsES(TR=TR),
             name="plot_executive_summary_carpets",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,

@@ -17,7 +17,7 @@ from xcp_d.interfaces.workbench import (
     FixCiftiIntent,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.plot import plot_alff_reho_surface, plot_alff_reho_volumetric
+from xcp_d.utils.plotting import plot_alff_reho_surface, plot_alff_reho_volumetric
 from xcp_d.utils.utils import fwhm2sigma
 
 

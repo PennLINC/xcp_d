@@ -44,17 +44,7 @@ def _decimate_data(data, seg_data, size):
     return data, seg_data
 
 
-def plotimage(img, out_file):
-    """Plot anatomical image and save to file."""
-    from nilearn.plotting import plot_anat
-
-    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
-    plot_anat(img, draw_cross=False, figure=fig)
-    fig.savefig(out_file, bbox_inches="tight", pad_inches=None)
-    return out_file
-
-
-def confoundplot(
+def plot_confounds(
     time_series,
     grid_spec_ts,
     gs_dist=None,
@@ -801,7 +791,7 @@ class FMRIPlot:
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
             time_series = kwargs.pop("values")
-            confoundplot(
+            plot_confounds(
                 time_series, grid[grid_id], TR=self.TR, color=palette[i], name=name, **kwargs
             )
             grid_id += 1
@@ -1151,7 +1141,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
 
-    from xcp_d.utils.plot import surf_data_from_cifti
+    from xcp_d.utils.plotting import surf_data_from_cifti
 
     density = parse_file_entities(bold_file).get("den", "32k")
     if density == "91k":

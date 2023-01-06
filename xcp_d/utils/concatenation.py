@@ -18,7 +18,7 @@ from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import _drop_dummy_scans
-from xcp_d.utils.plot import plot_fmri_es
+from xcp_d.utils.plotting import plot_fmri_es
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_segfile
 from xcp_d.utils.write_save import read_ndata, write_ndata

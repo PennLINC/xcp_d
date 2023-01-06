@@ -56,13 +56,12 @@ xcp_d-combineqc
    interfaces.filtering
    interfaces.layout_builder
    interfaces.nilearn
+   interfaces.plotting
    interfaces.prepostcleaning
-   interfaces.qc_plot
    interfaces.regression
    interfaces.report_core
    interfaces.report
    interfaces.resting_state
-   interfaces.surfplotting
    interfaces.workbench
 
 :mod:`xcp_d.utils`: Miscellaneous Utility Functions
@@ -89,7 +88,7 @@ xcp_d-combineqc
    utils.fcon
    utils.filemanip
    utils.modified_data
-   utils.plot
+   utils.plotting
    utils.qcmetrics
    utils.sentry
    utils.utils
