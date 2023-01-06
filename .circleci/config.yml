@@ -280,9 +280,10 @@ jobs:
           no_output_timeout: 40m
           command: |
             if [[ -n "$DOCKERHUB_TOKEN" ]]; then
-              docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
+              echo "$DOCKERHUB_TOKEN" | docker login -u $DOCKERHUB_USERNAME --password-stdin
               docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
               docker push pennlinc/xcp_d:unstable
+
               if [[ -n "$CIRCLE_TAG" ]]; then
                 docker push pennlinc/xcp_d:latest
                 docker tag pennlinc/xcp_d pennlinc/xcp_d:$CIRCLE_TAG
