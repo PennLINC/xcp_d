@@ -4,6 +4,7 @@ import os
 import nibabel as nb
 import numpy as np
 import pytest
+from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.prepostcleaning import ConvertTo32
 
@@ -109,3 +110,29 @@ def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_facto
     assert float32_img.dataobj.dtype == np.float32
     int32_img = nb.load(int32_file)
     assert int32_img.dataobj.dtype == np.int32
+
+
+def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
+    tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation")
+
+    atlas_file = pkgrf(
+        "xcp_d",
+        "data/ciftiatlas/Schaefer2018_100Parcels_17Networks_order.dlabel.nii",
+    )
+    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+
+    cifti_img = nb.load(cifti_file)
+    atlas_img = nb.load(atlas_file)
+
+    cifti_data = cifti_img.get_fdata()
+    atlas_data = atlas_img.get_fdata()
+
+    # Select half of the vertices in node 5
+    node_5 = np.where(atlas_data == 5)[0][::2]
+    # Select all of the vertices in node 10
+    node_10 = np.where(atlas_data == 10)[0]
+
+    cifti_data_zeros = cifti_data.copy()
+    cifti_data_nans = cifti_data.copy()
+    cifti_data_500s = cifti_data.copy()
+
