@@ -136,7 +136,7 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Select all of the vertices in node 10
     node_10 = np.where(atlas_data == 10)[0]
 
-    cifti_data = np.random.randint(1, 100, size=cifti_data.shape)
+    cifti_data = np.random.normal(loc=100, scale=5, size=cifti_data.shape)
     cifti_data_zeros = cifti_data.copy()
     cifti_data_nans = cifti_data.copy()
     cifti_data_500s = cifti_data.copy()
