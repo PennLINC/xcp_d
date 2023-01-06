@@ -437,7 +437,7 @@ def plot_confounds_es(
             item.set_fontsize(30)
 
         lines = mean_line + std_line
-        line_labels = [l.get_label() for l in lines]
+        line_labels = [line.get_label() for line in lines]
         time_series_axis.legend(lines, line_labels, fontsize=40)
 
     else:  # If no thresholding
