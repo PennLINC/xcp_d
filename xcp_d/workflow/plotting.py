@@ -7,9 +7,8 @@ from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.plotting import CensoringPlot, QCPlot
+from xcp_d.interfaces.plotting import CensoringPlot, QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.interfaces.plotting import QCPlotsES
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
@@ -317,7 +316,7 @@ def init_qc_report_wf(
         # fmt:on
 
     qcreport = pe.Node(
-        QCPlot(
+        QCPlots(
             TR=TR,
             template_mask=nlin2009casym_brain_mask,
             head_radius=head_radius,

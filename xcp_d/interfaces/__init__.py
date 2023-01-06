@@ -15,7 +15,6 @@ from xcp_d.interfaces import (
     report,
     report_core,
     resting_state,
-    plotting,
     workbench,
 )
 
@@ -33,6 +32,5 @@ __all__ = [
     "report_core",
     "report",
     "resting_state",
-    "plotting",
     "workbench",
 ]

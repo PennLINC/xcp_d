@@ -184,7 +184,7 @@ class CensoringPlot(SimpleInterface):
         return runtime
 
 
-class _QCPlotInputSpec(BaseInterfaceInputSpec):
+class _QCPlotsInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Raw bold file from fMRIPrep")
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask")
@@ -206,14 +206,14 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
 
 
-class _QCPlotOutputSpec(TraitedSpec):
+class _QCPlotsOutputSpec(TraitedSpec):
     qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True, mandatory=True, desc="qc plot before regression")
     clean_qcplot = File(exists=True, mandatory=True, desc="qc plot after regression")
 
 
-class QCPlot(SimpleInterface):
-    """Generate a quality control (QC) figure.
+class QCPlots(SimpleInterface):
+    """Generate pre- and post-processing quality control (QC) figures.
 
     Examples
     --------
@@ -222,20 +222,20 @@ class QCPlot(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computeqcwf = QCPlot()
-    computeqcwf.inputs.cleaned_file = datafile
-    computeqcwf.inputs.bold_file = rawbold
-    computeqcwf.inputs.TR = TR
-    computeqcwf.inputs.tmask = temporalmask
-    computeqcwf.inputs.mask_file = mask
-    computeqcwf.inputs.dummy_scans = dummy_scans
-    computeqcwf.run()
+    qcplots = QCPlots()
+    qcplots.inputs.cleaned_file = datafile
+    qcplots.inputs.bold_file = rawbold
+    qcplots.inputs.TR = TR
+    qcplots.inputs.tmask = temporalmask
+    qcplots.inputs.mask_file = mask
+    qcplots.inputs.dummy_scans = dummy_scans
+    qcplots.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _QCPlotInputSpec
-    output_spec = _QCPlotOutputSpec
+    input_spec = _QCPlotsInputSpec
+    output_spec = _QCPlotsOutputSpec
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
