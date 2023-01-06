@@ -255,7 +255,7 @@ def confoundplot(
     return time_series_axis, grid_specification
 
 
-def confoundplotx(
+def plot_confounds_es(
     time_series,
     grid_spec_ts,
     TR=None,
@@ -265,7 +265,7 @@ def confoundplotx(
     FD=False,
     work_dir=None,
 ):
-    """Create confounds plot."""
+    """Create confounds plot for the executive summary."""
     sns.set_style("whitegrid")
 
     # Define TR and number of frames
@@ -443,7 +443,7 @@ def confoundplotx(
 
 
 @fill_doc
-def plot_svgx(
+def plot_fmri_es(
     preprocessed_file,
     residuals_file,
     denoised_file,
@@ -460,7 +460,7 @@ def plot_svgx(
     denoised_dvars=None,
     work_dir=None,
 ):
-    """Generate carpet plot with DVARS, FD, and WB.
+    """Generate carpet plot with DVARS, FD, and WB for the executive summary.
 
     Parameters
     ----------
@@ -588,14 +588,14 @@ def plot_svgx(
     plt.clf()
     unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(
+    plot_confounds_es(
         time_series=DVARS_timeseries,
         grid_spec_ts=grid[0],
         TR=TR,
         ylabel="DVARS",
         hide_x=True,
     )
-    confoundplotx(
+    plot_confounds_es(
         time_series=unprocessed_data_timeseries,
         grid_spec_ts=grid[1],
         TR=TR,
@@ -609,7 +609,7 @@ def plot_svgx(
         subplot=grid[3],
         legend=False,
     )
-    confoundplotx(
+    plot_confounds_es(
         time_series=FD_timeseries,
         grid_spec_ts=grid[4],
         TR=TR,
@@ -629,7 +629,7 @@ def plot_svgx(
     processed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
 
-    confoundplotx(
+    plot_confounds_es(
         time_series=DVARS_timeseries,
         grid_spec_ts=grid[0],
         TR=TR,
@@ -637,7 +637,7 @@ def plot_svgx(
         hide_x=True,
         work_dir=work_dir,
     )
-    confoundplotx(
+    plot_confounds_es(
         time_series=processed_data_timeseries,
         grid_spec_ts=grid[1],
         TR=TR,
@@ -653,7 +653,7 @@ def plot_svgx(
         subplot=grid[3],
         legend=True,
     )
-    confoundplotx(
+    plot_confounds_es(
         time_series=FD_timeseries,
         grid_spec_ts=grid[4],
         TR=TR,
@@ -1222,71 +1222,3 @@ def plot_design_matrix(design_matrix):
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
 
     return design_matrix_figure
-
-
-def plot_ribbon_svg(template, in_file):
-    """Plot the anatomical template and ribbon in a static SVG file."""
-    import os
-
-    import matplotlib.pyplot as plt
-    import nibabel as nib
-    import numpy as np
-    from matplotlib.patches import Rectangle
-    from nilearn.image import math_img
-    from nilearn.plotting import plot_anat
-
-    plot_file = os.path.abspath("ribbon.svg")
-
-    # Set vmax to 95-th percentile of T1w image
-    t1w_img = nib.load(template)
-    vmax = np.percentile(t1w_img.get_fdata(), 95)
-
-    # Coerce to ints
-    img = math_img("img.astype(int)", img=in_file)
-    white_img = math_img("img == 1", img=img)
-    pial_img = math_img("img == 2", img=img)
-    both_img = math_img("img == 3", img=img)
-
-    fig = plt.figure(
-        figsize=(25, 10),
-    )
-    display = plot_anat(
-        template,
-        draw_cross=False,
-        vmax=vmax,
-        figure=fig,
-    )
-    display.add_contours(
-        white_img,
-        contours=1,
-        antialiased=False,
-        linewidths=1.0,
-        levels=[0],
-        colors=["purple"],
-    )
-    display.add_contours(
-        pial_img,
-        contours=1,
-        antialiased=False,
-        linewidths=1.0,
-        levels=[0],
-        colors=["green"],
-    )
-    display.add_contours(
-        both_img,
-        contours=1,
-        antialiased=False,
-        linewidths=1.0,
-        levels=[0],
-        colors=["red"],
-    )
-    # We generate a legend using the trick described on
-    # http://matplotlib.sourceforge.net/users/legend_guide.httpml#using-proxy-artist
-    p1 = Rectangle((0, 0), 1, 1, fc="purple", label="White Matter")
-    p2 = Rectangle((0, 0), 1, 1, fc="green", label="Pial")
-    p3 = Rectangle((0, 0), 1, 1, fc="red", label="Both Somehow")
-    plt.legend([p1, p2, p3], ["White Matter", "Pial", "Both Somehow"], fontsize=18)
-
-    fig.savefig(plot_file, bbox_inches="tight", pad_inches=None)
-    # return fig
-    return plot_file

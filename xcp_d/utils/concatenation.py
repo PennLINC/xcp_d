@@ -18,7 +18,7 @@ from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import _drop_dummy_scans
-from xcp_d.utils.plot import plot_svgx
+from xcp_d.utils.plot import plot_fmri_es
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.utils import get_segfile
 from xcp_d.utils.write_save import read_ndata, write_ndata
@@ -412,8 +412,8 @@ def concatenate_derivatives(
                             validate=False,
                         )
 
-                        LOGGER.debug("Starting plot_svgx")
-                        plot_svgx(
+                        LOGGER.debug("Starting plot_fmri_es")
+                        plot_fmri_es(
                             preprocessed_file=concat_preproc_file,
                             residuals_file=concat_censored_file,
                             denoised_file=concat_denoised_file,
@@ -430,7 +430,7 @@ def concatenate_derivatives(
                             TR=TR,
                             work_dir=work_dir,
                         )
-                        LOGGER.debug("plot_svgx done")
+                        LOGGER.debug("plot_fmri_es done")
 
                     # Now timeseries files
                     atlases = layout_xcpd.get_atlases(

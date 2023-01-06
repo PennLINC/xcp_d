@@ -12,7 +12,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.plot import plot_svgx, plotimage
+from xcp_d.utils.plot import plot_fmri_es, plotimage
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -102,7 +102,7 @@ class PlotSVGData(SimpleInterface):
         segmentation_file = self.inputs.seg_data
         segmentation_file = segmentation_file if isdefined(segmentation_file) else None
 
-        self._results["before_process"], self._results["after_process"] = plot_svgx(
+        self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_file=self.inputs.rawdata,
             residuals_file=self.inputs.regressed_data,
             denoised_file=self.inputs.residual_data,
