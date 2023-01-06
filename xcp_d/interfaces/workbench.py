@@ -604,8 +604,8 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
     )
     out_file = File(
         name_source=["in_file"],
-        name_template="parcellated_%s.nii",
-        keep_extension=True,
+        name_template="parcellated_%s.ptseries.nii",
+        keep_extension=False,
         argstr="%s",
         position=3,
         desc="Output cifti file",
