@@ -187,9 +187,9 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
     orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
     orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
     orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
-    # assert np.allclose(node_5_good_mean, orig_cifti_node_5)
+    assert np.allclose(node_5_good_mean, orig_cifti_node_5)
     assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
-    # assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
+    assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
     assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
 
     # Parcellate and check the NaNed-out file
@@ -206,9 +206,9 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
     orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
     orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
     orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
-    # assert np.allclose(node_5_good_mean, orig_cifti_node_5)
+    assert np.allclose(node_5_good_mean, orig_cifti_node_5)
     assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
-    # assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
+    assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
     assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
 
     # Parcellate and check the 500-filled file
