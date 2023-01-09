@@ -1,6 +1,8 @@
 """Command-line interface tests."""
 import os
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from xcp_d.cli.run import build_workflow, get_parser
@@ -98,15 +100,32 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
 
 @pytest.mark.fmriprep_without_freesurfer
 def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
-    """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options."""
+    """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
+
+    Notes
+    -----
+    This test also mocks up custom confounds.
+    """
     test_name = "test_fmriprep_without_freesurfer"
 
     data_dir = datasets["fmriprep_without_freesurfer"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
+    custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
+    os.makedirs(custom_confounds_dir, exist_ok=True)
 
     test_data_dir = get_test_data_path()
     os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
+
+    # Create custom confounds folder
+    for run in [1, 2]:
+        out_file = f"sub-01_task-mixedgamblestask_run-{run}_desc-confounds_timeseries.tsv"
+        out_file = os.path.join(custom_confounds_dir, out_file)
+        confounds_df = pd.DataFrame(
+            columns=["a", "b"],
+            data=np.random.random((60, 2)),
+        )
+        confounds_df.to_csv(out_file, sep="\t", index=False)
 
     parameters = [
         data_dir,
@@ -124,6 +143,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         "--disable-bandpass-filter",
         "--dcan-qc",
         "--dummy-scans=1",
+        f"--custom_confounds={custom_confounds_dir}",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
