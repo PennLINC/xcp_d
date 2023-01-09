@@ -123,7 +123,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         out_file = os.path.join(custom_confounds_dir, out_file)
         confounds_df = pd.DataFrame(
             columns=["a", "b"],
-            data=np.random.random((60, 2)),
+            data=np.random.random((16, 2)),
         )
         confounds_df.to_csv(out_file, sep="\t", index=False)
 
