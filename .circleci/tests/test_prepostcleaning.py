@@ -119,7 +119,7 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     atlas_file = pkgrf(
         "xcp_d",
-        "data/ciftiatlas/Schaefer2018_100Parcels_17Networks_order.dlabel.nii",
+        "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii",
     )
     cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
 
