@@ -7,6 +7,7 @@ import pytest
 
 from xcp_d.cli.run import build_workflow, get_parser
 from xcp_d.tests.utils import check_generated_files, get_test_data_path, test_affines
+from xcp_d.utils.concatenation import concatenate_derivatives
 
 
 @pytest.mark.ds001419_nifti
@@ -93,6 +94,18 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
+
+    # Apply the concatenation outside of the workflow run
+    concatenate_derivatives(
+        subjects=["01"],
+        fmri_dir=data_dir,
+        output_dir=os.path.join(out_dir, "xcp_d"),
+        work_dir=work_dir,
+        cifti=opts.cifti,
+        dcan_qc=opts.dcan_qc,
+        dummy_scans=opts.dummy_scans,
+        dummytime=opts.dummytime,
+    )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
