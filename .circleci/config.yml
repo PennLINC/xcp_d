@@ -182,8 +182,8 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pytests\]' )" != "" ]]; then
+              echo "Skipping pytests build"
               circleci step halt
             fi
       - restore_cache:
@@ -197,8 +197,7 @@ jobs:
           name: Run pytest on the tests directory
           no_output_timeout: 1h
           command: |
-            cd /src/xcp_d/.circleci
-            bash RunPyTests.sh
+            pytest --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
 
   deployable:
     docker:
