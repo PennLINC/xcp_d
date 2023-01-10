@@ -4,8 +4,10 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
+from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.cli.run import build_workflow, get_parser
+from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import check_generated_files, get_test_data_path, test_affines
 from xcp_d.utils.concatenation import concatenate_derivatives
 
@@ -46,9 +48,21 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
     opts = get_parser().parse_args(parameters)
     retval = {}
     retval = build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=data_dir,
+        work_dir=work_dir,
+        output_dir=output_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+        dcan_qc=opts.dcan_qc,
+    )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
@@ -91,6 +105,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     opts = get_parser().parse_args(parameters)
     retval = {}
     retval = build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
@@ -105,6 +120,17 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         dcan_qc=opts.dcan_qc,
         dummy_scans=opts.dummy_scans,
         dummytime=opts.dummytime,
+    )
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=data_dir,
+        work_dir=work_dir,
+        output_dir=output_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+        dcan_qc=opts.dcan_qc,
     )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
@@ -161,9 +187,21 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     opts = get_parser().parse_args(parameters)
     retval = {}
     retval = build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=data_dir,
+        work_dir=work_dir,
+        output_dir=output_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+        dcan_qc=opts.dcan_qc,
+    )
 
     output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
@@ -197,9 +235,21 @@ def test_nibabies(datasets, output_dir, working_dir):
     opts = get_parser().parse_args(parameters)
     retval = {}
     retval = build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=data_dir,
+        work_dir=work_dir,
+        output_dir=output_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+        dcan_qc=opts.dcan_qc,
+    )
 
     output_list_file = os.path.join(test_data_dir, "nibabies_outputs.txt")
     check_generated_files(out_dir, output_list_file)
