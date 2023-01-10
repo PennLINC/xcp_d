@@ -8,7 +8,12 @@ from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.cli.run import build_workflow, get_parser
 from xcp_d.interfaces.report_core import generate_reports
-from xcp_d.tests.utils import check_affines, check_generated_files, get_test_data_path
+from xcp_d.tests.utils import (
+    check_affines,
+    check_generated_files,
+    get_test_data_path,
+    run_command,
+)
 from xcp_d.utils.concatenation import concatenate_derivatives
 
 
@@ -170,42 +175,24 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         )
         confounds_df.to_csv(out_file, sep="\t", index=False)
 
-    parameters = [
-        data_dir,
-        out_dir,
-        "participant",
-        f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
-        "--despike",
-        "--head_radius=40",
-        "--smoothing=6",
-        "-f=100",
-        "-vv",
-        "--nuisance-regressors=27P",
-        "--disable-bandpass-filter",
-        "--dcan-qc",
-        "--dummy-scans=1",
-        f"--custom_confounds={custom_confounds_dir}",
-    ]
-    opts = get_parser().parse_args(parameters)
-    retval = {}
-    retval = build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=data_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
+    cmd = (
+        f"xcp_d {data_dir} {out_dir} participant "
+        f"-w {work_dir} "
+        "--nthreads 2 "
+        "--omp-nthreads 2 "
+        "--despike "
+        "--head_radius 40 "
+        "--smoothing 6 "
+        "-f 100 "
+        "-vv "
+        "--nuisance-regressors 27P "
+        "--disable-bandpass-filter "
+        "--dcan-qc "
+        "--dummy-scans 1 "
+        f"--custom_confounds={custom_confounds_dir}"
     )
+
+    run_command(cmd)
 
     output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
