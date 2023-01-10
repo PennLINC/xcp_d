@@ -8,7 +8,7 @@ from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.cli.run import build_workflow, get_parser
 from xcp_d.interfaces.report_core import generate_reports
-from xcp_d.tests.utils import check_generated_files, get_test_data_path, test_affines
+from xcp_d.tests.utils import check_affines, check_generated_files, get_test_data_path
 from xcp_d.utils.concatenation import concatenate_derivatives
 
 
@@ -66,6 +66,8 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
+
+    check_affines(data_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.ds001419_cifti
@@ -135,6 +137,8 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
+
+    check_affines(data_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.fmriprep_without_freesurfer
@@ -206,6 +210,8 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
+    check_affines(data_dir, out_dir, input_type="nifti")
+
 
 @pytest.mark.nibabies
 def test_nibabies(datasets, output_dir, working_dir):
@@ -254,4 +260,4 @@ def test_nibabies(datasets, output_dir, working_dir):
     output_list_file = os.path.join(test_data_dir, "nibabies_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    test_affines(data_dir, out_dir, input_type="nibabies")
+    check_affines(data_dir, out_dir, input_type="nibabies")

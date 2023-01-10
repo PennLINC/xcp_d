@@ -44,7 +44,7 @@ def check_generated_files(out_dir, output_list_file):
         raise ValueError(msg)
 
 
-def test_affines(data_dir, out_dir, input_type):
+def check_affines(data_dir, out_dir, input_type):
     """Confirm affines don't change across XCP runs."""
     fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
     xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=False)
