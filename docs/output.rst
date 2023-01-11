@@ -57,10 +57,9 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
                     <source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
                     <source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
 
-#.   Functional outputs:
-     Functional outputs consist of processed/denoised BOLD data, timeseries, functional connectivity matrices, and resting-state derivatives.
+3. Functional outputs: Functional outputs consist of processed/denoised BOLD data, timeseries, functional connectivity matrices, and resting-state derivatives.
 
-     #.   Denoised or residual BOLD data::
+   a. Denoised or residual BOLD data::
 
           xcp_d/
                sub-<label>/[ses-<label>/]
@@ -75,7 +74,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
       The json/sidecar contains parameters of the data and processing steps.
 
-          .. code-block:: json
+       .. code-block:: json-object
 
           {
               "Freq Band": [ 0.009, 0.08],
@@ -85,7 +84,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
               "nuisance parameters": "27P",
           }
 
-     #.   Functional timeseries and connectivity matrices::
+   b. Functional timeseries and connectivity matrices::
 
           xcp_d/
                sub-<label>/[ses-<label>/]
