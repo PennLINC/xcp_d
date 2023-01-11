@@ -102,8 +102,8 @@ jobs:
           no_output_timeout: 1h
           command: |
             pytest -m "fmriprep_without_freesurfer" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
-            mkdir /tmp/src/coverage
-            mv /tmp/src/xcp_d/.coverage /tmp/src/coverage/.coverage.fmriprep_without_freesurfer
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -131,8 +131,8 @@ jobs:
           no_output_timeout: 1h
           command: |
             pytest -m "ds001419_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
-            mkdir /tmp/src/coverage
-            mv /tmp/src/xcp_d/.coverage /tmp/src/coverage/.coverage.ds001419_nifti
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -160,8 +160,8 @@ jobs:
           no_output_timeout: 1h
           command: |
             pytest -m "nibabies" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
-            mkdir /tmp/src/coverage
-            mv /tmp/src/xcp_d/.coverage /tmp/src/coverage/.coverage.nibabies
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -189,8 +189,8 @@ jobs:
           no_output_timeout: 5h
           command: |
             pytest -m "ds001419_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
-            mkdir /tmp/src/coverage
-            mv /tmp/src/xcp_d/.coverage /tmp/src/coverage/.coverage.ds001419_cifti
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -222,15 +222,15 @@ jobs:
           no_output_timeout: 1h
           command: |
             pytest --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
-            mkdir /tmp/src/coverage
-            mv /tmp/src/xcp_d/.coverage /tmp/src/coverage/.coverage.pytests
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.pytests
       - persist_to_workspace:
           root: /tmp
           paths:
               - src/coverage/.coverage.pytests
 
   merge_coverage:
-    working_directory: /tmp/src/coverage
+    working_directory: /src/coverage
     docker:
       - image: continuumio/miniconda3
     steps:
@@ -245,11 +245,11 @@ jobs:
             apt-get update
             apt-get install -yqq curl
             source activate tedana_py37  # depends on makeenv37
-            cd /tmp/src/coverage/
+            cd /src/coverage/
             coverage combine
             coverage xml
       - store_artifacts:
-          path: /tmp/src/coverage
+          path: /src/coverage
 
   deployable:
     docker:
