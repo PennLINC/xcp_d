@@ -114,15 +114,15 @@ def get_atlas_cifti(atlas_name):
     elif atlas_name == "Glasser":
         atlas_file = pkgrf(
             "xcp_d",
-            "data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii",
+            "data/ciftiatlas/Glasser_360Parcels_fsLR_32k.dlabel.nii",
         )
     elif atlas_name == "Gordon":
         atlas_file = pkgrf(
             "xcp_d",
-            "data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii",
+            "data/ciftiatlas/Gordon_333Parcels_fsLR_32k.dlabel.nii",
         )
     elif atlas_name == "subcortical":
-        atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
+        atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_fsLR_32k.dlabel.nii")
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
 
