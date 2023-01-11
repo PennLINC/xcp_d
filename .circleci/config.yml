@@ -105,9 +105,9 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
       - persist_to_workspace:
-          root: /src
+          root: /src/coverage/
           paths:
-              - src/coverage/.coverage.fmriprep_without_freesurfer
+              - .coverage.fmriprep_without_freesurfer
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
 
@@ -134,9 +134,9 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
       - persist_to_workspace:
-          root: /src
+          root: /src/coverage/
           paths:
-              - src/coverage/.coverage.ds001419_nifti
+              - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
 
@@ -163,9 +163,9 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
       - persist_to_workspace:
-          root: /src
+          root: /src/coverage/
           paths:
-              - src/coverage/.coverage.nibabies
+              - .coverage.nibabies
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
 
@@ -192,9 +192,9 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
       - persist_to_workspace:
-          root: /src
+          root: /src/coverage
           paths:
-              - src/coverage/.coverage.ds001419_cifti
+              - .coverage.ds001419_cifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
 
@@ -225,9 +225,9 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pytests
       - persist_to_workspace:
-          root: /src
+          root: /src/coverage
           paths:
-              - src/coverage/.coverage.pytests
+              - .coverage.pytests
 
   merge_coverage:
     working_directory: /src/coverage
