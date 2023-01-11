@@ -98,7 +98,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file"],
+            output_names=["atlas_file", "node_labels_file"],
             function=get_atlas_nifti,
         ),
         name="atlas_file_grabber",
@@ -134,12 +134,12 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     extract_parcel_timeseries = pe.MapNode(
         Function(
-            input_names=["in_file", "atlas"],
+            input_names=["in_file", "atlas", "node_labels_file"],
             output_names=["timeseries"],
             function=extract_timeseries_funct,
         ),
         name="extract_parcel_timeseries",
-        iterfield=["atlas"],
+        iterfield=["atlas", "node_labels_file"],
         mem_gb=mem_gb,
     )
 
@@ -176,6 +176,9 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
         (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
             ("transformfile", "transforms"),
+        ]),
+        (atlas_file_grabber, extract_parcel_timeseries, [
+            ("node_labels_file", "node_labels_file"),
         ]),
         (warp_atlases_to_bold_space, extract_parcel_timeseries, [("output_image", "atlas")]),
         (extract_parcel_timeseries, outputnode, [("timeseries", "timeseries")]),
@@ -263,7 +266,7 @@ the Connectome Workbench.
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file"],
+            output_names=["atlas_file", "node_labels_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",

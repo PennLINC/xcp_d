@@ -45,7 +45,11 @@ def get_atlas_nifti(atlas_name):
     -------
     atlas_file : str
         Path to the atlas file.
+    node_labels_file : str
+        Path to the node labels file.
     """
+    import os
+
     from pkg_resources import resource_filename as pkgrf
 
     if atlas_name[:8] == "Schaefer":
@@ -74,7 +78,10 @@ def get_atlas_nifti(atlas_name):
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
 
-    return atlas_file
+    node_labels_file = atlas_file.replace("_FSLMNI152_2mm.nii.gz", "_info.tsv")
+    assert os.path.isfile(node_labels_file)
+
+    return atlas_file, node_labels_file
 
 
 def get_atlas_cifti(atlas_name):
@@ -94,7 +101,11 @@ def get_atlas_cifti(atlas_name):
     -------
     atlas_file : str
         Path to the atlas file.
+    node_labels_file : str
+        Path to the node labels file.
     """
+    import os
+
     from pkg_resources import resource_filename as pkgrf
 
     if atlas_name[:8] == "Schaefer":
@@ -126,4 +137,7 @@ def get_atlas_cifti(atlas_name):
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
 
-    return atlas_file
+    node_labels_file = atlas_file.replace("_fsLR_32k.dlabel.nii", "_info.tsv")
+    assert os.path.isfile(node_labels_file)
+
+    return atlas_file, node_labels_file

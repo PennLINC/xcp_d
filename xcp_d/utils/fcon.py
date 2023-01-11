@@ -3,13 +3,12 @@
 """Functions for calculating functional connectivity in NIFTI files."""
 import nibabel as nb
 import numpy as np
-import pandas as pd
 from scipy import signal
 from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 
-def extract_timeseries_funct(in_file, mask, atlas, node_names):
+def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
     """Use Nilearn NiftiLabelsMasker to extract timeseries.
 
     Parameters
@@ -20,7 +19,7 @@ def extract_timeseries_funct(in_file, mask, atlas, node_names):
         BOLD file's associated brain mask file.
     atlas : str
         atlas in the same space with bold
-    node_names : list of str
+    node_labels_file : str
         The name of each node in the atlas, in the same order as the values in the atlas file.
 
     Returns
@@ -30,9 +29,12 @@ def extract_timeseries_funct(in_file, mask, atlas, node_names):
     """
     import os
 
+    import pandas as pd
     from nilearn.input_data import NiftiLabelsMasker
 
     timeseries_file = os.path.abspath("timeseries.tsv")
+
+    node_labels_df = pd.read_table(node_labels_file, index_col="index")
 
     # Extract time series with nilearn
     masker = NiftiLabelsMasker(
@@ -43,14 +45,14 @@ def extract_timeseries_funct(in_file, mask, atlas, node_names):
     )
     timeseries_arr = masker.fit_transform(in_file)
 
-    if timeseries_arr.shape[1] != len(node_names):
+    if timeseries_arr.shape[1] != node_labels_df.shape[0]:
         raise ValueError(
             f"The number of detected nodes ({timeseries_arr.shape[1]}) does not equal "
-            f"the number of expected nodes ({len(node_names)}) in {atlas}."
+            f"the number of expected nodes ({node_labels_df.shape[0]}) in {atlas}."
         )
 
     # The time series file is tab-delimited, with node names included in the first row.
-    timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_names)
+    timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels_df["node"].tolist())
     timeseries_df.to_csv(timeseries_file, sep="\t", index=False)
 
     return timeseries_file
