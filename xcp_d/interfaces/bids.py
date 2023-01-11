@@ -6,7 +6,6 @@ from pathlib import Path
 
 import nibabel as nb
 import numpy as np
-from bids.layout import parse_file_entities
 from bids.layout.writing import build_path
 from bids.utils import listify
 from nipype import logging
@@ -55,9 +54,7 @@ DEFAULT_DTYPES = defaultdict(
 
 
 class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
-    base_directory = traits.Directory(
-        desc="Path to the base directory for storing data."
-    )
+    base_directory = traits.Directory(desc="Path to the base directory for storing data.")
     check_hdr = traits.Bool(True, usedefault=True, desc="fix headers of NIfTI outputs")
     compress = InputMultiObject(
         traits.Either(None, traits.Bool),
@@ -66,17 +63,14 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
         "or left unmodified (None, default).",
     )
     data_dtype = Str(
-        desc="NumPy datatype to coerce NIfTI data to, or `source` to"
-        "match the input file dtype"
+        desc="NumPy datatype to coerce NIfTI data to, or `source` to match the input file dtype"
     )
     dismiss_entities = InputMultiObject(
         traits.Either(None, Str),
         usedefault=True,
         desc="a list entities that will not be propagated from the source file",
     )
-    in_file = InputMultiObject(
-        File(exists=True), mandatory=True, desc="the object to be saved"
-    )
+    in_file = InputMultiObject(File(exists=True), mandatory=True, desc="the object to be saved")
     meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
     source_file = InputMultiObject(
         File(exists=False),
@@ -111,9 +105,7 @@ class BaseDerivativesDataSink(SimpleInterface):
 
     def __init__(self, allowed_entities=None, out_path_base=None, **inputs):
         """Initialize the SimpleInterface and extend inputs with custom entities."""
-        self._allowed_entities = set(allowed_entities or []).union(
-            self._allowed_entities
-        )
+        self._allowed_entities = set(allowed_entities or []).union(self._allowed_entities)
         if out_path_base:
             self.out_path_base = out_path_base
 
@@ -132,6 +124,8 @@ class BaseDerivativesDataSink(SimpleInterface):
             setattr(self.inputs, k, inputs[k])
 
     def _run_interface(self, runtime):
+        from bids.layout import parse_file_entities
+
         # Ready the output folder
         base_directory = runtime.cwd
         if isdefined(self.inputs.base_directory):
@@ -198,8 +192,7 @@ class BaseDerivativesDataSink(SimpleInterface):
             # Example: f"{key}-{{{key}}}" -> "task-{task}"
             custom_pat = "_".join(f"{key}-{{{key}}}" for key in sorted(custom_entities))
             patterns = [
-                pat.replace("_{suffix", "_".join(("", custom_pat, "{suffix")))
-                for pat in patterns
+                pat.replace("_{suffix", "_".join(("", custom_pat, "{suffix"))) for pat in patterns
             ]
 
         # Prepare SimpleInterface outputs object
@@ -225,9 +218,9 @@ class BaseDerivativesDataSink(SimpleInterface):
             self._results["out_file"].append(str(out_file))
             self._results["compression"].append(_copy_any(orig_file, str(out_file)))
 
-            is_nifti = out_file.name.endswith(
-                (".nii", ".nii.gz")
-            ) and not out_file.name.endswith((".dtseries.nii", ".dtseries.nii.gz"))
+            is_nifti = out_file.name.endswith((".nii", ".nii.gz")) and not out_file.name.endswith(
+                (".dtseries.nii", ".dtseries.nii.gz")
+            )
             data_dtype = self.inputs.data_dtype or DEFAULT_DTYPES[self.inputs.suffix]
             if is_nifti and any((self.inputs.check_hdr, data_dtype)):
                 # Do not use mmap; if we need to access the data at all, it will be to
@@ -248,9 +241,7 @@ class BaseDerivativesDataSink(SimpleInterface):
                     )
                     xcodes = (1, 1)  # Derivative in its original scanner space
                     if self.inputs.space:
-                        xcodes = (
-                            (4, 4) if self.inputs.space in STANDARD_SPACES else (2, 2)
-                        )
+                        xcodes = (4, 4) if self.inputs.space in STANDARD_SPACES else (2, 2)
 
                     if curr_codes != xcodes or curr_units != units:
                         self._results["fixed_hdr"][i] = True
@@ -263,9 +254,7 @@ class BaseDerivativesDataSink(SimpleInterface):
 
                 if data_dtype == "source":  # match source dtype
                     try:
-                        data_dtype = nb.load(
-                            self.inputs.source_file[0]
-                        ).get_data_dtype()
+                        data_dtype = nb.load(self.inputs.source_file[0]).get_data_dtype()
                     except Exception:
                         LOGGER.warning(
                             f"Could not get data type of file {self.inputs.source_file[0]}"
@@ -295,11 +284,7 @@ class BaseDerivativesDataSink(SimpleInterface):
         if len(self._results["out_file"]) == 1:
             meta_fields = self.inputs.copyable_trait_names()
             self._metadata.update(
-                {
-                    k: getattr(self.inputs, k)
-                    for k in meta_fields
-                    if k not in self._static_traits
-                }
+                {k: getattr(self.inputs, k) for k in meta_fields if k not in self._static_traits}
             )
             if self._metadata:
                 out_file = Path(self._results["out_file"][0])
@@ -319,12 +304,8 @@ class BaseDerivativesDataSink(SimpleInterface):
                         if key in self._metadata:
                             legacy_metadata[key] = self._metadata.pop(key)
                     if legacy_metadata:
-                        sidecar = (
-                            out_file.parent / f"{_splitext(str(out_file))[0]}.json"
-                        )
-                        sidecar.write_text(
-                            dumps(legacy_metadata, sort_keys=True, indent=2)
-                        )
+                        sidecar = out_file.parent / f"{_splitext(str(out_file))[0]}.json"
+                        sidecar.write_text(dumps(legacy_metadata, sort_keys=True, indent=2))
                 # The future: the extension is the first . and everything after
                 sidecar = out_file.parent / f"{out_file.name.split('.', 1)[0]}.json"
                 sidecar.write_text(dumps(self._metadata, sort_keys=True, indent=2))

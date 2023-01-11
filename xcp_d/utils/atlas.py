@@ -48,31 +48,28 @@ def get_atlas_nifti(atlas_name):
     """
     from pkg_resources import resource_filename as pkgrf
 
-    if atlas_name[:8] == 'Schaefer':
-        if atlas_name[8:12] == '1017':
+    if atlas_name[:8] == "Schaefer":
+        if atlas_name[8:12] == "1017":
             atlas_file = pkgrf(
-                'xcp_d',
-                (
-                    'data/niftiatlas/'
-                    'Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii'
-                ),
+                "xcp_d",
+                "data/niftiatlas/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii",
             )
         else:
             atlas_file = pkgrf(
-                'xcp_d',
+                "xcp_d",
                 (
-                    'data/niftiatlas/'
-                    f'Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_FSLMNI152_2mm.nii'
+                    "data/niftiatlas/"
+                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_FSLMNI152_2mm.nii"
                 ),
             )
-    elif atlas_name == 'Glasser':
-        atlas_file = pkgrf('xcp_d', 'data/niftiatlas/glasser360/glasser360MNI.nii.gz')
-    elif atlas_name == 'Gordon':
-        atlas_file = pkgrf('xcp_d', 'data/niftiatlas/gordon333/gordon333MNI.nii.gz')
-    elif atlas_name == 'subcortical':
+    elif atlas_name == "Glasser":
+        atlas_file = pkgrf("xcp_d", "data/niftiatlas/glasser360/glasser360MNI.nii.gz")
+    elif atlas_name == "Gordon":
+        atlas_file = pkgrf("xcp_d", "data/niftiatlas/gordon333/gordon333MNI.nii.gz")
+    elif atlas_name == "subcortical":
         atlas_file = pkgrf(
-            'xcp_d',
-            'data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz',
+            "xcp_d",
+            "data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz",
         )
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
@@ -100,32 +97,32 @@ def get_atlas_cifti(atlas_name):
     """
     from pkg_resources import resource_filename as pkgrf
 
-    if atlas_name[:8] == 'Schaefer':
-        if atlas_name[8:12] == '1017':
+    if atlas_name[:8] == "Schaefer":
+        if atlas_name[8:12] == "1017":
             atlas_file = pkgrf(
-                'xcp_d',
-                'data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order.dlabel.nii',
+                "xcp_d",
+                "data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order.dlabel.nii",
             )
         else:
             atlas_file = pkgrf(
-                'xcp_d',
+                "xcp_d",
                 (
-                    'data/ciftiatlas/'
-                    f'Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order.dlabel.nii'
+                    "data/ciftiatlas/"
+                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order.dlabel.nii"
                 ),
             )
-    elif atlas_name == 'Glasser':
+    elif atlas_name == "Glasser":
         atlas_file = pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii',
+            "xcp_d",
+            "data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii",
         )
-    elif atlas_name == 'Gordon':
+    elif atlas_name == "Gordon":
         atlas_file = pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii',
+            "xcp_d",
+            "data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii",
         )
-    elif atlas_name == 'subcortical':
-        atlas_file = pkgrf('xcp_d', 'data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii')
+    elif atlas_name == "subcortical":
+        atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
 

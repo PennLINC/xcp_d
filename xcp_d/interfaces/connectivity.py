@@ -1,10 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Handling functional connectvity.
-
-.. testsetup::
-# will comeback
-"""
+"""Handling functional connectvity."""
 import matplotlib.pyplot as plt
 import pandas as pd
 from nilearn.plotting import plot_matrix
@@ -26,7 +22,7 @@ LOGGER = logging.getLogger('nipype.interface')
 
 class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
     transforms = InputMultiObject(
-        traits.Either(File(exists=True), 'identity'),
+        traits.Either(File(exists=True), "identity"),
         argstr="%s",
         mandatory=True,
         desc="transform files",
@@ -44,10 +40,9 @@ class ApplyTransformsx(ApplyTransforms):
 
     def _run_interface(self, runtime):
         # Run normally
-        self.inputs.output_image = fname_presuffix(self.inputs.input_image,
-                                                   suffix='_trans.nii.gz',
-                                                   newpath=runtime.cwd,
-                                                   use_ext=False)
+        self.inputs.output_image = fname_presuffix(
+            self.inputs.input_image, suffix="_trans.nii.gz", newpath=runtime.cwd, use_ext=False
+        )
         runtime = super(ApplyTransformsx, self)._run_interface(runtime)
         return runtime
 
@@ -106,7 +101,7 @@ class ConnectPlot(SimpleInterface):
         # Generate a plot of each matrix's correlation coefficients
         fig, axes = plt.subplots(2, 2)
         fig.set_size_inches(20, 20)
-        font = {'weight': 'normal', 'size': 20}
+        font = {"weight": "normal", "size": 20}
 
         for atlas_name, subdict in ATLAS_LOOKUP.items():
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
@@ -127,14 +122,10 @@ class ConnectPlot(SimpleInterface):
             )
 
         # Write the results out
-        self._results['connectplot'] = fname_presuffix(
-            'connectivityplot',
-            suffix='_matrixplot.svg',
-            newpath=runtime.cwd,
-            use_ext=False)
+        self._results["connectplot"] = fname_presuffix(
+            "connectivityplot", suffix="_matrixplot.svg", newpath=runtime.cwd, use_ext=False
+        )
 
-        fig.savefig(self._results['connectplot'],
-                    bbox_inches="tight",
-                    pad_inches=None)
+        fig.savefig(self._results["connectplot"], bbox_inches="tight", pad_inches=None)
 
         return runtime

@@ -8,13 +8,12 @@ from nipype.pipeline import engine as pe
 from xcp_d.interfaces.nilearn import Smooth
 
 
-def test_smoothing_Nifti(data_dir):
+def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     """Test NIFTI smoothing."""
     #  Specify inputs
-    in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+    in_file = fmriprep_without_freesurfer_data["nifti_file"]
+    mask = fmriprep_without_freesurfer_data["brain_mask_file"]
+
     # Let's get into a temp dir
     tmpdir = tempfile.mkdtemp()
     os.chdir(tmpdir)
@@ -77,22 +76,21 @@ def test_smoothing_Nifti(data_dir):
 # # turn into standard deviation
 # from xcp_d.utils.utils import fwhm2sigma
 # sigma_lx = fwhm2sigma(smoothing)
-# def test_smoothing_Cifti(data_dir, sigma_lx):
+# def test_smoothing_Cifti(fmriprep_with_freesurfer_data, sigma_lx):
 #     # Specify inputs
-#     in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-#         "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
-
+#     in_file = fmriprep_with_freesurfer_data["cifti_file"]
+#
 #     # Let's get into a temp dir
 #     tmpdir = tempfile.mkdtemp()
 #     os.chdir(tmpdir)
-
+#
 #     # Run AFNI'S FWHMx
 #     fwhm = afni.FWHMx()
 #     fwhm.inputs.in_file = in_file
 #     fwhm.inputs.detrend = True
 #     results = fwhm.run()
 #     in_file_smoothness = results.outputs.fwhm
-
+#
 #     # Smooth the data
 #     smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
 #         #  hemisphere
@@ -112,15 +110,13 @@ def test_smoothing_Nifti(data_dir):
 #     smooth_data.inputs.out_file = 'test.dtseries.nii'
 #     results = smooth_data.run()
 #     out_file = results.outputs.out_file
-
+#
 #     # Run AFNI's FWHMx on the smoothed data
 #     fwhm = afni.FWHMx()
 #     fwhm.inputs.in_file = out_file
 #     fwhm.inputs.detrend = True
 #     results = fwhm.run()
 #     out_file_smoothness = results.outputs.fwhm
-
+#
 #     print(in_file_smoothness)
 #     print(out_file_smoothness)
-
-#     return

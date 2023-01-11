@@ -12,23 +12,13 @@ def get_parser():
     """Build parser object."""
     from argparse import ArgumentParser, RawTextHelpFormatter
 
-    parser = ArgumentParser(description=__doc__,
-                            formatter_class=RawTextHelpFormatter)
+    parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument('xcpd_dir',
-                        action='store',
-                        type=Path,
-                        help='xcp_d output dir')
+    parser.add_argument("xcpd_dir", action="store", type=Path, help="xcp_d output dir")
 
-    parser.add_argument('output_prefix',
-                        action='store',
-                        type=str,
-                        help='output prefix for group')
+    parser.add_argument("output_prefix", action="store", type=str, help="output prefix for group")
 
-    parser.add_argument('--cifti',
-                        action='store_true',
-                        default=False,
-                        help=' add cifti qc files')
+    parser.add_argument("--cifti", action="store_true", default=False, help=" add cifti qc files")
 
     return parser
 
@@ -38,20 +28,19 @@ def main():
     opts = get_parser().parse_args()
 
     allsubj_dir = os.path.abspath(opts.xcpd_dir)
-    outputfile = os.getcwd() + '/' + str(
-        opts.output_prefix) + '_allsubjects_qc.csv'
+    outputfile = os.getcwd() + "/" + str(opts.output_prefix) + "_allsubjects_qc.csv"
 
     qclist = []
     if opts.cifti:
         for r, d, f in os.walk(allsubj_dir):
             for filex in f:
                 if filex.endswith("space-fsLR_desc-qc_den-91k_bold.csv"):
-                    qclist.append(r + '/' + filex)
+                    qclist.append(r + "/" + filex)
     else:
         for r, d, f in os.walk(allsubj_dir):
             for filex in f:
                 if filex.endswith("desc-qc_bold.csv"):
-                    qclist.append(r + '/' + filex)
+                    qclist.append(r + "/" + filex)
 
     datax = pd.read_csv(qclist[0])
     for i in range(1, len(qclist)):
@@ -61,5 +50,5 @@ def main():
     datax.to_csv(outputfile, index=None)
 
 
-if __name__ == '__main__':
-    raise RuntimeError("this should be run after xcp_d;\n" " run xcp-d first")
+if __name__ == "__main__":
+    raise RuntimeError("this should be run after xcp_d;\nrun xcp-d first")

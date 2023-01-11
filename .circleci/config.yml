@@ -6,32 +6,81 @@ version: 2.1
   working_directory: /src/xcp_d
 
 runinstall: &runinstall
-    name: Install xcp_d
-    command: |
-      VERSION=0+build
-      if [[ -n "$CIRCLE_TAG" ]]; then
-        VERSION="$CIRCLE_TAG"
-      fi
-      git checkout $CIRCLE_BRANCH
-      echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
-      echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
-      pip install . --progress-bar off
+  name: Install xcp_d
+  command: |
+    VERSION=0+build
+    if [[ -n "$CIRCLE_TAG" ]]; then
+      VERSION="$CIRCLE_TAG"
+    fi
+    git checkout $CIRCLE_BRANCH
+    echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
+    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
+    pip install .[tests] --progress-bar off
 
-      # Write the config file
-      mkdir ~/.nipype
-      CFG=~/.nipype/nipype.cfg
-      printf "[execution]\nstop_on_first_crash = true\n" > ${CFG}
-      echo "poll_sleep_duration = 0.01" >> ${CFG}
-      echo "hash_method = content" >> ${CFG}
-
+    # Write the config file
+    mkdir ~/.nipype
+    CFG=~/.nipype/nipype.cfg
+    printf "[execution]\nstop_on_first_crash = true\n" > ${CFG}
+    echo "poll_sleep_duration = 0.01" >> ${CFG}
+    echo "hash_method = content" >> ${CFG}
 
 jobs:
-
   build:
     <<: *dockersetup
     steps:
       - checkout
       - run: *runinstall
+
+  download_data_ds001419-fmriprep:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: ds001419-fmriprep-05
+      - run:
+          name: Download ds001419-fmriprep test data
+          command: |
+            cd /src/xcp_d/.circleci
+            source get_data.sh
+            get_bids_data $PWD ds001419-fmriprep
+      - save_cache:
+          key: ds001419-fmriprep-05
+          paths:
+              - /src/xcp_d/.circleci/data/ds001419-fmriprep
+
+  download_data_fmriprepwithoutfreesurfer:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
+      - run:
+          name: Download fmriprepwithoutfreesurfer test data
+          command: |
+            cd /src/xcp_d/.circleci
+            source get_data.sh
+            get_bids_data $PWD sub01
+      - save_cache:
+          key: fmriprepwithoutfreesurfer-01
+          paths:
+              - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
+
+  download_data_nibabies:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: nibabies-01
+      - run:
+          name: Download nibabies test data
+          command: |
+            cd /src/xcp_d/.circleci
+            source get_data.sh
+            get_bids_data $PWD nibabies
+      - save_cache:
+          key: nibabies-01
+          paths:
+              - /src/xcp_d/.circleci/data/nibabies_test_data
 
   nifti_without_freesurfer:
     <<: *dockersetup
@@ -42,9 +91,11 @@ jobs:
           command: |
             cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_without_freesurfer\]' )" != "" ]]; then
-              echo "Skipping nifti_without_freeurfer build"
+              echo "Skipping nifti_without_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -75,6 +126,8 @@ jobs:
               echo "Skipping nifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: ds001419-fmriprep-05
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -93,6 +146,38 @@ jobs:
             diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nifti_with_freesurfer/test/outputs.out)
             exit $?
 
+  nibabies:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nibabies\]' )" != "" ]]; then
+              echo "Skipping nibabies build"
+              circleci step halt
+            fi
+      - restore_cache:
+          key: nibabies-01
+      - run: *runinstall
+      - run:
+          name: Run full xcp_d on nibabies
+          no_output_timeout: 1h
+          command: |
+            cd /src/xcp_d/.circleci
+            bash Nibabies.sh
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/
+      - run:
+          name: Check outputs of xcp_d run
+          command: |
+            mkdir -p /tmp/nibabies/test
+            CHECK_OUTPUTS_FILE="nibabies_outputs.txt"
+            find /src/xcp_d/.circleci/nibabies/derivatives/xcp_d/ \( -path */figures -o -path */log \) -prune -o -name "*" -print | sed s+/src/xcp_d/.circleci/nibabies/derivatives/++ | grep -v sourcedata | sort > /tmp/nibabies/test/outputs.out
+            diff <(sort /src/xcp_d/.circleci/${CHECK_OUTPUTS_FILE}) <(sort /tmp/nibabies/test/outputs.out)
+            exit $?
+
   cifti_with_freesurfer:
     <<: *dockersetup
     steps:
@@ -105,8 +190,9 @@ jobs:
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: ds001419-fmriprep-05
       - run: *runinstall
-
       - run:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
@@ -136,8 +222,11 @@ jobs:
               echo "Skipping cifti_with_freesurfer build"
               circleci step halt
             fi
+      - restore_cache:
+          key: ds001419-fmriprep-05
+      - restore_cache:
+          key: fmriprepwithoutfreesurfer-01
       - run: *runinstall
-
       - run:
           name: Run pytest on the tests directory
           no_output_timeout: 1h
@@ -190,8 +279,8 @@ jobs:
           name: Deploy to Docker Hub
           no_output_timeout: 40m
           command: |
-            if [[ -n "$DOCKER_PASS" ]]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
+            if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+              docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
               docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
               docker push pennlinc/xcp_d:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
@@ -210,9 +299,30 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer:
+      - download_data_ds001419-fmriprep:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
+
+      - download_data_fmriprepwithoutfreesurfer:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
+      - download_data_nibabies:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
+      - cifti_with_freesurfer:
+          requires:
+            - download_data_ds001419-fmriprep
           filters:
             branches:
               ignore:
@@ -223,7 +333,18 @@ workflows:
 
       - nifti_with_freesurfer:
           requires:
-            - build
+            - download_data_ds001419-fmriprep
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - nibabies:
+          requires:
+            - download_data_nibabies
           filters:
             branches:
               ignore:
@@ -234,7 +355,7 @@ workflows:
 
       - nifti_without_freesurfer:
           requires:
-            - build
+            - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
               ignore:
@@ -245,7 +366,8 @@ workflows:
 
       - pytests:
           requires:
-            - build
+            - download_data_ds001419-fmriprep
+            - download_data_fmriprepwithoutfreesurfer
           filters:
             branches:
               ignore:
@@ -258,6 +380,7 @@ workflows:
           requires:
             - nifti_with_freesurfer
             - nifti_without_freesurfer
+            - nibabies
             - cifti_with_freesurfer
             - pytests
           filters:

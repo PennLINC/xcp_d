@@ -17,6 +17,8 @@ from nipype.interfaces.base import (
     traits,
 )
 
+from xcp_d.utils.bids import get_entity
+
 SUBJECT_TEMPLATE = """\
 \t<ul class="elem-desc">
 \t\t<li>Subject ID: {subject_id}</li>
@@ -49,7 +51,7 @@ ABOUT_TEMPLATE = """\t<ul>
 class _SummaryInterfaceOutputSpec(TraitedSpec):
     """Output specification for SummaryInterface."""
 
-    out_report = File(exists=True, desc='HTML segment containing summary')
+    out_report = File(exists=True, desc="HTML segment containing summary")
 
 
 class SummaryInterface(SimpleInterface):
@@ -63,10 +65,10 @@ class SummaryInterface(SimpleInterface):
     def _run_interface(self, runtime):
         # Open a file to write information to
         segment = self._generate_segment()
-        file_name = os.path.join(runtime.cwd, 'report.html')
-        with open(file_name, 'w') as file_object:
+        file_name = os.path.join(runtime.cwd, "report.html")
+        with open(file_name, "w") as file_object:
             file_object.write(segment)
-        self._results['out_report'] = file_name
+        self._results["out_report"] = file_name
         return runtime
 
     def _generate_segment(self):
@@ -76,10 +78,15 @@ class SummaryInterface(SimpleInterface):
 class _SubjectSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for SubjectSummaryInterface."""
 
-    subject_id = Str(desc='Subject ID')
-    bold = InputMultiObject(traits.Either(File(exists=True),
-                                          traits.List(File(exists=True))),
-                            desc='BOLD or CIFTI functional series')
+    subject_id = Str(desc="Subject ID")
+    # A list of files or a list of lists of files?
+    bold = InputMultiObject(
+        traits.Either(
+            File(exists=True),
+            traits.List(File(exists=True)),
+        ),
+        desc="BOLD or CIFTI functional series",
+    )
 
 
 class _SubjectSummaryOutputSpec(_SummaryInterfaceOutputSpec):
@@ -87,7 +94,7 @@ class _SubjectSummaryOutputSpec(_SummaryInterfaceOutputSpec):
 
     # This exists to ensure that the summary is run prior to the first ReconAll
     # call, allowing a determination whether there is a pre-existing directory
-    subject_id = Str(desc='Subject ID')
+    subject_id = Str(desc="Subject ID")
 
 
 class SubjectSummary(SummaryInterface):
@@ -98,25 +105,26 @@ class SubjectSummary(SummaryInterface):
 
     def _run_interface(self, runtime):
         if isdefined(self.inputs.subject_id):
-            self._results['subject_id'] = self.inputs.subject_id
+            self._results["subject_id"] = self.inputs.subject_id
         return super(SubjectSummary, self)._run_interface(runtime)
 
     def _generate_segment(self):
         # Add list of tasks with number of runs
         num_bold_files = len(self.inputs.bold)
 
-        return SUBJECT_TEMPLATE.format(subject_id=self.inputs.subject_id,
-                                       num_bold_files=num_bold_files)
+        return SUBJECT_TEMPLATE.format(
+            subject_id=self.inputs.subject_id, num_bold_files=num_bold_files
+        )
 
 
 class _FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for FunctionalSummary."""
 
-    bold_file = traits.File(True, True, desc='cifti or bold File')
-    qc_file = traits.File(exists=True, desc='qc file')
+    bold_file = traits.File(exists=True, mandatory=True, desc="cifti or bold File")
+    qc_file = traits.File(exists=True, desc="qc file")
     TR = traits.Float(
         mandatory=True,
-        desc='Repetition time',
+        desc="Repetition time",
     )
 
 
@@ -127,7 +135,7 @@ class FunctionalSummary(SummaryInterface):
     #   Get information from the QC file and return it
 
     def _generate_segment(self):
-        space = get_space(self.inputs.bold_file)
+        space = get_entity(self.inputs.bold_file, "space")
         TR = self.inputs.TR
         qcfile = pd.read_csv(self.inputs.qc_file)
         meanFD = f"{round(qcfile['meanFD'][0], 4)} "
@@ -140,21 +148,23 @@ class FunctionalSummary(SummaryInterface):
         )
         num_vols_censored = f" {round(qcfile['num_censored_volumes'][0], 4)} "
 
-        return QC_TEMPLATE.format(space=space,
-                                  TR=TR,
-                                  meanFD=meanFD,
-                                  meanRMS=meanRMS,
-                                  maxRMS=maxRMS,
-                                  dvars_before_after=dvars,
-                                  corrfddv=fd_dvars_correlation,
-                                  volcensored=num_vols_censored)
+        return QC_TEMPLATE.format(
+            space=space,
+            TR=TR,
+            meanFD=meanFD,
+            meanRMS=meanRMS,
+            maxRMS=maxRMS,
+            dvars_before_after=dvars,
+            corrfddv=fd_dvars_correlation,
+            volcensored=num_vols_censored,
+        )
 
 
 class _AboutSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for AboutSummary."""
 
-    version = Str(desc='xcp_d version')
-    command = Str(desc='xcp_d command')
+    version = Str(desc="xcp_d version")
+    command = Str(desc="xcp_d command")
     # Date not included - update timestamp only if version or command changes
 
 
@@ -167,31 +177,5 @@ class AboutSummary(SummaryInterface):
         return ABOUT_TEMPLATE.format(
             version=self.inputs.version,
             command=self.inputs.command,
-            date=time.strftime("%Y-%m-%d %H:%M:%S %z"))
-
-
-def get_space(bold_file):
-    """Extract space from bold/cifti via string manipulation.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the BOLD file.
-
-    Returns
-    -------
-    space : str
-        The BOLD file's space.
-    """
-    bold_file = os.path.basename(bold_file)
-    if bold_file.endswith('.dtseries.nii'):
-        return 'fsLR'
-    else:
-        if 'space' not in bold_file:
-            return 'native'
-        elif 'space' in bold_file:
-            bold_file_space = bold_file.split('_')
-
-            for bold_file_name_component in bold_file_space:
-                if 'space' in bold_file_name_component:
-                    return bold_file_name_component.split('-')[1]
+            date=time.strftime("%Y-%m-%d %H:%M:%S %z"),
+        )

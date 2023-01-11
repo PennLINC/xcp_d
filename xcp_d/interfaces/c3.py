@@ -10,7 +10,6 @@ from nipype.interfaces.base import (
     File,
     InputMultiPath,
     OutputMultiPath,
-    SEMLikeCommandLine,
     TraitedSpec,
     isdefined,
     traits,
@@ -21,55 +20,11 @@ from xcp_d.utils.filemanip import split_filename
 iflogger = logging.getLogger("interface")
 
 
-class _C3dAffineToolInputSpec(CommandLineInputSpec):
-    """Input specification for C3dAffineTool."""
-
-    reference_file = File(exists=True, argstr="-ref %s", position=1)
-    source_file = File(exists=True, argstr="-src %s", position=2)
-    transform_file = File(exists=True, argstr="%s", position=3)
-    itk_transform = traits.Either(
-        traits.Bool,
-        File(),
-        hash_files=False,
-        desc="Export ITK transform.",
-        argstr="-oitk %s",
-        position=5,
-    )
-    fsl2ras = traits.Bool(argstr="-fsl2ras", position=4)
-
-
-class _C3dAffineToolOutputSpec(TraitedSpec):
-    """Output specification for C3dAffineTool."""
-
-    itk_transform = File(exists=True)
-
-
-class C3dAffineTool(SEMLikeCommandLine):
-    """Convert FSL-style affine registration into ANTS-compatible itk format.
-
-    Examples
-    --------
-    >>> from nipype.interfaces.c3 import C3dAffineTool
-    >>> c3 = C3dAffineTool()
-    >>> c3.inputs.source_file = 'cmatrix.mat'
-    >>> c3.inputs.itk_transform = 'affine.txt'
-    >>> c3.inputs.fsl2ras = True
-    >>> c3.cmdline
-    'c3d_affine_tool -src cmatrix.mat -fsl2ras -oitk affine.txt'
-    """
-
-    input_spec = _C3dAffineToolInputSpec
-    output_spec = _C3dAffineToolOutputSpec
-
-    _cmd = "c3d_affine_tool"
-    _outputs_filenames = {"itk_transform": "affine.txt"}
-
-
 class _C3dInputSpec(CommandLineInputSpec):
     """Input specification for C3d."""
 
     in_file = InputMultiPath(
-        File(),
+        File(exists=True),
         position=1,
         argstr="%s",
         mandatory=True,
@@ -83,7 +38,7 @@ class _C3dInputSpec(CommandLineInputSpec):
         desc="Output file of last image on the stack.",
     )
     out_files = InputMultiPath(
-        File(),
+        File(exists=False),
         argstr="-oo %s",
         xor=["out_file"],
         position=-1,
@@ -162,14 +117,14 @@ class _C3dInputSpec(CommandLineInputSpec):
     is_4d = traits.Bool(
         False,
         usedefault=True,
-        desc=("Changes command to support 4D file operations (default is" " false)."),
+        desc=("Changes command to support 4D file operations (default is false)."),
     )
 
 
 class _C3dOutputSpec(TraitedSpec):
     """Output specification for C3d."""
 
-    out_files = OutputMultiPath(File(exists=False))
+    out_files = OutputMultiPath(File(exists=True))
 
 
 class C3d(CommandLine):
@@ -226,7 +181,7 @@ class C3d(CommandLine):
         # if many infiles, raise exception
         if (len(self.inputs.in_file) > 1) or ("*" in self.inputs.in_file[0]):
             raise AttributeError(
-                "Multiple in_files found - specify either" " `out_file` or `out_files`."
+                "Multiple in_files found - specify either `out_file` or `out_files`."
             )
         _, fn, ext = split_filename(self.inputs.in_file[0])
         self.inputs.out_file = fn + "_generated" + ext

@@ -1,31 +1,39 @@
 """Tests for regression methods."""
+import os
+
 import numpy as np
-import pandas as pd
 import scipy
 
 from xcp_d.interfaces.regression import Regress
+from xcp_d.utils.confounds import load_confound_matrix
 from xcp_d.utils.write_save import read_ndata
 
 
-def test_Reg_Nifti(data_dir):
+def test_regression_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test NIFTI regression."""
-    #  Specify inputs
-    in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    confounds = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-2_desc-confounds_timeseries.tsv"
-    TR = 0.5
-    mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-    # Run regression
-    test_nifti = Regress(mask=mask, in_file=in_file,
-                         original_file=in_file, confounds=confounds, TR=TR)
-    results = test_nifti.run()
+    temp_dir = tmp_path_factory.mktemp("test_regression_nifti")
 
-    # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
-    df = pd.read_table(results.outputs.confound_matrix)
-    if df.shape[1] > 36:  # If that column is present
-        df = pd.read_table(results.outputs.confound_matrix, index_col=[0])
+    # Specify inputs
+    TR = 0.5
+    in_file = fmriprep_with_freesurfer_data["nifti_file"]
+    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+
+    # Read in confounds. Confounds must be selected before running Regress.
+    df = load_confound_matrix(img_file=in_file, params="36P")
+    assert df.shape[1] == 36
+    selected_confounds_file = os.path.join(temp_dir, "temp.tsv")
+    df.to_csv(selected_confounds_file, sep="\t", index=False)
+
+    # Run regression
+    regression = Regress(
+        mask=mask,
+        in_file=in_file,
+        confounds=selected_confounds_file,
+        TR=TR,
+        params="36P",
+    )
+    results = regression.run(cwd=temp_dir)
+
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
     list_of_regressors = []
@@ -41,31 +49,38 @@ def test_Reg_Nifti(data_dir):
     for regressor in list_of_regressors:
         regressor = np.array(regressor)
         regressor[~np.isfinite(regressor)] = 0
-        r, p = scipy.stats.pearsonr(regressor, regressed)
+        r, _ = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
+    print(max(regressed_correlations))
     assert (max(regressed_correlations)) < 0.01
 
 
-def test_Reg_Cifti(data_dir):
+def test_regression_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test CIFTI regression."""
     # Specify inputs
-    in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii"
-    confounds = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv"
-    TR = 0.5
-    mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
-    # Run regression
-    test_cifti = Regress(mask=mask, in_file=in_file,
-                         original_file=in_file, confounds=confounds, TR=TR)
-    results = test_cifti.run()
+    temp_dir = tmp_path_factory.mktemp("test_regression_cifti")
 
-    # Read in_file and regression results in, but ignore the 'Unnamed:0' column if present
-    df = pd.read_table(results.outputs.confound_matrix)
-    if df.shape[1] > 36:  # If that column is present
-        df = pd.read_table(results.outputs.confound_matrix, index_col=[0])
+    TR = 0.5
+    in_file = fmriprep_with_freesurfer_data["cifti_file"]
+    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+
+    # Read in confounds. Confounds must be selected before running Regress.
+    df = load_confound_matrix(img_file=in_file, params="36P")
+    assert df.shape[1] == 36
+    selected_confounds_file = os.path.join(temp_dir, "temp.tsv")
+    df.to_csv(selected_confounds_file, sep="\t", index=False)
+
+    # Run regression
+    regression = Regress(
+        mask=mask,
+        in_file=in_file,
+        confounds=selected_confounds_file,
+        TR=TR,
+        params="36P",
+    )
+    regression.base_dir = temp_dir
+    results = regression.run(cwd=temp_dir)
 
     # Loop through each column in the confounds matrix, creating a list of
     # regressors for correlation
@@ -82,7 +97,8 @@ def test_Reg_Cifti(data_dir):
     for regressor in list_of_regressors:
         regressor = np.array(regressor)
         regressor[~np.isfinite(regressor)] = 0
-        r, p = scipy.stats.pearsonr(regressor, regressed)
+        r, _ = scipy.stats.pearsonr(regressor, regressed)
         regressed_correlations.append(abs(r))
     # The strongest correlation should be less than 0.01
+    print((regressed_correlations))
     assert (max(regressed_correlations)) < 0.01

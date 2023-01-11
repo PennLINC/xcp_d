@@ -2,10 +2,10 @@
 
 cat << DOC
 
-Run PyTests 
+Run PyTests
 ===========
 
-Run the suite of pytests easily on a local machine or on circleci
+Run the suite of pytests easily on a local machine or on CircleCI.
 
 DOC
 
@@ -15,10 +15,10 @@ run_pytest_cmd () {
   workdir="$3"
 
   # Defines a call to pytest that works on circleci OR for a local
-  # test that uses 
+  # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    PYTEST_RUN="pytest --data_dir=${data_dir} --output_dir=${output_dir} --working_dir=${workdir} tests"
+    PYTEST_RUN="pytest --data_dir=${data_dir}/data --output_dir=${output_dir} --working_dir=${workdir} tests"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
@@ -39,7 +39,7 @@ run_pytest_cmd () {
     cwd_mount="-v ${PWD}/tests:/rundir:rw"
     PYTEST_RUN="docker run --rm -ti -u $(id -u) -w /rundir --entrypoint pytest "
     PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cwd_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} "
-    PYTEST_RUN+="--data_dir=/bids-input --output_dir=/out participant --working_dir=/work /rundir"
+    PYTEST_RUN+="--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /rundir"
 
   fi
 
@@ -53,8 +53,7 @@ get_config_data ${TESTDIR}
 
 # Get the data outside of running the tests
 get_bids_data ${TESTDIR} sub01
-get_bids_data ${TESTDIR} fmriprep_colornest
-get_bids_data ${TESTDIR} freesurfer_colornest
+get_bids_data ${TESTDIR} ds001419-fmriprep
 
 CFG=${TESTDIR}/data/nipype.cfg
 export FS_LICENSE=${TESTDIR}/data/license.txt
@@ -63,10 +62,12 @@ TESTNAME=run_pytest
 setup_dir ${TESTDIR}/${TESTNAME}
 TEMPDIR=${TESTDIR}/${TESTNAME}/work
 OUTPUT_DIR=${TESTDIR}/${TESTNAME}/derivatives
-BIDS_INPUT_DIR=${TESTDIR}/data
+BIDS_INPUT_DIR=${TESTDIR}
 
 # build the pytest command so it works both ways
 PYTEST_CMD=$(run_pytest_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 # Run it!
+echo ${PYTEST_CMD}
+
 ${PYTEST_CMD}

@@ -1,7 +1,10 @@
 """Custom wb_command interfaces."""
+import os
 
+import nibabel as nb
 from nipype import logging
 from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
     CommandLineInputSpec,
     File,
     SimpleInterface,
@@ -10,63 +13,62 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.workbench.base import WBCommand
 
-from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.filemanip import fname_presuffix, split_filename
+from xcp_d.utils.write_save import get_cifti_intents
 
 iflogger = logging.getLogger("nipype.interface")
 
 
-class _ConvertWarpfieldInputSpec(CommandLineInputSpec):
-    """Input specification for ConvertWarpfield."""
-
-    fromwhat = traits.Str(
-        mandatory=True,
-        argstr="-from-%s ",
-        position=0,
-        desc="world, itk, or fnirt",
-    )
-
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        argstr="%s ",
-        position=1,
-        desc="The input file",
-    )
-
-    towhat = traits.Str(
-        mandatory=True,
-        argstr="-to-%s ",
-        position=2,
-        desc="world, itk, or fnirt",
-    )
-
-    out_file = traits.File(
-        argstr="%s",
-        name_source="in_file",
-        name_template="%s_converted.nii.gz",
-        keep_extension=False,
-        position=3,
-    )
-
-    source_volume = File(
-        argstr="%s ",
-        position=4,
-        desc="fnirt source volume",
-    )
+class _FixCiftiIntentInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc="CIFTI file to check.")
 
 
-class _ConvertWarpfieldOutputSpec(TraitedSpec):
-    """Output specification for ConvertWarpfield."""
-
-    out_file = File(exists=True, desc="output file")
+class _FixCiftiIntentOutputSpec(TraitedSpec):
+    out_file = File(exists=True, mandatory=True, desc="Fixed CIFTI file.")
 
 
-class ConvertWarpfield(WBCommand):
-    """Interface for wb_command's -convert-warpfield command."""
+class FixCiftiIntent(SimpleInterface):
+    """This is not technically a Connectome Workbench interface, but it is related.
 
-    input_spec = _ConvertWarpfieldInputSpec
-    output_spec = _ConvertWarpfieldOutputSpec
-    _cmd = "wb_command -convert-warpfield "
+    CiftiSmooth (-cifti-smooth) overwrites the output file's intent to match a dtseries extension,
+    even when it is a dscalar file.
+    This interface sets the appropriate intent based on the extension.
+
+    We initially tried using a _post_run_hook in a modified version of the CiftiSmooth interface,
+    but felt that the errors being raised were too opaque.
+
+    If in_file has the correct intent code, it will be returned without modification.
+    """
+
+    input_spec = _FixCiftiIntentInputSpec
+    output_spec = _FixCiftiIntentOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+
+        cifti_intents = get_cifti_intents()
+        _, _, out_extension = split_filename(in_file)
+        target_intent = cifti_intents.get(out_extension, None)
+
+        if target_intent is None:
+            raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
+
+        img = nb.load(in_file)
+        out_file = in_file
+        # modify the intent if necessary, and write out the modified file
+        if img.nifti_header.get_intent()[0] != target_intent:
+            out_file = fname_presuffix(
+                self.inputs.in_file,
+                suffix="_modified",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+
+            img.nifti_header.set_intent(target_intent)
+            img.to_filename(out_file)
+
+        self._results["out_file"] = out_file
+        return runtime
 
 
 class _ConvertAffineInputSpec(CommandLineInputSpec):
@@ -153,14 +155,16 @@ class _ApplyAffineOutputSpec(TraitedSpec):
 class ApplyAffine(WBCommand):
     """Interface for wb_command's -surface-apply-affine command.
 
-    wb_command -surface-apply-affine
-       <in-surf> - the surface to transform
-       <affine> - the affine file
-       <out-surf> - output - the output transformed surface
+    .. code-block::
 
-       [-flirt] - MUST be used if affine is a flirt affine
-          <source-volume> - the source volume used when generating the affine
-          <target-volume> - the target volume used when generating the affine
+        wb_command -surface-apply-affine
+            <in-surf> - the surface to transform
+            <affine> - the affine file
+            <out-surf> - output - the output transformed surface
+
+            [-flirt] - MUST be used if affine is a flirt affine
+                <source-volume> - the source volume used when generating the affine
+                <target-volume> - the target volume used when generating the affine
 
     For flirt matrices, you must use the -flirt option, because flirt
     matrices are not a complete description of the coordinate transform they
@@ -217,13 +221,15 @@ class _ApplyWarpfieldOutputSpec(TraitedSpec):
 class ApplyWarpfield(WBCommand):
     """Apply warpfield to surface file.
 
-    wb_command -surface-apply-warpfield
-        <in-surf> - the surface to transform
-        <warpfield> - the INVERSE warpfield
-        <out-surf> - output - the output transformed surface
+    .. code-block::
 
-        [-fnirt] - MUST be used if using a fnirt warpfield
-            <forward-warp> - the forward warpfield
+        wb_command -surface-apply-warpfield
+            <in-surf> - the surface to transform
+            <warpfield> - the INVERSE warpfield
+            <out-surf> - output - the output transformed surface
+
+            [-fnirt] - MUST be used if using a fnirt warpfield
+                <forward-warp> - the forward warpfield
 
     Warping a surface requires the INVERSE of the warpfield used to warp the volume it lines up
     with.
@@ -285,11 +291,13 @@ class _SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
 class SurfaceSphereProjectUnproject(WBCommand):
     """Copy registration deformations to different sphere.
 
-    wb_command -surface-sphere-project-unproject
-    <sphere-in> - a sphere with the desired output mesh
-    <sphere-project-to> - a sphere that aligns with sphere-in
-    <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
-    <sphere-out> - output - the output sphere
+    .. code-block::
+
+        wb_command -surface-sphere-project-unproject
+            <sphere-in> - a sphere with the desired output mesh
+            <sphere-project-to> - a sphere that aligns with sphere-in
+            <sphere-unproject-from> - <sphere-project-to> deformed to the desired output space
+            <sphere-out> - output - the output sphere
     """
 
     input_spec = _SurfaceSphereProjectUnprojectInputSpec
@@ -314,10 +322,7 @@ class ChangeXfmType(SimpleInterface):
     def _run_interface(self, runtime):
         with open(self.inputs.in_transform) as f:
             lines = f.readlines()
-        listcomp = [
-            line.replace("AffineTransform", "MatrixOffsetTransformBase")
-            for line in lines
-        ]
+        listcomp = [line.replace("AffineTransform", "MatrixOffsetTransformBase") for line in lines]
         outfile = fname_presuffix(
             self.inputs.in_transform,
             suffix="_MatrixOffsetTransformBase",
@@ -367,17 +372,18 @@ class _SurfaceAverageOutputSpec(TraitedSpec):
 class SurfaceAverage(WBCommand):
     """Average surface files together.
 
-    wb_command -surface-average
-    <surface-out> - output - the output averaged surface
-    [-stddev] - compute 3D sample standard deviation
-       <stddev-metric-out> - output - the output metric for 3D sample
-          standard deviation
-    [-uncertainty] - compute caret5 'uncertainty'
-       <uncert-metric-out> - output - the output metric for uncertainty
-    [-surf] - repeatable - specify a surface to include in the average
-       <surface> - a surface file to average
-       [-weight] - specify a weighted average
-          <weight> - the weight to use (default 1)
+    .. code-block::
+
+        wb_command -surface-average
+            <surface-out> - output - the output averaged surface
+            [-stddev] - compute 3D sample standard deviation
+                <stddev-metric-out> - output - the output metric for 3D sample standard deviation
+            [-uncertainty] - compute caret5 'uncertainty'
+                <uncert-metric-out> - output - the output metric for uncertainty
+            [-surf] - repeatable - specify a surface to include in the average
+                <surface> - a surface file to average
+            [-weight] - specify a weighted average
+                <weight> - the weight to use (default 1)
 
     The 3D sample standard deviation is computed as
     'sqrt(sum(squaredlength(xyz - mean(xyz)))/(n - 1))'.
@@ -441,19 +447,21 @@ class _SurfaceGenerateInflatedOutputSpec(TraitedSpec):
 class SurfaceGenerateInflated(WBCommand):
     """Generate inflated surface.
 
-    wb_command -surface-generate-inflated
-       <anatomical-surface-in> - the anatomical surface
-       <inflated-surface-out> - output - the output inflated surface
-       <very-inflated-surface-out> - output - the output very inflated surface
+    .. code-block::
 
-       [-iterations-scale] - optional iterations scaling
-          <iterations-scale-value> - iterations-scale value
+        wb_command -surface-generate-inflated
+        <anatomical-surface-in> - the anatomical surface
+        <inflated-surface-out> - output - the output inflated surface
+        <very-inflated-surface-out> - output - the output very inflated surface
 
-       Generate inflated and very inflated surfaces. The output surfaces are
-       'matched' (have same XYZ range) to the anatomical surface. In most cases,
-       an iterations-scale of 1.0 (default) is sufficient.  However, if the
-       surface contains a large number of vertices (150,000), try an
-       iterations-scale of 2.5.
+        [-iterations-scale] - optional iterations scaling
+            <iterations-scale-value> - iterations-scale value
+
+    Generate inflated and very inflated surfaces. The output surfaces are
+    'matched' (have same XYZ range) to the anatomical surface. In most cases,
+    an iterations-scale of 1.0 (default) is sufficient.  However, if the
+    surface contains a large number of vertices (150,000), try an
+    iterations-scale of 2.5.
     """
 
     input_spec = _SurfaceGenerateInflatedInputSpec
@@ -674,7 +682,7 @@ class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
         keep_extension=True,
         argstr=" %s",
         position=3,
-        desc="The gifti output, iether left and right",
+        desc="The gifti output, either left and right",
     )
 
 
@@ -706,3 +714,357 @@ class CiftiSeparateMetric(WBCommand):
     input_spec = _CiftiSeparateMetricInputSpec
     output_spec = _CiftiSeparateMetricOutputSpec
     _cmd = "wb_command  -cifti-separate "
+
+
+class _CiftiSeparateVolumeAllInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSeparateVolumeAll command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The input dense series",
+    )
+    direction = traits.Enum(
+        "ROW",
+        "COLUMN",
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="which dimension to smooth along, ROW or COLUMN",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="%s_volumetric_data.nii.gz",
+        keep_extension=False,
+        argstr="-volume-all %s -crop",
+        position=2,
+        desc="The NIFTI output.",
+    )
+    label_file = File(
+        name_source=["in_file"],
+        name_template="%s_labels.nii.gz",
+        keep_extension=False,
+        argstr="-label %s",
+        position=3,
+        desc="A discrete segmentation NIFTI output.",
+    )
+
+
+class _CiftiSeparateVolumeAllOutputSpec(TraitedSpec):
+    """Output specification for the CiftiSeparateVolumeAll command."""
+
+    label_file = File(exists=True, desc="NIFTI file with labels.")
+    out_file = File(exists=True, desc="NIFTI file with volumetric data.")
+
+
+class CiftiSeparateVolumeAll(WBCommand):
+    """Extract volumetric data from CIFTI file (.dtseries).
+
+    Other structures can also be extracted.
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,
+
+    Examples
+    --------
+    >>> ciftiseparate = CiftiSeparateVolumeAll()
+    >>> ciftiseparate.inputs.in_file = 'sub-01_task-rest.dtseries.nii'
+    >>> ciftiseparate.inputs.out_file = 'sub_01_task-rest_volumetric_data.nii.gz'
+    >>> ciftiseparate.inputs.label_file = 'sub_01_task-rest_labels.nii.gz'
+    >>> ciftiseparate.inputs.direction = 'COLUMN'
+    >>> ciftiseparate.cmdline
+    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii' COLUMN \
+        -volume-all 'sub_01_task-rest_volumetric_data.nii.gz' \
+        -label 'sub_01_task-rest_labels.nii.gz'
+    """
+
+    input_spec = _CiftiSeparateVolumeAllInputSpec
+    output_spec = _CiftiSeparateVolumeAllOutputSpec
+    _cmd = "wb_command  -cifti-separate "
+
+
+class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiSeparateVolumeAll command."""
+
+    out_file = File(
+        name_source=["volume_data"],
+        name_template="%s_combined.dscalar.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=0,
+        desc="The CIFTI output.",
+    )
+    left_metric = File(
+        exists=True,
+        mandatory=True,
+        argstr="-left-metric %s",
+        position=1,
+        desc="The input surface data from the left hemisphere.",
+    )
+    right_metric = File(
+        exists=True,
+        mandatory=True,
+        argstr="-right-metric %s",
+        position=2,
+        desc="The input surface data from the right hemisphere.",
+    )
+    volume_data = File(
+        exists=True,
+        mandatory=True,
+        argstr="-volume %s",
+        position=3,
+        desc="The input volumetric data.",
+    )
+    structure_label_volume = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=4,
+        desc="A label file indicating the structure of each voxel in volume_data.",
+    )
+
+
+class _CiftiCreateDenseScalarOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCreateDenseScalar command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCreateDenseScalar(WBCommand):
+    """Extract volumetric data from CIFTI file (.dtseries).
+
+    Other structures can also be extracted.
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries,
+
+    Examples
+    --------
+    >>> cifticreatedensescalar = CiftiCreateDenseScalar()
+    >>> cifticreatedensescalar.inputs.out_file = 'sub_01_task-rest.dscalar.nii'
+    >>> cifticreatedensescalar.inputs.left_metric = 'sub_01_task-rest_hemi-L.func.gii'
+    >>> cifticreatedensescalar.inputs.left_metric = 'sub_01_task-rest_hemi-R.func.gii'
+    >>> cifticreatedensescalar.inputs.volume_data = 'sub_01_task-rest_subcortical.nii.gz'
+    >>> cifticreatedensescalar.inputs.structure_label_volume = 'sub_01_task-rest_labels.nii.gz'
+    >>> cifticreatedensescalar.cmdline
+    wb_command -cifti-create-dense-scalar 'sub_01_task-rest.dscalar.nii' \
+        -left-metric 'sub_01_task-rest_hemi-L.func.gii' \
+        -right-metric 'sub_01_task-rest_hemi-R.func.gii' \
+        -volume-data 'sub_01_task-rest_subcortical.nii.gz' 'sub_01_task-rest_labels.nii.gz'
+    """
+
+    input_spec = _CiftiCreateDenseScalarInputSpec
+    output_spec = _CiftiCreateDenseScalarOutputSpec
+    _cmd = "wb_command -cifti-create-dense-scalar"
+
+
+class _ShowSceneInputSpec(CommandLineInputSpec):
+    scene_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+    )
+    scene_name_or_number = traits.Either(
+        traits.Int,
+        traits.Str,
+        mandatory=True,
+        position=1,
+        argstr="%s",
+        desc="name or number (starting at one) of the scene in the scene file",
+    )
+    out_file = File(
+        exists=False,
+        mandatory=False,
+        argstr="%s",
+        genfile=True,
+        position=2,
+        desc="output image file name",
+    )
+    image_width = traits.Int(
+        mandatory=True,
+        argstr="%s",
+        position=3,
+        desc="width of output image(s), in pixels",
+    )
+    image_height = traits.Int(
+        mandatory=True,
+        argstr="%s",
+        position=4,
+        desc="height of output image(s), in pixels",
+    )
+
+
+class _ShowSceneOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="output image file name")
+
+
+class ShowScene(WBCommand):
+    """Offscreen rendering of scene to an image file.
+
+    Notes
+    -----
+    wb_command -show-scene
+        <scene-file> - scene file
+        <scene-name-or-number> - name or number (starting at one) of the scene in
+            the scene file
+        <image-file-name> - output image file name
+        <image-width> - width of output image(s), in pixels
+        <image-height> - height of output image(s), in pixels
+
+        [-use-window-size] - Override image size with window size
+
+        [-no-scene-colors] - Do not use background and foreground colors in scene
+
+        [-set-map-yoke] - Override selected map index for a map yoking group.
+            <Map Yoking Roman Numeral> - Roman numeral identifying the map yoking
+            group (I, II, III, IV, V, VI, VII, VIII, IX, X)
+            <Map Index> - Map index for yoking group.  Indices start at 1 (one)
+
+        [-conn-db-login] - Login for scenes with files in Connectome Database
+            <Username> - Connectome DB Username
+            <Password> - Connectome DB Password
+
+        Render content of browser windows displayed in a scene into image
+        file(s).  The image file name should be similar to "capture.png".  If
+        there is only one image to render, the image name will not change.  If
+        there is more than one image to render, an index will be inserted into
+        the image name: "capture_01.png", "capture_02.png" etc.
+
+        If the scene references files in the Connectome Database,
+        the "-conn-db-login" option is available for providing the
+        username and password.  If this options is not specified,
+        the username and password stored in the user's preferences
+        is used.
+
+        The image format is determined by the image file extension.
+        The available image formats may vary by operating system.
+        Image formats available on this system are:
+            bmp
+            jpeg
+            jpg
+            png
+            ppm
+            tif
+            tiff
+
+        The result of using the "-use-window-size" option
+        is dependent upon the version used to create the scene.
+            * Versions 1.2 and newer contain the width and
+            height of the graphics region.  The output image
+            will be the width and height from the scene and
+            the image width and height specified on the command
+            line is ignored.
+            * If the scene does not contain the width and height
+            of the graphics region, the width and height specified
+            on the command line is used for the size of the
+            output image.
+    """
+
+    input_spec = _ShowSceneInputSpec
+    output_spec = _ShowSceneOutputSpec
+    _cmd = "wb_command -show-scene"
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_outfilename())
+        return outputs
+
+    def _gen_filename(self, name):
+        if name == "out_file":
+            return self._gen_outfilename()
+        else:
+            return None
+
+    def _gen_outfilename(self):
+        frame_number = self.inputs.scene_name_or_number
+        if isinstance(frame_number, int):
+            # Add a bunch of leading zeros for easy sorting
+            out_file = f"frame_{frame_number:06g}.png"
+        else:
+            out_file = f"frame_{frame_number}.png"
+
+        return out_file
+
+
+class _CiftiConvertInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiConvert command."""
+
+    target = traits.Enum(
+        "from",
+        "to",
+        mandatory=True,
+        position=0,
+        argstr="-%s-nifti",
+        desc="Convert either to or from nifti.",
+    )
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="The input file.",
+    )
+    cifti_template = File(
+        exists=True,
+        mandatory=False,
+        argstr="%s",
+        position=2,
+        desc="A cifti file with the dimension(s) and mapping(s) that should be used.",
+    )
+    TR = traits.Float(
+        mandatory=False,
+        desc="Repetition time in seconds. Used to reset timepoints.",
+        position=4,
+        argstr="-reset-timepoints %s 0",
+    )
+    out_file = File(
+        exists=True,
+        mandatory=False,
+        genfile=True,
+        argstr="%s",
+        position=3,
+        desc="The output file.",
+    )
+
+
+class _CiftiConvertOutputSpec(TraitedSpec):
+    """Output specification for the CiftiConvert command."""
+
+    out_file = File(
+        exists=True,
+        desc="The output file.",
+    )
+
+
+class CiftiConvert(WBCommand):
+    """Convert between CIFTI and NIFTI file formats.
+
+    Examples
+    --------
+    >>> cifticonvert = CiftiConvert()
+    >>> cifticonvert.inputs.in_file = 'sub-01_task-rest_bold.dscalar.nii'
+    >>> cifticonvert.target = "to"
+    >>> cifticonvert.cmdline
+    wb_command -cifti-convert -to-nifti 'sub-01_task-rest_bold.dscalar.nii' \
+        'sub-01_task-rest_bold_converted.nii.gz'
+    """
+
+    input_spec = _CiftiConvertInputSpec
+    output_spec = _CiftiConvertOutputSpec
+    _cmd = "wb_command -cifti-convert"
+
+    def _gen_filename(self, name):
+        if name == "out_file":
+            _, fname, ext = split_filename(self.inputs.in_file)
+            # if we want to support other cifti outputs, we'll need to change this.
+            ext = ".dtseries.nii" if self.inputs.target == "from" else ".nii.gz"
+            output = fname + "_converted" + ext
+            return output
+        else:
+            return None
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
