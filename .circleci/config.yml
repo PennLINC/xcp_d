@@ -105,7 +105,7 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
       - persist_to_workspace:
-          root: /tmp
+          root: /src
           paths:
               - src/coverage/.coverage.fmriprep_without_freesurfer
       - store_artifacts:
@@ -134,7 +134,7 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
       - persist_to_workspace:
-          root: /tmp
+          root: /src
           paths:
               - src/coverage/.coverage.ds001419_nifti
       - store_artifacts:
@@ -163,7 +163,7 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
       - persist_to_workspace:
-          root: /tmp
+          root: /src
           paths:
               - src/coverage/.coverage.nibabies
       - store_artifacts:
@@ -192,7 +192,7 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
       - persist_to_workspace:
-          root: /tmp
+          root: /src
           paths:
               - src/coverage/.coverage.ds001419_cifti
       - store_artifacts:
@@ -225,7 +225,7 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pytests
       - persist_to_workspace:
-          root: /tmp
+          root: /src
           paths:
               - src/coverage/.coverage.pytests
 
@@ -235,7 +235,7 @@ jobs:
       - image: continuumio/miniconda3
     steps:
       - attach_workspace:
-          at: /tmp
+          at: /src/coverage
       - checkout
       - restore_cache:
           key: conda-py37-v2-{{ checksum "setup.cfg" }}
