@@ -28,31 +28,46 @@ def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
         extracted timeseries filename
     """
     import os
+    import warnings
 
+    import numpy as np
     import pandas as pd
     from nilearn.input_data import NiftiLabelsMasker
 
     timeseries_file = os.path.abspath("timeseries.tsv")
 
     node_labels_df = pd.read_table(node_labels_file, index_col="index")
+    node_labels = node_labels_df["node"].tolist()
 
     # Extract time series with nilearn
     masker = NiftiLabelsMasker(
         labels_img=atlas,
+        labels=node_labels,
         mask_img=mask,
         smoothing_fwhm=None,
         standardize=False,
+        resampling_target=None,  # they should be in the same space/resolution already
     )
     timeseries_arr = masker.fit_transform(in_file)
 
-    if timeseries_arr.shape[1] != node_labels_df.shape[0]:
-        raise ValueError(
+    if timeseries_arr.shape[1] != len(node_labels):
+        warnings.warn(
             f"The number of detected nodes ({timeseries_arr.shape[1]}) does not equal "
-            f"the number of expected nodes ({node_labels_df.shape[0]}) in {atlas}."
+            f"the number of expected nodes ({len(node_labels)}) in {atlas}."
         )
 
+        new_timeseries_arr = np.zeros(
+            (timeseries_arr.shape[0], len(node_labels)),
+            dtype=timeseries_arr.dtype,
+        )
+        for col in range(timeseries_arr.shape[1]):
+            label_col = int(masker.labels_[col]) - 1
+            new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
+
+        timeseries_arr = new_timeseries_arr
+
     # The time series file is tab-delimited, with node names included in the first row.
-    timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels_df["node"].tolist())
+    timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
     timeseries_df.to_csv(timeseries_file, sep="\t", index=False)
 
     return timeseries_file

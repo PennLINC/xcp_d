@@ -107,7 +107,7 @@ class ConnectPlot(SimpleInterface):
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
             atlas_file = self.inputs.correlation_tsvs[atlas_idx]
 
-            correlations_df = pd.read_table(atlas_file)
+            correlations_df = pd.read_table(atlas_file, index_col="Node")
 
             plot_matrix(
                 mat=correlations_df.to_numpy(),
