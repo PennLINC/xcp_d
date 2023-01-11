@@ -101,14 +101,14 @@ def get_atlas_cifti(atlas_name):
         if atlas_name[8:12] == "1017":
             atlas_file = pkgrf(
                 "xcp_d",
-                "data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order.dlabel.nii",
+                "data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order_fsLR_32k.dlabel.nii",
             )
         else:
             atlas_file = pkgrf(
                 "xcp_d",
                 (
                     "data/ciftiatlas/"
-                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order.dlabel.nii"
+                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_fsLR_32k.dlabel.nii"
                 ),
             )
     elif atlas_name == "Glasser":
