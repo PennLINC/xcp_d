@@ -134,7 +134,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     extract_parcel_timeseries = pe.MapNode(
         Function(
-            input_names=["in_file", "atlas", "node_labels_file"],
+            input_names=["in_file", "atlas", "mask", "node_labels_file"],
             output_names=["timeseries"],
             function=extract_timeseries_funct,
         ),
@@ -168,7 +168,10 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
                                                    ("template_to_t1w", "template_to_t1w"),
                                                    ("t1w_to_native", "t1w_to_native")]),
         (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
-        (inputnode, extract_parcel_timeseries, [("clean_bold", "in_file")]),
+        (inputnode, extract_parcel_timeseries, [
+            ("clean_bold", "in_file"),
+            ("bold_mask", "mask"),
+        ]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
