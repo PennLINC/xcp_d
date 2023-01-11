@@ -15,8 +15,6 @@ xcp_d/data/ds001419-example.tar.gz
 xcp_surface/.DS_Store
 .DS_Store
 *.pyc
-*.tsv
-*.pyc
 .eggs
 .Rhistory
 *.egg-info

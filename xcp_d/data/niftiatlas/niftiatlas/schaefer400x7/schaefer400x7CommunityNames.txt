@@ -1,7 +1,0 @@
-visual
-somatomotor
-dorsalAttention
-salienceVentralAttention
-limbic
-frontoparietalControl
-default

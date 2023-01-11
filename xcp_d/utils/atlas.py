@@ -52,24 +52,24 @@ def get_atlas_nifti(atlas_name):
         if atlas_name[8:12] == "1017":
             atlas_file = pkgrf(
                 "xcp_d",
-                "data/niftiatlas/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii",
+                "data/niftiatlas/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii.gz",
             )
         else:
             atlas_file = pkgrf(
                 "xcp_d",
                 (
                     "data/niftiatlas/"
-                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_FSLMNI152_2mm.nii"
+                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_FSLMNI152_2mm.nii.gz"
                 ),
             )
     elif atlas_name == "Glasser":
-        atlas_file = pkgrf("xcp_d", "data/niftiatlas/glasser360/glasser360MNI.nii.gz")
+        atlas_file = pkgrf("xcp_d", "data/niftiatlas/Glasser_360Parcels_FSLMNI152_2mm.nii.gz")
     elif atlas_name == "Gordon":
-        atlas_file = pkgrf("xcp_d", "data/niftiatlas/gordon333/gordon333MNI.nii.gz")
+        atlas_file = pkgrf("xcp_d", "data/niftiatlas/Gordon_333Parcels_FSLMNI152_2mm.nii.gz")
     elif atlas_name == "subcortical":
         atlas_file = pkgrf(
             "xcp_d",
-            "data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz",
+            "data/niftiatlas/Tian_FSLMNI152_2mm.nii.gz",
         )
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
