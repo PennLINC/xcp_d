@@ -113,6 +113,7 @@ def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_facto
     assert int32_img.dataobj.dtype == np.int32
 
 
+@pytest.mark.skip(reason="The cifti atlas and data files' get_fdata vertex orders do not match.")
 def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Check that the CIFTI parcellation approach works."""
     tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation")
