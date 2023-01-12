@@ -446,18 +446,7 @@ def concatenate_derivatives(
                             **space_entities,
                         )
                         concat_file = _get_concat_name(layout_xcpd, atlas_timeseries_files[0])
-                        if atlas_timeseries_files[0].extension == ".tsv":
-                            concatenate_tsv_files(atlas_timeseries_files, concat_file)
-                        elif atlas_timeseries_files[0].extension == ".ptseries.nii":
-                            _concatenate_niimgs(
-                                atlas_timeseries_files,
-                                concat_file,
-                                dummy_scans=0,
-                            )
-                        else:
-                            raise ValueError(
-                                f"Unknown extension for {atlas_timeseries_files[0].path}"
-                            )
+                        concatenate_tsv_files(atlas_timeseries_files, concat_file)
 
 
 def make_dcan_df(fds_files, name, TR):
@@ -540,17 +529,9 @@ def concatenate_tsv_files(tsv_files, fileout):
     fileout : str
         Path to the file that will be written out.
     """
-    # TODO: Support headers in timeseries files
-    if tsv_files[0].path.endswith("timeseries.tsv"):
-        # timeseries files have no header
-        data = [np.loadtxt(tsv_file.path, delimiter="\t") for tsv_file in tsv_files]
-        data = np.vstack(data)
-        np.savetxt(fileout, data, fmt="%.5f", delimiter="\t")
-    else:
-        # other tsv files have a header
-        data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
-        data = pd.concat(data, axis=0)
-        data.to_csv(fileout, sep="\t", index=False)
+    data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
+    data = pd.concat(data, axis=0)
+    data.to_csv(fileout, sep="\t", index=False)
     return fileout
 
 
