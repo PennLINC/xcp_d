@@ -604,8 +604,10 @@ produced by the regression.
             ("bold_mask", "inputnode.bold_mask"),
             ('ref_file', 'inputnode.ref_file'),
         ]),
-        (inputnode, connectivity_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
-                                 ('t1w_to_native', 'inputnode.t1w_to_native')]),
+        (inputnode, connectivity_wf, [
+            ('template_to_t1w', 'inputnode.template_to_t1w'),
+            ('t1w_to_native', 'inputnode.t1w_to_native'),
+        ]),
         (filtering_wf, connectivity_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
