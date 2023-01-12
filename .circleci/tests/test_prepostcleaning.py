@@ -66,8 +66,8 @@ def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_facto
 
     float_file = fmriprep_with_freesurfer_data["cifti_file"]
 
-    float64_file = os.path.join(tmpdir, "float64.nii.gz")
-    int64_file = os.path.join(tmpdir, "int64.nii.gz")
+    float64_file = os.path.join(tmpdir, "float64.dtseries.nii")
+    int64_file = os.path.join(tmpdir, "int64.dtseries.nii")
 
     # Create a float64 image to downcast
     float_img = nb.load(float_file)
