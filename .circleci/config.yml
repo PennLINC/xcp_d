@@ -230,9 +230,7 @@ jobs:
               - .coverage.pytests
 
   merge_coverage:
-    working_directory: /src/coverage
-    docker:
-      - image: continuumio/miniconda3
+    <<: *dockersetup
     steps:
       - attach_workspace:
           at: /src/coverage
