@@ -173,7 +173,7 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
             dcanfunfiles = [sbref, dtsereis, tw1tonative, tw1tonative, volume]
 
             TR = nb.load(volume).header.get_zooms()[-1]  # repetition time
-            jsontis = {"RepetitionTime": np.float(TR), "TaskName": taskname}
+            jsontis = {"RepetitionTime": float(TR), "TaskName": taskname}
 
             json2 = {
                 "grayordinates": "91k",

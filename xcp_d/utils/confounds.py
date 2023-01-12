@@ -589,7 +589,7 @@ def motion_regression_filter(
         bandwidth = np.abs(Wd)  # bandwidth
         # create filter coefficients
         filt_num, filt_denom = iirnotch(Wn, Wn / bandwidth)
-        num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
+        num_f_apply = np.floor(order / 2).astype(int)  # how many times to apply filter
 
     for i_iter in range(num_f_apply):
         for j_row in range(data.shape[0]):  # apply filters across columns

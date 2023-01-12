@@ -440,8 +440,8 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     nyq = 0.5 * fs  # nyquist frequency
 
     # normalize the cutoffs
-    lowcut = np.float(highpass) / nyq
-    highcut = np.float(lowpass) / nyq
+    lowcut = float(highpass) / nyq
+    highcut = float(lowpass) / nyq
 
     b, a = butter(order / 2, [lowcut, highcut], btype="band")  # get filter coeff
 

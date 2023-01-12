@@ -286,7 +286,7 @@ def hcpfmriprepx(hcp_dir, out_dir, sub_id):
         niftip = k + "/" + filenamex + ".nii.gz"
         TR = nb.load(niftip).header.get_zooms()[-1]  # repetition time
 
-        jsontis = {"RepetitionTime": np.float(TR), "TaskName": idx[1]}
+        jsontis = {"RepetitionTime": float(TR), "TaskName": idx[1]}
 
         json2 = {
             "grayordinates": "91k",
