@@ -84,10 +84,8 @@ def concatenate_derivatives(
     )
 
     if cifti:
-        tsv_extensions = [".ptseries.nii"]
         img_extensions = [".dtseries.nii"]
     else:
-        tsv_extensions = [".tsv"]
         img_extensions = [".nii.gz"]
 
     for subject in subjects:
@@ -435,7 +433,7 @@ def concatenate_derivatives(
                     # Now timeseries files
                     atlases = layout_xcpd.get_atlases(
                         suffix="timeseries",
-                        extension=tsv_extensions,
+                        extension=".tsv",
                         **space_entities,
                     )
                     for atlas in atlases:
@@ -444,7 +442,7 @@ def concatenate_derivatives(
                             run=runs,
                             atlas=atlas,
                             suffix="timeseries",
-                            extension=tsv_extensions,
+                            extension=".tsv",
                             **space_entities,
                         )
                         concat_file = _get_concat_name(layout_xcpd, atlas_timeseries_files[0])
