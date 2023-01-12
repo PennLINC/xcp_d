@@ -20,7 +20,7 @@ from xcp_d.utils.utils import extract_ptseries, get_std2bold_xforms
 def init_nifti_functional_connectivity_wf(
     mem_gb,
     omp_nthreads,
-    name="nifti_fcon_wf",
+    name="connectivity_wf",
 ):
     """Extract BOLD time series and compute functional connectivity.
 
@@ -33,7 +33,7 @@ def init_nifti_functional_connectivity_wf(
             wf = init_nifti_functional_connectivity_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="nifti_fcon_wf",
+                name="connectivity_wf",
             )
 
     Parameters
@@ -41,7 +41,7 @@ def init_nifti_functional_connectivity_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "nifti_fcon_wf".
+        Default is "connectivity_wf".
 
     Inputs
     ------
@@ -199,7 +199,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 def init_cifti_functional_connectivity_wf(
     mem_gb,
     omp_nthreads,
-    name="cifti_fcon_wf",
+    name="connectivity_wf",
 ):
     """Extract CIFTI time series.
 
@@ -212,13 +212,15 @@ def init_cifti_functional_connectivity_wf(
             wf = init_cifti_functional_connectivity_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="cifti_fcon_wf",
+                name="connectivity_wf",
             )
 
     Parameters
     ----------
     %(mem_gb)s
     %(omp_nthreads)s
+    %(name)s
+        Default is "connectivity_wf".
 
     Inputs
     ------
