@@ -64,7 +64,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Read that into a df
     df = pd.read_table(corr_mat_file, index_col="Node")
     xcp_array = df.to_numpy()
-    assert xcp_array.shape == (1000, 1000)
+    assert xcp_array.shape == (400, 400)
 
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = os.path.join(
@@ -86,7 +86,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # The "ground truth" matrix
     ground_truth = np.corrcoef(signals.T)
-    assert ground_truth.shape == (1000, 1000)
+    assert ground_truth.shape == (400, 400)
 
     # ds001491 data doesn't have complete coverage, so we must allow NaNs here.
     assert np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True)
@@ -126,7 +126,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     parc_file = os.path.join(
         connectivity_wf.base_dir,
         "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
-        "parcellated_inset_converted_residualized_filtered.dtseries.nii",
+        "parcellated_fake_signal_file.dtseries.nii",
     )
     assert os.path.isfile(parc_file)
 
