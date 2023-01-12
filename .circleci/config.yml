@@ -232,9 +232,10 @@ jobs:
   merge_coverage:
     <<: *dockersetup
     steps:
-      - run: *runinstall
+      - checkout
       - attach_workspace:
           at: /src/coverage
+      - run: *runinstall
       - run:
           name: Merge coverage files
           command: |
