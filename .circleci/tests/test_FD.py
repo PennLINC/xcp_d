@@ -7,21 +7,12 @@ import pandas as pd
 from xcp_d.interfaces.prepostcleaning import CensorScrub
 
 
-def test_fd_interface_cifti(data_dir, tmp_path_factory):
+def test_fd_interface_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Check results."""
     tmpdir = tmp_path_factory.mktemp("test_fd_interface_cifti")
+    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
 
-    data_dir = os.path.join(data_dir, "fmriprepwithfreesurfer")
-    boldfile = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii",
-    )
-    confounds_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_desc-confounds_timeseries.tsv",
-    )
     df = pd.read_table(confounds_file)
 
     # Replace confounds tsv values with values that should be omitted

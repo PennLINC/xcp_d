@@ -9,11 +9,8 @@ from pathlib import Path
 import nibabel as nb
 import numpy as np
 from nipype.interfaces.ants import ApplyTransforms
-from scipy.signal import butter, detrend, filtfilt
-from sklearn.linear_model import LinearRegression
+from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
-
-from xcp_d.utils.doc import fill_doc
 
 
 def _t12native(fname):
@@ -145,22 +142,16 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     Only used for QCReport in init_boldpostprocess_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    import os
-    import re
-
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.utils.bids import get_entity
+
     # Extract the space of the BOLD file
-    file_base = os.path.basename(bold_file)
-    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not bold_space:
-        bold_space = "native"
-    else:
-        bold_space = bold_space[0]
+    bold_space = get_entity(bold_file, "space")
 
     if bold_space in ("native", "T1w"):
-        base_std_space = re.findall("from-([a-zA-Z0-9]+)", template_to_t1w)[0]
+        base_std_space = get_entity(template_to_t1w, "from")
     elif f"from-{bold_space}" not in template_to_t1w:
         raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
 
@@ -279,22 +270,18 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
     Can easily be added in the future.
     """
     import os
-    import re
 
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.utils.bids import get_entity
+
     # Extract the space of the BOLD file
-    file_base = os.path.basename(bold_file)
-    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not bold_space:
-        bold_space = "native"
-    else:
-        bold_space = bold_space[0]
+    bold_space = get_entity(bold_file, "space")
 
     # Check that the MNI-to-T1w xform is from the right space
     if bold_space in ("native", "T1w"):
-        base_std_space = re.findall("from-([a-zA-Z0-9]+)", template_to_t1w)[0]
+        base_std_space = get_entity(template_to_t1w, "from")
     elif f"from-{bold_space}" not in template_to_t1w:
         raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
 
@@ -363,6 +350,7 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
             transform_list = [t1w_to_native, template_to_t1w]
 
     else:
+        file_base = os.path.basename(bold_file)
         raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
 
     return transform_list
@@ -382,123 +370,6 @@ def fwhm2sigma(fwhm):
         Sigma.
     """
     return fwhm / np.sqrt(8 * np.log(2))
-
-
-@fill_doc
-def stringforparams(params):
-    """Infer nuisance regression description from parameter set.
-
-    Parameters
-    ----------
-    %(params)s
-
-    Returns
-    -------
-    bsignal : str
-        String describing the parameters used for nuisance regression.
-    """
-    if params == "custom":
-        bsignal = "A custom set of regressors was used, with no other regressors from XCP-D"
-
-    elif params == "24P":
-        bsignal = (
-            "In total, 24 nuisance regressors were selected  from the nuisance "
-            "confound matrices of fMRIPrep output. These nuisance regressors included "
-            "six motion parameters with their temporal derivatives, "
-            "and their quadratic expansion of those six motion parameters and their "
-            "temporal derivatives"
-        )
-
-    elif params == "27P":
-        bsignal = (
-            "In total, 27 nuisance regressors were selected from the nuisance "
-            "confound matrices of fMRIPrep output. These nuisance regressors included "
-            "six motion parameters with their temporal derivatives, "
-            "the quadratic expansion of those six motion parameters and "
-            "their derivatives, the global signal, the mean white matter "
-            "signal, and the mean CSF signal"
-        )
-
-    elif params == "36P":
-        bsignal = (
-            "In total, 36 nuisance regressors were selected from the nuisance "
-            "confound matrices of fMRIPrep output. These nuisance regressors included "
-            "six motion parameters, global signal, the mean white matter, "
-            "the mean CSF signal with their temporal derivatives, "
-            "and the quadratic expansion of six motion parameters, tissues signals and "
-            "their temporal derivatives"
-        )
-
-    elif params == "aroma":
-        bsignal = (
-            "All the clean aroma components with the mean white matter "
-            "signal, and the mean CSF signal were selected as nuisance regressors"
-        )
-
-    elif params == "acompcor":
-        bsignal = (
-            "The top 5 principal aCompCor components from WM and CSF compartments "
-            "were selected as "
-            "nuisance regressors. Additionally, the six motion parameters and their temporal "
-            "derivatives were added as confounds."
-        )
-
-    elif params == "aroma_gsr":
-        bsignal = (
-            "All the clean aroma components with the mean white matter "
-            "signal, and the mean CSF signal, and mean global signal were "
-            "selected as nuisance regressors"
-        )
-
-    elif params == "acompcor_gsr":
-        bsignal = (
-            "The top 5 principal aCompCor components from WM and CSF "
-            "compartments were selected as "
-            "nuisance regressors. Additionally, the six motion parameters and their temporal "
-            "derivatives were added as confounds. The average global signal was also added as a "
-            "regressor."
-        )
-
-    else:
-        raise ValueError(f"Parameter string not understood: {params}")
-
-    return bsignal
-
-
-def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
-    """Identify a custom confounds file.
-
-    Parameters
-    ----------
-    custom_confounds_folder : str or None
-        The path to the custom confounds file.
-    fmriprep_confounds_file : str
-        Path to the confounds file from the preprocessing pipeline.
-        We expect the custom confounds file to have the same name.
-
-    Returns
-    -------
-    custom_confounds_file : str or None
-        The appropriate custom confounds file.
-    """
-    if custom_confounds_folder is None:
-        return None
-
-    if not os.path.isdir(custom_confounds_folder):
-        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
-
-    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
-    custom_confounds_file = os.path.abspath(
-        os.path.join(
-            custom_confounds_folder,
-            custom_confounds_filename,
-        )
-    )
-
-    if not os.path.isfile(custom_confounds_file):
-        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
-
-    return custom_confounds_file
 
 
 def zscore_nifti(img, outputname, mask=None):
@@ -583,86 +454,3 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
         )
 
     return filtered_data
-
-
-def linear_regression(data, confound):
-    """Perform linear regression with sklearn's LinearRegression.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-    confound : numpy.ndarray
-       nuisance regressors - vertices by timepoints for confounds matrix
-
-    Returns
-    -------
-    numpy.ndarray
-        residual matrix after regression
-    """
-    regression = LinearRegression(n_jobs=1)
-    regression.fit(confound.T, data.T)
-    y_predicted = regression.predict(confound.T)
-
-    return data - y_predicted.T
-
-
-def demean_detrend_data(data):
-    """Mean-center and remove linear trends over time from data.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        vertices by timepoints for bold file
-
-    Returns
-    -------
-    detrended : numpy.ndarray
-        demeaned and detrended data
-    """
-    demeaned = detrend(
-        data, axis=-1, type="constant", bp=0, overwrite_data=False
-    )  # Demean data using "constant" detrend,
-    # which subtracts mean
-    detrended = detrend(
-        demeaned, axis=-1, type="linear", bp=0, overwrite_data=False
-    )  # Detrend data using linear method
-
-    return detrended  # Subtract these predicted values from the demeaned data
-
-
-def consolidate_confounds(
-    img_file,
-    params,
-    custom_confounds_file=None,
-):
-    """Combine confounds files into a single tsv.
-
-    Parameters
-    ----------
-    img_file : file
-        bold file
-    custom_confounds_file : file
-        file to custom confounds tsv
-    params : string
-        confound parameters to load
-
-    Returns
-    -------
-    out_file : file
-        file to combined tsv
-    """
-    import os
-
-    from xcp_d.utils.confounds import load_confound_matrix
-
-    confounds_df = load_confound_matrix(
-        img_file=img_file,
-        params=params,
-        custom_confounds=custom_confounds_file,
-    )
-
-    out_file = os.path.abspath("confounds.tsv")
-    confounds_df.to_csv(out_file, sep="\t", index=False)
-
-    return out_file

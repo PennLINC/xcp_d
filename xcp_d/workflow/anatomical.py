@@ -2,10 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
 import fnmatch
-import glob
 import os
 import shutil
-from pathlib import Path
 
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -32,7 +30,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import _getsesid
+from xcp_d.utils.bids import get_entity, get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -86,6 +84,11 @@ def init_t1w_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
         name="inputnode",
+    )
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        name="outputnode",
     )
 
     # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
@@ -190,12 +193,12 @@ def init_t1w_wf(
         # fmt:on
 
     # fmt:off
-    workflow.connect(
-        [
-            (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-            (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
-        ]
-    )
+    workflow.connect([
+        (inputnode, ds_t1wmni, [("t1w", "source_file")]),
+        (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
+        (ds_t1wmni, outputnode, [("out_file", "t1w")]),
+        (ds_t1wseg, outputnode, [("out_file", "t1seg")]),
+    ])
     # fmt:on
 
     return workflow
@@ -270,6 +273,17 @@ def init_anatomical_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "lh_wm_surf",
+                "rh_wm_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+            ],
+        ),
+        name="outputnode",
+    )
 
     mnitemplate = get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
 
@@ -298,7 +312,7 @@ def init_anatomical_wf(
         ]
 
         # All of the converted dcan and hcp files should have a session entity/folder
-        ses_id = _getsesid(R_wm_surf)
+        ses_id = get_entity(R_wm_surf, "ses")
         anatdir = os.path.join(output_dir, "xcp_d", f"sub-{subject_id}", f"ses-{ses_id}", "anat")
         os.makedirs(anatdir, exist_ok=True)
 
@@ -316,22 +330,25 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
+        nothingnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t1seg"]),
+            name="nothingnode",
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, nothingnode, [
+                ("t1w", "t1w"),
+                ("t1seg", "t1seg"),
+            ]),
+        ])
+
+        # fmt:on
+
     else:
         all_files = list(layout.get_files())
 
-        # verify freesurfer directory
-        p = Path(fmri_dir)
-
-        freesurfer_paths = glob.glob(str(p.parent) + "/*freesurfer*")  # for fmriprep and nibabies
-        if len(freesurfer_paths) == 0:
-            freesurfer_paths = glob.glob(str(p) + "/sourcedata/*freesurfer*")  # nibabies
-
-        if len(freesurfer_paths) > 0 and "freesurfer" in os.path.basename(freesurfer_paths[0]):
-            freesurfer_path = freesurfer_paths[0]
-        else:
-            freesurfer_path = None
-
-        if freesurfer_path is not None and os.path.isdir(freesurfer_path):
+        freesurfer_dir = get_freesurfer_dir(fmri_dir)
+        if freesurfer_dir is not None:
 
             L_inflated_surf = fnmatch.filter(
                 all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
@@ -371,8 +388,8 @@ def init_anatomical_wf(
                 get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[0]
             )
 
-            lh_sphere_raw = str(freesurfer_path) + "/" + subid + "/surf/lh.sphere.reg"  # MB, TM
-            rh_sphere_raw = str(freesurfer_path) + "/" + subid + "/surf/rh.sphere.reg"  # MB, TM
+            lh_sphere_raw = str(freesurfer_dir) + "/" + subid + "/surf/lh.sphere.reg"  # MB, TM
+            rh_sphere_raw = str(freesurfer_dir) + "/" + subid + "/surf/rh.sphere.reg"  # MB, TM
 
             # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
             h5_file = fnmatch.filter(
@@ -819,6 +836,13 @@ def init_anatomical_wf(
                 run_without_submitting=False,
                 mem_gb=2,
             )
+
+            # fmt:off
+            workflow.connect([
+                (ds_wmLsurf_wf, outputnode, [("out_file", "lh_wm_surf")]),
+            ])
+            # fmt:on
+
             ds_wmRsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -836,6 +860,12 @@ def init_anatomical_wf(
                 mem_gb=2,
             )
 
+            # fmt:off
+            workflow.connect([
+                (ds_wmRsurf_wf, outputnode, [("out_file", "rh_wm_surf")]),
+            ])
+            # fmt:on
+
             ds_pialLsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -852,6 +882,13 @@ def init_anatomical_wf(
                 run_without_submitting=True,
                 mem_gb=2,
             )
+
+            # fmt:off
+            workflow.connect([
+                (ds_pialLsurf_wf, outputnode, [("out_file", "lh_pial_surf")]),
+            ])
+            # fmt:on
+
             ds_pialRsurf_wf = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -868,6 +905,12 @@ def init_anatomical_wf(
                 run_without_submitting=False,
                 mem_gb=2,
             )
+
+            # fmt:off
+            workflow.connect([
+                (ds_pialRsurf_wf, outputnode, [("out_file", "rh_pial_surf")]),
+            ])
+            # fmt:on
 
             ds_midLsurf_wf = pe.Node(
                 DerivativesDataSink(

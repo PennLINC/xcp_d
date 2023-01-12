@@ -3,10 +3,13 @@
 
 # documentation
 docs/api/
+docs/generated/
 docs/_build
 docs/*.dot
 docs/etc/
 docs/args.txt
+xcp_d/data/ds001419-example/
+xcp_d/data/ds001419-example.tar.gz
 
 # other stuff
 xcp_surface/.DS_Store
@@ -19,3 +22,4 @@ xcp_surface/.DS_Store
 *.egg-info
 .vscode
 xcp_d/notebooks/.ipynb_checkpoints/restingstate-checkpoint.ipynb
+xcp_d/data/*.scene.gz

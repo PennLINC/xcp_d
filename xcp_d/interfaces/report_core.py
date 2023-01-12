@@ -11,8 +11,8 @@ from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
 
-from xcp_d.interfaces.layout_builder import LayoutBuilder
-from xcp_d.utils.bids import _getsesid
+from xcp_d.interfaces.layout_builder import ExecutiveSummary
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("cli")
@@ -160,9 +160,9 @@ def generate_reports(
             from xcp_d.utils.concatenation import concatenate_derivatives
 
             if input_type == "dcan":
-                fmri_dir = str(work_dir) + "/dcanhcp"
+                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
             elif input_type == "hcp":
-                fmri_dir = str(work_dir) + "/hcp/hcp"
+                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
             print("Concatenating bold files ...")
             concatenate_derivatives(
                 subjects=subject_list,
@@ -186,11 +186,13 @@ def generate_reports(
                         "figures/*_bold.svg",
                     ),
                 )[0]
-                LayoutBuilder(
-                    html_path=str(Path(output_dir)) + "/xcp_d/",
+                exsumm = ExecutiveSummary(
+                    xcpd_path=os.path.join(output_dir, "xcp_d"),
                     subject_id=subject_label,
-                    session_id=_getsesid(brainplotfile),
+                    session_id=get_entity(brainplotfile, "ses"),
                 )
+                exsumm.collect_inputs()
+                exsumm.generate_report()
 
         print("Reports generated successfully")
     return errno

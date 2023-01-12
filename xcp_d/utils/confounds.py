@@ -157,10 +157,200 @@ def load_motion(
     return motion_confounds_df
 
 
+def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
+    """Identify a custom confounds file.
+
+    Parameters
+    ----------
+    custom_confounds_folder : str or None
+        The path to the custom confounds file.
+    fmriprep_confounds_file : str
+        Path to the confounds file from the preprocessing pipeline.
+        We expect the custom confounds file to have the same name.
+
+    Returns
+    -------
+    custom_confounds_file : str or None
+        The appropriate custom confounds file.
+    """
+    import os
+
+    if custom_confounds_folder is None:
+        return None
+
+    if not os.path.isdir(custom_confounds_folder):
+        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
+
+    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_file = os.path.abspath(
+        os.path.join(
+            custom_confounds_folder,
+            custom_confounds_filename,
+        )
+    )
+
+    if not os.path.isfile(custom_confounds_file):
+        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
+
+    return custom_confounds_file
+
+
+def consolidate_confounds(
+    img_file,
+    params,
+    custom_confounds_file=None,
+):
+    """Combine confounds files into a single tsv.
+
+    Parameters
+    ----------
+    img_file : str
+        bold file
+    params
+    custom_confounds_folder : str or None
+        Path to custom confounds tsv. May be None.
+
+    Returns
+    -------
+    out_file : str
+        Path to combined tsv.
+    """
+    import os
+
+    from xcp_d.utils.confounds import load_confound_matrix
+
+    confounds_df = load_confound_matrix(
+        img_file=img_file,
+        params=params,
+        custom_confounds=custom_confounds_file,
+    )
+
+    out_file = os.path.abspath("confounds.tsv")
+    confounds_df.to_csv(out_file, sep="\t", index=False)
+
+    return out_file
+
+
+@fill_doc
+def describe_regression(params, custom_confounds_file):
+    """Build a text description of the regression that will be performed.
+
+    Parameters
+    ----------
+    %(params)s
+    custom_confounds_file : str or None
+
+    Returns
+    -------
+    desc : str
+        A text description of the regression.
+    """
+    import nilearn
+    import pandas as pd
+
+    use_custom_confounds, non_aggro = False, False
+    if custom_confounds_file is not None:
+        use_custom_confounds = True
+        custom_confounds = pd.read_table(custom_confounds_file)
+        non_aggro = any([c.startswith("signal__") for c in custom_confounds.columns])
+
+    BASE_DESCRIPTIONS = {
+        "custom": "A custom set of regressors was used, with no other regressors from XCP-D. ",
+        "24P": (
+            "In total, 24 nuisance regressors were selected from the preprocessing confounds. "
+            "These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "and their quadratic expansion of those six motion parameters and their "
+            "temporal derivatives [@benchmarkp;@satterthwaite_2013]. "
+        ),
+        "27P": (
+            "In total, 27 nuisance regressors were selected from the preprocessing confounds. "
+            "These nuisance regressors included "
+            "six motion parameters with their temporal derivatives, "
+            "the quadratic expansion of those six motion parameters and their derivatives, "
+            "mean global signal, mean white matter signal, and mean CSF signal "
+            "[@benchmarkp;@satterthwaite_2013]. "
+        ),
+        "36P": (
+            "In total, 36 nuisance regressors were selected from the preprocessing confounds. "
+            "These nuisance regressors included "
+            "six motion parameters, mean global signal, mean white matter signal, "
+            "mean CSF signal with their temporal derivatives, "
+            "and the quadratic expansion of six motion parameters, tissues signals and "
+            "their temporal derivatives [@benchmarkp;@satterthwaite_2013]. "
+        ),
+        "acompcor": (
+            "The top 5 aCompCor principal components from the WM and CSF compartments "
+            "were selected as nuisance regressors [@behzadi2007component], "
+            "along with the six motion parameters and their temporal derivatives "
+            "[@benchmarkp;@satterthwaite_2013]. "
+        ),
+        "acompcor_gsr": (
+            "The top 5 aCompCor principal components from the WM and CSF compartments "
+            "were selected as nuisance regressors [@behzadi2007component], "
+            "along with the six motion parameters and their temporal derivatives, "
+            "mean white matter signal, mean CSF signal, and mean global signal "
+            "[@benchmarkp;@satterthwaite_2013]. "
+        ),
+        "aroma": (
+            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
+            "and mean CSF signal were selected as nuisance regressors "
+            "[@benchmarkp;@satterthwaite_2013]. "
+        ),
+        "aroma_gsr": (
+            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
+            "mean CSF signal, and mean global signal were selected as nuisance regressors "
+            "[@benchmarkp;@satterthwaite_2013]. "
+        ),
+    }
+
+    if params not in BASE_DESCRIPTIONS.keys():
+        raise ValueError(f"Unrecognized parameter string '{params}'")
+
+    desc = BASE_DESCRIPTIONS[params]
+    if use_custom_confounds and params != "custom":
+        desc += "Additionally, custom confounds were also included as nuisance regressors. "
+
+    if "aroma" not in params and non_aggro:
+        desc += (
+            "Custom confounds prefixed with 'signal__' were used to account for variance "
+            "explained by known signals. "
+            "These regressors were included in the regression, "
+            f"as implemented in nilearn {nilearn.__version__} [@nilearn], "
+            "after which the resulting parameter estimates from only the nuisance regressors "
+            "were used to denoise the BOLD data. "
+        )
+    elif "aroma" in params and not non_aggro:
+        desc += (
+            "AROMA non-motion components (i.e., ones assumed to reflect signal) were also "
+            "included in the regression, "
+            f"as implemented in nilearn {nilearn.__version__} [@nilearn], "
+            "after which the resulting parameter estimates from only the nuisance regressors "
+            "were used to denoise the BOLD data. "
+        )
+
+    if "aroma" in params or non_aggro:
+        desc += (
+            "In this way, shared variance between the nuisance regressors "
+            "and the signal regressors was separated smartly, "
+            "so that signal would not be removed by the regression. "
+            "This is colloquially known as 'non-aggressive' denoising, "
+            "and is the recommended denoising method when nuisance regressors may share variance "
+            "with known signal regressors [@pruim2015ica]."
+        )
+    else:
+        desc += (
+            "These nuisance regressors were regressed from the BOLD data using "
+            "linear regression, "
+            f"as implemented in nilearn {nilearn.__version__} [@nilearn]."
+        )
+
+    return desc
+
+
 @fill_doc
 def load_confound_matrix(params, img_file, custom_confounds=None):
-    """
-    Load a subset of the confounds associated with a given file.
+    """Load a subset of the confounds associated with a given file.
 
     Parameters
     ----------
@@ -174,63 +364,77 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     -------
     confound : pandas.DataFrame
         The loaded and selected confounds.
+        If "AROMA" is requested, then this DataFrame will include signal components as well.
+        These will be named something like "signal_[XX]".
     """
-    if params == "24P":  # Get rot and trans values, as well as derivatives and square
-        confound = load_confounds(img_file, strategy=(["motion"]), motion="full")[0]
-    elif params == "27P":  # Get rot and trans values, as well as derivatives and square, WM, CSF,
-        # global signal
-        confound = load_confounds(
-            img_file, strategy=(["motion", "wm_csf", "global_signal"]), motion="full"
-        )[0]
-    elif params == "36P":  # Get rot and trans values, as well as derivatives, WM, CSF,
+    PARAM_KWARGS = {
+        # Get rot and trans values, as well as derivatives and square
+        "24P": {
+            "strategy": ["motion"],
+            "motion": "full",
+        },
+        # Get rot and trans values, as well as derivatives and square, WM, CSF,
+        "27P": {
+            "strategy": ["motion", "global_signal", "wm_csf"],
+            "motion": "full",
+        },
+        # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
-        confound = load_confounds(
-            img_file,
-            strategy=(["motion", "wm_csf", "global_signal"]),
-            motion="full",
-            global_signal="full",
-            wm_csf="full",
-        )[0]
-    elif params == "acompcor":  # Get the rot and trans values, their derivative,
+        "36P": {
+            "strategy": ["motion", "global_signal", "wm_csf"],
+            "motion": "full",
+            "global_signal": "full",
+            "wm_csf": "full",
+        },
+        # Get the rot and trans values, their derivative,
         # as well as acompcor and cosine
-        confound = load_confounds(
-            img_file,
-            strategy=["motion", "high_pass", "compcor"],
-            motion="derivatives",
-            compcor="anat_separated",
-            n_compcor=5,
-        )[0]
-    elif params == "aroma":  # Get the WM, CSF, and aroma values
-        # NOTE: This works with *aggressive* denoising!
-        confound = load_confounds(
-            img_file,
-            strategy=(["wm_csf", "ica_aroma"]),
-            wm_csf="basic",
-            ica_aroma="basic",
-        )[0]
-    elif params == "aroma_gsr":  # Get the WM, CSF, and aroma values, as well as global signal
-        # NOTE: This works with *aggressive* denoising!
-        confound = load_confounds(
-            img_file,
-            strategy=(["wm_csf", "ica_aroma", "global_signal"]),
-            wm_csf="basic",
-            global_signal="basic",
-            ica_aroma="basic",
-        )[0]
-    elif params == "acompcor_gsr":  # Get the rot and trans values, as well as their derivative,
+        "acompcor": {
+            "strategy": ["motion", "high_pass", "compcor"],
+            "motion": "derivatives",
+            "compcor": "anat_separated",
+            "n_compcor": 5,
+        },
+        # Get the rot and trans values, as well as their derivative,
         # acompcor and cosine values as well as global signal
-        confound = load_confounds(
-            img_file,
-            strategy=(["motion", "high_pass", "compcor", "global_signal"]),
-            motion="derivatives",
-            compcor="anat_separated",
-            global_signal="basic",
-            n_compcor=5,
-        )[0]
+        "acompcor_gsr": {
+            "strategy": ["motion", "high_pass", "compcor", "global_signal"],
+            "motion": "derivatives",
+            "compcor": "anat_separated",
+            "global_signal": "basic",
+            "n_compcor": 5,
+        },
+        # Get WM and CSF
+        # AROMA confounds are loaded separately
+        "aroma": {
+            "strategy": ["wm_csf"],
+            "wm_csf": "basic",
+        },
+        # Get WM, CSF, and global signal
+        # AROMA confounds are loaded separately
+        "aroma_gsr": {
+            "strategy": ["wm_csf", "global_signal"],
+            "wm_csf": "basic",
+            "global_signal": "basic",
+        },
+    }
+
+    if params in PARAM_KWARGS.keys():
+        kwargs = PARAM_KWARGS[params]
+        confound = load_confounds(img_file, **kwargs)[0]
+
     elif params == "custom":
         # For custom confounds with no other confounds
         confound = pd.read_table(custom_confounds, sep="\t")
+
+    else:
+        raise ValueError(f"Unrecognized parameter string '{params}'")
+
+    if "aroma" in params:
+        ica_mixing_matrix = _get_mixing_matrix(img_file)
+        aroma_noise_comps_idx = _get_aroma_noise_comps(img_file)
+        labeled_ica_mixing_matrix = _label_mixing_matrix(ica_mixing_matrix, aroma_noise_comps_idx)
+        confound = pd.concat([confound, labeled_ica_mixing_matrix], axis=1)
 
     if params != "custom" and custom_confounds is not None:
         # For both custom and fMRIPrep confounds
@@ -238,6 +442,58 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
         confound = pd.concat([custom, confound], axis=1)
 
     return confound
+
+
+def _get_mixing_matrix(img_file):
+    """Find AROMA (i.e., MELODIC) mixing matrix file for a given BOLD file."""
+    suffix = "_space-" + img_file.split("space-")[1]
+
+    mixing_candidates = [
+        img_file.replace(suffix, "_desc-MELODIC_mixing.tsv"),
+    ]
+
+    mixing_file = [cr for cr in mixing_candidates if os.path.isfile(cr)]
+
+    if not mixing_file:
+        raise FileNotFoundError(f"Could not find mixing matrix for {img_file}")
+
+    return mixing_file[0]
+
+
+def _get_aroma_noise_comps(img_file):
+    """Find AROMA noise components file for a given BOLD file."""
+    suffix = "_space-" + img_file.split("space-")[1]
+
+    index_candidates = [
+        img_file.replace(suffix, "_AROMAnoiseICs.csv"),
+    ]
+
+    index_file = [cr for cr in index_candidates if os.path.isfile(cr)]
+
+    if not index_file:
+        raise FileNotFoundError(f"Could not find AROMAnoiseICs file for {img_file}")
+
+    return index_file[0]
+
+
+def _label_mixing_matrix(mixing_file, noise_index_file):
+    """Prepend 'signal__' to any non-noise components in AROMA mixing matrix."""
+    mixing_matrix = np.loadtxt(mixing_file, delimiter="\t")
+    noise_index = np.loadtxt(noise_index_file, delimiter=",", dtype=int)
+    # shift noise index to start with zero
+    noise_index -= 1
+    all_index = np.arange(mixing_matrix.shape[1], dtype=int)
+    signal_index = np.setdiff1d(all_index, noise_index)
+    noise_components = mixing_matrix[:, noise_index]
+    signal_components = mixing_matrix[:, signal_index]
+    # basing naming convention on fMRIPrep confounds column names
+    noise_component_names = [f"aroma_motion_{i:03g}" for i in noise_index]
+    signal_component_names = [f"signal__aroma_signal_{i:03g}" for i in signal_index]
+
+    noise_component_df = pd.DataFrame(noise_components, columns=noise_component_names)
+    signal_component_df = pd.DataFrame(signal_components, columns=signal_component_names)
+    component_df = pd.concat((noise_component_df, signal_component_df), axis=1)
+    return component_df
 
 
 @fill_doc

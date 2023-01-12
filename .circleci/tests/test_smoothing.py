@@ -12,15 +12,12 @@ from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.utils.utils import fwhm2sigma
 
 
-def test_smoothing_Nifti(data_dir):
+def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     """Test NIFTI smoothing."""
     #  Specify inputs
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
-    in_file = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
-    mask = data_dir + "/fmriprep/sub-colornest001/ses-1/func/" \
-        "sub-colornest001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-brain_mask.nii.gz"
+    in_file = fmriprep_without_freesurfer_data["nifti_file"]
+    mask = fmriprep_without_freesurfer_data["brain_mask_file"]
+
     # Let's get into a temp dir
     tmpdir = tempfile.mkdtemp()
     os.chdir(tmpdir)
@@ -77,67 +74,61 @@ def test_smoothing_Nifti(data_dir):
     return
 
 
-def test_smoothing_cifti(data_dir, sigma_lx=fwhm2sigma(6)):
-
-    # Specify inputs
-    right_surf = pkgrf(  # pull out atlases for each hemisphere
-        'xcp_d',
-        'data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii',
+def test_smoothing_cifti(fmriprep_with_freesurfer_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)):
+    """Test CIFTI smoothing."""
+    tmpdir = tmp_path_factory.mktemp("test_smoothing_cifti")
+    in_file = fmriprep_with_freesurfer_data["cifti_file"]
+    # pull out atlases for each hemisphere
+    right_surf = pkgrf(
+        "xcp_d",
+        "data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
     )
     left_surf = pkgrf(
-        'xcp_d',
-        'data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
+        "xcp_d",
+        "data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
     )
 
-    data_dir = os.path.join(data_dir,
-                            "fmriprepwithfreesurfer")
-    in_file = os.path.join(
-        data_dir,
-        "fmriprep/sub-colornest001/ses-1/func",
-        "sub-colornest001_ses-1_task-rest_run-1_space-fsLR_den-91k_bold.dtseries.nii")
-    # What's the smoothness?
-    in_file_smoothness = os.popen("wb_command -cifti-estimate-fwhm " + in_file
-                                  + " -surface CORTEX_LEFT " + left_surf
-                                  + " -surface CORTEX_RIGHT " + right_surf
-                                  + " -whole-file -merged-volume").read()
-
-    # Let's get into a temp dir
-    tmpdir = tempfile.mkdtemp()
-
-    smooth_data = pe.Node(CiftiSmooth(  # Call connectome workbench to smooth for each
-        #  hemisphere
-        sigma_surf=sigma_lx,  # the size of the surface kernel
-        sigma_vol=sigma_lx,  # the volume of the surface kernel
-        direction='COLUMN',  # which direction to smooth along@
-        right_surf=pkgrf(  # pull out atlases for each hemisphere
-            'xcp_d',
-            'data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii'
-        ),
-        left_surf=pkgrf(
-            'xcp_d',
-            'data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii'
-        )),
-        name="cifti_smoothing")
-    smooth_data.inputs.in_file = in_file
-    smooth_data.base_dir = tmpdir
-    smooth_data.inputs.out_file = os.path.join(tmpdir,'test.dtseries.nii')
-    results = smooth_data.run()
-    out_file = results.outputs.out_file
-
-    # What's the smoothness?
-    out_file_smoothness = os.popen("wb_command -cifti-estimate-fwhm " + out_file
-                                   + " -surface CORTEX_LEFT " + left_surf
-                                   + " -surface CORTEX_RIGHT " + right_surf
-                                   + " -whole-file -merged-volume").read()
-    smoothness = re.findall(r'\d.+', in_file_smoothness)
-    in_file_smoothness = [x.split(',') for x in smoothness]
+    # Estimate the smoothness of the unsmoothed file
+    in_file_smoothness = os.popen(
+        f"wb_command -cifti-estimate-fwhm {in_file} "
+        f"-surface CORTEX_LEFT {left_surf} "
+        f"-surface CORTEX_RIGHT {right_surf} "
+        "-whole-file -merged-volume"
+    ).read()
+    in_file_smoothness = re.findall(r"\d.+", in_file_smoothness)
+    in_file_smoothness = [x.split(",") for x in in_file_smoothness]
     in_file_smoothness = [item for sublist in in_file_smoothness for item in sublist]
     in_file_smoothness = list(map(float, in_file_smoothness))
     in_file_smoothness = np.sum((in_file_smoothness))
 
-    smoothness = re.findall(r'\d.+', out_file_smoothness)
-    out_file_smoothness = [x.split(',') for x in smoothness]
+    # Smooth the file
+    smooth_data = pe.Node(
+        CiftiSmooth(
+            sigma_surf=sigma_lx,  # the size of the surface kernel
+            sigma_vol=sigma_lx,  # the volume of the surface kernel
+            direction="COLUMN",  # which direction to smooth along@
+            right_surf=right_surf,
+            left_surf=left_surf,
+        ),
+        name="cifti_smoothing",
+    )
+    smooth_data.inputs.in_file = in_file
+    smooth_data.base_dir = tmpdir
+    smooth_data.inputs.out_file = os.path.join(tmpdir, "test.dtseries.nii")
+    results = smooth_data.run()
+    out_file = results.outputs.out_file
+
+    # Estimate the smoothness of the smoothed file
+    out_file_smoothness = os.popen(
+        f"wb_command -cifti-estimate-fwhm {out_file} "
+        f"-surface CORTEX_LEFT {left_surf} "
+        f"-surface CORTEX_RIGHT {right_surf} "
+        "-whole-file -merged-volume"
+    ).read()
+    out_file_smoothness = re.findall(r"\d.+", out_file_smoothness)
+    out_file_smoothness = [x.split(",") for x in out_file_smoothness]
     out_file_smoothness = [item for sublist in out_file_smoothness for item in sublist]
     out_file_smoothness = list(map(float, out_file_smoothness))
     out_file_smoothness = np.sum((out_file_smoothness))
+
     assert in_file_smoothness < out_file_smoothness

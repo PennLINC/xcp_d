@@ -3,206 +3,73 @@
 """Workflows for generating the executive summary."""
 import fnmatch
 import os
-from pathlib import Path
 
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from templateflow.api import get as get_template
+from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import ApplyTransformsx
-from xcp_d.interfaces.surfplotting import (
-    BrainPlotx,
-    PlotImage,
-    PlotSVGData,
-    RibbontoStatmap,
-)
-from xcp_d.utils.bids import find_nifti_bold_files
+from xcp_d.interfaces.surfplotting import PlotImage
+from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.plot import plot_ribbon_svg
-from xcp_d.utils.utils import _t12native, get_std2bold_xforms
+from xcp_d.utils.execsummary import (
+    get_n_frames,
+    get_png_image_names,
+    make_mosaic,
+    modify_brainsprite_scene_template,
+    modify_pngs_scene_template,
+)
 
 LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_brainsprite_wf(
-    layout,
-    fmri_dir,
-    subject_id,
+def init_brainsprite_figures_wf(
     output_dir,
-    dcan_qc,
-    input_type,
+    t2w_available,
     mem_gb,
     omp_nthreads,
-    name="init_brainsprite_wf",
+    name="init_brainsprite_figures_wf",
 ):
-    """Create a brainsprite figure from stuff.
+    """Create mosaic and PNG files for executive summary brainsprite.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
+
+            wf = init_brainsprite_figures_wf(
+                output_dir=".",
+                t2w_available=True,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="brainsprite_figures_wf",
+            )
 
     Parameters
     ----------
-    %(layout)s
-    %(fmri_dir)s
-    %(subject_id)s
     %(output_dir)s
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
-    %(input_type)s
+    t2w_available : bool
+        True if a T2w image is available.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "init_brainsprite_wf".
+        Default is "init_brainsprite_figures_wf".
 
     Inputs
     ------
     t1w
-    t1seg
-    """
-    workflow = Workflow(name=name)
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]),
-        name="inputnode",
-    )
-    ribbon2statmap = pe.Node(
-        RibbontoStatmap(),
-        name="ribbon2statmap",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-    if dcan_qc:
-        # Create a brainsprite if dcan_qc is True
-        plot_ribbon = pe.Node(
-            BrainPlotx(),
-            name="brainsprite",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-    else:
-        # Otherwise, make a static mosaic plot
-        plot_ribbon = pe.Node(
-            Function(
-                input_names=["template", "in_file"],
-                output_names=["plot_file"],
-                function=plot_ribbon_svg,
-            ),
-            name="ribbon_mosaic",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-    ds_brainspriteplot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=["desc"],
-            desc="brainplot",
-            datatype="figures",
-        ),
-        name="ds_brainspriteplot",
-    )
-
-    use_t1seg_as_ribbon = False
-    if input_type in ("dcan", "hcp"):
-        # The dcan2fmriprep/hcp2fmriprep functions copy the ribbon file to the derivatives dset.
-        ribbon = layout.get(
-            return_type="file",
-            subject=subject_id,
-            desc="ribbon",
-            extension="nii.gz",
-        )
-        if len(ribbon) != 1:
-            LOGGER.warning(f"{len(ribbon)} matches found for the ribbon file: {ribbon}")
-            use_t1seg_as_ribbon = True
-        else:
-            ribbon = ribbon[0]
-
-    else:
-        # verify freesurfer directory
-        fmri_path = Path(fmri_dir).absolute()
-
-        # for fmriprep and nibabies versions before XXXX,
-        # the freesurfer dir was placed at the same level as the main derivatives
-        freesurfer_paths = [fp for fp in fmri_path.parent.glob("*freesurfer*") if fp.is_dir()]
-        if len(freesurfer_paths) == 0:
-            # for later versions, the freesurfer dir is placed in sourcedata
-            # within the main derivatives folder
-            freesurfer_paths = [
-                fp for fp in fmri_path.glob("sourcedata/*freesurfer*") if fp.is_dir()
-            ]
-
-        if len(freesurfer_paths) > 0:
-            freesurfer_path = freesurfer_paths[0]
-            LOGGER.info(f"Freesurfer directory found at {freesurfer_path}.")
-            ribbon = freesurfer_path / f"sub-{subject_id}" / "mri" / "ribbon.mgz"
-            LOGGER.info(f"Using {ribbon} for ribbon.")
-
-            if not ribbon.is_file():
-                LOGGER.warning(f"File DNE: {ribbon}")
-                use_t1seg_as_ribbon = True
-
-        else:
-            LOGGER.info("No Freesurfer derivatives found.")
-            use_t1seg_as_ribbon = True
-
-    if use_t1seg_as_ribbon:
-        LOGGER.info("Using T1w segmentation for ribbon.")
-        # fmt:off
-        workflow.connect([(inputnode, ribbon2statmap, [("t1seg", "ribbon")])])
-        # fmt:on
-    else:
-        ribbon2statmap.inputs.ribbon = ribbon
-
-    # fmt:off
-    workflow.connect(
-        [
-            (inputnode, plot_ribbon, [("t1w", "template")]),
-            (ribbon2statmap, plot_ribbon, [("out_file", "in_file")]),
-            (plot_ribbon, ds_brainspriteplot, [("plot_file", "in_file")]),
-            (inputnode, ds_brainspriteplot, [("t1w", "source_file")]),
-        ]
-    )
-    # fmt:on
-
-    return workflow
-
-
-@fill_doc
-def init_execsummary_wf(
-    omp_nthreads,
-    bold_file,
-    output_dir,
-    TR,
-    mem_gb,
-    layout,
-    name="execsummary_wf",
-):
-    """Generate an executive summary.
-
-    Parameters
-    ----------
-    %(omp_nthreads)s
-    bold_file
-    %(output_dir)s
-    TR
-    %(mem_gb)s
-    layout
-    %(name)s
-
-    Inputs
-    ------
-    t1w
-    t1seg
-    regressed_data
-    residual_data
-    filtered_motion
-    tmask
-    rawdata
-    mask
-    %(template_to_t1w)s
-    %(dummy_scans)s
+        Path to T1w image.
+    t2w
+        Path to T2w image. Optional. Should only be defined if ``t2w_available`` is True.
+    lh_smoothwm_surf
+    rh_smoothwm_surf
+    lh_pial_surf
+    rh_pial_surf
     """
     workflow = Workflow(name=name)
 
@@ -210,21 +77,266 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
-                "t1seg",
-                "regressed_data",
-                "residual_data",
-                "filtered_motion",
-                "tmask",
-                "rawdata",
-                "mask",
-                "template_to_t1w",
-                "dummy_scans",
+                "t2w",
+                "lh_smoothwm_surf",
+                "rh_smoothwm_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    # Load template scene file
+    brainsprite_scene_template = pkgrf(
+        "xcp_d",
+        "data/executive_summary_scenes/brainsprite_template.scene.gz",
+    )
+    pngs_scene_template = pkgrf("xcp_d", "data/executive_summary_scenes/pngs_template.scene.gz")
+
+    if t2w_available:
+        image_types = ["T1", "T2"]
+    else:
+        image_types = ["T1"]
+
+    for image_type in image_types:
+        inputnode_anat_name = f"{image_type.lower()}w"
+        # Create frame-wise PNGs
+        get_number_of_frames = pe.Node(
+            Function(
+                function=get_n_frames,
+                input_names=["anat_file"],
+                output_names=["frame_numbers"],
+            ),
+            name=f"get_number_of_frames_{image_type}",
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, get_number_of_frames, [(inputnode_anat_name, "anat_file")]),
+        ])
+        # fmt:on
+
+        # Modify template scene file with file paths
+        modify_brainsprite_template_scene = pe.MapNode(
+            Function(
+                function=modify_brainsprite_scene_template,
+                input_names=[
+                    "slice_number",
+                    "anat_file",
+                    "rh_pial_file",
+                    "lh_pial_file",
+                    "rh_white_file",
+                    "lh_white_file",
+                    "scene_template",
+                ],
+                output_names=["out_file"],
+            ),
+            name=f"modify_brainsprite_template_scene_{image_type}",
+            iterfield=["slice_number"],
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+        modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, modify_brainsprite_template_scene, [
+                (inputnode_anat_name, "anat_file"),
+                ("lh_smoothwm_surf", "lh_white_file"),
+                ("rh_smoothwm_surf", "rh_white_file"),
+                ("lh_pial_surf", "lh_pial_file"),
+                ("rh_pial_surf", "rh_pial_file"),
+            ]),
+            (get_number_of_frames, modify_brainsprite_template_scene, [
+                ("frame_numbers", "slice_number"),
+            ]),
+        ])
+        # fmt:on
+
+        create_framewise_pngs = pe.MapNode(
+            ShowScene(
+                scene_name_or_number=1,
+                image_width=900,
+                image_height=800,
+            ),
+            name=f"create_framewise_pngs_{image_type}",
+            iterfield=["scene_file"],
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (modify_brainsprite_template_scene, create_framewise_pngs, [
+                ("out_file", "scene_file"),
+            ]),
+        ])
+        # fmt:on
+
+        # Make mosaic
+        make_mosaic_node = pe.Node(
+            Function(
+                function=make_mosaic,
+                input_names=["png_files"],
+                output_names=["mosaic_file"],
+            ),
+            name=f"make_mosaic_{image_type}",
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")]),
+        ])
+        # fmt:on
+
+        ds_mosaic_file = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["desc"],
+                desc="mosaic",
+                datatype="figures",
+                suffix=f"{image_type}w",
+            ),
+            name=f"ds_mosaic_file_{image_type}",
+            run_without_submitting=False,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_mosaic_file, [(inputnode_anat_name, "source_file")]),
+            (make_mosaic_node, ds_mosaic_file, [("mosaic_file", "in_file")]),
+        ])
+        # fmt:on
+
+        # Start working on the selected PNG images for the button
+        modify_pngs_template_scene = pe.Node(
+            Function(
+                function=modify_pngs_scene_template,
+                input_names=[
+                    "anat_file",
+                    "rh_pial_file",
+                    "lh_pial_file",
+                    "rh_white_file",
+                    "lh_white_file",
+                    "scene_template",
+                ],
+                output_names=["out_file"],
+            ),
+            name=f"modify_pngs_template_scene_{image_type}",
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+        modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, modify_pngs_template_scene, [
+                (inputnode_anat_name, "anat_file"),
+                ("lh_smoothwm_surf", "lh_white_file"),
+                ("rh_smoothwm_surf", "rh_white_file"),
+                ("lh_pial_surf", "lh_pial_file"),
+                ("rh_pial_surf", "rh_pial_file"),
+            ])
+        ])
+        # fmt:on
+
+        # Create specific PNGs for button
+        get_png_scene_names = pe.Node(
+            Function(
+                function=get_png_image_names,
+                output_names=["scene_index", "scene_descriptions"],
+            ),
+            name=f"get_png_scene_names_{image_type}",
+        )
+
+        create_scenewise_pngs = pe.MapNode(
+            ShowScene(image_width=900, image_height=800),
+            name=f"create_scenewise_pngs_{image_type}",
+            iterfield=["scene_name_or_number"],
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (modify_pngs_template_scene, create_scenewise_pngs, [
+                ("out_file", "scene_file"),
+            ]),
+            (get_png_scene_names, create_scenewise_pngs, [
+                ("scene_index", "scene_name_or_number"),
+            ]),
+        ])
+        # fmt:on
+
+        ds_scenewise_pngs = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["desc"],
+                datatype="figures",
+                suffix=f"{image_type}w",
+            ),
+            name=f"ds_scenewise_pngs_{image_type}",
+            run_without_submitting=False,
+            iterfield=["desc", "in_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_scenewise_pngs, [(inputnode_anat_name, "source_file")]),
+            (get_png_scene_names, ds_scenewise_pngs, [("scene_descriptions", "desc")]),
+            (create_scenewise_pngs, ds_scenewise_pngs, [("out_file", "in_file")]),
+        ])
+        # fmt:on
+
+    return workflow
+
+
+@fill_doc
+def init_execsummary_wf(
+    bold_file,
+    output_dir,
+    layout,
+    name="execsummary_wf",
+):
+    """Generate the figures for an executive summary.
+
+    Parameters
+    ----------
+    bold_file
+        BOLD data before post-processing.
+    %(output_dir)s
+    layout
+    %(name)s
+
+    Inputs
+    ------
+    bold_file
+        BOLD data before post-processing.
+        Set from the parameter.
+    boldref_file
+        The boldref file associated with the BOLD file.
+        This should only be defined (and used) for NIFTI inputs.
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "bold_file",
+                "boldref_file",  # a nifti boldref
             ]
         ),
         name="inputnode",
     )
     inputnode.inputs.bold_file = bold_file
+
     # Get bb_registration_file prefix from fmriprep
+    # TODO: Replace with interfaces.
     all_files = list(layout.get_files())
     current_bold_file = os.path.basename(bold_file)
     if "_space" in current_bold_file:
@@ -235,148 +347,40 @@ def init_execsummary_wf(
     # check if there is a bb_registration_file or coregister file
     patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
     registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
-    #  Get the T1w registration file
+    # Get the T1w registration file
     bold_t1w_registration_file = fnmatch.filter(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]
 
-    find_nifti_files = pe.Node(
-        Function(
-            function=find_nifti_bold_files,
-            input_names=["bold_file", "template_to_t1w"],
-            output_names=["nifti_bold_file", "nifti_boldref_file"],
-        ),
-        name="find_nifti_files",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, find_nifti_files, [
-            ("bold_file", "bold_file"),
-            ("template_to_t1w", "template_to_t1w"),
-        ]),
-    ])
-    # fmt:on
-
     # Plot the reference bold image
-    plotrefbold_wf = pe.Node(PlotImage(), name="plotrefbold_wf")
+    plot_boldref = pe.Node(PlotImage(), name="plot_boldref")
 
     # fmt:off
     workflow.connect([
-        (find_nifti_files, plotrefbold_wf, [
-            ("nifti_boldref_file", "in_file"),
-        ]),
+        (inputnode, plot_boldref, [("boldref_file", "in_file")]),
     ])
     # fmt:on
 
-    find_t1_to_native = pe.Node(
-        Function(
-            function=_t12native,
-            input_names=["fname"],
-            output_names=["t1w_to_native_xform"],
-        ),
-        name="find_t1_to_native",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, find_t1_to_native, [
-            ("nifti_bold_file", "fname"),
-        ]),
-    ])
-    # fmt:on
-
-    # Get the transform file to native space
-    get_std2native_transform = pe.Node(
-        Function(
-            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
-            output_names=["transform_list"],
-            function=get_std2bold_xforms,
-        ),
-        name="get_std2native_transform",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, get_std2native_transform, [
-            ("nifti_bold_file", "bold_file"),
-        ]),
-        (find_t1_to_native, get_std2native_transform, [
-            ("t1w_to_native_xform", "t1w_to_native"),
-        ]),
-    ])
-    # fmt:on
-
-    # Transform the file to native space
-    resample_parc = pe.Node(
-        ApplyTransformsx(
-            dimension=3,
-            input_image=str(
-                get_template(
-                    "MNI152NLin2009cAsym",
-                    resolution=1,
-                    desc="carpet",
-                    suffix="dseg",
-                    extension=[".nii", ".nii.gz"],
-                )
-            ),
-            interpolation="MultiLabel",
-        ),
-        name="resample_parc",
-        n_procs=omp_nthreads,
-        mem_gb=mem_gb * 3 * omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (find_nifti_files, resample_parc, [
-            ("nifti_boldref_file", "reference_image"),
-        ]),
-    ])
-    # fmt:on
-
-    # Plot the SVG files
-    plot_svgx_wf = pe.Node(
-        PlotSVGData(TR=TR),
-        name="plot_svgx_wf",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # Write out the necessary files:
-    # Reference file
-    ds_plot_bold_reference_file_wf = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir, dismiss_entities=["den"], datatype="figures", desc="boldref"
-        ),
-        name="ds_plot_bold_reference_file_wf",
-        run_without_submitting=True,
-    )
-
-    # Plot SVG before
-    ds_plot_svg_before_wf = pe.Node(
+    # Write out the figures.
+    ds_boldref_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["den"],
             datatype="figures",
-            desc="precarpetplot",
+            desc="boldref",
         ),
-        name="plot_svgxbe",
+        name="ds_boldref_figure",
         run_without_submitting=True,
     )
-    # Plot SVG after
-    ds_plot_svg_after_wf = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="postcarpetplot",
-        ),
-        name="plot_svgx_after",
-        run_without_submitting=True,
-    )
-    # Bold T1 registration file
-    ds_registration_wf = pe.Node(
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_boldref_figure, [("bold_file", "source_file")]),
+        (plot_boldref, ds_boldref_figure, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_registration_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             in_file=bold_t1w_registration_file,
@@ -384,32 +388,13 @@ def init_execsummary_wf(
             datatype="figures",
             desc="bbregister",
         ),
-        name="bb_registration_file",
+        name="ds_registration_figure",
         run_without_submitting=True,
     )
 
-    # Connect all the workflows
     # fmt:off
     workflow.connect([
-        (plotrefbold_wf, ds_plot_bold_reference_file_wf, [('out_file', 'in_file')]),
-        (inputnode, plot_svgx_wf, [
-            ('filtered_motion', 'filtered_motion'),
-            ('regressed_data', 'regressed_data'),
-            ('residual_data', 'residual_data'),
-            ('mask', 'mask'),
-            ('bold_file', 'rawdata'),
-            ('tmask', 'tmask'),
-            ('dummy_scans', 'dummy_scans'),
-        ]),
-        (inputnode, get_std2native_transform, [('template_to_t1w', 'template_to_t1w')]),
-        (get_std2native_transform, resample_parc, [('transform_list', 'transforms')]),
-        (resample_parc, plot_svgx_wf, [('output_image', 'seg_data')]),
-        (plot_svgx_wf, ds_plot_svg_before_wf, [('before_process', 'in_file')]),
-        (plot_svgx_wf, ds_plot_svg_after_wf, [('after_process', 'in_file')]),
-        (inputnode, ds_plot_svg_before_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_plot_svg_after_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_plot_bold_reference_file_wf, [('bold_file', 'source_file')]),
-        (inputnode, ds_registration_wf, [('bold_file', 'source_file')]),
+        (inputnode, ds_registration_figure, [("bold_file", "source_file")]),
     ])
     # fmt:on
 

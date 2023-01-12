@@ -51,6 +51,13 @@ run_xcpd_cmd () {
   # Defines a call to qsiprep that works on circleci OR for a local
   # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
+
+    # Is there a BIDS filter file?
+    BIDS_FILTER_FILE=$(printenv BIDS_FILTER_FILE)
+    if [[ -n "${BIDS_FILTER_FILE}" ]]; then
+      cp ${BIDS_FILTER_FILE} /bids_filter_file.json
+    fi
+
     # In circleci we're running from inside the container. call directly
     XCPD_RUN="/usr/local/miniconda/bin/xcp_d ${bids_dir} ${output_dir} participant -w ${workdir}"
   else
@@ -69,8 +76,15 @@ run_xcpd_cmd () {
     # Is there a Freesurfer license?
     fslicense_arg=""
     FS_LICENSE=$(printenv FS_LICENSE)
-    if [[ -n "${CFG}" ]]; then
+    if [[ -n "${FS_LICENSE}" ]]; then
       fslicense_arg="-v ${FS_LICENSE}:/license.txt --env FS_LICENSE=/license.txt"
+    fi
+
+    # Is there a BIDS filter file?
+    bids_filter_file_arg=""
+    BIDS_FILTER_FILE=$(printenv BIDS_FILTER_FILE)
+    if [[ -n "${BIDS_FILTER_FILE}" ]]; then
+      bids_filter_file_arg="-v ${BIDS_FILTER_FILE}:/bids_filter_file.json"
     fi
 
     # Otherwise we're going to use docker from the outside
@@ -80,7 +94,7 @@ run_xcpd_cmd () {
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
 
-    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
+    XCPD_RUN="docker run --rm -u $(id -u) ${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_filter_file_arg} ${bids_mount} ${output_mount} ${IMAGE} /bids-input/${bids_folder_name} /out participant -w /work"
 
   fi
   echo "${XCPD_RUN} --nthreads ${NTHREADS} --omp-nthreads ${OMP_NTHREADS}"
@@ -131,20 +145,20 @@ sub01:
 
 This appears to be one of the testing datasets used by fmriprep.
 
-fmriprep_colornest:
--------------------
+ds001419-fmriprep:
+------------------
 
-The results of running a colornest subject through fmriprep
+ds001419 fMRIPrep derivatives cloned from https://github.com/OpenNeuroDerivatives/ds001419-fmriprep
+One subject, multiple runs, two tasks, AROMA confounds, FreeSurfer derivatives.
+fMRIPrep version 22.0.0.
+run-00 only has 23 volumes, so it is a good candidate to skip with a filter file.
+The other runs have been reduced to the first 60 volumes.
 
-freesurfer_colornest:
----------------------
-
-The freesurfer results for the same data as in "fmriprep_colornest"
-
-fsaverage*:
------------
-
-Other freesurfer data. Unsure what this does or is for.
+nibabies:
+---------
+Nibabies derivatives downloaded from https://gin.g-node.org/nipreps-data/bcp,
+https://gin.g-node.org/nipreps-data/bcp-derivatives,
+and artifacts from https://github.com/nipreps/nibabies/pull/244.
 
 DOC
 
@@ -197,124 +211,30 @@ get_bids_data() {
         echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
 
-
-    # colornest subject who also has freesurfer data (in a different archive)
-    elif [[ ${DS} = fmriprep_colornest ]]
+    # ds001419 fMRIPrep derivatives cloned from https://github.com/OpenNeuroDerivatives/ds001419-fmriprep
+    # One subject, multiple runs, two tasks, AROMA confounds, FreeSurfer derivatives.
+    # fMRIPrep version 22.0.0.
+    # We have shortened each run (except for run 00, which has 23 volumes) to the first 60 volumes.
+    # This includes niftis, ciftis, giftis, confounds files, and the AROMA mixing matrices.
+    elif [[ ${DS} = "ds001419-fmriprep" ]]
     then
-      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/fmriprep"
+      dataset_dir="$TEST_DATA_DIR/ds001419-fmriprep"
       # Do not re-download if the folder exists
       if [ ! -d $dataset_dir ]
       then
         echo "Downloading ${DS} data to $dataset_dir"
 
         ${WGET} \
-          -O withfs_fmriprep_colornest001.tar.xz \
-          "https://upenn.box.com/shared/static/i3ulccnfr53f0la2eo5s1ijz273hw80u.xz"
-        tar xvfJ withfs_fmriprep_colornest001.tar.xz -C $TEST_DATA_DIR
-        mkdir fmriprepwithfreesurfer
-        mv fmriprep fmriprepwithfreesurfer/fmriprep
-        rm withfs_fmriprep_colornest001.tar.xz
+          -O ds001419-fmriprep.tar.xz \
+          "https://upenn.box.com/shared/static/mqedc972yp9f4gsuy2yq0fqbn1d4qum5.xz"
+        tar xvfJ ds001419-fmriprep.tar.xz -C $TEST_DATA_DIR
+        rm ds001419-fmriprep.tar.xz
 
       else
         echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
       fi
-
-    elif [[ ${DS} = freesurfer_colornest ]]
-    then
-      dataset_dir="$TEST_DATA_DIR/fmriprepwithfreesurfer/freesurfer"
-      # Do not re-download if the folder exists
-      if [ ! -d $dataset_dir ]
-      then
-        echo "Downloading ${DS} data to $dataset_dir"
-
-        ${WGET} \
-          -O withfs_fs_colornest001.tar.xz \
-          "https://upenn.box.com/shared/static/dnyhbeckak62ar1kfllm012q5wwbej55.xz"
-        tar xvfJ withfs_fs_colornest001.tar.xz -C $TEST_DATA_DIR
-        mv freesurfer fmriprepwithfreesurfer/freesurfer
-        rm withfs_fs_colornest001.tar.xz
-
-      else
-        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
-      fi
-
-    elif [[ ${DS} = fsaverage4 ]]
-    then
-      dataset_dir="$TEST_DATA_DIR/fsaverage4"
-      # Do not re-download if the folder exists
-      if [ ! -d $dataset_dir ]
-      then
-        echo "Downloading ${DS} data to $dataset_dir"
-
-        ${WGET} \
-          -O withfs_fs_fsaverage4.tar.xz \
-          "https://upenn.box.com/shared/static/mcc2ri4xd2da0barnkunw045uszczwuu.xz"
-        tar xvfJ withfs_fs_fsaverage4.tar.xz -C $TEST_DATA_DIR
-        rm withfs_fs_fsaverage4.tar.xz
-
-      else
-        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
-      fi
-
-    elif [[ ${DS} = fsaverage5 ]]
-    then
-      dataset_dir="$TEST_DATA_DIR/fsaverage5"
-      # Do not re-download if the folder exists
-      if [ ! -d $dataset_dir ]
-      then
-        echo "Downloading ${DS} colornest data to $dataset_dir"
-
-        ${WGET} \
-          -O withfs_fs_fsaverage5.tar.xz \
-          "https://upenn.box.com/shared/static/xjydc4ac71ercd8j9lqbiq875w01y8p4.xz"
-        tar xvfJ withfs_fs_fsaverage5.tar.xz -C $TEST_DATA_DIR
-        rm withfs_fs_fsaverage5.tar.xz
-
-      else
-        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
-      fi
-
-    elif [[ ${DS} = fsaverage6 ]]
-    then
-      dataset_dir="$TEST_DATA_DIR/fsaverage6"
-      # Do not re-download if the folder exists
-      if [ ! -d $dataset_dir ]
-      then
-        echo "Downloading ${DS} colornest data to $dataset_dir"
-
-        ${WGET} \
-          -O withfs_fs_fsaverage6.tar.xz \
-          "hhttps://upenn.box.com/shared/static/hfv2sbdr7z3pasqr2bxh4ajyzni4wm93.xz"
-        tar xvfJ withfs_fs_fsaverage6.tar.xz -C $TEST_DATA_DIR
-        rm withfs_fs_fsaverage6.tar.xz
-
-      else
-        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
-      fi
-
-    elif [[ ${DS} = fsaverage_sym ]]
-    then
-      dataset_dir="$TEST_DATA_DIR/fsaverage_sym"
-      # Do not re-download if the folder exists
-      if [ ! -d $dataset_dir ]
-      then
-        echo "Downloading ${DS} colornest data to $dataset_dir"
-
-        ${WGET} \
-          -O withfs_fs_fsaverage_sym.tar.xz \
-          "https://upenn.box.com/shared/static/8xi851ymcffxd5a0pacryaq7swy4gkpy.xz"
-        tar xvfJ withfs_fs_fsaverage_sym.tar.xz -C $TEST_DATA_DIR
-        rm withfs_fs_fsaverage_sym.tar.xz
-
-      else
-        echo "Data directory ($dataset_dir) already exists. If you need to re-download the data, remove the data folder."
-      fi
-
-    else
-      echo "Dataset ${DS} not recognized"
-      exit 1
-
     fi
+
     cd ${ENTRYDIR}
 }
 

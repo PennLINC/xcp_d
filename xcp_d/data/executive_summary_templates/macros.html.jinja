@@ -1,0 +1,104 @@
+{#
+    Build the BrainSprite.
+#}
+{% macro build_brainsprite(image_type, modal_id, mosaic_file) %}
+    <section id="{{ image_type }}">
+
+        <div class="w3-container">
+            <div class="w3-cell w3-left label3">BrainSprite Viewer: {{ image_type }}</div>
+            <div class="w3-cell w3-right">
+                <button class="w3-btn w3-teal" onclick="open_{{ modal_id }}_to_index(1)">
+                    View {{ image_type }} pngs
+                </button>
+            </div>
+        </div>
+        <div class="w3-container">
+            <div w3-row w3-hide-small>
+                <canvas id="{{ image_type }}-viewer" style="max-width: 100%">
+                <img id="{{ image_type }}-spriteImg" class="hidden" src="{{ mosaic_file }}">
+            </div>
+        </div>
+
+    </section>
+{% endmacro %}
+
+{#
+    The modal scripts that will show the chosen image and
+    let users click across image from the same mode.
+    Needs the following values: modal_id, image_class.
+    image_class *must match* one of the classes defined in the template file (e.g., T1pngs).
+#}
+{% macro build_modal_script(image_class, modal_id) %}
+    <script>
+    var {{ image_class }}Idx = 1;
+    show_{{ image_class }}({{ image_class }}Idx)
+
+    function change_{{ image_class }}(n) {
+        show_{{ image_class }}({{ image_class }}Idx += n)
+    }
+
+    function show_{{ image_class }}(n) {
+        var i;
+        var x = document.getElementsByClassName("{{ image_class }}");
+        if (n > x.length) { {{ image_class }}Idx = 1 }
+        if (n < 1) { {{ image_class }}Idx = x.length }
+        for (i = 0; i < x.length; i++) {
+            x[i].style.display = "none";
+        }
+        x[{{ image_class }}Idx-1].style.display = "block";
+    }
+
+    function open_{{ modal_id }}_to_index(idx) {
+        show_{{ image_class }}({{ image_class }}Idx = idx)
+        document.getElementById("{{ modal_id }}").style.display='block'
+    }
+    </script>
+{% endmacro %}
+
+{#
+    Build a cycle across images.
+#}
+{% macro build_cycler(image_class, modal_id, cycler_files) %}
+    <div id="{{ modal_id }}" class="w3-modal">
+        <div class="w3-modal-content">
+            <div class="w3-content w3-display-container">
+                {% for cycler_file in cycler_files %}
+                    {% if cycler_file != "None" %}
+                        <div class="w3-display-container {{ image_class }}">
+                            <img src="{{ cycler_file }}">
+                            <div class="w3-display-topleft w3-black"><p>{{ cycler_file | basename }}</p></div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <button class="w3-button w3-black w3-display-bottomleft w3-xxlarge" onclick="change_{{ image_class }}(-1)">
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <button class="w3-button w3-black w3-display-bottomright w3-xxlarge" onclick="change_{{ image_class }}(1)">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="w3-btn w3-red w3-display-topright w3-large" onclick="document.getElementById('{{ modal_id }}').style.display='none'">
+                    <i class="fa fa-close"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{#
+    The loader script to be run when the window loads. Put this with other scripts.
+
+    TS: Seems to call the brainsprite function for a give image type.
+#}
+{% macro build_sprite_loader_script(image_type) %}
+    <script>
+    $( window ).load(function() {
+        var brain{{ image_type }} = brainsprite({
+            canvas: "{{ image_type }}-viewer",
+            sprite: "{{ image_type }}-spriteImg",
+            nbSlice: { 'Y':218 , 'Z':218 },
+            flagCoordinates: true,
+        });
+    });
+    </script>
+{% endmacro %}

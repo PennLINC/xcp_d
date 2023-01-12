@@ -9,13 +9,15 @@ from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 
-def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
+def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     """Use Nilearn NiftiLabelsMasker to extract timeseries.
 
     Parameters
     ----------
     in_file : str
         bold file timeseries
+    mask : str
+        BOLD file's associated brain mask file.
     atlas : str
         atlas in the same space with bold
     timeseries : str
@@ -30,9 +32,16 @@ def extract_timeseries_funct(in_file, atlas, timeseries, fconmatrix):
     fconmatrix : str
         functional connectivity matrix filename
     """
-    masker = NiftiLabelsMasker(labels_img=atlas, smoothing_fwhm=None, standardize=False)
+    masker = NiftiLabelsMasker(
+        labels_img=atlas,
+        mask_img=mask,
+        smoothing_fwhm=None,
+        standardize=False,
+    )
+
     # Use nilearn for time_series
     time_series = masker.fit_transform(in_file)
+
     # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
 

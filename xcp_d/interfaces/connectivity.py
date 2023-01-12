@@ -1,10 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Handling functional connectvity.
-
-.. testsetup::
-# will comeback
-"""
+"""Handling functional connectvity."""
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
@@ -29,6 +25,7 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc="filtered file")
+    mask = File(exists=True, mandator=True, desc="brain mask file")
     atlas = File(exists=True, mandatory=True, desc="atlas file")
 
 
@@ -48,10 +45,16 @@ class NiftiConnect(SimpleInterface):
         # Then write out functional correlation matrix of
         # timeseries using numpy.
         self._results["time_series_tsv"] = fname_presuffix(
-            self.inputs.filtered_file, suffix="time_series.tsv", newpath=runtime.cwd, use_ext=False
+            self.inputs.filtered_file,
+            suffix="time_series.tsv",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
         self._results["fcon_matrix_tsv"] = fname_presuffix(
-            self.inputs.filtered_file, suffix="fcon_matrix.tsv", newpath=runtime.cwd, use_ext=False
+            self.inputs.filtered_file,
+            suffix="fcon_matrix.tsv",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
 
         (
@@ -60,6 +63,7 @@ class NiftiConnect(SimpleInterface):
         ) = extract_timeseries_funct(
             in_file=self.inputs.filtered_file,
             atlas=self.inputs.atlas,
+            mask=self.inputs.mask,
             timeseries=self._results["time_series_tsv"],
             fconmatrix=self._results["fcon_matrix_tsv"],
         )

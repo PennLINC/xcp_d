@@ -5,7 +5,6 @@ import os
 
 import nibabel as nb
 import numpy as np
-import sklearn
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -20,11 +19,17 @@ from xcp_d.interfaces.prepostcleaning import (
     Interpolate,
     RemoveTR,
 )
-from xcp_d.interfaces.regression import CiftiDespike, Regress
+from xcp_d.interfaces.regression import Regress
+from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
+from xcp_d.utils.confounds import (
+    consolidate_confounds,
+    describe_regression,
+    get_customfile,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_design_matrix
-from xcp_d.utils.utils import consolidate_confounds, get_customfile, stringforparams
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -38,12 +43,12 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_ciftipostprocess_wf(
     bold_file,
+    bandpass_filter,
     lower_bpf,
     upper_bpf,
     bpf_order,
     motion_filter_type,
     motion_filter_order,
-    bandpass_filter,
     band_stop_min,
     band_stop_max,
     smoothing,
@@ -51,13 +56,14 @@ def init_ciftipostprocess_wf(
     params,
     output_dir,
     custom_confounds_folder,
-    omp_nthreads,
+    input_type,
     dummytime,
     dummy_scans,
     fd_thresh,
     despike,
     dcan_qc,
     n_runs,
+    omp_nthreads,
     layout=None,
     name="cifti_process_wf",
 ):
@@ -68,36 +74,59 @@ def init_ciftipostprocess_wf(
             :graph2use: orig
             :simple_form: yes
 
+            import os
+
+            from xcp_d.utils.bids import collect_data
             from xcp_d.workflow.cifti import init_ciftipostprocess_wf
+            from xcp_d.utils.doc import download_example_data
+
+            fmri_dir = download_example_data()
+
+            layout, subj_data = collect_data(
+                bids_dir=fmri_dir,
+                input_type="fmriprep",
+                participant_label="01",
+                task="imagery",
+                bids_validate=False,
+                cifti=True,
+            )
+
+            bold_file = subj_data["bold"][0]
+            custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
+
             wf = init_ciftipostprocess_wf(
-                bold_file="/path/to/cifti.dtseries.nii",
+                bold_file=bold_file,
                 bandpass_filter=True,
-                lower_bpf=0.009,
+                lower_bpf=0.01,
                 upper_bpf=0.08,
                 bpf_order=2,
-                motion_filter_type=None,
+                motion_filter_type="notch",
                 motion_filter_order=4,
-                band_stop_min=0,
-                band_stop_max=0,
+                band_stop_min=12,
+                band_stop_max=20,
                 smoothing=6,
-                head_radius=50,
-                params="36P",
+                head_radius=50.,
+                params="27P",
                 output_dir=".",
-                custom_confounds_folder=None,
-                omp_nthreads=1,
-                dummytime=0,
+                custom_confounds_folder=custom_confounds_folder,
+                input_type="fmriprep",
                 dummy_scans=0,
+                dummytime=0,
                 fd_thresh=0.2,
-                despike=False,
-                dcan_qc=False,
+                despike=True,
+                dcan_qc=True,
                 n_runs=1,
-                layout=None,
-                name='cifti_postprocess_wf',
+                omp_nthreads=1,
+                layout=layout,
+                name="cifti_postprocess_wf",
             )
+            wf.inputs.inputnode.t1w = subj_data["t1w"]
+            wf.inputs.inputnode.t1seg = subj_data["t1w_seg"]
 
     Parameters
     ----------
     bold_file
+    input_type
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -130,20 +159,28 @@ def init_ciftipostprocess_wf(
     ------
     bold_file
         CIFTI file
-    custom_confounds_folder
+    custom_confounds_file
         custom regressors
     t1w
     t1seg
-    %(template_to_t1w)s
     fmriprep_confounds_tsv
 
     References
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, bold_file)
+    run_data = collect_run_data(layout, input_type, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
+
+    # Load custom confounds
+    # We need to run this function directly to access information in the confounds that is
+    # used for the boilerplate.
+    custom_confounds_file = get_customfile(
+        custom_confounds_folder,
+        run_data["confounds"],
+    )
+    regression_description = describe_regression(params, custom_confounds_file)
 
     workflow = Workflow(name=name)
 
@@ -189,10 +226,20 @@ def init_ciftipostprocess_wf(
             "regressors were discarded, then "
         )
 
+    despike_str = ""
     if despike:
-        despike_str = "despiked, mean-centered, and linearly detrended"
-    else:
-        despike_str = "mean-centered and linearly detrended"
+        despike_str = (
+            "After censoring, but before nuisance regression, "
+            "the BOLD data were converted to NIfTI format, despiked with 3dDespike, "
+            "and converted back to CIFTI format."
+        )
+
+    bandpass_str = ""
+    if bandpass_filter:
+        bandpass_str = (
+            "The interpolated timeseries were then band-pass filtered to retain signals within "
+            f"the {lower_bpf}-{upper_bpf} Hz frequency band."
+        )
 
     workflow.__desc__ = f"""\
 For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
@@ -202,24 +249,21 @@ In order to identify high-motion outlier volumes, {fd_str}.
 Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
 {fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
 {filter_post_str}
-Before nuisance regression, but after censoring, the BOLD data were {despike_str}.
-{stringforparams(params=params)} [@benchmarkp;@satterthwaite_2013].
-These nuisance regressors were regressed from the BOLD data using linear regression -
-as implemented in Scikit-Learn {sklearn.__version__} [@scikit-learn].
+{despike_str}
+Next, the BOLD data and confounds were mean-centered and linearly detrended.
+{regression_description}
 Any volumes censored earlier in the workflow were then interpolated in the residual time series
 produced by the regression.
-The interpolated timeseries were then band-pass filtered to retain signals within the
-{lower_bpf}-{upper_bpf} Hz frequency band.
+{bandpass_str}
 """
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
-                "custom_confounds_folder",
+                "custom_confounds_file",
                 "t1w",
                 "t1seg",
-                "template_to_t1w",
                 "fmriprep_confounds_tsv",
                 "dummy_scans",
             ],
@@ -228,7 +272,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.custom_confounds_folder = custom_confounds_folder
+    inputnode.inputs.ref_file = run_data["boldref"]
+    inputnode.inputs.custom_confounds_file = custom_confounds_file
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
 
@@ -250,15 +295,6 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         ]),
     ])
     # fmt:on
-
-    get_custom_confounds_file = pe.Node(
-        Function(
-            input_names=["custom_confounds_folder", "fmriprep_confounds_file"],
-            output_names=["custom_confounds_file"],
-            function=get_customfile,
-        ),
-        name="get_custom_confounds_file",
-    )
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
         mem_gb=mem_gbx["timeseries"], name="cifti_ts_con_wf", omp_nthreads=omp_nthreads
@@ -351,14 +387,8 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # Load and filter confounds
     # fmt:off
     workflow.connect([
-        (inputnode, get_custom_confounds_file, [
-            ("custom_confounds_folder", "custom_confounds_folder"),
-            ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-        ]),
         (inputnode, consolidate_confounds_node, [
             ("bold_file", "img_file"),
-        ]),
-        (get_custom_confounds_file, consolidate_confounds_node, [
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
     ])
@@ -398,14 +428,18 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        dcan_qc=dcan_qc,
         cifti=True,
         name="qc_report_wf",
     )
 
     # fmt:off
     workflow.connect([
-        (downcast_data, qc_report_wf, [
+        (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.preprocessed_bold_file"),
+        ]),
+        (regression_wf, qc_report_wf, [
+            ("res_file", "inputnode.cleaned_unfiltered_file"),
         ]),
     ])
     # fmt:on
@@ -415,7 +449,7 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
         remove_dummy_scans = pe.Node(
             RemoveTR(),
             name="remove_dummy_scans",
-            mem_gb=0.1 * mem_gbx["timeseries"],
+            mem_gb=mem_gbx["timeseries"],
         )
 
         # fmt:off
@@ -473,18 +507,38 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     ])
     # fmt:on
 
-    if despike:  # If we despike
+    if despike:
+        # first, convert the cifti to a nifti
+        convert_to_nifti = pe.Node(
+            CiftiConvert(target="to"),
+            name="convert_to_nifti",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
+
+        # next, run 3dDespike
         despike3d = pe.Node(
-            CiftiDespike(TR=TR),
-            name="cifti_despike",
+            DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
+            name="despike3d",
+            mem_gb=mem_gbx["timeseries"],
+            n_procs=omp_nthreads,
+        )
+
+        # finally, convert the despiked nifti back to cifti
+        convert_to_cifti = pe.Node(
+            CiftiConvert(target="from", TR=TR),
+            name="convert_to_cifti",
             mem_gb=mem_gbx["timeseries"],
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (censor_scrub, despike3d, [("bold_censored", "in_file")]),
-            (despike3d, regression_wf, [("des_file", "in_file")]),
+            (censor_scrub, convert_to_nifti, [("bold_censored", "in_file")]),
+            (convert_to_nifti, despike3d, [("out_file", "in_file")]),
+            (censor_scrub, convert_to_cifti, [("bold_censored", "cifti_template")]),
+            (despike3d, convert_to_cifti, [("out_file", "in_file")]),
+            (convert_to_cifti, regression_wf, [("out_file", "in_file")]),
         ])
         # fmt:on
 
@@ -533,7 +587,10 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
     # qc report
     workflow.connect([
         (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
-        (censor_scrub, qc_report_wf, [("tmask", "inputnode.tmask")]),
+        (censor_scrub, qc_report_wf, [
+            ("tmask", "inputnode.tmask"),
+            ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
     ])
 
     # write derivatives
@@ -637,54 +694,25 @@ The interpolated timeseries were then band-pass filtered to retain signals withi
 
     # executive summary workflow
     if dcan_qc:
-        executivesummary_wf = init_execsummary_wf(
-            TR=TR,
+        executive_summary_wf = init_execsummary_wf(
             bold_file=bold_file,
             layout=layout,
             output_dir=output_dir,
-            omp_nthreads=omp_nthreads,
-            mem_gb=mem_gbx["timeseries"],
+            name="executive_summary_wf",
         )
 
         # fmt:off
+        # Use inputnode for executive summary instead of downcast_data
+        # because T1w is used as name source.
         workflow.connect([
-            (inputnode, executivesummary_wf, [
-                ('template_to_t1w', 'inputnode.template_to_t1w'),
-            ]),
-            (downcast_data, executivesummary_wf, [
-                ('t1w', 'inputnode.t1w'),
-                ('t1seg', 'inputnode.t1seg'),
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
+            (inputnode, executive_summary_wf, [
                 ('bold_file', 'inputnode.bold_file'),
-            ]),
-            (regression_wf, executivesummary_wf, [
-                ('res_file', 'inputnode.regressed_data'),
-            ]),
-            (filtering_wf, executivesummary_wf, [
-                ('filtered_file', 'inputnode.residual_data'),
-            ]),
-            (censor_scrub, executivesummary_wf, [
-                ('filtered_motion', 'inputnode.filtered_motion'),
-                ('tmask', 'inputnode.tmask'),
+                ("ref_file", "inputnode.boldref_file"),
             ]),
         ])
         # fmt:on
-
-        if dummy_scans:
-            # fmt:off
-            workflow.connect([
-                (remove_dummy_scans, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ])
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (inputnode, executivesummary_wf, [
-                    ("dummy_scans", "inputnode.dummy_scans"),
-                ]),
-            ])
-            # fmt:on
 
     return workflow
 
