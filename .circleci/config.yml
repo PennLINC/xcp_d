@@ -236,15 +236,11 @@ jobs:
     steps:
       - attach_workspace:
           at: /src/coverage
-      - checkout
-      - restore_cache:
-          key: conda-py37-v2-{{ checksum "setup.cfg" }}
       - run:
           name: Merge coverage files
           command: |
             apt-get update
             apt-get install -yqq curl
-            source activate tedana_py37  # depends on makeenv37
             cd /src/coverage/
             coverage combine
             coverage xml
