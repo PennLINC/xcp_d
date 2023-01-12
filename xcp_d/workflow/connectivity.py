@@ -155,9 +155,9 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     )
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(
+    plot_correlation_matrices = pe.Node(
         ConnectPlot(),
-        name="matrix_plot",
+        name="plot_correlation_matrices",
         mem_gb=mem_gb,
     )
 
@@ -172,10 +172,10 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
             ("clean_bold", "in_file"),
             ("bold_mask", "mask"),
         ]),
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (inputnode, plot_correlation_matrices, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (atlas_name_grabber, plot_correlation_matrices, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
         (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
             ("transformfile", "transforms"),
@@ -187,8 +187,10 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         (extract_parcel_timeseries, outputnode, [("timeseries", "timeseries")]),
         (extract_parcel_timeseries, correlate_timeseries, [("timeseries", "in_file")]),
         (correlate_timeseries, outputnode, [("correlations_file", "correlations")]),
-        (correlate_timeseries, matrix_plot, [("correlations_file", "correlation_tsvs")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+        (correlate_timeseries, plot_correlation_matrices, [
+            ("correlations_file", "correlation_tsvs"),
+        ]),
+        (plot_correlation_matrices, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 
@@ -289,7 +291,7 @@ the Connectome Workbench.
     extract_parcel_timeseries = pe.MapNode(
         Function(
             input_names=["in_file"],
-            output_names=["timeseries_file", "correlations_file"],
+            output_names=["timeseries_file"],
             function=extract_ptseries,
         ),
         name="extract_parcel_timeseries",
@@ -309,26 +311,28 @@ the Connectome Workbench.
     )
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(
+    plot_correlation_matrices = pe.Node(
         ConnectPlot(),
-        name="matrix_plot",
+        name="plot_correlation_matrices",
         mem_gb=mem_gb,
     )
 
     # fmt:off
     workflow.connect([
         (inputnode, parcellate_data, [("clean_bold", "in_file")]),
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (inputnode, plot_correlation_matrices, [("clean_bold", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (atlas_name_grabber, plot_correlation_matrices, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
         (parcellate_data, extract_parcel_timeseries, [("out_file", "in_file")]),
         (extract_parcel_timeseries, outputnode, [("timeseries_file", "timeseries")]),
         (extract_parcel_timeseries, correlate_timeseries, [("timeseries_file", "in_file")]),
-        (correlate_timeseries, matrix_plot, [("correlations_file", "correlation_tsvs")]),
+        (correlate_timeseries, plot_correlation_matrices, [
+            ("correlations_file", "correlation_tsvs"),
+        ]),
         (correlate_timeseries, outputnode, [("correlations_file", "correlations")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+        (plot_correlation_matrices, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 
