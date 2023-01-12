@@ -236,11 +236,10 @@ jobs:
     steps:
       - attach_workspace:
           at: /src/coverage
+      - run: *runinstall
       - run:
           name: Merge coverage files
           command: |
-            apt-get update
-            apt-get install -yqq curl
             cd /src/coverage/
             coverage combine
             coverage xml
