@@ -327,9 +327,9 @@ produced by the regression.
     ])
     # fmt:on
 
-    fcon_ts_wf = init_nifti_functional_connectivity_wf(
+    connectivity_wf = init_nifti_functional_connectivity_wf(
         mem_gb=mem_gbx["timeseries"],
-        name="fcons_ts_wf",
+        name="connectivity_wf",
         omp_nthreads=omp_nthreads,
     )
 
@@ -599,14 +599,14 @@ produced by the regression.
 
     # functional connect workflow
     workflow.connect([
-        (downcast_data, fcon_ts_wf, [
+        (downcast_data, connectivity_wf, [
             ('bold_file', 'inputnode.bold_file'),
             ("bold_mask", "inputnode.bold_mask"),
             ('ref_file', 'inputnode.ref_file'),
         ]),
-        (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
+        (inputnode, connectivity_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
-        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
+        (filtering_wf, connectivity_wf, [('filtered_file', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
@@ -653,7 +653,7 @@ produced by the regression.
         (reho_compute_wf, write_derivative_wf, [
             ('outputnode.reho_out', 'inputnode.reho_out'),
         ]),
-        (fcon_ts_wf, write_derivative_wf, [
+        (connectivity_wf, write_derivative_wf, [
             ('outputnode.atlas_names', 'inputnode.atlas_names'),
             ('outputnode.correlations', 'inputnode.correlations'),
             ('outputnode.timeseries', 'inputnode.timeseries'),
@@ -709,7 +709,7 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
+        (connectivity_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
     ])
     # fmt:on

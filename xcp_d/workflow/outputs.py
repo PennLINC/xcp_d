@@ -62,7 +62,7 @@ def init_writederivatives_wf(
     TR : float
         repetition time in seconds
     %(name)s
-        Default is "fcons_ts_wf".
+        Default is "write_derivatives_wf".
 
     Inputs
     ------

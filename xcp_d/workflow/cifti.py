@@ -296,8 +296,10 @@ produced by the regression.
     ])
     # fmt:on
 
-    fcon_ts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=mem_gbx["timeseries"], name="cifti_ts_con_wf", omp_nthreads=omp_nthreads
+    connectivity_wf = init_cifti_functional_connectivity_wf(
+        mem_gb=mem_gbx["timeseries"],
+        name="connectivity_wf",
+        omp_nthreads=omp_nthreads,
     )
 
     if bandpass_filter:
@@ -572,7 +574,7 @@ produced by the regression.
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([(filtering_wf, connectivity_wf, [('filtered_file', 'inputnode.clean_bold')])])
 
     # reho and alff
     workflow.connect([
@@ -614,7 +616,7 @@ produced by the regression.
         (reho_compute_wf, write_derivative_wf, [
             ('outputnode.reho_out', 'inputnode.reho_out'),
         ]),
-        (fcon_ts_wf, write_derivative_wf, [
+        (connectivity_wf, write_derivative_wf, [
             ('outputnode.atlas_names', 'inputnode.atlas_names'),
             ('outputnode.correlations', 'inputnode.correlations'),
             ('outputnode.timeseries', 'inputnode.timeseries'),
@@ -681,7 +683,7 @@ produced by the regression.
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
         (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
-        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
+        (connectivity_wf, ds_report_connectivity, [('outputnode.connectplot', "in_file")])
     ])
     # fmt:on
 
