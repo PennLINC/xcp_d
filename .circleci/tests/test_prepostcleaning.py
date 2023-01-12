@@ -60,7 +60,6 @@ def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_facto
     assert int32_img.dataobj.dtype == np.int32
 
 
-@pytest.mark.skip(reason="Cannot make a cifti with float64 data.")
 def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Convert nifti files to 32-bit."""
     tmpdir = tmp_path_factory.mktemp("test_conversion_to_32bit")
