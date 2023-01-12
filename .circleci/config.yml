@@ -279,8 +279,8 @@ jobs:
           name: Deploy to Docker Hub
           no_output_timeout: 40m
           command: |
-            if [[ -n "$DOCKER_PASS" ]]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
+            if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+              docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
               docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
               docker push pennlinc/xcp_d:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
