@@ -213,7 +213,7 @@ def init_writederivatives_wf(
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
-        correlations_wf = pe.MapNode(
+        ds_correlation_matrices = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -222,7 +222,7 @@ def init_writederivatives_wf(
                 suffix="conmat",
                 extension=".tsv",
             ),
-            name="correlations_wf",
+            name="ds_correlation_matrices",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
@@ -328,7 +328,7 @@ def init_writederivatives_wf(
                 dismiss_entities=["desc", "den"],
                 den="91k",
                 suffix="timeseries",
-                extension=".ptseries.nii",
+                extension=".tsv",
             ),
             name="ds_parcellated_timeseries",
             run_without_submitting=True,
@@ -336,7 +336,7 @@ def init_writederivatives_wf(
             iterfield=["atlas", "in_file"],
         )
 
-        correlations_wf = pe.MapNode(
+        ds_correlation_matrices = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -345,9 +345,9 @@ def init_writederivatives_wf(
                 den="91k",
                 measure="pearsoncorrelation",
                 suffix="conmat",
-                extension=".pconn.nii",
+                extension=".tsv",
             ),
-            name="correlations_wf",
+            name="ds_correlation_matrices",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
@@ -429,7 +429,10 @@ def init_writederivatives_wf(
             ('timeseries', 'in_file'),
             ('atlas_names', 'atlas'),
         ]),
-        (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, ds_correlation_matrices, [
+            ('correlations', 'in_file'),
+            ('atlas_names', 'atlas'),
+        ]),
     ])
 
     if bandpass_filter:
