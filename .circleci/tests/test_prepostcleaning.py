@@ -3,7 +3,6 @@ import os
 
 import nibabel as nb
 import numpy as np
-import pytest
 
 from xcp_d.interfaces.prepostcleaning import ConvertTo32
 
