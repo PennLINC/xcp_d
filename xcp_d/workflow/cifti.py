@@ -574,7 +574,11 @@ produced by the regression.
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, connectivity_wf, [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([
+        (filtering_wf, connectivity_wf, [
+            ('filtered_file', 'inputnode.clean_bold'),
+        ]),
+    ])
 
     # reho and alff
     workflow.connect([

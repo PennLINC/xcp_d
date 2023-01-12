@@ -290,7 +290,7 @@ the Connectome Workbench.
             output_names=["timeseries_file", "correlations_file"],
             function=extract_ptseries,
         ),
-        name="extract_timeseries",
+        name="extract_parcel_timeseries",
         iterfield=["in_file"],
         mem_gb=mem_gb,
     )

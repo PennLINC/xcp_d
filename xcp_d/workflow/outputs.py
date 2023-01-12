@@ -200,7 +200,7 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        timeseries_wf = pe.MapNode(
+        ds_parcellated_timeseries = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -208,7 +208,7 @@ def init_writederivatives_wf(
                 suffix="timeseries",
                 extension=".tsv",
             ),
-            name="timeseries_wf",
+            name="ds_parcellated_timeseries",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
@@ -320,7 +320,7 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        timeseries_wf = pe.MapNode(
+        ds_parcellated_timeseries = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -330,7 +330,7 @@ def init_writederivatives_wf(
                 suffix="timeseries",
                 extension=".ptseries.nii",
             ),
-            name="timeseries_wf",
+            name="ds_parcellated_timeseries",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
@@ -425,7 +425,10 @@ def init_writederivatives_wf(
         (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
         (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
         (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
-        (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, ds_parcellated_timeseries, [
+            ('timeseries', 'in_file'),
+            ('atlas_names', 'atlas'),
+        ]),
         (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
     ])
 
