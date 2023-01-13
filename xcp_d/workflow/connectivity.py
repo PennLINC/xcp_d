@@ -10,7 +10,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot
 from xcp_d.interfaces.workbench import CiftiParcellate
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
+from xcp_d.utils.atlas import get_atlas_file, get_atlas_names
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.fcon import compute_functional_connectivity, extract_timeseries_funct
 from xcp_d.utils.utils import extract_ptseries, get_std2bold_xforms
@@ -94,21 +94,22 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         name="outputnode",
     )
 
-    # get atlases via pkgrf
-    atlas_file_grabber = pe.MapNode(
-        Function(
-            input_names=["atlas_name"],
-            output_names=["atlas_file", "node_labels_file"],
-            function=get_atlas_nifti,
-        ),
-        name="atlas_file_grabber",
-        iterfield=["atlas_name"],
-    )
-
     atlas_name_grabber = pe.Node(
         Function(output_names=["atlas_names"], function=get_atlas_names),
         name="atlas_name_grabber",
     )
+
+    # get atlases via pkgrf
+    atlas_file_grabber = pe.MapNode(
+        Function(
+            input_names=["atlas_name", "cifti"],
+            output_names=["atlas_file", "node_labels_file"],
+            function=get_atlas_file,
+        ),
+        name="atlas_file_grabber",
+        iterfield=["atlas_name"],
+    )
+    atlas_file_grabber.inputs.cifti = False
 
     get_transforms_to_bold_space = pe.Node(
         Function(
@@ -272,13 +273,14 @@ the Connectome Workbench.
 
     atlas_file_grabber = pe.MapNode(
         Function(
-            input_names=["atlas_name"],
+            input_names=["atlas_name", "cifti"],
             output_names=["atlas_file", "node_labels_file"],
-            function=get_atlas_cifti,
+            function=get_atlas_file,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
+    atlas_file_grabber.inputs.cifti = True
 
     parcellate_data = pe.MapNode(
         CiftiParcellate(direction="COLUMN"),
