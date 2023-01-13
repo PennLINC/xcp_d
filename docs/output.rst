@@ -148,10 +148,10 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
                sub-<label>/[ses-<label>/]
                     func/
                          # Nifti
-                         <source_entities>_space-<label>_desc-framewisedisplacement_bold-DCAN.hdf5
+                         <source_entities>_space-<label>_desc-dcan_qc.hdf5
 
                          # Cifti
-                         <source_entities>_space-fsLR_desc-framewisedisplacement-bold-DCAN.hdf5
+                         <source_entities>_space-fsLR_desc-dcan_qc.hdf5
 
       These files have the following keys:
 
