@@ -173,7 +173,7 @@ def concatenate_derivatives(
                         "desc-filtered_motion.tsv",
                         "desc-dcan_qc.hdf5",
                     )
-                    make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
+                    make_dcan_df(concat_motion_file, concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(

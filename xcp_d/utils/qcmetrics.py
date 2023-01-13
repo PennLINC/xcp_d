@@ -209,21 +209,19 @@ def _make_dcan_qc_file(filtered_motion, TR):
 
     from xcp_d.utils.execsummary import make_dcan_df
 
-    filtered_motion_filename = os.path.basename(filtered_motion)
-    dcan_df_file = f"{'.'.join(filtered_motion_filename.split('.')[:-1])}-DCAN.hdf5"
-    dcan_df_file = os.path.abspath(dcan_df_file)
+    dcan_df_file = os.path.abspath("desc-dcan_qc.hdf5")
 
-    make_dcan_df([filtered_motion], dcan_df_file, TR)
+    make_dcan_df(filtered_motion, dcan_df_file, TR)
     return dcan_df_file
 
 
-def make_dcan_df(fds_files, name, TR):
+def make_dcan_df(filtered_motion_file, name, TR):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
     ----------
-    fds_files : list of str
-        List of files from which to extract information.
+    filtered_motion_file : str
+        File from which to extract information.
     name : str
         Name of the HDF5-format file to be created.
     TR : float
@@ -249,9 +247,8 @@ def make_dcan_df(fds_files, name, TR):
     """
     LOGGER.debug(f"Generating DCAN file: {name}")
 
-    # Load filtered framewise_displacement values from files and concatenate
-    filtered_motion_dfs = [pd.read_table(fds_file) for fds_file in fds_files]
-    filtered_motion_df = pd.concat(filtered_motion_dfs, axis=0)
+    # Load filtered framewise_displacement values from file
+    filtered_motion_df = pd.read_table(filtered_motion_file)
     fd = filtered_motion_df["framewise_displacement"].values
 
     with h5py.File(name, "w") as dcan:
