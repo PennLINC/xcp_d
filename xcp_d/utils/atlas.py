@@ -54,74 +54,31 @@ def get_atlas_file(atlas_name, cifti):
 
     from pkg_resources import resource_filename as pkgrf
 
-    if cifti:
-        if atlas_name[:8] == "Schaefer":
-            if atlas_name[8:12] == "1017":
-                atlas_file = pkgrf(
-                    "xcp_d",
-                    (
-                        "data/ciftiatlas/"
-                        "Schaefer2018_1000Parcels_17Networks_order_fsLR_32k.dlabel.nii"
-                    ),
-                )
-            else:
-                atlas_file = pkgrf(
-                    "xcp_d",
-                    (
-                        "data/ciftiatlas/"
-                        f"Schaefer2018_{atlas_name[8]}00Parcels_"
-                        "17Networks_order_fsLR_32k.dlabel.nii"
-                    ),
-                )
-        elif atlas_name == "Glasser":
-            atlas_file = pkgrf(
-                "xcp_d",
-                "data/ciftiatlas/Glasser_360Parcels_fsLR_32k.dlabel.nii",
-            )
-        elif atlas_name == "Gordon":
-            atlas_file = pkgrf(
-                "xcp_d",
-                "data/ciftiatlas/Gordon_333Parcels_fsLR_32k.dlabel.nii",
-            )
-        elif atlas_name == "subcortical":
-            atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_fsLR_32k.dlabel.nii")
-        else:
-            raise RuntimeError(f'Atlas "{atlas_name}" not available')
+    suffix = "_fsLR_32k.dlabel.nii" if cifti else "_FSLMNI152_2mm.nii.gz"
+    folder = "ciftiatlas" if cifti else "niftiatlas"
 
-        node_labels_file = atlas_file.replace("_fsLR_32k.dlabel.nii", "_info.tsv")
+    if atlas_name[:8] == "Schaefer":
+        if atlas_name[8:12] == "1017":
+            n_parcels = "1000"
+        else:
+            n_parcels = f"{atlas_name[8]}00"
+
+        filename = f"Schaefer2018_{n_parcels}Parcels_17Networks_order{suffix}"
+
+    elif atlas_name == "Glasser":
+        filename = f"Glasser_360Parcels{suffix}"
+
+    elif atlas_name == "Gordon":
+        filename = f"Gordon_333Parcels{suffix}"
+
+    elif atlas_name == "subcortical":
+        filename = f"Tian{suffix}"
 
     else:
-        if atlas_name[:8] == "Schaefer":
-            if atlas_name[8:12] == "1017":
-                atlas_file = pkgrf(
-                    "xcp_d",
-                    (
-                        "data/niftiatlas/"
-                        "Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii.gz"
-                    ),
-                )
-            else:
-                atlas_file = pkgrf(
-                    "xcp_d",
-                    (
-                        "data/niftiatlas/"
-                        f"Schaefer2018_{atlas_name[8]}00Parcels_"
-                        "17Networks_order_FSLMNI152_2mm.nii.gz"
-                    ),
-                )
-        elif atlas_name == "Glasser":
-            atlas_file = pkgrf("xcp_d", "data/niftiatlas/Glasser_360Parcels_FSLMNI152_2mm.nii.gz")
-        elif atlas_name == "Gordon":
-            atlas_file = pkgrf("xcp_d", "data/niftiatlas/Gordon_333Parcels_FSLMNI152_2mm.nii.gz")
-        elif atlas_name == "subcortical":
-            atlas_file = pkgrf(
-                "xcp_d",
-                "data/niftiatlas/Tian_FSLMNI152_2mm.nii.gz",
-            )
-        else:
-            raise RuntimeError(f'Atlas "{atlas_name}" not available')
+        raise RuntimeError(f"Atlas '{atlas_name}' not available")
 
-        node_labels_file = atlas_file.replace("_FSLMNI152_2mm.nii.gz", "_info.tsv")
+    atlas_file = pkgrf("xcp_d", f"data/{folder}/{filename}")
+    node_labels_file = atlas_file.replace(suffix, "_info.tsv")
 
     assert os.path.isfile(node_labels_file)
 
