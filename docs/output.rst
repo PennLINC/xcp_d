@@ -94,8 +94,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
                          <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
 
                          # Cifti
-                         <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
-                         <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+                         <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
+                         <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.tsv
 
    c. Resting-state derivatives (Regional Homogeneity and ALFF)::
 
