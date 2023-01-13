@@ -207,7 +207,7 @@ def _make_dcan_qc_file(filtered_motion, TR):
     """Make DCAN HDF5 file from single motion file."""
     import os
 
-    from xcp_d.utils.execsummary import make_dcan_df
+    from xcp_d.utils.qcmetrics import make_dcan_df
 
     dcan_df_file = os.path.abspath("desc-dcan_qc.hdf5")
 
