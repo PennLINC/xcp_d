@@ -172,6 +172,9 @@ def concatenate_derivatives(
                     concat_dcan_df_file = concat_motion_file.replace(
                         "desc-filtered_motion.tsv",
                         "desc-dcan_qc.hdf5",
+                    ).replace(
+                        "_motion.tsv",
+                        "desc-dcan_qc.hdf5",
                     )
                     make_dcan_df(concat_motion_file, concat_dcan_df_file, TR)
 
