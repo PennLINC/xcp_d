@@ -231,6 +231,74 @@ def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert np.allclose(node_10_500s_mean, orig_cifti_node_10)
 
 
+def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Check that the CIFTI parcellation approach works.
+
+    This is a basic version of ``test_cifti_parcellation``.
+    Instead of testing across whole nodes, this test only changes a single vertex.
+    """
+    tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation_basic")
+
+    atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
+    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+
+    cifti_img = nb.load(cifti_file)
+
+    cifti_data = cifti_img.get_fdata()
+    cifti_data = np.ones(cifti_data.shape)
+
+    # Parcellate the simulated file to find the node associated with the modified vertex.
+    VERTEX_IDX = 60000
+    cifti_data_locator = cifti_data.copy()
+    cifti_data_locator[:, VERTEX_IDX] = 1000000
+    cifti_file_loc = os.path.join(tmpdir, "cifti_simulated.dtseries.nii")
+    cifti_img_loc = nb.Cifti2Image(
+        dataobj=cifti_data_locator,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_loc.to_filename(cifti_file_loc)
+
+    cifti_file_loc_parc = _run_parcellation(cifti_file_loc, atlas_file, tmpdir)
+    cifti_data_loc_parc = nb.load(cifti_file_loc_parc).get_fdata()
+    loc_node = np.where(cifti_data_loc_parc[0, :] > 1)[0][0]
+
+    # Parcellate and check the zeroed-out file
+    # The zeros should be ignored, so the affected node should have all ones
+    cifti_data_zeros = cifti_data.copy()
+    cifti_data_zeros[:, VERTEX_IDX] = 0
+    cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
+    cifti_img_zeros = nb.Cifti2Image(
+        dataobj=cifti_data_zeros,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_zeros.to_filename(cifti_file_zeros)
+
+    cifti_file_zeros_parc = _run_parcellation(cifti_file_zeros, atlas_file, tmpdir)
+    cifti_data_zeros_parc = nb.load(cifti_file_zeros_parc).get_fdata()
+    assert np.all(cifti_data_zeros_parc[:, loc_node] == 1)
+
+    # Parcellate and check the NaNed-out file
+    # The NaNs should be ignored, so the affected node should have all ones
+    cifti_data_nans = cifti_data.copy()
+    cifti_data_nans[:, VERTEX_IDX] = np.nan
+    cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
+    cifti_img_nans = nb.Cifti2Image(
+        dataobj=cifti_data_nans,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_nans.to_filename(cifti_file_nans)
+
+    cifti_file_nans_parc = _run_parcellation(cifti_file_nans, atlas_file, tmpdir)
+    cifti_data_nans_parc = nb.load(cifti_file_nans_parc).get_fdata()
+    assert np.all(cifti_data_nans_parc[:, loc_node] == 1)
+
+
 def _run_parcellation(in_file, atlas_file, tmpdir):
     replace_empty_vertices = CiftiZerosToNaNs()
     replace_empty_vertices.inputs.in_file = in_file
