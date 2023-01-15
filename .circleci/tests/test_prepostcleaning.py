@@ -264,8 +264,8 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     cifti_data_loc_parc = nb.load(cifti_file_loc_parc).get_fdata()
     loc_node = np.where(cifti_data_loc_parc[0, :] > 1)[0][0]
 
-    # Parcellate and check the zeroed-out file
-    # The zeros should be ignored, so the affected node should have all ones
+    # Create file with one vertex that is all zeros.
+    # The zeros should be ignored, so the affected node should have all ones.
     cifti_data_zeros = cifti_data.copy()
     cifti_data_zeros[:, VERTEX_IDX] = 0
     cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
@@ -281,10 +281,45 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     cifti_data_zeros_parc = nb.load(cifti_file_zeros_parc).get_fdata()
     assert np.all(cifti_data_zeros_parc[:, loc_node] == 1)
 
-    # Parcellate and check the NaNed-out file
-    # The NaNs should be ignored, so the affected node should have all ones
+    # Create file with one vertex that has a zero in first timepoint.
+    # The single zero should be treated as real data,
+    # so the affected node should have a value < 1 in the affected timepoint.
+    cifti_data_zeros = cifti_data.copy()
+    cifti_data_zeros[0, VERTEX_IDX] = 0
+    cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
+    cifti_img_zeros = nb.Cifti2Image(
+        dataobj=cifti_data_zeros,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_zeros.to_filename(cifti_file_zeros)
+
+    cifti_file_zeros_parc = _run_parcellation(cifti_file_zeros, atlas_file, tmpdir)
+    cifti_data_zeros_parc = nb.load(cifti_file_zeros_parc).get_fdata()
+    assert cifti_data_zeros_parc[0, loc_node] < 1
+
+    # Create file with one vertex that is all NaNs.
+    # The NaNs should be ignored, so the affected node should have all ones.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[:, VERTEX_IDX] = np.nan
+    cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
+    cifti_img_nans = nb.Cifti2Image(
+        dataobj=cifti_data_nans,
+        header=cifti_img.header,
+        file_map=cifti_img.file_map,
+        nifti_header=cifti_img.nifti_header,
+    )
+    cifti_img_nans.to_filename(cifti_file_nans)
+
+    cifti_file_nans_parc = _run_parcellation(cifti_file_nans, atlas_file, tmpdir)
+    cifti_data_nans_parc = nb.load(cifti_file_nans_parc).get_fdata()
+    assert np.all(cifti_data_nans_parc[:, loc_node] == 1)
+
+    # Create file with one vertex that is has a NaN in the first timepoint.
+    # The NaN should be ignored, so the affected node should have all ones.
+    cifti_data_nans = cifti_data.copy()
+    cifti_data_nans[0, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
     cifti_img_nans = nb.Cifti2Image(
         dataobj=cifti_data_nans,
