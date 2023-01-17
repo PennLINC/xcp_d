@@ -456,7 +456,7 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     return filtered_data
 
 
-def estimate_brain_radius(mask_file):
+def estimate_brain_radius(mask_file, head_radius="auto"):
     """Estimate brain radius from binary brain mask file.
 
     Parameters
@@ -466,7 +466,7 @@ def estimate_brain_radius(mask_file):
 
     Returns
     -------
-    radius : float
+    brain_radius : float
         Estimated brain radius, in millimeters.
 
     Notes
@@ -479,11 +479,16 @@ def estimate_brain_radius(mask_file):
     import nibabel as nb
     import numpy as np
 
-    mask_img = nb.load(mask_file)
-    mask_data = mask_img.get_fdata()
-    n_voxels = np.sum(mask_data)
-    voxel_size = np.prod(mask_img.header.get_zooms())
-    volume = n_voxels * voxel_size
+    if head_radius == "auto":
+        mask_img = nb.load(mask_file)
+        mask_data = mask_img.get_fdata()
+        n_voxels = np.sum(mask_data)
+        voxel_size = np.prod(mask_img.header.get_zooms())
+        volume = n_voxels * voxel_size
 
-    radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
-    return radius
+        brain_radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
+
+    else:
+        brain_radius = head_radius
+
+    return brain_radius

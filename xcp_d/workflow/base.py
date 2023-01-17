@@ -577,12 +577,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             (inputnode, bold_postproc_wf, [
                 ('t1w', 'inputnode.t1w'),
                 ('t1w_seg', 'inputnode.t1seg'),
+                ('t1w_mask', 'inputnode.t1w_mask'),
             ]),
         ])
         if not cifti:
             workflow.connect([
                 (inputnode, bold_postproc_wf, [
-                    ('t1w_mask', 'inputnode.t1w_mask'),
                     ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
                 ]),
             ])

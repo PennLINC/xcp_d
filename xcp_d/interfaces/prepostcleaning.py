@@ -22,7 +22,6 @@ from xcp_d.utils.modified_data import (
     generate_mask,
     interpolate_masked_data,
 )
-from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -266,23 +265,10 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv. Used for flagging high-motion volumes.",
     )
-    head_radius = traits.Either(
-        traits.Float,
-        traits.Enum("auto"),
+    head_radius = traits.Float(
         mandatory=False,
         default_value=50,
-        desc=(
-            "Head radius in mm, used for calculating framewise displacement. "
-            "A value of 'auto' is also allowed."
-        ),
-    )
-    brain_mask_file = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Preprocessed brain mask. "
-            "This input is only used if 'head_radius' is set to 'auto'."
-        ),
+        desc="Head radius in mm, used for calculating framewise displacement.",
     )
     motion_filter_type = traits.Either(
         None,
@@ -363,14 +349,9 @@ class CensorScrub(SimpleInterface):
             band_stop_max=self.inputs.band_stop_max,
         )
 
-        if self.inputs.head_radius == "auto":
-            head_radius = estimate_brain_radius(self.inputs.brain_mask_file)
-        else:
-            head_radius = self.inputs.head_radius
-
         fd_timeseries_uncensored = compute_fd(
             confound=motion_df,
-            head_radius=head_radius,
+            head_radius=self.inputs.head_radius,
         )
         motion_df["framewise_displacement"] = fd_timeseries_uncensored
 
