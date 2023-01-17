@@ -471,10 +471,6 @@ def init_warp_surfaces_to_template_wf(
                     (f"{hemi_label}_pial_surf", "in1"),
                     (f"{hemi_label}_wm_surf", "in2"),
                 ]),
-                (inputnode, collect_surfaces, [
-                    (f"{hemi_label}_pial_surf", "in1"),
-                    (f"{hemi_label}_wm_surf", "in2"),
-                ]),
             ])
             # fmt:on
 
