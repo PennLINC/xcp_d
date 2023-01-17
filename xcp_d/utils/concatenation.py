@@ -30,7 +30,14 @@ LOGGER = logging.getLogger("nipype.interface")
 
 @fill_doc
 def concatenate_derivatives(
-    fmridir, outputdir, work_dir, subjects, cifti, dcan_qc, dummy_scans, dummytime=0,
+    fmridir,
+    outputdir,
+    work_dir,
+    subjects,
+    cifti,
+    dcan_qc,
+    dummy_scans,
+    dummytime=0,
 ):
     """Concatenate derivatives.
 
@@ -64,9 +71,16 @@ def concatenate_derivatives(
     # NOTE: The config has no effect when derivatives is True :(
     # At least for pybids ~0.15.1.
     # TODO: Find a way to support the xcpd config file in the BIDSLayout.
-    layout_xcpd = BIDSLayout(outputdir, validate=False, derivatives=True,)
+    layout_xcpd = BIDSLayout(
+        outputdir,
+        validate=False,
+        derivatives=True,
+    )
     layout_fmriprep = BIDSLayout(
-        fmridir, validate=False, derivatives=True, config=["bids", "derivatives"],
+        fmridir,
+        validate=False,
+        derivatives=True,
+        config=["bids", "derivatives"],
     )
 
     if cifti:
@@ -95,7 +109,10 @@ def concatenate_derivatives(
                 "datatype": "func",
             }
             tasks = layout_xcpd.get_tasks(
-                desc="denoised", suffix="bold", extension=img_extensions, **base_entities,
+                desc="denoised",
+                suffix="bold",
+                extension=img_extensions,
+                **base_entities,
             )
             for task in tasks:
                 LOGGER.debug(f"Concatenating task {task}")
@@ -183,7 +200,11 @@ def concatenate_derivatives(
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
-                    run=runs, desc=None, suffix="outliers", extension=".tsv", **task_entities,
+                    run=runs,
+                    desc=None,
+                    suffix="outliers",
+                    extension=".tsv",
+                    **task_entities,
                 )
                 outlier_file_names = ", ".join(
                     [outlier_file.path for outlier_file in outlier_files]
@@ -235,7 +256,9 @@ def concatenate_derivatives(
                             f"{concat_smooth_denoised_file}"
                         )
                         _concatenate_niimgs(
-                            smooth_denoised_files, concat_smooth_denoised_file, dummy_scans=0,
+                            smooth_denoised_files,
+                            concat_smooth_denoised_file,
+                            dummy_scans=0,
                         )
 
                     # Executive summary carpet plots
@@ -251,7 +274,8 @@ def concatenate_derivatives(
                             **space_entities,
                         )
                         concat_preproc_file = os.path.join(
-                            tmpdir, f"rawdata{preproc_files[0].extension}",
+                            tmpdir,
+                            f"rawdata{preproc_files[0].extension}",
                         )
                         preproc_files_str = "\n\t".join(
                             [preproc_file.path for preproc_file in preproc_files]
@@ -287,7 +311,9 @@ def concatenate_derivatives(
 
                         # Concatenate preprocessed files, but drop dummy scans from each run
                         _concatenate_niimgs(
-                            preproc_files, concat_preproc_file, dummy_scans=runwise_dummy_scans,
+                            preproc_files,
+                            concat_preproc_file,
+                            dummy_scans=runwise_dummy_scans,
                         )
 
                         # Get mask and dseg files for loading data and calculating DVARS.
@@ -318,12 +344,16 @@ def concatenate_derivatives(
                         # Create a censored version of the denoised file,
                         # because denoised_file is from before interpolation.
                         concat_censored_file = os.path.join(
-                            tmpdir, f"filtereddata{preproc_files[0].extension}",
+                            tmpdir,
+                            f"filtereddata{preproc_files[0].extension}",
                         )
                         tmask_df = pd.read_table(concat_outlier_file)
                         tmask_arr = tmask_df["framewise_displacement"].values
                         tmask_bool = ~tmask_arr.astype(bool)
-                        temp_data_arr = read_ndata(datafile=concat_denoised_file, maskfile=mask,)
+                        temp_data_arr = read_ndata(
+                            datafile=concat_denoised_file,
+                            maskfile=mask,
+                        )
                         temp_data_arr = temp_data_arr[:, tmask_bool]
                         write_ndata(
                             data_matrix=temp_data_arr,
@@ -404,7 +434,9 @@ def concatenate_derivatives(
 
                     # Now timeseries files
                     atlases = layout_xcpd.get_atlases(
-                        suffix="timeseries", extension=tsv_extensions, **space_entities,
+                        suffix="timeseries",
+                        extension=tsv_extensions,
+                        **space_entities,
                     )
                     for atlas in atlases:
                         LOGGER.debug(f"Concatenating time series files for atlas {atlas}")
@@ -420,7 +452,9 @@ def concatenate_derivatives(
                             concatenate_tsv_files(atlas_timeseries_files, concat_file)
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
                             _concatenate_niimgs(
-                                atlas_timeseries_files, concat_file, dummy_scans=0,
+                                atlas_timeseries_files,
+                                concat_file,
+                                dummy_scans=0,
                             )
                         else:
                             raise ValueError(
@@ -527,7 +561,10 @@ def _get_concat_name(layout_xcpd, in_file):
     in_file_entities = in_file.get_entities()
     in_file_entities["run"] = None
     concat_file = layout_xcpd.build_path(
-        in_file_entities, path_patterns=path_patterns, strict=False, validate=False,
+        in_file_entities,
+        path_patterns=path_patterns,
+        strict=False,
+        validate=False,
     )
     return concat_file
 

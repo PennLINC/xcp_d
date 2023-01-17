@@ -81,7 +81,10 @@ class _SubjectSummaryInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="Subject ID")
     # A list of files or a list of lists of files?
     bold = InputMultiObject(
-        traits.Either(File(exists=True), traits.List(File(exists=True)),),
+        traits.Either(
+            File(exists=True),
+            traits.List(File(exists=True)),
+        ),
         desc="BOLD or CIFTI functional series",
     )
 
@@ -119,7 +122,10 @@ class _FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
 
     bold_file = traits.File(exists=True, mandatory=True, desc="cifti or bold File")
     qc_file = traits.File(exists=True, desc="qc file")
-    TR = traits.Float(mandatory=True, desc="Repetition time",)
+    TR = traits.Float(
+        mandatory=True,
+        desc="Repetition time",
+    )
 
 
 class FunctionalSummary(SummaryInterface):

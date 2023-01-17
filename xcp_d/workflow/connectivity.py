@@ -18,7 +18,9 @@ from xcp_d.utils.utils import get_std2bold_xforms
 
 @fill_doc
 def init_nifti_functional_connectivity_wf(
-    mem_gb, omp_nthreads, name="nifti_fcon_wf",
+    mem_gb,
+    omp_nthreads,
+    name="nifti_fcon_wf",
 ):
     """Extract BOLD time series and compute functional connectivity.
 
@@ -95,7 +97,9 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
-            input_names=["atlas_name"], output_names=["atlas_file"], function=get_atlas_nifti,
+            input_names=["atlas_name"],
+            output_names=["atlas_file"],
+            function=get_atlas_nifti,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
@@ -117,7 +121,11 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
-        ApplyTransformsx(interpolation="MultiLabel", input_image_type=3, dimension=3,),
+        ApplyTransformsx(
+            interpolation="MultiLabel",
+            input_image_type=3,
+            dimension=3,
+        ),
         name="warp_atlases_to_bold_space",
         iterfield=["input_image"],
         mem_gb=mem_gb,
@@ -125,11 +133,18 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     )
 
     nifti_connect = pe.MapNode(
-        NiftiConnect(), name="nifti_connect", iterfield=["atlas"], mem_gb=mem_gb,
+        NiftiConnect(),
+        name="nifti_connect",
+        iterfield=["atlas"],
+        mem_gb=mem_gb,
     )
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(ConnectPlot(), name="matrix_plot", mem_gb=mem_gb,)
+    matrix_plot = pe.Node(
+        ConnectPlot(),
+        name="matrix_plot",
+        mem_gb=mem_gb,
+    )
 
     # fmt:off
     workflow.connect([
@@ -163,7 +178,9 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
 @fill_doc
 def init_cifti_functional_connectivity_wf(
-    mem_gb, omp_nthreads, name="cifti_fcon_wf",
+    mem_gb,
+    omp_nthreads,
+    name="cifti_fcon_wf",
 ):
     """Extract CIFTI time series.
 
@@ -215,7 +232,10 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 the Connectome Workbench.
 """
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["clean_bold"]), name="inputnode",)
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["clean_bold"]),
+        name="inputnode",
+    )
     outputnode = pe.Node(
         niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
         name="outputnode",
@@ -229,14 +249,18 @@ the Connectome Workbench.
 
     atlas_file_grabber = pe.MapNode(
         Function(
-            input_names=["atlas_name"], output_names=["atlas_file"], function=get_atlas_cifti,
+            input_names=["atlas_name"],
+            output_names=["atlas_file"],
+            function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
 
     replace_empty_vertices = pe.Node(
-        CiftiZerosToNaNs(), name="replace_empty_vertices", n_procs=omp_nthreads,
+        CiftiZerosToNaNs(),
+        name="replace_empty_vertices",
+        n_procs=omp_nthreads,
     )
 
     parcellate_data = pe.MapNode(
@@ -256,7 +280,11 @@ the Connectome Workbench.
     )
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(ConnectPlot(), name="matrix_plot", mem_gb=mem_gb,)
+    matrix_plot = pe.Node(
+        ConnectPlot(),
+        name="matrix_plot",
+        mem_gb=mem_gb,
+    )
 
     # fmt:off
     workflow.connect([

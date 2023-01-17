@@ -15,7 +15,11 @@ from xcp_d.utils.utils import fwhm2sigma
 
 @fill_doc
 def init_resd_smoothing_wf(
-    mem_gb, smoothing, omp_nthreads, cifti=False, name="resd_smoothing_wf",
+    mem_gb,
+    smoothing,
+    omp_nthreads,
+    cifti=False,
+    name="resd_smoothing_wf",
 ):
     """Smooth BOLD residuals.
 
@@ -90,7 +94,10 @@ size of {str(smoothing)} mm  (FWHM).
 
         # Always check the intent code in CiftiSmooth's output file
         fix_cifti_intent = pe.Node(
-            FixCiftiIntent(), name="fix_cifti_intent", mem_gb=mem_gb, n_procs=omp_nthreads,
+            FixCiftiIntent(),
+            name="fix_cifti_intent",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
         )
 
         # fmt:off

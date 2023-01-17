@@ -533,7 +533,9 @@ def plot_svgx(
     )
 
     FD_timeseries = pd.DataFrame(
-        {"FD": pd.read_table(filtered_motion)["framewise_displacement"].values,}
+        {
+            "FD": pd.read_table(filtered_motion)["framewise_displacement"].values,
+        }
     )
 
     # The mean and standard deviation of raw data
@@ -587,7 +589,11 @@ def plot_svgx(
     unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
     confoundplotx(
-        time_series=DVARS_timeseries, grid_spec_ts=grid[0], TR=TR, ylabel="DVARS", hide_x=True,
+        time_series=DVARS_timeseries,
+        grid_spec_ts=grid[0],
+        TR=TR,
+        ylabel="DVARS",
+        hide_x=True,
     )
     confoundplotx(
         time_series=unprocessed_data_timeseries,
@@ -597,7 +603,11 @@ def plot_svgx(
         ylabel="WB",
     )
     plot_carpet(
-        func=scaled_raw_file, atlaslabels=atlaslabels, TR=TR, subplot=grid[3], legend=False,
+        func=scaled_raw_file,
+        atlaslabels=atlaslabels,
+        TR=TR,
+        subplot=grid[3],
+        legend=False,
     )
     confoundplotx(
         time_series=FD_timeseries,
@@ -637,7 +647,11 @@ def plot_svgx(
     )
 
     plot_carpet(
-        func=scaled_denoised_file, atlaslabels=atlaslabels, TR=TR, subplot=grid[3], legend=True,
+        func=scaled_denoised_file,
+        atlaslabels=atlaslabels,
+        TR=TR,
+        subplot=grid[3],
+        legend=True,
     )
     confoundplotx(
         time_series=FD_timeseries,
@@ -850,7 +864,10 @@ def plot_carpet(
         legend = False
 
     else:  # Volumetric NIfTI
-        img_nii = check_niimg_4d(img, dtype="auto",)  # Check the image is in nifti format
+        img_nii = check_niimg_4d(
+            img,
+            dtype="auto",
+        )  # Check the image is in nifti format
         func_data = _safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -956,7 +973,12 @@ def _carpet(
     # Carpet plot
     ax1 = plt.subplot(grid_specification[1])
     ax1.imshow(
-        data[order], interpolation="nearest", aspect="auto", cmap="gray", vmin=v[0], vmax=v[1],
+        data[order],
+        interpolation="nearest",
+        aspect="auto",
+        cmap="gray",
+        vmin=v[0],
+        vmax=v[1],
     )
 
     ax1.grid(False)
@@ -1108,8 +1130,16 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2, subplot_kw={"projection": "3d"})
     output_path = os.path.abspath(output_path)
-    lh_surf_data = surf_data_from_cifti(cifti_data, cifti_axes[1], "CIFTI_STRUCTURE_CORTEX_LEFT",)
-    rh_surf_data = surf_data_from_cifti(cifti_data, cifti_axes[1], "CIFTI_STRUCTURE_CORTEX_RIGHT",)
+    lh_surf_data = surf_data_from_cifti(
+        cifti_data,
+        cifti_axes[1],
+        "CIFTI_STRUCTURE_CORTEX_LEFT",
+    )
+    rh_surf_data = surf_data_from_cifti(
+        cifti_data,
+        cifti_axes[1],
+        "CIFTI_STRUCTURE_CORTEX_RIGHT",
+    )
 
     v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
     v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
@@ -1217,16 +1247,38 @@ def plot_ribbon_svg(template, in_file):
     pial_img = math_img("img == 2", img=img)
     both_img = math_img("img == 3", img=img)
 
-    fig = plt.figure(figsize=(25, 10),)
-    display = plot_anat(template, draw_cross=False, vmax=vmax, figure=fig,)
-    display.add_contours(
-        white_img, contours=1, antialiased=False, linewidths=1.0, levels=[0], colors=["purple"],
+    fig = plt.figure(
+        figsize=(25, 10),
+    )
+    display = plot_anat(
+        template,
+        draw_cross=False,
+        vmax=vmax,
+        figure=fig,
     )
     display.add_contours(
-        pial_img, contours=1, antialiased=False, linewidths=1.0, levels=[0], colors=["green"],
+        white_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["purple"],
     )
     display.add_contours(
-        both_img, contours=1, antialiased=False, linewidths=1.0, levels=[0], colors=["red"],
+        pial_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["green"],
+    )
+    display.add_contours(
+        both_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["red"],
     )
     # We generate a legend using the trick described on
     # http://matplotlib.sourceforge.net/users/legend_guide.httpml#using-proxy-artist

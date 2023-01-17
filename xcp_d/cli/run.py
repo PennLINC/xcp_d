@@ -111,7 +111,10 @@ def get_parser():
         help="the root folder of a preprocessed fMRI output.",
     )
     parser.add_argument(
-        "output_dir", action="store", type=Path, help="the output path for xcp_d",
+        "output_dir",
+        action="store",
+        type=Path,
+        help="the output path for xcp_d",
     )
     parser.add_argument(
         "analysis_level",
@@ -239,7 +242,16 @@ def get_parser():
         "--nuisance-regressors",
         dest="nuisance_regressors",
         required=False,
-        choices=["27P", "36P", "24P", "acompcor", "aroma", "acompcor_gsr", "aroma_gsr", "custom",],
+        choices=[
+            "27P",
+            "36P",
+            "24P",
+            "acompcor",
+            "aroma",
+            "acompcor_gsr",
+            "aroma_gsr",
+            "custom",
+        ],
         default="36P",
         type=str,
         help="Nuisance parameters to be selected. See Ciric et. al (2007).",
@@ -874,7 +886,10 @@ def build_workflow(opts, retval):
         # Defaults
         plugin_settings = {
             "plugin": "MultiProc",
-            "plugin_args": {"raise_insufficient": False, "maxtasksperchild": 1,},
+            "plugin_args": {
+                "raise_insufficient": False,
+                "maxtasksperchild": 1,
+            },
         }
 
     # nthreads = plugin_settings['plugin_args'].get('n_procs')

@@ -83,7 +83,12 @@ def modify_brainsprite_scene_template(
 
 
 def modify_pngs_scene_template(
-    anat_file, rh_pial_file, lh_pial_file, rh_white_file, lh_white_file, scene_template,
+    anat_file,
+    rh_pial_file,
+    lh_pial_file,
+    rh_white_file,
+    lh_white_file,
+    scene_template,
 ):
     """Create modified .scene text file to be used for creating PNGs later."""
     import gzip

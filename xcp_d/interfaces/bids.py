@@ -43,7 +43,13 @@ def _none():
 
 # Automatically coerce certain suffixes (DerivativesDataSink)
 DEFAULT_DTYPES = defaultdict(
-    _none, (("mask", "uint8"), ("dseg", "int16"), ("probseg", "float32"), ("boldref", "source"),),
+    _none,
+    (
+        ("mask", "uint8"),
+        ("dseg", "int16"),
+        ("probseg", "float32"),
+        ("boldref", "source"),
+    ),
 )
 
 
@@ -67,7 +73,9 @@ class _DerivativesDataSinkInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     in_file = InputMultiObject(File(exists=True), mandatory=True, desc="the object to be saved")
     meta_dict = traits.DictStrAny(desc="an input dictionary containing metadata")
     source_file = InputMultiObject(
-        File(exists=False), mandatory=True, desc="the source file(s) to extract entities from",
+        File(exists=False),
+        mandatory=True,
+        desc="the source file(s) to extract entities from",
     )
 
 

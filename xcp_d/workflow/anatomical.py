@@ -38,7 +38,11 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_t1w_wf(
-    output_dir, input_type, omp_nthreads, mem_gb, name="t1w_wf",
+    output_dir,
+    input_type,
+    omp_nthreads,
+    mem_gb,
+    name="t1w_wf",
 ):
     """Copy T1w and segmentation to the derivative directory.
 
@@ -78,10 +82,14 @@ def init_t1w_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]), name="inputnode",
+        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
+        name="inputnode",
     )
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="outputnode",)
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        name="outputnode",
+    )
 
     # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
     mnitemplate = str(
@@ -95,13 +103,19 @@ def init_t1w_wf(
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
-            DerivativesDataSink(base_directory=output_dir, extension=".nii.gz",),
+            DerivativesDataSink(
+                base_directory=output_dir,
+                extension=".nii.gz",
+            ),
             name="ds_t1wmni",
             run_without_submitting=False,
         )
 
         ds_t1wseg = pe.Node(
-            DerivativesDataSink(base_directory=output_dir, extension=".nii.gz",),
+            DerivativesDataSink(
+                base_directory=output_dir,
+                extension=".nii.gz",
+            ),
             name="ds_t1wseg",
             run_without_submitting=False,
         )
@@ -147,7 +161,9 @@ def init_t1w_wf(
 
         ds_t1wmni = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir, space="MNI152NLin6Asym", extension=".nii.gz",
+                base_directory=output_dir,
+                space="MNI152NLin6Asym",
+                extension=".nii.gz",
             ),
             name="ds_t1wmni",
             run_without_submitting=False,
@@ -155,7 +171,9 @@ def init_t1w_wf(
 
         ds_t1wseg = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir, space="MNI152NLin6Asym", extension=".nii.gz",
+                base_directory=output_dir,
+                space="MNI152NLin6Asym",
+                extension=".nii.gz",
             ),
             name="ds_t1wseg",
             run_without_submitting=False,
@@ -257,7 +275,12 @@ def init_anatomical_wf(
     inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
     outputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["lh_wm_surf", "rh_wm_surf", "lh_pial_surf", "rh_pial_surf",],
+            fields=[
+                "lh_wm_surf",
+                "rh_wm_surf",
+                "lh_pial_surf",
+                "rh_pial_surf",
+            ],
         ),
         name="outputnode",
     )
@@ -307,7 +330,10 @@ def init_anatomical_wf(
         for ss in surf:
             shutil.copy(ss, anatdir)
 
-        nothingnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="nothingnode",)
+        nothingnode = pe.Node(
+            niu.IdentityInterface(fields=["t1w", "t1seg"]),
+            name="nothingnode",
+        )
         # fmt:off
         workflow.connect([
             (inputnode, nothingnode, [
@@ -381,7 +407,9 @@ def init_anatomical_wf(
             ]  # MB
             disassemble_h5 = pe.Node(
                 CompositeTransformUtil(
-                    process="disassemble", in_file=h5_file, output_prefix="T1w_to_MNI152NLin6Asym",
+                    process="disassemble",
+                    in_file=h5_file,
+                    output_prefix="T1w_to_MNI152NLin6Asym",
                 ),
                 name="disassemble_h5",
                 mem_gb=mem_gb,
@@ -420,10 +448,16 @@ def init_anatomical_wf(
 
             # merge new components
             merge_xfms_list = pe.Node(
-                niu.Merge(2), name="merge_xfms_list", mem_gb=mem_gb, n_procs=omp_nthreads,
+                niu.Merge(2),
+                name="merge_xfms_list",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )
             merge_inv_xfms_list = pe.Node(
-                niu.Merge(2), name="merge_inv_xfms_list", mem_gb=mem_gb, n_procs=omp_nthreads,
+                niu.Merge(2),
+                name="merge_inv_xfms_list",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )
 
             # combine the affine and warpfield xfms from the
@@ -540,18 +574,30 @@ def init_anatomical_wf(
 
             # merge new components
             merge_new_components = pe.Node(
-                niu.Merge(3), name="merge_new_components", mem_gb=mem_gb, n_procs=omp_nthreads,
+                niu.Merge(3),
+                name="merge_new_components",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )
             merge_new_inv_components = pe.Node(
-                niu.Merge(3), name="merge_new_inv_components", mem_gb=mem_gb, n_procs=omp_nthreads,
+                niu.Merge(3),
+                name="merge_new_inv_components",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )
 
             # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
             remerge_warpfield = pe.Node(
-                Merge(), name="remerge_warpfield", mem_gb=mem_gb, n_procs=omp_nthreads,
+                Merge(),
+                name="remerge_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )
             remerge_inv_warpfield = pe.Node(
-                Merge(), name="remerge_inv_warpfield", mem_gb=mem_gb, n_procs=omp_nthreads,
+                Merge(),
+                name="remerge_inv_warpfield",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )
             # convert spheres (from FreeSurfer surf dir) to gifti #MB
             lh_sphere_raw_mris = pe.Node(
@@ -561,7 +607,10 @@ def init_anatomical_wf(
                 n_procs=omp_nthreads,
             )  # MB
             rh_sphere_raw_mris = pe.Node(
-                MRIsConvert(out_datatype="gii", in_file=rh_sphere_raw,),
+                MRIsConvert(
+                    out_datatype="gii",
+                    in_file=rh_sphere_raw,
+                ),
                 name="rh_sphere_raw_mris",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -569,7 +618,10 @@ def init_anatomical_wf(
 
             # apply affine to native surfs
             lh_native_apply_affine = pe.Node(
-                ApplyAffine(), name="lh_native_apply_affine", mem_gb=mem_gb, n_procs=omp_nthreads,
+                ApplyAffine(),
+                name="lh_native_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )  # TM
             lh_native_apply_affine.iterables = (
                 "in_file",
@@ -577,7 +629,10 @@ def init_anatomical_wf(
             )
 
             rh_native_apply_affine = pe.Node(
-                ApplyAffine(), name="rh_native_apply_affine", mem_gb=mem_gb, n_procs=omp_nthreads,
+                ApplyAffine(),
+                name="rh_native_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )  # TM
             rh_native_apply_affine.iterables = (
                 "in_file",
@@ -638,13 +693,15 @@ def init_anatomical_wf(
 
             surface_sphere_project_unproject_lh = pe.Node(
                 SurfaceSphereProjectUnproject(
-                    sphere_project_to=fs_std_mesh_L, sphere_unproject_from=fs_L2fsLR,
+                    sphere_project_to=fs_std_mesh_L,
+                    sphere_unproject_from=fs_L2fsLR,
                 ),
                 name="surface_sphere_project_unproject_lh",
             )
             surface_sphere_project_unproject_rh = pe.Node(
                 SurfaceSphereProjectUnproject(
-                    sphere_project_to=fs_std_mesh_R, sphere_unproject_from=fs_R2fsLR,
+                    sphere_project_to=fs_std_mesh_R,
+                    sphere_unproject_from=fs_R2fsLR,
                 ),
                 name="surface_sphere_project_unproject_rh",
             )
@@ -652,7 +709,10 @@ def init_anatomical_wf(
             # resample the mid, pial, wm surfs to fsLR32k
 
             lh_32k_resample_wf = pe.Node(
-                CiftiSurfaceResample(new_sphere=lh_sphere_fsLR, metric=" BARYCENTRIC ",),
+                CiftiSurfaceResample(
+                    new_sphere=lh_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
                 name="lh_32k_resample_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -663,7 +723,10 @@ def init_anatomical_wf(
             )
 
             rh_32k_resample_wf = pe.Node(
-                CiftiSurfaceResample(new_sphere=rh_sphere_fsLR, metric=" BARYCENTRIC ",),
+                CiftiSurfaceResample(
+                    new_sphere=rh_sphere_fsLR,
+                    metric=" BARYCENTRIC ",
+                ),
                 name="rh_32k_resample_wf",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
@@ -674,11 +737,17 @@ def init_anatomical_wf(
             )
             # apply affine to 32k surfs
             lh_32k_apply_affine = pe.Node(
-                ApplyAffine(), name="lh_32k_apply_affine", mem_gb=mem_gb, n_procs=omp_nthreads,
+                ApplyAffine(),
+                name="lh_32k_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )  # TM
 
             rh_32k_apply_affine = pe.Node(
-                ApplyAffine(), name="rh_32k_apply_affine", mem_gb=mem_gb, n_procs=omp_nthreads,
+                ApplyAffine(),
+                name="rh_32k_apply_affine",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
             )  # TM
 
             # apply FNIRT-format warpfield

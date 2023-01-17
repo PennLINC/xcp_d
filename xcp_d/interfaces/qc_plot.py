@@ -75,10 +75,13 @@ class CensoringPlot(SimpleInterface):
         # Load confound matrix and load motion with motion filtering
         confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
         preproc_motion_df = load_motion(
-            confound_matrix.copy(), TR=self.inputs.TR, motion_filter_type=None,
+            confound_matrix.copy(),
+            TR=self.inputs.TR,
+            motion_filter_type=None,
         )
         preproc_fd_timeseries = compute_fd(
-            confound=preproc_motion_df, head_radius=self.inputs.head_radius,
+            confound=preproc_motion_df,
+            head_radius=self.inputs.head_radius,
         )
 
         fig, ax = plt.subplots(figsize=(16, 8))
@@ -120,7 +123,10 @@ class CensoringPlot(SimpleInterface):
 
             idx_after_dummy_scans = idx + dummy_scans
             ax.axvline(
-                idx_after_dummy_scans * self.inputs.TR, label=label, color=palette[3], alpha=0.5,
+                idx_after_dummy_scans * self.inputs.TR,
+                label=label,
+                color=palette[3],
+                alpha=0.5,
             )
 
         # Compute filtered framewise displacement to plot censoring
@@ -134,7 +140,8 @@ class CensoringPlot(SimpleInterface):
                 band_stop_max=self.inputs.band_stop_max,
             )
             filtered_fd_timeseries = compute_fd(
-                confound=filtered_motion_df, head_radius=self.inputs.head_radius,
+                confound=filtered_motion_df,
+                head_radius=self.inputs.head_radius,
             )
 
             ax.plot(
@@ -150,7 +157,11 @@ class CensoringPlot(SimpleInterface):
         y_max = (
             np.max(
                 np.hstack(
-                    (preproc_fd_timeseries, filtered_fd_timeseries, [self.inputs.fd_thresh],)
+                    (
+                        preproc_fd_timeseries,
+                        filtered_fd_timeseries,
+                        [self.inputs.fd_thresh],
+                    )
                 )
             )
             * 1.5
@@ -162,7 +173,10 @@ class CensoringPlot(SimpleInterface):
         fig.tight_layout()
 
         self._results["out_file"] = fname_presuffix(
-            "censoring", suffix="_motion.svg", newpath=runtime.cwd, use_ext=False,
+            "censoring",
+            suffix="_motion.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
 
         fig.savefig(self._results["out_file"])
@@ -226,10 +240,13 @@ class QCPlot(SimpleInterface):
         # Load confound matrix and load motion with motion filtering
         confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
         preproc_motion_df = load_motion(
-            confound_matrix.copy(), TR=self.inputs.TR, motion_filter_type=None,
+            confound_matrix.copy(),
+            TR=self.inputs.TR,
+            motion_filter_type=None,
         )
         preproc_fd_timeseries = compute_fd(
-            confound=preproc_motion_df, head_radius=self.inputs.head_radius,
+            confound=preproc_motion_df,
+            head_radius=self.inputs.head_radius,
         )
         postproc_fd_timeseries = preproc_fd_timeseries.copy()
 
@@ -252,28 +269,42 @@ class QCPlot(SimpleInterface):
 
         # Compute the DVARS for both bold files provided
         dvars_before_processing = compute_dvars(
-            read_ndata(datafile=self.inputs.bold_file, maskfile=self.inputs.mask_file,)[
-                :, dummy_scans:
-            ],
+            read_ndata(
+                datafile=self.inputs.bold_file,
+                maskfile=self.inputs.mask_file,
+            )[:, dummy_scans:],
         )
         dvars_after_processing = compute_dvars(
-            read_ndata(datafile=self.inputs.cleaned_file, maskfile=self.inputs.mask_file,),
+            read_ndata(
+                datafile=self.inputs.cleaned_file,
+                maskfile=self.inputs.mask_file,
+            ),
         )
 
         # get QC plot names
         self._results["raw_qcplot"] = fname_presuffix(
-            "preprocess", suffix="_raw_qcplot.svg", newpath=runtime.cwd, use_ext=False,
+            "preprocess",
+            suffix="_raw_qcplot.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
         self._results["clean_qcplot"] = fname_presuffix(
-            "postprocess", suffix="_clean_qcplot.svg", newpath=runtime.cwd, use_ext=False,
+            "postprocess",
+            suffix="_clean_qcplot.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
         raw_data_removed_TR = read_ndata(
-            datafile=self.inputs.bold_file, maskfile=self.inputs.mask_file,
+            datafile=self.inputs.bold_file,
+            maskfile=self.inputs.mask_file,
         )[:, dummy_scans:]
 
         # Get file names to write out & write data out
         dropped_bold_file = fname_presuffix(
-            self.inputs.bold_file, newpath=runtime.cwd, suffix="_dropped", use_ext=True,
+            self.inputs.bold_file,
+            newpath=runtime.cwd,
+            suffix="_dropped",
+            use_ext=True,
         )
 
         write_ndata(
@@ -285,7 +316,10 @@ class QCPlot(SimpleInterface):
         )
 
         preproc_confounds = pd.DataFrame(
-            {"FD": preproc_fd_timeseries, "DVARS": dvars_before_processing,}
+            {
+                "FD": preproc_fd_timeseries,
+                "DVARS": dvars_before_processing,
+            }
         )
 
         preproc_fig = FMRIPlot(
@@ -296,7 +330,8 @@ class QCPlot(SimpleInterface):
         ).plot(labelsize=8)
 
         preproc_fig.savefig(
-            self._results["raw_qcplot"], bold_file_name_componentsox_inches="tight",
+            self._results["raw_qcplot"],
+            bold_file_name_componentsox_inches="tight",
         )
 
         # If censoring occurs, censor the cleaned BOLD data and FD time series
@@ -312,13 +347,17 @@ class QCPlot(SimpleInterface):
 
             # Apply temporal mask to data
             raw_data_removed_TR = read_ndata(
-                datafile=self.inputs.cleaned_file, maskfile=self.inputs.mask_file,
+                datafile=self.inputs.cleaned_file,
+                maskfile=self.inputs.mask_file,
             )
             raw_data_censored = raw_data_removed_TR[:, tmask_arr == 0]
 
             # Get temporary filename and write data out
             dropped_clean_file = fname_presuffix(
-                self.inputs.bold_file, newpath=runtime.cwd, suffix="_droppedClean", use_ext=True,
+                self.inputs.bold_file,
+                newpath=runtime.cwd,
+                suffix="_droppedClean",
+                use_ext=True,
             )
 
             write_ndata(
@@ -333,7 +372,10 @@ class QCPlot(SimpleInterface):
             dropped_clean_file = self.inputs.cleaned_file
 
         postproc_confounds = pd.DataFrame(
-            {"FD": postproc_fd_timeseries, "DVARS": dvars_after_processing,}
+            {
+                "FD": postproc_fd_timeseries,
+                "DVARS": dvars_after_processing,
+            }
         )
 
         postproc_fig = FMRIPlot(
@@ -344,7 +386,8 @@ class QCPlot(SimpleInterface):
         ).plot(labelsize=8)
 
         postproc_fig.savefig(
-            self._results["clean_qcplot"], bold_file_name_componentsox_inches="tight",
+            self._results["clean_qcplot"],
+            bold_file_name_componentsox_inches="tight",
         )
 
         # Calculate QC measures
@@ -394,7 +437,10 @@ class QCPlot(SimpleInterface):
         # Convert dictionary to df and write out the qc file
         df = pd.DataFrame(qc_dictionary)
         self._results["qc_file"] = fname_presuffix(
-            self.inputs.cleaned_file, suffix="qc_bold.csv", newpath=runtime.cwd, use_ext=False,
+            self.inputs.cleaned_file,
+            suffix="qc_bold.csv",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
         df.to_csv(self._results["qc_file"], index=False, header=True)
 

@@ -27,7 +27,11 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_brainsprite_figures_wf(
-    output_dir, t2w_available, mem_gb, omp_nthreads, name="init_brainsprite_figures_wf",
+    output_dir,
+    t2w_available,
+    mem_gb,
+    omp_nthreads,
+    name="init_brainsprite_figures_wf",
 ):
     """Create mosaic and PNG files for executive summary brainsprite.
 
@@ -85,7 +89,8 @@ def init_brainsprite_figures_wf(
 
     # Load template scene file
     brainsprite_scene_template = pkgrf(
-        "xcp_d", "data/executive_summary_scenes/brainsprite_template.scene.gz",
+        "xcp_d",
+        "data/executive_summary_scenes/brainsprite_template.scene.gz",
     )
     pngs_scene_template = pkgrf("xcp_d", "data/executive_summary_scenes/pngs_template.scene.gz")
 
@@ -99,7 +104,9 @@ def init_brainsprite_figures_wf(
         # Create frame-wise PNGs
         get_number_of_frames = pe.Node(
             Function(
-                function=get_n_frames, input_names=["anat_file"], output_names=["frame_numbers"],
+                function=get_n_frames,
+                input_names=["anat_file"],
+                output_names=["frame_numbers"],
             ),
             name=f"get_number_of_frames_{image_type}",
             mem_gb=mem_gb,
@@ -150,7 +157,11 @@ def init_brainsprite_figures_wf(
         # fmt:on
 
         create_framewise_pngs = pe.MapNode(
-            ShowScene(scene_name_or_number=1, image_width=900, image_height=800,),
+            ShowScene(
+                scene_name_or_number=1,
+                image_width=900,
+                image_height=800,
+            ),
             name=f"create_framewise_pngs_{image_type}",
             iterfield=["scene_file"],
             mem_gb=mem_gb,
@@ -168,7 +179,9 @@ def init_brainsprite_figures_wf(
         # Make mosaic
         make_mosaic_node = pe.Node(
             Function(
-                function=make_mosaic, input_names=["png_files"], output_names=["mosaic_file"],
+                function=make_mosaic,
+                input_names=["png_files"],
+                output_names=["mosaic_file"],
             ),
             name=f"make_mosaic_{image_type}",
             mem_gb=mem_gb,
@@ -235,7 +248,8 @@ def init_brainsprite_figures_wf(
         # Create specific PNGs for button
         get_png_scene_names = pe.Node(
             Function(
-                function=get_png_image_names, output_names=["scene_index", "scene_descriptions"],
+                function=get_png_image_names,
+                output_names=["scene_index", "scene_descriptions"],
             ),
             name=f"get_png_scene_names_{image_type}",
         )
@@ -284,7 +298,10 @@ def init_brainsprite_figures_wf(
 
 @fill_doc
 def init_execsummary_wf(
-    bold_file, output_dir, layout, name="execsummary_wf",
+    bold_file,
+    output_dir,
+    layout,
+    name="execsummary_wf",
 ):
     """Generate the figures for an executive summary.
 
@@ -308,7 +325,12 @@ def init_execsummary_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold_file", "boldref_file",]),  # a nifti boldref
+        niu.IdentityInterface(
+            fields=[
+                "bold_file",
+                "boldref_file",
+            ]
+        ),  # a nifti boldref
         name="inputnode",
     )
     inputnode.inputs.bold_file = bold_file

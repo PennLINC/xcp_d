@@ -58,7 +58,10 @@ class FixCiftiIntent(SimpleInterface):
         # modify the intent if necessary, and write out the modified file
         if img.nifti_header.get_intent()[0] != target_intent:
             out_file = fname_presuffix(
-                self.inputs.in_file, suffix="_modified", newpath=runtime.cwd, use_ext=True,
+                self.inputs.in_file,
+                suffix="_modified",
+                newpath=runtime.cwd,
+                use_ext=True,
             )
 
             img.nifti_header.set_intent(target_intent)
@@ -72,12 +75,26 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
     """Input specification for ConvertAffine."""
 
     fromwhat = traits.Str(
-        mandatory=True, argstr="-from-%s", position=0, desc="world, itk, or flirt",
+        mandatory=True,
+        argstr="-from-%s",
+        position=0,
+        desc="world, itk, or flirt",
     )
 
-    in_file = File(exists=True, mandatory=True, argstr="%s", position=1, desc="The input file",)
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="The input file",
+    )
 
-    towhat = traits.Str(mandatory=True, argstr="-to-%s", position=2, desc="world, itk, or flirt",)
+    towhat = traits.Str(
+        mandatory=True,
+        argstr="-to-%s",
+        position=2,
+        desc="world, itk, or flirt",
+    )
     out_file = File(
         argstr="%s",
         name_source="in_file",
@@ -104,9 +121,21 @@ class ConvertAffine(WBCommand):
 class _ApplyAffineInputSpec(CommandLineInputSpec):
     """Input specification for ApplyAffine."""
 
-    in_file = File(exists=True, mandatory=True, argstr="%s", position=0, desc="The input file",)
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The input file",
+    )
 
-    affine = File(exists=True, mandatory=True, argstr="%s", position=1, desc="The affine file",)
+    affine = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="The affine file",
+    )
 
     out_file = File(
         argstr="%s",
@@ -152,10 +181,20 @@ class ApplyAffine(WBCommand):
 class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     """Input specification for ApplyWarpfield."""
 
-    in_file = File(exists=True, mandatory=True, argstr="%s", position=0, desc="The input file",)
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The input file",
+    )
 
     warpfield = File(
-        exists=True, mandatory=True, argstr="%s", position=1, desc="The warpfield file",
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="The warpfield file",
     )
 
     out_file = File(
@@ -166,7 +205,11 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
         position=2,
     )
 
-    forward_warp = File(argstr="-fnirt %s", position=3, desc="fnirt forward warpfield",)
+    forward_warp = File(
+        argstr="-fnirt %s",
+        position=3,
+        desc="fnirt forward warpfield",
+    )
 
 
 class _ApplyWarpfieldOutputSpec(TraitedSpec):
@@ -281,7 +324,9 @@ class ChangeXfmType(SimpleInterface):
             lines = f.readlines()
         listcomp = [line.replace("AffineTransform", "MatrixOffsetTransformBase") for line in lines]
         outfile = fname_presuffix(
-            self.inputs.in_transform, suffix="_MatrixOffsetTransformBase", newpath=runtime.cwd,
+            self.inputs.in_transform,
+            suffix="_MatrixOffsetTransformBase",
+            newpath=runtime.cwd,
         )
         with open(outfile, "w") as write_file:
             write_file.write("".join(listcomp))
@@ -359,7 +404,11 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     """Input specification for SurfaceGenerateInflated."""
 
     anatomical_surface_in = File(
-        exists=True, mandatory=True, argstr="%s", position=0, desc="the anatomical surface",
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="the anatomical surface",
     )
 
     inflated_out_file = File(
@@ -381,7 +430,10 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     )
 
     iterations_scale_value = traits.Float(
-        mandatory=False, argstr="-iterations-scale %f", position=3, desc="iterations-scale value",
+        mandatory=False,
+        argstr="-iterations-scale %f",
+        position=3,
+        desc="iterations-scale value",
     )
 
 
@@ -443,23 +495,43 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     )
 
     left_roi = File(
-        exists=True, position=3, argstr="-left-roi %s", desc="use an roi for left hempsphere",
+        exists=True,
+        position=3,
+        argstr="-left-roi %s",
+        desc="use an roi for left hempsphere",
     )
 
     right_roi = File(
-        exists=True, position=5, argstr="-right-roi %s", desc="use an roi for right hempsphere",
+        exists=True,
+        position=5,
+        argstr="-right-roi %s",
+        desc="use an roi for right hempsphere",
     )
     cerebellum_roi = File(
-        exists=True, position=6, argstr="-cerebellum-roi %s", desc="use an roi for cerebellum",
+        exists=True,
+        position=6,
+        argstr="-cerebellum-roi %s",
+        desc="use an roi for cerebellum",
     )
 
-    vol_roi = File(exists=True, position=7, argstr="-vol-roi %s", desc="use an roi for volume",)
+    vol_roi = File(
+        exists=True,
+        position=7,
+        argstr="-vol-roi %s",
+        desc="use an roi for volume",
+    )
 
     cifti_roi = File(
-        exists=True, position=8, argstr="-cifti-roi %s", desc="use a cifti file for combined rois",
+        exists=True,
+        position=8,
+        argstr="-cifti-roi %s",
+        desc="use a cifti file for combined rois",
     )
     weights_file = File(
-        exists=True, position=9, argstr="-weights %s", desc="specify column weights",
+        exists=True,
+        position=9,
+        argstr="-weights %s",
+        desc="specify column weights",
     )
 
     fisher_ztrans = traits.Bool(
@@ -473,7 +545,9 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
         desc="instead of correlation, do dot product of rows, then normalize by diagonal",
     )
     compute_covariance = traits.Bool(
-        position=12, argstr="-covariance", desc="compute covariance instead of correlation",
+        position=12,
+        argstr="-covariance",
+        desc="compute covariance instead of correlation",
     )
 
 
@@ -508,7 +582,11 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiParcellate command."""
 
     in_file = File(
-        exists=True, mandatory=True, argstr="%s", position=0, desc="The cifti file to parcellate",
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The cifti file to parcellate",
     )
     atlas_label = File(
         mandatory=True,
@@ -606,7 +684,9 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         desc="Specify method of parcellation (default MEAN, or MODE if label data)",
     )
     only_numeric = traits.Bool(
-        position=13, argstr="-only-numeric", desc="Exclude non-numeric values",
+        position=13,
+        argstr="-only-numeric",
+        desc="Exclude non-numeric values",
     )
 
 
@@ -643,7 +723,13 @@ class CiftiParcellate(WBCommand):
 class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSurfaceResample command."""
 
-    in_file = File(exists=True, mandatory=True, argstr="%s ", position=0, desc="the gifti file",)
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s ",
+        position=0,
+        desc="the gifti file",
+    )
 
     current_sphere = File(
         exists=True,
@@ -660,7 +746,10 @@ class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
     )
 
     metric = traits.Str(
-        argstr=" %s ", position=3, desc=" fixed for anatomic", default="  BARYCENTRIC  ",
+        argstr=" %s ",
+        position=3,
+        desc=" fixed for anatomic",
+        default="  BARYCENTRIC  ",
     )
 
     out_file = File(
@@ -694,7 +783,11 @@ class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSeparateMetric command."""
 
     in_file = File(
-        exists=True, mandatory=True, argstr="%s ", position=0, desc="The input dense series",
+        exists=True,
+        mandatory=True,
+        argstr="%s ",
+        position=0,
+        desc="The input dense series",
     )
     direction = traits.Enum(
         "ROW",
@@ -755,7 +848,11 @@ class _CiftiSeparateVolumeAllInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     in_file = File(
-        exists=True, mandatory=True, argstr="%s", position=0, desc="The input dense series",
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The input dense series",
     )
     direction = traits.Enum(
         "ROW",
@@ -890,7 +987,12 @@ class CiftiCreateDenseScalar(WBCommand):
 
 
 class _ShowSceneInputSpec(CommandLineInputSpec):
-    scene_file = File(exists=True, mandatory=True, argstr="%s", position=0,)
+    scene_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+    )
     scene_name_or_number = traits.Either(
         traits.Int,
         traits.Str,
@@ -908,10 +1010,16 @@ class _ShowSceneInputSpec(CommandLineInputSpec):
         desc="output image file name",
     )
     image_width = traits.Int(
-        mandatory=True, argstr="%s", position=3, desc="width of output image(s), in pixels",
+        mandatory=True,
+        argstr="%s",
+        position=3,
+        desc="width of output image(s), in pixels",
     )
     image_height = traits.Int(
-        mandatory=True, argstr="%s", position=4, desc="height of output image(s), in pixels",
+        mandatory=True,
+        argstr="%s",
+        position=4,
+        desc="height of output image(s), in pixels",
     )
 
 
@@ -1018,7 +1126,13 @@ class _CiftiConvertInputSpec(CommandLineInputSpec):
         argstr="-%s-nifti",
         desc="Convert either to or from nifti.",
     )
-    in_file = File(exists=True, mandatory=True, argstr="%s", position=1, desc="The input file.",)
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="The input file.",
+    )
     cifti_template = File(
         exists=True,
         mandatory=False,
@@ -1045,7 +1159,10 @@ class _CiftiConvertInputSpec(CommandLineInputSpec):
 class _CiftiConvertOutputSpec(TraitedSpec):
     """Output specification for the CiftiConvert command."""
 
-    out_file = File(exists=True, desc="The output file.",)
+    out_file = File(
+        exists=True,
+        desc="The output file.",
+    )
 
 
 class CiftiConvert(WBCommand):
