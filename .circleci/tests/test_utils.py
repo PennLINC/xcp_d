@@ -1,4 +1,4 @@
-"""Init tests for utils."""
+"""Test functions in xcp_d.utils.utils."""
 from xcp_d.utils.utils import estimate_brain_radius
 
 
