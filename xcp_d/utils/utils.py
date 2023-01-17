@@ -463,6 +463,10 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     ----------
     mask_file : str
         Binary brain mask file, in nifti format.
+    head_radius : float or "auto", optional
+        Head radius to use. Either a number, in millimeters, or "auto".
+        If set to "auto", the brain radius will be estimated from the mask file.
+        Default is "auto".
 
     Returns
     -------
