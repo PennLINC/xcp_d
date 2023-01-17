@@ -514,7 +514,7 @@ def init_warp_surfaces_to_template_wf(
             # fmt:off
             workflow.connect([
                 (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
-                    ("warped_hemi_files", "inlist"),
+                    ("outputnode.warped_hemi_files", "inlist"),
                 ]),
                 (split_up_surfaces_fsLR_32k, outputnode, [
                     ("out1", f"{hemi_label}_pial_surf"),
@@ -542,7 +542,7 @@ def init_warp_surfaces_to_template_wf(
                     ("out", "source_file"),
                 ]),
                 (apply_transforms_wf, ds_standard_space_surfaces, [
-                    ("warped_hemi_files", "in_file"),
+                    ("outputnode.warped_hemi_files", "in_file"),
                 ]),
             ])
             # fmt:on
