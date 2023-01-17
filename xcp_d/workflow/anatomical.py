@@ -552,7 +552,7 @@ def init_warp_surfaces_to_template_wf(
                 output_dir=output_dir,
                 mem_gb=mem_gb,
                 omp_nthreads=omp_nthreads,
-                name=f"{hemi_label}_inflate_surfaces_wf",
+                name=f"{hemi_label}_generate_hcp_surfaces_wf",
             )
 
             # fmt:off
