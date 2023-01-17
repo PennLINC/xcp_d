@@ -30,7 +30,7 @@ from xcp_d.utils.confounds import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_design_matrix
-from xcp_d.utils.utils import estimate_head_radius
+from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -306,7 +306,7 @@ produced by the regression.
 
     determine_head_radius = pe.Node(
         Function(
-            function=estimate_head_radius,
+            function=estimate_brain_radius,
             input_names=["mask_file", "head_radius"],
             output_names=["head_radius"],
         ),
