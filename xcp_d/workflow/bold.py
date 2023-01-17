@@ -228,9 +228,14 @@ def init_boldpostprocess_wf(
             "for denoising."
         )
 
+    if isinstance(head_radius, float):
+        fd_substr = f"with a head radius of {head_radius} mm"
+    else:
+        fd_substr = "with a head radius estimated from the preprocessed brain mask"
+
     fd_str = (
         f"{filter_str}framewise displacement was calculated using the formula from "
-        f"@power_fd_dvars, with a head radius of {head_radius} mm"
+        f"@power_fd_dvars, {fd_substr}"
     )
 
     if dummy_scans == 0 and dummytime != 0:

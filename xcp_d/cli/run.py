@@ -70,6 +70,23 @@ def _int_or_auto(string, is_parser=True):
     return intarg
 
 
+def _float_or_auto(string, is_parser=True):
+    """Check if argument is a float >= 0 or the string "auto"."""
+    if string == "auto":
+        return string
+
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        floatarg = float(string)
+    except ValueError:
+        msg = "Argument must be a nonnegative float or 'auto'."
+        raise error(msg)
+
+    if floatarg < 0:
+        raise error("Float argument must be nonnegative.")
+    return floatarg
+
+
 class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 
@@ -433,8 +450,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-r",
         "--head_radius",
         default=50,
-        type=float,
-        help=("head radius for computing FD, default is 50mm, 35mm is recommended for baby"),
+        type=_float_or_auto,
+        help=(
+            "Head radius used to calculate framewise displacement, in mm. "
+            "The default value is 50 mm, which is recommended for adults. "
+            "For infants, we recommend a value of 35 mm. "
+            "A value of 'auto' is also supported, in which case the brain radius is "
+            "estimated from the preprocessed brain mask."
+        ),
     )
     g_censor.add_argument(
         "-f",
