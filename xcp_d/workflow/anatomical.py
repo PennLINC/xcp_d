@@ -463,46 +463,22 @@ def init_warp_surfaces_to_template_wf(
         for hemi in ["L", "R"]:
             hemi_label = f"{hemi.lower()}h"
 
-            # Create native-space HCP-style midthickness surface file
-            native_hcpmidthick = pe.Node(
-                SurfaceAverage(),
-                name=f"native_hcpmidthick_{hemi_label}",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # fmt:off
-            workflow.connect([
-                (inputnode, native_hcpmidthick, [
-                    (f"{hemi_label}_pial_surf", "surface_in1"),
-                    (f"{hemi_label}_wm_surf", "surface_in2"),
-                ]),
-            ])
-            # fmt:on
-
             # Place the surfaces in a single node.
-            collect_original_surfaces = pe.Node(
-                niu.Merge(2),
-                name=f"collect_original_surfaces_{hemi_label}",
-            )
             collect_surfaces = pe.Node(
-                niu.Merge(3),
+                niu.Merge(2),
                 name=f"collect_surfaces_{hemi_label}",
             )
 
             # fmt:off
             # NOTE: Must match order of split_up_surfaces_fsLR_32k.
             workflow.connect([
-                (inputnode, collect_original_surfaces, [
+                (inputnode, collect_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
                     (f"{hemi_label}_wm_surf", "in2"),
                 ]),
                 (inputnode, collect_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
                     (f"{hemi_label}_wm_surf", "in2"),
-                ]),
-                (native_hcpmidthick, collect_surfaces, [
-                    ("out_file", "in3"),
                 ]),
             ])
             # fmt:on
@@ -531,22 +507,27 @@ def init_warp_surfaces_to_template_wf(
             ])
             # fmt:on
 
-            # Split up the warped files
-            split_out_hcp_surface = pe.Node(
+            # Split up the surfaces
+            # NOTE: Must match order of collect_surfaces
+            split_up_surfaces_fsLR_32k = pe.Node(
                 niu.Split(
                     splits=[
-                        2,  # number of ingested and warped surfaces, with inflated dropped
-                        1,  # the HCP midthickness surface
+                        1,  # pial
+                        1,  # wm
                     ],
                     squeeze=True,
                 ),
-                name=f"split_out_hcp_surface_{hemi_label}",
+                name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
             )
 
             # fmt:off
             workflow.connect([
-                (apply_transforms_wf, split_out_hcp_surface, [
-                    ("outputnode.warped_hemi_files", "inlist"),
+                (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
+                    ("warped_hemi_files", "inlist"),
+                ]),
+                (split_up_surfaces_fsLR_32k, outputnode, [
+                    ("out1", f"{hemi_label}_pial_surf"),
+                    ("out2", f"{hemi_label}_wm_surf"),
                 ]),
             ])
             # fmt:on
@@ -566,64 +547,17 @@ def init_warp_surfaces_to_template_wf(
 
             # fmt:off
             workflow.connect([
-                (collect_original_surfaces, ds_standard_space_surfaces, [
+                (collect_surfaces, ds_standard_space_surfaces, [
                     ("out", "source_file"),
                 ]),
-                (split_out_hcp_surface, ds_standard_space_surfaces, [
-                    ("out1", "in_file"),
+                (apply_transforms_wf, ds_standard_space_surfaces, [
+                    ("warped_hemi_files", "in_file"),
                 ]),
             ])
             # fmt:on
 
-            # Split up the normal surfaces as well
-            # NOTE: Must match order of collect_surfaces
-            split_up_surfaces_fsLR_32k = pe.Node(
-                niu.Split(
-                    splits=[
-                        1,  # pial
-                        1,  # wm
-                    ],
-                    squeeze=True,
-                ),
-                name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
-            )
-
-            # fmt:off
-            workflow.connect([
-                (split_out_hcp_surface, split_up_surfaces_fsLR_32k, [
-                    ("out1", "inlist"),
-                ]),
-                (split_up_surfaces_fsLR_32k, outputnode, [
-                    ("out1", f"{hemi_label}_pial_surf"),
-                    ("out2", f"{hemi_label}_wm_surf"),
-                ]),
-            ])
-            # fmt:on
-
-            ds_hcp_midthickness = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    space="fsLR",
-                    den="32k",
-                    hemi=hemi,
-                    desc="hcp",
-                    suffix="midthickness",
-                    extension=".surf.gii",
-                ),
-                name=f"ds_hcp_midthickness_{hemi_label}",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-
-            # fmt:off
-            workflow.connect([
-                (inputnode, ds_hcp_midthickness, [(f"{hemi_label}_pial_surf", "source_file")]),
-                (split_out_hcp_surface, ds_hcp_midthickness, [("out2", "in_file")]),
-            ])
-            # fmt:on
-
-            inflate_surfaces_wf = init_inflate_surfaces_wf(
+            # Generate and output HCP-style surface files
+            generate_hcp_surfaces_wf = init_generate_hcp_surfaces_wf(
                 output_dir=output_dir,
                 mem_gb=mem_gb,
                 omp_nthreads=omp_nthreads,
@@ -632,11 +566,12 @@ def init_warp_surfaces_to_template_wf(
 
             # fmt:off
             workflow.connect([
-                (split_out_hcp_surface, inflate_surfaces_wf, [
-                    ("out2", "inputnode.midthickness_surf"),
+                (inputnode, generate_hcp_surfaces_wf, [
+                    (f"{hemi_label}_pial_surf", "inputnode.name_source"),
                 ]),
-                (ds_hcp_midthickness, inflate_surfaces_wf, [
-                    ("out_file", "inputnode.name_source"),
+                (split_up_surfaces_fsLR_32k, generate_hcp_surfaces_wf, [
+                    ("out1", "inputnode.pial_surf"),
+                    ("out2", "inputnode.wm_surf"),
                 ]),
             ])
             # fmt:on
@@ -645,25 +580,25 @@ def init_warp_surfaces_to_template_wf(
 
 
 @fill_doc
-def init_inflate_surfaces_wf(
+def init_generate_hcp_surfaces_wf(
     output_dir,
     mem_gb,
     omp_nthreads,
-    name="inflate_surfaces_wf",
+    name="generate_hcp_surfaces_wf",
 ):
-    """Generate inflated and very-inflated HCP-style surfaces.
+    """Generate midthickness, inflated, and very-inflated HCP-style surfaces.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_inflate_surfaces_wf
-            wf = init_inflate_surfaces_wf(
+            from xcp_d.workflow.anatomical import init_generate_hcp_surfaces_wf
+            wf = init_generate_hcp_surfaces_wf(
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="inflate_surfaces_wf",
+                name="generate_hcp_surfaces_wf",
             )
 
     Parameters
@@ -672,13 +607,15 @@ def init_inflate_surfaces_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "inflate_surfaces_wf".
+        Default is "generate_hcp_surfaces_wf".
 
     Inputs
     ------
     name_source : str
         Path to the file that will be used as the source_file for datasinks.
-    midthickness_surf : str
+    pial_surf : str
+        The surface file to inflate.
+    wm_surf : str
         The surface file to inflate.
     """
     workflow = Workflow(name=name)
@@ -687,11 +624,50 @@ def init_inflate_surfaces_wf(
         niu.IdentityInterface(
             fields=[
                 "name_source",
-                "midthickness_surf",
+                "pial_surf",
+                "wm_surf",
             ],
         ),
         name="inputnode",
     )
+
+    generate_midthickness = pe.Node(
+        SurfaceAverage(),
+        name="generate_midthickness",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, generate_midthickness, [
+            ("pial_surf", "surface_in1"),
+            ("wm_surf", "surface_in2"),
+        ]),
+    ])
+    # fmt:on
+
+    ds_midthickness = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            space="fsLR",
+            den="32k",
+            desc="hcp",
+            suffix="midthickness",
+            extension=".surf.gii",
+        ),
+        name="ds_midthickness",
+        run_without_submitting=False,
+        mem_gb=2,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_midthickness, [("name_source", "source_file")]),
+        (generate_midthickness, ds_midthickness, [("out_file", "in_file")]),
+    ])
+    # fmt:on
 
     # Generate (very-)inflated surface from standard-space midthickness surface.
     inflate_surface = pe.Node(
@@ -703,7 +679,7 @@ def init_inflate_surfaces_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, inflate_surface, [("midthickness_surf", "anatomical_surface_in")]),
+        (generate_midthickness, inflate_surface, [("out_file", "anatomical_surface_in")]),
     ])
     # fmt:on
 
@@ -711,6 +687,9 @@ def init_inflate_surfaces_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             check_hdr=False,
+            space="fsLR",
+            den="32k",
+            desc="hcp",
             suffix="inflated",
             extension=".surf.gii",
         ),
@@ -730,6 +709,9 @@ def init_inflate_surfaces_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             check_hdr=False,
+            space="fsLR",
+            den="32k",
+            desc="hcp",
             suffix="vinflated",
             extension=".surf.gii",
         ),
