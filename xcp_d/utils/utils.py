@@ -482,6 +482,9 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     """
     import nibabel as nb
     import numpy as np
+    from nipype import logging
+
+    LOGGER = logging.getLogger("nipype.utils")
 
     if head_radius == "auto":
         mask_img = nb.load(mask_file)
@@ -491,6 +494,8 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
         volume = n_voxels * voxel_size
 
         brain_radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
+
+        LOGGER.info(f"Brain radius estimated at {brain_radius} mm.")
 
     else:
         brain_radius = head_radius
