@@ -88,7 +88,7 @@ def test_bandpass_filtering(data_files):
     butterworth_data_test = butter_bandpass(
         raw_data,
         fs=1 / 0.8,
-        highpass=0.01,
+        highpass=0.009,
         lowpass=0.080,
         order=2,
     )
