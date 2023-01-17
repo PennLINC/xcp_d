@@ -314,14 +314,16 @@ def get_parser():
         action="store",
         default=0.01,
         type=float,
-        help="lower cut-off frequency (Hz) for the butterworth bandpass filter, see Satterthwaite et al. (2013)",
+        help=("lower cut-off frequency (Hz) for the butterworth bandpass filter, "
+              " see Satterthwaite et al. (2013)"),
     )
     g_filter.add_argument(
         "--upper-bpf",
         action="store",
         default=0.08,
         type=float,
-        help="upper cut-off frequency (Hz) for the butterworth bandpass filter, see Satterthwaite et al. (2013)",
+        help=("upper cut-off frequency (Hz) for the butterworth bandpass filter, "
+              " see Satterthwaite et al. (2013)"),
     )
     g_filter.add_argument(
         "--bpf-order",
