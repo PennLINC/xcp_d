@@ -265,11 +265,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv. Used for flagging high-motion volumes.",
     )
-    head_radius = traits.Float(
-        mandatory=False,
-        default_value=50,
-        desc="Head radius in mm, used for calculating framewise displacement.",
-    )
+    head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
     motion_filter_type = traits.Either(
         None,
         traits.Str,
