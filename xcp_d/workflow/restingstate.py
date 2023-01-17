@@ -46,7 +46,7 @@ def init_compute_alff_wf(
                 TR=2.,
                 bold_file="/path/to/file.nii.gz",
                 lowpass=0.1,
-                highpass=0.009,
+                highpass=0.01,
                 smoothing=6,
                 cifti=False,
                 omp_nthreads=1,
