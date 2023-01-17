@@ -76,9 +76,7 @@ def get_segfile(bold_file):
         mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
 
     transformfilex = get_std2bold_xforms(
-        bold_file=bold_file,
-        template_to_t1w=mni_to_t1,
-        t1w_to_native=_t12native(bold_file),
+        bold_file=bold_file, template_to_t1w=mni_to_t1, t1w_to_native=_t12native(bold_file),
     )
 
     boldref = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
@@ -180,8 +178,7 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     elif bold_space == "MNIInfant":
         # MNIInfant --> MNI152NLin2009cAsym
         MNIInfant_to_MNI152NLin2009cAsym = pkgrf(
-            "xcp_d",
-            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+            "xcp_d", "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
         xforms_to_MNI_invert = [False]
@@ -308,8 +305,7 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
     elif bold_space == "MNIInfant":
         # NLin6 --> NLin2009c --> MNIInfant
         MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
-            "xcp_d",
-            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+            "xcp_d", "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
         )
         transform_list = [
             MNI152NLin2009cAsym_to_MNI152Infant,

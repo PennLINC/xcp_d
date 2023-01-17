@@ -29,25 +29,13 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
     bold_file = traits.Either(
-        None,
-        File(exists=True),
-        desc="BOLD file",
-        mandatory=False,
-        usedefault=True,
+        None, File(exists=True), desc="BOLD file", mandatory=False, usedefault=True,
     )
     ref_file = traits.Either(
-        None,
-        File(exists=True),
-        desc="BOLD reference file",
-        mandatory=False,
-        usedefault=True,
+        None, File(exists=True), desc="BOLD reference file", mandatory=False, usedefault=True,
     )
     bold_mask = traits.Either(
-        None,
-        File(exists=True),
-        desc="BOLD mask file",
-        mandatory=False,
-        usedefault=True,
+        None, File(exists=True), desc="BOLD mask file", mandatory=False, usedefault=True,
     )
     t1w = traits.Either(
         None,
@@ -64,51 +52,21 @@ class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
         usedefault=True,
     )
     t1w_mask = traits.Either(
-        None,
-        File(exists=True),
-        desc="T1-space mask file",
-        mandatory=False,
-        usedefault=True,
+        None, File(exists=True), desc="T1-space mask file", mandatory=False, usedefault=True,
     )
 
 
 class _ConvertTo32OutputSpec(TraitedSpec):
-    bold_file = traits.Either(
-        None,
-        File(exists=True),
-        desc="BOLD file",
-        mandatory=False,
-    )
-    ref_file = traits.Either(
-        None,
-        File(exists=True),
-        desc="BOLD reference file",
-        mandatory=False,
-    )
-    bold_mask = traits.Either(
-        None,
-        File(exists=True),
-        desc="BOLD mask file",
-        mandatory=False,
-    )
+    bold_file = traits.Either(None, File(exists=True), desc="BOLD file", mandatory=False,)
+    ref_file = traits.Either(None, File(exists=True), desc="BOLD reference file", mandatory=False,)
+    bold_mask = traits.Either(None, File(exists=True), desc="BOLD mask file", mandatory=False,)
     t1w = traits.Either(
-        None,
-        File(exists=True),
-        desc="T1-weighted anatomical file",
-        mandatory=False,
+        None, File(exists=True), desc="T1-weighted anatomical file", mandatory=False,
     )
     t1seg = traits.Either(
-        None,
-        File(exists=True),
-        desc="T1-space segmentation file",
-        mandatory=False,
+        None, File(exists=True), desc="T1-space segmentation file", mandatory=False,
     )
-    t1w_mask = traits.Either(
-        None,
-        File(exists=True),
-        desc="T1-space mask file",
-        mandatory=False,
-    )
+    t1w_mask = traits.Either(None, File(exists=True), desc="T1-space mask file", mandatory=False,)
 
 
 class ConvertTo32(SimpleInterface):
@@ -141,9 +99,7 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
         ),
     )
     confounds_file = File(
-        exists=True,
-        mandatory=True,
-        desc="TSV file with selected confounds for denoising.",
+        exists=True, mandatory=True, desc="TSV file with selected confounds for denoising.",
     )
     fmriprep_confounds_file = File(
         exists=True,
@@ -166,9 +122,7 @@ class _RemoveTROutputSpec(TraitedSpec):
     )
 
     bold_file_dropped_TR = File(
-        exists=True,
-        mandatory=True,
-        desc="bold or cifti with volumes dropped",
+        exists=True, mandatory=True, desc="bold or cifti with volumes dropped",
     )
     dummy_scans = traits.Int(desc="Number of volumes dropped.")
 
@@ -203,10 +157,7 @@ class RemoveTR(SimpleInterface):
 
         # get the file names to output to
         self._results["bold_file_dropped_TR"] = fname_presuffix(
-            self.inputs.bold_file,
-            newpath=runtime.cwd,
-            suffix="_dropped",
-            use_ext=True,
+            self.inputs.bold_file, newpath=runtime.cwd, suffix="_dropped", use_ext=True,
         )
         self._results["fmriprep_confounds_file_dropped_TR"] = fname_presuffix(
             self.inputs.fmriprep_confounds_file,
@@ -235,14 +186,10 @@ class RemoveTR(SimpleInterface):
 
         # Save out results
         dropped_fmriprep_confounds_df.to_csv(
-            self._results["fmriprep_confounds_file_dropped_TR"],
-            sep="\t",
-            index=False,
+            self._results["fmriprep_confounds_file_dropped_TR"], sep="\t", index=False,
         )
         confounds_tsv_dropped.to_csv(
-            self._results["confounds_file_dropped_TR"],
-            sep="\t",
-            index=False,
+            self._results["confounds_file_dropped_TR"], sep="\t", index=False,
         )
 
         return runtime
@@ -256,9 +203,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         desc="Framewise displacement threshold. All values above this will be dropped.",
     )
     confounds_file = File(
-        exists=True,
-        mandatory=True,
-        desc="File with selected confounds for denoising.",
+        exists=True, mandatory=True, desc="File with selected confounds for denoising.",
     )
     fmriprep_confounds_file = File(
         exists=True,
@@ -266,11 +211,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
         desc="fMRIPrep confounds tsv. Used for flagging high-motion volumes.",
     )
     head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
-    motion_filter_type = traits.Either(
-        None,
-        traits.Str,
-        mandatory=True,
-    )
+    motion_filter_type = traits.Either(None, traits.Str, mandatory=True,)
     motion_filter_order = traits.Int(mandatory=True)
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     band_stop_min = traits.Either(
@@ -291,15 +232,9 @@ class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True, mandatory=True, desc="FD-censored bold file")
 
     fmriprep_confounds_censored = File(
-        exists=True,
-        mandatory=True,
-        desc="fmriprep_confounds_file censored",
+        exists=True, mandatory=True, desc="fmriprep_confounds_file censored",
     )
-    confounds_censored = File(
-        exists=True,
-        mandatory=True,
-        desc="confounds_file censored",
-    )
+    confounds_censored = File(exists=True, mandatory=True, desc="confounds_file censored",)
     tmask = File(
         exists=True,
         mandatory=True,
@@ -346,8 +281,7 @@ class CensorScrub(SimpleInterface):
         )
 
         fd_timeseries_uncensored = compute_fd(
-            confound=motion_df,
-            head_radius=self.inputs.head_radius,
+            confound=motion_df, head_radius=self.inputs.head_radius,
         )
         motion_df["framewise_displacement"] = fd_timeseries_uncensored
 
@@ -357,10 +291,7 @@ class CensorScrub(SimpleInterface):
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
-        tmask = generate_mask(
-            fd_res=fd_timeseries_uncensored,
-            fd_thresh=self.inputs.fd_thresh,
-        )
+        tmask = generate_mask(fd_res=fd_timeseries_uncensored, fd_thresh=self.inputs.fd_thresh,)
         if np.sum(tmask) > 0:  # If any FD values exceed the threshold
             if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
                 bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
@@ -405,10 +336,7 @@ class CensorScrub(SimpleInterface):
 
         # get the output
         self._results["bold_censored"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_censored",
-            newpath=runtime.cwd,
-            use_ext=True,
+            self.inputs.in_file, suffix="_censored", newpath=runtime.cwd, use_ext=True,
         )
         self._results["fmriprep_confounds_censored"] = fname_presuffix(
             self.inputs.in_file,
@@ -439,29 +367,18 @@ class CensorScrub(SimpleInterface):
         bold_file_censored.to_filename(self._results["bold_censored"])
 
         fmriprep_confounds_tsv_censored.to_csv(
-            self._results["fmriprep_confounds_censored"],
-            index=False,
-            header=True,
-            sep="\t",
+            self._results["fmriprep_confounds_censored"], index=False, header=True, sep="\t",
         )
         outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
         outliers_df.to_csv(
-            self._results["tmask"],
-            index=False,
-            header=True,
-            sep="\t",
+            self._results["tmask"], index=False, header=True, sep="\t",
         )
 
         motion_df.to_csv(
-            self._results["filtered_motion"],
-            index=False,
-            header=True,
-            sep="\t",
+            self._results["filtered_motion"], index=False, header=True, sep="\t",
         )
         confounds_tsv_censored.to_csv(
-            self._results["confounds_censored"],
-            index=False,
-            sep="\t",
+            self._results["confounds_censored"], index=False, sep="\t",
         )
         return runtime
 
@@ -508,16 +425,12 @@ class Interpolate(SimpleInterface):
 
         # interpolate the data using scipy's interpolation functionality
         interpolated_data = interpolate_masked_data(
-            bold_data=data_with_zeros,
-            tmask=tmask_arr,
-            TR=self.inputs.TR,
+            bold_data=data_with_zeros, tmask=tmask_arr, TR=self.inputs.TR,
         )
 
         # save out results
         self._results["bold_interpolated"] = fname_presuffix(
-            self.inputs.in_file,
-            newpath=os.getcwd(),
-            use_ext=True,
+            self.inputs.in_file, newpath=os.getcwd(), use_ext=True,
         )
 
         write_ndata(

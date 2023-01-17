@@ -45,12 +45,7 @@ class Report(_Report):
 
 
 def run_reports(
-    out_dir,
-    subject_label,
-    run_uuid,
-    config=None,
-    reportlets_dir=None,
-    packagename=None,
+    out_dir, subject_label, run_uuid, config=None, reportlets_dir=None, packagename=None,
 ):
     """Run the reports.
 
@@ -180,11 +175,7 @@ def generate_reports(
             LOGGER.info("Generating executive summary.")
             for subject_label in subject_list:
                 brainplotfile = glob.glob(
-                    os.path.join(
-                        output_dir,
-                        f"xcp_d/sub-{subject_label}",
-                        "figures/*_bold.svg",
-                    ),
+                    os.path.join(output_dir, f"xcp_d/sub-{subject_label}", "figures/*_bold.svg",),
                 )[0]
                 exsumm = ExecutiveSummary(
                     xcpd_path=os.path.join(output_dir, "xcp_d"),

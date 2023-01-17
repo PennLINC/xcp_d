@@ -349,8 +349,7 @@ def init_subject_wf(
     )
 
     surface_data, _, surfaces_found = collect_surface_data(
-        layout=layout,
-        participant_label=subject_id,
+        layout=layout, participant_label=subject_id,
     )
 
     # determine the appropriate post-processing workflow
@@ -436,15 +435,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
 """
 
-    summary = pe.Node(
-        SubjectSummary(subject_id=subject_id, bold=preproc_files),
-        name="summary",
-    )
+    summary = pe.Node(SubjectSummary(subject_id=subject_id, bold=preproc_files), name="summary",)
 
-    about = pe.Node(
-        AboutSummary(version=__version__, command=" ".join(sys.argv)),
-        name="about",
-    )
+    about = pe.Node(AboutSummary(version=__version__, command=" ".join(sys.argv)), name="about",)
 
     ds_report_summary = pe.Node(
         DerivativesDataSink(
@@ -485,10 +478,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     if surfaces_found:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
-            output_dir=output_dir,
-            t2w_available=False,
-            omp_nthreads=omp_nthreads,
-            mem_gb=5,
+            output_dir=output_dir, t2w_available=False, omp_nthreads=omp_nthreads, mem_gb=5,
         )
 
     if process_surfaces and surfaces_found:

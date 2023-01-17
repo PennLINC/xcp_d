@@ -22,9 +22,7 @@ LOGGER = logging.getLogger("nipype.interface")
 class _RegressInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="The bold file to be regressed")
     confounds = File(
-        exists=True,
-        mandatory=True,
-        desc="The selected confounds for regression, in a TSV file.",
+        exists=True, mandatory=True, desc="The selected confounds for regression, in a TSV file.",
     )
     # TODO: Use Enum maybe?
     params = traits.Str(mandatory=True, desc="Parameter set to use.")
@@ -131,10 +129,7 @@ class Regress(SimpleInterface):
         _, _, extension = split_filename(self.inputs.in_file)
         suffix = "_residualized" + extension
         self._results["res_file"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix=suffix,
-            newpath=runtime.cwd,
-            use_ext=False,
+            self.inputs.in_file, suffix=suffix, newpath=runtime.cwd, use_ext=False,
         )
 
         residuals = residuals.T  # transpose residual BOLD data back to SxT

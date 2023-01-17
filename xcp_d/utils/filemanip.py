@@ -378,11 +378,7 @@ def copyfile(
     if op.lexists(newfile):
         if op.islink(newfile):
             if all(
-                (
-                    os.readlink(newfile) == op.realpath(originalfile),
-                    not use_hardlink,
-                    not copy,
-                )
+                (os.readlink(newfile) == op.realpath(originalfile), not use_hardlink, not copy,)
             ):
                 keep = True
         elif posixpath.samefile(newfile, originalfile):

@@ -122,14 +122,7 @@ def init_qc_report_wf(
         name="inputnode",
     )
 
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "qc_file",
-            ],
-        ),
-        name="outputnode",
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["qc_file",],), name="outputnode",)
 
     censor_report = pe.Node(
         CensoringPlot(
@@ -194,10 +187,7 @@ def init_qc_report_wf(
         # fmt:on
 
         warp_boldmask_to_t1w = pe.Node(
-            ApplyTransforms(
-                dimension=3,
-                interpolation="NearestNeighbor",
-            ),
+            ApplyTransforms(dimension=3, interpolation="NearestNeighbor",),
             name="warp_boldmask_to_t1w",
             n_procs=omp_nthreads,
             mem_gb=mem_gb,
@@ -285,10 +275,7 @@ def init_qc_report_wf(
 
         # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
         # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
-        add_xform_to_nlin6asym = pe.Node(
-            niu.Merge(2),
-            name="add_xform_to_nlin6asym",
-        )
+        add_xform_to_nlin6asym = pe.Node(niu.Merge(2), name="add_xform_to_nlin6asym",)
         add_xform_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
 
         # fmt:off
@@ -299,11 +286,7 @@ def init_qc_report_wf(
 
         # Transform MNI152NLin2009cAsym dseg file to the same space as the BOLD data.
         warp_dseg_to_bold = pe.Node(
-            ApplyTransforms(
-                dimension=3,
-                input_image=dseg_file,
-                interpolation="MultiLabel",
-            ),
+            ApplyTransforms(dimension=3, input_image=dseg_file, interpolation="MultiLabel",),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
             mem_gb=mem_gb * 3 * omp_nthreads,
@@ -317,11 +300,7 @@ def init_qc_report_wf(
         # fmt:on
 
     qcreport = pe.Node(
-        QCPlot(
-            TR=TR,
-            template_mask=nlin2009casym_brain_mask,
-            head_radius=head_radius,
-        ),
+        QCPlot(TR=TR, template_mask=nlin2009casym_brain_mask, head_radius=head_radius,),
         name="qc_report",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -436,10 +415,7 @@ def init_qc_report_wf(
         qcreport.inputs.mask_file = None
 
     functional_qc = pe.Node(
-        FunctionalSummary(TR=TR),
-        name="qcsummary",
-        run_without_submitting=False,
-        mem_gb=mem_gb,
+        FunctionalSummary(TR=TR), name="qcsummary", run_without_submitting=False, mem_gb=mem_gb,
     )
 
     # fmt:off
@@ -462,31 +438,19 @@ def init_qc_report_wf(
     )
 
     ds_report_qualitycontrol = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="qualitycontrol",
-            datatype="figures",
-        ),
+        DerivativesDataSink(base_directory=output_dir, desc="qualitycontrol", datatype="figures",),
         name="ds_report_qualitycontrol",
         run_without_submitting=False,
     )
 
     ds_report_preprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="preprocessing",
-            datatype="figures",
-        ),
+        DerivativesDataSink(base_directory=output_dir, desc="preprocessing", datatype="figures",),
         name="ds_report_preprocessing",
         run_without_submitting=False,
     )
 
     ds_report_postprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="postprocessing",
-            datatype="figures",
-        ),
+        DerivativesDataSink(base_directory=output_dir, desc="postprocessing", datatype="figures",),
         name="ds_report_postprocessing",
         run_without_submitting=False,
     )

@@ -137,9 +137,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             )
             # Smooth via Nilearn
             smooth_data = pe.Node(
-                Smooth(fwhm=smoothing),
-                name="niftismoothing",
-                n_procs=omp_nthreads,
+                Smooth(fwhm=smoothing), name="niftismoothing", n_procs=omp_nthreads,
             )
             # fmt:off
             workflow.connect([
@@ -178,10 +176,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
             # Always check the intent code in CiftiSmooth's output file
             fix_cifti_intent = pe.Node(
-                FixCiftiIntent(),
-                name="fix_cifti_intent",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
+                FixCiftiIntent(), name="fix_cifti_intent", mem_gb=mem_gb, n_procs=omp_nthreads,
             )
 
             # fmt:off
@@ -197,10 +192,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 @fill_doc
 def init_cifti_reho_wf(
-    mem_gb,
-    omp_nthreads,
-    bold_file,
-    name="cifti_reho_wf",
+    mem_gb, omp_nthreads, bold_file, name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
 
@@ -248,13 +240,9 @@ was computed with nearest-neighbor vertices to yield ReHo.
 For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using
 *3dReHo* in AFNI [@afni].
 """
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold"]),
-        name="inputnode",
-    )
+    inputnode = pe.Node(niu.IdentityInterface(fields=["clean_bold"]), name="inputnode",)
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["reho_out", "rehoplot"]),
-        name="outputnode",
+        niu.IdentityInterface(fields=["reho_out", "rehoplot"]), name="outputnode",
     )
 
     # Extract left and right hemispheres via Connectome Workbench
@@ -279,16 +267,10 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Calculate the reho by hemipshere
     lh_reho = pe.Node(
-        SurfaceReHo(surf_hemi="L"),
-        name="reho_lh",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
+        SurfaceReHo(surf_hemi="L"), name="reho_lh", mem_gb=mem_gb, n_procs=omp_nthreads,
     )
     rh_reho = pe.Node(
-        SurfaceReHo(surf_hemi="R"),
-        name="reho_rh",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
+        SurfaceReHo(surf_hemi="R"), name="reho_rh", mem_gb=mem_gb, n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
@@ -299,10 +281,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
-        CiftiCreateDenseScalar(),
-        name="merge_cifti",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
+        CiftiCreateDenseScalar(), name="merge_cifti", mem_gb=mem_gb, n_procs=omp_nthreads,
     )
     reho_plot = pe.Node(
         Function(
@@ -338,10 +317,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 @fill_doc
 def init_nifti_reho_wf(
-    mem_gb,
-    omp_nthreads,
-    bold_file,
-    name="nifti_reho_wf",
+    mem_gb, omp_nthreads, bold_file, name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
 

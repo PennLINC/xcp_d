@@ -113,9 +113,7 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
 
 class _ConnectPlotOutputSpec(TraitedSpec):
     connectplot = File(
-        exists=True,
-        mandatory=True,
-        desc="Path to SVG file with four correlation heat maps.",
+        exists=True, mandatory=True, desc="Path to SVG file with four correlation heat maps.",
     )
 
 
@@ -127,22 +125,10 @@ class ConnectPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         ATLAS_LOOKUP = {
-            "Schaefer217": {
-                "title": "schaefer 200  17 networks",
-                "axes": [0, 0],
-            },
-            "Schaefer417": {
-                "title": "schaefer 400  17 networks",
-                "axes": [0, 1],
-            },
-            "Gordon": {
-                "title": "Gordon 333",
-                "axes": [1, 0],
-            },
-            "Glasser": {
-                "title": "Glasser 360",
-                "axes": [1, 1],
-            },
+            "Schaefer217": {"title": "schaefer 200  17 networks", "axes": [0, 0],},
+            "Schaefer417": {"title": "schaefer 400  17 networks", "axes": [0, 1],},
+            "Gordon": {"title": "Gordon 333", "axes": [1, 0],},
+            "Glasser": {"title": "Glasser 360", "axes": [1, 1],},
         }
 
         # Generate a plot of each matrix's correlation coefficients
@@ -170,8 +156,7 @@ class ConnectPlot(SimpleInterface):
                 axes=axes[subdict["axes"][0], subdict["axes"][1]],
             )
             axes[subdict["axes"][0], subdict["axes"][1]].set_title(
-                subdict["title"],
-                fontdict=font,
+                subdict["title"], fontdict=font,
             )
 
         # Write the results out

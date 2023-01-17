@@ -11,15 +11,9 @@ CHUNK_SIZE = 16384
 # Group common events with pre specified fingerprints
 KNOWN_ERRORS = {
     "permission-denied": ["PermwissionError: [Errno 13] Permission denied"],
-    "memory-error": [
-        "MemoryError",
-        "Cannot allocate memory",
-        "Return code: 134",
-    ],
+    "memory-error": ["MemoryError", "Cannot allocate memory", "Return code: 134",],
     "no-disk-space": ["[Errno 28] No space left on device", "[Errno 122] Disk quota exceeded"],
-    "keyboard-interrupt": [
-        "KeyboardInterrupt",
-    ],
+    "keyboard-interrupt": ["KeyboardInterrupt",],
 }
 
 
@@ -60,7 +54,7 @@ def sentry_setup(opts, exec_env):
     )
     with sentry_sdk.configure_scope() as scope:
         scope.set_tag("exec_env", exec_env)
-        free_mem_at_start = round(psutil.virtual_memory().free / 1024**3, 1)
+        free_mem_at_start = round(psutil.virtual_memory().free / 1024 ** 3, 1)
         scope.set_tag("free_mem_at_start", free_mem_at_start)
         scope.set_tag("cpu_count", cpu_count())
 

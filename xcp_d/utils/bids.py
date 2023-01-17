@@ -22,20 +22,12 @@ LOGGER = logging.getLogger("nipype.utils")
 # TODO: Add and test fsaverage.
 DEFAULT_ALLOWED_SPACES = {
     "cifti": ["fsLR"],
-    "nifti": [
-        "MNI152NLin6Asym",
-        "MNI152NLin2009cAsym",
-        "MNIInfant",
-    ],
+    "nifti": ["MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant",],
 }
 INPUT_TYPE_ALLOWED_SPACES = {
     "nibabies": {
         "cifti": ["fsLR"],
-        "nifti": [
-            "MNIInfant",
-            "MNI152NLin6Asym",
-            "MNI152NLin2009cAsym",
-        ],
+        "nifti": ["MNIInfant", "MNI152NLin6Asym", "MNI152NLin2009cAsym",],
     },
 }
 
@@ -127,16 +119,14 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     found_label = sorted(set(participant_label) & all_participants)
     if not found_label:
         raise BIDSError(
-            f"Could not find participants [{', '.join(participant_label)}]",
-            bids_dir,
+            f"Could not find participants [{', '.join(participant_label)}]", bids_dir,
         )
 
     # Warn if some IDs were not found
     notfound_label = sorted(set(participant_label) - all_participants)
     if notfound_label:
         exc = BIDSError(
-            f"Some participants were not found: {', '.join(notfound_label)}",
-            bids_dir,
+            f"Some participants were not found: {', '.join(notfound_label)}", bids_dir,
         )
         if strict:
             raise exc
@@ -197,11 +187,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "template_to_t1w_xform": {
-            "datatype": "anat",
-            "to": "T1w",
-            "suffix": "xfm",
-        },
+        "template_to_t1w_xform": {"datatype": "anat", "to": "T1w", "suffix": "xfm",},
         # native T1w-space brain mask
         "t1w_mask": {
             "datatype": "anat",
@@ -212,11 +198,7 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_template_xform": {
-            "datatype": "anat",
-            "from": "T1w",
-            "suffix": "xfm",
-        },
+        "t1w_to_template_xform": {"datatype": "anat", "from": "T1w", "suffix": "xfm",},
     }
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
@@ -237,10 +219,9 @@ def collect_data(
         # but we'll grab the first one with available data if they did.
         allowed_spaces = ensure_list(queries["bold"]["space"])
     else:
-        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["cifti" if cifti else "nifti"]
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(input_type, DEFAULT_ALLOWED_SPACES,)[
+            "cifti" if cifti else "nifti"
+        ]
 
     for space in allowed_spaces:
         queries["bold"]["space"] = space
@@ -261,10 +242,9 @@ def collect_data(
         # Select the best *volumetric* space, based on available nifti BOLD files.
         # This space will be used in the executive summary and T1w/T2w workflows.
         temp_query = queries["t1w_to_template_xform"].copy()
-        temp_allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        temp_allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(input_type, DEFAULT_ALLOWED_SPACES,)[
+            "nifti"
+        ]
 
         for space in temp_allowed_spaces:
             temp_query["to"] = space
@@ -292,13 +272,7 @@ def collect_data(
         queries["bold"]["density"] = densities[0]
 
     subj_data = {
-        dtype: sorted(
-            layout.get(
-                return_type="file",
-                subject=participant_label,
-                **query,
-            )
-        )
+        dtype: sorted(layout.get(return_type="file", subject=participant_label, **query,))
         for dtype, query in queries.items()
     }
 
@@ -343,26 +317,10 @@ def collect_surface_data(layout, participant_label):
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
     surface_queries = {
-        "lh_pial_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "pial",
-        },
-        "rh_pial_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "pial",
-        },
-        "lh_smoothwm_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "smoothwm",
-        },
-        "rh_smoothwm_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "smoothwm",
-        },
+        "lh_pial_surf": {"hemi": "L", "desc": None, "suffix": "pial",},
+        "rh_pial_surf": {"hemi": "R", "desc": None, "suffix": "pial",},
+        "lh_smoothwm_surf": {"hemi": "L", "desc": None, "suffix": "smoothwm",},
+        "rh_smoothwm_surf": {"hemi": "R", "desc": None, "suffix": "smoothwm",},
     }
 
     # First, try to grab the first base surface file in standard space.
@@ -433,36 +391,12 @@ def collect_surface_data(layout, participant_label):
     # The optional surfaces may be in native or standard space.
     # We only want HCP-style (desc = hcp) versions of these files.
     surface_queries = {
-        "lh_midthickness_surf": {
-            "hemi": "L",
-            "desc": "hcp",
-            "suffix": "midthickness",
-        },
-        "rh_midthickness_surf": {
-            "hemi": "R",
-            "desc": "hcp",
-            "suffix": "midthickness",
-        },
-        "lh_inflated_surf": {
-            "hemi": "L",
-            "desc": "hcp",
-            "suffix": "inflated",
-        },
-        "rh_inflated_surf": {
-            "hemi": "R",
-            "desc": "hcp",
-            "suffix": "inflated",
-        },
-        "lh_vinflated_surf": {
-            "hemi": "L",
-            "desc": "hcp",
-            "suffix": "vinflated",
-        },
-        "rh_vinflated_surf": {
-            "hemi": "R",
-            "desc": "hcp",
-            "suffix": "vinflated",
-        },
+        "lh_midthickness_surf": {"hemi": "L", "desc": "hcp", "suffix": "midthickness",},
+        "rh_midthickness_surf": {"hemi": "R", "desc": "hcp", "suffix": "midthickness",},
+        "lh_inflated_surf": {"hemi": "L", "desc": "hcp", "suffix": "inflated",},
+        "rh_inflated_surf": {"hemi": "R", "desc": "hcp", "suffix": "inflated",},
+        "lh_vinflated_surf": {"hemi": "L", "desc": "hcp", "suffix": "vinflated",},
+        "rh_vinflated_surf": {"hemi": "R", "desc": "hcp", "suffix": "vinflated",},
     }
 
     surface_files = {
@@ -525,11 +459,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
     run_data["confounds"] = layout.get_nearest(
-        bids_file.path,
-        strict=False,
-        desc="confounds",
-        suffix="timeseries",
-        extension=".tsv",
+        bids_file.path, strict=False, desc="confounds", suffix="timeseries", extension=".tsv",
     )
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
@@ -537,16 +467,9 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
     if not cifti:
-        run_data["boldref"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            suffix="boldref",
-        )
+        run_data["boldref"] = layout.get_nearest(bids_file.path, strict=False, suffix="boldref",)
         run_data["boldmask"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            desc="brain",
-            suffix="mask",
+            bids_file.path, strict=False, desc="brain", suffix="mask",
         )
         run_data["t1w_to_native_xform"] = layout.get_nearest(
             bids_file.path,
@@ -556,15 +479,11 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             suffix="xfm",
         )
     else:
-        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(input_type, DEFAULT_ALLOWED_SPACES,)[
+            "nifti"
+        ]
         run_data["boldref"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            space=allowed_nifti_spaces,
-            suffix="boldref",
+            bids_file.path, strict=False, space=allowed_nifti_spaces, suffix="boldref",
         )
 
     LOGGER.debug(
@@ -612,12 +531,7 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
     generated_by = dset_desc.get("GeneratedBy", [])
     generated_by.insert(
-        0,
-        {
-            "Name": "xcp_d",
-            "Version": __version__,
-            "CodeURL": DOWNLOAD_URL,
-        },
+        0, {"Name": "xcp_d", "Version": __version__, "CodeURL": DOWNLOAD_URL,},
     )
     dset_desc["GeneratedBy"] = generated_by
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."

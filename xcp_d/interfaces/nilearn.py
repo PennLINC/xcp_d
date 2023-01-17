@@ -14,9 +14,7 @@ from nipype.interfaces.nilearn import NilearnBaseInterface
 
 class _MergeInputSpec(BaseInterfaceInputSpec):
     in_files = InputMultiPath(
-        File(exists=True),
-        mandatory=True,
-        desc="A list of images to concatenate.",
+        File(exists=True), mandatory=True, desc="A list of images to concatenate.",
     )
     out_file = File(
         "concat_4d.nii.gz",
@@ -27,10 +25,7 @@ class _MergeInputSpec(BaseInterfaceInputSpec):
 
 
 class _MergeOutputSpec(TraitedSpec):
-    out_file = File(
-        exists=True,
-        desc="Concatenated output file.",
-    )
+    out_file = File(exists=True, desc="Concatenated output file.",)
 
 
 class Merge(NilearnBaseInterface, SimpleInterface):
@@ -50,18 +45,10 @@ class Merge(NilearnBaseInterface, SimpleInterface):
 
 
 class _SmoothInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="An image to smooth.",
-    )
+    in_file = File(exists=True, mandatory=True, desc="An image to smooth.",)
     fwhm = traits.Either(
         traits.Float(),
-        traits.List(
-            traits.Float(),
-            minlen=3,
-            maxlen=3,
-        ),
+        traits.List(traits.Float(), minlen=3, maxlen=3,),
         desc="Smoothing strength, as a full-width at half maximum, in millimeters.",
     )
     out_file = File(
@@ -73,10 +60,7 @@ class _SmoothInputSpec(BaseInterfaceInputSpec):
 
 
 class _SmoothOutputSpec(TraitedSpec):
-    out_file = File(
-        exists=True,
-        desc="Smoothed output file.",
-    )
+    out_file = File(exists=True, desc="Smoothed output file.",)
 
 
 class Smooth(NilearnBaseInterface, SimpleInterface):
@@ -96,11 +80,7 @@ class Smooth(NilearnBaseInterface, SimpleInterface):
 
 
 class _BinaryMathInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="An image to do math on.",
-    )
+    in_file = File(exists=True, mandatory=True, desc="An image to do math on.",)
     expression = traits.String(
         mandatory=True,
         desc="A mathematical expression to apply to the image. Must have 'img' in it.",
@@ -114,10 +94,7 @@ class _BinaryMathInputSpec(BaseInterfaceInputSpec):
 
 
 class _BinaryMathOutputSpec(TraitedSpec):
-    out_file = File(
-        exists=True,
-        desc="Mathified output file.",
-    )
+    out_file = File(exists=True, desc="Mathified output file.",)
 
 
 class BinaryMath(NilearnBaseInterface, SimpleInterface):

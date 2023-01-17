@@ -61,10 +61,7 @@ class FilteringData(SimpleInterface):
 
         # write the output out
         self._results["filtered_file"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix=suffix,
-            newpath=runtime.cwd,
-            use_ext=False,
+            self.inputs.in_file, suffix=suffix, newpath=runtime.cwd, use_ext=False,
         )
         self._results["filtered_file"] = write_ndata(
             data_matrix=filt_data,

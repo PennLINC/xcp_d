@@ -150,8 +150,7 @@ def load_motion(
         )
         motion_confounds = motion_confounds.T  # Transpose motion confounds back to RxT
         motion_confounds_df = pd.DataFrame(
-            data=motion_confounds,
-            columns=motion_confounds_df.columns,
+            data=motion_confounds, columns=motion_confounds_df.columns,
         )
 
     return motion_confounds_df
@@ -183,10 +182,7 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
 
     custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
     custom_confounds_file = os.path.abspath(
-        os.path.join(
-            custom_confounds_folder,
-            custom_confounds_filename,
-        )
+        os.path.join(custom_confounds_folder, custom_confounds_filename,)
     )
 
     if not os.path.isfile(custom_confounds_file):
@@ -196,9 +192,7 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
 
 
 def consolidate_confounds(
-    img_file,
-    params,
-    custom_confounds_file=None,
+    img_file, params, custom_confounds_file=None,
 ):
     """Combine confounds files into a single tsv.
 
@@ -220,9 +214,7 @@ def consolidate_confounds(
     from xcp_d.utils.confounds import load_confound_matrix
 
     confounds_df = load_confound_matrix(
-        img_file=img_file,
-        params=params,
-        custom_confounds=custom_confounds_file,
+        img_file=img_file, params=params, custom_confounds=custom_confounds_file,
     )
 
     out_file = os.path.abspath("confounds.tsv")
@@ -369,15 +361,9 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square
-        "24P": {
-            "strategy": ["motion"],
-            "motion": "full",
-        },
+        "24P": {"strategy": ["motion"], "motion": "full",},
         # Get rot and trans values, as well as derivatives and square, WM, CSF,
-        "27P": {
-            "strategy": ["motion", "global_signal", "wm_csf"],
-            "motion": "full",
-        },
+        "27P": {"strategy": ["motion", "global_signal", "wm_csf"], "motion": "full",},
         # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
         # and global signal as well.
@@ -406,10 +392,7 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
         },
         # Get WM and CSF
         # AROMA confounds are loaded separately
-        "aroma": {
-            "strategy": ["wm_csf"],
-            "wm_csf": "basic",
-        },
+        "aroma": {"strategy": ["wm_csf"], "wm_csf": "basic",},
         # Get WM, CSF, and global signal
         # AROMA confounds are loaded separately
         "aroma_gsr": {
@@ -498,12 +481,7 @@ def _label_mixing_matrix(mixing_file, noise_index_file):
 
 @fill_doc
 def motion_regression_filter(
-    data,
-    TR,
-    motion_filter_type,
-    band_stop_min,
-    band_stop_max,
-    motion_filter_order=4,
+    data, TR, motion_filter_type, band_stop_min, band_stop_max, motion_filter_order=4,
 ):
     """Filter translation and rotation motion parameters.
 

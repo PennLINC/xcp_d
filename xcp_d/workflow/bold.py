@@ -198,10 +198,7 @@ def init_boldpostprocess_wf(
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
     # used for the boilerplate.
-    custom_confounds_file = get_customfile(
-        custom_confounds_folder,
-        run_data["confounds"],
-    )
+    custom_confounds_file = get_customfile(custom_confounds_folder, run_data["confounds"],)
     regression_description = describe_regression(params, custom_confounds_file)
 
     workflow = Workflow(name=name)
@@ -308,10 +305,7 @@ produced by the regression.
     mem_gbx = _create_mem_gb(bold_file)
 
     downcast_data = pe.Node(
-        ConvertTo32(),
-        name="downcast_data",
-        mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
+        ConvertTo32(), name="downcast_data", mem_gb=mem_gbx["timeseries"], n_procs=omp_nthreads,
     )
 
     # fmt:off
@@ -328,9 +322,7 @@ produced by the regression.
     # fmt:on
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
-        mem_gb=mem_gbx["timeseries"],
-        name="fcons_ts_wf",
-        omp_nthreads=omp_nthreads,
+        mem_gb=mem_gbx["timeseries"], name="fcons_ts_wf", omp_nthreads=omp_nthreads,
     )
 
     if bandpass_filter:
@@ -405,11 +397,7 @@ produced by the regression.
 
     consolidate_confounds_node = pe.Node(
         Function(
-            input_names=[
-                "img_file",
-                "custom_confounds_file",
-                "params",
-            ],
+            input_names=["img_file", "custom_confounds_file", "params",],
             output_names=["out_file"],
             function=consolidate_confounds,
         ),
@@ -735,10 +723,7 @@ produced by the regression.
     # executive summary workflow
     if dcan_qc:
         executive_summary_wf = init_execsummary_wf(
-            bold_file=bold_file,
-            layout=layout,
-            output_dir=output_dir,
-            name="executive_summary_wf",
+            bold_file=bold_file, layout=layout, output_dir=output_dir, name="executive_summary_wf",
         )
 
         # fmt:off
@@ -756,7 +741,7 @@ produced by the regression.
 
 
 def _create_mem_gb(bold_fname):
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
+    bold_size_gb = os.path.getsize(bold_fname) / (1024 ** 3)
     bold_tlen = nb.load(bold_fname).shape[-1]
     mem_gbz = {
         "derivative": bold_size_gb,

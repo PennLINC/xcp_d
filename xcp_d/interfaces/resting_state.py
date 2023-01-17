@@ -89,21 +89,9 @@ class SurfaceReHo(SimpleInterface):
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
     TR = traits.Float(mandatory=True, desc="repetition time")
-    lowpass = traits.Float(
-        mandatory=True,
-        default_value=0.10,
-        desc="lowpass filter in Hz",
-    )
-    highpass = traits.Float(
-        mandatory=True,
-        default_value=0.01,
-        desc="highpass filter in Hz",
-    )
-    mask = File(
-        exists=True,
-        mandatory=False,
-        desc=" brain mask for nifti file",
-    )
+    lowpass = traits.Float(mandatory=True, default_value=0.10, desc="lowpass filter in Hz",)
+    highpass = traits.Float(mandatory=True, default_value=0.01, desc="highpass filter in Hz",)
+    mask = File(exists=True, mandatory=False, desc=" brain mask for nifti file",)
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
@@ -136,10 +124,7 @@ class ComputeALFF(SimpleInterface):
             suffix = "_alff.nii.gz"
 
         self._results["alff_out"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix=suffix,
-            newpath=runtime.cwd,
-            use_ext=False,
+            self.inputs.in_file, suffix=suffix, newpath=runtime.cwd, use_ext=False,
         )
         write_ndata(
             data_matrix=alff_mat,
@@ -190,10 +175,7 @@ class BrainPlot(SimpleInterface):
 
         # write the html out
         self._results["nifti_html"] = fname_presuffix(
-            "zscore_nifti_",
-            suffix="stat.html",
-            newpath=runtime.cwd,
-            use_ext=False,
+            "zscore_nifti_", suffix="stat.html", newpath=runtime.cwd, use_ext=False,
         )
 
         html_view.save_as_html(self._results["nifti_html"])
@@ -241,10 +223,7 @@ class ReHoNamePatch(SimpleInterface):
 
 class _DespikePatchInputSpec(DespikeInputSpec):
     out_file = File(
-        mandatory=False,
-        genfile=True,
-        desc="output image file name",
-        argstr="-prefix %s",
+        mandatory=False, genfile=True, desc="output image file name", argstr="-prefix %s",
     )
 
 

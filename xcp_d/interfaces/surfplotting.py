@@ -46,9 +46,7 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     regressed_data = File(exists=True, mandatory=True, desc="Data after regression")
     residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
     filtered_motion = File(
-        exists=True,
-        mandatory=True,
-        desc="TSV file with filtered motion parameters.",
+        exists=True, mandatory=True, desc="TSV file with filtered motion parameters.",
     )
     TR = traits.Float(default_value=1, desc="Repetition time")
 
@@ -57,9 +55,7 @@ class _PlotSVGDataInputSpec(BaseInterfaceInputSpec):
     tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
     dummy_scans = traits.Int(
-        0,
-        usedefault=True,
-        desc="Number of dummy volumes to drop from the beginning of the run.",
+        0, usedefault=True, desc="Number of dummy volumes to drop from the beginning of the run.",
     )
 
 
@@ -83,17 +79,11 @@ class PlotSVGData(SimpleInterface):
     def _run_interface(self, runtime):
 
         before_process_fn = fname_presuffix(
-            "carpetplot_before_",
-            suffix="file.svg",
-            newpath=runtime.cwd,
-            use_ext=False,
+            "carpetplot_before_", suffix="file.svg", newpath=runtime.cwd, use_ext=False,
         )
 
         after_process_fn = fname_presuffix(
-            "carpetplot_after_",
-            suffix="file.svg",
-            newpath=runtime.cwd,
-            use_ext=False,
+            "carpetplot_after_", suffix="file.svg", newpath=runtime.cwd, use_ext=False,
         )
 
         mask_file = self.inputs.mask

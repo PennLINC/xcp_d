@@ -193,11 +193,7 @@ def run_shell(cmd, env=os.environ):
         cmd = " ".join(cmd)
 
     call_command = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        shell=True,
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, shell=True,
     )
     output, error = call_command.communicate("Hello from the other side!")
     call_command.wait()
