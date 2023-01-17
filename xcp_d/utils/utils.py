@@ -454,3 +454,36 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
         )
 
     return filtered_data
+
+
+def estimate_brain_radius(mask_file):
+    """Estimate brain radius from binary brain mask file.
+
+    Parameters
+    ----------
+    mask_file : str
+        Binary brain mask file, in nifti format.
+
+    Returns
+    -------
+    radius : float
+        Estimated brain radius, in millimeters.
+
+    Notes
+    -----
+    This function estimates the brain radius based on the brain volume,
+    assuming that the brain is a sphere.
+    This was Paul Taylor's idea, shared in this NeuroStars post:
+    https://neurostars.org/t/estimating-head-brain-radius-automatically/24290/2.
+    """
+    import nibabel as nb
+    import numpy as np
+
+    mask_img = nb.load(mask_file)
+    mask_data = mask_img.get_fdata()
+    n_voxels = np.sum(mask_data)
+    voxel_size = np.prod(mask_img.header.get_zooms())
+    volume = n_voxels * voxel_size
+
+    radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
+    return radius
