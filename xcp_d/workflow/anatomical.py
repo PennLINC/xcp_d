@@ -275,8 +275,7 @@ def init_warp_surfaces_to_template_wf(
         directory and returned via outputnode for use in a brainsprite.
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
-        to generate HCP-style midthickness, inflated, and veryinflated surfaces
-        if they're not already available.
+        to generate HCP-style midthickness, inflated, and veryinflated surfaces.
     lh_wm_surf, rh_wm_surf : str
         Left- and right-hemisphere smoothed white matter surface files.
 
@@ -284,35 +283,31 @@ def init_warp_surfaces_to_template_wf(
         directory and returned via outputnode for use in a brainsprite.
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
-        to generate HCP-style midthickness, inflated, and veryinflated surfaces
-        if they're not already available.
+        to generate HCP-style midthickness, inflated, and veryinflated surfaces.
     lh_midthickness_surf, rh_midthickness_surf : str
         Left- and right-hemisphere midthickness surface files.
 
-        If ``warp_to_standard`` is False, then this is an fMRIPrep-style file,
-        and it will be ignored, as an HCP-style version will be created from the pial and wm
-        files.
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory.
 
-        If ``warp_to_standard`` is True, then it is an HCP-style file,
-        and it will be written out to the output directory.
+        If ``warp_to_standard`` is True, then this input is ignored and a replacement file
+        are generated from the pial and wm files after they are warped to standard space.
     lh_inflated_surf, rh_inflated_surf : str
         Left- and right-hemisphere inflated surface files.
 
-        If ``warp_to_standard`` is False, then this is an fMRIPrep-style file,
-        and it will be ignored, as an HCP-style version will be created from the pial and wm
-        files.
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory.
 
-        If ``warp_to_standard`` is True, then it is an HCP-style file,
-        and it will be written out to the output directory.
+        If ``warp_to_standard`` is True, then this input is ignored and a replacement file
+        are generated from the pial and wm files after they are warped to standard space.
     lh_vinflated_surf, rh_vinflated_surf : str
         Left- and right-hemisphere very-inflated surface files.
 
-        If ``warp_to_standard`` is False, then this is an fMRIPrep-style file,
-        and it will be ignored, as an HCP-style version will be created from the pial and wm
-        files.
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory.
 
-        If ``warp_to_standard`` is True, then it is an HCP-style file,
-        and it will be written out to the output directory.
+        If ``warp_to_standard`` is True, then this input is ignored and a replacement file
+        are generated from the pial and wm files after they are warped to standard space.
 
     Notes
     -----
