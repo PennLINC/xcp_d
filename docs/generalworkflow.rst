@@ -153,7 +153,7 @@ Processing Steps
 
 6.  Bandpass filtering [Optional]:
     ``XCP-D`` implements a Butterworth bandpass filter to filter BOLD signal after regression.
-    The bandpass filter parameters are set to 0.01 to 0.08 Hz with order of 2 by default and can be modified in the command line (see :footcite:p:`satterthwaite_2013`).
+    The bandpass filter parameters are set to 0.01 to 0.08 Hz with order of 2 by default and can be modified in the command line (see :footcite:t:`satterthwaite_2013`).
     If there are any flagged volumes or timepoints during Temporal Censoring, these volumes are interpolated before bandpass filtering.
     This can be disabled in the command line arguments with ``--disable-bandpass-filter``.
 
