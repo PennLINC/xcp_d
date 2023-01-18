@@ -729,7 +729,7 @@ class CiftiApplyCoverageThreshold(SimpleInterface):
             )
 
         new_data = np.zeros_like(data)
-        new_data[coverage_thresholded, :] = 0
+        new_data[:, coverage_thresholded] = 0
 
         # make the modified img object
         img = nb.Cifti2Image(
