@@ -628,7 +628,7 @@ class CiftiBinarizeCoverage(SimpleInterface):
         # load it in memory
         data = np.array(data)
         # select first volume
-        data = data[..., 0]
+        data = data[0, :]
 
         new_data = np.zeros_like(data)
         new_data[~np.isnan(data)] = 1
