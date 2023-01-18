@@ -31,8 +31,22 @@ def output_dir(request):
 
 
 @pytest.fixture
-def fmriprep_with_freesurfer_data(data_dir):
-    subj_dir = os.path.join(data_dir, "ds001419-fmriprep", "sub-01")
+def datasets(data_dir):
+    """Locate downloaded datasets."""
+    dsets = {}
+    dsets["ds001419"] = os.path.join(data_dir, "ds001419-fmriprep")
+    dsets["nibabies"] = os.path.join(data_dir, "nibabies_test_data/derivatives/nibabies")
+    dsets["fmriprep_without_freesurfer"] = os.path.join(
+        data_dir,
+        "fmriprepwithoutfreesurfer/fmriprep",
+    )
+    return dsets
+
+
+@pytest.fixture
+def fmriprep_with_freesurfer_data(datasets):
+    """Collect a list of files from ds001419 that will be used by misc. tests."""
+    subj_dir = os.path.join(datasets["ds001419"], "sub-01")
     func_dir = os.path.join(subj_dir, "func")
     anat_dir = os.path.join(subj_dir, "anat")
 
@@ -78,8 +92,9 @@ def fmriprep_with_freesurfer_data(data_dir):
 
 
 @pytest.fixture
-def fmriprep_without_freesurfer_data(data_dir):
-    subj_dir = os.path.join(data_dir, "fmriprepwithoutfreesurfer", "fmriprep", "sub-01")
+def fmriprep_without_freesurfer_data(datasets):
+    """Collect a list of fmriprepwithoutfreesurfer files that will be used by misc. tests."""
+    subj_dir = os.path.join(datasets["fmriprep_without_freesurfer"], "sub-01")
     func_dir = os.path.join(subj_dir, "func")
 
     files = {}
