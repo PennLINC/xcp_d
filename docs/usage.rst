@@ -28,7 +28,7 @@ as the command line is simpler.
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d <fmriprep_dir> <output_dir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,

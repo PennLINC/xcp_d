@@ -77,7 +77,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
        .. code-block:: json-object
 
           {
-              "Freq Band": [ 0.009, 0.08],
+              "Freq Band": [ 0.01, 0.08],
               "RepetitionTime": 2.0,
               "compression": true,
               "dummy vols": 0,
