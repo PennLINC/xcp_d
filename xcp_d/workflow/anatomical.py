@@ -58,6 +58,7 @@ def init_t1w_wf(
             wf = init_t1w_wf(
                 output_dir=".",
                 input_type="fmriprep",
+                target_space="MNI152Nlin6Asym",
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="t1w_wf",
@@ -94,9 +95,7 @@ def init_t1w_wf(
         name="outputnode",
     )
 
-    template_file = str(
-        get_template(template=target_space, resolution=1, desc=None, suffix="T1w")
-    )
+    template_file = str(get_template(template=target_space, resolution=1, desc=None, suffix="T1w"))
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
