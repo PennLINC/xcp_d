@@ -94,7 +94,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # The "ground truth" matrix
     ground_truth = np.corrcoef(signals.T)
-    # ds001491 data doesn't have complete coverage, so we must allow NaNs here.
+    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
     assert np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True)
 
 
