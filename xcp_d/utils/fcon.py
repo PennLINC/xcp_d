@@ -4,9 +4,12 @@
 import nibabel as nb
 import numpy as np
 from nilearn.input_data import NiftiLabelsMasker
+from nipype import logging
 from scipy import signal
 from scipy.stats import rankdata
 from templateflow.api import get as get_template
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
@@ -55,6 +58,12 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
     prop_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
     coverage_thresholded = prop_coverage < 0.5  # we require 50%+ coverage
+
+    if np.any(coverage_thresholded):
+        LOGGER.warning(
+            f"{coverage_thresholded.sum()}/{coverage_thresholded.size} of parcels have "
+            "<50%% coverage"
+        )
 
     masker = NiftiLabelsMasker(
         labels_img=atlas,
