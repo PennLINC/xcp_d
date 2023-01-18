@@ -734,9 +734,9 @@ class CiftiApplyCoverageThreshold(SimpleInterface):
         # make the modified img object
         img = nb.Cifti2Image(
             dataobj=new_data,
-            header=masked_cov_cifti_obj.header,
-            file_map=masked_cov_cifti_obj.file_map,
-            nifti_header=masked_cov_cifti_obj.nifti_header,
+            header=parc_cifti_obj.header,
+            file_map=parc_cifti_obj.file_map,
+            nifti_header=parc_cifti_obj.nifti_header,
         )
 
         self._results["out_file"] = os.path.abspath(self.inputs.out_file)
