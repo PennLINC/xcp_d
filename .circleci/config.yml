@@ -247,7 +247,7 @@ jobs:
       - store_artifacts:
           path: /src/coverage
       - codecov/upload:
-          file: /tmp/src/coverage/coverage.xml
+          file: /src/coverage/coverage.xml
 
   deployable:
     docker:
