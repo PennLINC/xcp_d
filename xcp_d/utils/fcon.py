@@ -32,6 +32,30 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     fconmatrix : str
         functional connectivity matrix filename
     """
+    # Before anything, we need to measure coverage
+    atlas_img = nb.load(atlas)
+    in_data = atlas_img.get_fdata()
+    in_data_bin = (in_data > 0).astype(np.float32)
+    atlas_img_bin = nb.Nifti1Image(in_data_bin, atlas_img.affine, atlas_img.header)
+
+    sum_masker_masked = NiftiLabelsMasker(
+        labels_img=atlas,
+        mask_img=mask,
+        smoothing_fwhm=None,
+        standardize=False,
+        strategy="sum",
+    )
+    sum_masker_unmasked = NiftiLabelsMasker(
+        labels_img=atlas,
+        smoothing_fwhm=None,
+        standardize=False,
+        strategy="sum",
+    )
+    n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
+    n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
+    prop_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
+    coverage_thresholded = prop_coverage < 0.5  # we require 50%+ coverage
+
     masker = NiftiLabelsMasker(
         labels_img=atlas,
         mask_img=mask,
@@ -41,6 +65,9 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
 
     # Use nilearn for time_series
     time_series = masker.fit_transform(in_file)
+
+    # Apply the coverage mask
+    time_series[:, coverage_thresholded] = 0
 
     # Use numpy for correlation matrix
     correlation_matrices = np.corrcoef(time_series.T)
