@@ -280,7 +280,7 @@ the Connectome Workbench.
     # fmt:on
 
     parcellate_coverage = pe.MapNode(
-        CiftiParcellate(direction="COLUMN", only_numeric=True),
+        CiftiParcellate(direction="ROW", only_numeric=True),
         mem_gb=mem_gb,
         name="parcellate_coverage",
         n_procs=omp_nthreads,
@@ -288,7 +288,7 @@ the Connectome Workbench.
     )
 
     count_vertices_per_parcel = pe.MapNode(
-        CiftiParcellate(direction="COLUMN", only_numeric=True),
+        CiftiParcellate(direction="ROW", only_numeric=True),
         mem_gb=mem_gb,
         name="count_vertices_per_parcel",
         n_procs=omp_nthreads,
