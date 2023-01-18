@@ -591,3 +591,153 @@ class CiftiZerosToNaNs(SimpleInterface):
         img.to_filename(self._results["out_file"])
 
         return runtime
+
+
+class _CiftiBinarizeCoverageInputSpec:
+    in_file = File(exists=True, mandatory=True, desc="CIFTI file to modify.")
+    masked_binarized_file = File(
+        "binarized_data.dtseries.nii",
+        usedefault=True,
+        exists=False,
+        desc="The name of the modified file to write out. binarized_data.dtseries.nii by default.",
+    )
+    unmasked_binarized_file = File(
+        "all_ones.dtseries.nii",
+        usedefault=True,
+        exists=False,
+        desc="The name of the modified file to write out. all_ones.dtseries.nii by default.",
+    )
+
+
+class _CiftiBinarizeCoverageOutputSpec:
+    masked_binarized_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+    unmasked_binarized_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+
+
+class CiftiBinarizeCoverage(SimpleInterface):
+    """Replace all NaNs with zeros, and all non-NaNs with ones."""
+
+    input_spec = _CiftiBinarizeCoverageInputSpec
+    output_spec = _CiftiBinarizeCoverageOutputSpec
+
+    def _run_interface(self, runtime):
+        cifti_obj = nb.load(self.inputs.in_file)
+
+        # load data as memmap
+        data = cifti_obj.get_fdata()
+        # load it in memory
+        data = np.array(data)
+        # select first volume
+        data = data[..., 0]
+
+        new_data = np.zeros_like(data)
+        new_data[~np.isnan(data)] = 1
+
+        new_unmasked_data = np.ones_like(data)
+
+        # make the modified img object
+        masked_img = nb.Cifti2Image(
+            dataobj=new_data,
+            header=cifti_obj.header,
+            file_map=cifti_obj.file_map,
+            nifti_header=cifti_obj.nifti_header,
+        )
+        unmasked_img = nb.Cifti2Image(
+            dataobj=new_unmasked_data,
+            header=cifti_obj.header,
+            file_map=cifti_obj.file_map,
+            nifti_header=cifti_obj.nifti_header,
+        )
+
+        self._results["masked_binarized_file"] = os.path.abspath(self.inputs.masked_binarized_file)
+        masked_img.to_filename(self._results["masked_binarized_file"])
+        self._results["unmasked_binarized_file"] = os.path.abspath(
+            self.inputs.unmasked_binarized_file
+        )
+        unmasked_img.to_filename(self._results["unmasked_binarized_file"])
+
+        return runtime
+
+
+class _CiftiApplyCoverageThresholdInputSpec:
+    parc_file = File(exists=True, mandatory=True, desc="Parcellated CIFTI file to modify.")
+    masked_coverage_file = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Parcellated CIFTI coverage file. "
+            "Each parcel's value is the proportion of vertices in the parcel that are covered in "
+            "the data."
+        ),
+    )
+    unmasked_coverage_file = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Parcellated CIFTI coverage file. "
+            "Each parcel's value is the proportion of vertices in the parcel that are covered in "
+            "the data."
+        ),
+    )
+    out_file = File(
+        "thresholded_timeseries.ptseries.nii",
+        usedefault=True,
+        exists=False,
+        desc=(
+            "The name of the modified file to write out. "
+            "thresholded_timeseries.ptseries.nii by default."
+        ),
+    )
+
+
+class _CiftiApplyCoverageThresholdOutputSpec:
+    out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+
+
+class CiftiApplyCoverageThreshold(SimpleInterface):
+    """Apply 50% coverage threshold to parcellated data."""
+
+    input_spec = _CiftiApplyCoverageThresholdInputSpec
+    output_spec = _CiftiApplyCoverageThresholdOutputSpec
+
+    def _run_interface(self, runtime):
+        parc_cifti_obj = nb.load(self.inputs.parc_file)
+        masked_cov_cifti_obj = nb.load(self.inputs.masked_coverage_file)
+        unmasked_cov_cifti_obj = nb.load(self.inputs.unmasked_coverage_file)
+
+        # load data as memmap
+        data = parc_cifti_obj.get_fdata()
+        masked_cov_data = masked_cov_cifti_obj.get_fdata()
+        unmasked_cov_data = unmasked_cov_cifti_obj.get_fdata()
+        # load it in memory
+        data = np.array(data)
+        masked_cov_data = np.array(masked_cov_data)
+        unmasked_cov_data = np.array(unmasked_cov_data)
+        # select first volume
+        masked_cov_data = np.squeeze(masked_cov_data)
+        unmasked_cov_data = np.squeeze(unmasked_cov_data)
+
+        prop_coverage = masked_cov_data / unmasked_cov_data
+        coverage_thresholded = prop_coverage < 0.5  # we require 50%+ coverage
+
+        if np.any(coverage_thresholded):
+            LOGGER.warning(
+                f"{coverage_thresholded.sum()}/{coverage_thresholded.size} of parcels have "
+                "<50%% coverage"
+            )
+
+        new_data = np.zeros_like(data)
+        new_data[coverage_thresholded, :] = 0
+
+        # make the modified img object
+        img = nb.Cifti2Image(
+            dataobj=new_data,
+            header=parc_cifti_obj.header,
+            file_map=parc_cifti_obj.file_map,
+            nifti_header=parc_cifti_obj.nifti_header,
+        )
+
+        self._results["out_file"] = os.path.abspath(self.inputs.out_file)
+        img.to_filename(self._results["out_file"])
+
+        return runtime
