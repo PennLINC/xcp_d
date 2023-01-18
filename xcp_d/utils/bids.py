@@ -38,6 +38,9 @@ INPUT_TYPE_ALLOWED_SPACES = {
         ],
     },
 }
+ASSOCIATED_TEMPLATES = {
+    "fsLR": "MNI152NLin6Asym",
+}
 
 
 class BIDSError(ValueError):
@@ -258,27 +261,19 @@ def collect_data(
         queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
         queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
     else:
-        # Select the best *volumetric* space, based on available nifti BOLD files.
-        # This space will be used in the executive summary and T1w/T2w workflows.
+        # Select the appropriate volumetric space for the CIFTI template
         temp_query = queries["t1w_to_template_xform"].copy()
-        temp_allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        volumetric_space = ASSOCIATED_TEMPLATES[space]
 
-        for space in temp_allowed_spaces:
-            temp_query["to"] = space
-            transform_files = layout.get(**temp_query)
-            if transform_files:
-                queries["t1w_to_template_xform"]["to"] = space
-                queries["template_to_t1w_xform"]["from"] = space
-                break
-
+        temp_query["to"] = volumetric_space
+        transform_files = layout.get(**temp_query)
         if not transform_files:
-            allowed_space_str = ", ".join(temp_allowed_spaces)
             raise FileNotFoundError(
-                f"No nifti transforms found to allowed spaces ({allowed_space_str})"
+                f"No nifti transforms found to allowed space ({volumetric_space})"
             )
+
+        queries["t1w_to_template_xform"]["to"] = volumetric_space
+        queries["template_to_t1w_xform"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,

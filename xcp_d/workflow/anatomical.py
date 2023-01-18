@@ -40,6 +40,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 def init_t1w_wf(
     output_dir,
     input_type,
+    target_space,
     omp_nthreads,
     mem_gb,
     name="t1w_wf",
@@ -66,6 +67,8 @@ def init_t1w_wf(
     ----------
     %(output_dir)s
     %(input_type)s
+    target_space : str
+        Target NIFTI template for T1w.
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -91,15 +94,9 @@ def init_t1w_wf(
         name="outputnode",
     )
 
-    # MNI92FSL = pkgrf("xcp_d", "data/transform/FSL2MNI9Composite.h5")
-    mnitemplate = str(
-        get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
+    template_file = str(
+        get_template(template=target_space, resolution=2, desc=None, suffix="T1w")
     )
-    # mnitemplatemask = str(
-    #     get_template(
-    #         template="MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask"
-    #     )
-    # )
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(
@@ -121,22 +118,21 @@ def init_t1w_wf(
         )
 
         # fmt:off
-        workflow.connect(
-            [
-                (inputnode, ds_t1wmni, [("t1w", "in_file")]),
-                (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
-            ]
-        )
+        workflow.connect([
+            (inputnode, ds_t1wmni, [("t1w", "in_file")]),
+            (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+        ])
         # fmt:on
+
     else:
-        # #TM: need to replace MNI92FSL xfm with the correct
+        # TM: need to replace MNI92FSL xfm with the correct
         # xfm from the MNI output space of fMRIPrep/NiBabies
         # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
         # to MNI152NLin6Asym.
         t1w_transform = pe.Node(
             ApplyTransformsx(
                 num_threads=2,
-                reference_image=mnitemplate,
+                reference_image=template_file,
                 interpolation="LanczosWindowedSinc",
                 input_image_type=3,
                 dimension=3,
@@ -149,7 +145,7 @@ def init_t1w_wf(
         seg_transform = pe.Node(
             ApplyTransformsx(
                 num_threads=2,
-                reference_image=mnitemplate,
+                reference_image=template_file,
                 interpolation="MultiLabel",
                 input_image_type=3,
                 dimension=3,

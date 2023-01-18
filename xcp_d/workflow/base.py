@@ -21,6 +21,7 @@ from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
     collect_surface_data,
+    get_entity,
     get_preproc_pipeline_info,
     write_dataset_description,
 )
@@ -467,9 +468,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         run_without_submitting=True,
     )
 
+    # Extract target volumetric space for T1w image
+    target_space = get_entity(subj_data["t1w_to_template_xform"], "to")
+
     t1w_wf = init_t1w_wf(
         output_dir=output_dir,
         input_type=input_type,
+        target_space=target_space,
         omp_nthreads=omp_nthreads,
         mem_gb=5,  # RF: need to change memory size
     )
