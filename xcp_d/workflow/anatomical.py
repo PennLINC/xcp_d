@@ -95,7 +95,13 @@ def init_t1w_wf(
         name="outputnode",
     )
 
-    template_file = str(get_template(template=target_space, resolution=1, desc=None, suffix="T1w"))
+    cohort = None
+    if "+" in target_space:
+        target_space, cohort = target_space.split("+")
+
+    template_file = str(
+        get_template(template=target_space, cohort=cohort, resolution=1, desc=None, suffix="T1w")
+    )
 
     if input_type in ("dcan", "hcp"):
         ds_t1wmni = pe.Node(

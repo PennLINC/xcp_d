@@ -770,7 +770,7 @@ def get_entity(filename, entity):
 
     folder, file_base = os.path.split(filename)
 
-    entity_values = re.findall(f"{entity}-([a-zA-Z0-9]+)", file_base)
+    entity_values = re.findall(f"{entity}-([a-zA-Z0-9+]+)", file_base)
     if len(entity_values) < 1:
         entity_value = None
     else:
