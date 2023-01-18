@@ -328,9 +328,9 @@ def init_execsummary_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
-                "boldref_file",  # a nifti boldref
+                "boldref_file",
             ]
-        ),
+        ),  # a nifti boldref
         name="inputnode",
     )
     inputnode.inputs.bold_file = bold_file
