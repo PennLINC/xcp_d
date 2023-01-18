@@ -459,7 +459,7 @@ class CensorScrub(SimpleInterface):
         motion_metadata = {
             "framewise_displacement": {
                 "Description": (
-                    "Framewise displacement calculated according to Power et al. (2014)."
+                    "Framewise displacement calculated according to Power et al. (2012)."
                 ),
                 "Units": "mm",
                 "HeadRadius": self.inputs.head_radius,

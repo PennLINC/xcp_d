@@ -143,7 +143,7 @@ def init_writederivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_temporal_mask, [
-            ("tmask_metadata", "additional_metadata"),
+            ("tmask_metadata", "meta_dict"),
         ])
     ])
     # fmt:on
@@ -165,7 +165,7 @@ def init_writederivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_filtered_motion, [
-            ("filtered_motion_metadata", "additional_metadata"),
+            ("filtered_motion_metadata", "meta_dict"),
         ])
     ])
     # fmt:on
