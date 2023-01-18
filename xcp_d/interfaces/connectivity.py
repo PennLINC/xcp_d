@@ -17,7 +17,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.filemanip import fname_presuffix
 
-LOGGER = logging.getLogger('nipype.interface')
+LOGGER = logging.getLogger("nipype.interface")
 
 
 class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
