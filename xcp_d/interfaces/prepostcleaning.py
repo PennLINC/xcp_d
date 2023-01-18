@@ -289,7 +289,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
 
 class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True, mandatory=True, desc="FD-censored bold file")
-
     fmriprep_confounds_censored = File(
         exists=True,
         mandatory=True,
@@ -308,6 +307,9 @@ class _CensorScrubOutputSpec(TraitedSpec):
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
     )
+    tmask_metadata = traits.Dict(
+        desc="Metadata associated with the tmask output.",
+    )
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -315,6 +317,9 @@ class _CensorScrubOutputSpec(TraitedSpec):
             "Framewise displacement timeseries. "
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
+    )
+    filtered_motion_metadata = traits.Dict(
+        desc="Metadata associated with the filtered_motion output.",
     )
 
 
@@ -422,7 +427,6 @@ class CensorScrub(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
             suffix="_desc-fd_outliers.tsv",
@@ -451,6 +455,39 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
+
+        motion_metadata = {
+            "framewise_displacement": {
+                "Description": (
+                    "Framewise displacement calculated according to Power et al. (2014)."
+                ),
+                "Units": "mm",
+                "HeadRadius": self.inputs.head_radius,
+            }
+        }
+        if self.inputs.motion_filter_type == "lp":
+            motion_metadata["LowpassFilter"] = self.inputs.band_stop_max
+            motion_metadata["LowpassFilterOrder"] = self.inputs.motion_filter_order
+        elif self.inputs.motion_filter_type == "notch":
+            motion_metadata["BandstopFilter"] = [
+                self.inputs.band_stop_min,
+                self.inputs.band_stop_max,
+            ]
+            motion_metadata["BandstopFilterOrder"] = self.inputs.motion_filter_order
+
+        self._results["filtered_motion_metadata"] = motion_metadata
+
+        outliers_metadata = {
+            "framewise_displacement": {
+                "Description": "Outlier time series based on framewise displacement.",
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+                "Threshold": self.inputs.fd_thresh,
+            }
+        }
+        self._results["tmask_metadata"] = outliers_metadata
 
         motion_df.to_csv(
             self._results["filtered_motion"],

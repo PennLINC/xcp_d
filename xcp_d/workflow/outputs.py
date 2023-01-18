@@ -85,7 +85,9 @@ def init_writederivatives_wf(
     reho_out
     confounds_file
     filtered_motion
+    filtered_motion_metadata
     tmask
+    tmask_metadata
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
@@ -106,7 +108,9 @@ def init_writederivatives_wf(
                 "reho_rh",
                 "reho_out",
                 "filtered_motion",
+                "filtered_motion_metadata",
                 "tmask",
+                "tmask_metadata",
                 "dummy_scans",
             ],
         ),
@@ -123,7 +127,7 @@ def init_writederivatives_wf(
 
     smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
 
-    write_derivative_tmask_wf = pe.Node(
+    ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["atlas", "den", "res", "space", "desc"],
@@ -131,10 +135,18 @@ def init_writederivatives_wf(
             extension=".tsv",
             source_file=bold_file,
         ),
-        name="write_derivative_tmask_wf",
+        name="ds_temporal_mask",
         run_without_submitting=True,
         mem_gb=1,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_temporal_mask, [
+            ("tmask_metadata", "additional_metadata"),
+        ])
+    ])
+    # fmt:on
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
@@ -149,6 +161,14 @@ def init_writederivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_filtered_motion, [
+            ("filtered_motion_metadata", "additional_metadata"),
+        ])
+    ])
+    # fmt:on
 
     ds_confounds = pe.Node(
         DerivativesDataSink(
@@ -165,7 +185,7 @@ def init_writederivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, write_derivative_tmask_wf, [('tmask', 'in_file')]),
+        (inputnode, ds_temporal_mask, [('tmask', 'in_file')]),
         (inputnode, ds_filtered_motion, [('filtered_motion', 'in_file')]),
         (inputnode, ds_confounds, [('confounds_file', 'in_file')])
     ])

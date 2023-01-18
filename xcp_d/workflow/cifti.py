@@ -637,7 +637,9 @@ produced by the regression.
         ]),
         (censor_scrub, write_derivative_wf, [
             ('filtered_motion', 'inputnode.filtered_motion'),
+            ('filtered_motion_metadata', 'inputnode.filtered_motion_metadata'),
             ('tmask', 'inputnode.tmask'),
+            ('tmask_metadata', 'inputnode.tmask_metadata'),
         ]),
         (reho_compute_wf, write_derivative_wf, [
             ('outputnode.reho_out', 'inputnode.reho_out'),
