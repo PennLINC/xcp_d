@@ -636,15 +636,17 @@ class CiftiBinarizeCoverage(SimpleInterface):
         new_unmasked_data = np.ones_like(data)
 
         # make the modified img object
+        space_axis = cifti_obj.header.get_axis(1)
+        new_header = nb.cifti2.Cifti2Header.from_axes((space_axis,))
         masked_img = nb.Cifti2Image(
             dataobj=new_data,
-            header=cifti_obj.header,
+            header=new_header,
             file_map=cifti_obj.file_map,
             nifti_header=cifti_obj.nifti_header,
         )
         unmasked_img = nb.Cifti2Image(
             dataobj=new_unmasked_data,
-            header=cifti_obj.header,
+            header=new_header,
             file_map=cifti_obj.file_map,
             nifti_header=cifti_obj.nifti_header,
         )
@@ -732,9 +734,9 @@ class CiftiApplyCoverageThreshold(SimpleInterface):
         # make the modified img object
         img = nb.Cifti2Image(
             dataobj=new_data,
-            header=parc_cifti_obj.header,
-            file_map=parc_cifti_obj.file_map,
-            nifti_header=parc_cifti_obj.nifti_header,
+            header=masked_cov_cifti_obj.header,
+            file_map=masked_cov_cifti_obj.file_map,
+            nifti_header=masked_cov_cifti_obj.nifti_header,
         )
 
         self._results["out_file"] = os.path.abspath(self.inputs.out_file)
