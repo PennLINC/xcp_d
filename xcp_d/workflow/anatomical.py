@@ -95,7 +95,7 @@ def init_t1w_wf(
     )
 
     template_file = str(
-        get_template(template=target_space, resolution=2, desc=None, suffix="T1w")
+        get_template(template=target_space, resolution=1, desc=None, suffix="T1w")
     )
 
     if input_type in ("dcan", "hcp"):
