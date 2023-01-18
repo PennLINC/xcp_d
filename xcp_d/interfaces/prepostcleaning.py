@@ -593,7 +593,7 @@ class CiftiZerosToNaNs(SimpleInterface):
         return runtime
 
 
-class _CiftiBinarizeCoverageInputSpec:
+class _CiftiBinarizeCoverageInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="CIFTI file to modify.")
     masked_binarized_file = File(
         "binarized_data.dtseries.nii",
@@ -609,7 +609,7 @@ class _CiftiBinarizeCoverageInputSpec:
     )
 
 
-class _CiftiBinarizeCoverageOutputSpec:
+class _CiftiBinarizeCoverageOutputSpec(TraitedSpec):
     masked_binarized_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
     unmasked_binarized_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
 
@@ -659,7 +659,7 @@ class CiftiBinarizeCoverage(SimpleInterface):
         return runtime
 
 
-class _CiftiApplyCoverageThresholdInputSpec:
+class _CiftiApplyCoverageThresholdInputSpec(BaseInterfaceInputSpec):
     parc_file = File(exists=True, mandatory=True, desc="Parcellated CIFTI file to modify.")
     masked_coverage_file = File(
         exists=True,
@@ -690,7 +690,7 @@ class _CiftiApplyCoverageThresholdInputSpec:
     )
 
 
-class _CiftiApplyCoverageThresholdOutputSpec:
+class _CiftiApplyCoverageThresholdOutputSpec(TraitedSpec):
     out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
 
 
