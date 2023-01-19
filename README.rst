@@ -17,6 +17,10 @@
    :target: https://circleci.com/gh/PennLINC/xcp_d
    :alt: Test Status
 
+.. image:: https://codecov.io/gh/PennLINC/xcp_d/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/PennLINC/xcp_d
+   :alt: Codecov
+
 .. image:: https://zenodo.org/badge/309485627.svg
    :target: https://zenodo.org/badge/latestdoi/309485627
    :alt: DOI
