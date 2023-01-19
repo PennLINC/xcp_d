@@ -9,11 +9,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
-from xcp_d.interfaces.prepostcleaning import (
-    CiftiApplyCoverageThreshold,
-    CiftiBinarizeCoverage,
-    CiftiZerosToNaNs,
-)
+from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
 from xcp_d.interfaces.workbench import (
     CiftiCorrelation,
     CiftiCreateDenseFromTemplate,
@@ -265,12 +261,6 @@ the Connectome Workbench.
         iterfield=["atlas_name"],
     )
 
-    replace_empty_vertices = pe.Node(
-        CiftiZerosToNaNs(),
-        name="replace_empty_vertices",
-        n_procs=omp_nthreads,
-    )
-
     resample_atlas_to_data = pe.MapNode(
         CiftiCreateDenseFromTemplate(),
         name="resample_atlas_to_data",
@@ -280,96 +270,38 @@ the Connectome Workbench.
 
     # fmt:off
     workflow.connect([
-        (replace_empty_vertices, resample_atlas_to_data, [("out_file", "template_cifti")]),
+        (inputnode, resample_atlas_to_data, [("clean_bold", "template_cifti")]),
         (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
     ])
     # fmt:on
 
-    binarize_cifti_coverage = pe.Node(
-        CiftiBinarizeCoverage(),
-        name="binarize_cifti_coverage",
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (replace_empty_vertices, binarize_cifti_coverage, [("out_file", "in_file")]),
-    ])
-    # fmt:on
-
-    count_covered_vertices_per_parcel = pe.MapNode(
-        CiftiParcellate(direction="ROW", only_numeric=True),
-        mem_gb=mem_gb,
-        name="count_covered_vertices_per_parcel",
-        n_procs=omp_nthreads,
-        iterfield=["atlas_label"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (atlas_file_grabber, count_covered_vertices_per_parcel, [
-            ("atlas_file", "atlas_label"),
-        ]),
-        (binarize_cifti_coverage, count_covered_vertices_per_parcel, [
-            ("masked_binarized_file", "in_file"),
-        ]),
-    ])
-    # fmt:on
-
-    count_vertices_per_parcel = pe.MapNode(
-        CiftiParcellate(direction="ROW", only_numeric=True),
-        mem_gb=mem_gb,
-        name="count_vertices_per_parcel",
-        n_procs=omp_nthreads,
-        iterfield=["atlas_label"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (atlas_file_grabber, count_vertices_per_parcel, [
-            ("atlas_file", "atlas_label"),
-        ]),
-        (binarize_cifti_coverage, count_vertices_per_parcel, [
-            ("unmasked_binarized_file", "in_file"),
-        ]),
-    ])
-    # fmt:on
-
     prepare_data_for_parcellation = pe.MapNode(
-        Function(
-            input_names=["data_file", "atlas_file"],
-            output_names=["timeseries_file"],
-            function=None,
-        )
+        CiftiPrepareForParcellation(),
+        name="prepare_data_for_parcellation",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["atlas_file"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, prepare_data_for_parcellation, [("clean_bold", "data_file")]),
+        (resample_atlas_to_data, prepare_data_for_parcellation, [("cifti_out", "atlas_file")]),
+    ])
+    # fmt:on
 
     parcellate_data = pe.MapNode(
         CiftiParcellate(direction="COLUMN", only_numeric=True),
         name="parcellate_data",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
-        iterfield=["atlas_label"],
-    )
-
-    apply_coverage_threshold = pe.MapNode(
-        CiftiApplyCoverageThreshold(),
-        name="apply_coverage_threshold",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["masked_coverage_file", "unmasked_coverage_file", "parc_file"],
+        iterfield=["in_file", "atlas_label"],
     )
 
     # fmt:off
     workflow.connect([
-        (parcellate_coverage, apply_coverage_threshold, [
-            ("out_file", "masked_coverage_file"),
-        ]),
-        (count_vertices_per_parcel, apply_coverage_threshold, [
-            ("out_file", "unmasked_coverage_file"),
-        ]),
-        (parcellate_data, apply_coverage_threshold, [
-            ("out_file", "parc_file"),
-        ])
+        (resample_atlas_to_data, parcellate_data, [("cifti_out", "atlas_label")]),
+        (prepare_data_for_parcellation, parcellate_data, [("out_file", "in_file")]),
     ])
     # fmt:on
 
@@ -390,17 +322,15 @@ the Connectome Workbench.
 
     # fmt:off
     workflow.connect([
-        (inputnode, replace_empty_vertices, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (replace_empty_vertices, parcellate_data, [("out_file", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
-        (apply_coverage_threshold, correlate_data, [("out_file", "in_file")]),
-        (apply_coverage_threshold, outputnode, [("out_file", "timeseries")]),
+        (parcellate_data, correlate_data, [("out_file", "in_file")]),
+        (parcellate_data, outputnode, [("out_file", "timeseries")]),
         (correlate_data, outputnode, [("out_file", "correlations")]),
-        (apply_coverage_threshold, matrix_plot, [("out_file", "time_series_tsv")]),
+        (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on

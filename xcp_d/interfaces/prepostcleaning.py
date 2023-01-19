@@ -531,215 +531,114 @@ class Interpolate(SimpleInterface):
         return runtime
 
 
-class _CiftiZerosToNaNsInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="CIFTI file to modify.")
-    out_file = File(
-        "modified_data.dtseries.nii",
-        usedefault=True,
-        exists=False,
-        desc="The name of the modified file to write out. modified_data.dtseries.nii by default.",
+class _CiftiPrepareForParcellationInputSpec(BaseInterfaceInputSpec):
+    data_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Dense CIFTI time series file to prepare for parcellation.",
     )
-
-
-class _CiftiZerosToNaNsOutputSpec(TraitedSpec):
-    out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
-
-
-class CiftiZerosToNaNs(SimpleInterface):
-    """Convert all all-zero vertices' time series to NaNs in a CIFTI file.
-
-    This is done so that these vertices will be flagged as missing data by wb_command.
-    This interface is only designed to work with dtseries CIFTIs where the first axis is time and
-    the second is space.
-    """
-
-    input_spec = _CiftiZerosToNaNsInputSpec
-    output_spec = _CiftiZerosToNaNsOutputSpec
-
-    def _run_interface(self, runtime):
-        cifti_obj = nb.load(self.inputs.in_file)
-        # load data as memmap
-        data = cifti_obj.get_fdata()
-        # load it in memory
-        data = np.array(data)
-
-        # find all vertices with all zeros or one or more NaNs
-        stdevs = np.std(data, axis=0)
-        # nan > 0 == False, nan <= 0 == False
-        zero_std = ~(stdevs > 0)  # std over time is zero or NaN
-        zero_values = ~(data[0, :] > 0)  # first time point's value is zero or NaN
-        bad_vertex_idx = np.where(np.logical_and(zero_std, zero_values))[0]
-
-        if bad_vertex_idx.size:
-            LOGGER.warning(
-                f"{bad_vertex_idx.size}/{zero_std.size} vertices have missing data. "
-                "Filling these vertices with NaNs so they will be ignored by parcellation step."
-            )
-
-        # replace the bad vertices' values with NaNs
-        data[:, bad_vertex_idx] = np.nan
-
-        # make the modified img object
-        img = nb.Cifti2Image(
-            dataobj=data,
-            header=cifti_obj.header,
-            file_map=cifti_obj.file_map,
-            nifti_header=cifti_obj.nifti_header,
-        )
-
-        self._results["out_file"] = os.path.abspath(self.inputs.out_file)
-        img.to_filename(self._results["out_file"])
-
-        return runtime
-
-
-class _CiftiBinarizeCoverageInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="CIFTI file to modify.")
-    masked_binarized_file = File(
-        "binarized_data.dtseries.nii",
-        usedefault=True,
-        exists=False,
-        desc="The name of the modified file to write out. binarized_data.dtseries.nii by default.",
-    )
-    unmasked_binarized_file = File(
-        "all_ones.dtseries.nii",
-        usedefault=True,
-        exists=False,
-        desc="The name of the modified file to write out. all_ones.dtseries.nii by default.",
-    )
-
-
-class _CiftiBinarizeCoverageOutputSpec(TraitedSpec):
-    masked_binarized_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
-    unmasked_binarized_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
-
-
-class CiftiBinarizeCoverage(SimpleInterface):
-    """Replace all NaNs with zeros, and all non-NaNs with ones."""
-
-    input_spec = _CiftiBinarizeCoverageInputSpec
-    output_spec = _CiftiBinarizeCoverageOutputSpec
-
-    def _run_interface(self, runtime):
-        cifti_obj = nb.load(self.inputs.in_file)
-
-        # load data as memmap
-        data = cifti_obj.get_fdata()
-        # load it in memory
-        data = np.array(data)
-        # select first volume
-        data = data[0, :]
-
-        new_data = np.zeros_like(data)
-        new_data[~np.isnan(data)] = 1
-
-        new_unmasked_data = np.ones_like(data)
-
-        # make the modified img object
-        space_axis = cifti_obj.header.get_axis(1)
-        new_header = nb.cifti2.Cifti2Header.from_axes((space_axis,))
-        masked_img = nb.Cifti2Image(
-            dataobj=new_data,
-            header=new_header,
-            file_map=cifti_obj.file_map,
-            nifti_header=cifti_obj.nifti_header,
-        )
-        unmasked_img = nb.Cifti2Image(
-            dataobj=new_unmasked_data,
-            header=new_header,
-            file_map=cifti_obj.file_map,
-            nifti_header=cifti_obj.nifti_header,
-        )
-
-        self._results["masked_binarized_file"] = os.path.abspath(self.inputs.masked_binarized_file)
-        masked_img.to_filename(self._results["masked_binarized_file"])
-        self._results["unmasked_binarized_file"] = os.path.abspath(
-            self.inputs.unmasked_binarized_file
-        )
-        unmasked_img.to_filename(self._results["unmasked_binarized_file"])
-
-        return runtime
-
-
-class _CiftiApplyCoverageThresholdInputSpec(BaseInterfaceInputSpec):
-    parc_file = File(exists=True, mandatory=True, desc="Parcellated CIFTI file to modify.")
-    masked_coverage_file = File(
+    atlas_file = File(
         exists=True,
         mandatory=True,
         desc=(
-            "Parcellated CIFTI coverage file. "
-            "Each parcel's value is the proportion of vertices in the parcel that are covered in "
-            "the data."
+            "Atlas CIFTI file to use to prepare data file for parcellation. "
+            "This file must already be resampled to the same structure as the data_file."
         ),
     )
-    unmasked_coverage_file = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Parcellated CIFTI coverage file. "
-            "Each parcel's value is the proportion of vertices in the parcel that are covered in "
-            "the data."
-        ),
-    )
+    TR = traits.Float(mandatory=True, desc="Repetition time, in seconds.")
     out_file = File(
-        "thresholded_timeseries.ptseries.nii",
+        "prepared_timeseries.dtseries.nii",
         usedefault=True,
         exists=False,
         desc=(
             "The name of the modified file to write out. "
-            "thresholded_timeseries.ptseries.nii by default."
+            "prepared_timeseries.dtseries.nii by default."
         ),
     )
 
 
-class _CiftiApplyCoverageThresholdOutputSpec(TraitedSpec):
+class _CiftiPrepareForParcellationOutputSpec(TraitedSpec):
     out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
 
 
-class CiftiApplyCoverageThreshold(SimpleInterface):
+class CiftiPrepareForParcellation(SimpleInterface):
     """Apply 50% coverage threshold to parcellated data."""
 
-    input_spec = _CiftiApplyCoverageThresholdInputSpec
-    output_spec = _CiftiApplyCoverageThresholdOutputSpec
+    input_spec = _CiftiPrepareForParcellationInputSpec
+    output_spec = _CiftiPrepareForParcellationOutputSpec
 
     def _run_interface(self, runtime):
-        parc_cifti_obj = nb.load(self.inputs.parc_file)
-        masked_cov_cifti_obj = nb.load(self.inputs.masked_coverage_file)
-        unmasked_cov_cifti_obj = nb.load(self.inputs.unmasked_coverage_file)
+        data_file = self.inputs.data_file
+        atlas_file = self.inputs.atlas_file
+        TR = self.inputs.TR
+        out_file = self.inputs.out_file
 
-        # load data as memmap
-        data = parc_cifti_obj.get_fdata()
-        masked_cov_data = masked_cov_cifti_obj.get_fdata()
-        unmasked_cov_data = unmasked_cov_cifti_obj.get_fdata()
-        # load it in memory
-        data = np.array(data)
-        masked_cov_data = np.array(masked_cov_data)
-        unmasked_cov_data = np.array(unmasked_cov_data)
-        # select first volume
-        masked_cov_data = np.squeeze(masked_cov_data)
-        unmasked_cov_data = np.squeeze(unmasked_cov_data)
+        assert data_file.endswith(".dtseries.nii")
+        assert atlas_file.endswith(".dlabel.nii")
 
-        prop_coverage = masked_cov_data / unmasked_cov_data
-        coverage_thresholded = prop_coverage < 0.5  # we require 50%+ coverage
+        data = read_ndata(data_file)
+        atlas_data = read_ndata(atlas_file)
+        atlas_data = np.squeeze(atlas_data)  # squeeze to 1D
+        assert atlas_data.ndim == 1
+        assert atlas_data.shape[0] == data.shape[0]  # same number of vertices
 
-        if np.any(coverage_thresholded):
+        bad_vertices_idx = np.where(np.all(np.logical_or(data == 0, np.isnan(data)), axis=1))
+
+        # First, replace all bad vertices' time series with NaNs.
+        # This way, any partially-covered nodes will have NaNs in the bad portions,
+        # so those vertices will be ignored by wb_command -cifti-parcellate.
+        data[bad_vertices_idx, :] = np.nan
+
+        # The problem is that wb_command -cifti-parcellate will raise an error if a whole parcel is
+        # NaNs, so we must replace entirely-bad parcels with zeros instead.
+        n_partially_covered_nodes, n_poorly_covered_nodes, n_uncovered_nodes = 0, 0, 0
+        parcel_ids = np.unique(atlas_data)[1:]
+        n_nodes = parcel_ids.size
+        for i_parcel in parcel_ids:
+            parcel_idx = np.where(atlas_data == i_parcel)[0]
+            bad_parcel = ~np.any(np.setdiff1d(parcel_idx, bad_vertices_idx))
+            bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
+
+            if bad_parcel:
+                # If the whole parcel is bad, replace all of the values with zeros.
+                data[parcel_idx, :] = 0
+
+                n_uncovered_nodes += 1
+
+            elif (bad_vertices_in_parcel_idx.size / parcel_idx.size) >= 0.5:
+                # If the node has >=50% bad data, replace all of the values with zeros.
+                data[parcel_idx, :] = 0
+
+                n_poorly_covered_nodes += 1
+
+            elif bad_vertices_in_parcel_idx.size:
+                # If the node has < 50% bad data, keep the node, but make a note.
+                n_partially_covered_nodes += 1
+
+        if n_uncovered_nodes:
+            LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0%% coverage.")
+
+        if n_poorly_covered_nodes:
             LOGGER.warning(
-                f"{coverage_thresholded.sum()}/{coverage_thresholded.size} of parcels have "
-                "<50%% coverage"
+                f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50%% coverage. "
+                "These nodes' time series will be replaced with zeros."
             )
 
-        new_data = np.zeros_like(data)
-        new_data[:, coverage_thresholded] = 0
+        if n_partially_covered_nodes:
+            LOGGER.warning(
+                f"{n_partially_covered_nodes}/{n_nodes} of parcels have at least one uncovered "
+                "vertex, but have enough good vertices to be useable. "
+                "The bad vertices will be ignored and the nodes' time series will be calculated "
+                "from the remaining vertices."
+            )
 
-        # make the modified img object
-        img = nb.Cifti2Image(
-            dataobj=new_data,
-            header=parc_cifti_obj.header,
-            file_map=parc_cifti_obj.file_map,
-            nifti_header=parc_cifti_obj.nifti_header,
+        out_file = os.path.abspath(out_file)
+        write_ndata(
+            data_matrix=data,
+            template=data_file,
+            filename=out_file,
+            TR=TR,
         )
-
-        self._results["out_file"] = os.path.abspath(self.inputs.out_file)
-        img.to_filename(self._results["out_file"])
+        self._results["out_file"] = out_file
 
         return runtime
