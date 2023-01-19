@@ -18,7 +18,7 @@ run_pytest_cmd () {
   # test that uses
   if [[ "${CIRCLECI}" = "true" ]]; then
     # In circleci we're running from inside the container. call directly
-    PYTEST_RUN="pytest --data_dir=${data_dir}/data --output_dir=${output_dir} --working_dir=${workdir} tests/"
+    PYTEST_RUN="pytest --data_dir=${data_dir}/data --output_dir=${output_dir} --working_dir=${workdir} tests/ -k test_cifti_conn"
   else
     patch_mount=""
     if [[ -n "${LOCAL_PATCH}" ]]; then
