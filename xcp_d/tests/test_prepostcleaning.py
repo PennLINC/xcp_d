@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs, ConvertTo32
+from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation, ConvertTo32
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -336,9 +336,16 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
 
 
 def _run_parcellation(in_file, atlas_file, tmpdir):
-    replace_empty_vertices = CiftiZerosToNaNs()
-    replace_empty_vertices.inputs.in_file = in_file
-    replace_results = replace_empty_vertices.run(cwd=tmpdir)
+    ccdft = CiftiCreateDenseFromTemplate()
+    ccdft.inputs.template_cifti = in_file
+    ccdft.inputs.label = atlas_file
+    ccdft.inputs.cifti_out = "resampled_atlas.dlabel.nii"
+    ccdft_results = ccdft.run(cwd=tmpdir)
+    cpfp = CiftiPrepareForParcellation()
+    cpfp.inputs.in_file = in_file
+    cpfp.inputs.atlas_file = ccdft_results.outputs.cifti_out
+    cpfp.inputs.TR = 1
+    replace_results = cpfp.run(cwd=tmpdir)
     parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
     parcellate_data.inputs.in_file = replace_results.outputs.out_file
     parcellate_data.inputs.atlas_label = atlas_file
