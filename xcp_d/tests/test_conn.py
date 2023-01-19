@@ -112,6 +112,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
 
     boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    TR = _get_tr(nb.load(boldfile))
 
     # Generate fake signal
     bold_data = read_ndata(boldfile)
@@ -122,13 +123,14 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     write_ndata(
         fake_signal,
         template=boldfile,
-        TR=_get_tr(nb.load(boldfile)),
+        TR=TR,
         filename=fake_bold_file,
     )
     assert os.path.isfile(fake_bold_file)
 
     # Create the node and a tmpdir to write its results out to
     connectivity_wf = init_cifti_functional_connectivity_wf(
+        TR=TR,
         mem_gb=4,
         name="connectivity_wf",
         omp_nthreads=2,

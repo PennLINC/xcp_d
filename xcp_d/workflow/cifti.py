@@ -297,7 +297,10 @@ produced by the regression.
     # fmt:on
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=mem_gbx["timeseries"], name="cifti_ts_con_wf", omp_nthreads=omp_nthreads
+        TR=TR,
+        mem_gb=mem_gbx["timeseries"],
+        name="cifti_ts_con_wf",
+        omp_nthreads=omp_nthreads,
     )
 
     if bandpass_filter:

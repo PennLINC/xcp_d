@@ -182,6 +182,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
 @fill_doc
 def init_cifti_functional_connectivity_wf(
+    TR,
     mem_gb,
     omp_nthreads,
     name="cifti_fcon_wf",
@@ -202,6 +203,7 @@ def init_cifti_functional_connectivity_wf(
 
     Parameters
     ----------
+    TR
     %(mem_gb)s
     %(omp_nthreads)s
 
@@ -282,6 +284,7 @@ the Connectome Workbench.
         n_procs=omp_nthreads,
         iterfield=["atlas_file"],
     )
+    prepare_data_for_parcellation.inputs.TR = TR
 
     # fmt:off
     workflow.connect([
