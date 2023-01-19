@@ -1210,8 +1210,8 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
     )
     cifti_out = File(
         name_source=["label"],
-        name_template="resampled_%s",
-        keep_extension=True,
+        name_template="resampled_%s.dlabel.nii",
+        keep_extension=False,
         argstr="%s",
         position=1,
         desc="The output cifti file.",

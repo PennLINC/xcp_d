@@ -574,7 +574,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
         out_file = self.inputs.out_file
 
         assert data_file.endswith(".dtseries.nii")
-        assert atlas_file.endswith(".dlabel.nii")
+        assert atlas_file.endswith(".dlabel.nii"), atlas_file
 
         data = read_ndata(data_file)
         atlas_data = read_ndata(atlas_file)
