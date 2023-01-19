@@ -326,7 +326,6 @@ the Connectome Workbench.
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
         (parcellate_data, correlate_data, [("out_file", "in_file")]),
         (parcellate_data, outputnode, [("out_file", "timeseries")]),
         (correlate_data, outputnode, [("out_file", "correlations")]),
