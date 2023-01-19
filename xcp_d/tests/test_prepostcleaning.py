@@ -7,7 +7,8 @@ import pytest
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs, ConvertTo32
-from xcp_d.interfaces.workbench import CiftiParcellate
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -343,3 +344,68 @@ def _run_parcellation(in_file, atlas_file, tmpdir):
     parcellate_data.inputs.atlas_label = atlas_file
     parc_results = parcellate_data.run(cwd=tmpdir)
     return parc_results.outputs.out_file
+
+
+def test_cifti_parcellation_resampling(fmriprep_with_freesurfer_data, tmp_path_factory):
+    tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
+
+    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    atlas_file = pkgrf(
+        "xcp_d",
+        "data/ciftiatlas/Schaefer2018_100Parcels_17Networks_order.dlabel.nii",
+    )
+    N_PARCELS = 100
+
+    ccdft = CiftiCreateDenseFromTemplate()
+    ccdft.inputs.template_cifti = boldfile
+    ccdft.inputs.label = atlas_file
+    ccdft.inputs.cifti_out = "resampled_atlas.dlabel.nii"
+    ccdft.run(cwd=tmpdir)
+
+    resampled_atlas_file = os.path.join(tmpdir, "resampled_atlas.dlabel.nii")
+    assert os.path.isfile(resampled_atlas_file)
+
+    original_atlas_data = read_ndata(atlas_file)
+    original_atlas_data = original_atlas_data[:, 0]  # squeeze to 1D
+
+    resampled_atlas_data = read_ndata(resampled_atlas_file)
+    resampled_atlas_data = resampled_atlas_data[:, 0]  # squeeze to 1D
+
+    bold_data = read_ndata(boldfile)
+    assert bold_data.shape[0] != original_atlas_data.shape[0]
+    assert bold_data.shape[0] == resampled_atlas_data.shape[0]
+
+    parcellated_bold_data = np.zeros_like(bold_data)
+    for i_parcel in range(1, N_PARCELS + 1):
+        parcel_idx = resampled_atlas_data == i_parcel
+        parcellated_bold_data[parcel_idx, :] = i_parcel
+
+    modified_data_file = os.path.join(tmpdir, "modified_data.dtseries.nii")
+    write_ndata(parcellated_bold_data, boldfile, modified_data_file)
+    assert os.path.isfile(modified_data_file)
+
+    # The modified data file should match the resampled atlas file
+    parcellated_modified_data_file = _run_parcellation(
+        modified_data_file,
+        resampled_atlas_file,
+        tmpdir,
+    )
+    parcellated_data = read_ndata(parcellated_modified_data_file)
+    assert parcellated_data.shape == (N_PARCELS, bold_data.shape[1])
+
+    for i_parcel in range(parcellated_data.shape[0]):
+        parcel_val = i_parcel + 1
+        assert np.all(parcellated_data[i_parcel, :] == parcel_val)
+
+    # The modified data file should also match the original atlas file
+    parcellated_modified_data_file = _run_parcellation(
+        modified_data_file,
+        atlas_file,
+        tmpdir,
+    )
+    parcellated_data = read_ndata(parcellated_modified_data_file)
+    assert parcellated_data.shape == (N_PARCELS, bold_data.shape[1])
+
+    for i_parcel in range(parcellated_data.shape[0]):
+        parcel_val = i_parcel + 1
+        assert np.all(parcellated_data[i_parcel, :] == parcel_val)

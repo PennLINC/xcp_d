@@ -30,7 +30,8 @@ def read_ndata(datafile, maskfile=None, scale=0):
         Vertices or voxels by timepoints.
     """
     # read cifti series
-    if datafile.endswith(".dtseries.nii"):
+    cifti_extensions = [".dtseries.nii", ".dlabel.nii", ".ptseries.nii"]
+    if any([datafile.endswith(ext) for ext in cifti_extensions]):
         data = nb.load(datafile).get_fdata()
 
     # or nifti data, mask is required

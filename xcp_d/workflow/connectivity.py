@@ -14,7 +14,11 @@ from xcp_d.interfaces.prepostcleaning import (
     CiftiBinarizeCoverage,
     CiftiZerosToNaNs,
 )
-from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
+from xcp_d.interfaces.workbench import (
+    CiftiCorrelation,
+    CiftiCreateDenseFromTemplate,
+    CiftiParcellate,
+)
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xforms
@@ -267,6 +271,20 @@ the Connectome Workbench.
         n_procs=omp_nthreads,
     )
 
+    resample_atlas_to_data = pe.MapNode(
+        CiftiCreateDenseFromTemplate(),
+        name="resample_atlas_to_data",
+        n_procs=omp_nthreads,
+        iterfield=["label"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (replace_empty_vertices, resample_atlas_to_data, [("out_file", "template_cifti")]),
+        (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
+    ])
+    # fmt:on
+
     binarize_cifti_coverage = pe.Node(
         CiftiBinarizeCoverage(),
         name="binarize_cifti_coverage",
@@ -279,13 +297,24 @@ the Connectome Workbench.
     ])
     # fmt:on
 
-    parcellate_coverage = pe.MapNode(
+    count_covered_vertices_per_parcel = pe.MapNode(
         CiftiParcellate(direction="ROW", only_numeric=True),
         mem_gb=mem_gb,
-        name="parcellate_coverage",
+        name="count_covered_vertices_per_parcel",
         n_procs=omp_nthreads,
         iterfield=["atlas_label"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (atlas_file_grabber, count_covered_vertices_per_parcel, [
+            ("atlas_file", "atlas_label"),
+        ]),
+        (binarize_cifti_coverage, count_covered_vertices_per_parcel, [
+            ("masked_binarized_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
 
     count_vertices_per_parcel = pe.MapNode(
         CiftiParcellate(direction="ROW", only_numeric=True),
@@ -297,20 +326,22 @@ the Connectome Workbench.
 
     # fmt:off
     workflow.connect([
-        (atlas_file_grabber, parcellate_coverage, [
-            ("atlas_file", "atlas_label"),
-        ]),
-        (binarize_cifti_coverage, parcellate_coverage, [
-            ("masked_binarized_file", "in_file"),
-        ]),
         (atlas_file_grabber, count_vertices_per_parcel, [
             ("atlas_file", "atlas_label"),
         ]),
-        (binarize_cifti_coverage, count_vertices_per_parcel, (
-            ["unmasked_binarized_file", "in_file"],
-        )),
+        (binarize_cifti_coverage, count_vertices_per_parcel, [
+            ("unmasked_binarized_file", "in_file"),
+        ]),
     ])
     # fmt:on
+
+    prepare_data_for_parcellation = pe.MapNode(
+        Function(
+            input_names=["data_file", "atlas_file"],
+            output_names=["timeseries_file"],
+            function=None,
+        )
+    )
 
     parcellate_data = pe.MapNode(
         CiftiParcellate(direction="COLUMN", only_numeric=True),

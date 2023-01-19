@@ -1,7 +1,4 @@
 """Tests for connectivity matrix calculation."""
-
-# Necessary imports
-import fnmatch
 import os
 
 import nibabel as nb
