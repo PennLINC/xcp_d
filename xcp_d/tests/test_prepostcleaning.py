@@ -239,7 +239,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     """
     tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation_basic")
 
-    atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
+    atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_fsLR_32k.dlabel.nii")
     cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
 
     cifti_img = nb.load(cifti_file)

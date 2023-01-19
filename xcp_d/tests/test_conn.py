@@ -126,7 +126,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     parc_file = os.path.join(
         connectivity_wf.base_dir,
         "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
-        "parcellated_fake_signal_file.dtseries.nii",
+        "parcellated_modified_data.dtseries.ptseries.nii",
     )
     assert os.path.isfile(parc_file)
 
