@@ -37,13 +37,13 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_t1w_wf(
+def init_warp_anats_to_template_wf(
     output_dir,
     input_type,
     target_space,
     omp_nthreads,
     mem_gb,
-    name="t1w_wf",
+    name="warp_anats_to_template_wf",
 ):
     """Copy T1w and segmentation to the derivative directory.
 
@@ -54,14 +54,14 @@ def init_t1w_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_t1w_wf
-            wf = init_t1w_wf(
+            from xcp_d.workflow.anatomical import init_warp_anats_to_template_wf
+            wf = init_warp_anats_to_template_wf(
                 output_dir=".",
                 input_type="fmriprep",
                 target_space="MNI152Nlin6Asym",
                 omp_nthreads=1,
                 mem_gb=0.1,
-                name="t1w_wf",
+                name="warp_anats_to_template_wf",
             )
 
     Parameters
@@ -73,7 +73,7 @@ def init_t1w_wf(
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
-        Default is "t1w_wf".
+        Default is "warp_anats_to_template_wf".
 
     Inputs
     ------
@@ -95,6 +95,7 @@ def init_t1w_wf(
         name="outputnode",
     )
 
+    # Split cohort out of the space for MNIInfant templates.
     cohort = None
     if "+" in target_space:
         target_space, cohort = target_space.split("+")
@@ -104,37 +105,38 @@ def init_t1w_wf(
     )
 
     if input_type in ("dcan", "hcp"):
-        ds_t1wmni = pe.Node(
+        # Assume that the T1w and T1w segmentation files are in standard space,
+        # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
+        # This is a bug, and the converted filenames are inaccurate, so we have this
+        # workaround in place.
+        ds_t1w = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 extension=".nii.gz",
             ),
-            name="ds_t1wmni",
+            name="ds_t1w",
             run_without_submitting=False,
         )
 
-        ds_t1wseg = pe.Node(
+        ds_t1seg = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 extension=".nii.gz",
             ),
-            name="ds_t1wseg",
+            name="ds_t1seg",
             run_without_submitting=False,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_t1wmni, [("t1w", "in_file")]),
-            (inputnode, ds_t1wseg, [("t1seg", "in_file")]),
+            (inputnode, ds_t1w, [("t1w", "in_file")]),
+            (inputnode, ds_t1seg, [("t1seg", "in_file")]),
         ])
         # fmt:on
 
     else:
-        # TM: need to replace MNI92FSL xfm with the correct
-        # xfm from the MNI output space of fMRIPrep/NiBabies
-        # (MNI2009, MNIInfant, or for cifti output MNI152NLin6Asym)
-        # to MNI152NLin6Asym.
-        t1w_transform = pe.Node(
+        # Warp the native T1w-space T1w and T1w segmentation files to the selected standard space.
+        warp_t1w_to_template = pe.Node(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=template_file,
@@ -142,12 +144,21 @@ def init_t1w_wf(
                 input_image_type=3,
                 dimension=3,
             ),
-            name="t1w_transform",
+            name="warp_t1w_to_template",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
 
-        seg_transform = pe.Node(
+        # fmt:off
+        workflow.connect([
+            (inputnode, warp_t1w_to_template, [
+                ("t1w", "input_image"),
+                ("t1w_to_template", "transforms"),
+            ]),
+        ])
+        # fmt:on
+
+        warp_t1seg_to_template = pe.Node(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=template_file,
@@ -155,50 +166,56 @@ def init_t1w_wf(
                 input_image_type=3,
                 dimension=3,
             ),
-            name="seg_transform",
+            name="warp_t1seg_to_template",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
 
-        ds_t1wmni = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space="MNI152NLin6Asym",
-                extension=".nii.gz",
-            ),
-            name="ds_t1wmni",
-            run_without_submitting=False,
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, warp_t1seg_to_template, [
+                ("t1seg", "input_image"),
+                ("t1w_to_template", "transforms"),
+            ]),
+        ])
+        # fmt:on
 
-        ds_t1wseg = pe.Node(
+        ds_t1w = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                space="MNI152NLin6Asym",
+                space=target_space,
+                cohort=cohort,
                 extension=".nii.gz",
             ),
-            name="ds_t1wseg",
+            name="ds_t1w",
             run_without_submitting=False,
         )
 
         # fmt:off
-        workflow.connect(
-            [
-                (inputnode, t1w_transform, [("t1w", "input_image"),
-                                            ("t1w_to_template", "transforms")]),
-                (inputnode, seg_transform, [("t1seg", "input_image"),
-                                            ("t1w_to_template", "transforms")]),
-                (t1w_transform, ds_t1wmni, [("output_image", "in_file")]),
-                (seg_transform, ds_t1wseg, [("output_image", "in_file")]),
-            ]
+        workflow.connect([(warp_t1w_to_template, ds_t1w, [("output_image", "in_file")])])
+        # fmt:on
+
+        ds_t1seg = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space=target_space,
+                cohort=cohort,
+                extension=".nii.gz",
+            ),
+            name="ds_t1seg",
+            run_without_submitting=False,
         )
+
+        # fmt:off
+        workflow.connect([(warp_t1seg_to_template, ds_t1seg, [("output_image", "in_file")])])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_t1wmni, [("t1w", "source_file")]),
-        (inputnode, ds_t1wseg, [("t1seg", "source_file")]),
-        (ds_t1wmni, outputnode, [("out_file", "t1w")]),
-        (ds_t1wseg, outputnode, [("out_file", "t1seg")]),
+        (inputnode, ds_t1w, [("t1w", "source_file")]),
+        (inputnode, ds_t1seg, [("t1seg", "source_file")]),
+        (ds_t1w, outputnode, [("out_file", "t1w")]),
+        (ds_t1seg, outputnode, [("out_file", "t1seg")]),
     ])
     # fmt:on
 

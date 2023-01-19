@@ -26,7 +26,7 @@ from xcp_d.utils.bids import (
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
+from xcp_d.workflow.anatomical import init_anatomical_wf, init_warp_anats_to_template_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
@@ -471,7 +471,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # Extract target volumetric space for T1w image
     target_space = get_entity(subj_data["t1w_to_template_xform"], "to")
 
-    t1w_wf = init_t1w_wf(
+    warp_anats_to_template_wf = init_warp_anats_to_template_wf(
         output_dir=output_dir,
         input_type=input_type,
         target_space=target_space,
@@ -481,9 +481,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # fmt:off
     workflow.connect([
-        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
-                             ('t1w_seg', 'inputnode.t1seg'),
-                             ('t1w_to_template_xform', 'inputnode.t1w_to_template')]),
+        (inputnode, warp_anats_to_template_wf, [
+            ("t1w", "inputnode.t1w"),
+            ("t1w_seg", "inputnode.t1seg"),
+            ("t1w_to_template_xform", "inputnode.t1w_to_template"),
+        ]),
     ])
     # fmt:on
 
@@ -514,7 +516,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("t1w", "inputnode.t1w"),
                 ("t1w_seg", "inputnode.t1seg"),
             ]),
-            (t1w_wf, brainsprite_wf, [
+            (warp_anats_to_template_wf, brainsprite_wf, [
                 ("outputnode.t1w", "inputnode.t1w"),
             ]),
             (anatomical_wf, brainsprite_wf, [
