@@ -140,12 +140,16 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.run()
 
     # Let's find the correct parcellated file
+    parc_dir = os.path.join(
+        connectivity_wf.base_dir,
+        "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
+    )
     parc_file = os.path.join(
         connectivity_wf.base_dir,
         "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
         "parcellated_modified_data.dtseries.ptseries.nii",
     )
-    assert os.path.isfile(parc_file)
+    assert os.path.isfile(parc_file), os.listdir(parc_dir)
 
     # Let's read out the parcellated time series and get its corr coeff
     data = nb.load(parc_file).get_fdata().T
