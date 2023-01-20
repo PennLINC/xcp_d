@@ -4,8 +4,8 @@ xcp_d/logs
 xcp_d/logs/CITATION.md
 xcp_d/sub-01
 xcp_d/sub-01/anat
-xcp_d/sub-01/anat/sub-01_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-xcp_d/sub-01/anat/sub-01_space-MNI152NLin6Asym_dseg.nii.gz
+xcp_d/sub-01/anat/sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz
+xcp_d/sub-01/anat/sub-01_space-MNI152NLin2009cAsym_dseg.nii.gz
 xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii
 xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii
 xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_desc-hcp_vinflated.surf.gii
