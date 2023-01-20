@@ -481,8 +481,8 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     )
     out_file = File(
         name_source=["in_file"],
-        name_template="correlation_matrix_%s.nii",
-        keep_extension=True,
+        name_template="correlation_matrix_%s.pconn.nii",
+        keep_extension=False,
         argstr="%s",
         position=1,
         desc="The output CIFTI",
