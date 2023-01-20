@@ -1,5 +1,6 @@
 """Tests for connectivity matrix calculation."""
 import os
+import sys
 
 import nibabel as nb
 import numpy as np
@@ -12,6 +13,8 @@ from xcp_d.workflow.connectivity import (
     init_cifti_functional_connectivity_wf,
     init_nifti_functional_connectivity_wf,
 )
+
+np.set_printoptions(threshold=sys.maxsize)
 
 
 def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -182,15 +185,14 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # If we replace the bad parcels' diagonals in the test matrix with NaNs,
     # the resulting matrix should match the ground truth one.
-    bad_parcel_idx = np.where(np.isnan(np.diag(xcp_array)))[0]
+    bad_parcel_idx = np.where(np.isnan(np.diag(ground_truth)))[0]
     xcp_array[bad_parcel_idx, bad_parcel_idx] = np.nan
 
     # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
     if not np.array_equal(np.isnan(xcp_array), np.isnan(ground_truth)):
-        raise ValueError(np.vstack(np.where(np.isnan(xcp_array) != np.isnan(ground_truth))))
+        mismatch_idx = np.vstack(np.where(np.isnan(xcp_array) != np.isnan(ground_truth))).T
+        raise ValueError(f"{mismatch_idx}\n\n{np.where(np.isnan(xcp_array))}")
 
     if not np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True):
         diff = xcp_array - ground_truth
-        import sys
-        np.set_printoptions(threshold=sys.maxsize)
         raise ValueError(np.nanmax(np.abs(diff)))
