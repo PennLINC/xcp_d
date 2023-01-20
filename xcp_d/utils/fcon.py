@@ -62,7 +62,7 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     if np.any(coverage_thresholded):
         LOGGER.warning(
             f"{coverage_thresholded.sum()}/{coverage_thresholded.size} of parcels have "
-            "<50%% coverage"
+            "<50% coverage"
         )
 
     masker = NiftiLabelsMasker(

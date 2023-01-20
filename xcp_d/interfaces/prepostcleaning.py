@@ -616,11 +616,11 @@ class CiftiPrepareForParcellation(SimpleInterface):
                 n_partially_covered_nodes += 1
 
         if n_uncovered_nodes:
-            LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0%% coverage.")
+            LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0% coverage.")
 
         if n_poorly_covered_nodes:
             LOGGER.warning(
-                f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50%% coverage. "
+                f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50% coverage. "
                 "These nodes' time series will be replaced with zeros."
             )
 
