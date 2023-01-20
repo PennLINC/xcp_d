@@ -172,11 +172,11 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Parcels with <50% coverage should have NaNs
     # We know that 10 of the nodes in the 400-parcel Schaefer are flagged
+    raise Exception(np.unique(np.diag(xcp_array)))
     assert np.sum(np.isnan(np.diag(xcp_array))) == 10
 
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
-    raise Exception(np.unique(np.diag(xcp_array)))
     bad_parcel_idx = np.where(np.isnan(np.diag(xcp_array)))[0]
     ground_truth[bad_parcel_idx, :] = np.nan
     ground_truth[:, bad_parcel_idx] = np.nan
