@@ -58,7 +58,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_des
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.tsv
@@ -100,7 +100,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_des
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-rest_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-rest_desc-filtered_motion.tsv
 xcp_d/sub-01/func/sub-01_task-rest_desc-preproc_design.tsv
@@ -142,4 +142,4 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoised
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_qc.csv
+xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-linc_qc.csv

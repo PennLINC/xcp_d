@@ -61,7 +61,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bo
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-dcan_qc.hdf5
@@ -102,7 +102,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bo
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-Glasser_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-Gordon_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-Schaefer1017_den-91k_timeseries.ptseries.nii
