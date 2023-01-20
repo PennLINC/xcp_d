@@ -156,6 +156,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert ground_truth.shape == (400, 400)
 
     bad_parcels_idx = np.where(np.isnan(np.diag(ground_truth)))[0]
+    good_parcels_idx = np.where(~np.isnan(np.diag(ground_truth)))[0]
 
     # Let's find the correct correlation matrix file
     corr_dir = os.path.join(
@@ -172,18 +173,17 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     xcp_array = nb.load(pconn_file).get_fdata().T
     assert xcp_array.shape == (400, 400)
 
-    raise Exception(xcp_array[0, bad_parcels_idx])
-
     # Parcels with <50% coverage should have NaNs
-    # We know that 10 of the nodes in the 400-parcel Schaefer are flagged
-    raise Exception(np.unique(np.diag(xcp_array)))
-    assert np.sum(np.isnan(np.diag(xcp_array))) == 10
+    # CiftiCorrelation produces NaNs for off-diagonals, but not for diagonals.
+    first_good_parcel_corrs = xcp_array[good_parcels_idx[0], :]
 
-    # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
-    # the resulting matrix should match the workflow-generated one.
+    # The number of NaNs for a good parcel's correlations should match the number of bad parcels.
+    assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
+
+    # If we replace the bad parcels' diagonals in the test matrix with NaNs,
+    # the resulting matrix should match the ground truth one.
     bad_parcel_idx = np.where(np.isnan(np.diag(xcp_array)))[0]
-    ground_truth[bad_parcel_idx, :] = np.nan
-    ground_truth[:, bad_parcel_idx] = np.nan
+    xcp_array[bad_parcel_idx, bad_parcel_idx] = np.nan
 
     # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
     assert np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True)
