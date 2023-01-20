@@ -54,7 +54,7 @@ def init_warp_anats_to_template_wf(
             wf = init_warp_anats_to_template_wf(
                 output_dir=".",
                 input_type="fmriprep",
-                target_space="MNI152Nlin6Asym",
+                target_space="MNI152NLin6Asym",
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="warp_anats_to_template_wf",

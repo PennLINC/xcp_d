@@ -1,8 +1,8 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# emacs: -*- mode: python; py-indent-offset: 1; indent-tabs-mode: nil -*-
-# vi: set ft=python sts=4 ts=4 sw=4 et:
 """Aggregate qc of all the subjects."""
 import os
+from argparse import ArgumentParser, RawTextHelpFormatter
 from pathlib import Path
 
 import pandas as pd
@@ -10,15 +10,20 @@ import pandas as pd
 
 def get_parser():
     """Build parser object."""
-    from argparse import ArgumentParser, RawTextHelpFormatter
-
     parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument("xcpd_dir", action="store", type=Path, help="xcp_d output dir")
-
-    parser.add_argument("output_prefix", action="store", type=str, help="output prefix for group")
-
-    parser.add_argument("--cifti", action="store_true", default=False, help=" add cifti qc files")
+    parser.add_argument(
+        "xcpd_dir",
+        action="store",
+        type=Path,
+        help="xcp_d output dir",
+    )
+    parser.add_argument(
+        "output_prefix",
+        action="store",
+        type=str,
+        help="output prefix for group",
+    )
 
     return parser
 
@@ -27,27 +32,18 @@ def main():
     """Run the combineqc workflow."""
     opts = get_parser().parse_args()
 
-    allsubj_dir = os.path.abspath(opts.xcpd_dir)
-    outputfile = os.getcwd() + "/" + str(opts.output_prefix) + "_allsubjects_qc.csv"
+    xcpd_dir = os.path.abspath(opts.xcpd_dir)
+    outputfile = os.path.join(os.getcwd(), f"{opts.output_prefix}_allsubjects_qc.csv")
 
-    qclist = []
-    if opts.cifti:
-        for r, d, f in os.walk(allsubj_dir):
-            for filex in f:
-                if filex.endswith("space-fsLR_desc-qc_den-91k_bold.csv"):
-                    qclist.append(r + "/" + filex)
-    else:
-        for r, d, f in os.walk(allsubj_dir):
-            for filex in f:
-                if filex.endswith("desc-qc_bold.csv"):
-                    qclist.append(r + "/" + filex)
+    qc_files = []
+    for dirpath, _, filenames in os.walk(xcpd_dir):
+        for filename in filenames:
+            if filename.endswith("_desc-linc_qc.csv"):
+                qc_files.append(os.path.join(dirpath, filename))
 
-    datax = pd.read_csv(qclist[0])
-    for i in range(1, len(qclist)):
-        dy = pd.read_csv(qclist[i])
-        datax = pd.concat([datax, dy])
-
-    datax.to_csv(outputfile, index=None)
+    dfs = [pd.read_csv(qc_file) for qc_file in qc_files]
+    df = pd.concat(dfs, axis=0)
+    df.to_csv(outputfile, index=False)
 
 
 if __name__ == "__main__":

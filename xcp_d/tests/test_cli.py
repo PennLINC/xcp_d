@@ -191,7 +191,11 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         "--dummy-scans 1 "
         f"--custom_confounds={custom_confounds_dir}"
     )
+    run_command(cmd)
 
+    # Run combine-qc too
+    xcpd_dir = os.path.join(out_dir, "xcp_d")
+    cmd = f"cd {xcpd_dir};xcp_d-combineqc {xcpd_dir} summary"
     run_command(cmd)
 
     output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
@@ -220,7 +224,7 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--input-type=nibabies",
         "--nuisance-regressors=27P",
         "--despike",
-        "--head_radius=40",
+        "--head_radius=auto",
         "--smoothing=6",
         "--fd-thresh=100",
         "-vv",
