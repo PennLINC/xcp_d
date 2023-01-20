@@ -145,9 +145,8 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
     )
     parc_file = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
-        "parcellated_modified_data.dtseries.ptseries.nii",
+        parc_dir,
+        "parcellated_prepared_timeseries.dtseries.ptseries.nii",
     )
     assert os.path.isfile(parc_file), os.listdir(parc_dir)
 
@@ -157,16 +156,15 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert ground_truth.shape == (400, 400)
 
     # Let's find the correct correlation matrix file
-    files = os.listdir(
-        os.path.join(
-            connectivity_wf.base_dir, "connectivity_wf/correlate_data/mapflow/_correlate_data3"
-        )
+    corr_dir = os.path.join(
+        connectivity_wf.base_dir,
+        "connectivity_wf/correlate_data/mapflow/_correlate_data3",
     )
+    files = os.listdir(corr_dir)
     raise Exception(files)
 
     pconn_file = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/correlate_data/mapflow/_correlate_data3",
+        corr_dir,
         "",
     )
     assert os.path.isfile(pconn_file)
