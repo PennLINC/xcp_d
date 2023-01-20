@@ -298,6 +298,13 @@ More information can be found at the HCP `documentation <https://www.humanconnec
 If you use the default NIFTI processing pipeline, you can use Nilearn's
 `NiftiLabelsMasker <https://nilearn.github.io/stable/auto_examples/06_manipulating_images/plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-niftilabelsmasker>`_
 
+Advanced Applications
+=====================
+
+``xcp_d`` can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
+We have attempted to document these applications with working code in `PennLINC/xcp_d-examples <https://github.com/PennLINC/xcp_d-examples>`_.
+If there is an application you think would be useful to document, please open an issue in that repository.
+
 Troubleshooting
 ===============
 

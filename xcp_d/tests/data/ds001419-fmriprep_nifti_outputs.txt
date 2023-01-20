@@ -17,8 +17,10 @@ xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_desc-hcp_vinflated.surf.gii
 xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii
 xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii
 xcp_d/sub-01/func
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-filtered_motion.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-preproc_design.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_outliers.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_outliers.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
@@ -57,8 +59,10 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_des
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_outliers.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_outliers.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
@@ -97,8 +101,10 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_des
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_qc.csv
+xcp_d/sub-01/func/sub-01_task-rest_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-rest_desc-filtered_motion.tsv
 xcp_d/sub-01/func/sub-01_task-rest_desc-preproc_design.tsv
+xcp_d/sub-01/func/sub-01_task-rest_outliers.json
 xcp_d/sub-01/func/sub-01_task-rest_outliers.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv

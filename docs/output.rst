@@ -128,13 +128,17 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
                          # Nifti
                          <source_entities>_space-<label>_qc.csv
                          <source_entities>[_desc-filtered]_motion.tsv
+                         <source_entities>[_desc-filtered]_motion.json
                          <source_entities>_outliers.tsv
+                         <source_entities>_outliers.json
                          <source_entities>_design.tsv
 
                          # Cifti
                          <source_entities>_space-fsLR_qc.csv
                          <source_entities>[_desc-filtered]_motion.tsv
+                         <source_entities>[_desc-filtered]_motion.json
                          <source_entities>_outliers.tsv
+                         <source_entities>_outliers.json
                          <source_entities>_design.tsv
 
       The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;

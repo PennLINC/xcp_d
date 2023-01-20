@@ -59,6 +59,23 @@ def _int_or_auto(string, is_parser=True):
     return intarg
 
 
+def _float_or_auto(string, is_parser=True):
+    """Check if argument is a float >= 0 or the string "auto"."""
+    if string == "auto":
+        return string
+
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        floatarg = float(string)
+    except ValueError:
+        msg = "Argument must be a nonnegative float or 'auto'."
+        raise error(msg)
+
+    if floatarg < 0:
+        raise error("Float argument must be nonnegative.")
+    return floatarg
+
+
 class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 

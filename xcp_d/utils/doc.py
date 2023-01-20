@@ -106,10 +106,12 @@ smoothing : float
 docdict[
     "head_radius"
 ] = """
-head_radius : float
+head_radius : float or "auto"
     Radius of the head, in millimeters, for framewise displacement calculation.
 
     ``xcp_d``'s default head radius is 50. The recommended value for infants is 35.
+    A value of 'auto' is also supported, in which case the brain radius is
+    estimated from the preprocessed brain mask.
 """
 
 docdict[
