@@ -5,13 +5,13 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import logging
 import os
 import warnings
 
 import nibabel as nb
 import yaml
 from bids import BIDSLayout
+from nipype import logging
 from packaging.version import Version
 
 from xcp_d.utils.doc import fill_doc
@@ -350,12 +350,12 @@ def collect_surface_data(layout, participant_label):
             "desc": None,
             "suffix": "pial",
         },
-        "lh_smoothwm_surf": {
+        "lh_wm_surf": {
             "hemi": "L",
             "desc": None,
             "suffix": "smoothwm",
         },
-        "rh_smoothwm_surf": {
+        "rh_wm_surf": {
             "hemi": "R",
             "desc": None,
             "suffix": "smoothwm",
@@ -753,6 +753,48 @@ def get_freesurfer_dir(fmri_dir):
         raise NotADirectoryError("No FreeSurfer derivatives found.")
 
     return freesurfer_path
+
+
+def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
+    """Find FreeSurfer sphere file.
+
+    Parameters
+    ----------
+    freesurfer_path : str
+        Path to the FreeSurfer derivatives.
+    subject_id : str
+        Subject ID. This may or may not be prefixed with "sub-".
+    hemisphere : {"L", "R"}
+        The hemisphere to grab.
+
+    Returns
+    -------
+    sphere_raw : str
+        Sphere file for the requested subject and hemisphere.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the sphere file cannot be found.
+    """
+    import os
+
+    assert hemisphere in ("L", "R"), hemisphere
+
+    if not subject_id.startswith("sub-"):
+        subject_id = "sub-" + subject_id
+
+    sphere_raw = os.path.join(
+        freesurfer_path,
+        subject_id,
+        "surf",
+        f"{hemisphere.lower()}h.sphere.reg",
+    )
+
+    if not os.path.isfile(sphere_raw):
+        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
+
+    return sphere_raw
 
 
 def get_entity(filename, entity):
