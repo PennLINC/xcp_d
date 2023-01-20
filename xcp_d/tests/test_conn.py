@@ -172,7 +172,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     xcp_array = nb.load(pconn_file).get_fdata().T
     assert xcp_array.shape == (400, 400)
 
-    raise Exception(np.diag(xcp_array)[bad_parcels_idx])
+    raise Exception(xcp_array[0, bad_parcels_idx])
 
     # Parcels with <50% coverage should have NaNs
     # We know that 10 of the nodes in the 400-parcel Schaefer are flagged
