@@ -223,7 +223,7 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--input-type=nibabies",
         "--nuisance-regressors=27P",
         "--despike",
-        "--head_radius=40",
+        "--head_radius=auto",
         "--smoothing=6",
         "--fd-thresh=100",
         "-vv",

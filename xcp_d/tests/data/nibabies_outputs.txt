@@ -9,7 +9,9 @@ xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-p
 xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_dseg.nii.gz
 xcp_d/sub-01/ses-1mo/func
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_outliers.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_outliers.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_alff.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_alff.nii.gz
