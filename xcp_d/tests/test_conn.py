@@ -160,14 +160,11 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         connectivity_wf.base_dir,
         "connectivity_wf/correlate_data/mapflow/_correlate_data3",
     )
-    files = os.listdir(corr_dir)
-    raise Exception(files)
-
     pconn_file = os.path.join(
         corr_dir,
-        "",
+        "correlation_matrix_parcellated_prepared_timeseries.dtseries.ptseries.pconn.nii",
     )
-    assert os.path.isfile(pconn_file)
+    assert os.path.isfile(pconn_file), os.lsitdir(corr_dir)
 
     # Read it out
     xcp_array = nb.load(pconn_file).get_fdata().T
