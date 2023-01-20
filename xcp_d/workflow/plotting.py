@@ -11,6 +11,7 @@ from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.surfplotting import PlotSVGData
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.qcmetrics import _make_dcan_qc_file
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
 
@@ -341,6 +342,41 @@ def init_qc_report_wf(
     # fmt:on
 
     if dcan_qc:
+        make_dcan_qc_file = pe.Node(
+            Function(
+                input_names=["filtered_motion", "TR"],
+                output_names=["dcan_df_file"],
+                function=_make_dcan_qc_file,
+            ),
+            name="make_dcan_qc_file",
+        )
+        make_dcan_qc_file.inputs.TR = TR
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, make_dcan_qc_file, [("filtered_motion", "filtered_motion")]),
+        ])
+        # fmt:on
+
+        ds_dcan_qc = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                datatype="func",
+                desc="dcan",
+                suffix="qc",
+                extension="hdf5",
+            ),
+            name="ds_dcan_qc",
+            run_without_submitting=True,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_dcan_qc, [("preprocessed_bold_file", "source_file")]),
+            (make_dcan_qc_file, ds_dcan_qc, [("dcan_df_file", "in_file")]),
+        ])
+        # fmt:on
+
         # Generate preprocessing and postprocessing carpet plots.
         plot_executive_summary_carpets = pe.Node(
             PlotSVGData(TR=TR),

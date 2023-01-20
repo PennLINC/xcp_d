@@ -11,8 +11,8 @@ xcp_d/sub-01/anat
 xcp_d/sub-01/anat/sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz
 xcp_d/sub-01/anat/sub-01_space-MNI152NLin2009cAsym_dseg.nii.gz
 xcp_d/sub-01/func
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-dcan_qc.hdf5
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_outliers.json
@@ -50,6 +50,8 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_d
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.nii.gz
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-dcan_qc.hdf5
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_outliers.json
