@@ -5,90 +5,31 @@
 xcp_d preprocessing workflow
 ============================
 """
-import argparse
 import gc
-import json
 import logging
 import os
 import sys
 import uuid
 import warnings
-from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 from time import strftime
 
 from niworkflows import NIWORKFLOWS_LOG
+
+from xcp_d.cli.parser_utils import (
+    _DeprecatedStoreAction040,
+    _float_or_auto,
+    _int_or_auto,
+    check_deps,
+    json_file,
+)
 
 warnings.filterwarnings("ignore")
 
 logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
 logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
-
-
-def json_file(file_):
-    """Load a JSON file and return it."""
-    if file_ is None:
-        return file_
-    elif os.path.isfile(file_):
-        with open(file_, "r") as fo:
-            data = json.load(fo)
-        return data
-    else:
-        raise ValueError(f"Not supported: {file_}")
-
-
-def _warn_redirect(message, category):
-    logger.warning("Captured warning (%s): %s", category, message)
-
-
-def check_deps(workflow):
-    """Check the dependencies for the workflow."""
-    from nipype.utils.filemanip import which
-
-    return sorted(
-        (node.interface.__class__.__name__, node.interface._cmd)
-        for node in workflow._get_all_nodes()
-        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
-    )
-
-
-def _int_or_auto(string, is_parser=True):
-    """Check if argument is an integer >= 0 or the string "auto"."""
-    if string == "auto":
-        return string
-
-    error = argparse.ArgumentTypeError if is_parser else ValueError
-    try:
-        intarg = int(string)
-    except ValueError:
-        msg = "Argument must be a nonnegative integer or 'auto'."
-        raise error(msg)
-
-    if intarg < 0:
-        raise error("Int argument must be nonnegative.")
-    return intarg
-
-
-class _DeprecatedStoreAction(Action):
-    """A custom argparse "store" action to raise a DeprecationWarning.
-
-    Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
-    """
-
-    __version__ = ""
-
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
-        """Call the argument."""
-        NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version "
-            f"{self.__version__}. "
-        )
-        setattr(namespace, self.dest, values)
-
-
-class _DeprecatedStoreAction040(_DeprecatedStoreAction):
-    __version__ = "0.4.0"
 
 
 def get_parser():
@@ -119,7 +60,7 @@ def get_parser():
     parser.add_argument(
         "analysis_level",
         action="store",
-        type=str,
+        choices=["participant"],
         help='the analysis level for xcp_d, must be specified as "participant".',
     )
 
@@ -312,16 +253,22 @@ def get_parser():
     g_filter.add_argument(
         "--lower-bpf",
         action="store",
-        default=0.009,
+        default=0.01,
         type=float,
-        help="lower cut-off frequency (Hz) for the butterworth bandpass filter",
+        help=(
+            "lower cut-off frequency (Hz) for the butterworth bandpass filter, "
+            " see Satterthwaite et al. (2013)"
+        ),
     )
     g_filter.add_argument(
         "--upper-bpf",
         action="store",
         default=0.08,
         type=float,
-        help="upper cut-off frequency (Hz) for the butterworth bandpass filter",
+        help=(
+            "upper cut-off frequency (Hz) for the butterworth bandpass filter, "
+            " see Satterthwaite et al. (2013)"
+        ),
     )
     g_filter.add_argument(
         "--bpf-order",
@@ -433,8 +380,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-r",
         "--head_radius",
         default=50,
-        type=float,
-        help=("head radius for computing FD, default is 50mm, 35mm is recommended for baby"),
+        type=_float_or_auto,
+        help=(
+            "Head radius used to calculate framewise displacement, in mm. "
+            "The default value is 50 mm, which is recommended for adults. "
+            "For infants, we recommend a value of 35 mm. "
+            "A value of 'auto' is also supported, in which case the brain radius is "
+            "estimated from the preprocessed brain mask."
+        ),
     )
     g_censor.add_argument(
         "-f",
@@ -530,13 +483,19 @@ By default, this workflow is disabled.
     return parser
 
 
-def main():
-    """Run the main workflow."""
-    from multiprocessing import Manager, Process, set_start_method
+def _main(args=None):
+    from multiprocessing import set_start_method
 
     set_start_method("forkserver")
-    warnings.showwarning = _warn_redirect
-    opts = get_parser().parse_args()
+
+    main(args=args)
+
+
+def main(args=None):
+    """Run the main workflow."""
+    from multiprocessing import Manager, Process
+
+    opts = get_parser().parse_args(args)
 
     exec_env = os.name
 
@@ -548,9 +507,8 @@ def main():
 
         sentry_setup(opts, exec_env)
 
-    # Retrieve logging level
+    # Retrieve and set logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-    # Set logging
     logger.setLevel(log_level)
 
     # Call build_workflow(opts, retval)
@@ -599,10 +557,12 @@ def main():
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-        crashfolders = [output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list]
-        for crashfolder in crashfolders:
-            for crashfile in crashfolder.glob("crash*.*"):
-                process_crashfile(crashfile)
+            crashfolders = [
+                output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
+            ]
+            for crashfolder in crashfolders:
+                for crashfile in crashfolder.glob("crash*.*"):
+                    process_crashfile(crashfile)
 
         if "Workflow did not execute cleanly" not in str(e):
             sentry_sdk.capture_exception(e)
@@ -676,6 +636,23 @@ def main():
                 "HTML and LaTeX versions of it will not be available"
             )
 
+        # concatenate postprocessing derivatives across runs
+        if opts.combineruns:
+            from xcp_d.utils.concatenation import concatenate_derivatives
+
+            print("Concatenating bold files ...")
+            concatenate_derivatives(
+                subjects=subject_list,
+                fmri_dir=str(fmri_dir),
+                output_dir=str(Path(str(output_dir)) / "xcp_d/"),
+                work_dir=work_dir,
+                cifti=opts.cifti,
+                dcan_qc=opts.dcan_qc,
+                dummy_scans=opts.dummy_scans,
+                dummytime=opts.dummytime,
+            )
+            print("Concatenation complete!")
+
         # Generate reports phase
         failed_reports = generate_reports(
             subject_list=subject_list,
@@ -683,14 +660,9 @@ def main():
             work_dir=work_dir,
             output_dir=output_dir,
             run_uuid=run_uuid,
-            cifti=opts.cifti,
-            dummy_scans=opts.dummy_scans,
-            dummytime=opts.dummytime,
-            combineruns=opts.combineruns,
-            dcan_qc=opts.dcan_qc,
-            input_type=opts.input_type,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
+            dcan_qc=opts.dcan_qc,
         )
 
         if failed_reports and not opts.notrack:
@@ -992,8 +964,6 @@ Running xcp_d version {__version__}:
         name="xcpd_wf",
     )
 
-    retval["return_code"] = 0
-
     logs_path = Path(output_dir) / "xcp_d" / "logs"
     boilerplate = retval["workflow"].visit_desc()
 
@@ -1019,6 +989,9 @@ Running xcp_d version {__version__}:
             f"include the following boilerplate:\n\n{boilerplate}"
         ),
     )
+
+    retval["return_code"] = 0
+
     return retval
 
 

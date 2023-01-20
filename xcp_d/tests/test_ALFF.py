@@ -31,7 +31,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
-        highpass=0.009,
+        highpass=0.01,
         cifti=False,
         smoothing=6,
     )
@@ -108,7 +108,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
         mem_gb=4,
         TR=TR,
         lowpass=0.08,
-        highpass=0.009,
+        highpass=0.01,
         cifti=True,
         smoothing=6,
     )

@@ -5,13 +5,13 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import logging
 import os
 import warnings
 
 import nibabel as nb
 import yaml
 from bids import BIDSLayout
+from nipype import logging
 from packaging.version import Version
 
 from xcp_d.utils.doc import fill_doc
@@ -37,6 +37,10 @@ INPUT_TYPE_ALLOWED_SPACES = {
             "MNI152NLin2009cAsym",
         ],
     },
+}
+# The volumetric NIFTI template associated with each supported CIFTI template.
+ASSOCIATED_TEMPLATES = {
+    "fsLR": "MNI152NLin6Asym",
 }
 
 
@@ -254,31 +258,24 @@ def collect_data(
         raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
 
     if not cifti:
-        # use the BOLD file's space if the BOLD file is a nifti
+        # use the BOLD file's space if the BOLD file is a nifti.
         queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
         queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
     else:
-        # Select the best *volumetric* space, based on available nifti BOLD files.
+        # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
         temp_query = queries["t1w_to_template_xform"].copy()
-        temp_allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        volumetric_space = ASSOCIATED_TEMPLATES[space]
 
-        for space in temp_allowed_spaces:
-            temp_query["to"] = space
-            transform_files = layout.get(**temp_query)
-            if transform_files:
-                queries["t1w_to_template_xform"]["to"] = space
-                queries["template_to_t1w_xform"]["from"] = space
-                break
-
+        temp_query["to"] = volumetric_space
+        transform_files = layout.get(**temp_query)
         if not transform_files:
-            allowed_space_str = ", ".join(temp_allowed_spaces)
             raise FileNotFoundError(
-                f"No nifti transforms found to allowed spaces ({allowed_space_str})"
+                f"No nifti transforms found to allowed space ({volumetric_space})"
             )
+
+        queries["t1w_to_template_xform"]["to"] = volumetric_space
+        queries["template_to_t1w_xform"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -353,12 +350,12 @@ def collect_surface_data(layout, participant_label):
             "desc": None,
             "suffix": "pial",
         },
-        "lh_smoothwm_surf": {
+        "lh_wm_surf": {
             "hemi": "L",
             "desc": None,
             "suffix": "smoothwm",
         },
-        "rh_smoothwm_surf": {
+        "rh_wm_surf": {
             "hemi": "R",
             "desc": None,
             "suffix": "smoothwm",
@@ -758,24 +755,70 @@ def get_freesurfer_dir(fmri_dir):
     return freesurfer_path
 
 
-def get_entity(filename, entity):
-    """Extract space from bold/cifti via string manipulation.
+def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
+    """Find FreeSurfer sphere file.
 
     Parameters
     ----------
-    bold_file : str
-        Path to the BOLD file.
+    freesurfer_path : str
+        Path to the FreeSurfer derivatives.
+    subject_id : str
+        Subject ID. This may or may not be prefixed with "sub-".
+    hemisphere : {"L", "R"}
+        The hemisphere to grab.
 
     Returns
     -------
-    space : str
-        The BOLD file's space.
+    sphere_raw : str
+        Sphere file for the requested subject and hemisphere.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the sphere file cannot be found.
+    """
+    import os
+
+    assert hemisphere in ("L", "R"), hemisphere
+
+    if not subject_id.startswith("sub-"):
+        subject_id = "sub-" + subject_id
+
+    sphere_raw = os.path.join(
+        freesurfer_path,
+        subject_id,
+        "surf",
+        f"{hemisphere.lower()}h.sphere.reg",
+    )
+
+    if not os.path.isfile(sphere_raw):
+        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
+
+    return sphere_raw
+
+
+def get_entity(filename, entity):
+    """Extract a given entity from a BIDS filename via string manipulation.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the BIDS file.
+    entity : str
+        The entity to extract from the filename.
+
+    Returns
+    -------
+    entity_value : str or None
+        The BOLD file's entity value associated with the requested entity.
     """
     import re
 
     folder, file_base = os.path.split(filename)
 
-    entity_values = re.findall(f"{entity}-([a-zA-Z0-9]+)", file_base)
+    # Allow + sign, which is not allowed in BIDS,
+    # but is used by templateflow for the MNIInfant template.
+    entity_values = re.findall(f"{entity}-([a-zA-Z0-9+]+)", file_base)
     if len(entity_values) < 1:
         entity_value = None
     else:
