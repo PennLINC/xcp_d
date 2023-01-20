@@ -186,4 +186,9 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     xcp_array[bad_parcel_idx, bad_parcel_idx] = np.nan
 
     # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
-    assert np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True)
+    if not np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True):
+        diff = xcp_array - ground_truth
+        import sys
+        np.set_printoptions(threshold=sys.maxsize)
+        print(diff)
+        raise ValueError(diff)
