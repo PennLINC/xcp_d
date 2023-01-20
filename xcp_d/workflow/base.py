@@ -26,7 +26,10 @@ from xcp_d.utils.bids import (
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.workflow.anatomical import init_warp_anats_to_template_wf, init_warp_surfaces_to_template_wf
+from xcp_d.workflow.anatomical import (
+    init_warp_anats_to_template_wf,
+    init_warp_surfaces_to_template_wf,
+)
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
