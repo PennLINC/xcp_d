@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """Aggregate qc of all the subjects."""
 import os
+from argparse import ArgumentParser, RawTextHelpFormatter
 from pathlib import Path
 
 import pandas as pd
-from argparse import ArgumentParser, RawTextHelpFormatter
 
 
 def get_parser():
