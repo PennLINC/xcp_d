@@ -1,7 +1,7 @@
 xcp_d/dataset_description.json
 xcp_d/sub-01.html
 xcp_d/sub-01_executive_summary.html
-xcp_d/summary_allsubjects_qc.csv.csv
+xcp_d/summary_allsubjects_qc.csv
 xcp_d/logs
 xcp_d/logs/CITATION.bib
 xcp_d/logs/CITATION.html
