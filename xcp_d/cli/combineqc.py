@@ -38,12 +38,12 @@ def main():
     qc_files = []
     for dirpath, _, filenames in os.walk(xcpd_dir):
         for filename in filenames:
-            if filename.endswith("space-fsLR_desc-qc_den-91k_bold.csv"):
+            if filename.endswith("_desc-linc_qc.csv"):
                 qc_files.append(os.path.join(dirpath, filename))
 
     dfs = [pd.read_csv(qc_file) for qc_file in qc_files]
-    df = pd.concat(dfs)
-    df.to_csv(outputfile, index=None)
+    df = pd.concat(dfs, axis=0)
+    df.to_csv(outputfile, index=False)
 
 
 if __name__ == "__main__":

@@ -176,7 +176,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         confounds_df.to_csv(out_file, sep="\t", index=False)
 
     cmd = (
-        f"xcp_d {data_dir} {out_dir} participant "
+        f"xcp_d {data_dir}/xcp_d {out_dir} participant "
         f"-w {work_dir} "
         "--nthreads 2 "
         "--omp-nthreads 2 "
