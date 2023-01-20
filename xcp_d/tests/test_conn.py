@@ -151,9 +151,11 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(parc_file), os.listdir(parc_dir)
 
     # Let's read out the parcellated time series and get its corr coeff
-    data = nb.load(parc_file).get_fdata().T
-    ground_truth = np.corrcoef(data)
+    parc_data = nb.load(parc_file).get_fdata().T
+    ground_truth = np.corrcoef(parc_data)
     assert ground_truth.shape == (400, 400)
+
+    bad_parcels_idx = np.where(np.isnan(np.diag(ground_truth)))[0]
 
     # Let's find the correct correlation matrix file
     corr_dir = os.path.join(
@@ -169,6 +171,8 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Read it out
     xcp_array = nb.load(pconn_file).get_fdata().T
     assert xcp_array.shape == (400, 400)
+
+    raise Exception(np.diag(xcp_array)[bad_parcels_idx])
 
     # Parcels with <50% coverage should have NaNs
     # We know that 10 of the nodes in the 400-parcel Schaefer are flagged
