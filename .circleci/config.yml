@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.5
 
 .dockersetup: &dockersetup
   docker:
@@ -244,6 +246,8 @@ jobs:
             coverage xml
       - store_artifacts:
           path: /src/coverage
+      - codecov/upload:
+          file: /src/coverage/coverage.xml
 
   deployable:
     docker:
