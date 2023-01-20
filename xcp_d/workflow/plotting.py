@@ -23,7 +23,6 @@ def init_qc_report_wf(
     band_stop_min,
     motion_filter_order,
     fd_thresh,
-    head_radius,
     mem_gb,
     omp_nthreads,
     cifti,
@@ -46,7 +45,6 @@ def init_qc_report_wf(
                 band_stop_min=0,
                 motion_filter_order=1,
                 fd_thresh=0.2,
-                head_radius=50,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 cifti=False,
@@ -63,7 +61,6 @@ def init_qc_report_wf(
     %(band_stop_min)s
     %(motion_filter_order)s
     %(fd_thresh)s
-    %(head_radius)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
@@ -93,6 +90,7 @@ def init_qc_report_wf(
     t1w_to_native
         Only used with non-CIFTI data.
     %(dummy_scans)s
+    %(head_radius)s
     tmask
     filtered_motion
 
@@ -111,6 +109,7 @@ def init_qc_report_wf(
                 "dummy_scans",
                 "filtered_motion",
                 "tmask",
+                "head_radius",
                 # nifti-only inputs
                 "bold_mask",
                 "t1w_mask",
@@ -134,7 +133,6 @@ def init_qc_report_wf(
     censor_report = pe.Node(
         CensoringPlot(
             TR=TR,
-            head_radius=head_radius,
             motion_filter_type=motion_filter_type,
             band_stop_max=band_stop_max,
             band_stop_min=band_stop_min,
@@ -149,6 +147,7 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, censor_report, [
+            ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
             ("preprocessed_bold_file", "bold_file"),
@@ -320,7 +319,6 @@ def init_qc_report_wf(
         QCPlot(
             TR=TR,
             template_mask=nlin2009casym_brain_mask,
-            head_radius=head_radius,
         ),
         name="qc_report",
         mem_gb=mem_gb,
@@ -332,6 +330,7 @@ def init_qc_report_wf(
         (inputnode, qcreport, [
             ("preprocessed_bold_file", "bold_file"),
             ("cleaned_file", "cleaned_file"),
+            ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
         ]),
