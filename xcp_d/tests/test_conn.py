@@ -190,4 +190,4 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         diff = xcp_array - ground_truth
         import sys
         np.set_printoptions(threshold=sys.maxsize)
-        raise ValueError(np.max(np.abs(diff)))
+        raise ValueError(np.nanmax(np.abs(diff)))
