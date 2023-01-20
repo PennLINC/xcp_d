@@ -194,7 +194,8 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     run_command(cmd)
 
     # Run combine-qc too
-    cmd = f"xcp_d-combineqc {out_dir}/xcp_d prefix"
+    xcpd_dir = os.path.join(out_dir, "xcp_d")
+    cmd = f"cd {xcpd_dir};xcp_d-combineqc {xcpd_dir} summary"
     run_command(cmd)
 
     output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
