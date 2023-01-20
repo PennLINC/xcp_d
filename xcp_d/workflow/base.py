@@ -25,7 +25,7 @@ from xcp_d.utils.bids import (
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
+from xcp_d.workflow.anatomical import init_t1w_wf, init_warp_surfaces_to_template_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
@@ -348,7 +348,7 @@ def init_subject_wf(
         layout=layout,
     )
 
-    surface_data, _, surfaces_found = collect_surface_data(
+    surface_data, standard_space_surfaces, surfaces_found = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -369,8 +369,8 @@ def init_subject_wf(
                 # surface files
                 "lh_pial_surf",
                 "rh_pial_surf",
-                "lh_smoothwm_surf",
-                "rh_smoothwm_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
                 # hcp-style surface files
                 "lh_midthickness_surf",
                 "rh_midthickness_surf",
@@ -392,8 +392,8 @@ def init_subject_wf(
     # surface files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
     inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
-    inputnode.inputs.lh_smoothwm_surf = surface_data["lh_smoothwm_surf"]
-    inputnode.inputs.rh_smoothwm_surf = surface_data["rh_smoothwm_surf"]
+    inputnode.inputs.lh_wm_surf = surface_data["lh_wm_surf"]
+    inputnode.inputs.rh_wm_surf = surface_data["rh_wm_surf"]
 
     # optional surface files
     inputnode.inputs.lh_midthickness_surf = surface_data["lh_midthickness_surf"]
@@ -492,31 +492,46 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         )
 
     if process_surfaces and surfaces_found:
-        anatomical_wf = init_anatomical_wf(
-            layout=layout,
+        warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            input_type=input_type,
+            warp_to_standard=~standard_space_surfaces,
             omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
+            name="warp_surfaces_to_template_wf",
         )
 
         # Use standard-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
-            (inputnode, anatomical_wf, [
-                ("t1w", "inputnode.t1w"),
-                ("t1w_seg", "inputnode.t1seg"),
+            (inputnode, warp_surfaces_to_template_wf, [
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("lh_midthickness_surf", "inputnode.lh_midthickness_surf"),
+                ("rh_midthickness_surf", "inputnode.rh_midthickness_surf"),
+                ("lh_inflated_surf", "inputnode.lh_inflated_surf"),
+                ("rh_inflated_surf", "inputnode.rh_inflated_surf"),
+                ("lh_vinflated_surf", "inputnode.lh_vinflated_surf"),
+                ("rh_vinflated_surf", "inputnode.rh_vinflated_surf"),
+                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
+                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
             ]),
+        ])
+        # fmt:on
+
+        # fmt:off
+        workflow.connect([
             (t1w_wf, brainsprite_wf, [
                 ("outputnode.t1w", "inputnode.t1w"),
             ]),
-            (anatomical_wf, brainsprite_wf, [
-                ("outputnode.lh_wm_surf", "inputnode.lh_smoothwm_surf"),
-                ("outputnode.rh_wm_surf", "inputnode.rh_smoothwm_surf"),
+            (warp_surfaces_to_template_wf, brainsprite_wf, [
                 ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
             ]),
         ])
         # fmt:on
@@ -527,10 +542,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (inputnode, brainsprite_wf, [
                 ("t1w", "inputnode.t1w"),
-                ("lh_smoothwm_surf", "inputnode.lh_smoothwm_surf"),
-                ("rh_smoothwm_surf", "inputnode.rh_smoothwm_surf"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
             ]),
         ])
         # fmt:on
