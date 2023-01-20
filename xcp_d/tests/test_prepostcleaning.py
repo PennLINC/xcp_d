@@ -301,7 +301,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     assert cifti_data_zeros_parc[0, loc_node] < 1
 
     # Create file with one vertex that is all NaNs.
-    # The NaNs should be ignored, so the affected node should have all ones.
+    # The NaNs should be ignored, so the affected node should have all zeros.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[:, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
@@ -315,10 +315,10 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
 
     cifti_file_nans_parc = _run_parcellation(cifti_file_nans, atlas_file, tmpdir)
     cifti_data_nans_parc = nb.load(cifti_file_nans_parc).get_fdata()
-    assert np.all(cifti_data_nans_parc[:, loc_node] == 1)
+    assert np.all(cifti_data_nans_parc[:, loc_node] == 0)
 
     # Create file with one vertex that is has a NaN in the first timepoint.
-    # The NaN should be ignored, so the affected node should have all ones.
+    # The NaN should be ignored, so the affected node should have all zeros.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[0, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
@@ -332,28 +332,35 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
 
     cifti_file_nans_parc = _run_parcellation(cifti_file_nans, atlas_file, tmpdir)
     cifti_data_nans_parc = nb.load(cifti_file_nans_parc).get_fdata()
-    assert np.all(cifti_data_nans_parc[:, loc_node] == 1)
+    assert np.all(cifti_data_nans_parc[:, loc_node] == 0)
 
 
 def _run_parcellation(in_file, atlas_file, tmpdir):
+    # Resample the atlas to the same order as the data file.
     ccdft = CiftiCreateDenseFromTemplate()
     ccdft.inputs.template_cifti = in_file
     ccdft.inputs.label = atlas_file
     ccdft.inputs.cifti_out = "resampled_atlas.dlabel.nii"
     ccdft_results = ccdft.run(cwd=tmpdir)
+
+    # Zero out any parcels that have <50% coverage.
     cpfp = CiftiPrepareForParcellation()
-    cpfp.inputs.in_file = in_file
+    cpfp.inputs.data_file = in_file
     cpfp.inputs.atlas_file = ccdft_results.outputs.cifti_out
     cpfp.inputs.TR = 1
     replace_results = cpfp.run(cwd=tmpdir)
+
+    # Apply the parcellation.
     parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
     parcellate_data.inputs.in_file = replace_results.outputs.out_file
     parcellate_data.inputs.atlas_label = atlas_file
     parc_results = parcellate_data.run(cwd=tmpdir)
+
     return parc_results.outputs.out_file
 
 
 def test_cifti_parcellation_resampling(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test CIFTI parcellation with resampling."""
     tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
 
     boldfile = fmriprep_with_freesurfer_data["cifti_file"]
