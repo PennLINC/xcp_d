@@ -29,8 +29,8 @@ LOGGER = logging.getLogger("nipype.interface")
 
 @fill_doc
 def concatenate_derivatives(
-    fmridir,
-    outputdir,
+    fmri_dir,
+    output_dir,
     work_dir,
     subjects,
     cifti,
@@ -50,9 +50,9 @@ def concatenate_derivatives(
 
     Parameters
     ----------
-    fmridir : str
+    fmri_dir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
-    outputdir : str
+    output_dir : str
         Path to location of xcpd derivatives.
     work_dir : str
         Working directory.
@@ -71,12 +71,12 @@ def concatenate_derivatives(
     # At least for pybids ~0.15.1.
     # TODO: Find a way to support the xcpd config file in the BIDSLayout.
     layout_xcpd = BIDSLayout(
-        outputdir,
+        output_dir,
         validate=False,
         derivatives=True,
     )
     layout_fmriprep = BIDSLayout(
-        fmridir,
+        fmri_dir,
         validate=False,
         derivatives=True,
         config=["bids", "derivatives"],

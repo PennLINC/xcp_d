@@ -1,14 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
-import fnmatch
-import os
-import shutil
-
-from nipype import logging
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.ants.resampling import ApplyTransforms  # TM
 from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -20,6 +15,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
+from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -30,7 +26,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_entity, get_freesurfer_dir
+from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -78,6 +74,7 @@ def init_t1w_wf(
     t1seg : str
         Path to the T1w segmentation file.
     %(t1w_to_template)s
+        We need to use MNI152NLin6Asym for the template.
     """
     workflow = Workflow(name=name)
 
@@ -205,1325 +202,1015 @@ def init_t1w_wf(
 
 
 @fill_doc
-def init_anatomical_wf(
-    layout,
+def init_warp_surfaces_to_template_wf(
     fmri_dir,
     subject_id,
     output_dir,
-    input_type,
+    warp_to_standard,
     omp_nthreads,
     mem_gb,
-    name="anatomical_wf",
+    name="warp_surfaces_to_template_wf",
 ):
     """Transform surfaces from native to standard fsLR-32k space.
 
     For the ``hcp`` and ``dcan`` preprocessing workflows,
-    the fsLR-32k space surfaces already exist, and will simply be copied to the output directory.
+    the fsLR-32k-space surfaces already exist and will simply be copied to the output directory.
 
-    For other preprocessing workflows, the native space surfaces are present in the Freesurfer
-    directory (if Freesurfer was run), and must be transformed to standard space.
-    If Freesurfer derivatives are not available, then a warning will be raised and
-    no output files will be generated.
+    For other preprocessing workflows, the native space surfaces are present in the preprocessed
+    derivatives directory (if Freesurfer was run), and must be transformed to standard space.
+    The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
+    If Freesurfer derivatives are not available, then an error will be raised.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_anatomical_wf
-            wf = init_anatomical_wf(
-                layout=None,
-                omp_nthreads=1,
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+            wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
                 subject_id="01",
                 output_dir=".",
-                input_type="fmriprep",
+                warp_to_standard=True,
+                omp_nthreads=1,
                 mem_gb=0.1,
-                name="anatomical_wf",
+                name="warp_surfaces_to_template_wf",
             )
 
     Parameters
     ----------
-    %(layout)s
     %(fmri_dir)s
     %(subject_id)s
     %(output_dir)s
-    %(input_type)s
+    warp_to_standard : :obj:`bool`
+        Whether to warp native-space surface files to standard space or not.
+        If False, the files are assumed to be in standard space already.
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
-        Default is "anatomical_wf".
+        Default is "warp_surfaces_to_template_wf".
 
     Inputs
     ------
-    t1w : str
-        Path to the T1w file.
-    t1seg : str
-        Path to the T1w segmentation file.
+    t1w_to_template_xform : str
+        The transform from T1w space to template space.
+
+        The template in question should match the volumetric space of the BOLD CIFTI files
+        being processed by the main xcpd workflow.
+        For example, MNI152NLin6Asym for fsLR-space CIFTIs.
+
+        If ``warp_to_standard`` is False, this file is unused.
+    template_to_t1w_xform : str
+        The transform from template space to T1w space.
+
+        The template in question should match the volumetric space of the BOLD CIFTI files
+        being processed by the main xcpd workflow.
+        For example, MNI152NLin6Asym for fsLR-space CIFTIs.
+
+        If ``warp_to_standard`` is False, this file is unused.
+    lh_pial_surf, rh_pial_surf : str
+        Left- and right-hemisphere pial surface files.
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory and returned via outputnode for use in a brainsprite.
+
+        If ``warp_to_standard`` is True, then it is also warped to standard space and used
+        to generate HCP-style midthickness, inflated, and veryinflated surfaces.
+    lh_wm_surf, rh_wm_surf : str
+        Left- and right-hemisphere smoothed white matter surface files.
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory and returned via outputnode for use in a brainsprite.
+
+        If ``warp_to_standard`` is True, then it is also warped to standard space and used
+        to generate HCP-style midthickness, inflated, and veryinflated surfaces.
+    lh_midthickness_surf, rh_midthickness_surf : str
+        Left- and right-hemisphere midthickness surface files.
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory.
+
+        If ``warp_to_standard`` is True, then this input is ignored and a replacement file
+        are generated from the pial and wm files after they are warped to standard space.
+    lh_inflated_surf, rh_inflated_surf : str
+        Left- and right-hemisphere inflated surface files.
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory.
+
+        If ``warp_to_standard`` is True, then this input is ignored and a replacement file
+        are generated from the pial and wm files after they are warped to standard space.
+    lh_vinflated_surf, rh_vinflated_surf : str
+        Left- and right-hemisphere very-inflated surface files.
+
+        If ``warp_to_standard`` is False, then this file is just written out to the output
+        directory.
+
+        If ``warp_to_standard`` is True, then this input is ignored and a replacement file
+        are generated from the pial and wm files after they are warped to standard space.
 
     Notes
     -----
-    If "hcp" or "dcan" input type, pre-generated surface files will be collected from the
+    If "hcp" or "dcan" input type, standard-space surface files will be collected from the
     converted preprocessed derivatives.
-    However, these derivatives do not include HCP-style surfaces.
+    This includes the HCP-style surfaces (midthickness, inflated, and vinflated).
 
-    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from the
-    associated Freesurfer directory (if available), and warped to fsLR space.
+    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from
+    the preprocessed derivatives and will be warped to standard space.
+    The HCP-style surfaces will also be generated.
     """
     workflow = Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "t1seg"]), name="inputnode")
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                # required surfaces
+                "lh_pial_surf",
+                "rh_pial_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
+                # optional HCP-style surfaces
+                "lh_midthickness_surf",
+                "rh_midthickness_surf",
+                "lh_inflated_surf",
+                "rh_inflated_surf",
+                "lh_vinflated_surf",
+                "rh_vinflated_surf",
+                # transforms (only used if warp_to_standard is True)
+                "t1w_to_template_xform",
+                "template_to_t1w_xform",
+            ],
+        ),
+        name="inputnode",
+    )
+    # Feed only the standard-space pial and white matter surfaces to the outputnode for the
+    # brainsprite.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "lh_wm_surf",
-                "rh_wm_surf",
                 "lh_pial_surf",
                 "rh_pial_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
             ],
         ),
         name="outputnode",
     )
 
-    mnitemplate = get_template(template="MNI152NLin6Asym", resolution=2, desc=None, suffix="T1w")
-
-    if input_type in ("dcan", "hcp"):
-        # TODO: Replace with layout.get call(s). No reason to search through a list of strings.
-        all_files = list(layout.get_files())
-        L_inflated_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
-        )[0]
-        R_inflated_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-R_inflated.surf.gii"
-        )[0]
-        L_midthick_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-L_midthickness.surf.gii"
-        )[0]
-        R_midthick_surf = fnmatch.filter(
-            all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
-        )[0]
-        L_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii")[0]
-        R_pial_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii")[0]
-        L_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii")[
-            0
-        ]
-        R_wm_surf = fnmatch.filter(all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii")[
-            0
-        ]
-
-        # All of the converted dcan and hcp files should have a session entity/folder
-        ses_id = get_entity(R_wm_surf, "ses")
-        anatdir = os.path.join(output_dir, "xcp_d", f"sub-{subject_id}", f"ses-{ses_id}", "anat")
-        os.makedirs(anatdir, exist_ok=True)
-
-        surf = [
-            L_inflated_surf,
-            R_inflated_surf,
-            L_midthick_surf,
-            R_midthick_surf,
-            L_pial_surf,
-            R_pial_surf,
-            L_wm_surf,
-            R_wm_surf,
-        ]
-
-        for ss in surf:
-            shutil.copy(ss, anatdir)
-
-        nothingnode = pe.Node(
-            niu.IdentityInterface(fields=["t1w", "t1seg"]),
-            name="nothingnode",
+    if not warp_to_standard:
+        # The files are already available, so we just map them to the outputnode and DataSinks.
+        merge_files_to_list = pe.Node(
+            niu.Merge(10),
+            name="merge_files_to_list",
         )
+
         # fmt:off
         workflow.connect([
-            (inputnode, nothingnode, [
-                ("t1w", "t1w"),
-                ("t1seg", "t1seg"),
+            (inputnode, merge_files_to_list, [
+                ("lh_pial_surf", "in1"),
+                ("rh_pial_surf", "in2"),
+                ("lh_wm_surf", "in3"),
+                ("rh_wm_surf", "in4"),
+                ("lh_midthickness_surf", "in5"),
+                ("rh_midthickness_surf", "in6"),
+                ("lh_inflated_surf", "in7"),
+                ("rh_inflated_surf", "in8"),
+                ("lh_vinflated_surf", "in9"),
+                ("rh_vinflated_surf", "in10"),
+            ]),
+            (inputnode, outputnode, [
+                ("lh_pial_surf", "lh_pial_surf"),
+                ("lh_wm_surf", "lh_wm_surf"),
+                ("rh_pial_surf", "rh_pial_surf"),
+                ("rh_wm_surf", "rh_wm_surf"),
             ]),
         ])
+        # fmt:on
 
+        # The DataSink will fail if source_file or in_file is undefined/None,
+        # so we must filter out any undefined inputs.
+        filter_out_missing_surfaces = pe.Node(
+            FilterUndefined(),
+            name="filter_out_missing_surfaces",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (merge_files_to_list, filter_out_missing_surfaces, [("out", "inlist")]),
+        ])
+        # fmt:on
+
+        # Write out standard-space surfaces to output directory
+        ds_standard_space_surfaces = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+            ),
+            name="ds_standard_space_surfaces",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["in_file", "source_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (filter_out_missing_surfaces, ds_standard_space_surfaces, [
+                ("outlist", "in_file"),
+                ("outlist", "source_file"),
+            ])
+        ])
         # fmt:on
 
     else:
-        all_files = list(layout.get_files())
+        # Warp the surfaces to space-fsLR, den-32k.
+        # We want the following output surfaces:
+        # 1. Pial
+        # 2. Smoothed white matter
+        # 3. HCP-style midthickness
+        # 4. HCP-style inflated
+        # 5. HCP-style very-inflated
+        get_freesurfer_dir_node = pe.Node(
+            Function(
+                function=get_freesurfer_dir,
+                input_names=["fmri_dir"],
+                output_names=["freesurfer_path"],
+            ),
+            name="get_freesurfer_dir_node",
+        )
+        get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
 
-        freesurfer_dir = get_freesurfer_dir(fmri_dir)
-        if freesurfer_dir is not None:
+        # First, we create the Connectome WorkBench-compatible transform files.
+        update_xform_wf = init_ants_xform_to_fsl_wf(
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+            name="update_xform_wf",
+        )
 
-            L_inflated_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_inflated.surf.gii"
-            )[0]
-            R_inflated_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_inflated.surf.gii"
-            )[0]
-            L_midthick_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_midthickness.surf.gii"
-            )[0]
-            R_midthick_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_midthickness.surf.gii"
-            )[0]
-            L_pial_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_pial.surf.gii"
-            )[0]
-            R_pial_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_pial.surf.gii"
-            )[0]
-            L_wm_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-L_smoothwm.surf.gii"
-            )[0]
-            R_wm_surf = fnmatch.filter(
-                all_files, "*sub-*" + subject_id + "*hemi-R_smoothwm.surf.gii"
-            )[0]
+        # fmt:off
+        workflow.connect([
+            (inputnode, update_xform_wf, [
+                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
+                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+            ]),
+        ])
+        # fmt:on
 
-            # get sphere surfaces to be converted
-            if "sub-" not in subject_id:
-                subid = "sub-" + subject_id
-            else:
-                subid = subject_id
+        # TODO: It would be nice to replace this for loop with MapNodes or iterables some day.
+        for hemi in ["L", "R"]:
+            hemi_label = f"{hemi.lower()}h"
 
-            lh_sphere_fsLR = str(
-                get_template(template="fsLR", hemi="L", density="32k", suffix="sphere")[0]
-            )
-            rh_sphere_fsLR = str(
-                get_template(template="fsLR", hemi="R", density="32k", suffix="sphere")[0]
-            )
-
-            lh_sphere_raw = str(freesurfer_dir) + "/" + subid + "/surf/lh.sphere.reg"  # MB, TM
-            rh_sphere_raw = str(freesurfer_dir) + "/" + subid + "/surf/rh.sphere.reg"  # MB, TM
-
-            # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
-            h5_file = fnmatch.filter(
-                all_files,
-                "*sub-*" + subject_id + "*from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-            )[
-                0
-            ]  # MB
-
-            h5_inv_file = fnmatch.filter(
-                all_files,
-                "*sub-*" + subject_id + "*from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
-            )[
-                0
-            ]  # MB
-            disassemble_h5 = pe.Node(
-                CompositeTransformUtil(
-                    process="disassemble",
-                    in_file=h5_file,
-                    output_prefix="T1w_to_MNI152NLin6Asym",
-                ),
-                name="disassemble_h5",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # MB
-
-            # Nipype's CompositeTransformUtil assumes a certain file naming and
-            # concatenation order of xfms which does not work for the inverse .h5,
-            # so we use our modified class, "CompositeInvTransformUtil"
-            disassemble_h5_inv = pe.Node(
-                CompositeInvTransformUtil(
-                    process="disassemble",
-                    in_file=h5_inv_file,
-                    output_prefix="MNI152NLin6Asym_to_T1w",
-                ),
-                name="disassemble_h5_inv",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            # convert affine from ITK binary to txt
-            convert_ants_transform = pe.Node(
-                ConvertTransformFile(dimension=3), name="convert_ants_transform"
-            )  # MB
-
-            # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
-            # since wb_command doesn't recognize "AffineTransform"
-            # (AffineTransform is a subclass of MatrixOffsetTransformBase
-            # which makes this okay to do AFAIK)
-            change_xfm_type = pe.Node(ChangeXfmType(), name="change_xfm_type")  # MB
-
-            # convert affine xfm to "world" so it works with -surface-apply-affine
-            convert_xfm2world = pe.Node(
-                ConvertAffine(fromwhat="itk", towhat="world"), name="convert_xfm2world"
-            )  # MB
-
-            # merge new components
-            merge_xfms_list = pe.Node(
+            # Place the surfaces in a single node.
+            collect_surfaces = pe.Node(
                 niu.Merge(2),
-                name="merge_xfms_list",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            merge_inv_xfms_list = pe.Node(
-                niu.Merge(2),
-                name="merge_inv_xfms_list",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
+                name=f"collect_surfaces_{hemi_label}",
             )
 
-            # combine the affine and warpfield xfms from the
-            # disassembled h5 into a single warpfield xfm
-            #
+            # fmt:off
+            # NOTE: Must match order of split_up_surfaces_fsLR_32k.
+            workflow.connect([
+                (inputnode, collect_surfaces, [
+                    (f"{hemi_label}_pial_surf", "in1"),
+                    (f"{hemi_label}_wm_surf", "in2"),
+                ]),
+            ])
+            # fmt:on
 
-            combine_xfms = pe.Node(
-                ApplyTransforms(
-                    reference_image=mnitemplate,
-                    interpolation="LanczosWindowedSinc",
-                    print_out_composite_warp_file=True,
-                    output_image="ants_composite_xfm.nii.gz",
+            apply_transforms_wf = init_warp_one_hemisphere_wf(
+                hemisphere=hemi,
+                mem_gb=mem_gb,
+                omp_nthreads=omp_nthreads,
+                name=f"{hemi_label}_apply_transforms_wf",
+            )
+            apply_transforms_wf.inputs.inputnode.participant_id = subject_id
+
+            # fmt:off
+            workflow.connect([
+                (get_freesurfer_dir_node, apply_transforms_wf, [
+                    ("freesurfer_path", "inputnode.freesurfer_path"),
+                ]),
+                (update_xform_wf, apply_transforms_wf, [
+                    ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
+                    ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
+                    ("outputnode.world_xform", "inputnode.world_xform"),
+                ]),
+                (collect_surfaces, apply_transforms_wf, [
+                    ("out", "inputnode.hemi_files"),
+                ]),
+            ])
+            # fmt:on
+
+            # Split up the surfaces
+            # NOTE: Must match order of collect_surfaces
+            split_up_surfaces_fsLR_32k = pe.Node(
+                niu.Split(
+                    splits=[
+                        1,  # pial
+                        1,  # wm
+                    ],
+                    squeeze=True,
                 ),
-                name="combine_xfms",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            combine_inv_xfms = pe.Node(
-                ApplyTransforms(
-                    reference_image=mnitemplate,
-                    interpolation="LanczosWindowedSinc",
-                    print_out_composite_warp_file=True,
-                    output_image="ants_composite_inv_xfm.nii.gz",
-                ),
-                name="combine_inv_xfms",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            # use C3d to separate the combined warpfield xfm
-            # into x, y, and z components
-
-            get_xyz_components = pe.Node(
-                C3d(
-                    is_4d=True,
-                    multicomp_split=True,
-                    out_files=["e1.nii.gz", "e2.nii.gz", "e3.nii.gz"],
-                ),
-                name="get_xyz_components",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            get_inv_xyz_components = pe.Node(
-                C3d(
-                    is_4d=True,
-                    multicomp_split=True,
-                    out_files=["e1inv.nii.gz", "e2inv.nii.gz", "e3inv.nii.gz"],
-                ),
-                name="get_inv_xyz_components",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            # select x-component after separating warpfield above
-            select_x_component = pe.Node(
-                niu.Select(index=[0]),
-                name="select_x_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            select_inv_x_component = pe.Node(
-                niu.Select(index=[0]),
-                name="select_inv_x_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # select y-component
-            select_y_component = pe.Node(
-                niu.Select(index=[1]),
-                name="select_y_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            select_inv_y_component = pe.Node(
-                niu.Select(index=[1]),
-                name="select_inv_y_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # select z-component
-            select_z_component = pe.Node(
-                niu.Select(index=[2]),
-                name="select_z_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            select_inv_z_component = pe.Node(
-                niu.Select(index=[2]),
-                name="select_inv_z_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # reverse y-component of the warpfield
-            # (need to do this when converting a warpfield from ANTs to FNIRT format
-            # for use with wb_command -surface-apply-warpfield)
-
-            reverse_y_component = pe.Node(
-                BinaryMath(expression="img * -1"),
-                name="reverse_y_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            reverse_inv_y_component = pe.Node(
-                BinaryMath(expression="img * -1"),
-                name="reverse_inv_y_component",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # merge new components
-            merge_new_components = pe.Node(
-                niu.Merge(3),
-                name="merge_new_components",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            merge_new_inv_components = pe.Node(
-                niu.Merge(3),
-                name="merge_new_inv_components",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            # re-merge warpfield in FSL FNIRT format, with the reversed y-component from above
-            remerge_warpfield = pe.Node(
-                Merge(),
-                name="remerge_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            remerge_inv_warpfield = pe.Node(
-                Merge(),
-                name="remerge_inv_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            # convert spheres (from FreeSurfer surf dir) to gifti #MB
-            lh_sphere_raw_mris = pe.Node(
-                MRIsConvert(out_datatype="gii", in_file=lh_sphere_raw),
-                name="lh_sphere_raw_mris",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # MB
-            rh_sphere_raw_mris = pe.Node(
-                MRIsConvert(
-                    out_datatype="gii",
-                    in_file=rh_sphere_raw,
-                ),
-                name="rh_sphere_raw_mris",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # MB
-
-            # apply affine to native surfs
-            lh_native_apply_affine = pe.Node(
-                ApplyAffine(),
-                name="lh_native_apply_affine",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-            lh_native_apply_affine.iterables = (
-                "in_file",
-                [L_midthick_surf, L_pial_surf, L_wm_surf],
-            )
-
-            rh_native_apply_affine = pe.Node(
-                ApplyAffine(),
-                name="rh_native_apply_affine",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-            rh_native_apply_affine.iterables = (
-                "in_file",
-                [R_midthick_surf, R_pial_surf, R_wm_surf],
-            )
-            # apply FNIRT-format warpfield
-            lh_native_apply_warpfield = pe.Node(
-                ApplyWarpfield(),
-                name="lh_native_apply_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            rh_native_apply_warpfield = pe.Node(
-                ApplyWarpfield(),
-                name="rh_native_apply_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            fs_std_mesh_L = str(
-                get_template(
-                    template="fsaverage",
-                    hemi="L",
-                    space=None,
-                    density="164k",
-                    desc=None,
-                    suffix="sphere",
-                )
-            )
-
-            fs_std_mesh_R = str(
-                get_template(
-                    template="fsaverage",
-                    hemi="R",
-                    space=None,
-                    density="164k",
-                    desc=None,
-                    suffix="sphere",
-                )
-            )
-
-            fs_L2fsLR = pkgrf(
-                "xcp_d",
-                (
-                    "data/standard_mesh_atlases/fs_L/"
-                    "fs_L-to-fs_LR_fsaverage.L_LR.spherical_std.164k_fs_L.surf.gii"
-                ),
-            )
-
-            fs_R2fsLR = pkgrf(
-                "xcp_d",
-                (
-                    "data/standard_mesh_atlases/fs_R/"
-                    "fs_R-to-fs_LR_fsaverage.R_LR.spherical_std.164k_fs_R.surf.gii"
-                ),
-            )
-
-            surface_sphere_project_unproject_lh = pe.Node(
-                SurfaceSphereProjectUnproject(
-                    sphere_project_to=fs_std_mesh_L,
-                    sphere_unproject_from=fs_L2fsLR,
-                ),
-                name="surface_sphere_project_unproject_lh",
-            )
-            surface_sphere_project_unproject_rh = pe.Node(
-                SurfaceSphereProjectUnproject(
-                    sphere_project_to=fs_std_mesh_R,
-                    sphere_unproject_from=fs_R2fsLR,
-                ),
-                name="surface_sphere_project_unproject_rh",
-            )
-
-            # resample the mid, pial, wm surfs to fsLR32k
-
-            lh_32k_resample_wf = pe.Node(
-                CiftiSurfaceResample(
-                    new_sphere=lh_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="lh_32k_resample_wf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            lh_32k_resample_wf.iterables = (
-                "in_file",
-                [L_midthick_surf, L_pial_surf, L_wm_surf],
-            )
-
-            rh_32k_resample_wf = pe.Node(
-                CiftiSurfaceResample(
-                    new_sphere=rh_sphere_fsLR,
-                    metric=" BARYCENTRIC ",
-                ),
-                name="rh_32k_resample_wf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            rh_32k_resample_wf.iterables = (
-                "in_file",
-                [R_midthick_surf, R_pial_surf, R_wm_surf],
-            )
-            # apply affine to 32k surfs
-            lh_32k_apply_affine = pe.Node(
-                ApplyAffine(),
-                name="lh_32k_apply_affine",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            rh_32k_apply_affine = pe.Node(
-                ApplyAffine(),
-                name="rh_32k_apply_affine",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            # apply FNIRT-format warpfield
-            lh_32k_apply_warpfield = pe.Node(
-                ApplyWarpfield(),
-                name="lh_32k_apply_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            rh_32k_apply_warpfield = pe.Node(
-                ApplyWarpfield(),
-                name="rh_32k_apply_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-
-            join_lh_32k_warped_surfs = pe.JoinNode(
-                niu.Merge(1),
-                name="join_lh_32k_warped_surfs",
-                joinsource="lh_32k_resample_wf",
-                joinfield="in1",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            join_rh_32k_warped_surfs = pe.JoinNode(
-                niu.Merge(1),
-                name="join_rh_32k_warped_surfs",
-                joinsource="rh_32k_resample_wf",
-                joinfield="in1",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-
-            select_lh_32k_midthick_surf = pe.Node(
-                niu.Select(index=[0]),
-                name="select_lh_32k_midthick_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_lh_32k_pial_surf = pe.Node(
-                niu.Select(index=[1]),
-                name="select_lh_32k_pial_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_lh_32k_wm_surf = pe.Node(
-                niu.Select(index=[2]),
-                name="select_lh_32k_wm_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_rh_32k_midthick_surf = pe.Node(
-                niu.Select(index=[0]),
-                name="select_rh_32k_midthick_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_rh_32k_pial_surf = pe.Node(
-                niu.Select(index=[1]),
-                name="select_rh_32k_pial_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            select_rh_32k_wm_surf = pe.Node(
-                niu.Select(index=[2]),
-                name="select_rh_32k_wm_surf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            # write report node
-            ds_wmLsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=L_wm_surf,
-                    dismiss_entities=["desc"],
-                    space="fsLR",
-                    den="32k",
-                    hemi="L",
-                    suffix="smoothwm",
-                    extension=".surf.gii",
-                ),
-                name="ds_wmLsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
+                name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
             )
 
             # fmt:off
             workflow.connect([
-                (ds_wmLsurf_wf, outputnode, [("out_file", "lh_wm_surf")]),
+                (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
+                    ("outputnode.warped_hemi_files", "inlist"),
+                ]),
+                (split_up_surfaces_fsLR_32k, outputnode, [
+                    ("out1", f"{hemi_label}_pial_surf"),
+                    ("out2", f"{hemi_label}_wm_surf"),
+                ]),
             ])
             # fmt:on
 
-            ds_wmRsurf_wf = pe.Node(
+            ds_standard_space_surfaces = pe.MapNode(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=R_wm_surf,
-                    dismiss_entities=["desc"],
                     space="fsLR",
                     den="32k",
-                    hemi="R",
-                    suffix="smoothwm",
-                    extension=".surf.gii",
+                    extension=".surf.gii",  # the extension is taken from the in_file by default
                 ),
-                name="ds_wmRsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-
-            # fmt:off
-            workflow.connect([
-                (ds_wmRsurf_wf, outputnode, [("out_file", "rh_wm_surf")]),
-            ])
-            # fmt:on
-
-            ds_pialLsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=L_pial_surf,
-                    dismiss_entities=["desc"],
-                    space="fsLR",
-                    den="32k",
-                    hemi="L",
-                    suffix="pial",
-                    extension=".surf.gii",
-                ),
-                name="ds_pialLsurf_wf",
+                name=f"ds_standard_space_surfaces_{hemi_label}",
                 run_without_submitting=True,
-                mem_gb=2,
+                mem_gb=1,
+                iterfield=["in_file", "source_file"],
             )
 
             # fmt:off
             workflow.connect([
-                (ds_pialLsurf_wf, outputnode, [("out_file", "lh_pial_surf")]),
+                (collect_surfaces, ds_standard_space_surfaces, [
+                    ("out", "source_file"),
+                ]),
+                (apply_transforms_wf, ds_standard_space_surfaces, [
+                    ("outputnode.warped_hemi_files", "in_file"),
+                ]),
             ])
             # fmt:on
 
-            ds_pialRsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=R_pial_surf,
-                    dismiss_entities=["desc"],
-                    space="fsLR",
-                    den="32k",
-                    hemi="R",
-                    suffix="pial",
-                    extension=".surf.gii",
-                ),
-                name="ds_pialRsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
+            # Generate and output HCP-style surface files
+            generate_hcp_surfaces_wf = init_generate_hcp_surfaces_wf(
+                output_dir=output_dir,
+                mem_gb=mem_gb,
+                omp_nthreads=omp_nthreads,
+                name=f"{hemi_label}_generate_hcp_surfaces_wf",
             )
 
             # fmt:off
             workflow.connect([
-                (ds_pialRsurf_wf, outputnode, [("out_file", "rh_pial_surf")]),
+                (inputnode, generate_hcp_surfaces_wf, [
+                    (f"{hemi_label}_pial_surf", "inputnode.name_source"),
+                ]),
+                (split_up_surfaces_fsLR_32k, generate_hcp_surfaces_wf, [
+                    ("out1", "inputnode.pial_surf"),
+                    ("out2", "inputnode.wm_surf"),
+                ]),
             ])
             # fmt:on
 
-            ds_midLsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=L_midthick_surf,
-                    dismiss_entities=["desc"],
-                    space="fsLR",
-                    den="32k",
-                    suffix="midthickness",
-                    extension=".surf.gii",
-                    hemi="L",
-                ),
-                name="ds_midLsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
+    return workflow
+
+
+@fill_doc
+def init_generate_hcp_surfaces_wf(
+    output_dir,
+    mem_gb,
+    omp_nthreads,
+    name="generate_hcp_surfaces_wf",
+):
+    """Generate midthickness, inflated, and very-inflated HCP-style surfaces.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_generate_hcp_surfaces_wf
+            wf = init_generate_hcp_surfaces_wf(
+                output_dir=".",
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="generate_hcp_surfaces_wf",
             )
 
-            ds_midRsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=R_midthick_surf,
-                    dismiss_entities=["desc"],
-                    space="fsLR",
-                    den="32k",
-                    hemi="R",
-                    suffix="midthickness",
-                    extension=".surf.gii",
-                ),
-                name="ds_midRsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
+    Parameters
+    ----------
+    output_dir
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "generate_hcp_surfaces_wf".
+
+    Inputs
+    ------
+    name_source : str
+        Path to the file that will be used as the source_file for datasinks.
+    pial_surf : str
+        The surface file to inflate.
+    wm_surf : str
+        The surface file to inflate.
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "name_source",
+                "pial_surf",
+                "wm_surf",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    generate_midthickness = pe.Node(
+        SurfaceAverage(),
+        name="generate_midthickness",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, generate_midthickness, [
+            ("pial_surf", "surface_in1"),
+            ("wm_surf", "surface_in2"),
+        ]),
+    ])
+    # fmt:on
+
+    ds_midthickness = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            space="fsLR",
+            den="32k",
+            desc="hcp",
+            suffix="midthickness",
+            extension=".surf.gii",
+        ),
+        name="ds_midthickness",
+        run_without_submitting=False,
+        mem_gb=2,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_midthickness, [("name_source", "source_file")]),
+        (generate_midthickness, ds_midthickness, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    # Generate (very-)inflated surface from standard-space midthickness surface.
+    inflate_surface = pe.Node(
+        SurfaceGenerateInflated(iterations_scale_value=0.75),
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
+        name="inflate_surface",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (generate_midthickness, inflate_surface, [("out_file", "anatomical_surface_in")]),
+    ])
+    # fmt:on
+
+    ds_inflated = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            space="fsLR",
+            den="32k",
+            desc="hcp",
+            suffix="inflated",
+            extension=".surf.gii",
+        ),
+        name="ds_inflated",
+        run_without_submitting=False,
+        mem_gb=2,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_inflated, [("name_source", "source_file")]),
+        (inflate_surface, ds_inflated, [("inflated_out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_vinflated = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            space="fsLR",
+            den="32k",
+            desc="hcp",
+            suffix="vinflated",
+            extension=".surf.gii",
+        ),
+        name="ds_vinflated",
+        run_without_submitting=False,
+        mem_gb=2,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_vinflated, [("name_source", "source_file")]),
+        (inflate_surface, ds_vinflated, [("very_inflated_out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    return workflow
+
+
+@fill_doc
+def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf"):
+    """Modify ANTS-style fMRIPrep transforms to work with Connectome Workbench/FSL FNIRT.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_ants_xform_to_fsl_wf
+            wf = init_ants_xform_to_fsl_wf(
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="ants_xform_to_fsl_wf",
             )
 
-            # fmt:off
-            workflow.connect(
-                [
-                    (disassemble_h5, merge_xfms_list, [("displacement_field", "in1")]),
-                    (disassemble_h5, merge_xfms_list, [("affine_transform", "in2")]),
-                    (inputnode, combine_xfms, [("t1w", "input_image")]),
-                    (merge_xfms_list, combine_xfms, [("out", "transforms")]),
-                    (disassemble_h5, get_xyz_components, [("displacement_field", "in_file")]),
-                    (get_xyz_components, select_x_component, [("out_files", "inlist")]),
-                    (get_xyz_components, select_y_component, [("out_files", "inlist")]),
-                    (get_xyz_components, select_z_component, [("out_files", "inlist")]),
-                    (select_y_component, reverse_y_component, [("out", "in_file")]),
-                    (select_x_component, merge_new_components, [("out", "in1")]),
-                    (reverse_y_component, merge_new_components, [("out_file", "in2")]),
-                    (select_z_component, merge_new_components, [("out", "in3")]),
-                    (merge_new_components, remerge_warpfield, [("out", "in_files")]),
-                ]
-            )
-            workflow.connect(
-                [
-                    (
-                        disassemble_h5,
-                        convert_ants_transform,
-                        [("affine_transform", "in_transform")],
-                    ),
-                    (
-                        convert_ants_transform,
-                        change_xfm_type,
-                        [("out_transform", "in_transform")],
-                    ),
-                    (
-                        change_xfm_type,
-                        convert_xfm2world,
-                        [("out_transform", "in_file")],
-                    ),
-                ]
-            )
-            workflow.connect(
-                [  # concat order is affine 1st, field 2nd for inverse xfm (opposite of fwd xfm)
-                    # but input and ref image are same for fwd and inv combine_xfms
-                    (
-                        disassemble_h5_inv,
-                        merge_inv_xfms_list,
-                        [("displacement_field", "in2")],
-                    ),
-                    (
-                        disassemble_h5_inv,
-                        merge_inv_xfms_list,
-                        [("affine_transform", "in1")],
-                    ),
-                    (inputnode, combine_inv_xfms, [("t1w", "input_image")]),
-                    (merge_inv_xfms_list, combine_inv_xfms, [("out", "transforms")]),
-                    (
-                        disassemble_h5_inv,
-                        get_inv_xyz_components,
-                        [("displacement_field", "in_file")],
-                    ),
-                    (
-                        get_inv_xyz_components,
-                        select_inv_x_component,
-                        [("out_files", "inlist")],
-                    ),
-                    (
-                        get_inv_xyz_components,
-                        select_inv_y_component,
-                        [("out_files", "inlist")],
-                    ),
-                    (
-                        get_inv_xyz_components,
-                        select_inv_z_component,
-                        [("out_files", "inlist")],
-                    ),
-                    (
-                        select_inv_y_component,
-                        reverse_inv_y_component,
-                        [("out", "in_file")],
-                    ),
-                    (
-                        select_inv_x_component,
-                        merge_new_inv_components,
-                        [("out", "in1")],
-                    ),
-                    (
-                        reverse_inv_y_component,
-                        merge_new_inv_components,
-                        [("out_file", "in2")],
-                    ),
-                    (
-                        select_inv_z_component,
-                        merge_new_inv_components,
-                        [("out", "in3")],
-                    ),
-                    (
-                        merge_new_inv_components,
-                        remerge_inv_warpfield,
-                        [("out", "in_files")],
-                    ),
-                ]
-            )
-            workflow.connect(
-                [
-                    (
-                        convert_xfm2world,
-                        lh_native_apply_affine,
-                        [("out_file", "affine")],
-                    ),
-                    (
-                        lh_native_apply_affine,
-                        lh_native_apply_warpfield,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        remerge_warpfield,
-                        lh_native_apply_warpfield,
-                        [("out_file", "forward_warp")],
-                    ),
-                    (
-                        remerge_inv_warpfield,
-                        lh_native_apply_warpfield,
-                        [("out_file", "warpfield")],
-                    ),
-                    (
-                        lh_sphere_raw_mris,
-                        surface_sphere_project_unproject_lh,
-                        [("converted", "in_file")]
-                    ),
-                    (
-                        surface_sphere_project_unproject_lh,
-                        lh_32k_resample_wf,
-                        [("out_file", "current_sphere")],
-                    ),
-                    (
-                        lh_32k_resample_wf,
-                        lh_32k_apply_affine,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        convert_xfm2world,
-                        lh_32k_apply_affine,
-                        [("out_file", "affine")],
-                    ),
-                    (
-                        remerge_warpfield,
-                        lh_32k_apply_warpfield,
-                        [("out_file", "forward_warp")],
+    Parameters
+    ----------
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "ants_xform_to_fsl_wf".
 
-                    ),
-                    (
-                        remerge_inv_warpfield,
-                        lh_32k_apply_warpfield,
-                        [("out_file", "warpfield")],
+    Inputs
+    ------
+    t1w_to_template_xform
+        ANTS/fMRIPrep-style H5 transform from T1w image to template.
+    template_to_t1w_xform
+        ANTS/fMRIPrep-style H5 transform from template to T1w image.
 
-                    ),
-                    (
-                        lh_32k_apply_affine,
-                        lh_32k_apply_warpfield,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        lh_32k_apply_warpfield,
-                        join_lh_32k_warped_surfs,
-                        [("out_file", "in1")],
-                    ),
-                    (
-                        join_lh_32k_warped_surfs,
-                        select_lh_32k_midthick_surf,
-                        [("out", "inlist")],
-                    ),
-                    (
-                        join_lh_32k_warped_surfs,
-                        select_lh_32k_pial_surf,
-                        [("out", "inlist")],
-                    ),
-                    (
-                        join_lh_32k_warped_surfs,
-                        select_lh_32k_wm_surf,
-                        [("out", "inlist")],
-                    ),
-                    (select_lh_32k_midthick_surf, ds_midLsurf_wf, [("out", "in_file")]),
-                    (select_lh_32k_pial_surf, ds_pialLsurf_wf, [("out", "in_file")]),
-                    (select_lh_32k_wm_surf, ds_wmLsurf_wf, [("out", "in_file")]),
-                ]
-            )
-            workflow.connect(
-                [
-                    (
-                        convert_xfm2world,
-                        rh_native_apply_affine,
-                        [("out_file", "affine")],
-                    ),
-                    (
-                        rh_native_apply_affine,
-                        rh_native_apply_warpfield,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        remerge_warpfield,
-                        rh_native_apply_warpfield,
-                        [("out_file", "forward_warp")],
-                    ),
-                    (
-                        remerge_inv_warpfield,
-                        rh_native_apply_warpfield,
-                        [("out_file", "warpfield")],
-                    ),
-                    (
-                        rh_sphere_raw_mris,
-                        surface_sphere_project_unproject_rh,
-                        [("converted", "in_file")]
-                    ),
-                    (
-                        surface_sphere_project_unproject_rh,
-                        rh_32k_resample_wf,
-                        [("out_file", "current_sphere")],
-                    ),
-                    (
-                        rh_32k_resample_wf,
-                        rh_32k_apply_affine,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        convert_xfm2world,
-                        rh_32k_apply_affine,
-                        [("out_file", "affine")],
-                    ),
-                    (
-                        remerge_warpfield,
-                        rh_32k_apply_warpfield,
-                        [("out_file", "forward_warp")],
-                    ),
-                    (
-                        remerge_inv_warpfield,
-                        rh_32k_apply_warpfield,
-                        [("out_file", "warpfield")],
-                    ),
-                    (
-                        rh_32k_apply_affine,
-                        rh_32k_apply_warpfield,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        rh_32k_apply_warpfield,
-                        join_rh_32k_warped_surfs,
-                        [("out_file", "in1")],
-                    ),
-                    (
-                        join_rh_32k_warped_surfs,
-                        select_rh_32k_midthick_surf,
-                        [("out", "inlist")],
-                    ),
-                    (
-                        join_rh_32k_warped_surfs,
-                        select_rh_32k_pial_surf,
-                        [("out", "inlist")],
-                    ),
-                    (
-                        join_rh_32k_warped_surfs,
-                        select_rh_32k_wm_surf,
-                        [("out", "inlist")],
-                    ),
-                    (select_rh_32k_midthick_surf, ds_midRsurf_wf, [("out", "in_file")]),
-                    (select_rh_32k_pial_surf, ds_pialRsurf_wf, [("out", "in_file")]),
-                    (select_rh_32k_wm_surf, ds_wmRsurf_wf, [("out", "in_file")]),
-                ]
-            )
-            # fmt:on
+    Outputs
+    -------
+    world_xform
+        TODO: Add description.
+    merged_warpfield
+        TODO: Add description.
+    merged_inv_warpfield
+        TODO: Add description.
+    """
+    workflow = Workflow(name=name)
 
-            # make "HCP-style" native midthickness and inflated
-            lh_native_hcpmidthick_wf = pe.Node(
-                SurfaceAverage(surface_in1=L_pial_surf, surface_in2=L_wm_surf),
-                name="lh_native_hcpmidthick_wf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            rh_native_hcpmidthick_wf = pe.Node(
-                SurfaceAverage(surface_in1=R_pial_surf, surface_in2=R_wm_surf),
-                name="rh_native_hcpmidthick_wf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            lh_32k_hcpmidthick_resample_wf = pe.Node(
-                CiftiSurfaceResample(new_sphere=lh_sphere_fsLR, metric=" BARYCENTRIC "),
-                name="lh_32k_hcpmidthick_resample_wf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            rh_32k_hcpmidthick_resample_wf = pe.Node(
-                CiftiSurfaceResample(new_sphere=rh_sphere_fsLR, metric=" BARYCENTRIC "),
-                name="rh_32k_hcpmidthick_resample_wf",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )
-            # apply affine to 32k hcpmidthick
-            lh_32k_hcpmidthick_apply_affine = pe.Node(
-                ApplyAffine(),
-                name="lh_32k_hcpmidthick_apply_affine",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["t1w_to_template_xform", "template_to_t1w_xform"]),
+        name="inputnode",
+    )
 
-            rh_32k_hcpmidthick_apply_affine = pe.Node(
-                ApplyAffine(),
-                name="rh_32k_hcpmidthick_apply_affine",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["world_xform", "merged_warpfield", "merged_inv_warpfield"]),
+        name="outputnode",
+    )
 
-            # apply FNIRT-format warpfield
-            lh_32k_hcpmidthick_apply_warpfield = pe.Node(
-                ApplyWarpfield(),
-                name="lh_32k_hcpmidthick_apply_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
+    # Now we can start the actual workflow.
+    # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
+    disassemble_h5 = pe.Node(
+        CompositeTransformUtil(
+            process="disassemble",
+            output_prefix="T1w_to_MNI152NLin6Asym",
+        ),
+        name="disassemble_h5",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )  # MB
 
-            rh_32k_hcpmidthick_apply_warpfield = pe.Node(
-                ApplyWarpfield(),
-                name="rh_32k_hcpmidthick_apply_warpfield",
-                mem_gb=mem_gb,
-                n_procs=omp_nthreads,
-            )  # TM
-            lh_32k_hcpinflated_surf_wf = pe.Node(
-                SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name="lh_hcpinflated_surf_wf",
-            )
-            rh_32k_hcpinflated_surf_wf = pe.Node(
-                SurfaceGenerateInflated(iterations_scale_value=0.75),
-                name="rh_hcpinflated_surf_wf",
+    # fmt:off
+    workflow.connect([
+        (inputnode, disassemble_h5, [("t1w_to_template_xform", "in_file")]),
+    ])
+    # fmt:on
+
+    # Nipype's CompositeTransformUtil assumes a certain file naming and
+    # concatenation order of xfms which does not work for the inverse .h5,
+    # so we use our modified class, "CompositeInvTransformUtil"
+    disassemble_h5_inv = pe.Node(
+        CompositeInvTransformUtil(
+            process="disassemble",
+            output_prefix="MNI152NLin6Asym_to_T1w",
+        ),
+        name="disassemble_h5_inv",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, disassemble_h5_inv, [("template_to_t1w_xform", "in_file")]),
+    ])
+    # fmt:on
+
+    # convert affine from ITK binary to txt
+    convert_ants_transform = pe.Node(
+        ConvertTransformFile(dimension=3),
+        name="convert_ants_transform",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (disassemble_h5, convert_ants_transform, [("affine_transform", "in_transform")]),
+    ])
+    # fmt:on
+
+    # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
+    # since wb_command doesn't recognize "AffineTransform"
+    # (AffineTransform is a subclass of MatrixOffsetTransformBase
+    # which makes this okay to do AFAIK)
+    change_xfm_type = pe.Node(ChangeXfmType(), name="change_xfm_type")
+
+    # fmt:off
+    workflow.connect([
+        (convert_ants_transform, change_xfm_type, [("out_transform", "in_transform")]),
+    ])
+    # fmt:on
+
+    # convert affine xfm to "world" so it works with -surface-apply-affine
+    convert_xfm2world = pe.Node(
+        ConvertAffine(fromwhat="itk", towhat="world"),
+        name="convert_xfm2world",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (change_xfm_type, convert_xfm2world, [("out_transform", "in_file")]),
+    ])
+    # fmt:on
+
+    # use C3d to separate the combined warpfield xfm into x, y, and z components
+    get_xyz_components = pe.Node(
+        C3d(
+            is_4d=True,
+            multicomp_split=True,
+            out_files=["e1.nii.gz", "e2.nii.gz", "e3.nii.gz"],
+        ),
+        name="get_xyz_components",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    get_inv_xyz_components = pe.Node(
+        C3d(
+            is_4d=True,
+            multicomp_split=True,
+            out_files=["e1inv.nii.gz", "e2inv.nii.gz", "e3inv.nii.gz"],
+        ),
+        name="get_inv_xyz_components",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (disassemble_h5, get_xyz_components, [("displacement_field", "in_file")]),
+        (disassemble_h5_inv, get_inv_xyz_components, [("displacement_field", "in_file")]),
+    ])
+    # fmt:on
+
+    # select x-component after separating warpfield above
+    select_x_component = pe.Node(
+        niu.Select(index=[0]),
+        name="select_x_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    select_inv_x_component = pe.Node(
+        niu.Select(index=[0]),
+        name="select_inv_x_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # select y-component
+    select_y_component = pe.Node(
+        niu.Select(index=[1]),
+        name="select_y_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    select_inv_y_component = pe.Node(
+        niu.Select(index=[1]),
+        name="select_inv_y_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # select z-component
+    select_z_component = pe.Node(
+        niu.Select(index=[2]),
+        name="select_z_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    select_inv_z_component = pe.Node(
+        niu.Select(index=[2]),
+        name="select_inv_z_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (get_xyz_components, select_x_component, [("out_files", "inlist")]),
+        (get_xyz_components, select_y_component, [("out_files", "inlist")]),
+        (get_xyz_components, select_z_component, [("out_files", "inlist")]),
+        (get_inv_xyz_components, select_inv_x_component, [("out_files", "inlist")]),
+        (get_inv_xyz_components, select_inv_y_component, [("out_files", "inlist")]),
+        (get_inv_xyz_components, select_inv_z_component, [("out_files", "inlist")]),
+    ])
+    # fmt:on
+
+    # reverse y-component of the warpfield
+    # (need to do this when converting a warpfield from ANTs to FNIRT format
+    # for use with wb_command -surface-apply-warpfield)
+    reverse_y_component = pe.Node(
+        BinaryMath(expression="img * -1"),
+        name="reverse_y_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    reverse_inv_y_component = pe.Node(
+        BinaryMath(expression="img * -1"),
+        name="reverse_inv_y_component",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (select_y_component, reverse_y_component, [("out", "in_file")]),
+        (select_inv_y_component, reverse_inv_y_component, [("out", "in_file")]),
+    ])
+    # fmt:on
+
+    # Collect new warpfield components in individual nodes
+    collect_new_components = pe.Node(
+        niu.Merge(3),
+        name="collect_new_components",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    collect_new_inv_components = pe.Node(
+        niu.Merge(3),
+        name="collect_new_inv_components",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (select_x_component, collect_new_components, [("out", "in1")]),
+        (reverse_y_component, collect_new_components, [("out_file", "in2")]),
+        (select_z_component, collect_new_components, [("out", "in3")]),
+        (select_inv_x_component, collect_new_inv_components, [("out", "in1")]),
+        (reverse_inv_y_component, collect_new_inv_components, [("out_file", "in2")]),
+        (select_inv_z_component, collect_new_inv_components, [("out", "in3")]),
+    ])
+    # fmt:on
+
+    # Merge warpfield components in FSL FNIRT format, with the reversed y-component from above
+    remerge_warpfield = pe.Node(
+        Merge(),
+        name="remerge_warpfield",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+    remerge_inv_warpfield = pe.Node(
+        Merge(),
+        name="remerge_inv_warpfield",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (collect_new_components, remerge_warpfield, [("out", "in_files")]),
+        (collect_new_inv_components, remerge_inv_warpfield, [("out", "in_files")]),
+        (convert_xfm2world, outputnode, [("out_file", "world_xform")]),
+        (remerge_warpfield, outputnode, [("out_file", "merged_warpfield")]),
+        (remerge_inv_warpfield, outputnode, [("out_file", "merged_inv_warpfield")]),
+    ])
+    # fmt:on
+
+    return workflow
+
+
+@fill_doc
+def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one_hemisphere_wf"):
+    """Apply transforms to warp one hemisphere's surface files into standard space.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_warp_one_hemisphere_wf
+            wf = init_warp_one_hemisphere_wf(
+                hemisphere="L",
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="warp_one_hemisphere_wf",
             )
 
-            ds_hcpmidLsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=L_midthick_surf,
-                    space="fsLR",
-                    den="32k",
-                    hemi="L",
-                    desc="hcp",
-                    suffix="midthickness",
-                    extension=".surf.gii",
-                ),
-                name="ds_hcpmidLsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-            ds_hcpmidRsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=R_midthick_surf,
-                    space="fsLR",
-                    den="32k",
-                    hemi="R",
-                    desc="hcp",
-                    suffix="midthickness",
-                    extension=".surf.gii",
-                ),
-                name="ds_hcpmidRsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-            ds_hcpinfLsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=L_inflated_surf,
-                    space="fsLR",
-                    den="32k",
-                    hemi="L",
-                    desc="hcp",
-                    suffix="inflated",
-                    extension=".surf.gii",
-                ),
-                name="ds_hcpinfLsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-            ds_hcpinfRsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=R_inflated_surf,
-                    space="fsLR",
-                    den="32k",
-                    hemi="R",
-                    desc="hcp",
-                    suffix="inflated",
-                    extension=".surf.gii",
-                ),
-                name="ds_hcpinfRsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-            ds_hcpveryinfLsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=L_inflated_surf,
-                    space="fsLR",
-                    den="32k",
-                    hemi="L",
-                    desc="hcp",
-                    suffix="vinflated",
-                    extension=".surf.gii",
-                ),
-                name="ds_hcpveryinfLsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
-            ds_hcpveryinfRsurf_wf = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    check_hdr=False,
-                    source_file=R_inflated_surf,
-                    space="fsLR",
-                    den="32k",
-                    hemi="R",
-                    desc="hcp",
-                    suffix="vinflated",
-                    extension=".surf.gii",
-                ),
-                name="ds_hcpveryinfRsurf_wf",
-                run_without_submitting=False,
-                mem_gb=2,
-            )
+    Parameters
+    ----------
+    hemisphere : {"L", "R"}
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "warp_one_hemisphere_wf".
 
-            # fmt:off
-            workflow.connect(
-                [
-                    (
-                        surface_sphere_project_unproject_lh,
-                        lh_32k_hcpmidthick_resample_wf,
-                        [("out_file", "current_sphere")],
-                    ),
-                    (
-                        lh_native_hcpmidthick_wf,
-                        lh_32k_hcpmidthick_resample_wf,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        lh_32k_hcpmidthick_resample_wf,
-                        lh_32k_hcpmidthick_apply_affine,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        convert_xfm2world,
-                        lh_32k_hcpmidthick_apply_affine,
-                        [("out_file", "affine")],
-                    ),
-                    (
-                        remerge_warpfield,
-                        lh_32k_hcpmidthick_apply_warpfield,
-                        [("out_file", "forward_warp")],
-                    ),
-                    (
-                        remerge_inv_warpfield,
-                        lh_32k_hcpmidthick_apply_warpfield,
-                        [("out_file", "warpfield")],
-                    ),
-                    (
-                        lh_32k_hcpmidthick_apply_affine,
-                        lh_32k_hcpmidthick_apply_warpfield,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        lh_32k_hcpmidthick_apply_warpfield,
-                        ds_hcpmidLsurf_wf,
-                        [("out_file", "in_file")],
-                    ),
-                ]
-            )
+    Inputs
+    ------
+    hemi_files : list of str
+        A list of surface files for the requested hemisphere, in fsnative space.
+    world_xform
+    merged_warpfield
+    merged_inv_warpfield
+    freesurfer_path
+        Path to FreeSurfer derivatives. Used to load the subject's sphere file.
+    participant_id
 
-            workflow.connect(
-                [
-                    (
-                        surface_sphere_project_unproject_rh,
-                        rh_32k_hcpmidthick_resample_wf,
-                        [("out_file", "current_sphere")],
-                    ),
-                    (
-                        rh_native_hcpmidthick_wf,
-                        rh_32k_hcpmidthick_resample_wf,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        rh_32k_hcpmidthick_resample_wf,
-                        rh_32k_hcpmidthick_apply_affine,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        convert_xfm2world,
-                        rh_32k_hcpmidthick_apply_affine,
-                        [("out_file", "affine")],
-                    ),
-                    (
-                        remerge_warpfield,
-                        rh_32k_hcpmidthick_apply_warpfield,
-                        [("out_file", "forward_warp")],
-                    ),
-                    (
-                        remerge_inv_warpfield,
-                        rh_32k_hcpmidthick_apply_warpfield,
-                        [("out_file", "warpfield")],
-                    ),
-                    (
-                        rh_32k_hcpmidthick_apply_affine,
-                        rh_32k_hcpmidthick_apply_warpfield,
-                        [("out_file", "in_file")],
-                    ),
-                    (
-                        rh_32k_hcpmidthick_apply_warpfield,
-                        ds_hcpmidRsurf_wf,
-                        [("out_file", "in_file")],
-                    ),
-                ]
-            )
+    Outputs
+    -------
+    warped_hemi_files
+    """
+    workflow = Workflow(name=name)
 
-            workflow.connect(
-                [
-                    (
-                        lh_32k_hcpmidthick_apply_warpfield,
-                        lh_32k_hcpinflated_surf_wf,
-                        [("out_file", "anatomical_surface_in")],
-                    ),
-                    (
-                        lh_32k_hcpinflated_surf_wf,
-                        ds_hcpinfLsurf_wf,
-                        [("inflated_out_file", "in_file")],
-                    ),
-                    (
-                        lh_32k_hcpinflated_surf_wf,
-                        ds_hcpveryinfLsurf_wf,
-                        [("very_inflated_out_file", "in_file")],
-                    ),
-                ]
-            )
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "hemi_files",
+                "world_xform",
+                "merged_warpfield",
+                "merged_inv_warpfield",
+                "freesurfer_path",
+                "participant_id",
+            ],
+        ),
+        name="inputnode",
+    )
 
-            workflow.connect(
-                [
-                    (
-                        rh_32k_hcpmidthick_apply_warpfield,
-                        rh_32k_hcpinflated_surf_wf,
-                        [("out_file", "anatomical_surface_in")],
-                    ),
-                    (
-                        rh_32k_hcpinflated_surf_wf,
-                        ds_hcpinfRsurf_wf,
-                        [("inflated_out_file", "in_file")],
-                    ),
-                    (
-                        rh_32k_hcpinflated_surf_wf,
-                        ds_hcpveryinfRsurf_wf,
-                        [("very_inflated_out_file", "in_file")],
-                    ),
-                ]
-            )
-            # fmt:on
+    # Load the fsaverage-164k sphere
+    # NOTE: Why do we need the fsaverage mesh?
+    fsaverage_mesh = str(
+        get_template(
+            template="fsaverage",
+            space=None,
+            hemi=hemisphere,
+            density="164k",
+            desc=None,
+            suffix="sphere",
+        )
+    )
 
-        else:
-            LOGGER.warning(
-                "No FreeSurfer derivatives detected. "
-                "Surface transformation will not be performed."
-            )
-            # The inputnode needs to be connected to *something* to be added to the workflow.
-            # This "nothingnode" exists just to allow the inputnode to connect to something.
-            # TODO: Should we maybe raise an Exception instead?
-            nothingnode = pe.Node(
-                niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
-                name="nothingnode",
-            )
-            # fmt:off
-            workflow.connect(
-                [
-                    (inputnode, nothingnode, [("t1w", "t1w")]),
-                    (inputnode, nothingnode, [("t1seg", "t1seg")]),
-                ]
-            )
-            # fmt:on
+    # NOTE: Can we upload these to templateflow?
+    fs_hemisphere_to_fsLR = pkgrf(
+        "xcp_d",
+        (
+            f"data/standard_mesh_atlases/fs_{hemisphere}/"
+            f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
+            f"164k_fs_{hemisphere}.surf.gii"
+        ),
+    )
+    get_freesurfer_sphere_node = pe.Node(
+        Function(
+            function=get_freesurfer_sphere,
+            input_names=["freesurfer_path", "subject_id", "hemisphere"],
+            output_names=["sphere_raw"],
+        ),
+        name="get_freesurfer_sphere_node",
+    )
+    get_freesurfer_sphere_node.inputs.hemisphere = hemisphere
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_freesurfer_sphere_node, [
+            ("freesurfer_path", "freesurfer_path"),
+            ("participant_id", "subject_id"),
+        ])
+    ])
+    # fmt:on
+
+    # NOTE: What does this step do?
+    sphere_to_surf_gii = pe.Node(
+        MRIsConvert(out_datatype="gii"),
+        name="sphere_to_surf_gii",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (get_freesurfer_sphere_node, sphere_to_surf_gii, [("sphere_raw", "in_file")]),
+    ])
+    # fmt:on
+
+    # NOTE: What does this step do?
+    surface_sphere_project_unproject = pe.Node(
+        SurfaceSphereProjectUnproject(
+            sphere_project_to=fsaverage_mesh,
+            sphere_unproject_from=fs_hemisphere_to_fsLR,
+        ),
+        name="surface_sphere_project_unproject",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
+    ])
+    # fmt:on
+
+    fsLR_sphere = str(
+        get_template(
+            template="fsLR",
+            space=None,
+            hemi=hemisphere,
+            density="32k",
+            desc=None,
+            suffix="sphere",
+        )
+    )
+
+    # resample the surfaces to fsLR-32k
+    # NOTE: Does that mean the data are in fsLR-164k before this?
+    resample_to_fsLR32k = pe.MapNode(
+        CiftiSurfaceResample(
+            new_sphere=fsLR_sphere,
+            metric=" BARYCENTRIC ",
+        ),
+        name="resample_to_fsLR32k",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, resample_to_fsLR32k, [
+            ("hemi_files", "in_file"),
+        ]),
+        (surface_sphere_project_unproject, resample_to_fsLR32k, [
+            ("out_file", "current_sphere"),
+        ]),
+    ])
+    # fmt:on
+
+    # apply affine to 32k surfs
+    # NOTE: What does this step do? Aren't the data in fsLR-32k from resample_to_fsLR32k?
+    apply_affine_to_fsLR32k = pe.MapNode(
+        ApplyAffine(),
+        name="apply_affine_to_fsLR32k",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
+        (inputnode, apply_affine_to_fsLR32k, [("world_xform", "affine")]),
+    ])
+    # fmt:on
+
+    # apply FNIRT-format warpfield
+    # NOTE: What does this step do?
+    apply_warpfield_to_fsLR32k = pe.MapNode(
+        ApplyWarpfield(),
+        name="apply_warpfield_to_fsLR32k",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, apply_warpfield_to_fsLR32k, [
+            ("merged_warpfield", "forward_warp"),
+            ("merged_inv_warpfield", "warpfield"),
+        ]),
+        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [
+            ("out_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
+
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["warped_hemi_files"]),
+        name="outputnode",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (apply_warpfield_to_fsLR32k, outputnode, [("out_file", "warped_hemi_files")]),
+    ])
+    # fmt:on
 
     return workflow

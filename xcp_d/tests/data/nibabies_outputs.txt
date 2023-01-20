@@ -1,11 +1,7 @@
-xcp_d/
 xcp_d/dataset_description.json
 xcp_d/sub-01.html
 xcp_d/logs
-xcp_d/logs/CITATION.bib
-xcp_d/logs/CITATION.html
 xcp_d/logs/CITATION.md
-xcp_d/logs/CITATION.tex
 xcp_d/sub-01
 xcp_d/sub-01/ses-1mo
 xcp_d/sub-01/ses-1mo/anat
