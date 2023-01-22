@@ -312,6 +312,29 @@ def collect_data(
     return layout, subj_data
 
 
+def _find_standard_space_surfaces(layout, participant_label, queries):
+    standard_space_surfaces = True
+    for name, query in queries.items():
+        # First, try to grab the first base surface file in standard space.
+        # If it's not available, switch to native T1w-space data.
+        temp_files = layout.get(
+            return_type="file",
+            subject=participant_label,
+            datatype="anat",
+            space="fsLR",
+            res="32k",
+            **query,
+        )
+        if len(temp_files) == 0:
+            LOGGER.info("No standard-space surfaces found.")
+            standard_space_surfaces = False
+        elif len(temp_files) > 1:
+            LOGGER.warning(f"{name}: More than one standard-space surface found.")
+
+    return standard_space_surfaces
+
+
+
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
@@ -339,39 +362,93 @@ def collect_surface_data(layout, participant_label):
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    surface_queries = {
+    mesh_queries = {
         "lh_pial_surf": {
             "hemi": "L",
             "desc": None,
             "suffix": "pial",
+            "extension": ".surf.gii",
         },
         "rh_pial_surf": {
             "hemi": "R",
             "desc": None,
             "suffix": "pial",
+            "extension": ".surf.gii",
         },
         "lh_wm_surf": {
             "hemi": "L",
             "desc": None,
             "suffix": "smoothwm",
+            "extension": ".surf.gii",
         },
         "rh_wm_surf": {
             "hemi": "R",
             "desc": None,
             "suffix": "smoothwm",
+            "extension": ".surf.gii",
         },
     }
 
+    standard_meshes_found = _find_standard_space_surfaces(
+        layout,
+        participant_label,
+        mesh_queries,
+    )
+
+    shape_queries = {
+        "lh_sulcal_depth": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "sulc",
+            "extension": ".shape.gii",
+        },
+        "rh_sulcal_depth": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "sulc",
+            "extension": ".shape.gii",
+        },
+        "lh_sulcal_curv": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "curv",
+            "extension": ".shape.gii",
+        },
+        "rh_sulcal_curv": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "curv",
+            "extension": ".shape.gii",
+        },
+        "lh_cortical_thickness": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "thickness",
+            "extension": ".shape.gii",
+        },
+        "rh_cortical_thickness": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "thickness",
+            "extension": ".shape.gii",
+        },
+    }
+
+    standard_shapes_found = _find_standard_space_surfaces(
+        layout,
+        participant_label,
+        shape_queries,
+    )
+
     # First, try to grab the first base surface file in standard space.
     # If it's not available, switch to native T1w-space data.
-    temp_query = surface_queries["lh_pial_surf"]
+    temp_query = mesh_queries["lh_pial_surf"]
     temp_files = layout.get(
         return_type="file",
         subject=participant_label,
         datatype="anat",
         space="fsLR",
         res="32k",
-        extension=".surf.gii",
         **temp_query,
     )
     if len(temp_files) == 0:
@@ -400,12 +477,11 @@ def collect_surface_data(layout, participant_label):
                 return_type="file",
                 subject=participant_label,
                 datatype="anat",
-                extension=".surf.gii",
                 **query,
                 **query_extras,
             )
         )
-        for dtype, query in surface_queries.items()
+        for dtype, query in mesh_queries.items()
     }
 
     out_surface_files = {}
@@ -423,13 +499,13 @@ def collect_surface_data(layout, participant_label):
             raise ValueError(
                 "More than one surface found.\n"
                 f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {surface_queries[dtype]}"
+                f"Query: {mesh_queries[dtype]}"
             )
 
-    # Now let's try finding the optional surfaces
-    # The optional surfaces may be in native or standard space.
+    # Now let's try finding the surface morphometry files
+    # These surfaces may be in native or standard space.
     # We only want HCP-style (desc = hcp) versions of these files.
-    surface_queries = {
+    morph_queries = {
         "lh_midthickness_surf": {
             "hemi": "L",
             "desc": "hcp",
@@ -462,6 +538,12 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
+    standard_morphs_found = _find_standard_space_surfaces(
+        layout,
+        participant_label,
+        morph_queries,
+    )
+
     surface_files = {
         dtype: sorted(
             layout.get(
@@ -473,7 +555,7 @@ def collect_surface_data(layout, participant_label):
                 **query_extras,
             )
         )
-        for dtype, query in surface_queries.items()
+        for dtype, query in morph_queries.items()
     }
 
     for dtype, surface_files_ in surface_files.items():
@@ -488,7 +570,7 @@ def collect_surface_data(layout, participant_label):
             raise ValueError(
                 "More than one surface found.\n"
                 f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {surface_queries[dtype]}"
+                f"Query: {morph_queries[dtype]}"
             )
 
     LOGGER.debug(
