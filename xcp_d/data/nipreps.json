@@ -131,12 +131,12 @@
     },
     {
       "name": "cohort",
-      "pattern": "[_/\\\\]+cohort-0*(\\d+)",
+      "pattern": "(?:^|_)cohort-([0-9]+)",
       "dtype": "int"
     },
     {
       "name": "measure",
-      "pattern": "[_/\\\\]measure-([a-zA-Z0-9]+)"
+      "pattern": "(?:^|_)measure-([a-zA-Z0-9]+)"
     }
   ],
   "default_path_patterns": [
@@ -157,6 +157,7 @@
     "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_cohort-{cohort}][_desc-{desc}]_{suffix<motion>}{extension<.json|.tsv>|.tsv}",
     "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_cohort-{cohort}][_desc-{desc}]_{suffix<outliers>}{extension<.json|.tsv>|.tsv}",
     "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_space-{space}][_cohort-{cohort}][_den-{den}][_desc-{desc}]_{suffix<qc>}{extension<.json|.csv>|.csv}",
+    "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_desc-{desc}]_{suffix<qc>}{extension<.hdf5>|.hdf5}",
     "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_space-{space}][_atlas-{atlas}][_cohort-{cohort}][_den-{den}][_hemi-{hemi<L|R>}][_desc-{desc}]_{suffix<bold>}{extension<.ptseries.nii|.dtseries.nii|.func.gii|.shape.gii|.json>}",
     "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_space-{space}][_atlas-{atlas}][_cohort-{cohort}][_den-{den}][_hemi-{hemi<L|R>}][_desc-{desc}]_{suffix<alff|reho>}{extension<.dscalar.nii|.func.gii|.shape.gii|.json>}",
     "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_space-{space}][_atlas-{atlas}][_cohort-{cohort}][_den-{den}][_hemi-{hemi<L|R>}][_measure-{measure}][_desc-{desc}]_{suffix<conmat|timeseries>}{extension<.tsv|.json>}",

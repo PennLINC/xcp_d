@@ -488,3 +488,50 @@ def extract_ptseries(in_file):
     df.to_csv(timeseries_file, index=False, sep="\t")
 
     return timeseries_file
+
+
+def estimate_brain_radius(mask_file, head_radius="auto"):
+    """Estimate brain radius from binary brain mask file.
+
+    Parameters
+    ----------
+    mask_file : str
+        Binary brain mask file, in nifti format.
+    head_radius : float or "auto", optional
+        Head radius to use. Either a number, in millimeters, or "auto".
+        If set to "auto", the brain radius will be estimated from the mask file.
+        Default is "auto".
+
+    Returns
+    -------
+    brain_radius : float
+        Estimated brain radius, in millimeters.
+
+    Notes
+    -----
+    This function estimates the brain radius based on the brain volume,
+    assuming that the brain is a sphere.
+    This was Paul Taylor's idea, shared in this NeuroStars post:
+    https://neurostars.org/t/estimating-head-brain-radius-automatically/24290/2.
+    """
+    import nibabel as nb
+    import numpy as np
+    from nipype import logging
+
+    LOGGER = logging.getLogger("nipype.utils")
+
+    if head_radius == "auto":
+        mask_img = nb.load(mask_file)
+        mask_data = mask_img.get_fdata()
+        n_voxels = np.sum(mask_data)
+        voxel_size = np.prod(mask_img.header.get_zooms())
+        volume = n_voxels * voxel_size
+
+        brain_radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
+
+        LOGGER.info(f"Brain radius estimated at {brain_radius} mm.")
+
+    else:
+        brain_radius = head_radius
+
+    return brain_radius

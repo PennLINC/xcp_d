@@ -21,11 +21,15 @@ from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
     collect_surface_data,
+    get_entity,
     get_preproc_pipeline_info,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.workflow.anatomical import init_t1w_wf, init_warp_surfaces_to_template_wf
+from xcp_d.workflow.anatomical import (
+    init_warp_anats_to_template_wf,
+    init_warp_surfaces_to_template_wf,
+)
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
 from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
@@ -467,18 +471,24 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         run_without_submitting=True,
     )
 
-    t1w_wf = init_t1w_wf(
+    # Extract target volumetric space for T1w image
+    target_space = get_entity(subj_data["t1w_to_template_xform"], "to")
+
+    warp_anats_to_template_wf = init_warp_anats_to_template_wf(
         output_dir=output_dir,
         input_type=input_type,
+        target_space=target_space,
         omp_nthreads=omp_nthreads,
         mem_gb=5,  # RF: need to change memory size
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, t1w_wf, [('t1w', 'inputnode.t1w'),
-                             ('t1w_seg', 'inputnode.t1seg'),
-                             ('t1w_to_template_xform', 'inputnode.t1w_to_template')]),
+        (inputnode, warp_anats_to_template_wf, [
+            ("t1w", "inputnode.t1w"),
+            ("t1w_seg", "inputnode.t1seg"),
+            ("t1w_to_template_xform", "inputnode.t1w_to_template"),
+        ]),
     ])
     # fmt:on
 
@@ -524,7 +534,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         # fmt:off
         workflow.connect([
-            (t1w_wf, brainsprite_wf, [
+            (warp_anats_to_template_wf, brainsprite_wf, [
                 ("outputnode.t1w", "inputnode.t1w"),
             ]),
             (warp_surfaces_to_template_wf, brainsprite_wf, [
@@ -592,12 +602,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             (inputnode, bold_postproc_wf, [
                 ('t1w', 'inputnode.t1w'),
                 ('t1w_seg', 'inputnode.t1seg'),
+                ('t1w_mask', 'inputnode.t1w_mask'),
             ]),
         ])
         if not cifti:
             workflow.connect([
                 (inputnode, bold_postproc_wf, [
-                    ('t1w_mask', 'inputnode.t1w_mask'),
                     ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
                 ]),
             ])

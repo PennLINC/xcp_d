@@ -6,7 +6,6 @@ import tempfile
 from json import loads
 from pathlib import Path
 
-import h5py
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
@@ -19,7 +18,7 @@ from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import _drop_dummy_scans
 from xcp_d.utils.plot import plot_svgx
-from xcp_d.utils.qcmetrics import compute_dvars
+from xcp_d.utils.qcmetrics import compute_dvars, make_dcan_df
 from xcp_d.utils.utils import get_segfile
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -135,24 +134,7 @@ def concatenate_derivatives(
                         **task_entities,
                     )
                     if len(motion_files) == 1:
-                        if dcan_qc:
-                            # Make DCAN HDF5 file from single motion file
-                            dcan_df_file = (
-                                f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
-                            )
-
-                            # Get TR from one of the preproc files
-                            preproc_files = layout_fmriprep.get(
-                                desc=["preproc", None],
-                                suffix="bold",
-                                extension=img_extensions,
-                                **task_entities,
-                            )
-                            TR = _get_tr(preproc_files[0].path)
-
-                            make_dcan_df([motion_files[0].path], dcan_df_file, TR)
-                            LOGGER.debug(f"Only one run found for task {task}")
-
+                        LOGGER.debug(f"Only one run found for task {task}")
                         continue
                     elif len(motion_files) == 0:
                         LOGGER.warning(f"No motion files found for task {task}")
@@ -177,12 +159,6 @@ def concatenate_derivatives(
                 )
                 TR = _get_tr(preproc_files[0].path)
 
-                # Make DCAN HDF5 file for each of the motion files
-                if dcan_qc:
-                    for motion_file in motion_files:
-                        dcan_df_file = f"{'.'.join(motion_file.path.split('.')[:-1])}-DCAN.hdf5"
-                        make_dcan_df([motion_file.path], dcan_df_file, TR)
-
                 # Concatenate motion files
                 motion_file_names = ", ".join([motion_file.path for motion_file in motion_files])
                 LOGGER.debug(f"Concatenating motion files: {motion_file_names}")
@@ -191,10 +167,14 @@ def concatenate_derivatives(
 
                 # Make DCAN HDF5 file from concatenated motion file
                 if dcan_qc:
-                    concat_dcan_df_file = (
-                        f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+                    concat_dcan_df_file = concat_motion_file.replace(
+                        "desc-filtered_motion.tsv",
+                        "desc-dcan_qc.hdf5",
+                    ).replace(
+                        "_motion.tsv",
+                        "desc-dcan_qc.hdf5",
                     )
-                    make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
+                    make_dcan_df(concat_motion_file, concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
@@ -447,74 +427,6 @@ def concatenate_derivatives(
                         )
                         concat_file = _get_concat_name(layout_xcpd, atlas_timeseries_files[0])
                         concatenate_tsv_files(atlas_timeseries_files, concat_file)
-
-
-def make_dcan_df(fds_files, name, TR):
-    """Create an HDF5-format file containing a DCAN-format dataset.
-
-    Parameters
-    ----------
-    fds_files : list of str
-        List of files from which to extract information.
-    name : str
-        Name of the HDF5-format file to be created.
-    TR : float
-        Repetition time.
-
-    Notes
-    -----
-    FD_threshold: a number >= 0 that represents the FD threshold used to calculate
-    the metrics in this list.
-    frame_removal: a binary vector/array the same length as the number of frames
-    in the concatenated time series, indicates whether a frame is removed (1) or
-    not (0)
-    format_string (legacy): a string that denotes how the frames were excluded
-    -- uses a notation devised by Avi Snyder
-    total_frame_count: a whole number that represents the total number of frames
-    in the concatenated series
-    remaining_frame_count: a whole number that represents the number of remaining
-    frames in the concatenated series
-    remaining_seconds: a whole number that represents the amount of time remaining
-    after thresholding
-    remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
-    remaining frames
-    """
-    LOGGER.debug(f"Generating DCAN file: {name}")
-
-    # Load filtered framewise_displacement values from files and concatenate
-    filtered_motion_dfs = [pd.read_table(fds_file) for fds_file in fds_files]
-    filtered_motion_df = pd.concat(filtered_motion_dfs, axis=0)
-    fd = filtered_motion_df["framewise_displacement"].values
-
-    with h5py.File(name, "w") as dcan:
-        for thresh in np.linspace(0, 1, 101):
-            thresh = np.around(thresh, 2)
-
-            dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip", data=0, dtype="float")
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/binary_mask",
-                data=(fd > thresh).astype(int),
-                dtype="float",
-            )
-            dcan.create_dataset(f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float")
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/total_frame_count", data=len(fd), dtype="float"
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
-                data=len(fd[fd <= thresh]),
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_seconds",
-                data=len(fd[fd <= thresh]) * TR,
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
-                data=(fd[fd <= thresh]).mean(),
-                dtype="float",
-            )
 
 
 def concatenate_tsv_files(tsv_files, fileout):
