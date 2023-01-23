@@ -599,7 +599,20 @@ class _CiftiPrepareForParcellationOutputSpec(TraitedSpec):
 
 
 class CiftiPrepareForParcellation(SimpleInterface):
-    """Apply 50% coverage threshold to parcellated data."""
+    """Apply 50% coverage threshold to parcellated data.
+
+    This interface takes a CIFTI atlas and a CIFTI data file, and ensures that
+    missing data in the data file is handled appropriately.
+    First, any vertices in the data file that have missing data
+    (i.e., are time series of all zeros or NaNs)
+    are replaced with time series of all NaNs,
+    so that the CIFTI parcellation step will ignore those vertices.
+    Next, any parcels with <50% coverage will have all associated vertices in the data file
+    replaced with *zeros* (overwriting any NaNs).
+    This way, the parcellation will return a summary time series of zeros.
+    Any parcels with all NaNs will raise an error in the parcellation step, so we must use zeros
+    for these vertices instead.
+    """
 
     input_spec = _CiftiPrepareForParcellationInputSpec
     output_spec = _CiftiPrepareForParcellationOutputSpec
@@ -622,7 +635,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
         bad_vertices_idx = np.where(np.all(np.logical_or(data == 0, np.isnan(data)), axis=1))
 
         # First, replace all bad vertices' time series with NaNs.
-        # This way, any partially-covered nodes will have NaNs in the bad portions,
+        # This way, any partially-covered parcels will have NaNs in the bad portions,
         # so those vertices will be ignored by wb_command -cifti-parcellate.
         data[bad_vertices_idx, :] = np.nan
 
@@ -632,8 +645,13 @@ class CiftiPrepareForParcellation(SimpleInterface):
         parcel_ids = np.unique(atlas_data)[1:]
         n_nodes = parcel_ids.size
         for i_parcel in parcel_ids:
+            # Find vertices associated with the parcel
             parcel_idx = np.where(atlas_data == i_parcel)[0]
+
+            # Determine if all of the vertices in the parcel as missing.
             bad_parcel = ~np.any(np.setdiff1d(parcel_idx, bad_vertices_idx))
+
+            # Determine which, if any, vertices in the parcel are missing.
             bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
 
             if bad_parcel:
@@ -643,13 +661,13 @@ class CiftiPrepareForParcellation(SimpleInterface):
                 n_uncovered_nodes += 1
 
             elif (bad_vertices_in_parcel_idx.size / parcel_idx.size) >= 0.5:
-                # If the node has >=50% bad data, replace all of the values with zeros.
+                # If the parcel has >=50% bad data, replace all of the values with zeros.
                 data[parcel_idx, :] = 0
 
                 n_poorly_covered_nodes += 1
 
             elif bad_vertices_in_parcel_idx.size:
-                # If the node has < 50% bad data, keep the node, but make a note.
+                # If the parcel has < 50% bad data, keep the parcel, but make a note.
                 n_partially_covered_nodes += 1
 
         if n_uncovered_nodes:

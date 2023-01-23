@@ -79,7 +79,7 @@ the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topog
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either ignored,
-when the node had >50% coverage, or were set to zero, when the node had <50% coverage.
+when the parcel had >50% coverage, or were set to zero, when the parcel had <50% coverage.
 """
 
     inputnode = pe.Node(
@@ -239,7 +239,7 @@ Corresponding pair-wise functional connectivity between all regions was computed
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
 In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either ignored,
-when the node had >50% coverage, or were set to zero, when the node had <50% coverage.
+when the parcel had >50% coverage, or were set to zero, when the parcel had <50% coverage.
 """
 
     inputnode = pe.Node(

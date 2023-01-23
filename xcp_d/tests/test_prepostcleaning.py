@@ -3,7 +3,6 @@ import os
 
 import nibabel as nb
 import numpy as np
-import pytest
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation, ConvertTo32
@@ -117,7 +116,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     """Check that the CIFTI parcellation approach works.
 
     This is a basic version of ``test_cifti_parcellation``.
-    Instead of testing across whole nodes, this test only changes a single vertex.
+    Instead of testing across whole parcels, this test only changes a single vertex.
     """
     tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation_basic")
 
@@ -129,7 +128,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     cifti_data = cifti_img.get_fdata()
     cifti_data = np.ones(cifti_data.shape)
 
-    # Parcellate the simulated file to find the node associated with the modified vertex.
+    # Parcellate the simulated file to find the parcel associated with the modified vertex.
     VERTEX_IDX = 60000
     cifti_data_locator = cifti_data.copy()
     cifti_data_locator[:, VERTEX_IDX] = 1000000
@@ -147,7 +146,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     loc_node = np.where(cifti_data_loc_parc[0, :] > 1)[0][0]
 
     # Create file with one vertex that is all zeros.
-    # The zeros should be ignored, so the affected node should have all ones.
+    # The zeros should be ignored, so the affected parcel should have all ones.
     cifti_data_zeros = cifti_data.copy()
     cifti_data_zeros[:, VERTEX_IDX] = 0
     cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
@@ -165,7 +164,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
 
     # Create file with one vertex that has a zero in first timepoint.
     # The single zero should be treated as real data,
-    # so the affected node should have a value < 1 in the affected timepoint.
+    # so the affected parcel should have a value < 1 in the affected timepoint.
     cifti_data_zeros = cifti_data.copy()
     cifti_data_zeros[0, VERTEX_IDX] = 0
     cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
@@ -182,7 +181,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     assert cifti_data_zeros_parc[0, loc_node] < 1
 
     # Create file with one vertex that is all NaNs.
-    # The NaNs should be ignored, so the affected node should have all zeros.
+    # The NaNs should be ignored, so the affected parcel should have all zeros.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[:, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
@@ -199,7 +198,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     assert np.all(cifti_data_nans_parc[:, loc_node] == 1)
 
     # Create file with one vertex that is has a NaN in the first timepoint.
-    # The NaN should be ignored, so the affected node should have all zeros.
+    # The NaN should be ignored, so the affected parcel should have all zeros.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[0, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
