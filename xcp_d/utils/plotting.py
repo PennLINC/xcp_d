@@ -252,8 +252,8 @@ def plot_confounds_es(
     hide_x=True,
     ylims=None,
     ylabel=None,
-    FD=False,
-    whole_brain=False,
+    is_fd=False,
+    is_whole_brain=False,
     work_dir=None,
 ):
     """Create confounds plot for the executive summary."""
@@ -300,13 +300,15 @@ def plot_confounds_es(
     # Set y-axis labels
     if ylabel:
         time_series_axis.set_ylabel(ylabel)
+
     if work_dir is not None:
         time_series.to_csv(f"/{work_dir}/{ylabel}_tseries.npy")
+
     columns = time_series.columns
     maximum_values = []
     minimum_values = []
 
-    if FD:
+    if is_fd:
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=3, color="black")
             maximum_values.append(max(time_series[c]))
@@ -405,7 +407,8 @@ def plot_confounds_es(
                 transform=time_series_axis.transAxes,
                 fontsize=30,
             )
-    elif whole_brain:
+
+    elif is_whole_brain:
         # Plot the whole brain mean and std.
         # Mean scale on the left, std scale on the right.
         mean_line = time_series_axis.plot(
@@ -414,9 +417,11 @@ def plot_confounds_es(
         maximum_values.append(max(time_series["Mean"]))
         minimum_values.append(min(time_series["Mean"]))
         ax_right = time_series_axis.twinx()
+        ax_right.set_ylabel("Standard Deviation")
         std_line = ax_right.plot(
             time_series["Std"], label="Std", color="orange", linewidth=10, alpha=0.5
         )
+
         std_mean = np.mean(time_series["Std"])
         ax_right.set_ylim(
             (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
@@ -440,14 +445,14 @@ def plot_confounds_es(
     minimum_x_value = [abs(x) for x in minimum_values]
 
     time_series_axis.set_xlim((0, ntsteps - 1))
-    if FD is True:
+    if is_fd is True:
         time_series_axis.legend(fontsize=40)
         time_series_axis.set_ylim(0, 1.1)
         time_series_axis.set_yticks([0, 0.05, 0.1, 0.2, 0.5, 1])
     elif ylims:
         time_series_axis.legend(fontsize=40)
         time_series_axis.set_ylim(ylims)
-    elif whole_brain:
+    elif is_whole_brain:
         mean_mean = np.mean(time_series["Mean"])
         time_series_axis.set_ylim(
             (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
@@ -632,7 +637,7 @@ def plot_fmri_es(
         TR=TR,
         hide_x=True,
         ylabel="WB",
-        whole_brain=True,
+        is_whole_brain=True,
     )
     plot_carpet(
         func=scaled_raw_file,
@@ -648,7 +653,7 @@ def plot_fmri_es(
         hide_x=False,
         ylims=[0, 1],
         ylabel="FD[mm]",
-        FD=True,
+        is_fd=True,
     )
 
     # Save out the before processing file
@@ -676,7 +681,7 @@ def plot_fmri_es(
         hide_x=True,
         ylabel="WB",
         work_dir=work_dir,
-        whole_brain=True,
+        is_whole_brain=True,
     )
 
     plot_carpet(
@@ -693,7 +698,7 @@ def plot_fmri_es(
         hide_x=False,
         ylims=[0, 1],
         ylabel="FD[mm]",
-        FD=True,
+        is_fd=True,
         work_dir=work_dir,
     )
     processed_figure.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
