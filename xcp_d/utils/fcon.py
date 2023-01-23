@@ -37,9 +37,9 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     """
     # Before anything, we need to measure coverage
     atlas_img = nb.load(atlas)
-    in_data = atlas_img.get_fdata()
-    in_data_bin = (in_data > 0).astype(np.float32)
-    atlas_img_bin = nb.Nifti1Image(in_data_bin, atlas_img.affine, atlas_img.header)
+    atlas_data = atlas_img.get_fdata()
+    atlas_data_bin = (atlas_data > 0).astype(np.float32)
+    atlas_img_bin = nb.Nifti1Image(atlas_data_bin, atlas_img.affine, atlas_img.header)
 
     sum_masker_masked = NiftiLabelsMasker(
         labels_img=atlas,
@@ -59,10 +59,26 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     prop_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
     coverage_thresholded = prop_coverage < 0.5  # we require 50%+ coverage
 
-    if np.any(coverage_thresholded):
+    n_nodes = coverage_thresholded.size
+    n_uncovered_nodes = np.sum(prop_coverage == 0)
+    n_poorly_covered_nodes = np.sum(np.logical_and(prop_coverage > 0, prop_coverage < 0.5))
+    n_partially_covered_nodes = np.sum(np.logical_and(prop_coverage >= 0.5, prop_coverage < 1))
+
+    if n_uncovered_nodes:
+        LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0% coverage.")
+
+    if n_poorly_covered_nodes:
         LOGGER.warning(
-            f"{coverage_thresholded.sum()}/{coverage_thresholded.size} of parcels have "
-            "<50% coverage"
+            f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50% coverage. "
+            "These parcels' time series will be replaced with zeros."
+        )
+
+    if n_partially_covered_nodes:
+        LOGGER.warning(
+            f"{n_partially_covered_nodes}/{n_nodes} of parcels have at least one uncovered "
+            "voxel, but have enough good voxels to be useable. "
+            "The bad voxels will be ignored and the parcels' time series will be "
+            "calculated from the remaining voxels."
         )
 
     masker = NiftiLabelsMasker(

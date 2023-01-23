@@ -658,15 +658,15 @@ class CiftiPrepareForParcellation(SimpleInterface):
         if n_poorly_covered_nodes:
             LOGGER.warning(
                 f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50% coverage. "
-                "These nodes' time series will be replaced with zeros."
+                "These parcels' time series will be replaced with zeros."
             )
 
         if n_partially_covered_nodes:
             LOGGER.warning(
                 f"{n_partially_covered_nodes}/{n_nodes} of parcels have at least one uncovered "
                 "vertex, but have enough good vertices to be useable. "
-                "The bad vertices will be ignored and the nodes' time series will be calculated "
-                "from the remaining vertices."
+                "The bad vertices will be ignored and the parcels' time series will be "
+                "calculated from the remaining vertices."
             )
 
         out_file = os.path.abspath(out_file)
