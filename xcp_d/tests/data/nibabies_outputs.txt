@@ -1,4 +1,3 @@
-xcp_d/
 xcp_d/dataset_description.json
 xcp_d/space-MNIInfant_atlas-Glasser_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-Gordon_dseg.nii.gz
@@ -15,18 +14,17 @@ xcp_d/space-MNIInfant_atlas-Schaefer917_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-subcortical_dseg.nii.gz
 xcp_d/sub-01.html
 xcp_d/logs
-xcp_d/logs/CITATION.bib
-xcp_d/logs/CITATION.html
 xcp_d/logs/CITATION.md
-xcp_d/logs/CITATION.tex
 xcp_d/sub-01
 xcp_d/sub-01/ses-1mo
 xcp_d/sub-01/ses-1mo/anat
-xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNI152NLin6Asym_dseg.nii.gz
+xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-preproc_T1w.nii.gz
+xcp_d/sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_dseg.nii.gz
 xcp_d/sub-01/ses-1mo/func
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_outliers.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_outliers.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_alff.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_alff.nii.gz
@@ -62,6 +60,6 @@ xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfan
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_desc-denoised_bold.nii.gz
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_desc-smooth_alff.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_desc-smooth_alff.nii.gz
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_qc.csv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_desc-linc_qc.csv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_reho.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_reho.nii.gz

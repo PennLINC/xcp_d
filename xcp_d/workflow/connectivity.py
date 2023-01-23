@@ -10,6 +10,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
@@ -286,8 +287,14 @@ the Connectome Workbench.
         iterfield=["atlas_name"],
     )
 
+    replace_empty_vertices = pe.Node(
+        CiftiZerosToNaNs(),
+        name="replace_empty_vertices",
+        n_procs=omp_nthreads,
+    )
+
     parcellate_data = pe.MapNode(
-        CiftiParcellate(direction="COLUMN"),
+        CiftiParcellate(direction="COLUMN", only_numeric=True),
         mem_gb=mem_gb,
         name="parcellate_data",
         n_procs=omp_nthreads,
@@ -333,8 +340,9 @@ the Connectome Workbench.
 
     # fmt:off
     workflow.connect([
-        (inputnode, parcellate_data, [("clean_bold", "in_file")]),
+        (inputnode, replace_empty_vertices, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (replace_empty_vertices, parcellate_data, [("out_file", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),

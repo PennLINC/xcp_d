@@ -30,6 +30,7 @@ from xcp_d.utils.confounds import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.plot import plot_design_matrix
+from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
 from xcp_d.workflow.outputs import init_writederivatives_wf
@@ -228,9 +229,14 @@ def init_boldpostprocess_wf(
             "for denoising."
         )
 
+    if isinstance(head_radius, float):
+        fd_substr = f"with a head radius of {head_radius} mm"
+    else:
+        fd_substr = "with a head radius estimated from the preprocessed brain mask"
+
     fd_str = (
         f"{filter_str}framewise displacement was calculated using the formula from "
-        f"@power_fd_dvars, with a head radius of {head_radius} mm"
+        f"@power_fd_dvars, {fd_substr}"
     )
 
     if dummy_scans == 0 and dummytime != 0:
@@ -327,6 +333,24 @@ produced by the regression.
     ])
     # fmt:on
 
+    determine_head_radius = pe.Node(
+        Function(
+            function=estimate_brain_radius,
+            input_names=["mask_file", "head_radius"],
+            output_names=["head_radius"],
+        ),
+        name="determine_head_radius",
+    )
+    determine_head_radius.inputs.head_radius = head_radius
+
+    # fmt:off
+    workflow.connect([
+        (downcast_data, determine_head_radius, [
+            ("t1w_mask", "mask_file"),
+        ]),
+    ])
+    # fmt:on
+
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
@@ -375,7 +399,6 @@ produced by the regression.
             band_stop_max=band_stop_max,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
-            head_radius=head_radius,
             fd_thresh=fd_thresh,
         ),
         name="censoring",
@@ -459,7 +482,6 @@ produced by the regression.
         band_stop_min=band_stop_min,
         motion_filter_order=motion_filter_order,
         fd_thresh=fd_thresh,
-        head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         dcan_qc=dcan_qc,
@@ -476,6 +498,9 @@ produced by the regression.
             ("t1w_mask", "inputnode.t1w_mask"),
             ("template_to_t1w", "inputnode.template_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),
+        ]),
+        (determine_head_radius, qc_report_wf, [
+            ("head_radius", "inputnode.head_radius"),
         ]),
         (regression_wf, qc_report_wf, [
             ("res_file", "inputnode.cleaned_unfiltered_file"),
@@ -538,6 +563,9 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
+        (determine_head_radius, censor_scrub, [
+            ("head_radius", "head_radius"),
+        ]),
         (censor_scrub, plot_design_matrix_node, [
             ("confounds_censored", "design_matrix"),
         ]),
@@ -649,7 +677,9 @@ produced by the regression.
         ]),
         (censor_scrub, write_derivative_wf, [
             ('filtered_motion', 'inputnode.filtered_motion'),
+            ('filtered_motion_metadata', 'inputnode.filtered_motion_metadata'),
             ('tmask', 'inputnode.tmask'),
+            ('tmask_metadata', 'inputnode.tmask_metadata'),
         ]),
         (reho_compute_wf, write_derivative_wf, [
             ('outputnode.reho_out', 'inputnode.reho_out'),

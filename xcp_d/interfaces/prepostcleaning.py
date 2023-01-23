@@ -289,7 +289,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
 
 class _CensorScrubOutputSpec(TraitedSpec):
     bold_censored = File(exists=True, mandatory=True, desc="FD-censored bold file")
-
     fmriprep_confounds_censored = File(
         exists=True,
         mandatory=True,
@@ -308,6 +307,9 @@ class _CensorScrubOutputSpec(TraitedSpec):
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
     )
+    tmask_metadata = traits.Dict(
+        desc="Metadata associated with the tmask output.",
+    )
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -315,6 +317,9 @@ class _CensorScrubOutputSpec(TraitedSpec):
             "Framewise displacement timeseries. "
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
+    )
+    filtered_motion_metadata = traits.Dict(
+        desc="Metadata associated with the filtered_motion output.",
     )
 
 
@@ -422,7 +427,6 @@ class CensorScrub(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
             suffix="_desc-fd_outliers.tsv",
@@ -451,6 +455,39 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
+
+        motion_metadata = {
+            "framewise_displacement": {
+                "Description": (
+                    "Framewise displacement calculated according to Power et al. (2012)."
+                ),
+                "Units": "mm",
+                "HeadRadius": self.inputs.head_radius,
+            }
+        }
+        if self.inputs.motion_filter_type == "lp":
+            motion_metadata["LowpassFilter"] = self.inputs.band_stop_max
+            motion_metadata["LowpassFilterOrder"] = self.inputs.motion_filter_order
+        elif self.inputs.motion_filter_type == "notch":
+            motion_metadata["BandstopFilter"] = [
+                self.inputs.band_stop_min,
+                self.inputs.band_stop_max,
+            ]
+            motion_metadata["BandstopFilterOrder"] = self.inputs.motion_filter_order
+
+        self._results["filtered_motion_metadata"] = motion_metadata
+
+        outliers_metadata = {
+            "framewise_displacement": {
+                "Description": "Outlier time series based on framewise displacement.",
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+                "Threshold": self.inputs.fd_thresh,
+            }
+        }
+        self._results["tmask_metadata"] = outliers_metadata
 
         motion_df.to_csv(
             self._results["filtered_motion"],
@@ -527,5 +564,67 @@ class Interpolate(SimpleInterface):
             TR=self.inputs.TR,
             filename=self._results["bold_interpolated"],
         )
+
+        return runtime
+
+
+class _CiftiZerosToNaNsInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc="CIFTI file to modify.")
+    out_file = File(
+        "modified_data.dtseries.nii",
+        usedefault=True,
+        exists=False,
+        desc="The name of the modified file to write out. modified_data.dtseries.nii by default.",
+    )
+
+
+class _CiftiZerosToNaNsOutputSpec(TraitedSpec):
+    out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+
+
+class CiftiZerosToNaNs(SimpleInterface):
+    """Convert all all-zero vertices' time series to NaNs in a CIFTI file.
+
+    This is done so that these vertices will be flagged as missing data by wb_command.
+    This interface is only designed to work with dtseries CIFTIs where the first axis is time and
+    the second is space.
+    """
+
+    input_spec = _CiftiZerosToNaNsInputSpec
+    output_spec = _CiftiZerosToNaNsOutputSpec
+
+    def _run_interface(self, runtime):
+        cifti_obj = nb.load(self.inputs.in_file)
+        # load data as memmap
+        data = cifti_obj.get_fdata()
+        # load it in memory
+        data = np.array(data)
+
+        # find all vertices with all zeros or one or more NaNs
+        stdevs = np.std(data, axis=0)
+        # nan > 0 == False, nan <= 0 == False
+        zero_std = ~(stdevs > 0)  # std over time is zero or NaN
+        zero_values = ~(data[0, :] > 0)  # first time point's value is zero or NaN
+        bad_vertex_idx = np.where(np.logical_and(zero_std, zero_values))[0]
+
+        if bad_vertex_idx.size:
+            LOGGER.warning(
+                f"{bad_vertex_idx.size}/{zero_std.size} vertices have missing data. "
+                "Filling these vertices with NaNs so they will be ignored by parcellation step."
+            )
+
+        # replace the bad vertices' values with NaNs
+        data[:, bad_vertex_idx] = np.nan
+
+        # make the modified img object
+        img = nb.Cifti2Image(
+            dataobj=data,
+            header=cifti_obj.header,
+            file_map=cifti_obj.file_map,
+            nifti_header=cifti_obj.nifti_header,
+        )
+
+        self._results["out_file"] = os.path.abspath(self.inputs.out_file)
+        img.to_filename(self._results["out_file"])
 
         return runtime
