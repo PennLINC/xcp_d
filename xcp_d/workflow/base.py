@@ -370,18 +370,25 @@ def init_subject_wf(
                 "t1w_seg",
                 "template_to_t1w_xform",  # not used by cifti workflow
                 "t1w_to_template_xform",
-                # surface files
+                # mesh files
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # hcp-style surface files
+                # hcp-style morphometry files
                 "lh_midthickness_surf",
                 "rh_midthickness_surf",
                 "lh_inflated_surf",
                 "rh_inflated_surf",
                 "lh_vinflated_surf",
                 "rh_vinflated_surf",
+                # shape files
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
             ],
         ),
         name="inputnode",
@@ -393,19 +400,27 @@ def init_subject_wf(
     inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
     inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
 
-    # surface files (required for brainsprite/warp workflows)
+    # surface mesh files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
     inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
     inputnode.inputs.lh_wm_surf = surface_data["lh_wm_surf"]
     inputnode.inputs.rh_wm_surf = surface_data["rh_wm_surf"]
 
-    # optional surface files
+    # optional surface morphometry files (used by surface-warping workflow)
     inputnode.inputs.lh_midthickness_surf = surface_data["lh_midthickness_surf"]
     inputnode.inputs.rh_midthickness_surf = surface_data["rh_midthickness_surf"]
     inputnode.inputs.lh_inflated_surf = surface_data["lh_inflated_surf"]
     inputnode.inputs.rh_inflated_surf = surface_data["rh_inflated_surf"]
     inputnode.inputs.lh_inflated_surf = surface_data["lh_vinflated_surf"]
     inputnode.inputs.rh_inflated_surf = surface_data["rh_vinflated_surf"]
+
+    # optional surface shape files (used by surface-warping workflow)
+    inputnode.inputs.lh_sulcal_depth = surface_data["lh_sulcal_depth"]
+    inputnode.inputs.rh_sulcal_depth = surface_data["rh_sulcal_depth"]
+    inputnode.inputs.lh_sulcal_curv = surface_data["lh_sulcal_curv"]
+    inputnode.inputs.rh_sulcal_curv = surface_data["rh_sulcal_curv"]
+    inputnode.inputs.lh_cortical_thickness = surface_data["lh_cortical_thickness"]
+    inputnode.inputs.rh_cortical_thickness = surface_data["rh_cortical_thickness"]
 
     workflow = Workflow(name=name)
 

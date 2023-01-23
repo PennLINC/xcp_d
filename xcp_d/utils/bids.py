@@ -313,6 +313,18 @@ def collect_data(
 
 
 def _find_standard_space_surfaces(layout, participant_label, queries):
+    """Find standard-space surfaces for a given set of queries.
+
+    Parameters
+    ----------
+    layout : BIDSLayout
+    participant_label : str
+    queries : dict of dict
+
+    Returns
+    -------
+    standard_space_surfaces : bool
+    """
     standard_space_surfaces = True
     for name, query in queries.items():
         # First, try to grab the first base surface file in standard space.
@@ -331,15 +343,57 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
         elif len(temp_files) > 1:
             LOGGER.warning(f"{name}: More than one standard-space surface found.")
 
-    return standard_space_surfaces
+    # Now that we know if there are standard-space surfaces available, we can grab the files.
+    if standard_space_surfaces:
+        query_extras = {
+            "space": "fsLR",
+            "res": "32k",
+        }
+    else:
+        query_extras = {
+            "space": None,
+        }
 
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in queries.items()
+    }
+
+    out_surface_files = {}
+    surface_files_found = True
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 1:
+            out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            surface_files_found = False
+            out_surface_files[dtype] = None
+
+        else:
+            surface_files_found = False
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {queries[dtype]}"
+            )
+
+    return surface_files_found, standard_space_surfaces, out_surface_files
 
 
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
-    If these standard-spave surface files aren't available, it will default to native T1w-space
+    If these standard-space surface files aren't available, it will default to native T1w-space
     files.
 
     Parameters
@@ -351,14 +405,16 @@ def collect_surface_data(layout, participant_label):
 
     Returns
     -------
-    out_surface_files : :obj:`dict`
+    surface_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
-    standard_space_surfaces : :obj:`bool`
-        True if standard-space surfaces were found. False if native-space surfaces were found.
-    surfaces_found : :obj:`bool`
+    standard_spaces : :obj:`dict`
+        True if standard-space surface fiels were found. False if they were not.
+    surface_files_found : :obj:`dict`
         True if surface files were found at all. False if they were not.
     """
+    surface_files_found, standard_spaces = {}, {}
+
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
@@ -389,7 +445,11 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
-    standard_meshes_found = _find_standard_space_surfaces(
+    (
+        surface_files_found["mesh"],
+        standard_spaces["mesh"],
+        mesh_files,
+    ) = _find_standard_space_surfaces(
         layout,
         participant_label,
         mesh_queries,
@@ -434,73 +494,15 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
-    standard_shapes_found = _find_standard_space_surfaces(
+    (
+        surface_files_found["shape"],
+        standard_spaces["shape"],
+        shape_files,
+    ) = _find_standard_space_surfaces(
         layout,
         participant_label,
         shape_queries,
     )
-
-    # First, try to grab the first base surface file in standard space.
-    # If it's not available, switch to native T1w-space data.
-    temp_query = mesh_queries["lh_pial_surf"]
-    temp_files = layout.get(
-        return_type="file",
-        subject=participant_label,
-        datatype="anat",
-        space="fsLR",
-        res="32k",
-        **temp_query,
-    )
-    if len(temp_files) == 0:
-        LOGGER.info("No standard-space surfaces found.")
-        standard_space_surfaces = False
-    else:
-        if len(temp_files) > 1:
-            LOGGER.warning("More than one standard-space surface found.")
-
-        standard_space_surfaces = True
-
-    if standard_space_surfaces:
-        query_extras = {
-            "space": "fsLR",
-            "res": "32k",
-        }
-    else:
-        query_extras = {
-            "space": None,
-        }
-
-    # Find the required files first
-    surface_files = {
-        dtype: sorted(
-            layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                **query,
-                **query_extras,
-            )
-        )
-        for dtype, query in mesh_queries.items()
-    }
-
-    out_surface_files = {}
-    surfaces_found = True
-    for dtype, surface_files_ in surface_files.items():
-        if len(surface_files_) == 1:
-            out_surface_files[dtype] = surface_files_[0]
-
-        elif len(surface_files_) == 0:
-            out_surface_files[dtype] = None
-            surfaces_found = False
-
-        else:
-            surface_str = "\n\t".join(surface_files_)
-            raise ValueError(
-                "More than one surface found.\n"
-                f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {mesh_queries[dtype]}"
-            )
 
     # Now let's try finding the surface morphometry files
     # These surfaces may be in native or standard space.
@@ -538,47 +540,24 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
-    standard_morphs_found = _find_standard_space_surfaces(
+    (
+        surface_files_found["morphometry"],
+        standard_spaces["morphometry"],
+        morph_files,
+    ) = _find_standard_space_surfaces(
         layout,
         participant_label,
         morph_queries,
     )
 
-    surface_files = {
-        dtype: sorted(
-            layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                extension=".surf.gii",
-                **query,
-                **query_extras,
-            )
-        )
-        for dtype, query in morph_queries.items()
-    }
-
-    for dtype, surface_files_ in surface_files.items():
-        if len(surface_files_) == 1:
-            out_surface_files[dtype] = surface_files_[0]
-
-        elif len(surface_files_) == 0:
-            out_surface_files[dtype] = None
-
-        else:
-            surface_str = "\n\t".join(surface_files_)
-            raise ValueError(
-                "More than one surface found.\n"
-                f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {morph_queries[dtype]}"
-            )
+    surface_files = {**mesh_files, **shape_files, **morph_files}
 
     LOGGER.debug(
         f"Collected surface data:\n"
-        f"{yaml.dump(out_surface_files, default_flow_style=False, indent=4)}"
+        f"{yaml.dump(surface_files, default_flow_style=False, indent=4)}"
     )
 
-    return out_surface_files, standard_space_surfaces, surfaces_found
+    return surface_files_found, standard_spaces, surface_files
 
 
 def collect_run_data(layout, input_type, bold_file, cifti=False):

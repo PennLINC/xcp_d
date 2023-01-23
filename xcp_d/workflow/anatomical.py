@@ -229,7 +229,7 @@ def init_warp_surfaces_to_template_wf(
     mem_gb,
     name="warp_surfaces_to_template_wf",
 ):
-    """Transform surfaces from native to standard fsLR-32k space.
+    """Warp surfaces from fsnative to standard fsLR-32k space.
 
     For the ``hcp`` and ``dcan`` preprocessing workflows,
     the fsLR-32k-space surfaces already exist and will simply be copied to the output directory.
@@ -326,6 +326,9 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
+    lh_sulcal_depth, rh_sulcal_depth : str
+    lh_sulcal_curv, rh_sulcal_curv : str
+    lh_cortical_thickness, rh_cortical_thickness : str
 
     Notes
     -----
@@ -342,18 +345,25 @@ def init_warp_surfaces_to_template_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # required surfaces
+                # surface mesh files
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # optional HCP-style surfaces
+                # optional surface morphometry files
                 "lh_midthickness_surf",
                 "rh_midthickness_surf",
                 "lh_inflated_surf",
                 "rh_inflated_surf",
                 "lh_vinflated_surf",
                 "rh_vinflated_surf",
+                # optional surface shape files
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
                 # transforms (only used if warp_to_standard is True)
                 "t1w_to_template_xform",
                 "template_to_t1w_xform",
@@ -446,6 +456,9 @@ def init_warp_surfaces_to_template_wf(
         # 3. HCP-style midthickness
         # 4. HCP-style inflated
         # 5. HCP-style very-inflated
+        # 6. Sulcal depth
+        # 7. Sulcal curvature
+        # 8. Cortical thickness
         get_freesurfer_dir_node = pe.Node(
             Function(
                 function=get_freesurfer_dir,
