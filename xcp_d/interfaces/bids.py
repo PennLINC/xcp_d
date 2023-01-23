@@ -3,7 +3,7 @@ from json import loads
 from pathlib import Path
 
 from nipype import logging
-from nipype.interfaces.base import DerivativesDataSink as BaseDerivativesDataSink
+from niworkflows.interfaces.base import DerivativesDataSink as BaseDerivativesDataSink
 from pkg_resources import resource_filename as pkgrf
 
 # NOTE: Modified for xcpd's purposes
