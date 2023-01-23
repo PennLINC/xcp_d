@@ -25,16 +25,16 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   workflow.base
-   workflow.bold
-   workflow.cifti
-   workflow.anatomical
-   workflow.connectivity
-   workflow.execsummary
-   workflow.outputs
-   workflow.plotting
-   workflow.postprocessing
-   workflow.restingstate
+   xcp_d.workflow.base
+   xcp_d.workflow.bold
+   xcp_d.workflow.cifti
+   xcp_d.workflow.anatomical
+   xcp_d.workflow.connectivity
+   xcp_d.workflow.execsummary
+   xcp_d.workflow.outputs
+   xcp_d.workflow.plotting
+   xcp_d.workflow.postprocessing
+   xcp_d.workflow.restingstate
 
 :mod:`xcp_d.interfaces`: Nipype Interfaces
 ------------------------------------------
@@ -49,20 +49,21 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   interfaces.ants
-   interfaces.bids
-   interfaces.c3
-   interfaces.connectivity
-   interfaces.filtering
-   interfaces.layout_builder
-   interfaces.nilearn
-   interfaces.plotting
-   interfaces.prepostcleaning
-   interfaces.regression
-   interfaces.report_core
-   interfaces.report
-   interfaces.resting_state
-   interfaces.workbench
+   xcp_d.interfaces.ants
+   xcp_d.interfaces.bids
+   xcp_d.interfaces.c3
+   xcp_d.interfaces.connectivity
+   xcp_d.interfaces.filtering
+   xcp_d.interfaces.layout_builder
+   xcp_d.interfaces.nilearn
+   xcp_d.interfaces.prepostcleaning
+   xcp_d.interfaces.qc_plot
+   xcp_d.interfaces.regression
+   xcp_d.interfaces.report_core
+   xcp_d.interfaces.report
+   xcp_d.interfaces.resting_state
+   xcp_d.interfaces.surfplotting
+   xcp_d.interfaces.workbench
 
 :mod:`xcp_d.utils`: Miscellaneous Utility Functions
 ---------------------------------------------------
@@ -77,19 +78,19 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   utils.atlas
-   utils.bids
-   utils.concatenation
-   utils.confounds
-   utils.dcan2fmriprep
-   utils.hcp2fmriprep
-   utils.doc
-   utils.execsummary
-   utils.fcon
-   utils.filemanip
-   utils.modified_data
-   utils.plotting
-   utils.qcmetrics
-   utils.sentry
-   utils.utils
-   utils.write_save
+   xcp_d.utils.atlas
+   xcp_d.utils.bids
+   xcp_d.utils.concatenation
+   xcp_d.utils.confounds
+   xcp_d.utils.dcan2fmriprep
+   xcp_d.utils.hcp2fmriprep
+   xcp_d.utils.doc
+   xcp_d.utils.execsummary
+   xcp_d.utils.fcon
+   xcp_d.utils.filemanip
+   xcp_d.utils.modified_data
+   xcp_d.utils.plotting
+   xcp_d.utils.qcmetrics
+   xcp_d.utils.sentry
+   xcp_d.utils.utils
+   xcp_d.utils.write_save

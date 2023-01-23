@@ -91,14 +91,9 @@ def generate_reports(
     work_dir,
     output_dir,
     run_uuid,
-    dummy_scans,
-    dummytime=0,
-    cifti=False,
     config=None,
     packagename=None,
-    combineruns=False,
     dcan_qc=False,
-    input_type="fmriprep",
 ):
     """Execute run_reports on a list of subjects.
 
@@ -112,19 +107,12 @@ def generate_reports(
         The path to the output directory.
     run_uuid : str
         The UUID of the run for which the report will be generated.
-    %(dummy_scans)s
-    %(dummytime)s
-    %(cifti)s
     config : None or str, optional
         Configuration file.
     packagename : None or str, optional
         The name of the package.
-    combineruns : bool, optional
-        Whether to concatenate runs or not. Default is False.
     dcan_qc : bool, optional
         Whether to perform DCAN QC steps or not. Default is False.
-    input_type : {'fmriprep', 'dcan', 'hcp'}, optional
-        Default is 'fmriprep'.
     """
     # reportlets_dir = None
     if work_dir is not None:
@@ -155,27 +143,6 @@ def generate_reports(
             error_list,
         )
     else:
-        # concate cifi and nifti here for multiple runs
-        if combineruns:
-            from xcp_d.utils.concatenation import concatenate_derivatives
-
-            if input_type == "dcan":
-                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
-            elif input_type == "hcp":
-                fmri_dir = str(work_dir) + "/dcanhcp/derivatives"
-            print("Concatenating bold files ...")
-            concatenate_derivatives(
-                subjects=subject_list,
-                fmridir=str(fmri_dir),
-                outputdir=str(Path(str(output_dir)) / "xcp_d/"),
-                work_dir=work_dir,
-                cifti=cifti,
-                dcan_qc=dcan_qc,
-                dummy_scans=dummy_scans,
-                dummytime=dummytime,
-            )
-            print("Concatenation complete!")
-
         if dcan_qc:
             LOGGER.info("Generating executive summary.")
             for subject_label in subject_list:

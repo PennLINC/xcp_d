@@ -27,7 +27,7 @@ BASE_XCPD_CMD=$(run_xcpd_cmd ${BIDS_INPUT_DIR} ${OUTPUT_DIR} ${TEMPDIR})
 
 XCPD_CMD="$BASE_XCPD_CMD \
     --despike \
-    --head_radius 40 \
+    --head_radius auto \
     --smoothing 6 \
     -f 100 \
     -vv \

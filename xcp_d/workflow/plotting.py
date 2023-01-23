@@ -10,6 +10,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import CensoringPlot, QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.qcmetrics import _make_dcan_qc_file
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 
 
@@ -22,7 +23,6 @@ def init_qc_report_wf(
     band_stop_min,
     motion_filter_order,
     fd_thresh,
-    head_radius,
     mem_gb,
     omp_nthreads,
     cifti,
@@ -45,7 +45,6 @@ def init_qc_report_wf(
                 band_stop_min=0,
                 motion_filter_order=1,
                 fd_thresh=0.2,
-                head_radius=50,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 cifti=False,
@@ -62,7 +61,6 @@ def init_qc_report_wf(
     %(band_stop_min)s
     %(motion_filter_order)s
     %(fd_thresh)s
-    %(head_radius)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
@@ -92,6 +90,7 @@ def init_qc_report_wf(
     t1w_to_native
         Only used with non-CIFTI data.
     %(dummy_scans)s
+    %(head_radius)s
     tmask
     filtered_motion
 
@@ -110,6 +109,7 @@ def init_qc_report_wf(
                 "dummy_scans",
                 "filtered_motion",
                 "tmask",
+                "head_radius",
                 # nifti-only inputs
                 "bold_mask",
                 "t1w_mask",
@@ -133,7 +133,6 @@ def init_qc_report_wf(
     censor_report = pe.Node(
         CensoringPlot(
             TR=TR,
-            head_radius=head_radius,
             motion_filter_type=motion_filter_type,
             band_stop_max=band_stop_max,
             band_stop_min=band_stop_min,
@@ -148,6 +147,7 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, censor_report, [
+            ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
             ("preprocessed_bold_file", "bold_file"),
@@ -319,7 +319,6 @@ def init_qc_report_wf(
         QCPlots(
             TR=TR,
             template_mask=nlin2009casym_brain_mask,
-            head_radius=head_radius,
         ),
         name="qc_report",
         mem_gb=mem_gb,
@@ -331,6 +330,7 @@ def init_qc_report_wf(
         (inputnode, qcreport, [
             ("preprocessed_bold_file", "bold_file"),
             ("cleaned_file", "cleaned_file"),
+            ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
         ]),
@@ -341,6 +341,41 @@ def init_qc_report_wf(
     # fmt:on
 
     if dcan_qc:
+        make_dcan_qc_file = pe.Node(
+            Function(
+                input_names=["filtered_motion", "TR"],
+                output_names=["dcan_df_file"],
+                function=_make_dcan_qc_file,
+            ),
+            name="make_dcan_qc_file",
+        )
+        make_dcan_qc_file.inputs.TR = TR
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, make_dcan_qc_file, [("filtered_motion", "filtered_motion")]),
+        ])
+        # fmt:on
+
+        ds_dcan_qc = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                datatype="func",
+                desc="dcan",
+                suffix="qc",
+                extension="hdf5",
+            ),
+            name="ds_dcan_qc",
+            run_without_submitting=True,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_dcan_qc, [("preprocessed_bold_file", "source_file")]),
+            (make_dcan_qc_file, ds_dcan_qc, [("dcan_df_file", "in_file")]),
+        ])
+        # fmt:on
+
         # Generate preprocessing and postprocessing carpet plots.
         plot_executive_summary_carpets = pe.Node(
             QCPlotsES(TR=TR),
