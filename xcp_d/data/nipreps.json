@@ -131,8 +131,7 @@
     },
     {
       "name": "cohort",
-      "pattern": "[_/\\\\]+cohort-([0-9]+)",
-      "dtype": "int"
+      "pattern": "[_/\\\\]+cohort-([0-9]+)"
     },
     {
       "name": "measure",
