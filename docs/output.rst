@@ -84,9 +84,16 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
               "nuisance parameters": "27P",
           }
 
-   b. Functional timeseries and connectivity matrices::
+   b. Functional timeseries and connectivity matrices.
+      This includes the atlases used to extract the timeseries.::
 
           xcp_d/
+               # Nifti
+               space-<label>_atlas-<label>_dseg.nii.gz
+
+               # Cifti
+               space-<label>_atlas-<label>_dseg.dlabel.nii
+
                sub-<label>/[ses-<label>/]
                     func/
                          # Nifti
