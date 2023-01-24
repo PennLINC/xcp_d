@@ -215,6 +215,10 @@ def downcast_to_32(in_file):
 def cast_cifti_to_int16(in_file):
     """Cast a CIFTI file to int16 data.
 
+    This function serves as a temporary workaround for a bug in the
+    DerivativesDataSink class from niworkflows version 1.7.1.
+    For more information, see https://github.com/nipreps/niworkflows/issues/778.
+
     Parameters
     ----------
     in_file : str
@@ -224,7 +228,7 @@ def cast_cifti_to_int16(in_file):
     -------
     out_file : str
         Path to output CIFTI file.
-        The file will have the same
+        The file will have the same filename, but will be written to the working directory.
     """
     import os
 
