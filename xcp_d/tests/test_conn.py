@@ -115,18 +115,18 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
     tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
 
-    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
-    TR = _get_tr(nb.load(boldfile))
+    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+    TR = _get_tr(nb.load(bold_file))
 
     # Generate fake signal
-    bold_data = read_ndata(boldfile)
+    bold_data = read_ndata(bold_file)
     fake_signal = np.random.randint(1, 500, size=bold_data.shape).astype(np.float32)
     # Make half the vertices all zeros
     fake_signal[:5000, :] = 0
     fake_bold_file = os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
     write_ndata(
         fake_signal,
-        template=boldfile,
+        template=bold_file,
         TR=TR,
         filename=fake_bold_file,
     )
@@ -141,6 +141,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         name="connectivity_wf",
     )
     connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.base_dir = tmpdir
     connectivity_wf.run()
 
