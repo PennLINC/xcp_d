@@ -121,6 +121,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         omp_nthreads=2,
     )
     connectivity_wf.base_dir = tmpdir
+    connectivity_wf.inputs.inputnode.bold_file = boldfile
     connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
     connectivity_wf.run()
 

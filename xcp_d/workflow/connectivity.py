@@ -249,6 +249,7 @@ def init_cifti_functional_connectivity_wf(
 
     Parameters
     ----------
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -260,8 +261,8 @@ def init_cifti_functional_connectivity_wf(
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
-    %(atlas_names)s
-        Defined in the function.
+    bold_file
+        Used as a name-source for atlases.
 
     Outputs
     -------
