@@ -155,25 +155,6 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         mem_gb=mem_gb,
     )
 
-    # Coerce the bold_file to int16 before feeding it in as source_file,
-    # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
-    # but treats them as niftis, which fails.
-    cast_atlas_to_int16 = pe.MapNode(
-        Function(
-            function=cast_cifti_to_int16,
-            input_names=["atlas"],
-            output_names=["atlas"],
-        ),
-        name="cast_atlas_to_int16",
-        iterfield=["atlas"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (warp_atlases_to_bold_space, cast_atlas_to_int16, [("output_image", "in_file")]),
-    ])
-    # fmt:on
-
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -191,7 +172,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     workflow.connect([
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
-        (cast_atlas_to_int16, ds_atlas, [("atlas", "in_file")]),
+        (warp_atlases_to_bold_space, ds_atlas, [("output_image", "in_file")]),
     ])
     # fmt:on
 
@@ -336,6 +317,25 @@ the Connectome Workbench.
         mem_gb=mem_gb,
     )
 
+    # Coerce the bold_file to int16 before feeding it in as source_file,
+    # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
+    # but treats them as niftis, which fails.
+    cast_atlas_to_int16 = pe.MapNode(
+        Function(
+            function=cast_cifti_to_int16,
+            input_names=["in_file"],
+            output_names=["out_file"],
+        ),
+        name="cast_atlas_to_int16",
+        iterfield=["in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (atlas_file_grabber, cast_atlas_to_int16, [("atlas_file", "in_file")]),
+    ])
+    # fmt:on
+
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -354,7 +354,7 @@ the Connectome Workbench.
     workflow.connect([
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
-        (atlas_file_grabber, ds_atlas, [("atlas_file", "in_file")]),
+        (cast_atlas_to_int16, ds_atlas, [("out_file", "in_file")]),
     ])
     # fmt:on
 
