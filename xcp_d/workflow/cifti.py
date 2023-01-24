@@ -12,7 +12,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.filtering import FilteringData
+from xcp_d.interfaces.filtering import ApplyBandpassFilter
 from xcp_d.interfaces.prepostcleaning import (
     CensorScrub,
     ConvertTo32,
@@ -430,7 +430,7 @@ produced by the regression.
     )
 
     apply_bandpass_filter = pe.Node(
-        FilteringData(
+        ApplyBandpassFilter(
             TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
