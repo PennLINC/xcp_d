@@ -382,19 +382,6 @@ produced by the regression.
         omp_nthreads=omp_nthreads,
     )
 
-    filtering_wf = pe.Node(
-        FilteringData(
-            TR=TR,
-            lowpass=upper_bpf,
-            highpass=lower_bpf,
-            filter_order=bpf_order,
-            bandpass_filter=bandpass_filter,
-        ),
-        name="filtering_wf",
-        mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
-    )
-
     consolidate_confounds_node = pe.Node(
         Function(
             input_names=[
@@ -441,6 +428,25 @@ produced by the regression.
         mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,
     )
+
+    apply_bandpass_filter = pe.Node(
+        FilteringData(
+            TR=TR,
+            lowpass=upper_bpf,
+            highpass=lower_bpf,
+            filter_order=bpf_order,
+            bandpass_filter=bandpass_filter,
+        ),
+        name="apply_bandpass_filter",
+        mem_gb=mem_gbx["timeseries"],
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (interpolate_wf, apply_bandpass_filter, [("bold_interpolated", "in_file")]),
+    ])
+    # fmt:on
 
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
@@ -591,30 +597,28 @@ produced by the regression.
         (regression_wf, interpolate_wf, [('res_file', 'in_file')])
     ])
 
-    # add filtering workflow
-    workflow.connect([(interpolate_wf, filtering_wf, [('bold_interpolated',
-                                                       'in_file')])])
-
     # residual smoothing
-    workflow.connect([(filtering_wf, resd_smoothing_wf,
+    workflow.connect([(apply_bandpass_filter, resd_smoothing_wf,
                        [('filtered_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
-    workflow.connect([(filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])])
+    workflow.connect([
+        (apply_bandpass_filter, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')]),
+    ])
 
     # reho and alff
     workflow.connect([
-        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (apply_bandpass_filter, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
 
     if bandpass_filter:
         workflow.connect([
-            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+            (apply_bandpass_filter, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
         ])
 
     # qc report
     workflow.connect([
-        (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
+        (apply_bandpass_filter, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
         (censor_scrub, qc_report_wf, [
             ("tmask", "inputnode.tmask"),
             ("filtered_motion", "inputnode.filtered_motion"),
@@ -626,7 +630,7 @@ produced by the regression.
         (consolidate_confounds_node, write_derivative_wf, [
             ('out_file', 'inputnode.confounds_file'),
         ]),
-        (filtering_wf, write_derivative_wf, [
+        (apply_bandpass_filter, write_derivative_wf, [
             ('filtered_file', 'inputnode.processed_bold'),
         ]),
         (qc_report_wf, write_derivative_wf, [
