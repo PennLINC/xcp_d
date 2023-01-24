@@ -426,11 +426,13 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     fs : float
         Sampling frequency. 1/TR(s).
     lowpass : float
-        frequency
+        Upper frequency of filter in Hertz.
     highpass : float
-        frequency
-    order : int
-        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+        Lower frequency of filter in Hertz.
+    order : int, optional
+        The order of the filter.
+        This will be divided by 2 when calling scipy.signal.butter.
+        Default is 2.
 
     Returns
     -------
@@ -447,10 +449,16 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
 
     filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
 
-    # apply the filter, loop through columns of regressors
-    for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(
-            b, a, data[ii, :], padtype="odd", padlen=3 * (max(len(b), len(a)) - 1)
+    padlen = filtered_data.shape[1] - 1  # use maximum possible pad length (n timepoints - 1)
+
+    # apply the filter, loop through voxels/vertices
+    for i_voxel in range(filtered_data.shape[0]):
+        filtered_data[i_voxel, :] = filtfilt(
+            b,
+            a,
+            data[i_voxel, :],
+            padtype="const",  # constant padding is similar to zero padding
+            padlen=padlen,
         )
 
     return filtered_data
