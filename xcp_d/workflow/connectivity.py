@@ -14,6 +14,7 @@ from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs
 from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.modified_data import cast_cifti_to_int16
 from xcp_d.utils.utils import get_std2bold_xforms
 
 
@@ -154,6 +155,25 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         mem_gb=mem_gb,
     )
 
+    # Coerce the bold_file to int16 before feeding it in as source_file,
+    # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
+    # but treats them as niftis, which fails.
+    cast_atlas_to_int16 = pe.MapNode(
+        Function(
+            function=cast_cifti_to_int16,
+            input_names=["atlas"],
+            output_names=["atlas"],
+        ),
+        name="cast_atlas_to_int16",
+        iterfield=["atlas"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (warp_atlases_to_bold_space, cast_atlas_to_int16, [("output_image", "in_file")]),
+    ])
+    # fmt:on
+
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -171,7 +191,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
     workflow.connect([
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
-        (warp_atlases_to_bold_space, ds_atlas, [("output_image", "in_file")]),
+        (cast_atlas_to_int16, ds_atlas, [("atlas", "in_file")]),
     ])
     # fmt:on
 
