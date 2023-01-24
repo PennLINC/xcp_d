@@ -104,7 +104,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
                          <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
                          <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 
-   c. Resting-state derivatives (Regional Homogeneity and ALFF)::
+   c. Resting-state metric derivatives (Regional Homogeneity and ALFF)::
 
           xcp_d/
                sub-<label>/[ses-<label>/]
