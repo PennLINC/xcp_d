@@ -8,6 +8,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
 from xcp_d.interfaces.workbench import (
@@ -17,11 +18,13 @@ from xcp_d.interfaces.workbench import (
 )
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.modified_data import cast_cifti_to_int16
 from xcp_d.utils.utils import get_std2bold_xforms
 
 
 @fill_doc
 def init_nifti_functional_connectivity_wf(
+    output_dir,
     mem_gb,
     omp_nthreads,
     name="nifti_fcon_wf",
@@ -35,6 +38,7 @@ def init_nifti_functional_connectivity_wf(
 
             from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
             wf = init_nifti_functional_connectivity_wf(
+                output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="nifti_fcon_wf",
@@ -42,6 +46,7 @@ def init_nifti_functional_connectivity_wf(
 
     Parameters
     ----------
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -100,6 +105,11 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="outputnode",
     )
 
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
+    )
+
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
@@ -152,6 +162,27 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         mem_gb=mem_gb,
     )
 
+    ds_atlas = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
+            suffix="dseg",
+            extension=".nii.gz",
+        ),
+        name="ds_atlas",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas, [("bold_file", "source_file")]),
+        (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
+        (warp_atlases_to_bold_space, ds_atlas, [("output_image", "in_file")]),
+    ])
+    # fmt:on
+
     # fmt:off
     workflow.connect([
         # Transform Atlas to correct MNI2009 space
@@ -185,6 +216,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 @fill_doc
 def init_cifti_functional_connectivity_wf(
     TR,
+    output_dir,
     mem_gb,
     omp_nthreads,
     name="cifti_fcon_wf",
@@ -198,6 +230,8 @@ def init_cifti_functional_connectivity_wf(
 
             from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
             wf = init_cifti_functional_connectivity_wf(
+                TR=1.,
+                output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="cifti_fcon_wf",
@@ -206,8 +240,11 @@ def init_cifti_functional_connectivity_wf(
     Parameters
     ----------
     TR
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
+    %(name)s
+        Default is "cifti_fcon_wf".
 
     Inputs
     ------
@@ -243,7 +280,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold"]),
+        niu.IdentityInterface(fields=["clean_bold", "bold_file"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -326,6 +363,47 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="matrix_plot",
         mem_gb=mem_gb,
     )
+
+    # Coerce the bold_file to int16 before feeding it in as source_file,
+    # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
+    # but treats them as niftis, which fails.
+    cast_atlas_to_int16 = pe.MapNode(
+        Function(
+            function=cast_cifti_to_int16,
+            input_names=["in_file"],
+            output_names=["out_file"],
+        ),
+        name="cast_atlas_to_int16",
+        iterfield=["in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (atlas_file_grabber, cast_atlas_to_int16, [("atlas_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_atlas = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
+            suffix="dseg",
+            extension=".dlabel.nii",
+        ),
+        name="ds_atlas",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas, [("bold_file", "source_file")]),
+        (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
+        (cast_atlas_to_int16, ds_atlas, [("out_file", "in_file")]),
+    ])
+    # fmt:on
 
     # fmt:off
     workflow.connect([
