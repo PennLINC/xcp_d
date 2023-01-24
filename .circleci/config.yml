@@ -230,6 +230,8 @@ jobs:
           root: /src/coverage
           paths:
               - .coverage.pytests
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/out/
 
   merge_coverage:
     <<: *dockersetup
