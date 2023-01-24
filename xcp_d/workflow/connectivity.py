@@ -34,6 +34,7 @@ def init_nifti_functional_connectivity_wf(
 
             from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
             wf = init_nifti_functional_connectivity_wf(
+                output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="nifti_fcon_wf",
@@ -222,6 +223,7 @@ def init_cifti_functional_connectivity_wf(
 
             from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
             wf = init_cifti_functional_connectivity_wf(
+                output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="cifti_fcon_wf",
