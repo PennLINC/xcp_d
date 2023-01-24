@@ -721,7 +721,7 @@ def build_workflow(opts, retval):
 
         if not opts.process_surfaces:
             build_log.warning(
-                f"With input_type {opts.input_type}, surface processing "
+                f"With input_type {opts.input_type}, surface normalization "
                 "(--warp-surfaces-native2std) will be enabled automatically."
             )
             opts.process_surfaces = True
@@ -749,10 +749,9 @@ def build_workflow(opts, retval):
         fmri_dir = converted_fmri_dir
 
     if opts.process_surfaces and not opts.cifti:
-        build_log.warning(
-            "With current settings, structural surfaces will be warped to standard space, "
-            "but BOLD postprocessing will be performed on volumetric data. "
-            "This is not recommended."
+        build_log.error(
+            "In order to perform surface normalization (--warp-surfaces-native2std), "
+            "you must enable cifti processing (--cifti)."
         )
 
     # Set up some instrumental utilities
