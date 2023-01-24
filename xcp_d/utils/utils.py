@@ -457,7 +457,7 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
             b,
             a,
             data[i_voxel, :],
-            padtype="const",  # constant padding is similar to zero padding
+            padtype="constant",  # constant padding is similar to zero padding
             padlen=padlen,
         )
 
