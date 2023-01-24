@@ -131,7 +131,7 @@
     },
     {
       "name": "cohort",
-      "pattern": "(?:^|_)cohort-([0-9]+)",
+      "pattern": "[_/\\\\]+cohort-0*(\\d+)",
       "dtype": "int"
     },
     {
