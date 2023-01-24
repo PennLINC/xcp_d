@@ -323,6 +323,7 @@ produced by the regression.
     # fmt:on
 
     connectivity_wf = init_cifti_functional_connectivity_wf(
+        output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",
         omp_nthreads=omp_nthreads,
@@ -601,11 +602,10 @@ produced by the regression.
     workflow.connect([(filtering_wf, resd_smoothing_wf,
                        [('filtered_file', 'inputnode.bold_file')])])
 
-    # functional connect workflow
+    # functional connectivity workflow
     workflow.connect([
-        (filtering_wf, connectivity_wf, [
-            ('filtered_file', 'inputnode.clean_bold'),
-        ]),
+        (inputnode, connectivity_wf, [('bold_file', 'inputnode.bold_file')]),
+        (filtering_wf, connectivity_wf, [('filtered_file', 'inputnode.clean_bold')]),
     ])
 
     # reho and alff

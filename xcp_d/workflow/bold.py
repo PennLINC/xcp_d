@@ -352,6 +352,7 @@ produced by the regression.
     # fmt:on
 
     connectivity_wf = init_nifti_functional_connectivity_wf(
+        output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",
         omp_nthreads=omp_nthreads,

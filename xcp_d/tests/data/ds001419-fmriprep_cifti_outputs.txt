@@ -1,4 +1,17 @@
 xcp_d/dataset_description.json
+xcp_d/space-fsLR_atlas-Glasser_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Gordon_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer1017_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer117_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer217_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer317_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer417_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer517_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer617_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer717_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer817_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-Schaefer917_den-91k_dseg.dlabel.nii
+xcp_d/space-fsLR_atlas-subcortical_den-91k_dseg.dlabel.nii
 xcp_d/sub-01.html
 xcp_d/sub-01_executive_summary.html
 xcp_d/logs
