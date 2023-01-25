@@ -38,7 +38,7 @@ run_pytest_cmd () {
     workdir_mount="-v ${workdir}:/work:rw"
     PYTEST_RUN="docker run --rm -ti -u $(id -u) --entrypoint pytest "
     PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} "
-    PYTEST_RUN+='--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /usr/local/miniconda/lib/python3.8/site-packages/xcp_d -k test_compute_functional_connectivity'
+    PYTEST_RUN+='--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /usr/local/miniconda/lib/python3.8/site-packages/xcp_d'
 
   fi
 
