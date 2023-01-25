@@ -14,9 +14,13 @@ from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs
 from xcp_d.interfaces.workbench import CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_file, get_atlas_names
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.fcon import compute_functional_connectivity, extract_timeseries_funct
+from xcp_d.utils.fcon import (
+    compute_functional_connectivity,
+    extract_ptseries,
+    extract_timeseries_funct,
+)
 from xcp_d.utils.modified_data import cast_cifti_to_int16
-from xcp_d.utils.utils import extract_ptseries, get_std2bold_xforms
+from xcp_d.utils.utils import get_std2bold_xforms
 
 
 @fill_doc
