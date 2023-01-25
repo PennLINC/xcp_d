@@ -749,7 +749,7 @@ def build_workflow(opts, retval):
         fmri_dir = converted_fmri_dir
 
     if opts.process_surfaces and not opts.cifti:
-        build_log.error(
+        build_log.critical(
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--cifti)."
         )
