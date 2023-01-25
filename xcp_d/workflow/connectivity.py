@@ -332,14 +332,25 @@ the Connectome Workbench.
 
     extract_parcel_timeseries = pe.MapNode(
         Function(
-            input_names=["in_file"],
+            input_names=["in_file", "node_labels_file"],
             output_names=["timeseries_file"],
             function=extract_ptseries,
         ),
         name="extract_parcel_timeseries",
-        iterfield=["in_file"],
+        iterfield=["in_file", "node_labels_file"],
         mem_gb=mem_gb,
     )
+
+    # fmt:off
+    workflow.connect([
+        (atlas_file_grabber, extract_parcel_timeseries, [
+            ("node_labels_file", "node_labels_file"),
+        ]),
+        (parcellate_data, extract_parcel_timeseries, [
+            ("out_file", "in_file"),
+        ]),
+    ])
+    # fmt:on
 
     correlate_timeseries = pe.MapNode(
         Function(
@@ -409,7 +420,6 @@ the Connectome Workbench.
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, plot_correlation_matrices, [["atlas_names", "atlas_names"]]),
         (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
-        (parcellate_data, extract_parcel_timeseries, [("out_file", "in_file")]),
         (extract_parcel_timeseries, outputnode, [("timeseries_file", "timeseries")]),
         (extract_parcel_timeseries, correlate_timeseries, [("timeseries_file", "in_file")]),
         (correlate_timeseries, plot_correlation_matrices, [
