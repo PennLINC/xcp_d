@@ -8,7 +8,7 @@ import os
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiLabelsMasker
+from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata

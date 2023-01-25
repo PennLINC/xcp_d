@@ -9,7 +9,7 @@ import re
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiMasker
+from nilearn.maskers import NiftiMasker
 
 
 def dcan2fmriprep(dcandir, outdir, sub_id=None):
