@@ -331,7 +331,7 @@ class QCPlot(SimpleInterface):
 
         preproc_fig.savefig(
             self._results["raw_qcplot"],
-            bold_file_name_componentsox_inches="tight",
+            bbox_inches="tight",
         )
 
         # If censoring occurs, censor the cleaned BOLD data and FD time series
@@ -387,7 +387,7 @@ class QCPlot(SimpleInterface):
 
         postproc_fig.savefig(
             self._results["clean_qcplot"],
-            bold_file_name_componentsox_inches="tight",
+            bbox_inches="tight",
         )
 
         # Calculate QC measures
