@@ -210,3 +210,38 @@ def downcast_to_32(in_file):
         out_file = in_file
 
     return out_file
+
+
+def cast_cifti_to_int16(in_file):
+    """Cast a CIFTI file to int16 data.
+
+    This function serves as a temporary workaround for a bug in the
+    DerivativesDataSink class from niworkflows version 1.7.1.
+    For more information, see https://github.com/nipreps/niworkflows/issues/778.
+
+    Parameters
+    ----------
+    in_file : str
+        Path to input CIFTI file.
+
+    Returns
+    -------
+    out_file : str
+        Path to output CIFTI file.
+        The file will have the same filename, but will be written to the working directory.
+    """
+    import os
+
+    import nibabel as nb
+    import numpy as np
+
+    filename = os.path.basename(in_file)
+    out_file = os.path.abspath(filename)
+    if os.path.abspath(in_file) == out_file:
+        raise ValueError("This function must be run in a separate working directory!")
+
+    img = nb.load(in_file)
+    img.nifti_header.set_data_dtype(np.int16)
+    img.to_filename(out_file)
+
+    return out_file

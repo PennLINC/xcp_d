@@ -45,6 +45,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Let's define the inputs and create the node
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
+        output_dir=tempdir,
         mem_gb=4,
         name="fcons_ts_wf",
         omp_nthreads=2,
@@ -117,11 +118,15 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Create the node and a tempdir to write its results out to
     tmpdir = tmp_path_factory.mktemp("fcon_cifti_test_2")
     cifti_conts_wf = init_cifti_functional_connectivity_wf(
-        mem_gb=4, name="cifti_ts_con_wf", omp_nthreads=2
+        output_dir=tmpdir,
+        mem_gb=4,
+        name="cifti_ts_con_wf",
+        omp_nthreads=2,
     )
     cifti_conts_wf.base_dir = tmpdir
     # Run the node
     cifti_conts_wf.inputs.inputnode.clean_bold = fake_bold_file
+    cifti_conts_wf.inputs.inputnode.bold_file = boldfile
     cifti_conts_wf.run()
     # Let's find the correct parcellated file
     for file_ in os.listdir(
