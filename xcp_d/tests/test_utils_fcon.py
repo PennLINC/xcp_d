@@ -2,14 +2,12 @@
 import os
 
 import pandas as pd
-import pytest
 import numpy as np
 
 from xcp_d.tests.utils import chdir
 from xcp_d.utils import fcon
 
 
-@pytest.mark.skip(reason="Not sure how to deal with non-sequential node labels yet.")
 def test_extract_timeseries_funct(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Check the output of extract_timeseries_funct."""
     tmpdir = tmp_path_factory.mktemp("test_extract_timeseries_funct")
@@ -29,7 +27,9 @@ def test_extract_timeseries_funct(fmriprep_with_freesurfer_data, tmp_path_factor
 
     assert os.path.isfile(ts_file)
     df = pd.read_table(ts_file)
-    assert df.shape == (60, 1374)
+    assert df.shape == (60, 1373)
+    assert df.columns[0] == "Left-Cerebral-Exterior"
+    assert df.columns[-1] == "wm_rh_S_temporal_transverse"
 
 
 def test_compute_functional_connectivity(tmp_path_factory):

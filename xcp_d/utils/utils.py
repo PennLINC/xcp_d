@@ -456,40 +456,6 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     return filtered_data
 
 
-def extract_ptseries(in_file):
-    """Extract time series and parcel names from ptseries CIFTI file.
-
-    Parameters
-    ----------
-    in_file : str
-        Path to a ptseries (parcellated time series) CIFTI file.
-
-    Returns
-    -------
-    timeseries_file : str
-        The saved tab-delimited time series file.
-        Column headers are the names of the parcels from the CIFTI file.
-    """
-    import os
-
-    import nibabel as nib
-    import pandas as pd
-
-    timeseries_file = os.path.abspath("timeseries.tsv")
-
-    img = nib.load(in_file)
-    assert "ConnParcelSries" in img.nifti_header.get_intent(), img.nifti_header.get_intent()
-
-    # First axis should be time, second should be parcels
-    ax = img.header.get_axis(1)
-
-    # Place the data in a DataFrame and save to a TSV
-    df = pd.DataFrame(columns=ax.name, data=img.get_fdata())
-    df.to_csv(timeseries_file, index=False, sep="\t")
-
-    return timeseries_file
-
-
 def estimate_brain_radius(mask_file, head_radius="auto"):
     """Estimate brain radius from binary brain mask file.
 

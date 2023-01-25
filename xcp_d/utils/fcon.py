@@ -37,6 +37,11 @@ def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
     timeseries_file = os.path.abspath("timeseries.tsv")
 
     node_labels_df = pd.read_table(node_labels_file, index_col="index")
+
+    # Explicitly remove label corresponding to background (index=0), if present.
+    if 0 in node_labels_df.index:
+        node_labels_df = node_labels_df.drop(index=[0])
+
     node_labels = node_labels_df["name"].tolist()
 
     # Extract time series with nilearn
@@ -50,6 +55,9 @@ def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
     )
     timeseries_arr = masker.fit_transform(in_file)
 
+    # Region indices in the atlas may not be sequential, so we map them to sequential ints.
+    seq_mapper = {idx: i for i, idx in enumerate(masker.labels_)}
+
     if timeseries_arr.shape[1] != len(node_labels):
         warnings.warn(
             f"The number of detected nodes ({timeseries_arr.shape[1]}) does not equal "
@@ -61,7 +69,7 @@ def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
             dtype=timeseries_arr.dtype,
         )
         for col in range(timeseries_arr.shape[1]):
-            label_col = int(masker.labels_[col]) - 1
+            label_col = seq_mapper[masker.labels_[col]]
             new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
 
         timeseries_arr = new_timeseries_arr
@@ -69,6 +77,85 @@ def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
     # The time series file is tab-delimited, with node names included in the first row.
     timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
     timeseries_df.to_csv(timeseries_file, sep="\t", index=False)
+
+    return timeseries_file
+
+
+def extract_ptseries(in_file, node_labels_file):
+    """Extract time series and parcel names from ptseries CIFTI file.
+
+    Parameters
+    ----------
+    in_file : str
+        Path to a ptseries (parcellated time series) CIFTI file.
+    node_labels_file : str
+        The name of each node in the atlas, in the same order as the values in the atlas file.
+
+    Returns
+    -------
+    timeseries_file : str
+        The saved tab-delimited time series file.
+        Column headers are the names of the parcels from the CIFTI file.
+    """
+    import os
+    import warnings
+
+    import nibabel as nib
+    import numpy as np
+    import pandas as pd
+
+    timeseries_file = os.path.abspath("timeseries.tsv")
+
+    node_labels_df = pd.read_table(node_labels_file, index_col="index")
+
+    # Explicitly remove label corresponding to background (index=0), if present.
+    if 0 in node_labels_df.index:
+        node_labels_df = node_labels_df.drop(index=[0])
+
+    node_labels = node_labels_df["name"].tolist()
+
+    img = nib.load(in_file)
+    assert "ConnParcelSries" in img.nifti_header.get_intent(), img.nifti_header.get_intent()
+
+    # Load node names from CIFTI file.
+    # First axis should be time, second should be parcels
+    ax = img.header.get_axis(1)
+    detected_node_labels = ax.name
+
+    # If there are nodes in the CIFTI that aren't in the node labels file, raise an error.
+    found_but_not_expected = sorted(list(set(detected_node_labels) - set(node_labels)))
+    if found_but_not_expected:
+        raise ValueError(
+            "Mismatch found between atlas nodes and node labels file: "
+            f"{', '.join(found_but_not_expected)}"
+        )
+
+    # Load the extracted time series from the CIFTI file.
+    timeseries_arr = np.array(img.get_fdata())
+
+    # Region indices in the atlas may not be sequential, so we map them to sequential ints.
+    seq_mapper = {label: i for i, label in enumerate(node_labels)}
+
+    # Check if all of the nodes in the atlas node labels file are represented.
+    if timeseries_arr.shape[1] != len(node_labels):
+        warnings.warn(
+            f"The number of detected nodes ({timeseries_arr.shape[1]}) does not equal "
+            f"the number of expected nodes ({len(node_labels)}) in atlas."
+        )
+
+        new_timeseries_arr = np.zeros(
+            (timeseries_arr.shape[0], len(node_labels)),
+            dtype=timeseries_arr.dtype,
+        )
+        for col in range(timeseries_arr.shape[1]):
+            label_col = seq_mapper[detected_node_labels[col]]
+            new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
+
+        timeseries_arr = new_timeseries_arr
+
+    # Place the data in a DataFrame and save to a TSV
+    df = pd.DataFrame(columns=node_labels, data=timeseries_arr)
+    df.to_csv(timeseries_file, index=False, sep="\t")
 
     return timeseries_file
 
