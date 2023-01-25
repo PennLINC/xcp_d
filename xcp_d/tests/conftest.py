@@ -87,6 +87,11 @@ def fmriprep_with_freesurfer_data(datasets):
         func_dir,
         "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_boldref.nii.gz",
     )
+    files["aparcaseg"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-aparcaseg_dseg.nii.gz",
+    )
+    files["aparcaseg_node_labels"] = os.path.join(datasets["ds001419"], "desc-aparcaseg_dseg.tsv")
 
     return files
 

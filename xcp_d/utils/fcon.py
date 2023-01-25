@@ -37,7 +37,7 @@ def extract_timeseries_funct(in_file, mask, atlas, node_labels_file):
     timeseries_file = os.path.abspath("timeseries.tsv")
 
     node_labels_df = pd.read_table(node_labels_file, index_col="index")
-    node_labels = node_labels_df["node"].tolist()
+    node_labels = node_labels_df["name"].tolist()
 
     # Extract time series with nilearn
     masker = NiftiLabelsMasker(
