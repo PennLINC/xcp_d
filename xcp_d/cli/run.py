@@ -754,6 +754,10 @@ def build_workflow(opts, retval):
             "you must enable cifti processing (--cifti)."
         )
         retval["return_code"] = 1
+        raise ValueError(
+            "In order to perform surface normalization (--warp-surfaces-native2std), "
+            "you must enable cifti processing (--cifti)."
+        )
 
     # Set up some instrumental utilities
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
