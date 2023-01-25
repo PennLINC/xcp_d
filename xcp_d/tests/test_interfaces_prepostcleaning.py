@@ -1,4 +1,4 @@
-"""Tests for prepostcleaning interfaces."""
+"""Tests for the xcp_d.interfaces.prepostcleaning module."""
 import os
 
 import nibabel as nb
@@ -7,7 +7,8 @@ import pytest
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs, ConvertTo32
-from xcp_d.interfaces.workbench import CiftiParcellate
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
+from xcp_d.utils import atlas
 
 
 def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -343,3 +344,59 @@ def _run_parcellation(in_file, atlas_file, tmpdir):
     parcellate_data.inputs.atlas_label = atlas_file
     parc_results = parcellate_data.run(cwd=tmpdir)
     return parc_results.outputs.out_file
+
+
+def test_cifti_parcellation_labels(fmriprep_with_freesurfer_data, tmp_path_factory):
+    import pandas as pd
+
+    tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation_labels")
+
+    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+    atlas_names = atlas.get_atlas_names()
+
+    error_messages = []
+    for i_atlas, atlas_name in enumerate(atlas_names):
+        atlas_file, node_labels_file = atlas.get_atlas_file(atlas_name, cifti=True)
+
+        node_labels_df = pd.read_table(node_labels_file)
+        expected_cifti_node_labels = node_labels_df["cifti_name"].tolist()
+
+        ccdft = CiftiCreateDenseFromTemplate()
+        ccdft.inputs.template_cifti = cifti_file
+        ccdft.inputs.label = atlas_file
+        ccdft.inputs.cifti_out = f"resampled_atlas_{i_atlas}.dscalar.nii"
+        ccdft_results = ccdft.run(cwd=tmpdir)
+
+        parcellate_atlas = CiftiParcellate(direction="COLUMN", only_numeric=True)
+        parcellate_atlas.inputs.atlas_label = atlas_file
+        parcellate_atlas.inputs.in_file = ccdft_results.outputs.cifti_out
+        parc_results = parcellate_atlas.run(cwd=tmpdir)
+        ptseries_file = parc_results.outputs.out_file
+
+        ptseries_img = nb.load(ptseries_file)
+        ax = ptseries_img.header.get_axis(1)
+        detected_node_labels = ax.name
+
+        timeseries_arr = np.array(ptseries_img.get_fdata())
+        assert len(detected_node_labels) == timeseries_arr.shape[1]
+        assert len(expected_cifti_node_labels) == len(detected_node_labels)
+
+        for i_label, detected_node_label in enumerate(detected_node_labels):
+            label_data = timeseries_arr[:, i_label]
+            assert label_data == label_data.astype(int)
+            expected_index = expected_cifti_node_labels.index(detected_node_label) + 1
+            if label_data == 0:
+                label_vertices_dict = ax.get_element(i_label)[2]
+
+                if not label_vertices_dict:
+                    print(f"{atlas_name}: No vertices in {detected_node_label}")
+                else:
+                    raise ValueError(f"{atlas_name}: {detected_node_label} has value of 0")
+
+            elif label_data != expected_index:
+                error_messages.append(
+                    f"{atlas_name}: {detected_node_label}: {label_data} != {expected_index}"
+                )
+
+    if error_messages:
+        raise ValueError(error_messages)

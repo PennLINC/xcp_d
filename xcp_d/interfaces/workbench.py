@@ -1087,3 +1087,69 @@ class CiftiConvert(WBCommand):
         outputs = self.output_spec().get()
         outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
         return outputs
+
+
+class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiCreateDenseFromTemplate command."""
+
+    template_cifti = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="File to match brainordinates of.",
+    )
+    cifti_out = File(
+        name_source=["label"],
+        name_template="resampled_%s.dlabel.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=1,
+        desc="The output cifti file.",
+    )
+    label = File(
+        exists=True,
+        mandatory=True,
+        argstr="-cifti %s",
+        position=2,
+        desc="Use input data from surface label files. Input label file.",
+    )
+
+
+class _CiftiCreateDenseFromTemplateOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCreateDenseFromTemplate command."""
+
+    cifti_out = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCreateDenseFromTemplate(WBCommand):
+    """Create CIFTI with matching dense map.
+
+    This command helps you make a new dscalar, dtseries, or dlabel cifti file
+    that matches the brainordinate space used in another cifti file.  The
+    template file must have the desired brainordinate space in the mapping
+    along the column direction (for dtseries, dscalar, dlabel, and symmetric
+    dconn this is always the case).  All input cifti files must have a brain
+    models mapping along column and use the same volume space and/or surface
+    vertex count as the template for structures that they contain.  If any
+    input files contain label data, then input files with non-label data are
+    not allowed, and the -series option may not be used.
+
+    Any structure that isn't covered by an input is filled with zeros or the
+    unlabeled key.
+
+    Examples
+    --------
+    >>> ccdft = CiftiCreateDenseFromTemplate()
+    >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
+    >>> ccdft.inputs.label = "parcellation.dlabel.nii"
+    >>> ccdft.cmdline
+    wb_command -cifti-create-dense-from-template \
+        sub-01_task-rest_bold.dtseries.nii \
+        resampled_parcellation.dlabel.nii \
+        -label parcellation.dlabel.nii
+    """
+
+    input_spec = _CiftiCreateDenseFromTemplateInputSpec
+    output_spec = _CiftiCreateDenseFromTemplateOutputSpec
+    _cmd = "wb_command -cifti-create-dense-from-template"

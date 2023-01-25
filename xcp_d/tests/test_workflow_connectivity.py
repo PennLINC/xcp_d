@@ -1,4 +1,4 @@
-"""Tests for connectivity matrix calculation."""
+"""Tests for the xcp_d.workflow.connectivity module."""
 import os
 
 import nibabel as nb
