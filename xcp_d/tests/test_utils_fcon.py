@@ -1,9 +1,11 @@
 """Tests for the xcp_d.utils.fcon module."""
 import os
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.interfaces.workbench import CiftiParcellate
 from xcp_d.tests.utils import chdir
 from xcp_d.utils import fcon
 
@@ -62,3 +64,27 @@ def test_compute_functional_connectivity(tmp_path_factory):
     assert all(np.isnan(corr_df.loc["b", :]))
     assert corr_df.loc["c", "c"] == 1
     assert not np.isnan(corr_df.loc["c", "d"])
+
+
+def test_extract_ptseries(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test extract_ptseries."""
+    tmpdir = tmp_path_factory.mktemp("test_extract_ptseries")
+
+    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+
+    cifti_atlas = pkgrf("xcp_d", "data/ciftiatlas/Glasser_360Parcels_fsLR_32k.dlabel.nii")
+    node_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Glasser_360Parcels_info.tsv")
+
+    # First, make a ptseries file
+    parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
+    parcellate_data.inputs.atlas_label = cifti_atlas
+    parcellate_data.inputs.in_file = cifti_file
+    parc_results = parcellate_data.run(cwd=tmpdir)
+    ptseries_file = parc_results.outputs.out_file
+
+    with chdir(tmpdir):
+        timeseries_file = fcon.extract_ptseries(ptseries_file, node_labels_file)
+
+    assert os.path.isfile(timeseries_file)
+    ts_df = pd.read_table(timeseries_file)
+    assert ts_df.shape == (60, 360)

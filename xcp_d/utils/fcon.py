@@ -113,6 +113,7 @@ def extract_ptseries(in_file, node_labels_file):
         node_labels_df = node_labels_df.drop(index=[0])
 
     node_labels = node_labels_df["name"].tolist()
+    expected_cifti_node_labels = node_labels_df["cifti_name"].tolist()
 
     img = nib.load(in_file)
     assert "ConnParcelSries" in img.nifti_header.get_intent(), img.nifti_header.get_intent()
@@ -123,7 +124,9 @@ def extract_ptseries(in_file, node_labels_file):
     detected_node_labels = ax.name
 
     # If there are nodes in the CIFTI that aren't in the node labels file, raise an error.
-    found_but_not_expected = sorted(list(set(detected_node_labels) - set(node_labels)))
+    found_but_not_expected = sorted(
+        list(set(detected_node_labels) - set(expected_cifti_node_labels))
+    )
     if found_but_not_expected:
         raise ValueError(
             "Mismatch found between atlas nodes and node labels file: "
@@ -134,13 +137,13 @@ def extract_ptseries(in_file, node_labels_file):
     timeseries_arr = np.array(img.get_fdata())
 
     # Region indices in the atlas may not be sequential, so we map them to sequential ints.
-    seq_mapper = {label: i for i, label in enumerate(node_labels)}
+    seq_mapper = {label: i for i, label in enumerate(expected_cifti_node_labels)}
 
     # Check if all of the nodes in the atlas node labels file are represented.
     if timeseries_arr.shape[1] != len(node_labels):
         warnings.warn(
             f"The number of detected nodes ({timeseries_arr.shape[1]}) does not equal "
-            f"the number of expected nodes ({len(node_labels)}) in atlas."
+            f"the number of expected nodes ({len(expected_cifti_node_labels)}) in atlas."
         )
 
         new_timeseries_arr = np.zeros(
