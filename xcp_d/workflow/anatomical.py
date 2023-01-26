@@ -240,12 +240,145 @@ def init_warp_surfaces_to_template_wf(
     The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
     If Freesurfer derivatives are not available, then an error will be raised.
 
+    Everything in standard space
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
             from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+
+            standard_spaces_available = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": True,
+            }
+            surfaces_found = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": True,
+            }
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                standard_spaces_available=standard_spaces_available,
+                surfaces_found=surfaces_found,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
+
+    Native-space meshes
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+
+            standard_spaces_available = {
+                "mesh": False,
+                "morphometry": True,
+                "shape": True,
+            }
+            surfaces_found = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": True,
+            }
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                standard_spaces_available=standard_spaces_available,
+                surfaces_found=surfaces_found,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
+
+    Nothing in standard space
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+
+            standard_spaces_available = {
+                "mesh": False,
+                "morphometry": False,
+                "shape": False,
+            }
+            surfaces_found = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": True,
+            }
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                standard_spaces_available=standard_spaces_available,
+                surfaces_found=surfaces_found,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
+
+    Meshes in standard space, no shapes
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+
+            standard_spaces_available = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": False,
+            }
+            surfaces_found = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": False,
+            }
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                standard_spaces_available=standard_spaces_available,
+                surfaces_found=surfaces_found,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
+
+    Shapes in standard space, meshes in native space
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+
+            standard_spaces_available = {
+                "mesh": False,
+                "morphometry": True,
+                "shape": True,
+            }
+            surfaces_found = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": True,
+            }
             wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
                 subject_id="01",
