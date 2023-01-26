@@ -240,6 +240,36 @@ def init_warp_surfaces_to_template_wf(
     The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
     If Freesurfer derivatives are not available, then an error will be raised.
 
+    Shapes in standard space, meshes in native space
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+
+            standard_spaces_available = {
+                "mesh": False,
+                "morphometry": True,
+                "shape": True,
+            }
+            surfaces_found = {
+                "mesh": True,
+                "morphometry": True,
+                "shape": True,
+            }
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                standard_spaces_available=standard_spaces_available,
+                surfaces_found=surfaces_found,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
+
     Everything in standard space
 
     Workflow Graph
@@ -348,36 +378,6 @@ def init_warp_surfaces_to_template_wf(
                 "mesh": True,
                 "morphometry": True,
                 "shape": False,
-            }
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                standard_spaces_available=standard_spaces_available,
-                surfaces_found=surfaces_found,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    Shapes in standard space, meshes in native space
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
-
-            standard_spaces_available = {
-                "mesh": False,
-                "morphometry": True,
-                "shape": True,
-            }
-            surfaces_found = {
-                "mesh": True,
-                "morphometry": True,
-                "shape": True,
             }
             wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
@@ -531,8 +531,10 @@ def init_warp_surfaces_to_template_wf(
         # Run HCP-generation workflow, then pass along to datasink/outputnode.
         apply_warps_to["mesh"] = False
         generate_morphometry = True
-
-    if surfaces_found["mesh"] and not standard_spaces_available["mesh"]:
+    elif standard_spaces_available["mesh"] and standard_spaces_available["morphometry"]:
+        apply_warps_to["mesh"] = False
+        generate_morphometry = False
+    elif surfaces_found["mesh"] and not standard_spaces_available["mesh"]:
         # Run warp workflows, apply to mesh files, and generate HCP morphometry files.
         apply_warps_to["mesh"] = True
         generate_morphometry = True
@@ -540,6 +542,8 @@ def init_warp_surfaces_to_template_wf(
     if surfaces_found["shape"] and not standard_spaces_available["shape"]:
         # Run warp workflows, apply to shape files.
         apply_warps_to["shape"] = True
+    elif standard_spaces_available["shape"] or not surfaces_found["shape"]:
+        apply_warps_to["shape"] = False
 
     if (
         standard_spaces_available["shape"]
@@ -745,7 +749,7 @@ def init_warp_surfaces_to_template_wf(
             # fmt:off
             workflow.connect([
                 (collect_surfaces_to_warp, apply_transforms_wf, [
-                    ("out", "hemi_files"),
+                    ("out", "inputnode.hemi_files"),
                 ]),
             ])
             # fmt:on
