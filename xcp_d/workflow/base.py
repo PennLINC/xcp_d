@@ -507,7 +507,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
-    if surfaces_found:
+    if surfaces_found and dcan_qc:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             output_dir=output_dir,
@@ -547,21 +547,22 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-        # fmt:off
-        workflow.connect([
-            (warp_anats_to_template_wf, brainsprite_wf, [
-                ("outputnode.t1w", "inputnode.t1w"),
-            ]),
-            (warp_surfaces_to_template_wf, brainsprite_wf, [
-                ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
-            ]),
-        ])
-        # fmt:on
+        if dcan_qc:
+            # fmt:off
+            workflow.connect([
+                (warp_anats_to_template_wf, brainsprite_wf, [
+                    ("outputnode.t1w", "inputnode.t1w"),
+                ]),
+                (warp_surfaces_to_template_wf, brainsprite_wf, [
+                    ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
+                    ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+                    ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
+                    ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
+                ]),
+            ])
+            # fmt:on
 
-    elif surfaces_found:
+    elif surfaces_found and dcan_qc:
         # Use native-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([

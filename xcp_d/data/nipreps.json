@@ -131,7 +131,7 @@
     },
     {
       "name": "cohort",
-      "pattern": "(?:^|_)cohort-([0-9]+)",
+      "pattern": "[_/\\\\]+cohort-0*(\\d+)",
       "dtype": "int"
     },
     {
@@ -140,6 +140,8 @@
     }
   ],
   "default_path_patterns": [
+    "[space-{space}_]atlas-{atlas}[_cohort-{cohort}][_res-{res}][_desc-{desc}]_{suffix<dseg>}{extension<.nii|.nii.gz|.tsv|.json>|.nii.gz}",
+    "[space-{space}_]atlas-{atlas}[_cohort-{cohort}][_den-{den}][_desc-{desc}]_{suffix<dseg>}{extension<.dlabel.nii|.tsv|.json>|.dlabel.nii}",
     "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_run-{run}][_space-{space}][_atlas-{atlas}][_cohort-{cohort}][_res-{res}][_desc-{desc}]_{suffix<T1w|T2w|T1rho|T1map|T2map|T2starmap|FLAIR|FLASH|PDmap|PD|PDT2|dseg|inplaneT[12]|angio>}{extension<.nii|.nii.gz|.json>|.nii.gz}",
     "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_run-{run}]_from-{from}_to-{to}_mode-{mode<image|points>|image}_{suffix<xfm>|xfm}{extension<.txt|.h5>}",
     "sub-{subject}[/ses-{session}]/{datatype<anat>|anat}/sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_run-{run}][_space-{space}][_atlas-{atlas}][_cohort-{cohort}][_den-{den}]_hemi-{hemi<L|R>}[_desc-{desc}]_{suffix<wm|smoothwm|pial|midthickness|inflated|vinflated|sphere|flat>}{extension<.surf.gii|.json>|.surf.gii}",
