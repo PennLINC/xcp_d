@@ -15,7 +15,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
-from xcp_d.interfaces.utils import FilterUndefined
+from xcp_d.interfaces.utils import CleanExtension, FilterUndefined
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -823,9 +823,24 @@ def init_warp_surfaces_to_template_wf(
                 ])
                 # fmt:on
 
+            clean_extensions_for_datasink = pe.MapNode(
+                CleanExtension(),
+                name=f"clean_extensions_for_datasink_{hemi_label}",
+                iterfield=["in_file"],
+            )
+
+            # fmt:off
+            workflow.connect([
+                (apply_transforms_wf, clean_extensions_for_datasink, [
+                    ("outputnode.warped_hemi_files", "in_file"),
+                ]),
+            ])
+            # fmt:on
+
             ds_warped_standard_space_surfaces = pe.MapNode(
                 DerivativesDataSink(
                     base_directory=output_dir,
+                    keep_extension=False,
                     space="fsLR",
                     den="32k",
                 ),
@@ -840,8 +855,8 @@ def init_warp_surfaces_to_template_wf(
                 (collect_surfaces_to_warp, ds_warped_standard_space_surfaces, [
                     ("out", "source_file"),
                 ]),
-                (apply_transforms_wf, ds_warped_standard_space_surfaces, [
-                    ("outputnode.warped_hemi_files", "in_file"),
+                (clean_extensions_for_datasink, ds_warped_standard_space_surfaces, [
+                    ("out_file", "in_file"),
                 ]),
             ])
             # fmt:on
