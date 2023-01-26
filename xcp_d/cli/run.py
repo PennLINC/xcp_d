@@ -692,6 +692,30 @@ def build_workflow(opts, retval):
             "is not set."
         )
 
+    # Some parameters are automatically set depending on the input type.
+    if opts.input_type in ("dcan", "hcp"):
+        if not opts.cifti:
+            build_log.warning(
+                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
+                "enabled automatically."
+            )
+            opts.cifti = True
+
+        if not opts.process_surfaces:
+            build_log.warning(
+                f"With input_type {opts.input_type}, surface normalization "
+                "(--warp-surfaces-native2std) will be enabled automatically."
+            )
+            opts.process_surfaces = True
+
+    # process_surfaces and nifti processing are incompatible.
+    if opts.process_surfaces and not opts.cifti:
+        build_log.critical(
+            "In order to perform surface normalization (--warp-surfaces-native2std), "
+            "you must enable cifti processing (--cifti)."
+        )
+        retval["return_code"] = 1
+
     if retval["return_code"] == 1:
         return retval
 
@@ -711,20 +735,6 @@ def build_workflow(opts, retval):
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
         from xcp_d.utils.bids import _add_subject_prefix
-
-        if not opts.cifti:
-            build_log.warning(
-                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
-                "enabled automatically."
-            )
-            opts.cifti = True
-
-        if not opts.process_surfaces:
-            build_log.warning(
-                f"With input_type {opts.input_type}, surface normalization "
-                "(--warp-surfaces-native2std) will be enabled automatically."
-            )
-            opts.process_surfaces = True
 
         if opts.input_type == "dcan":
             from xcp_d.utils.dcan2fmriprep import dcan2fmriprep as convert_to_fmriprep
@@ -747,17 +757,6 @@ def build_workflow(opts, retval):
             convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)
 
         fmri_dir = converted_fmri_dir
-
-    if opts.process_surfaces and not opts.cifti:
-        build_log.critical(
-            "In order to perform surface normalization (--warp-surfaces-native2std), "
-            "you must enable cifti processing (--cifti)."
-        )
-        retval["return_code"] = 1
-        raise ValueError(
-            "In order to perform surface normalization (--warp-surfaces-native2std), "
-            "you must enable cifti processing (--cifti)."
-        )
 
     # Set up some instrumental utilities
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"

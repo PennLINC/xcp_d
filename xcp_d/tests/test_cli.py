@@ -51,6 +51,8 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--warp-surfaces-native2std",
     ]
     opts = get_parser().parse_args(parameters)
+
+    # process_surfaces + ~cifti --> error
     retval = {}
     retval = build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
