@@ -521,7 +521,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            warp_to_standard=~standard_space_surfaces,
+            warp_to_standard=~standard_space_surfaces,  # TODO: Fix.
+            shapes_available=surfaces_found["shape"],
             omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
             name="warp_surfaces_to_template_wf",
@@ -541,6 +542,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_inflated_surf", "inputnode.rh_inflated_surf"),
                 ("lh_vinflated_surf", "inputnode.lh_vinflated_surf"),
                 ("rh_vinflated_surf", "inputnode.rh_vinflated_surf"),
+                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
                 ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
                 ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
             ]),

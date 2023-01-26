@@ -225,6 +225,7 @@ def init_warp_surfaces_to_template_wf(
     subject_id,
     output_dir,
     warp_to_standard,
+    shapes_available,
     omp_nthreads,
     mem_gb,
     name="warp_surfaces_to_template_wf",
@@ -250,6 +251,7 @@ def init_warp_surfaces_to_template_wf(
                 subject_id="01",
                 output_dir=".",
                 warp_to_standard=True,
+                shapes_available=True,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
@@ -263,6 +265,9 @@ def init_warp_surfaces_to_template_wf(
     warp_to_standard : :obj:`bool`
         Whether to warp native-space surface files to standard space or not.
         If False, the files are assumed to be in standard space already.
+    shapes_available : :obj:`bool`
+        True if shape files (sulcal depth, sulcal curvature, and cortical thickness)
+        are available. False if not.
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -302,7 +307,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
         to generate HCP-style midthickness, inflated, and veryinflated surfaces.
-    lh_midthickness_surf, rh_midthickness_surf : str
+    lh_midthickness_surf, rh_midthickness_surf : str or None
         Left- and right-hemisphere midthickness surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -310,7 +315,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
-    lh_inflated_surf, rh_inflated_surf : str
+    lh_inflated_surf, rh_inflated_surf : str or None
         Left- and right-hemisphere inflated surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -318,7 +323,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
-    lh_vinflated_surf, rh_vinflated_surf : str
+    lh_vinflated_surf, rh_vinflated_surf : str or None
         Left- and right-hemisphere very-inflated surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -326,9 +331,12 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
-    lh_sulcal_depth, rh_sulcal_depth : str
-    lh_sulcal_curv, rh_sulcal_curv : str
-    lh_cortical_thickness, rh_cortical_thickness : str
+    lh_sulcal_depth, rh_sulcal_depth : str or None
+        Should only be a string if ``shapes_available`` is True.
+    lh_sulcal_curv, rh_sulcal_curv : str or None
+        Should only be a string if ``shapes_available`` is True.
+    lh_cortical_thickness, rh_cortical_thickness : str or None
+        Should only be a string if ``shapes_available`` is True.
 
     Notes
     -----
@@ -388,7 +396,7 @@ def init_warp_surfaces_to_template_wf(
     if not warp_to_standard:
         # The files are already available, so we just map them to the outputnode and DataSinks.
         merge_files_to_list = pe.Node(
-            niu.Merge(10),
+            niu.Merge(16),
             name="merge_files_to_list",
         )
 
@@ -405,6 +413,12 @@ def init_warp_surfaces_to_template_wf(
                 ("rh_inflated_surf", "in8"),
                 ("lh_vinflated_surf", "in9"),
                 ("rh_vinflated_surf", "in10"),
+                ("lh_sulcal_depth", "in11"),
+                ("rh_sulcal_depth", "in12"),
+                ("lh_sulcal_curv", "in13"),
+                ("rh_sulcal_curv", "in14")
+                ("lh_cortical_thickness", "in15"),
+                ("rh_cortical_thickness", "in16"),
             ]),
             (inputnode, outputnode, [
                 ("lh_pial_surf", "lh_pial_surf"),
@@ -453,12 +467,12 @@ def init_warp_surfaces_to_template_wf(
         # We want the following output surfaces:
         # 1. Pial
         # 2. Smoothed white matter
-        # 3. HCP-style midthickness
-        # 4. HCP-style inflated
-        # 5. HCP-style very-inflated
-        # 6. Sulcal depth
-        # 7. Sulcal curvature
-        # 8. Cortical thickness
+        # 3. Sulcal depth (optional)
+        # 4. Sulcal curvature (optional)
+        # 5. Cortical thickness (optional)
+        # 6. HCP-style midthickness (generated)
+        # 7. HCP-style inflated (generated)
+        # 8. HCP-style very-inflated (generated)
         get_freesurfer_dir_node = pe.Node(
             Function(
                 function=get_freesurfer_dir,
@@ -489,14 +503,21 @@ def init_warp_surfaces_to_template_wf(
         for hemi in ["L", "R"]:
             hemi_label = f"{hemi.lower()}h"
 
+            if shapes_available:
+                n_to_merge = 5
+                splits = [1, 1, 3]  # pial, white, shapes
+            else:
+                n_to_merge = 2
+                splits = [1, 1]  # pial, white
+
             # Place the surfaces in a single node.
             collect_surfaces = pe.Node(
-                niu.Merge(2),
+                niu.Merge(n_to_merge),
                 name=f"collect_surfaces_{hemi_label}",
             )
 
-            # fmt:off
             # NOTE: Must match order of split_up_surfaces_fsLR_32k.
+            # fmt:off
             workflow.connect([
                 (inputnode, collect_surfaces, [
                     (f"{hemi_label}_pial_surf", "in1"),
@@ -504,6 +525,17 @@ def init_warp_surfaces_to_template_wf(
                 ]),
             ])
             # fmt:on
+
+            if shapes_available:
+                # fmt:off
+                workflow.connect([
+                    (inputnode, collect_surfaces, [
+                        (f"{hemi_label}_sulcal_depth", "in3"),
+                        (f"{hemi_label}_sulcal_curv", "in4"),
+                        (f"{hemi_label}_cortical_thickness", "in5"),
+                    ]),
+                ])
+                # fmt:on
 
             apply_transforms_wf = init_warp_one_hemisphere_wf(
                 hemisphere=hemi,
@@ -533,10 +565,7 @@ def init_warp_surfaces_to_template_wf(
             # NOTE: Must match order of collect_surfaces
             split_up_surfaces_fsLR_32k = pe.Node(
                 niu.Split(
-                    splits=[
-                        1,  # pial
-                        1,  # wm
-                    ],
+                    splits=splits,
                     squeeze=True,
                 ),
                 name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
@@ -559,7 +588,6 @@ def init_warp_surfaces_to_template_wf(
                     base_directory=output_dir,
                     space="fsLR",
                     den="32k",
-                    extension=".surf.gii",  # the extension is taken from the in_file by default
                 ),
                 name=f"ds_standard_space_surfaces_{hemi_label}",
                 run_without_submitting=True,
