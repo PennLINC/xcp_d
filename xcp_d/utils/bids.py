@@ -323,7 +323,9 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
 
     Returns
     -------
+    surface_files_found : bool
     standard_space_surfaces : bool
+    out_surface_files : dict
     """
     standard_space_surfaces = True
     for name, query in queries.items():
