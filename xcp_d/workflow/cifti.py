@@ -655,6 +655,7 @@ produced by the regression.
             ('outputnode.atlas_names', 'inputnode.atlas_names'),
             ('outputnode.correlations', 'inputnode.correlations'),
             ('outputnode.timeseries', 'inputnode.timeseries'),
+            ('outputnode.coverage', 'inputnode.coverage_files'),
         ]),
     ])
 

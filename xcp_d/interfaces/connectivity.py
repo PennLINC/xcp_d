@@ -32,6 +32,7 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
 class _NiftiConnectOutputSpec(TraitedSpec):
     time_series_tsv = File(exists=True, mandatory=True, desc=" time series file")
     fcon_matrix_tsv = File(exists=True, mandatory=True, desc=" time series file")
+    parcel_coverage_file = File(exists=True, mandatory=True, desc="Parcel-wise coverage file.")
 
 
 class NiftiConnect(SimpleInterface):
@@ -56,16 +57,24 @@ class NiftiConnect(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
+        self._results["parcel_coverage_file"] = fname_presuffix(
+            self.inputs.filtered_file,
+            suffix="parcel_coverage_file.tsv",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
 
         (
             self._results["time_series_tsv"],
             self._results["fcon_matrix_tsv"],
+            self._results["parcel_coverage_file"],
         ) = extract_timeseries_funct(
             in_file=self.inputs.filtered_file,
             atlas=self.inputs.atlas,
             mask=self.inputs.mask,
             timeseries=self._results["time_series_tsv"],
             fconmatrix=self._results["fcon_matrix_tsv"],
+            parcel_coverage_file=self._results["parcel_coverage_file"],
         )
         return runtime
 

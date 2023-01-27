@@ -73,6 +73,8 @@ def init_writederivatives_wf(
         List of paths to parcellated time series files.
     correlations : list of str
         List of paths to ROI-to-ROI correlation files.
+    coverage_files : list of str
+        List of paths to atlas-specific coverage files.
     qc_file
         quality control files
     processed_bold
@@ -100,6 +102,7 @@ def init_writederivatives_wf(
                 "timeseries",
                 "confounds_file",
                 "correlations",
+                "coverage_files",
                 "qc_file",
                 "processed_bold",
                 "smoothed_bold",
@@ -256,6 +259,20 @@ def init_writederivatives_wf(
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
+        ds_coverage_files = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="coverage",
+                extension=".tsv",
+            ),
+            name="ds_coverage_files",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
 
         write_derivative_reho_wf = pe.Node(
             DerivativesDataSink(
@@ -391,6 +408,21 @@ def init_writederivatives_wf(
             iterfield=["atlas", "in_file"],
         )
 
+        ds_coverage_files = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="coverage",
+                extension=".tsv",
+            ),
+            name="ds_coverage_files",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+
         write_derivative_reho_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -469,6 +501,7 @@ def init_writederivatives_wf(
         (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
         (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
         (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, ds_coverage_files, [("coverage_files", "in_file"), ("atlas_names", "atlas")]),
     ])
 
     if bandpass_filter:

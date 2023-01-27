@@ -68,6 +68,8 @@ def init_nifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
+    coverage : list of str
+        Paths to atlas-specific coverage files.
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -101,7 +103,15 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        niu.IdentityInterface(
+            fields=[
+                "atlas_names",
+                "timeseries",
+                "correlations",
+                "coverage",
+                "connectplot",
+            ],
+        ),
         name="outputnode",
     )
 
@@ -155,6 +165,16 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         mem_gb=mem_gb,
     )
 
+    # fmt:off
+    workflow.connect([
+        (nifti_connect, outputnode, [
+            ("time_series_tsv", "timeseries"),
+            ("fcon_matrix_tsv", "correlations"),
+            ("parcel_coverage_file", "coverage"),
+        ]),
+    ])
+    # fmt:on
+
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
         ConnectPlot(),
@@ -203,8 +223,6 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
             ("transformfile", "transforms"),
         ]),
         (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
-                                     ("fcon_matrix_tsv", "correlations")]),
         (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
@@ -261,6 +279,8 @@ def init_cifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
+    coverage : list of str
+        Paths to atlas-specific coverage files.
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -284,7 +304,15 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        niu.IdentityInterface(
+            fields=[
+                "atlas_names",
+                "timeseries",
+                "correlations",
+                "coverage",
+                "connectplot",
+            ],
+        ),
         name="outputnode",
     )
 
@@ -331,6 +359,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     workflow.connect([
         (inputnode, prepare_data_for_parcellation, [("clean_bold", "data_file")]),
         (resample_atlas_to_data, prepare_data_for_parcellation, [("cifti_out", "atlas_file")]),
+        (prepare_data_for_parcellation, outputnode, [("parcel_coverage_file", "coverage")]),
     ])
     # fmt:on
 

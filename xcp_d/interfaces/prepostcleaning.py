@@ -253,7 +253,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
-        desc="Framewise displacement threshold. All values above this will be dropped.",
+        desc="Framewise displacement coverage_threshold. All values above this will be dropped.",
     )
     confounds_file = File(
         exists=True,
@@ -330,7 +330,7 @@ class CensorScrub(SimpleInterface):
     including band stop values and motion filter type.
     Then proceeds to create a motion-filtered confounds matrix and recalculates FD from
     filtered motion parameters.
-    Finally generates temporal mask with volumes above FD threshold set to 1,
+    Finally generates temporal mask with volumes above FD coverage_threshold set to 1,
     then dropped from both confounds file and bolds file.
     Outputs temporal mask, framewise displacement timeseries and censored bold files.
     """
@@ -360,13 +360,13 @@ class CensorScrub(SimpleInterface):
         confounds_tsv_uncensored = pd.read_table(self.inputs.confounds_file)
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
 
-        # Generate temporal mask with all timepoints have FD over threshold
+        # Generate temporal mask with all timepoints have FD over coverage_threshold
         # set to 1 and then dropped.
         tmask = generate_mask(
             fd_res=fd_timeseries_uncensored,
             fd_thresh=self.inputs.fd_thresh,
         )
-        if np.sum(tmask) > 0:  # If any FD values exceed the threshold
+        if np.sum(tmask) > 0:  # If any FD values exceed the coverage_threshold
             if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
                 bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
             else:
@@ -592,14 +592,21 @@ class _CiftiPrepareForParcellationInputSpec(BaseInterfaceInputSpec):
             "prepared_timeseries.dtseries.nii by default."
         ),
     )
+    parcel_coverage_file = File(
+        "parcel_coverage.pscalar.nii",
+        usedefault=True,
+        exists=False,
+        desc="An atlas-specific file with the coverage for each parcel.",
+    )
 
 
 class _CiftiPrepareForParcellationOutputSpec(TraitedSpec):
     out_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+    parcel_coverage_file = File(exists=True, mandatory=True, desc="Output coverage file.")
 
 
 class CiftiPrepareForParcellation(SimpleInterface):
-    """Apply 50% coverage threshold to parcellated data.
+    """Apply 50% coverage coverage_threshold to parcellated data.
 
     This interface takes a CIFTI atlas and a CIFTI data file, and ensures that
     missing data in the data file is handled appropriately.
@@ -621,8 +628,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
         data_file = self.inputs.data_file
         atlas_file = self.inputs.atlas_file
         TR = self.inputs.TR
-        out_file = self.inputs.out_file
-        threshold = 0.5
+        coverage_threshold = 0.5
 
         assert data_file.endswith(".dtseries.nii")
         assert atlas_file.endswith(".dlabel.nii"), atlas_file
@@ -642,53 +648,55 @@ class CiftiPrepareForParcellation(SimpleInterface):
 
         # The problem is that wb_command -cifti-parcellate will raise an error if a whole parcel is
         # NaNs, so we must replace entirely-bad parcels with zeros instead.
-        n_partially_covered_nodes, n_poorly_covered_nodes, n_uncovered_nodes = 0, 0, 0
+        n_partially_covered_parcels, n_poorly_covered_parcels, n_uncovered_parcels = 0, 0, 0
         parcel_ids = np.unique(atlas_data)[1:]
-        n_nodes = parcel_ids.size
+        n_parcels = parcel_ids.size
+        parcel_coverages = np.zeros_like(parcel_ids)
         for i_parcel in parcel_ids:
             # Find vertices associated with the parcel
             parcel_idx = np.where(atlas_data == i_parcel)[0]
 
-            # Determine if all of the vertices in the parcel as missing.
-            bad_parcel = ~np.any(np.setdiff1d(parcel_idx, bad_vertices_idx))
-
             # Determine which, if any, vertices in the parcel are missing.
             bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
 
-            if bad_parcel:
+            # Determine the percentage of vertices with good data
+            parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
+            parcel_coverages[i_parcel] = parcel_coverage
+
+            if parcel_coverage == 0:
                 # If the whole parcel is bad, replace all of the values with zeros.
                 data[parcel_idx, :] = 0
 
-                n_uncovered_nodes += 1
+                n_uncovered_parcels += 1
 
-            elif (bad_vertices_in_parcel_idx.size / parcel_idx.size) >= threshold:
+            elif parcel_coverage < coverage_threshold:
                 # If the parcel has >=50% bad data, replace all of the values with zeros.
                 data[parcel_idx, :] = 0
 
-                n_poorly_covered_nodes += 1
+                n_poorly_covered_parcels += 1
 
-            elif bad_vertices_in_parcel_idx.size:
+            elif parcel_coverage < 1:
                 # If the parcel has < 50% bad data, keep the parcel, but make a note.
-                n_partially_covered_nodes += 1
+                n_partially_covered_parcels += 1
 
-        if n_uncovered_nodes:
-            LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0% coverage.")
+        if n_uncovered_parcels:
+            LOGGER.warning(f"{n_uncovered_parcels}/{n_parcels} of parcels have 0% coverage.")
 
-        if n_poorly_covered_nodes:
+        if n_poorly_covered_parcels:
             LOGGER.warning(
-                f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50% coverage. "
+                f"{n_poorly_covered_parcels}/{n_parcels} of parcels have <50% coverage. "
                 "These parcels' time series will be replaced with zeros."
             )
 
-        if n_partially_covered_nodes:
+        if n_partially_covered_parcels:
             LOGGER.warning(
-                f"{n_partially_covered_nodes}/{n_nodes} of parcels have at least one uncovered "
-                "vertex, but have enough good vertices to be useable. "
+                f"{n_partially_covered_parcels}/{n_parcels} of parcels have at least one "
+                "uncovered vertex, but have enough good vertices to be useable. "
                 "The bad vertices will be ignored and the parcels' time series will be "
                 "calculated from the remaining vertices."
             )
 
-        out_file = os.path.abspath(out_file)
+        out_file = os.path.abspath(self.inputs.out_file)
         write_ndata(
             data_matrix=data,
             template=data_file,
@@ -696,5 +704,14 @@ class CiftiPrepareForParcellation(SimpleInterface):
             TR=TR,
         )
         self._results["out_file"] = out_file
+
+        parcel_coverage_file = os.path.abspath(self.inputs.parcel_coverage_file)
+        write_ndata(
+            data_matrix=parcel_coverages,
+            template=atlas_file,
+            filename=parcel_coverage_file,
+            TR=TR,
+        )
+        self._results["parcel_coverage_file"] = parcel_coverage_file
 
         return runtime

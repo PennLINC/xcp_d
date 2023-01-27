@@ -12,7 +12,14 @@ from templateflow.api import get as get_template
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
+def extract_timeseries_funct(
+    in_file,
+    mask,
+    atlas,
+    timeseries,
+    fconmatrix,
+    parcel_coverage_file,
+):
     """Use Nilearn NiftiLabelsMasker to extract timeseries.
 
     Parameters
@@ -27,6 +34,8 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
         extracted timeseries filename
     fconmatrix : str
         functional connectivity matrix filename
+    parcel_coverage_file : str
+        parcel-wise coverage filename
 
     Returns
     -------
@@ -34,7 +43,11 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
         extracted timeseries filename
     fconmatrix : str
         functional connectivity matrix filename
+    parcel_coverage_file : str
+        parcel-wise coverage filename
     """
+    coverage_threshold = 0.5
+
     # Before anything, we need to measure coverage
     atlas_img = nb.load(atlas)
     atlas_data = atlas_img.get_fdata()
@@ -56,13 +69,13 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
     )
     n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
     n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
-    prop_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
-    coverage_thresholded = prop_coverage < 0.5  # we require 50%+ coverage
+    parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
+    coverage_thresholded = parcel_coverage < coverage_threshold  # we require 50%+ coverage
 
     n_nodes = coverage_thresholded.size
-    n_uncovered_nodes = np.sum(prop_coverage == 0)
-    n_poorly_covered_nodes = np.sum(np.logical_and(prop_coverage > 0, prop_coverage < 0.5))
-    n_partially_covered_nodes = np.sum(np.logical_and(prop_coverage >= 0.5, prop_coverage < 1))
+    n_uncovered_nodes = np.sum(parcel_coverage == 0)
+    n_poorly_covered_nodes = np.sum(np.logical_and(parcel_coverage > 0, parcel_coverage < 0.5))
+    n_partially_covered_nodes = np.sum(np.logical_and(parcel_coverage >= 0.5, parcel_coverage < 1))
 
     if n_uncovered_nodes:
         LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0% coverage.")
@@ -99,8 +112,9 @@ def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
 
     np.savetxt(fconmatrix, correlation_matrices, delimiter="\t")
     np.savetxt(timeseries, time_series, delimiter="\t")
+    np.savetxt(parcel_coverage_file, parcel_coverage, delimiter="\t")
 
-    return timeseries, fconmatrix
+    return timeseries, fconmatrix, parcel_coverage_file
 
 
 def compute_2d_reho(datat, adjacency_matrix):
