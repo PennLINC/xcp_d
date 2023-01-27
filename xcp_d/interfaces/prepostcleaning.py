@@ -651,10 +651,10 @@ class CiftiPrepareForParcellation(SimpleInterface):
         n_partially_covered_parcels, n_poorly_covered_parcels, n_uncovered_parcels = 0, 0, 0
         parcel_ids = np.unique(atlas_data)[1:]
         n_parcels = parcel_ids.size
-        parcel_coverages = np.zeros_like(parcel_ids)
-        for i_parcel in parcel_ids:
+        parcel_coverages = np.zeros_like(parcel_ids, dtype=np.float32)
+        for i_parcel, parcel_val in enumerate(parcel_ids):
             # Find vertices associated with the parcel
-            parcel_idx = np.where(atlas_data == i_parcel)[0]
+            parcel_idx = np.where(atlas_data == parcel_val)[0]
 
             # Determine which, if any, vertices in the parcel are missing.
             bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
