@@ -710,7 +710,7 @@ def build_workflow(opts, retval):
 
     # process_surfaces and nifti processing are incompatible.
     if opts.process_surfaces and not opts.cifti:
-        build_log.critical(
+        build_log.error(
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--cifti)."
         )
