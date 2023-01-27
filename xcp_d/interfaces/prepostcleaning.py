@@ -622,6 +622,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
         atlas_file = self.inputs.atlas_file
         TR = self.inputs.TR
         out_file = self.inputs.out_file
+        threshold = 0.5
 
         assert data_file.endswith(".dtseries.nii")
         assert atlas_file.endswith(".dlabel.nii"), atlas_file
@@ -660,7 +661,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
 
                 n_uncovered_nodes += 1
 
-            elif (bad_vertices_in_parcel_idx.size / parcel_idx.size) >= 0.5:
+            elif (bad_vertices_in_parcel_idx.size / parcel_idx.size) >= threshold:
                 # If the parcel has >=50% bad data, replace all of the values with zeros.
                 data[parcel_idx, :] = 0
 
