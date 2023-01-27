@@ -4,6 +4,7 @@ import shutil
 
 import pytest
 
+from xcp_d.tests.utils import get_test_data_path
 from xcp_d.workflow import anatomical
 
 
@@ -137,6 +138,9 @@ def test_init_warp_surfaces_to_template_wf_02(
 ):
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_02")
 
+    test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
+
     subject_id = "01"
     standard_spaces_available = {
         "mesh": False,
@@ -204,6 +208,9 @@ def test_init_warp_surfaces_to_template_wf_03(
     tmp_path_factory,
 ):
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_03")
+
+    test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     subject_id = "01"
     standard_spaces_available = {
