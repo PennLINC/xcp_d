@@ -415,7 +415,7 @@ def init_writederivatives_wf(
                 dismiss_entities=["desc"],
                 cohort=cohort,
                 suffix="coverage",
-                extension=".tsv",
+                extension=".pscalar.nii",
             ),
             name="ds_coverage_files",
             run_without_submitting=True,
