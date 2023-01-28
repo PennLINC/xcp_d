@@ -384,6 +384,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         n_procs=omp_nthreads,
         iterfield=["in_file", "atlas_label"],
     )
+    parcellate_coverage_file.inputs.out_file = "parcel_coverage.plabel.nii"
 
     # fmt:off
     workflow.connect([
