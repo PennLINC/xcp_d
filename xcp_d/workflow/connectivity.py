@@ -378,7 +378,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     # fmt:on
 
     parcellate_coverage_file = pe.MapNode(
-        CiftiParcellate(direction="COLUMN", only_numeric=True),
+        CiftiParcellate(direction="ROW", only_numeric=True),
         name="parcellate_coverage_file",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
