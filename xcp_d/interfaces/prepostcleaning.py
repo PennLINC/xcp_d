@@ -593,7 +593,7 @@ class _CiftiPrepareForParcellationInputSpec(BaseInterfaceInputSpec):
         ),
     )
     parcel_coverage_file = File(
-        "parcel_coverage.pscalar.nii",
+        "parcel_coverage.dscalar.nii",
         usedefault=True,
         exists=False,
         desc="An atlas-specific file with the coverage for each parcel.",
@@ -651,7 +651,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
         n_partially_covered_parcels, n_poorly_covered_parcels, n_uncovered_parcels = 0, 0, 0
         parcel_ids = np.unique(atlas_data)[1:]
         n_parcels = parcel_ids.size
-        parcel_coverages = np.zeros_like(parcel_ids, dtype=np.float32)
+        parcel_coverages = np.zeros_like(atlas_data, dtype=np.float32)
         for i_parcel, parcel_val in enumerate(parcel_ids):
             # Find vertices associated with the parcel
             parcel_idx = np.where(atlas_data == parcel_val)[0]
@@ -661,7 +661,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
 
             # Determine the percentage of vertices with good data
             parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
-            parcel_coverages[i_parcel] = parcel_coverage
+            parcel_coverages[parcel_idx] = parcel_coverage
 
             if parcel_coverage == 0:
                 # If the whole parcel is bad, replace all of the values with zeros.
