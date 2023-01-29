@@ -412,6 +412,7 @@ def init_writederivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
+                check_hdr=False,
                 dismiss_entities=["desc"],
                 cohort=cohort,
                 suffix="coverage",
