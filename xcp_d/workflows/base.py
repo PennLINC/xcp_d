@@ -26,13 +26,13 @@ from xcp_d.utils.bids import (
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.workflow.anatomical import (
+from xcp_d.workflows.anatomical import (
     init_warp_anats_to_template_wf,
     init_warp_surfaces_to_template_wf,
 )
-from xcp_d.workflow.bold import init_boldpostprocess_wf
-from xcp_d.workflow.cifti import init_ciftipostprocess_wf
-from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
+from xcp_d.workflows.bold import init_boldpostprocess_wf
+from xcp_d.workflows.cifti import init_ciftipostprocess_wf
+from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -82,7 +82,7 @@ def init_xcpd_wf(
             import os
             import tempfile
 
-            from xcp_d.workflow.base import init_xcpd_wf
+            from xcp_d.workflows.base import init_xcpd_wf
             from xcp_d.utils.doc import download_example_data
 
             fmri_dir = download_example_data()
@@ -261,7 +261,7 @@ def init_subject_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.base import init_subject_wf
+            from xcp_d.workflows.base import init_subject_wf
             from xcp_d.utils.doc import download_example_data
 
             fmri_dir = download_example_data()

@@ -687,7 +687,7 @@ def build_workflow(opts, retval):
 
     from xcp_d.__about__ import __version__
     from xcp_d.utils.bids import collect_participants
-    from xcp_d.workflow.base import init_xcpd_wf
+    from xcp_d.workflows.base import init_xcpd_wf
 
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
 
