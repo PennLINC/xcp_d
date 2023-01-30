@@ -13,7 +13,7 @@ Running XCP-D
 Execution and Input Formats
 ===========================
 
-The *XCP-D* workflow takes `fMRIPRep`, `NiBabies`, `DCAN` and `HCP` outputs in the form of BIDS derivatives.
+The *XCP-D* workflow takes `fMRIPRep`, `NiBabies` and `HCP` outputs in the form of BIDS derivatives.
 In these examples, we use an fmriprep output directory.
 
 The outputs are required to include at least anatomical and functional outputs with at least one preprocessed BOLD image.
@@ -28,7 +28,7 @@ as the command line is simpler.
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <outputdir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d <fmriprep_dir> <output_dir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -42,8 +42,54 @@ Command-Line Arguments
 .. argparse::
    :ref: xcp_d.cli.run.get_parser
    :prog: xcp_d
-   :nodefault:
-   :nodefaultconst:
+
+
+.. _filter_files:
+
+Filtering Inputs with BIDS Filter Files
+=======================================
+
+``xcp_d`` allows users to choose which preprocessed files will be post-processed with the ``--bids-filter-file`` parameter.
+This argument must point to a JSON file, containing filters that will be fed into PyBIDS.
+
+The keys in this JSON file are unique to ``xcp_d``.
+They are our internal terms for different inputs that will be selected from the preprocessed dataset.
+
+``"bold"`` determines which preprocessed BOLD files will be chosen.
+You can set a number of entities here, including "session", "task", "space", "resolution", and "density".
+We recommend NOT setting the datatype, suffix, or file extension in the filter file.
+
+.. warning::
+   We do not recommend applying additional filters to any of the following fields.
+   We have documented them here, for edge cases where they might be useful,
+   but the only field that most users should filter is ``"bold"``.
+
+``"t1w"`` selects a native T1w-space, preprocessed T1w file.
+
+``"t1w_seg"`` selects a native T1w-space segmentation file.
+This file is primarily used for figures.
+
+``"t1w_mask"`` selects a native T1w-space brain mask.
+
+``"t1w_to_template_xform"`` selects a transform from T1w space to standard space.
+The standard space that will be used depends on the ``"bold"`` files that are selected.
+
+``"template_to_t1w_xform"`` selects a transform from standard space to T1w space.
+Again, the standard space is determined based on other files.
+
+Example bids-filter-file
+------------------------
+
+In this example file, we only run ``xcp_d`` on resting-state preprocessed BOLD runs from session "01".
+
+.. code-block:: json
+
+   {
+      "bold": {
+         "session": ["01"],
+         "task": "rest"
+      }
+   }
 
 
 .. _run_docker:
@@ -115,181 +161,104 @@ the command line options are the same as the *bare-metal* installation.
 Custom Confounds
 ================
 
-XCP-D can implement custom confound regression (i.e., denoising).
+XCP-D can include custom confounds in its denoising.
 Here, you can supply your confounds, and optionally add these to a confound strategy already supported in XCP-D.
+
+To add custom confounds to your workflow, use the ``--custom-confounds`` parameter,
+and provide a folder containing the custom confounds files for all of the subjects, sessions, and tasks you plan to post-process.
+
+The individual confounds files should be tab-delimited, with one column for each regressor,
+and one row for each volume in the data being denoised.
+
+Signal Confounds for Non-Aggressive Denoising
+---------------------------------------------
+
+Let's say you have some nuisance regressors that are not necessarily orthogonal to some associated regressors that are ostensibly noise.
+For example, if you ran `tedana <https://tedana.readthedocs.io/en/stable/>`_ on multi-echo data,
+you would have a series of "rejected" (noise) and "accepted" (signal) ICA components.
+Because tedana uses a spatial ICA, these components' time series are not necessarily independent,
+and there can be shared variance between them.
+If you want to properly denoise your data using the noise components,
+you need to perform "non-aggressive" denoising so that variance from the signal components is not removed as well.
+In non-aggressive denoising, you fit a GLM using both the noise and signal regressors,
+then reconstruct the predicted data using just the noise regressors,
+and finally remove that predicted data from the real data.
+
+For more information about different types of denoising,
+see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.html>`_,
+`this NeuroStars topic <https://neurostars.org/t/aggressive-vs-nonaggressive-denoising/5612>`_,
+and/or `Pruim et al. (2015) <https://doi.org/10.1016/j.neuroimage.2015.02.064>`_.
+
+So how do we implement this in ``xcp_d``?
+In order to define regressors that should be treated as signal,
+and thus use non-aggressive denoising instead of the default aggressive denoising,
+you should include those regressors in your custom confounds file,
+with column names starting with ``signal__`` (lower-case "signal", followed by two underscores).
+
+.. important::
+
+   ``xcp_d`` will automatically perform non-aggressive denoising with any nuisance-regressor option that uses AROMA regressors
+   (e.g., ``aroma`` or ``aroma_gsr``).
+
 
 Task Regression
 ---------------
 
-Here we document how to regress task block effects as well as the 36 parameter model confounds.
+If you want to regress task-related signals out of your data, you can use the custom confounds option to do it.
 
-However, this method is still under development.
+Here we document how to include task effects as confounds.
 
-Regression of task effects from the BOLD timeseries is performed in 3 steps:
- 1. Create a task event timing array
- 2. Convolve task events with a gamma-shaped hemodynamic response function (HRF)
- 3. Regress out the effects of task via a general linear model implemented with xcp_d
+.. tip::
+   The basic approach to task regression is to convolve your task regressors with an HRF,
+   then save those regressors to a custom confounds file.
 
-Create a task event array
-`````````````````````````
+.. warning::
+   This method is still under development.
 
-First, for each condition (i.e., each separate contrast) in your task,
-create an Nx2 array where N is equal to the number of measurements (volumes) in your task fMRI run.
-Values in the first array column should increase sequentially by the length of the TR, with the first index = 0.
-Values in the second array column should equal either 0 or 1;
-each volume during which the condition/contrast was being tested should = 1, all others should = 0.
-
-For example, for an fMRI task run with 210 measurements and a 3 second TR during which happy faces (events) were presented for 5.5 seconds at time = 36, 54, 90 seconds etc.
-
-.. code-block::
-
-   [  0.   0.]
-   [  3.   0.]
-   [  6.   0.]
-   [  9.   0.]
-   [ 12.   0.]
-   [ 15.   0.]
-   [ 18.   0.]
-   [ 21.   0.]
-   [ 24.   0.]
-   [ 27.   0.]
-   [ 30.   0.]
-   [ 33.   0.]
-   [ 36.   1.]
-   [ 39.   1.]
-   [ 42.   1.]
-   [ 45.   0.]
-   [ 48.   0.]
-   [ 51.   0.]
-   [ 54.   1.]
-   [ 57.   1.]
-   [ 60.   1.]
-   [ 63.   0.]
-   [ 66.   0.]
-   [ 69.   0.]
-   [ 72.   0.]
-   [ 75.   0.]
-   [ 78.   0.]
-   [ 81.   0.]
-   [ 84.   0.]
-   [ 87.   0.]
-   [ 90.   1.]
-   [ 93.   1.]
-   [ 96.   1.]
-   [ 99.   0.]
-
-
-Convolve task events with the HRF
-`````````````````````````````````
-Next, the BOLD response to each event is modeled by convolving the task events with a canonical HRF.
-This can be done by first defining the HRF and then applying it to your task events array with :func:`numpy.convolve`.
+We recommend using a tool like Nilearn to generate convolved regressors from BIDS events files.
+See `this example <https://nilearn.github.io/stable/auto_examples/04_glm_first_level/plot_design_matrix.html#create-design-matrices>`_.
 
 .. code-block:: python
 
    import numpy as np
-   from scipy.stats import gamma
+   from nilearn.glm.first_level import make_first_level_design_matrix
 
+   N_VOLUMES = 200
+   TR = 0.8
+   frame_times = np.arange(N_VOLUMES) * TR
+   events_df = pd.read_table("sub-X_ses-Y_task-Z_run-01_events.tsv")
 
-   def hrf(times):
-      """Return values for HRF at given times."""
-      # Gamma pdf for the peak
-      peak_values = gamma.pdf(times, 6)
-      # Gamma pdf for the undershoot
-      undershoot_values = gamma.pdf(times, 12)
-      # Combine them
-      values = peak_values - 0.35 * undershoot_values
-      # Scale max to 0.6
-      return values / np.max(values) * 0.6
-
-   # Compute HRF with the signal
-   hrf_times = np.arange(0, 35, TR)  # TR = repetition time, in seconds
-   hrf_signal = hrf(hrf_times)
-   N = len(hrf_signal)-1
-   tt=np.convolve(taskevents[:,1], hrf_signal)  # taskevents = the array created in the prior step
-   realt=tt[:-N]  # realt = the output we need!
-
-The code block above contains the following user-defined variables:
-
-- ``TR``: a variable equal to the repetition time
-- ``taskevents``: the Nx2 array created in the prior step
-
-The code block above produces the numpy array ``realt``,
-**which must be saved to a file named** ``${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv``.
-This tsv file will be used in the next step of ``xcp_d``.
-
-If you have multiple conditions/contrasts per task,
-steps 1 and 2 must be repeated for each such that you generate one taskevents Nx2 array per condition,
-and one corresponding ``realt`` numpy array.
-The ``realt`` outputs must all be combined into one space-delimited ``${subid}_${sesid}_task-${taskname}_desc-custom_timeseries.tsv`` file.
-A task with 5 conditions (e.g., happy, angry, sad, fearful, and neutral faces) will have 5 columns in the custom .tsv file.
-Multiple realt outputs can be combined by modifying the example code below.
-
-.. code-block:: python
-
-   import pandas as pd
-
-   # Create an empty task array to save realt outputs to
-   taskarray = np.empty(shape=(measurements, 0))  # measurements = the number of fMRI volumes
-
-   # Create a taskevents file for each condition and convolve with the HRF, using the code above
-   ## code to compute realt
-
-   # Write a combined custom.tsv file
-   taskarray = np.column_stack((taskarray, realt))
-   df = pd.DataFrame(taskarray)
-   df.to_csv(
-      "{0}_{1}_task-{2}_desc-custom_timeseries.tsv".format(subid, sesid, taskid),
-      index=False,
-      header=False,
-      sep='\t',
+   task_confounds = make_first_level_design_matrix(
+      frame_times,
+      events_df,
+      drift_model=None,
+      add_regs=None,
+      hrf_model="spm",
    )
 
-The space-delimited ``*desc-custom_timeseries.tsv`` file for a 5 condition task may look like::
+   # The design matrix will include a constant column, which we should drop
+   task_confounds = task_confounds.drop(columns="constant")
 
-  0.0 0.0 0.0 0.0 0.0
-  0.0 0.0 0.0 0.0 0.3957422940438729
-  0.0 0.0 0.0 0.0 0.9957422940438729
-  0.0 0.0 0.0 0.0 1.1009022019820307
-  0.0 0.0 0.0 0.0 0.5979640661963432
-  0.0 0.0 0.0 0.0 0.31017195439257517
-  0.0 0.0 0.0 0.0 0.7722398821320118
-  0.0 0.0 0.0 0.0 0.9755486196351566
-  0.0 0.0 0.0 0.0 0.9499183578181378
-  0.0 0.0 0.0 0.0 0.8987971115721047
-  0.0 0.0 0.0 0.0 0.8750149365335346
-  0.0 0.0 0.0 0.0 0.47218635162456457
-  0.0 0.0 0.0 0.0 -0.1294234695774829
-  0.3957422940438729 0.0 0.0 0.0 -0.23488535934344593
-  0.9957422940438729 0.0 0.0 0.0 -0.12773843588350925
-  1.1009022019820307 0.0 0.0 0.0 -0.04421213464698274
-  0.5979640661963432 0.0 0.0 0.0 -0.011439970324577234
-  -0.08557033965129775 0.0 0.0 0.0 -0.0023929581477495315
-  -0.22350241191186113 0.0 0.0 0.0 -0.00042413222490445587
-  0.27038871169699874 0.0 0.0 0.0 -6.512750410688139e-05
-  0.9519542916217947 0.0 0.0 0.0 -8.104611114467545e-06
-  1.0895273591615604 0.0 0.0 0.3957422940438729 0.0
-  0.5955792126597081 0.0 0.0 0.9957422940438729 0.0
-  -0.0859944718762022 0.0 0.0 1.1009022019820307 0.0
-  -0.223567539415968 0.0 0.0 0.5979640661963432 0.0
-  -0.12536168695798863 0.0 0.0 -0.08557033965129775 0.0
-  -0.04378800242207828 0.0 0.0 -0.22350241191186113 0.0
-  -0.011374842820470351 0.3957422940438729 0.0 -0.12535358234687416 0.0
-  -0.002384853536635064 0.9957422940438729 0.0 -0.04378800242207828 0.0
-  -0.00042413222490445587 1.1009022019820307 0.3957422940438729 -0.011374842820470351 0.0
-  -6.512750410688139e-05 0.5979640661963432 0.9957422940438729 -0.002384853536635064 0.0
-  0.39573418943275845 -0.08557033965129775 1.1009022019820307 -0.00042413222490445587 0.0
-  0.9957422940438729 -0.22350241191186113 0.5979640661963432 -6.512750410688139e-05 0.0
-  1.1009022019820307 -0.12535358234687416 -0.08557033965129775 -8.104611114467545e-06 0.0
-  0.5979640661963432 -0.04378800242207828 -0.22350241191186113 0.0 0.0
+   # Assuming that the fMRIPrep confounds file is named
+   # "sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+   # we will name the custom confounds file the same thing, in a separate folder.
+   task_confounds.to_csv(
+      "/my/project/directory/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+      sep="\t",
+      index=False,
+   )
 
+Then, when you run XCP-D, you can use the flag ``--custom_confounds /my/project/directory/custom_confounds``.
 
 Command Line XCP-D with Custom Confounds
 ````````````````````````````````````````
 
-Last, supply the ``${subid}_${sesid}_task-${taskid}_desc-custom_timeseries.tsv`` file to xcp_d with ``-c`` option.
-``-c`` should point to the directory where this file exists, rather than to the file itself;
-``xcp_d`` will identify the correct file based on the subid, sesid, and taskid.
-You can simultaneously perform additional confound regression by including, for example, ``-p 36P`` to the call.
+Last, supply the file to xcp_d with the ``--custom_confounds`` option.
+``--custom_confounds`` should point to the directory where this file exists, rather than to the file itself;
+``xcp_d`` will identify the correct file based on the filename,
+which should match the name of the preprocessed BOLD data's associated confounds file.
+You can simultaneously perform additional confound regression by including,
+for example, ``--nuisance-regressors 36P`` in the call.
 
 .. code-block:: bash
 
@@ -297,15 +266,15 @@ You can simultaneously perform additional confound regression by including, for 
       /mnt/input/fmriprep \
       /mnt/output/directory \
       participant \
-      --despike --lower-bpf 0.01 --upper-bpf 0.08 \
-      --participant_label $subid -p 36P -f 10 \
-      -t emotionid -c /mnt/taskarray_file_dir
+      --participant_label X \
+      --task-id Z \
+      --nuisance-regressors 36P \
+      --custom_confounds /mnt/custom_confounds
 
 Custom Parcellations
 ====================
 While XCP-D comes with many built in parcellations, we understand that many users will want to use custom parcellations.
-We suggest running XCP-D with the ``-cifti`` option (assuming you have cifti files),
-and then using the Human Connectome Project wb_command to generate the time series:
+If you use the ``-cifti`` option, you can use the Human Connectome Project's ``wb_command`` to generate the time series:
 
 .. code-block:: bash
 
@@ -324,7 +293,35 @@ After this, if one wishes to have a connectivity matrix:
       {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii \
       {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.pconn.nii
 
-More information can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_
+More information can be found at the HCP `documentation <https://www.humanconnectome.org/software/workbench-command>`_.
+
+If you use the default NIFTI processing pipeline, you can use Nilearn's
+`NiftiLabelsMasker <https://nilearn.github.io/stable/auto_examples/06_manipulating_images/plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-niftilabelsmasker>`_
+
+Advanced Applications
+=====================
+
+``xcp_d`` can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
+We have attempted to document these applications with working code in `PennLINC/xcp_d-examples <https://github.com/PennLINC/xcp_d-examples>`_.
+If there is an application you think would be useful to document, please open an issue in that repository.
+
+Preprocessing Requirements for XCP-D
+====================================
+
+``xcp_d`` is designed to ingest data from a variety of different preprocessing pipelines.
+However, each supported pipeline must be explicitly supported within ``xcp_d`` in order for the workflow
+to select the correct files.
+
+Additionally, ``xcp_d`` may require files that are only created with specific settings in the preprocessing pipelines.
+
+fMRIPrep/Nibabies
+-----------------
+
+In order to work on fMRIPrep or Nibabies derivatives, ``xcp_d`` needs derivatives in one of a few template spaces,
+including "MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant", and "fsLR".
+We may add support for additional templates in the future, but currently you must have at least one of these among your output spaces.
+``xcp_d`` does not have any specific requirements for resolution of volumetric derivatives,
+but we do require fsLR-space CIFTIs be outputted in 91k density.
 
 Troubleshooting
 ===============

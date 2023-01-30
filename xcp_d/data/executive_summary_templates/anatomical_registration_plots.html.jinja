@@ -1,0 +1,44 @@
+{#
+    Make a section for static anatomical registration images.
+
+    Inputs:
+    - structural_files{image_type}{"registration_files"}[]
+    - structural_files{image_type}{"registration_titles"}[]
+
+    Also uses the namespace ns.registrations_counter to keep track of the
+    number of registration images to loop over.
+#}
+<section id="Anat">
+    <div class="w3-container">
+        <div class="w3-row-padding">
+            <div class="w3-center"><h2>Anatomical Data</h2></div>
+        </div>
+        {# modal_id and image_class are parameters to build_modal_script macro #}
+        {% set image_class = "Registrations" %}
+        {% set modal_id = "regs_modal" %}
+        {% for img_type in structural_files.keys() %}
+
+            {% set registration_files = structural_files[img_type]["registration_files"] %}
+            {% for i_img in range(registration_files | length) %}
+                {% set registration_file = registration_files[i_img] %}
+                {% set registration_title = structural_files[img_type]["registration_titles"][i_img] %}
+                <div class="w3-row-padding">
+                    <div class="w3-col l1 label2">{{ registration_title }}</div>
+
+                    <div class="w3-col l11">
+                    {% if registration_file != "None" %}
+                        <img src="{{ registration_file }}" onclick="open_{{ modal_id }}_to_index({{ ns.registrations_counter }})">
+                        {% set ns.registrations_counter = ns.registrations_counter + 1 %}
+                    {% else %}
+                        <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                        <div class="w3-container w3-pale-red label3"><br></div>
+                    {% endif %}
+                    </div>
+
+                </div>
+            {% endfor %}
+
+        {% endfor %}
+
+    </div>
+</section>

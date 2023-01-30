@@ -1,0 +1,27 @@
+{#
+    Inputs:
+    - ns.carpet_files: list of carpet images
+#}
+{# modal_id and image_class are parameters to build_modal_script macro #}
+{% from "macros.html.jinja" import build_modal_script, build_cycler %}
+
+{% set image_class = "Carpets" %}
+{% set modal_id = "carpets_modal" %}
+{% set cycler_files = ns.carpet_files %}
+
+{{ build_cycler(image_class, modal_id, cycler_files) }}
+{{ build_modal_script(image_class, modal_id) }}
+
+{% set image_class = "Images" %}
+{% set modal_id = "images_modal" %}
+{% set cycler_files = ns.image_files %}
+
+{{ build_cycler(image_class, modal_id, cycler_files) }}
+{{ build_modal_script(image_class, modal_id) }}
+
+{% set image_class = "Registrations" %}
+{% set modal_id = "regs_modal" %}
+{% set cycler_files = ns.registration_files %}
+
+{{ build_cycler(image_class, modal_id, cycler_files) }}
+{{ build_modal_script(image_class, modal_id) }}

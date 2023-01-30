@@ -5,18 +5,43 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import logging
 import os
 import warnings
 
 import nibabel as nb
 import yaml
 from bids import BIDSLayout
+from nipype import logging
 from packaging.version import Version
 
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger("nipype.utils")
+
+# TODO: Add and test fsaverage.
+DEFAULT_ALLOWED_SPACES = {
+    "cifti": ["fsLR"],
+    "nifti": [
+        "MNI152NLin6Asym",
+        "MNI152NLin2009cAsym",
+        "MNIInfant",
+    ],
+}
+INPUT_TYPE_ALLOWED_SPACES = {
+    "nibabies": {
+        "cifti": ["fsLR"],
+        "nifti": [
+            "MNIInfant",
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+        ],
+    },
+}
+# The volumetric NIFTI template associated with each supported CIFTI template.
+ASSOCIATED_TEMPLATES = {
+    "fsLR": "MNI152NLin6Asym",
+}
 
 
 class BIDSError(ValueError):
@@ -124,48 +149,42 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     return found_label
 
 
+@fill_doc
 def collect_data(
     bids_dir,
+    input_type,
     participant_label,
     task=None,
     bids_validate=False,
     bids_filters=None,
     cifti=False,
+    layout=None,
 ):
     """Collect data from a BIDS dataset.
 
     Parameters
     ----------
     bids_dir
+    %(input_type)s
     participant_label
     task
     bids_validate
     bids_filters
+    %(cifti)s
+    layout
 
     Returns
     -------
     layout : pybids.layout.BIDSLayout
     subj_data : dict
     """
-    layout = BIDSLayout(
-        str(bids_dir),
-        validate=bids_validate,
-        derivatives=True,
-        config=["bids", "derivatives"],
-    )
-
-    # TODO: Add and test fsaverage.
-    PREFERRED_SPACES = {
-        False: [
-            "MNI152NLin6Asym",
-            "MNI152NLin2009cAsym",
-            "MNIInfant",
-        ],
-        True: [
-            "fsLR",
-        ],
-    }
-    allowed_spaces = PREFERRED_SPACES[cifti]
+    if not isinstance(layout, BIDSLayout):
+        layout = BIDSLayout(
+            str(bids_dir),
+            validate=bids_validate,
+            derivatives=True,
+            config=["bids", "derivatives"],
+        )
 
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
@@ -184,7 +203,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "mni_to_t1w_xform": {
+        "template_to_t1w_xform": {
             "datatype": "anat",
             "to": "T1w",
             "suffix": "xfm",
@@ -199,7 +218,7 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_mni_xform": {
+        "t1w_to_template_xform": {
             "datatype": "anat",
             "from": "T1w",
             "suffix": "xfm",
@@ -222,25 +241,46 @@ def collect_data(
         queries["bold"]["task"] = task
 
     # Select the best available space
-    if "space" not in queries["bold"]:
-        for space in allowed_spaces:
-            bold_data = layout.get(
-                space=space,
-                **queries["bold"],
-            )
-            if bold_data:
-                queries["bold"]["space"] = space
-                if not cifti:
-                    queries["t1w_to_mni_xform"]["to"] = space
-                    queries["mni_to_t1w_xform"]["from"] = space
-
-                break
-    else:
+    if "space" in queries["bold"]:
+        # Hopefully no one puts in multiple spaces here,
+        # but we'll grab the first one with available data if they did.
         allowed_spaces = ensure_list(queries["bold"]["space"])
+    else:
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["cifti" if cifti else "nifti"]
+
+    for space in allowed_spaces:
+        queries["bold"]["space"] = space
+        bold_data = layout.get(**queries["bold"])
+        if bold_data:
+            # will leave the best available space in the query
+            break
 
     if not bold_data:
         allowed_space_str = ", ".join(allowed_spaces)
         raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+
+    if not cifti:
+        # use the BOLD file's space if the BOLD file is a nifti.
+        queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
+        queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
+    else:
+        # Select the appropriate volumetric space for the CIFTI template.
+        # This space will be used in the executive summary and T1w/T2w workflows.
+        temp_query = queries["t1w_to_template_xform"].copy()
+        volumetric_space = ASSOCIATED_TEMPLATES[space]
+
+        temp_query["to"] = volumetric_space
+        transform_files = layout.get(**temp_query)
+        if not transform_files:
+            raise FileNotFoundError(
+                f"No nifti transforms found to allowed space ({volumetric_space})"
+            )
+
+        queries["t1w_to_template_xform"]["to"] = volumetric_space
+        queries["template_to_t1w_xform"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -275,10 +315,199 @@ def collect_data(
             else:
                 subj_data[field] = None
 
+    LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+
     return layout, subj_data
 
 
-def collect_run_data(layout, bold_file, cifti=False):
+def collect_surface_data(layout, participant_label):
+    """Collect surface files from preprocessed derivatives.
+
+    This function will try to collect fsLR-space, 32k-resolution surface files first.
+    If these standard-spave surface files aren't available, it will default to native T1w-space
+    files.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.BIDSLayout`
+        Layout object indexing the preprocessed derivatives.
+    participant_label : :obj:`str`
+        Subject ID.
+
+    Returns
+    -------
+    out_surface_files : :obj:`dict`
+        Dictionary of surface file identifiers and their paths.
+        If the surface files weren't found, then the paths will be Nones.
+    standard_space_surfaces : :obj:`bool`
+        True if standard-space surfaces were found. False if native-space surfaces were found.
+    surfaces_found : :obj:`bool`
+        True if surface files were found at all. False if they were not.
+    """
+    # Surfaces to use for brainsprite and anatomical workflow
+    # The base surfaces can be used to generate the derived surfaces.
+    # The base surfaces may be in native or standard space.
+    surface_queries = {
+        "lh_pial_surf": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "pial",
+        },
+        "rh_pial_surf": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "pial",
+        },
+        "lh_wm_surf": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "smoothwm",
+        },
+        "rh_wm_surf": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "smoothwm",
+        },
+    }
+
+    # First, try to grab the first base surface file in standard space.
+    # If it's not available, switch to native T1w-space data.
+    temp_query = surface_queries["lh_pial_surf"]
+    temp_files = layout.get(
+        return_type="file",
+        subject=participant_label,
+        datatype="anat",
+        space="fsLR",
+        res="32k",
+        extension=".surf.gii",
+        **temp_query,
+    )
+    if len(temp_files) == 0:
+        LOGGER.info("No standard-space surfaces found.")
+        standard_space_surfaces = False
+    else:
+        if len(temp_files) > 1:
+            LOGGER.warning("More than one standard-space surface found.")
+
+        standard_space_surfaces = True
+
+    if standard_space_surfaces:
+        query_extras = {
+            "space": "fsLR",
+            "res": "32k",
+        }
+    else:
+        query_extras = {
+            "space": None,
+        }
+
+    # Find the required files first
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                extension=".surf.gii",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in surface_queries.items()
+    }
+
+    out_surface_files = {}
+    surfaces_found = True
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 1:
+            out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            out_surface_files[dtype] = None
+            surfaces_found = False
+
+        else:
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {surface_queries[dtype]}"
+            )
+
+    # Now let's try finding the optional surfaces
+    # The optional surfaces may be in native or standard space.
+    # We only want HCP-style (desc = hcp) versions of these files.
+    surface_queries = {
+        "lh_midthickness_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "midthickness",
+        },
+        "rh_midthickness_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "midthickness",
+        },
+        "lh_inflated_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "inflated",
+        },
+        "rh_inflated_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "inflated",
+        },
+        "lh_vinflated_surf": {
+            "hemi": "L",
+            "desc": "hcp",
+            "suffix": "vinflated",
+        },
+        "rh_vinflated_surf": {
+            "hemi": "R",
+            "desc": "hcp",
+            "suffix": "vinflated",
+        },
+    }
+
+    surface_files = {
+        dtype: sorted(
+            layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                extension=".surf.gii",
+                **query,
+                **query_extras,
+            )
+        )
+        for dtype, query in surface_queries.items()
+    }
+
+    for dtype, surface_files_ in surface_files.items():
+        if len(surface_files_) == 1:
+            out_surface_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            out_surface_files[dtype] = None
+
+        else:
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {surface_queries[dtype]}"
+            )
+
+    LOGGER.debug(
+        f"Collected surface data:\n"
+        f"{yaml.dump(out_surface_files, default_flow_style=False, indent=4)}"
+    )
+
+    return out_surface_files, standard_space_surfaces, surfaces_found
+
+
+def collect_run_data(layout, input_type, bold_file, cifti=False):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -290,6 +519,8 @@ def collect_run_data(layout, bold_file, cifti=False):
     cifti : :obj:`bool`, optional
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
         Default is False.
+    input_type: :obj:`str`
+        Input type.
 
     Returns
     -------
@@ -328,6 +559,17 @@ def collect_run_data(layout, bold_file, cifti=False):
             **{"from": "T1w"},  # "from" is protected Python kw
             to="scanner",
             suffix="xfm",
+        )
+    else:
+        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["nifti"]
+        run_data["boldref"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            space=allowed_nifti_spaces,
+            suffix="boldref",
         )
 
     LOGGER.debug(
@@ -411,6 +653,9 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         with open(dataset_description) as f:
             dataset_dict = json.load(f)
 
+    info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
+
+    if "Version" in dataset_dict["GeneratedBy"][0].keys():
         info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
     else:
         info_dict["version"] = "unknown"
@@ -447,32 +692,6 @@ def _add_subject_prefix(subid):
     return "-".join(("sub", subid))
 
 
-def _getsesid(filename):
-    """Get session id from filename if available.
-
-    Parameters
-    ----------
-    filename : str
-        The BIDS filename from which to extract the session ID.
-
-    Returns
-    -------
-    ses_id : str or None
-        The session ID in the filename.
-        If the file does not have a session entity, ``None`` will be returned.
-    """
-    ses_id = None
-    base_filename = os.path.basename(filename)
-
-    file_id = base_filename.split("_")
-    for k in file_id:
-        if "ses" in k:
-            ses_id = k.split("-")[1]
-            break
-
-    return ses_id
-
-
 def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
@@ -493,3 +712,133 @@ def _get_tr(img):
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
     raise RuntimeError("Could not extract TR - unknown data structure type")
+
+
+def get_freesurfer_dir(fmri_dir):
+    """Find FreeSurfer derivatives associated with preprocessing pipeline.
+
+    Parameters
+    ----------
+    fmri_dir : str
+        Path to preprocessed derivatives.
+
+    Returns
+    -------
+    freesurfer_path : str
+        Path to FreeSurfer derivatives.
+
+    Raises
+    ------
+    ValueError
+        If more than one potential FreeSurfer derivative folder is found.
+    NotADirectoryError
+        If no FreeSurfer derivatives are found.
+    """
+    import glob
+    import os
+
+    # for fMRIPrep/Nibabies versions >=20.2.1
+    freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
+    if len(freesurfer_paths) == 0:
+        # for fMRIPrep/Nibabies versions <20.2.1
+        freesurfer_paths = sorted(
+            glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
+        )
+
+    if len(freesurfer_paths) == 1:
+        freesurfer_path = freesurfer_paths[0]
+
+    elif len(freesurfer_paths) > 1:
+        freesurfer_paths_str = "\n\t".join(freesurfer_paths)
+        raise ValueError(
+            "More than one candidate for FreeSurfer derivatives found. "
+            "We recommend mounting only one FreeSurfer directory in your Docker/Singularity "
+            "image. "
+            f"Detected candidates:\n\t{freesurfer_paths_str}"
+        )
+
+    else:
+        raise NotADirectoryError("No FreeSurfer derivatives found.")
+
+    return freesurfer_path
+
+
+def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
+    """Find FreeSurfer sphere file.
+
+    Parameters
+    ----------
+    freesurfer_path : str
+        Path to the FreeSurfer derivatives.
+    subject_id : str
+        Subject ID. This may or may not be prefixed with "sub-".
+    hemisphere : {"L", "R"}
+        The hemisphere to grab.
+
+    Returns
+    -------
+    sphere_raw : str
+        Sphere file for the requested subject and hemisphere.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the sphere file cannot be found.
+    """
+    import os
+
+    assert hemisphere in ("L", "R"), hemisphere
+
+    if not subject_id.startswith("sub-"):
+        subject_id = "sub-" + subject_id
+
+    sphere_raw = os.path.join(
+        freesurfer_path,
+        subject_id,
+        "surf",
+        f"{hemisphere.lower()}h.sphere.reg",
+    )
+
+    if not os.path.isfile(sphere_raw):
+        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
+
+    return sphere_raw
+
+
+def get_entity(filename, entity):
+    """Extract a given entity from a BIDS filename via string manipulation.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the BIDS file.
+    entity : str
+        The entity to extract from the filename.
+
+    Returns
+    -------
+    entity_value : str or None
+        The BOLD file's entity value associated with the requested entity.
+    """
+    import re
+
+    folder, file_base = os.path.split(filename)
+
+    # Allow + sign, which is not allowed in BIDS,
+    # but is used by templateflow for the MNIInfant template.
+    entity_values = re.findall(f"{entity}-([a-zA-Z0-9+]+)", file_base)
+    if len(entity_values) < 1:
+        entity_value = None
+    else:
+        entity_value = entity_values[0]
+
+    if entity == "space" and entity_value is None:
+        foldername = os.path.basename(folder)
+        if foldername == "anat":
+            entity_value = "T1w"
+        elif foldername == "func":
+            entity_value = "native"
+        else:
+            raise ValueError(f"Unknown space for {filename}")
+
+    return entity_value

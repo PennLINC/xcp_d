@@ -1,0 +1,128 @@
+{#
+    Start the tasks section and  put in the column headings for the task-specific data.
+
+    Inputs:
+    - task_files[]{"task"}
+    - task_files[]{"run"}
+    - task_files[]{"registration_files"}
+    - task_files[]{"registration_titles"}
+    - task_files[]{"bold"}
+    - task_files[]{"reference"}
+    - task_files[]{"preproc_carpet"}
+    - task_files[]{"postproc_carpet"}
+#}
+{% set regs_image_class = "Registrations" %}
+{% set regs_modal_id = "regs_modal" %}
+{% set carpets_image_class = "Carpet" %}
+{% set carpets_modal_id = "carpets_modal" %}
+{% set images_image_class = "Images" %}
+{% set images_modal_id = "images_modal" %}
+
+<section id="Tasks">
+    <div class="w3-container">
+        <div class="w3-row-padding">
+            <div class="w3-center"><h2>Functional Data</h2></div>
+            <div>
+                {% for run_dict in task_files %}
+
+                    {% set task = run_dict["task"] %}
+                    {% set run = run_dict["run"] %}
+                    {% set registration_files = run_dict["registration_files"] %}
+                    {% set registration_titles = run_dict["registration_titles"] %}
+                    {% set bold = run_dict["bold"] %}
+                    {% set reference = run_dict["reference"] %}
+                    {% set preproc_carpet = run_dict["preproc_carpet"] %}
+                    {% set postproc_carpet = run_dict["postproc_carpet"] %}
+
+                    {#
+                        Add the task name for the next few rows.
+                    #}
+                    <div class="w3-row"></div>
+                        <div class="w3-left label2">task-{{ task }} run-{{ run }}:</div>
+                    <div class="w3-row"></div>
+
+                    {# Full rows for registration files #}
+                    {% for i_img in range(registration_files | length) %}
+                        {% set registration_file = registration_files[i_img] %}
+                        {% set registration_title = registration_titles[i_img] %}
+                        <div class="w3-row-padding">
+                            <div class="w3-col l1 label2">{{ registration_title }}</div>
+
+                            <div class="w3-col l11">
+                                {% if registration_file != "None" %}
+                                    <img src="{{ registration_file }}" onclick="open_{{ regs_modal_id }}_to_index({{ ns.registrations_counter }})">
+                                    {% set ns.registrations_counter = ns.registrations_counter + 1 %}
+                                {% else %}
+                                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                    <div class="w3-container w3-pale-red label3"><br></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="w3-row-padding">
+
+                        {# Half rows for BOLD images #}
+                        <div class="w3-half">
+                            <div  class="w3-row-padding">
+                                <div class="w3-col l2 label2">BOLD</div>
+                                <div class="w3-col l9">
+                                    {% if bold != "None" %}
+                                        <img src="{{ bold }}" onclick="open_{{ images_modal_id }}_to_index({{ ns.images_counter }})">
+                                        {% set ns.images_counter = ns.images_counter + 1 %}
+                                    {% else %}
+                                        <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                        <div class="w3-container w3-pale-red label3"><br></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div  class="w3-row-padding">
+                                <div class="w3-col l2 label2">Reference</div>
+                                <div class="w3-col l9">
+                                    {% if reference != "None" %}
+                                        <img src="{{ reference }}" onclick="open_{{ images_modal_id }}_to_index({{ ns.images_counter }})">
+                                        {% set ns.images_counter = ns.images_counter + 1 %}
+                                    {% else %}
+                                        <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                        <div class="w3-container w3-pale-red label3"><br></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {# Quarter rows for carpet plots #}
+                        <div class="w3-quarter">
+                            <div class="w3-row w3-center label1">Pre-Regression</div>
+                            <div class="w3-row">
+                                {% if preproc_carpet != "None" %}
+                                    <img src="{{ preproc_carpet }}" onclick="open_{{ carpets_modal_id }}_to_index({{ ns.carpets_counter }})">
+                                    {% set ns.carpets_counter = ns.carpets_counter + 1 %}
+                                {% else %}
+                                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                    <div class="w3-container w3-pale-red label3"><br></div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="w3-quarter">
+                            <div class="w3-row w3-center label1">Post-Regression</div>
+                            <div class="w3-row">
+                                {% if postproc_carpet != "None" %}
+                                    <img src="{{ postproc_carpet }}" onclick="open_{{ carpets_modal_id }}_to_index({{ ns.carpets_counter }})">
+                                    {% set ns.carpets_counter = ns.carpets_counter + 1 %}
+                                {% else %}
+                                    <div class="w3-container w3-pale-red label3">Image Not Available</div>
+                                    <div class="w3-container w3-pale-red label3"><br></div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+        </div>
+</section>

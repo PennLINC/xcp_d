@@ -5,13 +5,17 @@
 This is from niworkflows, a patch will be submitted.
 """
 import glob
+import logging
 import os
 from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
 
-from xcp_d.interfaces.layout_builder import LayoutBuilder
-from xcp_d.utils.bids import _getsesid
+from xcp_d.interfaces.layout_builder import ExecutiveSummary
+from xcp_d.utils.bids import get_entity
+from xcp_d.utils.doc import fill_doc
+
+LOGGER = logging.getLogger("cli")
 
 
 class Report(_Report):
@@ -80,18 +84,16 @@ def run_reports(
     ).generate_report()
 
 
+@fill_doc
 def generate_reports(
     subject_list,
-    dummytime,
     fmri_dir,
     work_dir,
     output_dir,
     run_uuid,
-    cifti=False,
     config=None,
     packagename=None,
-    combineruns=False,
-    input_type="fmriprep",
+    dcan_qc=False,
 ):
     """Execute run_reports on a list of subjects.
 
@@ -109,14 +111,13 @@ def generate_reports(
         Configuration file.
     packagename : None or str, optional
         The name of the package.
-    combineruns : bool, optional
-        Whether to concatenate runs or not. Default is False.
-    input_type : {'fmriprep', 'dcan', 'hcp'}, optional
-        Default is 'fmriprep'.
+    dcan_qc : bool, optional
+        Whether to perform DCAN QC steps or not. Default is False.
     """
     # reportlets_dir = None
     if work_dir is not None:
         work_dir = work_dir
+
     report_errors = [
         run_reports(
             Path(output_dir) / "xcp_d",
@@ -133,50 +134,32 @@ def generate_reports(
     errno = sum(report_errors)
 
     if errno:
-        import logging
-
-        logger = logging.getLogger("cli")
         error_list = ", ".join(
             f"{subid} ({err})" for subid, err in zip(subject_list, report_errors) if err
         )
-        logger.error(
+        LOGGER.error(
             "Processsing did not finish successfully. Errors occurred while processing "
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )
     else:
-        # concate cifi and nifti here for multiple runs
-        if combineruns:
-            from xcp_d.utils.concatenation import concatenate_derivatives
-
-            if input_type == "dcan":
-                fmri_dir = str(work_dir) + "/dcanhcp"
-            elif input_type == "hcp":
-                fmri_dir = str(work_dir) + "/hcp/hcp"
-            print("Concatenating bold files ...")
-            concatenate_derivatives(
-                dummytime=dummytime,
-                subjects=subject_list,
-                fmridir=str(fmri_dir),
-                outputdir=str(Path(str(output_dir)) / "xcp_d/"),
-                work_dir=work_dir,
-                cifti=cifti,
-            )
-            print("Concatenation complete!")
-
-        for subject_label in subject_list:
-            brainplotfile = glob.glob(
-                os.path.join(
-                    output_dir,
-                    f"xcp_d/sub-{subject_label}",
-                    "figures/*_bold.svg",
-                ),
-            )[0]
-            LayoutBuilder(
-                html_path=str(Path(output_dir)) + "/xcp_d/",
-                subject_id=subject_label,
-                session_id=_getsesid(brainplotfile),
-            )
+        if dcan_qc:
+            LOGGER.info("Generating executive summary.")
+            for subject_label in subject_list:
+                brainplotfile = glob.glob(
+                    os.path.join(
+                        output_dir,
+                        f"xcp_d/sub-{subject_label}",
+                        "figures/*_bold.svg",
+                    ),
+                )[0]
+                exsumm = ExecutiveSummary(
+                    xcpd_path=os.path.join(output_dir, "xcp_d"),
+                    subject_id=subject_label,
+                    session_id=get_entity(brainplotfile, "ses"),
+                )
+                exsumm.collect_inputs()
+                exsumm.generate_report()
 
         print("Reports generated successfully")
     return errno

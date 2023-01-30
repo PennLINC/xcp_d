@@ -17,6 +17,7 @@ from nilearn._utils.niimg import _safe_get_data
 from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -441,12 +442,13 @@ def confoundplotx(
     return time_series_axis, grid_specification
 
 
+@fill_doc
 def plot_svgx(
     preprocessed_file,
+    residuals_file,
     denoised_file,
-    denoised_filtered_file,
     tmask,
-    dummyvols,
+    dummy_scans,
     filtered_motion,
     unprocessed_filename,
     processed_filename,
@@ -454,8 +456,8 @@ def plot_svgx(
     seg_data=None,
     TR=1,
     raw_dvars=None,
-    regressed_dvars=None,
-    filtered_dvars=None,
+    residuals_dvars=None,
+    denoised_dvars=None,
     work_dir=None,
 ):
     """Generate carpet plot with DVARS, FD, and WB.
@@ -464,16 +466,15 @@ def plot_svgx(
     ----------
     preprocessed_file :
         nifti or cifti before processing
-    denoised_file :
+    residuals_file :
         nifti or cifti after nuisance regression
-    denoised_filtered_file :
-        nifti or cifti after regression and filtering
+    denoised_file :
+        nifti or cifti after regression, filtering, and interpolation
     mask :
         mask for nifti if available
     tmask :
        temporal censoring mask
-    dummyvols :
-        initial number of volumes to drop
+    %(dummy_scans)s
     seg_data :
         3 tissues seg_data files
     TR : float, optional
@@ -487,36 +488,36 @@ def plot_svgx(
     """
     # Compute dvars correctly if not already done
     raw_data_arr = read_ndata(datafile=preprocessed_file, maskfile=mask)
-    regressed_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
-    filtered_data_arr = read_ndata(datafile=denoised_filtered_file, maskfile=mask)
+    residuals_data_arr = read_ndata(datafile=residuals_file, maskfile=mask)
+    denoised_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
 
     # Let's remove dummy time from the raw_data_arr if needed
-    if dummyvols > 0:
-        raw_data_arr = raw_data_arr[:, dummyvols:]
+    if dummy_scans > 0:
+        raw_data_arr = raw_data_arr[:, dummy_scans:]
 
     # Let's censor the interpolated data and raw_data_arr:
     if sum(tmask_arr) > 0:
         raw_data_arr = raw_data_arr[:, tmask_bool]
-        filtered_data_arr = filtered_data_arr[:, tmask_bool]
+        denoised_data_arr = denoised_data_arr[:, tmask_bool]
 
     if not isinstance(raw_dvars, np.ndarray):
         raw_dvars = compute_dvars(raw_data_arr)
 
-    if not isinstance(regressed_dvars, np.ndarray):
-        regressed_dvars = compute_dvars(regressed_data_arr)
+    if not isinstance(residuals_dvars, np.ndarray):
+        residuals_dvars = compute_dvars(residuals_data_arr)
 
-    if not isinstance(filtered_dvars, np.ndarray):
-        filtered_dvars = compute_dvars(filtered_data_arr)
+    if not isinstance(denoised_dvars, np.ndarray):
+        denoised_dvars = compute_dvars(denoised_data_arr)
 
-    if not (raw_dvars.shape == regressed_dvars.shape == filtered_dvars.shape):
+    if not (raw_dvars.shape == residuals_dvars.shape == denoised_dvars.shape):
         raise ValueError(
             "Shapes do not match:\n"
             f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
-            f"\t{denoised_file}: {regressed_data_arr.shape}\n"
-            f"\t{denoised_filtered_file}: {filtered_data_arr.shape}\n\n"
+            f"\t{residuals_file}: {residuals_data_arr.shape}\n"
+            f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -526,8 +527,8 @@ def plot_svgx(
     DVARS_timeseries = pd.DataFrame(
         {
             "Pre regression": raw_dvars,
-            "Post regression": regressed_dvars,
-            "Post all": filtered_dvars,
+            "Post regression": residuals_dvars,
+            "Post all": denoised_dvars,
         }
     )
 
@@ -545,8 +546,8 @@ def plot_svgx(
     # The mean and standard deviation of filtered data
     processed_data_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(filtered_data_arr, axis=0),
-            "Std": np.nanstd(filtered_data_arr, axis=0),
+            "Mean": np.nanmean(denoised_data_arr, axis=0),
+            "Std": np.nanstd(denoised_data_arr, axis=0),
         }
     )
 
@@ -557,28 +558,28 @@ def plot_svgx(
 
     # The plot going to carpet plot will be rescaled to [-600,600]
     scaled_raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask, scale=600)
-    scaled_residual_data = read_ndata(datafile=denoised_filtered_file, maskfile=mask, scale=600)
+    scaled_denoised_data = read_ndata(datafile=denoised_file, maskfile=mask, scale=600)
 
     # Make a temporary file for niftis and ciftis
     if preprocessed_file.endswith(".nii.gz"):
-        scaledrawdata = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
-        scaledresdata = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
+        scaled_raw_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
+        scaled_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
     else:
-        scaledrawdata = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
-        scaledresdata = os.path.join(tempfile.mkdtemp(), "filex_red.dtseries.nii")
+        scaled_raw_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
+        scaled_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.dtseries.nii")
 
     # Write out the scaled data
-    scaledrawdata = write_ndata(
+    scaled_raw_file = write_ndata(
         data_matrix=scaled_raw_data,
         template=preprocessed_file,
-        filename=scaledrawdata,
+        filename=scaled_raw_file,
         mask=mask,
         TR=TR,
     )
-    scaledresdata = write_ndata(
-        data_matrix=scaled_residual_data,
-        template=denoised_filtered_file,
-        filename=scaledresdata,
+    scaled_denoised_file = write_ndata(
+        data_matrix=scaled_denoised_data,
+        template=denoised_file,
+        filename=scaled_denoised_file,
         mask=mask,
         TR=TR,
     )
@@ -588,7 +589,11 @@ def plot_svgx(
     unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
     grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
     confoundplotx(
-        time_series=DVARS_timeseries, grid_spec_ts=grid[0], TR=TR, ylabel="DVARS", hide_x=True
+        time_series=DVARS_timeseries,
+        grid_spec_ts=grid[0],
+        TR=TR,
+        ylabel="DVARS",
+        hide_x=True,
     )
     confoundplotx(
         time_series=unprocessed_data_timeseries,
@@ -597,7 +602,13 @@ def plot_svgx(
         hide_x=True,
         ylabel="WB",
     )
-    plot_carpet(func=scaledrawdata, atlaslabels=atlaslabels, TR=TR, subplot=grid[3], legend=False)
+    plot_carpet(
+        func=scaled_raw_file,
+        atlaslabels=atlaslabels,
+        TR=TR,
+        subplot=grid[3],
+        legend=False,
+    )
     confoundplotx(
         time_series=FD_timeseries,
         grid_spec_ts=grid[4],
@@ -635,7 +646,13 @@ def plot_svgx(
         work_dir=work_dir,
     )
 
-    plot_carpet(func=scaledresdata, atlaslabels=atlaslabels, TR=TR, subplot=grid[3], legend=True)
+    plot_carpet(
+        func=scaled_denoised_file,
+        atlaslabels=atlaslabels,
+        TR=TR,
+        subplot=grid[3],
+        legend=True,
+    )
     confoundplotx(
         time_series=FD_timeseries,
         grid_spec_ts=grid[4],
@@ -781,6 +798,7 @@ def plot_carpet(
     atlaslabels : numpy.ndarray, optional
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
+        Unused if ``func`` is a CIFTI.
     detrend : bool, optional
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
@@ -794,8 +812,7 @@ def plot_carpet(
         are .png, .pdf, .svg. If output_file is not None, the plot
         is saved to a file, and the display is closed.
     legend : bool
-        Whether to render the average functional series with ``atlaslabels`` as
-        overlay.
+        Whether to render the average functional series with ``atlaslabels`` as overlay.
     TR : float, optional
         Specify the TR, if specified it uses this value. If left as None,
         # of frames is plotted instead of time.
@@ -1180,3 +1197,96 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     fig.tight_layout()
     fig.savefig(output_path)
     return output_path
+
+
+def plot_design_matrix(design_matrix):
+    """Plot design matrix TSV with Nilearn.
+
+    Parameters
+    ----------
+    design_matrix : str
+        Path to TSV file containing the design matrix.
+
+    Returns
+    -------
+    design_matrix_figure : str
+        Path to SVG figure file.
+    """
+    import os
+
+    import pandas as pd
+    from nilearn import plotting
+
+    design_matrix_df = pd.read_table(design_matrix)
+    design_matrix_figure = os.path.abspath("design_matrix.svg")
+    plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
+
+    return design_matrix_figure
+
+
+def plot_ribbon_svg(template, in_file):
+    """Plot the anatomical template and ribbon in a static SVG file."""
+    import os
+
+    import matplotlib.pyplot as plt
+    import nibabel as nib
+    import numpy as np
+    from matplotlib.patches import Rectangle
+    from nilearn.image import math_img
+    from nilearn.plotting import plot_anat
+
+    plot_file = os.path.abspath("ribbon.svg")
+
+    # Set vmax to 95-th percentile of T1w image
+    t1w_img = nib.load(template)
+    vmax = np.percentile(t1w_img.get_fdata(), 95)
+
+    # Coerce to ints
+    img = math_img("img.astype(int)", img=in_file)
+    white_img = math_img("img == 1", img=img)
+    pial_img = math_img("img == 2", img=img)
+    both_img = math_img("img == 3", img=img)
+
+    fig = plt.figure(
+        figsize=(25, 10),
+    )
+    display = plot_anat(
+        template,
+        draw_cross=False,
+        vmax=vmax,
+        figure=fig,
+    )
+    display.add_contours(
+        white_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["purple"],
+    )
+    display.add_contours(
+        pial_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["green"],
+    )
+    display.add_contours(
+        both_img,
+        contours=1,
+        antialiased=False,
+        linewidths=1.0,
+        levels=[0],
+        colors=["red"],
+    )
+    # We generate a legend using the trick described on
+    # http://matplotlib.sourceforge.net/users/legend_guide.httpml#using-proxy-artist
+    p1 = Rectangle((0, 0), 1, 1, fc="purple", label="White Matter")
+    p2 = Rectangle((0, 0), 1, 1, fc="green", label="Pial")
+    p3 = Rectangle((0, 0), 1, 1, fc="red", label="Both Somehow")
+    plt.legend([p1, p2, p3], ["White Matter", "Pial", "Both Somehow"], fontsize=18)
+
+    fig.savefig(plot_file, bbox_inches="tight", pad_inches=None)
+    # return fig
+    return plot_file

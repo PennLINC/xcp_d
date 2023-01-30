@@ -11,47 +11,25 @@ import os
 import sys
 import uuid
 import warnings
-from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 from time import strftime
 
 from niworkflows import NIWORKFLOWS_LOG
+
+from xcp_d.cli.parser_utils import (
+    _DeprecatedStoreAction040,
+    _float_or_auto,
+    _int_or_auto,
+    check_deps,
+    json_file,
+)
 
 warnings.filterwarnings("ignore")
 
 logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
 logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
-
-
-def _warn_redirect(message, category):
-    logger.warning("Captured warning (%s): %s", category, message)
-
-
-def check_deps(workflow):
-    """Check the dependencies for the workflow."""
-    from nipype.utils.filemanip import which
-
-    return sorted(
-        (node.interface.__class__.__name__, node.interface._cmd)
-        for node in workflow._get_all_nodes()
-        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
-    )
-
-
-class DeprecatedStoreAction(Action):
-    """A custom argparse "store" action to raise a DeprecationWarning.
-
-    Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
-    """
-
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
-        """Call the argument."""
-        NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version 0.3.0. "
-            "Please use '--nuisance-regressors' or '-p'."
-        )
-        setattr(namespace, self.dest, values)
 
 
 def get_parser():
@@ -82,15 +60,15 @@ def get_parser():
     parser.add_argument(
         "analysis_level",
         action="store",
-        type=str,
+        choices=["participant"],
         help='the analysis level for xcp_d, must be specified as "participant".',
     )
 
     # optional arguments
     parser.add_argument("--version", action="version", version=verstr)
 
-    g_bidx = parser.add_argument_group("Options for filtering BIDS queries")
-    g_bidx.add_argument(
+    g_bids = parser.add_argument_group("Options for filtering BIDS queries")
+    g_bids.add_argument(
         "--participant_label",
         "--participant-label",
         action="store",
@@ -100,13 +78,22 @@ def get_parser():
             "identifier (the sub- prefix can be removed)"
         ),
     )
-    g_bidx.add_argument(
+    g_bids.add_argument(
         "-t",
         "--task-id",
         action="store",
         help="select a specific task to be selected for the postprocessing ",
     )
-    g_bidx.add_argument(
+    g_bids.add_argument(
+        "--bids-filter-file",
+        dest="bids_filters",
+        action="store",
+        type=json_file,
+        default=None,
+        metavar="FILE",
+        help="A JSON file defining BIDS input filters using PyBIDS.",
+    )
+    g_bids.add_argument(
         "-m",
         "--combineruns",
         action="store_true",
@@ -168,7 +155,7 @@ def get_parser():
         "--input-type",
         required=False,
         default="fmriprep",
-        choices=["fmriprep", "dcan", "hpc", "nibabies"],
+        choices=["fmriprep", "dcan", "hcp", "nibabies"],
         help=(
             "The pipeline used to generate the preprocessed derivatives. "
             "The default pipeline is 'fmriprep'. "
@@ -191,33 +178,7 @@ def get_parser():
         default=False,
         help="despike the nifti/cifti before postprocessing",
     )
-
-    nuisance_params = g_param.add_mutually_exclusive_group()
-    nuisance_params.add_argument(
-        "--nuissance-regressors",
-        dest="nuisance_regressors",
-        action=DeprecatedStoreAction,
-        required=False,
-        default="36P",
-        choices=[
-            "27P",
-            "36P",
-            "24P",
-            "acompcor",
-            "aroma",
-            "acompcor_gsr",
-            "aroma_gsr",
-            "custom",
-        ],
-        type=str,
-        help=(
-            "Nuisance parameters to be selected, other options include 24P and 36P acompcor and "
-            "aroma. See Ciric et. al (2007) for more information about regression strategies. "
-            "This parameter is deprecated and will be removed in version 0.3.0. "
-            "Please use ``-p`` or ``--nuisance-regressors``."
-        ),
-    )
-    nuisance_params.add_argument(
+    g_param.add_argument(
         "-p",
         "--nuisance-regressors",
         dest="nuisance_regressors",
@@ -232,6 +193,7 @@ def get_parser():
             "aroma_gsr",
             "custom",
         ],
+        default="36P",
         type=str,
         help="Nuisance parameters to be selected. See Ciric et. al (2007).",
     )
@@ -241,20 +203,44 @@ def get_parser():
         required=False,
         default=None,
         type=Path,
-        help="Custom confound to be added to nuisance regressors.",
+        help=(
+            "Custom confound to be added to nuisance regressors. "
+            "Must be a folder containing confounds files, "
+            "in which case the file with the name matching the fMRIPrep confounds "
+            "file will be selected. "
+        ),
     )
-    g_param.add_argument(
+
+    dummyvols = g_param.add_mutually_exclusive_group()
+    dummyvols.add_argument(
         "-d",
         "--dummytime",
         default=0,
         type=float,
-        help="first volume in seconds to be removed or skipped before postprocessing",
+        action=_DeprecatedStoreAction040,
+        help=(
+            "Number of seconds to remove from the beginning of each run. "
+            "This value will be rounded up to the nearest TR. "
+            "This parameter is deprecated and will be removed in version 0.4.0. "
+            "Please use ``--dummy-scans``."
+        ),
+    )
+    dummyvols.add_argument(
+        "--dummy-scans",
+        dest="dummy_scans",
+        default=0,
+        type=_int_or_auto,
+        metavar="{{auto,INT}}",
+        help=(
+            "Number of volumes to remove from the beginning of each run. "
+            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "preprocessing derivatives' confounds file."
+        ),
     )
 
     g_filter = parser.add_argument_group("Filtering parameters and default value")
 
-    bandpass_filter_params = g_filter.add_mutually_exclusive_group()
-    bandpass_filter_params.add_argument(
+    g_filter.add_argument(
         "--disable-bandpass-filter",
         "--disable_bandpass_filter",
         dest="bandpass_filter",
@@ -264,33 +250,25 @@ def get_parser():
             "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
         ),
     )
-    bandpass_filter_params.add_argument(
-        "--bandpass_filter",
-        dest="bandpass_filter",
-        action=DeprecatedStoreAction,
-        type=bool,
-        help=(
-            "Whether to Butterworth bandpass filter the data or not. "
-            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated. "
-            "This parameter is deprecated and will be removed in version 0.3.0. "
-            "Bandpass filtering is performed by default, and if you wish to disable it, "
-            "please use `--disable-bandpass-filter``."
-        ),
-    )
-
     g_filter.add_argument(
         "--lower-bpf",
         action="store",
-        default=0.009,
+        default=0.01,
         type=float,
-        help="lower cut-off frequency (Hz) for the butterworth bandpass filter",
+        help=(
+            "lower cut-off frequency (Hz) for the butterworth bandpass filter, "
+            " see Satterthwaite et al. (2013)"
+        ),
     )
     g_filter.add_argument(
         "--upper-bpf",
         action="store",
         default=0.08,
         type=float,
-        help="upper cut-off frequency (Hz) for the butterworth bandpass filter",
+        help=(
+            "upper cut-off frequency (Hz) for the butterworth bandpass filter, "
+            " see Satterthwaite et al. (2013)"
+        ),
     )
     g_filter.add_argument(
         "--bpf-order",
@@ -402,8 +380,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-r",
         "--head_radius",
         default=50,
-        type=float,
-        help=("head radius for computing FD, default is 50mm, " "35mm is recommended for baby"),
+        type=_float_or_auto,
+        help=(
+            "Head radius used to calculate framewise displacement, in mm. "
+            "The default value is 50 mm, which is recommended for adults. "
+            "For infants, we recommend a value of 35 mm. "
+            "A value of 'auto' is also supported, in which case the brain radius is "
+            "estimated from the preprocessed brain mask."
+        ),
     )
     g_censor.add_argument(
         "-f",
@@ -487,17 +471,31 @@ By default, this workflow is disabled.
         This file is only created if the input type is "fmriprep" or "nibabies".
 """,
     )
+    g_experimental.add_argument(
+        "--dcan-qc",
+        "--dcan_qc",
+        action="store_true",
+        dest="dcan_qc",
+        default=False,
+        help="Run DCAN QC, including executive summary generation.",
+    )
 
     return parser
 
 
-def main():
-    """Run the main workflow."""
-    from multiprocessing import Manager, Process, set_start_method
+def _main(args=None):
+    from multiprocessing import set_start_method
 
     set_start_method("forkserver")
-    warnings.showwarning = _warn_redirect
-    opts = get_parser().parse_args()
+
+    main(args=args)
+
+
+def main(args=None):
+    """Run the main workflow."""
+    from multiprocessing import Manager, Process
+
+    opts = get_parser().parse_args(args)
 
     exec_env = os.name
 
@@ -509,9 +507,8 @@ def main():
 
         sentry_setup(opts, exec_env)
 
-    # Retrieve logging level
+    # Retrieve and set logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-    # Set logging
     logger.setLevel(log_level)
 
     # Call build_workflow(opts, retval)
@@ -546,6 +543,12 @@ def main():
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
+    # Track start of workflow with sentry
+    if not opts.notrack:
+        from xcp_d.utils.sentry import start_ping
+
+        start_ping(run_uuid, len(subject_list))
+
     errno = 1  # Default is error exit unless otherwise set
     try:
         xcpd_wf.run(**plugin_settings)
@@ -554,10 +557,12 @@ def main():
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-        crashfolders = [output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list]
-        for crashfolder in crashfolders:
-            for crashfile in crashfolder.glob("crash*.*"):
-                process_crashfile(crashfile)
+            crashfolders = [
+                output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
+            ]
+            for crashfolder in crashfolders:
+                for crashfile in crashfolder.glob("crash*.*"):
+                    process_crashfile(crashfile)
 
         if "Workflow did not execute cleanly" not in str(e):
             sentry_sdk.capture_exception(e)
@@ -631,19 +636,33 @@ def main():
                 "HTML and LaTeX versions of it will not be available"
             )
 
+        # concatenate postprocessing derivatives across runs
+        if opts.combineruns:
+            from xcp_d.utils.concatenation import concatenate_derivatives
+
+            print("Concatenating bold files ...")
+            concatenate_derivatives(
+                subjects=subject_list,
+                fmri_dir=str(fmri_dir),
+                output_dir=str(Path(str(output_dir)) / "xcp_d/"),
+                work_dir=work_dir,
+                cifti=opts.cifti,
+                dcan_qc=opts.dcan_qc,
+                dummy_scans=opts.dummy_scans,
+                dummytime=opts.dummytime,
+            )
+            print("Concatenation complete!")
+
         # Generate reports phase
         failed_reports = generate_reports(
-            dummytime=opts.dummytime,
             subject_list=subject_list,
             fmri_dir=fmri_dir,
             work_dir=work_dir,
             output_dir=output_dir,
             run_uuid=run_uuid,
-            combineruns=opts.combineruns,
-            input_type=opts.input_type,
-            cifti=opts.cifti,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
+            dcan_qc=opts.dcan_qc,
         )
 
         if failed_reports and not opts.notrack:
@@ -668,7 +687,7 @@ def build_workflow(opts, retval):
 
     from xcp_d.__about__ import __version__
     from xcp_d.utils.bids import collect_participants
-    from xcp_d.workflow.base import init_xcpd_wf
+    from xcp_d.workflows.base import init_xcpd_wf
 
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
 
@@ -790,7 +809,7 @@ def build_workflow(opts, retval):
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
         print(f"checking the {opts.input_type} files")
-        converted_fmri_dir = os.path.join(work_dir, "dcanhcp")
+        converted_fmri_dir = os.path.join(work_dir, "dcanhcp/derivatives")
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
         if opts.participant_label is not None:
@@ -927,6 +946,7 @@ Running xcp_d version {__version__}:
         subject_list=subject_list,
         work_dir=str(work_dir),
         task_id=opts.task_id,
+        bids_filters=opts.bids_filters,
         despike=opts.despike,
         smoothing=opts.smoothing,
         params=opts.nuisance_regressors,
@@ -934,15 +954,15 @@ Running xcp_d version {__version__}:
         analysis_level=opts.analysis_level,
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
-        custom_confounds=opts.custom_confounds,
+        custom_confounds_folder=opts.custom_confounds,
         dummytime=opts.dummytime,
+        dummy_scans=opts.dummy_scans,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
+        dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
         name="xcpd_wf",
     )
-
-    retval["return_code"] = 0
 
     logs_path = Path(output_dir) / "xcp_d" / "logs"
     boilerplate = retval["workflow"].visit_desc()
@@ -969,6 +989,9 @@ Running xcp_d version {__version__}:
             f"include the following boilerplate:\n\n{boilerplate}"
         ),
     )
+
+    retval["return_code"] = 0
+
     return retval
 
 
