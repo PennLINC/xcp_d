@@ -253,7 +253,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
-        desc="Framewise displacement coverage_threshold. All values above this will be dropped.",
+        desc="Framewise displacement threshold. All values above this will be dropped.",
     )
     confounds_file = File(
         exists=True,
@@ -330,7 +330,7 @@ class CensorScrub(SimpleInterface):
     including band stop values and motion filter type.
     Then proceeds to create a motion-filtered confounds matrix and recalculates FD from
     filtered motion parameters.
-    Finally generates temporal mask with volumes above FD coverage_threshold set to 1,
+    Finally generates temporal mask with volumes above FD threshold set to 1,
     then dropped from both confounds file and bolds file.
     Outputs temporal mask, framewise displacement timeseries and censored bold files.
     """
@@ -360,13 +360,13 @@ class CensorScrub(SimpleInterface):
         confounds_tsv_uncensored = pd.read_table(self.inputs.confounds_file)
         bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
 
-        # Generate temporal mask with all timepoints have FD over coverage_threshold
+        # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
         tmask = generate_mask(
             fd_res=fd_timeseries_uncensored,
             fd_thresh=self.inputs.fd_thresh,
         )
-        if np.sum(tmask) > 0:  # If any FD values exceed the coverage_threshold
+        if np.sum(tmask) > 0:  # If any FD values exceed the threshold
             if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
                 bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
             else:
@@ -606,7 +606,7 @@ class _CiftiPrepareForParcellationOutputSpec(TraitedSpec):
 
 
 class CiftiPrepareForParcellation(SimpleInterface):
-    """Apply 50% coverage coverage_threshold to parcellated data.
+    """Apply 50% coverage threshold to parcellated data.
 
     This interface takes a CIFTI atlas and a CIFTI data file, and ensures that
     missing data in the data file is handled appropriately.
