@@ -390,6 +390,24 @@ Advanced Applications
 We have attempted to document these applications with working code in `PennLINC/xcp_d-examples <https://github.com/PennLINC/xcp_d-examples>`_.
 If there is an application you think would be useful to document, please open an issue in that repository.
 
+Preprocessing Requirements for XCP-D
+====================================
+
+``xcp_d`` is designed to ingest data from a variety of different preprocessing pipelines.
+However, each supported pipeline must be explicitly supported within ``xcp_d`` in order for the workflow
+to select the correct files.
+
+Additionally, ``xcp_d`` may require files that are only created with specific settings in the preprocessing pipelines.
+
+fMRIPrep/Nibabies
+-----------------
+
+In order to work on fMRIPrep or Nibabies derivatives, ``xcp_d`` needs derivatives in one of a few template spaces,
+including "MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant", and "fsLR".
+We may add support for additional templates in the future, but currently you must have at least one of these among your output spaces.
+``xcp_d`` does not have any specific requirements for resolution of volumetric derivatives,
+but we do require fsLR-space CIFTIs be outputted in 91k density.
+
 Troubleshooting
 ===============
 

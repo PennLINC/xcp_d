@@ -31,12 +31,12 @@ from xcp_d.utils.confounds import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plot import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
-from xcp_d.workflow.execsummary import init_execsummary_wf
-from xcp_d.workflow.outputs import init_writederivatives_wf
-from xcp_d.workflow.plotting import init_qc_report_wf
-from xcp_d.workflow.postprocessing import init_resd_smoothing_wf
-from xcp_d.workflow.restingstate import init_cifti_reho_wf, init_compute_alff_wf
+from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
+from xcp_d.workflows.execsummary import init_execsummary_wf
+from xcp_d.workflows.outputs import init_writederivatives_wf
+from xcp_d.workflows.plotting import init_qc_report_wf
+from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+from xcp_d.workflows.restingstate import init_cifti_reho_wf, init_compute_alff_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -78,7 +78,7 @@ def init_ciftipostprocess_wf(
             import os
 
             from xcp_d.utils.bids import collect_data
-            from xcp_d.workflow.cifti import init_ciftipostprocess_wf
+            from xcp_d.workflows.cifti import init_ciftipostprocess_wf
             from xcp_d.utils.doc import download_example_data
 
             fmri_dir = download_example_data()
