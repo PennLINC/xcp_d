@@ -443,7 +443,7 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     lowcut = np.float(highpass) / nyq
     highcut = np.float(lowpass) / nyq
 
-    b, a = butter(order / 2, [lowcut, highcut], btype="band")  # get filter coeff
+    b, a = butter(order / 2, [lowcut, highcut], btype="bandpass")  # get filter coeff
 
     filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
 
