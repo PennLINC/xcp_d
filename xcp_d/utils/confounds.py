@@ -555,7 +555,13 @@ def motion_regression_filter(
 
         highcut = np.float(low_pass_freq_hertz) / nyquist_frequency
 
-        b, a = butter(order / 2, highcut, btype="lowpass", output="ba")  # get filter coeff
+        b, a = butter(
+            order / 2,
+            highcut,
+            btype="lowpass",
+            output="ba",
+            fs=sampling_frequency,
+        )
 
     elif motion_filter_type == "notch":  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
@@ -570,7 +576,13 @@ def motion_regression_filter(
         bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
         bandstop_cuts = bandstop_band_hz / nyquist_frequency
 
-        b, a = butter(order / 2, bandstop_cuts, btype="bandstop", output="ba")  # get filter coeff
+        b, a = butter(
+            order / 2,
+            bandstop_cuts,
+            btype="bandstop",
+            output="ba",
+            fs=sampling_frequency,
+        )
 
     filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
 
