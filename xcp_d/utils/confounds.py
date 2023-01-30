@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from nilearn.interfaces.fmriprep import load_confounds
 from nipype import logging
-from scipy.signal import filtfilt, firwin, iirnotch
+from scipy.signal import butter, filtfilt
 
 from xcp_d.utils.doc import fill_doc
 
@@ -509,8 +509,8 @@ def motion_regression_filter(
 
     Parameters
     ----------
-    data : numpy.ndarray
-        Data to filter.
+    data : (V, T) numpy.ndarray
+        Data to filter. V = variables, T = time
     TR : float
         Repetition time of the data.
     motion_filter_type : {"lp", "notch"}
@@ -541,8 +541,8 @@ def motion_regression_filter(
 
     filtered_data = data.copy()
 
-    sampling_frequency = 1.0 / TR
-    nyquist_frequency = sampling_frequency / 2.0
+    sampling_frequency = 1 / TR
+    nyquist_frequency = sampling_frequency / 2
 
     if motion_filter_type == "lp":  # low-pass filter
         # Remove any frequencies above band_stop_min.
@@ -553,17 +553,9 @@ def motion_regression_filter(
 
         low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
 
-        # cutting frequency
-        cutting_frequency = np.abs(
-            low_pass_freq_hertz
-            - (np.floor((low_pass_freq_hertz + nyquist_frequency) / sampling_frequency))
-            * sampling_frequency
-        )
-        # cutting frequency normalized between 0 and nyquist
-        Wn = np.amin(cutting_frequency) / nyquist_frequency  # cutoffs
-        filt_num = firwin(int(order) + 1, Wn, pass_zero="lowpass")  # create b_filt
-        filt_denom = 1.0
-        num_f_apply = 1  # num of times to apply
+        highcut = np.float(low_pass_freq_hertz) / nyquist_frequency
+
+        b, a = butter(order / 2, highcut, btype="lowpass", output="ba")  # get filter coeff
 
     elif motion_filter_type == "notch":  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
@@ -576,24 +568,15 @@ def motion_regression_filter(
         # bandwidth as an array
         bandstop_band = np.array([band_stop_min, band_stop_max])
         bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
-        cutting_frequencies = np.abs(
-            bandstop_band_hz
-            - (np.floor((bandstop_band_hz + nyquist_frequency) / sampling_frequency))
-            * sampling_frequency
-        )
+        bandstop_cuts = bandstop_band_hz / nyquist_frequency
 
-        # normalize cutting frequency
-        W_notch = cutting_frequencies / nyquist_frequency
-        Wn = np.mean(W_notch)
-        Wd = np.diff(W_notch)
-        bandwidth = np.abs(Wd)  # bandwidth
-        # create filter coefficients
-        filt_num, filt_denom = iirnotch(Wn, Wn / bandwidth)
-        num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
+        b, a = butter(order / 2, bandstop_cuts, btype="bandstop", output="ba")  # get filter coeff
 
-    for i_iter in range(num_f_apply):
-        for j_row in range(data.shape[0]):  # apply filters across columns
-            filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
+    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
+
+    # apply the filter, loop through columns of regressors
+    for i_row in range(filtered_data.shape[0]):
+        filtered_data[i_row, :] = filtfilt(b, a, data[i_row, :], padtype="constant")
 
     return filtered_data
 
