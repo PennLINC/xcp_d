@@ -36,12 +36,13 @@ LOGGER = logging.getLogger("nipype.workflow")
 def init_warp_anats_to_template_wf(
     output_dir,
     input_type,
+    t2w_available,
     target_space,
     omp_nthreads,
     mem_gb,
     name="warp_anats_to_template_wf",
 ):
-    """Copy T1w and segmentation to the derivative directory.
+    """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
 
     If necessary, this workflow will also warp the images to standard space.
 
@@ -54,6 +55,7 @@ def init_warp_anats_to_template_wf(
             wf = init_warp_anats_to_template_wf(
                 output_dir=".",
                 input_type="fmriprep",
+                t2w_available=True,
                 target_space="MNI152NLin6Asym",
                 omp_nthreads=1,
                 mem_gb=0.1,
@@ -64,6 +66,8 @@ def init_warp_anats_to_template_wf(
     ----------
     %(output_dir)s
     %(input_type)s
+    t2w_available : bool
+        True if a preprocessed T2w is available, False if not.
     target_space : str
         Target NIFTI template for T1w.
     %(omp_nthreads)s
@@ -74,7 +78,11 @@ def init_warp_anats_to_template_wf(
     Inputs
     ------
     t1w : str
-        Path to the T1w file.
+        Path to the preprocessed T1w file.
+        This file may be in standard space or native T1w space.
+    t2w : str
+        Path to the preprocessed T2w file.
+        This file may be in standard space or native T1w space.
     t1seg : str
         Path to the T1w segmentation file.
     %(t1w_to_template)s
@@ -83,7 +91,7 @@ def init_warp_anats_to_template_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg", "t1w_to_template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template"]),
         name="inputnode",
     )
 
@@ -102,7 +110,7 @@ def init_warp_anats_to_template_wf(
     )
 
     if input_type in ("dcan", "hcp"):
-        # Assume that the T1w and T1w segmentation files are in standard space,
+        # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
@@ -131,8 +139,22 @@ def init_warp_anats_to_template_wf(
         ])
         # fmt:on
 
+        if t2w_available:
+            ds_t2wmni = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    extension=".nii.gz",
+                ),
+                name="ds_t2wmni",
+                run_without_submitting=False,
+            )
+
+            # fmt:off
+            workflow.connect([(inputnode, ds_t2wmni, [("t2w", "in_file")])])
+            # fmt:on
+
     else:
-        # Warp the native T1w-space T1w and T1w segmentation files to the selected standard space.
+        # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
         warp_t1w_to_template = pe.Node(
             ApplyTransformsx(
                 num_threads=2,
@@ -176,6 +198,42 @@ def init_warp_anats_to_template_wf(
             ]),
         ])
         # fmt:on
+
+        if t2w_available:
+            t2w_transform = pe.Node(
+                ApplyTransformsx(
+                    num_threads=2,
+                    reference_image=template_file,
+                    interpolation="LanczosWindowedSinc",
+                    input_image_type=3,
+                    dimension=3,
+                ),
+                name="t2w_transform",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            ds_t2w = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    space="MNI152NLin6Asym",
+                    extension=".nii.gz",
+                ),
+                name="ds_t2wmni",
+                run_without_submitting=False,
+            )
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, t2w_transform, [
+                    ("t2w", "input_image"),
+                    ("t1w_to_mni", "transforms"),
+                ]),
+                (t2w_transform, ds_t2w, [
+                    ("output_image", "in_file"),
+                ]),
+            ])
+            # fmt:on
 
         ds_t1w = pe.Node(
             DerivativesDataSink(
