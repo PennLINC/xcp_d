@@ -6,7 +6,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import nibabel as nb
 import numpy as np
 from nipype.interfaces.ants import ApplyTransforms
 from scipy.signal import butter, filtfilt
@@ -370,50 +369,6 @@ def fwhm2sigma(fwhm):
         Sigma.
     """
     return fwhm / np.sqrt(8 * np.log(2))
-
-
-def zscore_nifti(img, outputname, mask=None):
-    """Normalize (z-score) a NIFTI image.
-
-    Image and mask must be in the same space.
-    TODO: Use Nilearn for masking.
-
-    Parameters
-    ----------
-    img : str
-        Path to the NIFTI image to z-score.
-    outputname : str
-        Output filename.
-    mask : str or None, optional
-        Path to binary mask file. Default is None.
-
-    Returns
-    -------
-    outputname : str
-        Output filename. Same as the ``outputname`` parameter.
-    """
-    img = nb.load(img)
-
-    if mask:
-        # z-score the data
-        maskdata = nb.load(mask).get_fdata()
-        imgdata = img.get_fdata()
-        meandata = imgdata[maskdata > 0].mean()
-        stddata = imgdata[maskdata > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-        # values where the mask is less than 1 are set to 0
-        zscore_fdata[maskdata < 1] = 0
-    else:
-        # z-score the data
-        imgdata = img.get_fdata()
-        meandata = imgdata[np.abs(imgdata) > 0].mean()
-        stddata = imgdata[np.abs(imgdata) > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-
-    # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata, affine=img.affine, header=img.header)
-    dataout.to_filename(outputname)
-    return outputname
 
 
 def butter_bandpass(data, fs, lowpass, highpass, order=2):
