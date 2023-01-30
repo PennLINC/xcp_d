@@ -9,7 +9,7 @@ from nilearn.input_data import NiftiLabelsMasker
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflow.connectivity import (
+from xcp_d.workflows.connectivity import (
     init_cifti_functional_connectivity_wf,
     init_nifti_functional_connectivity_wf,
 )
