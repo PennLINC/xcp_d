@@ -37,7 +37,7 @@ def init_qc_report_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.plotting import init_qc_report_wf
+            from xcp_d.workflows.plotting import init_qc_report_wf
             wf = init_qc_report_wf(
                 output_dir=".",
                 TR=0.5,

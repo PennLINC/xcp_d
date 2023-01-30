@@ -40,7 +40,7 @@ def init_compute_alff_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.restingstate import init_compute_alff_wf
+            from xcp_d.workflows.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
                 mem_gb=0.1,
                 TR=2.,
@@ -209,7 +209,7 @@ def init_cifti_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.restingstate import init_cifti_reho_wf
+            from xcp_d.workflows.restingstate import init_cifti_reho_wf
             wf = init_cifti_reho_wf(
                 mem_gb=0.1,
                 bold_file="/path/to/bold.dtseries.nii",
@@ -350,7 +350,7 @@ def init_nifti_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.restingstate import init_nifti_reho_wf
+            from xcp_d.workflows.restingstate import init_nifti_reho_wf
             wf = init_nifti_reho_wf(
                 mem_gb=0.1,
                 bold_file="/path/to/bold.nii.gz",

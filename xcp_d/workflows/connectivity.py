@@ -32,7 +32,7 @@ def init_nifti_functional_connectivity_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
+            from xcp_d.workflows.connectivity import init_nifti_functional_connectivity_wf
             wf = init_nifti_functional_connectivity_wf(
                 output_dir=".",
                 mem_gb=0.1,
@@ -221,7 +221,7 @@ def init_cifti_functional_connectivity_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
+            from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
             wf = init_cifti_functional_connectivity_wf(
                 output_dir=".",
                 mem_gb=0.1,

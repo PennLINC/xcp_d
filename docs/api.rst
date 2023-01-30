@@ -12,10 +12,10 @@ xcp_d-combineqc
    :prog: xcp_d-combineqc
 
 
-:mod:`xcp_d.workflow`: Workflows
+:mod:`xcp_d.workflows`: Workflows
 --------------------------------
 
-.. automodule:: xcp_d.workflow
+.. automodule:: xcp_d.workflows
    :no-members:
    :no-inherited-members:
 
@@ -25,16 +25,16 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   xcp_d.workflow.base
-   xcp_d.workflow.bold
-   xcp_d.workflow.cifti
-   xcp_d.workflow.anatomical
-   xcp_d.workflow.connectivity
-   xcp_d.workflow.execsummary
-   xcp_d.workflow.outputs
-   xcp_d.workflow.plotting
-   xcp_d.workflow.postprocessing
-   xcp_d.workflow.restingstate
+   xcp_d.workflows.base
+   xcp_d.workflows.bold
+   xcp_d.workflows.cifti
+   xcp_d.workflows.anatomical
+   xcp_d.workflows.connectivity
+   xcp_d.workflows.execsummary
+   xcp_d.workflows.outputs
+   xcp_d.workflows.plotting
+   xcp_d.workflows.postprocessing
+   xcp_d.workflows.restingstate
 
 :mod:`xcp_d.interfaces`: Nipype Interfaces
 ------------------------------------------
