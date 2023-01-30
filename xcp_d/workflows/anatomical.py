@@ -50,7 +50,7 @@ def init_warp_anats_to_template_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_warp_anats_to_template_wf
+            from xcp_d.workflows.anatomical import init_warp_anats_to_template_wf
             wf = init_warp_anats_to_template_wf(
                 output_dir=".",
                 input_type="fmriprep",
@@ -247,7 +247,7 @@ def init_warp_surfaces_to_template_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
+            from xcp_d.workflows.anatomical import init_warp_surfaces_to_template_wf
 
             standard_spaces_available = {
                 "mesh": False,
@@ -878,7 +878,7 @@ def init_generate_hcp_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_generate_hcp_surfaces_wf
+            from xcp_d.workflows.anatomical import init_generate_hcp_surfaces_wf
             wf = init_generate_hcp_surfaces_wf(
                 output_dir=".",
                 mem_gb=0.1,
@@ -1024,7 +1024,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_ants_xform_to_fsl_wf
+            from xcp_d.workflows.anatomical import init_ants_xform_to_fsl_wf
             wf = init_ants_xform_to_fsl_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -1305,7 +1305,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.anatomical import init_warp_one_hemisphere_wf
+            from xcp_d.workflows.anatomical import init_warp_one_hemisphere_wf
             wf = init_warp_one_hemisphere_wf(
                 hemisphere="L",
                 mem_gb=0.1,
