@@ -6,7 +6,7 @@ import nibabel as nb
 import numpy as np
 
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflow.restingstate import init_cifti_reho_wf, init_nifti_reho_wf
+from xcp_d.workflows.restingstate import init_cifti_reho_wf, init_nifti_reho_wf
 
 
 def _add_noise(image):
