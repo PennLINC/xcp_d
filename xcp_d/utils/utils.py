@@ -448,10 +448,8 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
-    for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(
-            b, a, data[ii, :], padtype="odd", padlen=3 * (max(len(b), len(a)) - 1)
-        )
+    for i_voxel in range(filtered_data.shape[0]):
+        filtered_data[i_voxel, :] = filtfilt(b, a, data[i_voxel, :], padtype="constant")
 
     return filtered_data
 
