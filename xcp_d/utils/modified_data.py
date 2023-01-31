@@ -245,3 +245,14 @@ def cast_cifti_to_int16(in_file):
     img.to_filename(out_file)
 
     return out_file
+
+
+def scale_to_min_max(X, x_min, x_max):
+    """Scale data to between minimum and maximum values."""
+    nom = (X - X.min()) * (x_max - x_min)
+    denom = X.max() - X.min()
+
+    if denom == 0:
+        denom = 1
+
+    return x_min + (nom / denom)

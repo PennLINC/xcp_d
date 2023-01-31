@@ -19,16 +19,6 @@ xcp_d/sub-01
 xcp_d/sub-01/anat
 xcp_d/sub-01/anat/sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz
 xcp_d/sub-01/anat/sub-01_space-MNI152NLin2009cAsym_dseg.nii.gz
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_desc-hcp_vinflated.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-L_smoothwm.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_desc-hcp_inflated.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_desc-hcp_midthickness.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_desc-hcp_vinflated.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii
-xcp_d/sub-01/anat/sub-01_space-fsLR_den-32k_hemi-R_smoothwm.surf.gii
 xcp_d/sub-01/func
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-filtered_motion.tsv
