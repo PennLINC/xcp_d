@@ -138,11 +138,8 @@ def load_motion(
 
     # Apply LP or notch filter
     if motion_filter_type in ("lp", "notch"):
-        # TODO: Eliminate need for transpose. We control the filter function,
-        # so we can make it work on RxT data instead of TxR.
-        motion_confounds = motion_confounds_df.to_numpy().T
         motion_confounds = motion_regression_filter(
-            data=motion_confounds,
+            data=motion_confounds_df.to_numpy(),
             TR=TR,
             motion_filter_type=motion_filter_type,
             band_stop_min=band_stop_min,
@@ -510,8 +507,8 @@ def motion_regression_filter(
 
     Parameters
     ----------
-    data : (V, T) numpy.ndarray
-        Data to filter. V = variables, T = time
+    data : (T, R) numpy.ndarray
+        Data to filter. T = time, R = motion regressors
         The filter will be applied independently to each variable, across time.
     TR : float
         Repetition time of the data.
@@ -523,8 +520,8 @@ def motion_regression_filter(
 
     Returns
     -------
-    data : (V, T) numpy.ndarray
-        Filtered data. Same size as the original data.
+    data : (T, R) numpy.ndarray
+        Filtered data. Same shape as the original data.
 
     Notes
     -----
@@ -579,7 +576,7 @@ def motion_regression_filter(
             output="ba",
             fs=sampling_frequency,
         )
-        filtered_data = filtfilt(b, a, data, axis=1, padtype="constant")
+        filtered_data = filtfilt(b, a, data, axis=0, padtype="constant")
 
     elif motion_filter_type == "notch":  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
@@ -612,7 +609,7 @@ def motion_regression_filter(
 
         filtered_data = data.copy()
         for _ in range(n_filter_applications):
-            filtered_data = filtfilt(b, a, filtered_data, axis=1, padtype="constant")
+            filtered_data = filtfilt(b, a, filtered_data, axis=0, padtype="constant")
 
     return filtered_data
 
