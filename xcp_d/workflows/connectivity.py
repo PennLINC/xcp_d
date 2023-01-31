@@ -10,8 +10,12 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
-from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs
-from xcp_d.interfaces.workbench import CiftiCorrelation, CiftiParcellate
+from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
+from xcp_d.interfaces.workbench import (
+    CiftiCorrelation,
+    CiftiCreateDenseFromTemplate,
+    CiftiParcellate,
+)
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
@@ -64,6 +68,8 @@ def init_nifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
+    coverage : list of str
+        Paths to atlas-specific coverage files.
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -79,6 +85,8 @@ atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
 the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
+In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either ignored,
+when the parcel had >50% coverage, or were set to zero, when the parcel had <50% coverage.
 """
 
     inputnode = pe.Node(
@@ -95,7 +103,15 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        niu.IdentityInterface(
+            fields=[
+                "atlas_names",
+                "timeseries",
+                "correlations",
+                "coverage",
+                "connectplot",
+            ],
+        ),
         name="outputnode",
     )
 
@@ -149,6 +165,16 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
         mem_gb=mem_gb,
     )
 
+    # fmt:off
+    workflow.connect([
+        (nifti_connect, outputnode, [
+            ("time_series_tsv", "timeseries"),
+            ("fcon_matrix_tsv", "correlations"),
+            ("parcel_coverage_file", "coverage"),
+        ]),
+    ])
+    # fmt:on
+
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
         ConnectPlot(),
@@ -197,8 +223,6 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
             ("transformfile", "transforms"),
         ]),
         (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, outputnode, [("time_series_tsv", "timeseries"),
-                                     ("fcon_matrix_tsv", "correlations")]),
         (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
@@ -209,6 +233,7 @@ which was operationalized as the Pearson's correlation of each parcel's unsmooth
 
 @fill_doc
 def init_cifti_functional_connectivity_wf(
+    TR,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -223,6 +248,7 @@ def init_cifti_functional_connectivity_wf(
 
             from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
             wf = init_cifti_functional_connectivity_wf(
+                TR=1.,
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -231,8 +257,12 @@ def init_cifti_functional_connectivity_wf(
 
     Parameters
     ----------
+    TR
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
+    %(name)s
+        Default is "cifti_fcon_wf".
 
     Inputs
     ------
@@ -249,6 +279,8 @@ def init_cifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
+    coverage : list of str
+        Paths to atlas-specific coverage files.
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -263,6 +295,8 @@ the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topog
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
+In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either ignored,
+when the parcel had >50% coverage, or were set to zero, when the parcel had <50% coverage.
 """
 
     inputnode = pe.Node(
@@ -270,7 +304,15 @@ the Connectome Workbench.
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["atlas_names", "timeseries", "correlations", "connectplot"]),
+        niu.IdentityInterface(
+            fields=[
+                "atlas_names",
+                "timeseries",
+                "correlations",
+                "coverage",
+                "connectplot",
+            ],
+        ),
         name="outputnode",
     )
 
@@ -290,19 +332,73 @@ the Connectome Workbench.
         iterfield=["atlas_name"],
     )
 
-    replace_empty_vertices = pe.Node(
-        CiftiZerosToNaNs(),
-        name="replace_empty_vertices",
+    resample_atlas_to_data = pe.MapNode(
+        CiftiCreateDenseFromTemplate(),
+        name="resample_atlas_to_data",
         n_procs=omp_nthreads,
+        iterfield=["label"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, resample_atlas_to_data, [("clean_bold", "template_cifti")]),
+        (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
+    ])
+    # fmt:on
+
+    prepare_data_for_parcellation = pe.MapNode(
+        CiftiPrepareForParcellation(),
+        name="prepare_data_for_parcellation",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["atlas_file"],
+    )
+    prepare_data_for_parcellation.inputs.TR = TR
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, prepare_data_for_parcellation, [("clean_bold", "data_file")]),
+        (resample_atlas_to_data, prepare_data_for_parcellation, [("cifti_out", "atlas_file")]),
+    ])
+    # fmt:on
 
     parcellate_data = pe.MapNode(
         CiftiParcellate(direction="COLUMN", only_numeric=True),
-        mem_gb=mem_gb,
         name="parcellate_data",
+        mem_gb=mem_gb,
         n_procs=omp_nthreads,
-        iterfield=["atlas_label"],
+        iterfield=["in_file", "atlas_label"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (resample_atlas_to_data, parcellate_data, [("cifti_out", "atlas_label")]),
+        (prepare_data_for_parcellation, parcellate_data, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    parcellate_coverage_file = pe.MapNode(
+        CiftiParcellate(direction="ROW", only_numeric=True),
+        name="parcellate_coverage_file",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["in_file", "atlas_label"],
+    )
+    parcellate_coverage_file.inputs.out_file = "parcel_coverage.pscalar.nii"
+
+    # fmt:off
+    workflow.connect([
+        (resample_atlas_to_data, parcellate_coverage_file, [
+            ("cifti_out", "atlas_label"),
+        ]),
+        (prepare_data_for_parcellation, parcellate_coverage_file, [
+            ("parcel_coverage_file", "in_file"),
+        ]),
+        (parcellate_coverage_file, outputnode, [
+            ("out_file", "coverage"),
+        ]),
+    ])
+    # fmt:on
 
     correlate_data = pe.MapNode(
         CiftiCorrelation(),
@@ -362,13 +458,10 @@ the Connectome Workbench.
 
     # fmt:off
     workflow.connect([
-        (inputnode, replace_empty_vertices, [("clean_bold", "in_file")]),
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (replace_empty_vertices, parcellate_data, [("out_file", "in_file")]),
         (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, parcellate_data, [("atlas_file", "atlas_label")]),
         (parcellate_data, correlate_data, [("out_file", "in_file")]),
         (parcellate_data, outputnode, [("out_file", "timeseries")]),
         (correlate_data, outputnode, [("out_file", "correlations")]),
