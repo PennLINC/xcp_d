@@ -715,3 +715,74 @@ class CiftiPrepareForParcellation(SimpleInterface):
         self._results["parcel_coverage_file"] = parcel_coverage_file
 
         return runtime
+
+
+class _CiftiSanitizeParcellationResultsInputSpec(BaseInterfaceInputSpec):
+    timeseries_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Dense CIFTI time series file to prepare for parcellation.",
+    )
+    correlation_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Dense CIFTI time series file to prepare for parcellation.",
+    )
+
+
+class _CiftiSanitizeParcellationResultsOutputSpec(TraitedSpec):
+    timeseries_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+    correlation_file = File(exists=True, mandatory=True, desc="Output CIFTI file.")
+
+
+class CiftiSanitizeParcellationResults(SimpleInterface):
+    """Replace bad parcels' time series and correlations with NaNs."""
+
+    input_spec = _CiftiSanitizeParcellationResultsInputSpec
+    output_spec = _CiftiSanitizeParcellationResultsOutputSpec
+
+    def _run_interface(self, runtime):
+        timeseries_file = self.inputs.timeseries_file
+        correlation_file = self.inputs.correlation_file
+
+        timeseries_img = nb.load(timeseries_file)
+        correlation_img = nb.load(correlation_file)
+
+        timeseries_arr = timeseries_img.get_fdata()
+        correlation_arr = correlation_img.get_fdata()
+        assert timeseries_arr.shape[0] == correlation_arr.shape[0]
+        assert correlation_arr.shape[1] == correlation_arr.shape[0]
+
+        bad_parcels = np.where(np.all(timeseries_arr == 0, axis=0))
+        timeseries_arr[bad_parcels, :] = np.nan
+        correlation_arr[bad_parcels, :] = np.nan
+        correlation_arr[:, bad_parcels] = np.nan
+
+        out_timeseries_img = nb.Cifti2Image(
+            timeseries_arr,
+            header=timeseries_img.header,
+            nifti_header=timeseries_img.nifti_header,
+        )
+        out_correlation_img = nb.Cifti2Image(
+            correlation_arr,
+            header=correlation_img.header,
+            nifti_header=correlation_img.nifti_header,
+        )
+
+        self._results["timeseries_file"] = fname_presuffix(
+            timeseries_file,
+            suffix="sanitized.ptseries.nii",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        out_timeseries_img.to_filename(self._results["timeseries_file"])
+
+        self._results["correlation_file"] = fname_presuffix(
+            correlation_file,
+            suffix="sanitized.pconn.nii",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        out_correlation_img.to_filename(self._results["correlation_file"])
+
+        return runtime

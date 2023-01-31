@@ -15,6 +15,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCorrelation,
     CiftiCreateDenseFromTemplate,
     CiftiParcellate,
+    CiftiSanitizeParcellationResults,
 )
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
@@ -408,6 +409,21 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         iterfield=["in_file"],
     )
 
+    sanitize_parcellation_results = pe.MapNode(
+        CiftiSanitizeParcellationResults(),
+        mem_gb=mem_gb,
+        name="sanitize_parcellation_results",
+        n_procs=omp_nthreads,
+        iterfield=["timeseries_file", "correlation_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (parcellate_data, sanitize_parcellation_results, [("out_file", "timeseries_file")]),
+        (correlate_data, sanitize_parcellation_results, [("out_file", "correlation_file")]),
+    ])
+    # fmt:on
+
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
         ConnectPlot(),
@@ -463,9 +479,9 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (parcellate_data, correlate_data, [("out_file", "in_file")]),
-        (parcellate_data, outputnode, [("out_file", "timeseries")]),
-        (correlate_data, outputnode, [("out_file", "correlations")]),
-        (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
+        (sanitize_parcellation_results, outputnode, [("timeseries_file", "timeseries")]),
+        (sanitize_parcellation_results, outputnode, [("correlation_file", "correlations")]),
+        (sanitize_parcellation_results, matrix_plot, [("timeseries_file", "time_series_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
