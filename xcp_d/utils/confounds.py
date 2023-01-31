@@ -535,10 +535,6 @@ def motion_regression_filter(
     """
     assert motion_filter_type in ("lp", "notch")
 
-    # casting all variables
-    TR = float(TR)
-    order = float(motion_filter_order)
-
     filtered_data = data.copy()
 
     sampling_frequency = 1 / TR
@@ -563,11 +559,10 @@ def motion_regression_filter(
         highcut = float(cutting_frequency) / nyquist_frequency
 
         b, a = butter(
-            order / 2,
+            motion_filter_order / 2,
             highcut,
             btype="lowpass",
             output="ba",
-            fs=sampling_frequency,
         )
 
     elif motion_filter_type == "notch":  # notch filter
@@ -591,14 +586,13 @@ def motion_regression_filter(
         bandstop_cuts = cutting_frequencies / nyquist_frequency
 
         b, a = butter(
-            order / 2,
+            motion_filter_order / 2,
             bandstop_cuts,
             btype="bandstop",
             output="ba",
-            fs=sampling_frequency,
         )
 
-    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
+    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
     for i_row in range(filtered_data.shape[0]):
