@@ -10,12 +10,14 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
-from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
+from xcp_d.interfaces.prepostcleaning import (
+    CiftiPrepareForParcellation,
+    CiftiSanitizeParcellationResults,
+)
 from xcp_d.interfaces.workbench import (
     CiftiCorrelation,
     CiftiCreateDenseFromTemplate,
     CiftiParcellate,
-    CiftiSanitizeParcellationResults,
 )
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
