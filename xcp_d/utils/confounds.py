@@ -533,7 +533,8 @@ def motion_regression_filter(
     ----------
     .. footbibliography::
     """
-    assert motion_filter_type in ("lp", "notch")
+    if motion_filter_type not in ("lp", "notch"):
+        raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     sampling_frequency = 1 / TR
     nyquist_frequency = sampling_frequency / 2
