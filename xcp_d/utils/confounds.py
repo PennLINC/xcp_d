@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from nilearn.interfaces.fmriprep import load_confounds
 from nipype import logging
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
@@ -535,8 +535,6 @@ def motion_regression_filter(
     """
     assert motion_filter_type in ("lp", "notch")
 
-    filtered_data = data.copy()
-
     sampling_frequency = 1 / TR
     nyquist_frequency = sampling_frequency / 2
 
@@ -547,23 +545,26 @@ def motion_regression_filter(
         if band_stop_max:
             warnings.warn("The parameter 'band_stop_max' will be ignored.")
 
-        low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
+        lowpass_hz = band_stop_min / 60  # change BPM to right time unit
 
-        # cutting frequency
-        cutting_frequency = np.abs(
-            low_pass_freq_hertz
-            - (np.floor((low_pass_freq_hertz + nyquist_frequency) / sampling_frequency))
+        # Adjust frequency in case Nyquist is below cutoff.
+        # This won't have an effect if the data have a fast enough sampling rate.
+        lowpass_hz_adjusted = np.abs(
+            lowpass_hz
+            - (np.floor((lowpass_hz + nyquist_frequency) / sampling_frequency))
             * sampling_frequency
         )
-
-        highcut = float(cutting_frequency) / nyquist_frequency
+        if lowpass_hz_adjusted != lowpass_hz:
+            print("Low-pass filter frequency changed.")
 
         b, a = butter(
             motion_filter_order / 2,
-            highcut,
+            lowpass_hz_adjusted,
             btype="lowpass",
             output="ba",
+            fs=sampling_frequency,
         )
+        filtered_data = filtfilt(b, a, data, axis=1, padtype="constant")
 
     elif motion_filter_type == "notch":  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
@@ -573,30 +574,30 @@ def motion_regression_filter(
         assert band_stop_min > 0
         assert band_stop_min < band_stop_max
 
-        # bandwidth as an array
-        bandstop_band = np.array([band_stop_min, band_stop_max])
-        bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
+        stopband = np.array([band_stop_min, band_stop_max])
+        stopband_hz = stopband / 60  # change BPM to Hertz
 
-        cutting_frequencies = np.abs(
-            bandstop_band_hz
-            - (np.floor((bandstop_band_hz + nyquist_frequency) / sampling_frequency))
+        # Adjust frequencies in case Nyquist is within/below band.
+        # This won't have an effect if the data have a fast enough sampling rate.
+        stopband_hz_adjusted = np.abs(
+            stopband_hz
+            - (np.floor((stopband_hz + nyquist_frequency) / sampling_frequency))
             * sampling_frequency
         )
+        if not np.array_equal(stopband_hz, stopband_hz_adjusted):
+            print("Low-pass filter frequencies changed.")
 
-        bandstop_cuts = cutting_frequencies / nyquist_frequency
+        # Convert stopband to a single notch frequency.
+        freq_to_remove = np.mean(stopband_hz_adjusted)
+        bandwidth = np.abs(np.diff(stopband_hz_adjusted))
 
-        b, a = butter(
-            motion_filter_order / 2,
-            bandstop_cuts,
-            btype="bandstop",
-            output="ba",
-        )
+        # Create filter coefficients.
+        b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
+        n_filter_applications = int(np.floor(motion_filter_order / 2))
 
-    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
-
-    # apply the filter, loop through columns of regressors
-    for i_row in range(filtered_data.shape[0]):
-        filtered_data[i_row, :] = filtfilt(b, a, data[i_row, :], padtype="constant")
+        filtered_data = data.copy()
+        for _ in range(n_filter_applications):
+            filtered_data = filtfilt(b, a, filtered_data, axis=1, padtype="constant")
 
     return filtered_data
 
