@@ -16,7 +16,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.fcon import extract_timeseries_funct
+from xcp_d.utils.fcon import apply_nifti_parcellation
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -68,7 +68,7 @@ class NiftiConnect(SimpleInterface):
             self._results["time_series_tsv"],
             self._results["fcon_matrix_tsv"],
             self._results["parcel_coverage_file"],
-        ) = extract_timeseries_funct(
+        ) = apply_nifti_parcellation(
             in_file=self.inputs.filtered_file,
             atlas=self.inputs.atlas,
             mask=self.inputs.mask,

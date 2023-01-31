@@ -12,7 +12,7 @@ from templateflow.api import get as get_template
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def extract_timeseries_funct(
+def apply_nifti_parcellation(
     in_file,
     mask,
     atlas,
