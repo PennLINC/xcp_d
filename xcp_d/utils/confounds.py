@@ -346,6 +346,73 @@ def describe_regression(params, custom_confounds_file):
 
 
 @fill_doc
+def describe_censoring(
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    head_radius,
+    fd_thresh,
+):
+    """Build a text description of the motion parameter filtering and FD censoring process.
+
+    Parameters
+    ----------
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(head_radius)s
+    %(fd_thresh)s
+
+    Returns
+    -------
+    desc : str
+        A text description of the censoring procedure.
+    """
+    from num2words import num2words
+
+    filter_str, filter_post_str = "", ""
+    if motion_filter_type:
+        if motion_filter_type == "notch":
+            filter_sub_str = (
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a(n) "
+                f"{num2words(motion_filter_order, ordinal=True)}-order notch filter, "
+                "based on @fair2020correction"
+            )
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute using a(n) "
+                f"{num2words(motion_filter_order, ordinal=True)}-order Butterworth filter, "
+                "based on @gratton2020removal"
+            )
+
+        filter_str = (
+            f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
+        )
+        filter_post_str = (
+            "The filtered versions of the motion traces and framewise displacement were not used "
+            "for denoising."
+        )
+
+    if isinstance(head_radius, float):
+        fd_substr = f"{head_radius} mm"
+    else:
+        fd_substr = "estimated from the preprocessed brain mask"
+
+    desc = (
+        f"In order to identify high-motion outlier volumes, {filter_str}"
+        "framewise displacement was calculated using the formula from @power_fd_dvars, "
+        f"with a head radius {fd_substr}. "
+        f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
+        f"greater than {fd_thresh} mm were flagged as outliers and excluded from nuisance "
+        f"regression [@power_fd_dvars]. {filter_post_str}"
+    )
+    return desc
+
+
+@fill_doc
 def load_confound_matrix(params, img_file, custom_confounds=None):
     """Load a subset of the confounds associated with a given file.
 

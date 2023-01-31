@@ -25,6 +25,7 @@ from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,
+    describe_censoring,
     describe_regression,
     get_customfile,
 )
@@ -182,40 +183,16 @@ def init_ciftipostprocess_wf(
         run_data["confounds"],
     )
     regression_description = describe_regression(params, custom_confounds_file)
+    censoring_description = describe_censoring(
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        head_radius=head_radius,
+        fd_thresh=fd_thresh,
+    )
 
     workflow = Workflow(name=name)
-
-    filter_str, filter_post_str = "", ""
-    if motion_filter_type:
-        if motion_filter_type == "notch":
-            filter_sub_str = (
-                f"band-stop filtered to remove signals between {band_stop_min} and "
-                f"{band_stop_max} breaths-per-minute using a notch filter, based on "
-                "@fair2020correction"
-            )
-        else:  # lp
-            filter_sub_str = (
-                f"low-pass filtered below {band_stop_min} breaths-per-minute, "
-                "based on @fair2020correction and @gratton2020removal"
-            )
-
-        filter_str = (
-            f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
-        )
-        filter_post_str = (
-            "The filtered versions of the motion traces and framewise displacement were not used "
-            "for denoising."
-        )
-
-    if isinstance(head_radius, float):
-        fd_substr = f"with a head radius of {head_radius} mm"
-    else:
-        fd_substr = "with a head radius estimated from the preprocessed brain mask"
-
-    fd_str = (
-        f"{filter_str}framewise displacement was calculated using the formula from "
-        f"@power_fd_dvars, {fd_substr}"
-    )
 
     if dummy_scans == 0 and dummytime != 0:
         dummy_scans = int(np.ceil(dummytime / TR))
@@ -243,18 +220,16 @@ def init_ciftipostprocess_wf(
     bandpass_str = ""
     if bandpass_filter:
         bandpass_str = (
-            "The interpolated timeseries were then band-pass filtered to retain signals within "
-            f"the {lower_bpf}-{upper_bpf} Hz frequency band."
+            "The interpolated timeseries were then band-pass filtered using a(n) "
+            f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
+            f"in order to retain signals within the {lower_bpf}-{upper_bpf} Hz frequency band."
         )
 
     workflow.__desc__ = f"""\
-For each of the {num2words(n_runs)} BOLD series found per subject (across all tasks and sessions),
+For each of the {num2words(n_runs)} BOLD runs found per subject (across all tasks and sessions),
 the following post-processing was performed.
 First, {dummy_scans_str}outlier detection was performed.
-In order to identify high-motion outlier volumes, {fd_str}.
-Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement greater than
-{fd_thresh} mm were flagged as outliers and excluded from nuisance regression [@power_fd_dvars].
-{filter_post_str}
+{censoring_description}
 {despike_str}
 Next, the BOLD data and confounds were mean-centered and linearly detrended.
 {regression_description}
