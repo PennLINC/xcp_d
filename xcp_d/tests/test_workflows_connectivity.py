@@ -175,7 +175,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         corr_dir,
         "correlation_matrix_parcellated_prepared_timeseries.dtseries.ptseries.pconn.nii",
     )
-    assert os.path.isfile(pconn_file), os.lsitdir(corr_dir)
+    assert os.path.isfile(pconn_file), os.listdir(corr_dir)
 
     # Read it out
     xcp_array = nb.load(pconn_file).get_fdata().T
