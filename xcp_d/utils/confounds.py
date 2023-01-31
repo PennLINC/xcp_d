@@ -553,7 +553,14 @@ def motion_regression_filter(
 
         low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
 
-        highcut = np.float(low_pass_freq_hertz) / nyquist_frequency
+        # cutting frequency
+        cutting_frequency = np.abs(
+            low_pass_freq_hertz
+            - (np.floor((low_pass_freq_hertz + nyquist_frequency) / sampling_frequency))
+            * sampling_frequency
+        )
+
+        highcut = float(cutting_frequency) / nyquist_frequency
 
         b, a = butter(
             order / 2,
@@ -574,7 +581,14 @@ def motion_regression_filter(
         # bandwidth as an array
         bandstop_band = np.array([band_stop_min, band_stop_max])
         bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
-        bandstop_cuts = bandstop_band_hz / nyquist_frequency
+
+        cutting_frequencies = np.abs(
+            bandstop_band_hz
+            - (np.floor((bandstop_band_hz + nyquist_frequency) / sampling_frequency))
+            * sampling_frequency
+        )
+
+        bandstop_cuts = cutting_frequencies / nyquist_frequency
 
         b, a = butter(
             order / 2,
