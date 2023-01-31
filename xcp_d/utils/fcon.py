@@ -3,118 +3,12 @@
 """Functions for calculating functional connectivity in NIFTI files."""
 import nibabel as nb
 import numpy as np
-from nilearn.input_data import NiftiLabelsMasker
 from nipype import logging
 from scipy import signal
 from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
 LOGGER = logging.getLogger("nipype.utils")
-
-
-def apply_nifti_parcellation(
-    in_file,
-    mask,
-    atlas,
-    timeseries,
-    fconmatrix,
-    parcel_coverage_file,
-):
-    """Use Nilearn NiftiLabelsMasker to extract timeseries.
-
-    Parameters
-    ----------
-    in_file : str
-        bold file timeseries
-    mask : str
-        BOLD file's associated brain mask file.
-    atlas : str
-        atlas in the same space with bold
-    timeseries : str
-        extracted timeseries filename
-    fconmatrix : str
-        functional connectivity matrix filename
-    parcel_coverage_file : str
-        parcel-wise coverage filename
-
-    Returns
-    -------
-    timeseries : str
-        extracted timeseries filename
-    fconmatrix : str
-        functional connectivity matrix filename
-    parcel_coverage_file : str
-        parcel-wise coverage filename
-    """
-    coverage_threshold = 0.5
-
-    # Before anything, we need to measure coverage
-    atlas_img = nb.load(atlas)
-    atlas_data = atlas_img.get_fdata()
-    atlas_data_bin = (atlas_data > 0).astype(np.float32)
-    atlas_img_bin = nb.Nifti1Image(atlas_data_bin, atlas_img.affine, atlas_img.header)
-
-    sum_masker_masked = NiftiLabelsMasker(
-        labels_img=atlas,
-        mask_img=mask,
-        smoothing_fwhm=None,
-        standardize=False,
-        strategy="sum",
-    )
-    sum_masker_unmasked = NiftiLabelsMasker(
-        labels_img=atlas,
-        smoothing_fwhm=None,
-        standardize=False,
-        strategy="sum",
-    )
-    n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
-    n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
-    parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
-    coverage_thresholded = parcel_coverage < coverage_threshold  # we require 50%+ coverage
-
-    n_nodes = coverage_thresholded.size
-    n_uncovered_nodes = np.sum(parcel_coverage == 0)
-    n_poorly_covered_nodes = np.sum(np.logical_and(parcel_coverage > 0, parcel_coverage < 0.5))
-    n_partially_covered_nodes = np.sum(np.logical_and(parcel_coverage >= 0.5, parcel_coverage < 1))
-
-    if n_uncovered_nodes:
-        LOGGER.warning(f"{n_uncovered_nodes}/{n_nodes} of parcels have 0% coverage.")
-
-    if n_poorly_covered_nodes:
-        LOGGER.warning(
-            f"{n_poorly_covered_nodes}/{n_nodes} of parcels have <50% coverage. "
-            "These parcels' time series will be replaced with zeros."
-        )
-
-    if n_partially_covered_nodes:
-        LOGGER.warning(
-            f"{n_partially_covered_nodes}/{n_nodes} of parcels have at least one uncovered "
-            "voxel, but have enough good voxels to be useable. "
-            "The bad voxels will be ignored and the parcels' time series will be "
-            "calculated from the remaining voxels."
-        )
-
-    masker = NiftiLabelsMasker(
-        labels_img=atlas,
-        mask_img=mask,
-        smoothing_fwhm=None,
-        standardize=False,
-    )
-
-    # Use nilearn for time_series
-    time_series = masker.fit_transform(in_file)
-
-    # Apply the coverage mask
-    time_series[:, coverage_thresholded] = 0
-
-    # Use numpy for correlation matrix
-    correlation_matrices = np.corrcoef(time_series.T)
-
-    np.savetxt(fconmatrix, correlation_matrices, delimiter="\t")
-    np.savetxt(timeseries, time_series, delimiter="\t")
-    np.savetxt(parcel_coverage_file, parcel_coverage, delimiter="\t")
-
-    return timeseries, fconmatrix, parcel_coverage_file
 
 
 def compute_2d_reho(datat, adjacency_matrix):
