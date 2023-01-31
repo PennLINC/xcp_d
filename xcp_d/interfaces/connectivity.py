@@ -128,7 +128,7 @@ class NiftiConnect(SimpleInterface):
         time_series = masker.fit_transform(filtered_file)
 
         # Apply the coverage mask
-        time_series[:, coverage_thresholded] = 0
+        time_series[:, coverage_thresholded] = np.nan
 
         # Use numpy for correlation matrix
         correlation_matrices = np.corrcoef(time_series.T)
