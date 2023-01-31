@@ -154,7 +154,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     parc_file = os.path.join(
         parc_dir,
-        "parcellated_prepared_timeseries.dtseries.ptseries.nii",
+        "parcellated_fake_signal_file_timeseries.dtseries.ptseries.nii",
     )
     assert os.path.isfile(parc_file), os.listdir(parc_dir)
 
