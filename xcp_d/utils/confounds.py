@@ -128,7 +128,7 @@ def load_motion(
     ----------
     .. footbibliography::
     """
-    if motion_filter_type not in ("lp", "notch"):
+    if motion_filter_type not in ("lp", "notch", None):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
@@ -146,7 +146,6 @@ def load_motion(
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds = motion_confounds.T  # Transpose motion confounds back to RxT
         motion_confounds_df = pd.DataFrame(
             data=motion_confounds,
             columns=motion_confounds_df.columns,
