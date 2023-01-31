@@ -750,11 +750,11 @@ class CiftiSanitizeParcellationResults(SimpleInterface):
 
         timeseries_arr = timeseries_img.get_fdata()
         correlation_arr = correlation_img.get_fdata()
-        assert timeseries_arr.shape[0] == correlation_arr.shape[0]
+        assert timeseries_arr.shape[1] == correlation_arr.shape[0]
         assert correlation_arr.shape[1] == correlation_arr.shape[0]
 
-        bad_parcels = np.where(np.all(timeseries_arr == 0, axis=0))
-        timeseries_arr[bad_parcels, :] = np.nan
+        bad_parcels = np.where(np.all(timeseries_arr == 0, axis=0))[0]
+        timeseries_arr[:, bad_parcels] = np.nan
         correlation_arr[bad_parcels, :] = np.nan
         correlation_arr[:, bad_parcels] = np.nan
 
