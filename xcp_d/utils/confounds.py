@@ -128,7 +128,8 @@ def load_motion(
     ----------
     .. footbibliography::
     """
-    assert motion_filter_type in ("lp", "notch", None), motion_filter_type
+    if motion_filter_type not in ("lp", "notch"):
+        raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
     motion_confounds_df = confounds_df[
@@ -511,23 +512,36 @@ def motion_regression_filter(
     ----------
     data : (V, T) numpy.ndarray
         Data to filter. V = variables, T = time
+        The filter will be applied independently to each variable, across time.
     TR : float
         Repetition time of the data.
-    motion_filter_type : {"lp", "notch"}
-        The type of motion filter to apply.
-        If "notch", the frequencies between ``band_stop_min`` and ``band_stop_max`` will be
-        removed.
-        If "lp", the frequencies above ``band_stop_min`` will be removed.
+    %(motion_filter_type)s
         If not "notch" or "lp", an exception will be raised.
     %(band_stop_min)s
     %(band_stop_max)s
-    motion_filter_order : int, optional
-        Default is 4.
+    %(motion_filter_order)s
 
     Returns
     -------
-    data : numpy.ndarray
-        Filtered data.
+    data : (V, T) numpy.ndarray
+        Filtered data. Same size as the original data.
+
+    Notes
+    -----
+    Low-pass filtering (``motion_filter_type = "lp"``) is performed with a Butterworth filter,
+    as in :footcite:t:`gratton2020removal`.
+    The order of the Butterworth filter is determined by ``motion_filter_order``,
+    although the original paper used a first-order filter.
+    The original paper also used zero-padding with a padding size of 100.
+    We use constant-padding, with the default padding size determined by
+    :func:`scipy.signal.filtfilt`.
+
+    Band-stop filtering (``motion_filter_type = "notch"``) is performed with a notch filter,
+    as in :footcite:t:`fair2020correction`.
+    This filter uses the mean of the stopband frequencies as the target frequency,
+    and the range between the two frequencies as the bandwidth.
+    The filter is applied with constant-padding, using the default padding size determined by
+    :func:`scipy.signal.filtfilt`.
 
     References
     ----------
