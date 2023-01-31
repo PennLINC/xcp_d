@@ -48,9 +48,9 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--motion-filter-type=notch",
         "--band-stop-min=12",
         "--band-stop-max=18",
-        "--warp-surfaces-native2std",
     ]
     opts = get_parser().parse_args(parameters)
+
     retval = {}
     retval = build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)

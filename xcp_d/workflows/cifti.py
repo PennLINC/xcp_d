@@ -323,6 +323,7 @@ produced by the regression.
     # fmt:on
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
+        TR=TR,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         name="cifti_ts_con_wf",
@@ -654,6 +655,7 @@ produced by the regression.
             ('outputnode.atlas_names', 'inputnode.atlas_names'),
             ('outputnode.correlations', 'inputnode.correlations'),
             ('outputnode.timeseries', 'inputnode.timeseries'),
+            ('outputnode.coverage', 'inputnode.coverage_files'),
         ]),
     ])
 
