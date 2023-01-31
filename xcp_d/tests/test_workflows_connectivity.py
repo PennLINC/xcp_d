@@ -43,6 +43,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's define the inputs and create the node
     connectivity_wf = init_nifti_functional_connectivity_wf(
         output_dir=tmpdir,
+        min_coverage=0.5,
         mem_gb=4,
         name="connectivity_wf",
         omp_nthreads=2,
@@ -136,6 +137,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf = init_cifti_functional_connectivity_wf(
         TR=TR,
         output_dir=tmpdir,
+        min_coverage=0.5,
         mem_gb=4,
         omp_nthreads=2,
         name="connectivity_wf",
