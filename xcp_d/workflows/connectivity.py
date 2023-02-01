@@ -124,7 +124,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file"],
+            output_names=["atlas_file", "atlas_labels_file"],
             function=get_atlas_nifti,
         ),
         name="atlas_file_grabber",
@@ -167,10 +167,13 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 
     # fmt:off
     workflow.connect([
+        (atlas_file_grabber, nifti_connect, [
+            ("atlas_labels_file", "atlas_labels"),
+        ]),
         (nifti_connect, outputnode, [
-            ("time_series_tsv", "timeseries"),
-            ("fcon_matrix_tsv", "correlations"),
-            ("parcel_coverage_file", "coverage"),
+            ("timeseries", "timeseries"),
+            ("correlations", "correlations"),
+            ("coverage", "coverage"),
         ]),
     ])
     # fmt:on
@@ -325,7 +328,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file"],
+            output_names=["atlas_file", "atlas_labels_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
