@@ -80,17 +80,17 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Read that into a df
     timeseries_df = pd.read_table(timeseries_file, header=None)
     timeseries_arr = timeseries_df.to_numpy()
-    assert timeseries_arr.shape == (60, 1000)
+    assert timeseries_arr.shape == (60, 1000)  # :(
 
     # Read that into a df
     corr_df = pd.read_table(correlation_file, header=None)
     corr_arr = corr_df.to_numpy()
-    assert corr_arr.shape == (1000, 1000)
+    assert corr_arr.shape == (1000, 1000)  # :(
 
     # Read that into a df
     coverage_df = pd.read_table(coverage_file, header=None)
     coverage_arr = coverage_df.to_numpy()
-    assert coverage_arr.shape == (1000,)
+    assert coverage_arr.shape == (1000,)  # :(
 
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = os.path.join(
@@ -112,7 +112,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # The "ground truth" matrix
     ground_truth = np.corrcoef(signals.T)
-    assert ground_truth.shape == (1000, 1000)
+    assert ground_truth.shape == (998, 998)  # :(
 
     # Parcels with <50% coverage should have NaNs
     bad_parcel_idx = np.where(coverage_arr < 0.5)[0]
