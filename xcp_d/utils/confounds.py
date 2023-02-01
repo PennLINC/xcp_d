@@ -642,7 +642,7 @@ def motion_regression_filter(
             output="ba",
             fs=sampling_frequency,
         )
-        filtered_data = filtfilt(b, a, data, axis=0, padtype="constant")
+        filtered_data = filtfilt(b, a, data, axis=0, padtype="constant", padlen=data.shape[0])
 
     elif motion_filter_type == "notch":  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
@@ -675,7 +675,14 @@ def motion_regression_filter(
 
         filtered_data = data.copy()
         for _ in range(n_filter_applications):
-            filtered_data = filtfilt(b, a, filtered_data, axis=0, padtype="constant")
+            filtered_data = filtfilt(
+                b,
+                a,
+                filtered_data,
+                axis=0,
+                padtype="constant",
+                padlen=data.shape[0],
+            )
 
     return filtered_data
 

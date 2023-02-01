@@ -404,7 +404,13 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
 
     # apply the filter, loop through columns of regressors
     for i_voxel in range(filtered_data.shape[1]):
-        filtered_data[:, i_voxel] = filtfilt(b, a, data[:, i_voxel], padtype="constant")
+        filtered_data[:, i_voxel] = filtfilt(
+            b,
+            a,
+            data[:, i_voxel],
+            padtype="constant",
+            padlen=data.shape[0],
+        )
 
     return filtered_data
 

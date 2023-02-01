@@ -22,7 +22,13 @@ def test_motion_filtering_lp():
         output="ba",
         fs=1 / TR,
     )
-    lowpass_data_true = signal.filtfilt(b, a, raw_data, padtype="constant")
+    lowpass_data_true = signal.filtfilt(
+        b,
+        a,
+        raw_data,
+        padtype="constant",
+        padlen=raw_data.size,
+    )
 
     # Confirm the LP filter runs with reasonable parameters
     raw_data = raw_data[:, None]  # add singleton row dimension
@@ -54,7 +60,13 @@ def test_motion_filtering_notch():
 
     # Create filter coefficients.
     b, a = signal.iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=1 / TR)
-    notch_data_true = signal.filtfilt(b, a, raw_data, padtype="constant")
+    notch_data_true = signal.filtfilt(
+        b,
+        a,
+        raw_data,
+        padtype="constant",
+        padlen=raw_data.size,
+    )
 
     # Repeat for notch filter
     raw_data = raw_data[:, None]  # add singleton row dimension
@@ -85,7 +97,13 @@ def test_bandpass_filtering():
         output="ba",
         fs=fs,
     )
-    butterworth_data_true = signal.filtfilt(b, a, raw_data, padtype="constant")
+    butterworth_data_true = signal.filtfilt(
+        b,
+        a,
+        raw_data,
+        padtype="constant",
+        padlen=raw_data.size,
+    )
 
     # Confirm the butterworth filter runs with reasonable parameters
     raw_data = raw_data[:, None]  # add singleton row dimension
