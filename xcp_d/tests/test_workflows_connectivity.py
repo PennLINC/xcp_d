@@ -166,21 +166,25 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     timeseries_file = os.path.join(
         sanitize_dir,
-        "parcellated_prepared_timeseries.dtseries.ptseries.nii",
+        "parcellated_prepared_timeseries.dtseriessanitized.ptseries.nii",
     )
     assert os.path.isfile(timeseries_file), os.listdir(sanitize_dir)
 
     correlation_file = os.path.join(
         sanitize_dir,
-        "fake_signal_filefcon_matrix.pconn.nii",
+        "correlation_matrix_parcellated_prepared_timeseries.dtseries.ptseriessanitized.pconn.nii",
     )
     assert os.path.isfile(correlation_file), os.listdir(sanitize_dir)
 
-    coverage_file = os.path.join(
-        sanitize_dir,
-        "fake_signal_fileparcel_coverage_file.pscalar.nii",
+    coverage_dir = os.path.join(
+        connectivity_wf.base_dir,
+        "connectivity_wf/parcellate_coverage_file/mapflow/_parcellate_coverage_file9",
     )
-    assert os.path.isfile(coverage_file), os.listdir(sanitize_dir)
+    coverage_file = os.path.join(
+        coverage_dir,
+        "parcellated_parcel_coverage.dscalar.pscalar.nii",
+    )
+    assert os.path.isfile(coverage_file), os.listdir(coverage_dir)
 
     # Let's read out the parcellated time series and get its corr coeff
     timeseries_arr = nb.load(timeseries_file).get_fdata().T
