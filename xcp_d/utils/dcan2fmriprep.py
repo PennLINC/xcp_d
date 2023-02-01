@@ -39,7 +39,6 @@ def dcan2fmriprepx(dcan_dir, out_dir, sub_id):
     # anat dirx
 
     for ses in ses_id:
-
         anat_dirx = dcan_dir + "/" + sub_id + "/ses-" + ses + "/files/MNINonLinear/"
         anatdir = out_dir + "/" + sub_id + "/ses-" + ses + "/anat/"
         os.makedirs(anatdir, exist_ok=True)
