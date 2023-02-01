@@ -43,10 +43,6 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     alff_compute_wf.inputs.inputnode.clean_bold = bold_file
     alff_compute_wf.run()
 
-    node = alff_compute_wf.get_node("alff_compt")
-    node_output_dir = node.output_dir()
-    raise Exception(f"Paths:\n\tbase_dir: {tempdir}\n\tnode output_dir: {node_output_dir}")
-
     # Let's get the mean of the ALFF for later comparison
     original_alff = os.path.join(
         tempdir,
