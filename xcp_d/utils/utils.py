@@ -392,17 +392,12 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     filtered_data : (T, S) numpy.ndarray
         The filtered data.
     """
-    nyq = 0.5 * fs  # nyquist frequency
-
-    # normalize the cutoffs
-    lowcut = highpass / nyq
-    highcut = lowpass / nyq
-
     b, a = butter(
         order / 2,
-        [lowcut, highcut],
+        [highpass, lowpass],
         btype="bandpass",
         output="ba",
+        fs=fs,  # eliminates need to normalize cutoff frequencies
     )
 
     filtered_data = np.zeros_like(data)  # create something to populate filtered values with

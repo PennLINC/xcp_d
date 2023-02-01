@@ -32,7 +32,7 @@ def test_motion_filtering_lp():
             TR=TR,
             motion_filter_type="lp",
             band_stop_min=band_stop_min,
-            band_stop_max=None,
+            band_stop_max=18,
             motion_filter_order=2,
         )
 
@@ -66,7 +66,8 @@ def test_motion_filtering_notch():
         band_stop_max=band_stop_max,
         motion_filter_order=2,
     )
-    assert np.allclose(np.squeeze(notch_data_test), notch_data_true)
+    notch_data_test = np.squeeze(notch_data_test)
+    assert np.allclose(notch_data_test, notch_data_true)
 
 
 def test_bandpass_filtering():
@@ -74,12 +75,15 @@ def test_bandpass_filtering():
     raw_data = np.random.random(500)
 
     highpass, lowpass = 0.009, 0.08
+    TR = 0.8
+    fs = 1 / TR
 
     b, a = signal.butter(
         1,
         [highpass, lowpass],
         btype="bandpass",
         output="ba",
+        fs=fs,
     )
     butterworth_data_true = signal.filtfilt(b, a, raw_data, padtype="constant")
 
@@ -87,9 +91,10 @@ def test_bandpass_filtering():
     raw_data = raw_data[:, None]  # add singleton row dimension
     butterworth_data_test = butter_bandpass(
         raw_data,
-        fs=1 / 0.8,
+        fs=fs,
         highpass=highpass,
         lowpass=lowpass,
         order=2,
     )
-    assert np.allclose(np.squeeze(butterworth_data_test), butterworth_data_true)
+    butterworth_data_test = np.squeeze(butterworth_data_test)
+    assert np.allclose(butterworth_data_test, butterworth_data_true)
