@@ -38,7 +38,6 @@ class FilteringData(SimpleInterface):
     output_spec = _FilteringDataOutputSpec
 
     def _run_interface(self, runtime):
-
         # get the nifti/cifti into  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         # filter the data

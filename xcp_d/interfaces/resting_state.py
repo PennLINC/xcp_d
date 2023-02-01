@@ -60,7 +60,6 @@ class SurfaceReHo(SimpleInterface):
     output_spec = _SurfaceReHoOutputSpec
 
     def _run_interface(self, runtime):
-
         # Read the gifti data
         data_matrix = read_gii(self.inputs.surf_bold)
 
@@ -115,7 +114,6 @@ class ComputeALFF(SimpleInterface):
     output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
-
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         # compute the ALFF
