@@ -22,7 +22,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
         {
             "onset": [10, 30, 50],
             "duration": [5, 10, 5],
-            "trial_type": (["condition01"] * 2) + (["condition02"] * 1)
+            "trial_type": (["condition01"] * 2) + (["condition02"] * 1),
         },
     )
     custom_confounds = make_first_level_design_matrix(
