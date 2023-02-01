@@ -51,7 +51,6 @@ class Regress(SimpleInterface):
     output_spec = _RegressOutputSpec
 
     def _run_interface(self, runtime):
-
         # Get the confound matrix
         confound = pd.read_table(self.inputs.confounds)
         confound_arr = confound.to_numpy()

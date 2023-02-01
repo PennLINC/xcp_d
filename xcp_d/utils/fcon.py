@@ -42,11 +42,7 @@ def compute_2d_reho(datat, adjacency_matrix):
         neigbor, timepoint = neidata.shape[0], neidata.shape[1]
 
         for j in range(neidata.shape[0]):  # loop through each neighbour
-            rankeddata[j, :] = rankdata(
-                neidata[
-                    j,
-                ]
-            )  # assign ranks to timepoints for each voxel
+            rankeddata[j, :] = rankdata(neidata[j,])  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # KC is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
