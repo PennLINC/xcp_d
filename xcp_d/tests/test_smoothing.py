@@ -25,8 +25,8 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
     os.system(
         (
-            f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {in_file} -mask {mask} '
-            '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
+            f"3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {in_file} -mask {mask} "
+            "-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out"
         )
     )
 
@@ -41,11 +41,12 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     fwhm_unsmoothed = np.array(fwhm)
 
     # else this will need to be overwritten later
-    os.system('rm -rf 3dFWHMx.1D test_fwhm.out test_file.out')
+    os.system("rm -rf 3dFWHMx.1D test_fwhm.out test_file.out")
 
     # Smooth the data
-    smooth_data = pe.Node(Smooth(fwhm=6),  # FWHM = kernel size
-                          name="nifti_smoothing")  # Use fslmaths to smooth the image
+    smooth_data = pe.Node(
+        Smooth(fwhm=6), name="nifti_smoothing"  # FWHM = kernel size
+    )  # Use fslmaths to smooth the image
     smooth_data.inputs.in_file = in_file
     results = smooth_data.run()
     out_file = results.outputs.out_file
@@ -54,8 +55,8 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     # i.e : the "ShowMeClassicFWHM" option
     os.system(
         (
-            f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {out_file} -mask {mask} '
-            '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
+            f"3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {out_file} -mask {mask} "
+            "-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out"
         )
     )
 
@@ -68,8 +69,8 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
         item = float(item)
         fwhm.append(item)
     fwhm_smoothed = np.array(fwhm)
-    smoothed = np.sum((fwhm_smoothed)**2)
-    unsmoothed = np.sum((fwhm_unsmoothed)**2)
+    smoothed = np.sum((fwhm_smoothed) ** 2)
+    unsmoothed = np.sum((fwhm_unsmoothed) ** 2)
     assert smoothed > unsmoothed
     return
 

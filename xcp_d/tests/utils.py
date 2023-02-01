@@ -135,8 +135,7 @@ def run_command(command, env=None):
 
     if process.returncode != 0:
         raise Exception(
-            f"Non zero return code: {process.returncode}\n"
-            f"{command}\n\n{process.stdout.read()}"
+            f"Non zero return code: {process.returncode}\n" f"{command}\n\n{process.stdout.read()}"
         )
 
 
