@@ -376,20 +376,20 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
 
     Parameters
     ----------
-    data : numpy.ndarray
-        Voxels/vertices by timepoints dimension.
+    data : (T, S) numpy.ndarray
+        Time by voxels/vertices array of data.
     fs : float
         Sampling frequency. 1/TR(s).
     lowpass : float
-        frequency
+        frequency, in Hertz
     highpass : float
-        frequency
+        frequency, in Hertz
     order : int
         The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
 
     Returns
     -------
-    filtered_data : numpy.ndarray
+    filtered_data : (T, S) numpy.ndarray
         The filtered data.
     """
     nyq = 0.5 * fs  # nyquist frequency
@@ -408,8 +408,8 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
     filtered_data = np.zeros_like(data)  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
-    for i_voxel in range(filtered_data.shape[0]):
-        filtered_data[i_voxel, :] = filtfilt(b, a, data[i_voxel, :], padtype="constant")
+    for i_voxel in range(filtered_data.shape[1]):
+        filtered_data[:, i_voxel] = filtfilt(b, a, data[:, i_voxel], padtype="constant")
 
     return filtered_data
 
