@@ -383,7 +383,7 @@ class CiftiConnect(SimpleInterface):
             nifti_header=nifti_header,
         )
         coverage_img = nb.Cifti2Image(
-            coverage_arr_for_cifti,
+            coverage_arr_for_cifti.T,
             pscalar_img.header,
             nifti_header=pscalar_img.nifti_header,
         )
