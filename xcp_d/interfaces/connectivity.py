@@ -366,7 +366,7 @@ class CiftiConnect(SimpleInterface):
             timeseries_df[parcel_name] = label_timeseries
 
         timeseries_arr_for_cifti = timeseries_df[parcels_in_atlas].to_numpy()
-        coverage_arr_for_cifti = coverage_df.loc[parcels_in_atlas, "coverage"].to_numpy()
+        coverage_arr_for_cifti = coverage_df.loc[parcels_in_atlas].to_numpy()
         correlation_arr_for_cifti = np.corrcoef(timeseries_arr_for_cifti.T)
 
         # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
