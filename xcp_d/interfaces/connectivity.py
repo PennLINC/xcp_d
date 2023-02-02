@@ -202,8 +202,8 @@ class CiftiConnect(SimpleInterface):
     timeseries using numpy.
     """
 
-    input_spec = _NiftiConnectInputSpec
-    output_spec = _NiftiConnectOutputSpec
+    input_spec = _CiftiConnectInputSpec
+    output_spec = _CiftiConnectOutputSpec
 
     def _run_interface(self, runtime):
         ptseries = self.inputs.ptseries
