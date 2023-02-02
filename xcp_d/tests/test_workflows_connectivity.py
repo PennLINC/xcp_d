@@ -90,7 +90,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Read that into a df
     coverage_df = pd.read_table(coverage_file, header=None)
     coverage_arr = coverage_df.to_numpy()
-    assert coverage_arr.shape == (998,)  # :(
+    assert coverage_arr.shape == (998, 1)  # :(
 
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = os.path.join(
@@ -180,10 +180,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         connectivity_wf.base_dir,
         "connectivity_wf/parcellate_coverage_file/mapflow/_parcellate_coverage_file9",
     )
-    coverage_file = os.path.join(
-        coverage_dir,
-        "parcellated_parcel_coverage.dscalar.pscalar.nii",
-    )
+    coverage_file = os.path.join(coverage_dir, "parcel_coverage.pscalar.nii")
     assert os.path.isfile(coverage_file), os.listdir(coverage_dir)
 
     # Let's read out the parcellated time series and get its corr coeff
