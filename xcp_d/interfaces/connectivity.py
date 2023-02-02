@@ -370,7 +370,7 @@ class CiftiConnect(SimpleInterface):
         correlation_arr_for_cifti = np.corrcoef(timeseries_arr_for_cifti.T)
 
         # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
-        timeseries_df.rename(columns={parcel_name_mapper})
+        timeseries_df = timeseries_df.rename(columns=parcel_name_mapper)
         correlations_df = timeseries_df.corr()
 
         time_axis = data_img.header.get_axis(0)
