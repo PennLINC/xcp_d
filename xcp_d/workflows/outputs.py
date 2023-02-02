@@ -99,10 +99,10 @@ def init_writederivatives_wf(
         niu.IdentityInterface(
             fields=[
                 "atlas_names",
-                "timeseries",
                 "confounds_file",
-                "correlations",
                 "coverage_files",
+                "timeseries",
+                "correlations",
                 "qc_file",
                 "processed_bold",
                 "smoothed_bold",
@@ -116,6 +116,10 @@ def init_writederivatives_wf(
                 "tmask",
                 "tmask_metadata",
                 "dummy_scans",
+                # cifti-only inputs
+                "coverage_ciftis",
+                "timeseries_ciftis",
+                "correlation_ciftis",
             ],
         ),
         name="inputnode",
@@ -198,6 +202,67 @@ def init_writederivatives_wf(
     ])
     # fmt:on
 
+    ds_coverage_files = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            suffix="coverage",
+            extension=".tsv",
+        ),
+        name="ds_coverage_files",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file"],
+    )
+    ds_timeseries = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            suffix="timeseries",
+            extension=".tsv",
+        ),
+        name="ds_timeseries",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file"],
+    )
+    ds_correlations = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            measure="pearsoncorrelation",
+            suffix="conmat",
+            extension=".tsv",
+        ),
+        name="ds_correlations",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_coverage_files, [
+            ("coverage_files", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (inputnode, ds_timeseries, [
+            ("timeseries", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (inputnode, ds_correlations, [
+            ("correlations", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+    ])
+    # fmt:on
+
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti
         write_derivative_cleandata_wf = pe.Node(
@@ -228,50 +293,6 @@ def init_writederivatives_wf(
             name="write_derivative_qcfile_wf",
             run_without_submitting=True,
             mem_gb=1,
-        )
-
-        timeseries_wf = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                suffix="timeseries",
-                extension=".tsv",
-            ),
-            name="timeseries_wf",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file"],
-        )
-        correlations_wf = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                measure="pearsoncorrelation",
-                suffix="conmat",
-                extension=".tsv",
-            ),
-            name="correlations_wf",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file"],
-        )
-        ds_coverage_files = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                suffix="coverage",
-                extension=".tsv",
-            ),
-            name="ds_coverage_files",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file"],
         )
 
         write_derivative_reho_wf = pe.Node(
@@ -373,7 +394,22 @@ def init_writederivatives_wf(
             mem_gb=1,
         )
 
-        timeseries_wf = pe.MapNode(
+        ds_coverage_cifti_files = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="coverage",
+                extension=".pscalar.nii",
+            ),
+            name="ds_coverage_cifti_files",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+        ds_timeseries_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -384,13 +420,12 @@ def init_writederivatives_wf(
                 suffix="timeseries",
                 extension=".ptseries.nii",
             ),
-            name="timeseries_wf",
+            name="ds_timeseries_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
-
-        correlations_wf = pe.MapNode(
+        ds_correlation_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
@@ -402,27 +437,28 @@ def init_writederivatives_wf(
                 suffix="conmat",
                 extension=".pconn.nii",
             ),
-            name="correlations_wf",
+            name="ds_correlation_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
 
-        ds_coverage_files = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                check_hdr=False,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                suffix="coverage",
-                extension=".pscalar.nii",
-            ),
-            name="ds_coverage_files",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file"],
-        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_coverage_cifti_files, [
+                ("coverage_ciftis", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+            (inputnode, ds_timeseries_cifti_files, [
+                ("timeseries_ciftis", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+            (inputnode, ds_correlation_cifti_files, [
+                ("correlation_ciftis", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+        ])
+        # fmt:on
 
         write_derivative_reho_wf = pe.Node(
             DerivativesDataSink(
@@ -500,9 +536,6 @@ def init_writederivatives_wf(
         (inputnode, write_derivative_cleandata_wf, [('processed_bold', 'in_file')]),
         (inputnode, write_derivative_qcfile_wf, [('qc_file', 'in_file')]),
         (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
-        (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
-        (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
-        (inputnode, ds_coverage_files, [("coverage_files", "in_file"), ("atlas_names", "atlas")]),
     ])
 
     if bandpass_filter:

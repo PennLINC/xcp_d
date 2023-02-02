@@ -15,7 +15,6 @@ from xcp_d.interfaces.connectivity import (
     ConnectPlot,
     NiftiConnect,
 )
-from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
@@ -259,7 +258,6 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 
 @fill_doc
 def init_cifti_functional_connectivity_wf(
-    TR,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -274,7 +272,6 @@ def init_cifti_functional_connectivity_wf(
 
             from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
             wf = init_cifti_functional_connectivity_wf(
-                TR=1.,
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -283,7 +280,6 @@ def init_cifti_functional_connectivity_wf(
 
     Parameters
     ----------
-    TR
     %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
@@ -337,11 +333,12 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         niu.IdentityInterface(
             fields=[
                 "atlas_names",
-                "timeseries",
+                "coverage_pscalar",
                 "ptseries",
-                "correlations",
                 "pconn",
                 "coverage",
+                "timeseries",
+                "correlations",
                 "connectplot",
             ],
         ),
@@ -390,44 +387,13 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     ])
     # fmt:on
 
-    prepare_data_for_parcellation = pe.MapNode(
-        CiftiPrepareForParcellation(TR=TR),
-        name="prepare_data_for_parcellation",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["atlas_file"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, prepare_data_for_parcellation, [("clean_bold", "data_file")]),
-        (resample_atlas_to_data, prepare_data_for_parcellation, [("cifti_out", "atlas_file")]),
-    ])
-    # fmt:on
-
-    parcellate_data = pe.MapNode(
-        CiftiParcellate(direction="COLUMN", only_numeric=True),
-        name="parcellate_data",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["in_file", "atlas_label"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (resample_atlas_to_data, parcellate_data, [("cifti_out", "atlas_label")]),
-        (prepare_data_for_parcellation, parcellate_data, [("out_file", "in_file")]),
-        (parcellate_data, outputnode, [("out_file", "ptseries")]),
-    ])
-    # fmt:on
-
-    parcellate_coverage_file = pe.MapNode(
+    parcellate_atlas = pe.MapNode(
         CiftiParcellate(
-            out_file="parcel_coverage.pscalar.nii",
-            direction="ROW",
+            direction="COLUMN",
             only_numeric=True,
+            out_file="parcellated_atlas.pscalar.nii",
         ),
-        name="parcellate_coverage_file",
+        name="parcellate_atlas",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["in_file", "atlas_label"],
@@ -435,15 +401,8 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 
     # fmt:off
     workflow.connect([
-        (resample_atlas_to_data, parcellate_coverage_file, [
-            ("cifti_out", "atlas_label"),
-        ]),
-        (prepare_data_for_parcellation, parcellate_coverage_file, [
-            ("parcel_coverage_file", "in_file"),
-        ]),
-        (parcellate_coverage_file, outputnode, [
-            ("out_file", "coverage"),
-        ]),
+        (atlas_file_grabber, parcellate_atlas, [("atlas_file", "atlas_label")]),
+        (resample_atlas_to_data, parcellate_atlas, [("cifti_out", "in_file")]),
     ])
     # fmt:on
 
@@ -457,11 +416,18 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 
     # fmt:off
     workflow.connect([
-        (parcellate_data, cifti_connect, [("out_file", "ptseries")]),
+        (inputnode, cifti_connect, [("clean_bold", "data_file")]),
         (atlas_file_grabber, cifti_connect, [("atlas_labels_file", "atlas_labels")]),
-        (cifti_connect, outputnode, [("timeseries_tsv", "timeseries_tsv")]),
-        (cifti_connect, outputnode, [("pconn", "pconn")]),
-        (cifti_connect, outputnode, [("correlations", "correlations")]),
+        (resample_atlas_to_data, cifti_connect, [("cifti_out", "atlas_file")]),
+        (parcellate_atlas, cifti_connect, [("out_file", "parcellated_atlas")]),
+        (cifti_connect, outputnode, [
+            ("coverage_pscalar", "coverage_pscalar"),
+            ("ptseries", "ptseries"),
+            ("pconn", "pconn"),
+            ("coverage", "coverage"),
+            ("timeseries", "timeseries"),
+            ("correlations", "correlations"),
+        ]),
     ])
     # fmt:on
 
@@ -476,7 +442,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     workflow.connect([
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (cifti_connect, matrix_plot, [("correlations", "correlations")]),
+        (cifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on

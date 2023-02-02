@@ -1,6 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Handling functional connectvity."""
+import os
+import warnings
+
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
@@ -192,13 +195,36 @@ class NiftiConnect(SimpleInterface):
 
 
 class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
-    ptseries = File(exists=True, mandatory=True, desc="Timeseries ptseries.nii file.")
+    data_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Dense CIFTI time series file to parcellate.",
+    )
+    atlas_file = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Atlas CIFTI file to use to parcellate data_file. "
+            "This file must already be resampled to the same structure as data_file."
+        ),
+    )
+    parcellated_atlas = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Atlas CIFTI that has been parcellated with itself to make a .pscalar.nii file. "
+            "This is just used for its ParcelsAxis."
+        ),
+    )
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
 
 
 class _CiftiConnectOutputSpec(TraitedSpec):
-    timeseries_tsv = File(exists=True, mandatory=True, desc="Timeseries tsv file.")
+    coverage_pscalar = File(exists=True, mandatory=True, desc="Coverage CIFTI file.")
+    ptseries = File(exists=True, mandatory=True, desc="Parcellated data CIFTI file.")
     pconn = File(exists=True, mandatory=True, desc="Correlation matrix pconn.nii file.")
+    coverage = File(exists=True, mandatory=True, desc="Coverage tsv file.")
+    timeseries = File(exists=True, mandatory=True, desc="Parcellated data tsv file.")
     correlations = File(exists=True, mandatory=True, desc="Correlation matrix tsv file.")
 
 
@@ -214,30 +240,49 @@ class CiftiConnect(SimpleInterface):
     output_spec = _CiftiConnectOutputSpec
 
     def _run_interface(self, runtime):
-        ptseries = self.inputs.ptseries
+        data_file = self.inputs.data_file
+        atlas_file = self.inputs.atlas_file
+        pscalar_file = self.inputs.parcellated_atlas
         atlas_labels = self.inputs.atlas_labels
+        coverage_threshold = 0.5
 
+        cifti_intents = get_cifti_intents()
+
+        assert data_file.endswith(".dtseries.nii"), data_file
+        assert atlas_file.endswith(".dlabel.nii"), atlas_file
+        assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
+
+        data_img = nb.load(data_file)
+        atlas_img = nb.load(atlas_file)
+        pscalar_img = nb.load(pscalar_file)
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
+
+        data_arr = data_img.get_fdata()
+        atlas_arr = atlas_img.get_fdata()
+
+        # First, replace all bad vertices' time series with NaNs.
+        # This way, any partially-covered parcels will have NaNs in the bad portions,
+        # so those vertices will be ignored by wb_command -cifti-parcellate.
+        bad_vertices_idx = np.where(
+            np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0)
+        )[0]
+        data_arr[:, bad_vertices_idx] = np.nan
+
+        # Now we can work to parcellate the data
+        label_axis = atlas_img.header.get_axis(0)
+        parcels_axis = pscalar_img.header.get_axis(1)
+        atlas_label_mapper = label_axis.label[0]
+        atlas_label_mapper = {k: v[0] for k, v in atlas_label_mapper.items()}
+
+        if 0 in atlas_label_mapper.keys():
+            atlas_label_mapper.pop(0)
 
         # Explicitly remove label corresponding to background (index=0), if present.
         if 0 in node_labels_df.index:
             node_labels_df = node_labels_df.drop(index=[0])
 
-        node_labels = node_labels_df["name"].tolist()
         expected_cifti_node_labels = node_labels_df["cifti_name"].tolist()
-
-        ptseries_img = nb.load(ptseries)
-        timeseries_arr = ptseries_img.get_fdata()
-
-        # CiftiParcellate should fill missing
-        assert "ConnParcelSries" in ptseries_img.nifti_header.get_intent()
-        assert len(node_labels) == timeseries_arr.shape[1]
-
-        correlations = np.corrcoef(timeseries_arr.T)
-        parcels_axis = ptseries_img.header.get_axis(1)
-        new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
-        conn_img = nb.Cifti2Image(correlations, new_header, nifti_header=ptseries_img.nifti_header)
-        conn_img.nifti_header.set_intent(get_cifti_intents()[".pconn.nii"])
+        parcel_name_mapper = dict(zip(node_labels_df["cifti_name"], node_labels_df["name"]))
 
         # Load node names from CIFTI file.
         # First axis should be time, second should be parcels
@@ -266,31 +311,132 @@ class CiftiConnect(SimpleInterface):
         if error_msg:
             raise ValueError(error_msg)
 
-        self._results["timeseries_tsv"] = fname_presuffix(
-            ptseries,
-            suffix="_timeseries.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        self._results["pconn"] = fname_presuffix(
-            ptseries,
-            suffix="_corr.pconn.nii",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        self._results["correlations"] = fname_presuffix(
-            ptseries,
-            suffix="_corr.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
+        # Sort labels by corresponding values in atlas.
+        # This step is probably unnecessary
+        # (the axis labels are probably already sorted by the atlas values),
+        # but I wanted to be extra safe.
+        # Code from https://stackoverflow.com/a/6618543/2589328.
+        sorted_parcel_names = [
+            x for _, x in sorted(atlas_label_mapper.items(), key=lambda pair: pair[0])
+        ]
+
+        timeseries_arr = np.empty((data_arr.shape[0], len(atlas_label_mapper)), dtype=np.float32)
+        timeseries_df = pd.DataFrame(columns=sorted_parcel_names, data=timeseries_arr)
+
+        coverage_arr = np.empty((len(atlas_label_mapper), 1), dtype=np.float32)
+        coverage_df = pd.DataFrame(
+            index=sorted_parcel_names,
+            columns=["coverage"],
+            data=coverage_arr,
         )
 
-        # Place the data in a DataFrame and save to a TSV
-        timeseries_df = pd.DataFrame(columns=node_labels, data=timeseries_arr)
-        timeseries_df.to_csv(self._results["timeseries_tsv"], index=False, sep="\t")
-        correlations_df = pd.DataFrame(index=node_labels, columns=node_labels, data=correlations)
-        correlations_df.to_csv(self._results["correlations"], sep="\t", index_label="Node")
+        parcels_in_atlas = []  # list of labels for parcels
+        for parcel_val, parcel_name in atlas_label_mapper.items():
+            parcel_idx = np.where(atlas_arr == parcel_val)[0]
+
+            if parcel_idx.size:
+                # Determine which, if any, vertices in the parcel are missing.
+                bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
+
+                # Determine the percentage of vertices with good data
+                parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
+                coverage_df.loc[parcel_name, "coverage"] = parcel_coverage
+
+                if parcel_coverage < coverage_threshold:
+                    # If the parcel has >=50% bad data, replace all of the values with zeros.
+                    data_arr[parcel_idx, :] = np.nan
+
+                parcels_in_atlas.append(parcel_name)
+                parcel_data = data_arr[:, parcel_idx]
+                with warnings.catch_warnings():
+                    # Ignore warning if calculating mean from only NaNs.
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+
+                    label_timeseries = np.nanmean(parcel_data, axis=1)
+
+            else:
+                # Label was probably erased by downsampling or something.
+                label_timeseries = np.full(
+                    data_arr.shape[0],
+                    fill_value=np.nan,
+                    dtype=data_arr.dtype,
+                )
+                coverage_df.loc[parcel_name, "coverage"] = 0
+
+            timeseries_df[parcel_name] = label_timeseries
+
+        timeseries_arr_for_cifti = timeseries_df[parcels_in_atlas].to_numpy()
+        coverage_arr_for_cifti = coverage_df.loc[parcels_in_atlas, "coverage"].to_numpy()
+        correlation_arr_for_cifti = np.corrcoef(timeseries_arr_for_cifti.T)
+
+        # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
+        timeseries_df.rename(columns={parcel_name_mapper})
+        correlations_df = timeseries_df.corr()
+
+        time_axis = data_img.header.get_axis(0)
+        new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
+        nifti_header = data_img.nifti_header.copy()
+        nifti_header.set_intent(cifti_intents[".ptseries.nii"])
+        timeseries_img = nb.Cifti2Image(
+            timeseries_arr_for_cifti,
+            new_header,
+            nifti_header=nifti_header,
+        )
+        coverage_img = nb.Cifti2Image(
+            coverage_arr_for_cifti,
+            pscalar_img.header,
+            nifti_header=pscalar_img.nifti_header,
+        )
+        new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
+        nifti_header = nifti_header.copy()
+        nifti_header.set_intent(cifti_intents[".pconn.nii"])
+        conn_img = nb.Cifti2Image(
+            correlation_arr_for_cifti,
+            new_header,
+            nifti_header=nifti_header,
+        )
+
+        self._results["coverage_pscalar"] = fname_presuffix(
+            "coverage.pscalar.nii",
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
+        coverage_img.to_filename(self._results["coverage_pscalar"])
+
+        self._results["ptseries"] = fname_presuffix(
+            "parcellated_data.ptseries.nii",
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
+        timeseries_img.to_filename(self._results["ptseries"])
+
+        self._results["pconn"] = fname_presuffix(
+            "correlations.pconn.nii",
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
         conn_img.to_filename(self._results["pconn"])
+
+        self._results["coverage"] = fname_presuffix(
+            "coverage.tsv",
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
+        coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
+
+        self._results["timeseries"] = fname_presuffix(
+            "parcellated_data.tsv",
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
+        timeseries_df.to_csv(self._results["timeseries"], sep="\t", index=False)
+
+        self._results["correlations"] = fname_presuffix(
+            "correlations.tsv",
+            newpath=os.getcwd(),
+            use_ext=True,
+        )
+        correlations_df.to_csv(self._results["correlations"], sep="\t", index_label="Node")
 
         return runtime
 
