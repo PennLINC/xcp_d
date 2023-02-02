@@ -409,7 +409,7 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
             a,
             data[:, i_voxel],
             padtype="constant",
-            padlen=data.shape[0],
+            padlen=data.shape[0] - 1,
         )
 
     return filtered_data

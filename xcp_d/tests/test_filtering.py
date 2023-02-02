@@ -27,7 +27,7 @@ def test_motion_filtering_lp():
         a,
         raw_data,
         padtype="constant",
-        padlen=raw_data.size,
+        padlen=raw_data.size - 1,
     )
 
     # Confirm the LP filter runs with reasonable parameters
@@ -65,7 +65,7 @@ def test_motion_filtering_notch():
         a,
         raw_data,
         padtype="constant",
-        padlen=raw_data.size,
+        padlen=raw_data.size - 1,
     )
 
     # Repeat for notch filter
@@ -102,7 +102,7 @@ def test_bandpass_filtering():
         a,
         raw_data,
         padtype="constant",
-        padlen=raw_data.size,
+        padlen=raw_data.size - 1,
     )
 
     # Confirm the butterworth filter runs with reasonable parameters
