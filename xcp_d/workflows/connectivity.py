@@ -411,7 +411,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         mem_gb=mem_gb,
         name="cifti_connect",
         n_procs=omp_nthreads,
-        iterfield=["ptseries", "atlas_labels"],
+        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
     )
 
     # fmt:off
