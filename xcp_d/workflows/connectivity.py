@@ -121,6 +121,12 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="atlas_name_grabber",
     )
 
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+    ])
+    # fmt:on
+
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
@@ -132,10 +138,11 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         iterfield=["atlas_name"],
     )
 
-    atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
-        name="atlas_name_grabber",
-    )
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+    ])
+    # fmt:on
 
     get_transforms_to_bold_space = pe.Node(
         Function(
@@ -145,6 +152,16 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         ),
         name="get_transforms_to_bold_space",
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_transforms_to_bold_space, [
+            ("bold_file", "bold_file"),
+            ("template_to_t1w", "template_to_t1w"),
+            ("t1w_to_native", "t1w_to_native"),
+        ]),
+    ])
+    # fmt:on
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
@@ -159,17 +176,38 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         n_procs=omp_nthreads,
     )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, warp_atlases_to_bold_space, [
+            ("ref_file", "reference_image"),
+        ]),
+        (atlas_file_grabber, warp_atlases_to_bold_space, [
+            ("atlas_file", "input_image"),
+        ]),
+        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
+            ("transformfile", "transforms"),
+        ]),
+    ])
+    # fmt:on
+
     nifti_connect = pe.MapNode(
         NiftiConnect(),
         name="nifti_connect",
-        iterfield=["atlas"],
+        iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb,
     )
 
     # fmt:off
     workflow.connect([
+        (inputnode, nifti_connect, [
+            ("clean_bold", "filtered_file"),
+            ("bold_mask", "mask"),
+        ]),
         (atlas_file_grabber, nifti_connect, [
             ("atlas_labels_file", "atlas_labels"),
+        ]),
+        (warp_atlases_to_bold_space, nifti_connect, [
+            ("output_image", "atlas"),
         ]),
         (nifti_connect, outputnode, [
             ("timeseries", "timeseries"),
@@ -185,6 +223,15 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="matrix_plot",
         mem_gb=mem_gb,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
+        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+    ])
+    # fmt:on
 
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
@@ -204,31 +251,6 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (warp_atlases_to_bold_space, ds_atlas, [("output_image", "in_file")]),
-    ])
-    # fmt:on
-
-    # fmt:off
-    workflow.connect([
-        # Transform Atlas to correct MNI2009 space
-        (inputnode, get_transforms_to_bold_space, [("bold_file", "bold_file"),
-                                                   ("template_to_t1w", "template_to_t1w"),
-                                                   ("t1w_to_native", "t1w_to_native")]),
-        (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
-        (inputnode, nifti_connect, [
-            ("clean_bold", "filtered_file"),
-            ("bold_mask", "mask"),
-        ]),
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
-        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
-            ("transformfile", "transforms"),
-        ]),
-        (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 
@@ -282,7 +304,11 @@ def init_cifti_functional_connectivity_wf(
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
+    ptseries
+        Paths to CIFTI-format timeseries files.
     %(correlations)s
+    pconn
+        Paths to CIFTI-format correlation matrices.
     coverage : list of str
         Paths to atlas-specific coverage files.
     connectplot : str

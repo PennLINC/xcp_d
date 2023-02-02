@@ -158,8 +158,8 @@ class NiftiConnect(SimpleInterface):
         # Region indices in the atlas may not be sequential, so we map them to sequential ints.
         seq_mapper = {idx: i for i, idx in enumerate(masker.labels_)}
 
-        # Fill in any missing nodes with NaNs.
         if n_found_nodes != n_nodes:
+            # Fill in any missing nodes in the timeseries array with NaNs.
             new_timeseries_arr = np.full(
                 (timeseries_arr.shape[0], n_nodes),
                 fill_value=np.nan,
@@ -170,6 +170,14 @@ class NiftiConnect(SimpleInterface):
                 new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
 
             timeseries_arr = new_timeseries_arr
+
+            # Fill in any missing nodes in the coverage array with zero.
+            new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
+            for row in range(parcel_coverage.shape[0]):
+                label_row = seq_mapper[masker.labels_[row]]
+                new_parcel_coverage[label_row] = parcel_coverage[row]
+
+            parcel_coverage = new_parcel_coverage
 
         # The time series file is tab-delimited, with node names included in the first row.
         timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
