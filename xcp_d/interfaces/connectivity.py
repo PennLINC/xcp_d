@@ -233,8 +233,7 @@ class CiftiConnect(SimpleInterface):
 
         # Load node names from CIFTI file.
         # First axis should be time, second should be parcels
-        ax = ptseries_img.header.get_axis(1)
-        detected_node_labels = ax.name
+        detected_node_labels = parcels_axis.name
 
         # If there are nodes in the CIFTI that aren't in the node labels file, raise an error.
         found_but_not_expected = sorted(
@@ -279,8 +278,11 @@ class CiftiConnect(SimpleInterface):
         )
 
         # Place the data in a DataFrame and save to a TSV
-        df = pd.DataFrame(columns=node_labels, data=timeseries_arr)
-        df.to_csv(timeseries_file, index=False, sep="\t")
+        timeseries_df = pd.DataFrame(columns=node_labels, data=timeseries_arr)
+        timeseries_df.to_csv(self._results["timeseries_tsv"], index=False, sep="\t")
+        correlations_df = pd.DataFrame(index=node_labels, columns=node_labels, data=correlations)
+        correlations_df.to_csv(self._results["correlations"], sep="\t", index_label="Node")
+        conn_img.to_filename(self._results["pconn"])
 
         return runtime
 
@@ -319,10 +321,13 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
     )
-    time_series_tsv = InputMultiObject(
+    correlations_tsv = InputMultiObject(
         File(exists=True),
         mandatory=True,
-        desc="List of TSV file with time series. Aligned with the list of atlases in atlas_names",
+        desc=(
+            "List of TSV file with correlation matrices. "
+            "Aligned with the list of atlases in atlas_names"
+        ),
     )
 
 
@@ -367,18 +372,12 @@ class ConnectPlot(SimpleInterface):
 
         for atlas_name, subdict in ATLAS_LOOKUP.items():
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
-            atlas_file = self.inputs.time_series_tsv[atlas_idx]
+            atlas_file = self.inputs.correlations_tsv[atlas_idx]
 
-            if self.inputs.in_file.endswith("dtseries.nii"):  # for cifti
-                #  Get the correlation coefficient of the data
-                corrs = np.corrcoef(nb.load(atlas_file).get_fdata().T)
-
-            else:  # for nifti
-                #  Get the correlation coefficient of the data
-                corrs = np.corrcoef(np.loadtxt(atlas_file, delimiter="\t").T)
+            corrs_df = pd.read_table(atlas_file, index_col="Node")
 
             plot_matrix(
-                mat=corrs,
+                mat=corrs_df.to_numpy(),
                 colorbar=False,
                 vmax=1,
                 vmin=-1,
@@ -391,7 +390,10 @@ class ConnectPlot(SimpleInterface):
 
         # Write the results out
         self._results["connectplot"] = fname_presuffix(
-            "connectivityplot", suffix="_matrixplot.svg", newpath=runtime.cwd, use_ext=False
+            "connectivityplot",
+            suffix="_matrixplot.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
         )
 
         fig.savefig(self._results["connectplot"], bbox_inches="tight", pad_inches=None)

@@ -9,13 +9,14 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
-from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
-from xcp_d.interfaces.workbench import (
-    CiftiCorrelation,
-    CiftiCreateDenseFromTemplate,
-    CiftiParcellate,
+from xcp_d.interfaces.connectivity import (
+    ApplyTransformsx,
+    CiftiConnect,
+    ConnectPlot,
+    NiftiConnect,
 )
+from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
@@ -226,7 +227,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
             ("transformfile", "transforms"),
         ]),
         (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
+        (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
@@ -311,7 +312,9 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
             fields=[
                 "atlas_names",
                 "timeseries",
+                "ptseries",
                 "correlations",
+                "pconn",
                 "coverage",
                 "connectplot",
             ],
@@ -325,6 +328,12 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="atlas_name_grabber",
     )
 
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+    ])
+    # fmt:on
+
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
@@ -334,6 +343,12 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+    ])
+    # fmt:on
 
     resample_atlas_to_data = pe.MapNode(
         CiftiCreateDenseFromTemplate(),
@@ -350,13 +365,12 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     # fmt:on
 
     prepare_data_for_parcellation = pe.MapNode(
-        CiftiPrepareForParcellation(),
+        CiftiPrepareForParcellation(TR=TR),
         name="prepare_data_for_parcellation",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["atlas_file"],
     )
-    prepare_data_for_parcellation.inputs.TR = TR
 
     # fmt:off
     workflow.connect([
@@ -377,17 +391,21 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     workflow.connect([
         (resample_atlas_to_data, parcellate_data, [("cifti_out", "atlas_label")]),
         (prepare_data_for_parcellation, parcellate_data, [("out_file", "in_file")]),
+        (parcellate_data, outputnode, [("out_file", "ptseries")]),
     ])
     # fmt:on
 
     parcellate_coverage_file = pe.MapNode(
-        CiftiParcellate(direction="ROW", only_numeric=True),
+        CiftiParcellate(
+            out_file="parcel_coverage.pscalar.nii",
+            direction="ROW",
+            only_numeric=True,
+        ),
         name="parcellate_coverage_file",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["in_file", "atlas_label"],
     )
-    parcellate_coverage_file.inputs.out_file = "parcel_coverage.pscalar.nii"
 
     # fmt:off
     workflow.connect([
@@ -403,13 +421,23 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     ])
     # fmt:on
 
-    correlate_data = pe.MapNode(
-        CiftiCorrelation(),
+    cifti_connect = pe.MapNode(
+        CiftiConnect(),
         mem_gb=mem_gb,
-        name="correlate_data",
+        name="cifti_connect",
         n_procs=omp_nthreads,
-        iterfield=["in_file"],
+        iterfield=["ptseries", "atlas_labels"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (parcellate_data, cifti_connect, [("out_file", "ptseries")]),
+        (atlas_file_grabber, cifti_connect, [("atlas_labels_file", "atlas_labels")]),
+        (cifti_connect, outputnode, [("timeseries_tsv", "timeseries_tsv")]),
+        (cifti_connect, outputnode, [("pconn", "pconn")]),
+        (cifti_connect, outputnode, [("correlations", "correlations")]),
+    ])
+    # fmt:on
 
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
@@ -417,6 +445,15 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         name="matrix_plot",
         mem_gb=mem_gb,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (cifti_connect, matrix_plot, [("correlations", "correlations")]),
+        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+    ])
+    # fmt:on
 
     # Coerce the bold_file to int16 before feeding it in as source_file,
     # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
@@ -456,20 +493,6 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (cast_atlas_to_int16, ds_atlas, [("out_file", "in_file")]),
-    ])
-    # fmt:on
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (parcellate_data, correlate_data, [("out_file", "in_file")]),
-        (parcellate_data, outputnode, [("out_file", "timeseries")]),
-        (correlate_data, outputnode, [("out_file", "correlations")]),
-        (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 
