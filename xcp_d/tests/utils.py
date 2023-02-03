@@ -1,6 +1,7 @@
 """Utility functions for tests."""
 import os
 import subprocess
+from contextlib import contextmanager
 from glob import glob
 
 import nibabel as nb
@@ -134,6 +135,19 @@ def run_command(command, env=None):
 
     if process.returncode != 0:
         raise Exception(
-            f"Non zero return code: {process.returncode}\n"
-            f"{command}\n\n{process.stdout.read()}"
+            f"Non zero return code: {process.returncode}\n" f"{command}\n\n{process.stdout.read()}"
         )
+
+
+@contextmanager
+def chdir(path):
+    """Temporarily change directories.
+
+    Taken from https://stackoverflow.com/a/37996581/2589328.
+    """
+    oldpwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(oldpwd)

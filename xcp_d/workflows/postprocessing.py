@@ -28,7 +28,7 @@ def init_resd_smoothing_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.postprocessing import init_resd_smoothing_wf
+            from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
             wf = init_resd_smoothing_wf(
                 mem_gb=0.1,
                 smoothing=6,

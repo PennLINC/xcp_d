@@ -3,52 +3,12 @@
 """Functions for calculating functional connectivity in NIFTI files."""
 import nibabel as nb
 import numpy as np
-from nilearn.input_data import NiftiLabelsMasker
+from nipype import logging
 from scipy import signal
 from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
-
-def extract_timeseries_funct(in_file, mask, atlas, timeseries, fconmatrix):
-    """Use Nilearn NiftiLabelsMasker to extract timeseries.
-
-    Parameters
-    ----------
-    in_file : str
-        bold file timeseries
-    mask : str
-        BOLD file's associated brain mask file.
-    atlas : str
-        atlas in the same space with bold
-    timeseries : str
-        extracted timeseries filename
-    fconmatrix : str
-        functional connectivity matrix filename
-
-    Returns
-    -------
-    timeseries : str
-        extracted timeseries filename
-    fconmatrix : str
-        functional connectivity matrix filename
-    """
-    masker = NiftiLabelsMasker(
-        labels_img=atlas,
-        mask_img=mask,
-        smoothing_fwhm=None,
-        standardize=False,
-    )
-
-    # Use nilearn for time_series
-    time_series = masker.fit_transform(in_file)
-
-    # Use numpy for correlation matrix
-    correlation_matrices = np.corrcoef(time_series.T)
-
-    np.savetxt(fconmatrix, correlation_matrices, delimiter="\t")
-    np.savetxt(timeseries, time_series, delimiter="\t")
-
-    return timeseries, fconmatrix
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def compute_2d_reho(datat, adjacency_matrix):
@@ -82,11 +42,7 @@ def compute_2d_reho(datat, adjacency_matrix):
         neigbor, timepoint = neidata.shape[0], neidata.shape[1]
 
         for j in range(neidata.shape[0]):  # loop through each neighbour
-            rankeddata[j, :] = rankdata(
-                neidata[
-                    j,
-                ]
-            )  # assign ranks to timepoints for each voxel
+            rankeddata[j, :] = rankdata(neidata[j,])  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # KC is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared

@@ -26,13 +26,13 @@ from xcp_d.utils.bids import (
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.workflow.anatomical import (
+from xcp_d.workflows.anatomical import (
     init_warp_anats_to_template_wf,
     init_warp_surfaces_to_template_wf,
 )
-from xcp_d.workflow.bold import init_boldpostprocess_wf
-from xcp_d.workflow.cifti import init_ciftipostprocess_wf
-from xcp_d.workflow.execsummary import init_brainsprite_figures_wf
+from xcp_d.workflows.bold import init_boldpostprocess_wf
+from xcp_d.workflows.cifti import init_ciftipostprocess_wf
+from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -82,7 +82,7 @@ def init_xcpd_wf(
             import os
             import tempfile
 
-            from xcp_d.workflow.base import init_xcpd_wf
+            from xcp_d.workflows.base import init_xcpd_wf
             from xcp_d.utils.doc import download_example_data
 
             fmri_dir = download_example_data()
@@ -261,7 +261,7 @@ def init_subject_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.base import init_subject_wf
+            from xcp_d.workflows.base import init_subject_wf
             from xcp_d.utils.doc import download_example_data
 
             fmri_dir = download_example_data()
@@ -501,7 +501,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,
         )
 
-    if process_surfaces and surfaces_found:
+    if process_surfaces and surfaces_found and cifti:
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
@@ -547,7 +547,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-    elif surfaces_found and dcan_qc:
+    elif surfaces_found and dcan_qc and not process_surfaces:
         # Use native-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
@@ -561,7 +561,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-    elif process_surfaces:
+    elif process_surfaces and not surfaces_found:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."

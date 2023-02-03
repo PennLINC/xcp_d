@@ -9,7 +9,7 @@ from numpy.fft import fft, ifft
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflow.restingstate import init_compute_alff_wf
+from xcp_d.workflows.restingstate import init_compute_alff_wf
 
 
 def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):

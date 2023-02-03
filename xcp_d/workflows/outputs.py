@@ -6,6 +6,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 
 
@@ -30,7 +31,7 @@ def init_writederivatives_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflow.outputs import init_writederivatives_wf
+            from xcp_d.workflows.outputs import init_writederivatives_wf
             wf = init_writederivatives_wf(
                 bold_file="/path/to/file.nii.gz",
                 bandpass_filter=True,
@@ -72,6 +73,8 @@ def init_writederivatives_wf(
         List of paths to parcellated time series files.
     correlations : list of str
         List of paths to ROI-to-ROI correlation files.
+    coverage_files : list of str
+        List of paths to atlas-specific coverage files.
     qc_file
         quality control files
     processed_bold
@@ -99,6 +102,7 @@ def init_writederivatives_wf(
                 "timeseries",
                 "confounds_file",
                 "correlations",
+                "coverage_files",
                 "qc_file",
                 "processed_bold",
                 "smoothed_bold",
@@ -126,6 +130,9 @@ def init_writederivatives_wf(
         cleaned_data_dictionary["Freq Band"] = [highpass, lowpass]
 
     smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
+
+    # Determine cohort (if there is one) in the original data
+    cohort = get_entity(bold_file, "cohort")
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -198,6 +205,7 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 meta_dict=cleaned_data_dictionary,
                 source_file=bold_file,
+                cohort=cohort,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
@@ -212,6 +220,7 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 source_file=bold_file,
                 dismiss_entities=["desc"],
+                cohort=cohort,
                 desc="linc",
                 suffix="qc",
                 extension=".csv",
@@ -226,6 +235,7 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 source_file=bold_file,
                 dismiss_entities=["desc"],
+                cohort=cohort,
                 suffix="timeseries",
                 extension=".tsv",
             ),
@@ -239,11 +249,26 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 source_file=bold_file,
                 dismiss_entities=["desc"],
+                cohort=cohort,
                 measure="pearsoncorrelation",
                 suffix="conmat",
                 extension=".tsv",
             ),
             name="correlations_wf",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+        ds_coverage_files = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="coverage",
+                extension=".tsv",
+            ),
+            name="ds_coverage_files",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["atlas", "in_file"],
@@ -254,6 +279,7 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 source_file=bold_file,
                 dismiss_entities=["desc"],
+                cohort=cohort,
                 suffix="reho",
                 extension=".nii.gz",
                 compression=True,
@@ -269,6 +295,7 @@ def init_writederivatives_wf(
                     base_directory=output_dir,
                     source_file=bold_file,
                     dismiss_entities=["desc"],
+                    cohort=cohort,
                     suffix="alff",
                     extension=".nii.gz",
                     compression=True,
@@ -285,6 +312,7 @@ def init_writederivatives_wf(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
                     source_file=bold_file,
+                    cohort=cohort,
                     desc="denoisedSmoothed",
                     extension=".nii.gz",
                     compression=True,
@@ -300,6 +328,7 @@ def init_writederivatives_wf(
                         base_directory=output_dir,
                         meta_dict=smoothed_data_dictionary,
                         source_file=bold_file,
+                        cohort=cohort,
                         desc="smooth",
                         suffix="alff",
                         extension=".nii.gz",
@@ -318,6 +347,7 @@ def init_writederivatives_wf(
                 meta_dict=cleaned_data_dictionary,
                 source_file=bold_file,
                 dismiss_entities=["den"],
+                cohort=cohort,
                 desc="denoised",
                 den="91k",
                 extension=".dtseries.nii",
@@ -332,6 +362,7 @@ def init_writederivatives_wf(
                 base_directory=output_dir,
                 source_file=bold_file,
                 dismiss_entities=["desc", "den"],
+                cohort=cohort,
                 den="91k",
                 desc="linc",
                 suffix="qc",
@@ -348,6 +379,7 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
+                cohort=cohort,
                 den="91k",
                 suffix="timeseries",
                 extension=".ptseries.nii",
@@ -364,6 +396,7 @@ def init_writederivatives_wf(
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
+                cohort=cohort,
                 den="91k",
                 measure="pearsoncorrelation",
                 suffix="conmat",
@@ -375,12 +408,29 @@ def init_writederivatives_wf(
             iterfield=["atlas", "in_file"],
         )
 
+        ds_coverage_files = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=bold_file,
+                check_hdr=False,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="coverage",
+                extension=".pscalar.nii",
+            ),
+            name="ds_coverage_files",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+
         write_derivative_reho_wf = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
+                cohort=cohort,
                 den="91k",
                 suffix="reho",
                 extension=".dscalar.nii",
@@ -397,6 +447,7 @@ def init_writederivatives_wf(
                     source_file=bold_file,
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
+                    cohort=cohort,
                     den="91k",
                     suffix="alff",
                     extension=".dscalar.nii",
@@ -414,6 +465,7 @@ def init_writederivatives_wf(
                     meta_dict=smoothed_data_dictionary,
                     source_file=bold_file,
                     dismiss_entities=["den"],
+                    cohort=cohort,
                     den="91k",
                     desc="denoisedSmoothed",
                     extension=".dtseries.nii",
@@ -431,6 +483,7 @@ def init_writederivatives_wf(
                         meta_dict=smoothed_data_dictionary,
                         source_file=bold_file,
                         dismiss_entities=["den"],
+                        cohort=cohort,
                         desc="smooth",
                         den="91k",
                         suffix="alff",
@@ -449,6 +502,7 @@ def init_writederivatives_wf(
         (inputnode, write_derivative_reho_wf, [('reho_out', 'in_file')]),
         (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
         (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
+        (inputnode, ds_coverage_files, [("coverage_files", "in_file"), ("atlas_names", "atlas")]),
     ])
 
     if bandpass_filter:

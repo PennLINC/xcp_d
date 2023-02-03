@@ -8,7 +8,6 @@
 import os
 import shutil
 
-from nilearn.plotting import view_img
 from nipype import logging
 from nipype.interfaces.afni.preprocess import Despike, DespikeInputSpec
 from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
@@ -23,7 +22,6 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.utils import zscore_nifti
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -62,7 +60,6 @@ class SurfaceReHo(SimpleInterface):
     output_spec = _SurfaceReHoOutputSpec
 
     def _run_interface(self, runtime):
-
         # Read the gifti data
         data_matrix = read_gii(self.inputs.surf_bold)
 
@@ -117,7 +114,6 @@ class ComputeALFF(SimpleInterface):
     output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
-
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         # compute the ALFF
@@ -147,56 +143,6 @@ class ComputeALFF(SimpleInterface):
             filename=self._results["alff_out"],
             mask=self.inputs.mask,
         )
-        return runtime
-
-
-class _BrainPlotInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="alff or reho")
-    mask_file = File(exists=True, mandatory=True, desc="mask file ")
-
-
-class _BrainPlotOutputSpec(TraitedSpec):
-    nifti_html = File(exists=True, mandatory=True, desc="zscore html")
-
-
-class BrainPlot(SimpleInterface):
-    """Create a brainsprite figure from a NIFTI file.
-
-    The image will first be normalized (z-scored) before the figure is generated.
-
-    """
-
-    input_spec = _BrainPlotInputSpec
-    output_spec = _BrainPlotOutputSpec
-
-    def _run_interface(self, runtime):
-
-        # create a file name
-        z_score_nifti = os.path.split(os.path.abspath(self.inputs.in_file))[0] + "/zscore.nii.gz"
-
-        # create a nifti with z-scores
-        z_score_nifti = zscore_nifti(
-            img=self.inputs.in_file, mask=self.inputs.mask_file, outputname=z_score_nifti
-        )
-
-        html_view = view_img(
-            stat_map_img=z_score_nifti,
-            threshold=0,
-            opacity=0.5,
-            cut_coords=[0, 0, 0],
-            title="zscore",
-            bg_img=None,
-        )
-
-        # write the html out
-        self._results["nifti_html"] = fname_presuffix(
-            "zscore_nifti_",
-            suffix="stat.html",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-
-        html_view.save_as_html(self._results["nifti_html"])
         return runtime
 
 

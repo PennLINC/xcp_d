@@ -18,6 +18,7 @@ from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.modified_data import scale_to_min_max
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -593,8 +594,10 @@ def plot_fmri_es(
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask, scale=600)
-    scaled_denoised_data = read_ndata(datafile=denoised_file, maskfile=mask, scale=600)
+    raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask)
+    denoised_data = read_ndata(datafile=denoised_file, maskfile=mask)
+    scaled_raw_data = scale_to_min_max(raw_data, -600, 600)
+    scaled_denoised_data = scale_to_min_max(denoised_data, -600, 600)
 
     # Make a temporary file for niftis and ciftis
     if preprocessed_file.endswith(".nii.gz"):
