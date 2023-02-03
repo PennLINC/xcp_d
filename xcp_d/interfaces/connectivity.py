@@ -195,6 +195,16 @@ class NiftiConnect(SimpleInterface):
 
 
 class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
+    min_coverage = traits.Float(
+        default=0.5,
+        usedefault=True,
+        desc=(
+            "Coverage threshold to apply to parcels. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one. "
+            "Default is 0.5."
+        ),
+    )
     data_file = File(
         exists=True,
         mandatory=True,
@@ -240,11 +250,11 @@ class CiftiConnect(SimpleInterface):
     output_spec = _CiftiConnectOutputSpec
 
     def _run_interface(self, runtime):
+        coverage_threshold = self.inputs.min_coverage
         data_file = self.inputs.data_file
         atlas_file = self.inputs.atlas_file
         pscalar_file = self.inputs.parcellated_atlas
         atlas_labels = self.inputs.atlas_labels
-        coverage_threshold = 0.5
 
         cifti_intents = get_cifti_intents()
 
