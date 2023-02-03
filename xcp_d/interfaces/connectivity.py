@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Handling functional connectvity."""
-import os
 import warnings
 
 import matplotlib.pyplot as plt
@@ -66,22 +65,19 @@ class NiftiConnect(SimpleInterface):
         node_labels = node_labels_df["name"].tolist()
 
         self._results["timeseries"] = fname_presuffix(
-            filtered_file,
-            suffix="_timeseries.tsv",
+            "timeseries.tsv",
             newpath=runtime.cwd,
-            use_ext=False,
+            use_ext=True,
         )
         self._results["correlations"] = fname_presuffix(
-            filtered_file,
-            suffix="_corr.tsv",
+            "correlations.tsv",
             newpath=runtime.cwd,
-            use_ext=False,
+            use_ext=True,
         )
         self._results["coverage"] = fname_presuffix(
-            filtered_file,
-            suffix="_coverage.tsv",
+            "coverage.tsv",
             newpath=runtime.cwd,
-            use_ext=False,
+            use_ext=True,
         )
 
         coverage_threshold = 0.5
@@ -388,15 +384,15 @@ class CiftiConnect(SimpleInterface):
         # Save out the coverage tsv
         self._results["coverage"] = fname_presuffix(
             "coverage.tsv",
-            newpath=os.getcwd(),
+            newpath=runtime.cwd,
             use_ext=True,
         )
         coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
 
         # Save out the timeseries tsv
         self._results["timeseries"] = fname_presuffix(
-            "parcellated_data.tsv",
-            newpath=os.getcwd(),
+            "timeseries.tsv",
+            newpath=runtime.cwd,
             use_ext=True,
         )
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="NaN", index=False)
@@ -404,7 +400,7 @@ class CiftiConnect(SimpleInterface):
         # Save out the correlation matrix tsv
         self._results["correlations"] = fname_presuffix(
             "correlations.tsv",
-            newpath=os.getcwd(),
+            newpath=runtime.cwd,
             use_ext=True,
         )
         correlations_df.to_csv(
@@ -422,7 +418,7 @@ class CiftiConnect(SimpleInterface):
         )
         self._results["coverage_pscalar"] = fname_presuffix(
             "coverage.pscalar.nii",
-            newpath=os.getcwd(),
+            newpath=runtime.cwd,
             use_ext=True,
         )
         coverage_img.to_filename(self._results["coverage_pscalar"])
@@ -438,8 +434,8 @@ class CiftiConnect(SimpleInterface):
             nifti_header=nifti_header,
         )
         self._results["ptseries"] = fname_presuffix(
-            "parcellated_data.ptseries.nii",
-            newpath=os.getcwd(),
+            "timeseries.ptseries.nii",
+            newpath=runtime.cwd,
             use_ext=True,
         )
         timeseries_img.to_filename(self._results["ptseries"])
@@ -455,7 +451,7 @@ class CiftiConnect(SimpleInterface):
         )
         self._results["pconn"] = fname_presuffix(
             "correlations.pconn.nii",
-            newpath=os.getcwd(),
+            newpath=runtime.cwd,
             use_ext=True,
         )
         conn_img.to_filename(self._results["pconn"])

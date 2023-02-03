@@ -57,29 +57,27 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.run()
 
     # Let's find the correct time series file
-    timeseries_file = os.path.join(
+    connect_dir = os.path.join(
         connectivity_wf.base_dir,
-        "connectivity_wf/nifti_connect/mapflow/_nifti_connect3/fake_signal_filetime_series.tsv",
+        "connectivity_wf/nifti_connect/mapflow/_nifti_connect9",
     )
-    assert os.path.isfile(timeseries_file)
 
-    # Let's find the correct correlation matrix file
-    corr_mat_file = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/nifti_connect/mapflow/_nifti_connect3/fake_signal_filefcon_matrix.tsv",
-    )
-    assert os.path.isfile(corr_mat_file)
+    coverage = os.path.join(connect_dir, "coverage.tsv")
+    assert os.path.isfile(coverage), os.listdir(connect_dir)
+    timeseries = os.path.join(connect_dir, "timeseries.tsv")
+    assert os.path.isfile(timeseries), os.listdir(connect_dir)
+    correlations = os.path.join(connect_dir, "correlations.tsv")
+    assert os.path.isfile(correlations), os.listdir(connect_dir)
 
     # Read that into a df
-    df = pd.read_table(corr_mat_file, header=None)
-    xcp_array = df.to_numpy()
-    assert xcp_array.shape == (400, 400)
+    correlations_arr = pd.read_table(correlations, header=None).to_numpy()
+    assert correlations_arr.shape == (1000, 1000)
 
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = os.path.join(
         connectivity_wf.base_dir,
-        "connectivity_wf/warp_atlases_to_bold_space/mapflow/_warp_atlases_to_bold_space3",
-        "Schaefer2018_400Parcels_17Networks_order_FSLMNI152_2mm_trans.nii.gz",
+        "connectivity_wf/warp_atlases_to_bold_space/mapflow/_warp_atlases_to_bold_space9",
+        "Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm_trans.nii.gz",
     )
     assert os.path.isfile(atlas_file)
 
@@ -94,21 +92,21 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     signals = masker.transform(fake_bold_file)
 
     # The "ground truth" matrix
-    ground_truth = np.corrcoef(signals.T)
-    assert ground_truth.shape == (400, 400)
+    calculated_correlations = np.corrcoef(signals.T)
+    assert calculated_correlations.shape == (1000, 1000)
 
     # Parcels with <50% coverage should have NaNs
     # We know that 10 of the parcels in the 400-parcel Schaefer are flagged
-    assert np.sum(np.isnan(np.diag(xcp_array))) == 10
+    assert np.array_equal(coverage["coverage"] < 0.5, np.isnan(np.diag(correlations_arr)))
 
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
-    bad_parcel_idx = np.where(np.isnan(np.diag(xcp_array)))[0]
-    ground_truth[bad_parcel_idx, :] = np.nan
-    ground_truth[:, bad_parcel_idx] = np.nan
+    bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
+    calculated_correlations[bad_parcel_idx, :] = np.nan
+    calculated_correlations[:, bad_parcel_idx] = np.nan
 
     # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
-    assert np.allclose(xcp_array, ground_truth, atol=0.01, equal_nan=True)
+    assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
 def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -154,7 +152,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     pscalar = os.path.join(connect_dir, "coverage.pscalar.nii")
     assert os.path.isfile(pscalar), os.listdir(connect_dir)
 
-    ptseries = os.path.join(connect_dir, "parcellated_data.ptseries.nii")
+    ptseries = os.path.join(connect_dir, "timeseries.ptseries.nii")
     assert os.path.isfile(ptseries), os.listdir(connect_dir)
 
     pconn = os.path.join(connect_dir, "correlations.pconn.nii")
@@ -164,7 +162,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     coverage = os.path.join(connect_dir, "coverage.tsv")
     assert os.path.isfile(coverage), os.listdir(connect_dir)
 
-    timeseries = os.path.join(connect_dir, "parcellated_data.tsv")
+    timeseries = os.path.join(connect_dir, "timeseries.tsv")
     assert os.path.isfile(timeseries), os.listdir(connect_dir)
 
     correlations = os.path.join(connect_dir, "correlations.tsv")
