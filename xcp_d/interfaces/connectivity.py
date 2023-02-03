@@ -418,14 +418,12 @@ class CiftiConnect(SimpleInterface):
         coverage_img.to_filename(self._results["coverage_pscalar"])
 
         # Save out the timeseries CIFTI
-        timeseries_arr_for_cifti = timeseries_df[parcels_in_atlas].to_numpy()
-
         time_axis = data_img.header.get_axis(0)
         new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
         nifti_header = data_img.nifti_header.copy()
         nifti_header.set_intent(cifti_intents[".ptseries.nii"])
         timeseries_img = nb.Cifti2Image(
-            timeseries_arr_for_cifti,  # (n_vols x n_parcels) array
+            timeseries_df.to_numpy(),  # (n_vols x n_parcels) array
             new_header,
             nifti_header=nifti_header,
         )
@@ -437,13 +435,11 @@ class CiftiConnect(SimpleInterface):
         timeseries_img.to_filename(self._results["ptseries"])
 
         # Save out the correlation matrix CIFTI
-        correlation_arr_for_cifti = np.corrcoef(timeseries_arr_for_cifti.T)
-
         new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
         nifti_header = nifti_header.copy()
         nifti_header.set_intent(cifti_intents[".pconn.nii"])
         conn_img = nb.Cifti2Image(
-            correlation_arr_for_cifti,
+            correlations_df.to_numpy(),
             new_header,
             nifti_header=nifti_header,
         )
