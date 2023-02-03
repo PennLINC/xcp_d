@@ -602,8 +602,8 @@ class CiftiParcellate(WBCommand):
     >>> ciftiparcel.inputs.direction = 'COLUMN'
     >>> ciftiparcel.cmdline
     wb_command -cifti-parcellate sub-01XX_task-rest.dtseries.nii \
-    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \
-    sub_01XX_task-rest.pconn.nii
+    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii COLUMN \
+    sub_01XX_task-rest.ptseries.nii
     """
 
     input_spec = _CiftiParcellateInputSpec
