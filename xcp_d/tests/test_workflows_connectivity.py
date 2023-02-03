@@ -134,7 +134,6 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Create the node and a tmpdir to write its results out to
     connectivity_wf = init_cifti_functional_connectivity_wf(
-        TR=TR,
         output_dir=tmpdir,
         mem_gb=4,
         omp_nthreads=2,

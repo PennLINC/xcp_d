@@ -99,7 +99,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--despike",
         "--head_radius=40",
         "--smoothing=6",
-        "-vvv",
+        "-v",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--warp-surfaces-native2std",
