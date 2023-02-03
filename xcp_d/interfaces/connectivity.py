@@ -187,8 +187,13 @@ class NiftiConnect(SimpleInterface):
         correlations_df = timeseries_df.corr()
         coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels)
 
-        timeseries_df.to_csv(self._results["timeseries"], sep="\t", index=False)
-        correlations_df.to_csv(self._results["correlations"], sep="\t", index_label="Node")
+        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="NaN", index=False)
+        correlations_df.to_csv(
+            self._results["correlations"],
+            sep="\t",
+            na_rep="NaN",
+            index_label="Node",
+        )
         coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
 
         return runtime
@@ -268,7 +273,7 @@ class CiftiConnect(SimpleInterface):
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
 
         data_arr = data_img.get_fdata()
-        atlas_arr = atlas_img.get_fdata()
+        atlas_arr = np.squeeze(atlas_img.get_fdata())  # first dim is singleton
 
         # First, replace all bad vertices' time series with NaNs.
         # This way, any partially-covered parcels will have NaNs in the bad portions,
@@ -331,10 +336,10 @@ class CiftiConnect(SimpleInterface):
             x for _, x in sorted(atlas_label_mapper.items(), key=lambda pair: pair[0])
         ]
 
-        timeseries_arr = np.empty((data_arr.shape[0], len(atlas_label_mapper)), dtype=np.float32)
+        timeseries_arr = np.zeros((data_arr.shape[0], len(atlas_label_mapper)), dtype=np.float32)
         timeseries_df = pd.DataFrame(columns=sorted_parcel_names, data=timeseries_arr)
 
-        coverage_arr = np.empty((len(atlas_label_mapper), 1), dtype=np.float32)
+        coverage_arr = np.zeros((len(atlas_label_mapper), 1), dtype=np.float32)
         coverage_df = pd.DataFrame(
             index=sorted_parcel_names,
             columns=["coverage"],
@@ -394,7 +399,7 @@ class CiftiConnect(SimpleInterface):
             newpath=os.getcwd(),
             use_ext=True,
         )
-        timeseries_df.to_csv(self._results["timeseries"], sep="\t", index=False)
+        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="NaN", index=False)
 
         # Save out the correlation matrix tsv
         self._results["correlations"] = fname_presuffix(
@@ -402,7 +407,12 @@ class CiftiConnect(SimpleInterface):
             newpath=os.getcwd(),
             use_ext=True,
         )
-        correlations_df.to_csv(self._results["correlations"], sep="\t", index_label="Node")
+        correlations_df.to_csv(
+            self._results["correlations"],
+            sep="\t",
+            na_rep="NaN",
+            index_label="Node",
+        )
 
         # Save out the coverage CIFTI
         coverage_img = nb.Cifti2Image(
