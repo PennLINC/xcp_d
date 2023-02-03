@@ -422,5 +422,5 @@ The documentation of this project is found here: https://xcp-d.readthedocs.io/.
 All bugs, concerns and enhancement requests for this software can be submitted here:
 https://github.com/PennLINC/xcp_d/issues.
 
-If you have a question about using ``xcp_d``, please create a new topic on `NeuroStars <https://neurostars.org>`_ with the `"xcp_d" tag <https://neurostars.org/tag/xcp_d>`_.
+If you have a question about using ``xcp_d``, please create a new topic on `NeuroStars <https://neurostars.org>`_ with `the "Software Support" category and the "xcp_d" tag <https://neurostars.org/tags/c/software-support/234/xcp_d>`_.
 The ``xcp_d`` developers follow NeuroStars, and will be able to answer your question there.
