@@ -491,7 +491,6 @@ class QCPlotsES(SimpleInterface):
     output_spec = _QCPlotsESOutputSpec
 
     def _run_interface(self, runtime):
-
         before_process_fn = fname_presuffix(
             "carpetplot_before_",
             suffix="file.svg",
