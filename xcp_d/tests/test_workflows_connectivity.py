@@ -198,7 +198,6 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations)))[0]
 
     # Parcels with <50% coverage should have NaNs
-    # CiftiCorrelation produces NaNs for off-diagonals, but not for diagonals.
     first_good_parcel_corrs = pconn_arr[good_parcels_idx[0], :]
 
     # The number of NaNs for a good parcel's correlations should match the number of bad parcels.
