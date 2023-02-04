@@ -181,7 +181,7 @@ class NiftiConnect(SimpleInterface):
         # The time series file is tab-delimited, with node names included in the first row.
         timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
         correlations_df = timeseries_df.corr()
-        coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels)
+        coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels, columns=["coverage"])
 
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="NaN", index=False)
         correlations_df.to_csv(

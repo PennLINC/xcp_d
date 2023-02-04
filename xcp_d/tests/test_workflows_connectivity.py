@@ -75,13 +75,15 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert correlations_arr.shape == (1000, 1000)
     available_parcels = np.where(np.squeeze(coverage_arr) > 0)[0]
 
+    assert available_parcels.size == 973
+
     # Parcels with <50% coverage should have NaNs
     assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
     # Drop missing parcels (there are 34 for the 1000parcel )
     correlations_arr = correlations_arr[available_parcels, :]
     correlations_arr = correlations_arr[:, available_parcels]
-    assert correlations_arr.shape == (998, 998)
+    assert correlations_arr.shape == (973, 973)
 
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = os.path.join(
@@ -104,6 +106,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # The "ground truth" matrix
     calculated_correlations = np.corrcoef(signals.T)
     assert calculated_correlations.shape == (998, 998)
+    calculated_correlations = calculated_correlations[available_parcels, :]
+    calculated_correlations = calculated_correlations[:, available_parcels]
+    assert calculated_correlations.shape == (973, 973)
 
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
