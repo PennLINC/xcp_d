@@ -70,12 +70,13 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(correlations), os.listdir(connect_dir)
 
     # Read that into a df
+    coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
     correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
     assert correlations_arr.shape == (1000, 1000)
     available_parcels = np.where(~np.isnan(np.diag(correlations_arr)))[0]
 
     # Parcels with <50% coverage should have NaNs
-    assert np.array_equal(coverage["coverage"] < 0.5, np.isnan(np.diag(correlations_arr)))
+    assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
     # Drop missing parcels (there are 2 for the 1000parcel )
     correlations_arr = correlations_arr[available_parcels, :]
