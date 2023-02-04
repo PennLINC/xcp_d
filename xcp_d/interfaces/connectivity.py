@@ -183,11 +183,11 @@ class NiftiConnect(SimpleInterface):
         correlations_df = timeseries_df.corr()
         coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels, columns=["coverage"])
 
-        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="NaN", index=False)
+        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
         correlations_df.to_csv(
             self._results["correlations"],
             sep="\t",
-            na_rep="NaN",
+            na_rep="n/a",
             index_label="Node",
         )
         coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
@@ -395,7 +395,7 @@ class CiftiConnect(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="NaN", index=False)
+        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
 
         # Save out the correlation matrix tsv
         self._results["correlations"] = fname_presuffix(
@@ -406,7 +406,7 @@ class CiftiConnect(SimpleInterface):
         correlations_df.to_csv(
             self._results["correlations"],
             sep="\t",
-            na_rep="NaN",
+            na_rep="n/a",
             index_label="Node",
         )
 
