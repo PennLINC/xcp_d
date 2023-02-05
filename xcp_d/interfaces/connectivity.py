@@ -155,9 +155,9 @@ class NiftiConnect(SimpleInterface):
         timeseries_arr[:, coverage_thresholded] = np.nan
 
         # Region indices in the atlas may not be sequential, so we map them to sequential ints.
-        seq_mapper = {idx: i for i, idx in enumerate(masker.labels_)}
+        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df.index.tolist())}
 
-        if n_found_nodes != n_nodes:
+        if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
             # Fill in any missing nodes in the timeseries array with NaNs.
             new_timeseries_arr = np.full(
                 (timeseries_arr.shape[0], n_nodes),

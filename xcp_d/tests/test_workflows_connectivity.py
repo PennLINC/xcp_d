@@ -56,6 +56,8 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.base_dir = tmpdir
     connectivity_wf.run()
 
+    n_nodes, n_nodes_in_atlas, n_partial_nodes = 1000, 998, 993
+
     # Let's find the correct time series file
     connect_dir = os.path.join(
         connectivity_wf.base_dir,
@@ -70,20 +72,14 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(correlations), os.listdir(connect_dir)
 
     # Read that into a df
-    coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
+    coverage_df = pd.read_table(coverage, index_col="Node")
+    coverage_arr = coverage_df.to_numpy()
+    assert coverage_arr.shape[0] == n_nodes
     correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
-    assert correlations_arr.shape == (1000, 1000)
-    available_parcels = np.where(np.squeeze(coverage_arr) > 0)[0]
-
-    assert available_parcels.size == 973
+    assert correlations_arr.shape == (n_nodes, n_nodes)
 
     # Parcels with <50% coverage should have NaNs
     assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
-
-    # Drop missing parcels (there are 34 for the 1000parcel )
-    correlations_arr = correlations_arr[available_parcels, :]
-    correlations_arr = correlations_arr[:, available_parcels]
-    assert correlations_arr.shape == (973, 973)
 
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = os.path.join(
@@ -95,24 +91,35 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Masking img
     masker = NiftiLabelsMasker(
-        atlas_file,
-        mask_img=bold_mask,
+        labels_img=atlas_file,
+        labels=coverage_df.index.tolist(),
         smoothing_fwhm=None,
         standardize=False,
     )
     masker.fit(fake_bold_file)
     signals = masker.transform(fake_bold_file)
 
+    atlas_idx = range(1, len(coverage_df.index.tolist()) + 1)
+    idx_not_in_atlas = np.setdiff1d(atlas_idx, masker.labels_)
+    idx_in_atlas = np.array(masker.labels_, dtype=int)
+
+    # Drop missing parcels
+    correlations_arr = correlations_arr[idx_in_atlas, :]
+    correlations_arr = correlations_arr[:, idx_in_atlas]
+    assert correlations_arr.shape == (n_nodes_in_atlas, n_nodes_in_atlas)
+
+    # The masker.labels_ attribute only contains the labels that were found
+    assert idx_not_in_atlas.size == 2
+    assert idx_in_atlas.size == n_nodes_in_atlas
+
     # The "ground truth" matrix
     calculated_correlations = np.corrcoef(signals.T)
-    assert calculated_correlations.shape == (998, 998)
-    calculated_correlations = calculated_correlations[available_parcels, :]
-    calculated_correlations = calculated_correlations[:, available_parcels]
-    assert calculated_correlations.shape == (973, 973)
+    assert calculated_correlations.shape == (n_nodes_in_atlas, n_nodes_in_atlas)
 
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
     bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
+    assert bad_parcel_idx.size == n_partial_nodes
     calculated_correlations[bad_parcel_idx, :] = np.nan
     calculated_correlations[:, bad_parcel_idx] = np.nan
 
