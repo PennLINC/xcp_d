@@ -56,7 +56,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.base_dir = tmpdir
     connectivity_wf.run()
 
-    n_nodes, n_nodes_in_atlas, n_partial_nodes = 1000, 998, 993
+    n_nodes, n_nodes_in_atlas = 1000, 998
 
     # Let's find the correct time series file
     connect_dir = os.path.join(
@@ -99,9 +99,10 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     masker.fit(fake_bold_file)
     signals = masker.transform(fake_bold_file)
 
-    atlas_idx = range(len(coverage_df.index.tolist()))
+    atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
     idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
     idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
+    n_partial_nodes = np.where(coverage_df["coverage"] > 0.5)[0].size
 
     # Drop missing parcels
     correlations_arr = correlations_arr[idx_in_atlas, :]
@@ -119,7 +120,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
     bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
-    assert bad_parcel_idx.size == n_partial_nodes
+    assert bad_parcel_idx.size == n_nodes_in_atlas - n_partial_nodes
     calculated_correlations[bad_parcel_idx, :] = np.nan
     calculated_correlations[:, bad_parcel_idx] = np.nan
 
