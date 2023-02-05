@@ -99,9 +99,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     masker.fit(fake_bold_file)
     signals = masker.transform(fake_bold_file)
 
-    atlas_idx = range(1, len(coverage_df.index.tolist()) + 1)
-    idx_not_in_atlas = np.setdiff1d(atlas_idx, masker.labels_)
-    idx_in_atlas = np.array(masker.labels_, dtype=int)
+    atlas_idx = range(len(coverage_df.index.tolist()))
+    idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
+    idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
 
     # Drop missing parcels
     correlations_arr = correlations_arr[idx_in_atlas, :]
