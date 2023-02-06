@@ -634,8 +634,8 @@ def motion_regression_filter(
         )
         if lowpass_hz_adjusted != lowpass_hz:
             warnings.warn(
-                "Low-pass filter frequency changed "
-                f"({lowpass_hz} --> {lowpass_hz_adjusted} Hz)."
+                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_frequency} Hz), "
+                f"so it has been changed ({lowpass_hz} --> {lowpass_hz_adjusted} Hz)."
             )
 
         b, a = butter(
@@ -667,7 +667,9 @@ def motion_regression_filter(
         )
         if not np.array_equal(stopband_hz, stopband_hz_adjusted):
             warnings.warn(
-                "Band-stop filter frequencies changed "
+                "One or both filter frequencies are above Nyquist frequency "
+                f"({nyquist_frequency} Hz), "
+                "so they have been changed "
                 f"({stopband_hz[0]} --> {stopband_hz_adjusted[0]}, "
                 f"{stopband_hz[1]} --> {stopband_hz_adjusted[1]} Hz)."
             )
