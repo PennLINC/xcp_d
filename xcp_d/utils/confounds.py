@@ -284,6 +284,8 @@ def describe_regression(params, custom_confounds_file):
             "were selected as nuisance regressors [@behzadi2007component], "
             "along with the six motion parameters and their temporal derivatives "
             "[@benchmarkp;@satterthwaite_2013]. "
+            "As the aCompCor regressors were generated on high-pass filtered data, "
+            "the associated cosine basis regressors were included as well."
         ),
         "acompcor_gsr": (
             "The top 5 aCompCor principal components from the WM and CSF compartments "
@@ -291,6 +293,8 @@ def describe_regression(params, custom_confounds_file):
             "along with the six motion parameters and their temporal derivatives, "
             "mean white matter signal, mean CSF signal, and mean global signal "
             "[@benchmarkp;@satterthwaite_2013]. "
+            "As the aCompCor regressors were generated on high-pass filtered data, "
+            "the associated cosine basis regressors were included as well."
         ),
         "aroma": (
             "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
