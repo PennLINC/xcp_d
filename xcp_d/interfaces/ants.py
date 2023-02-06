@@ -3,15 +3,20 @@ import logging
 import os
 
 from nipype.interfaces.ants.base import ANTSCommand, ANTSCommandInputSpec
+from nipype.interfaces.ants.resampling import ApplyTransforms as _ApplyTransforms
+from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
 from nipype.interfaces.base import (
     CommandLine,
     CommandLineInputSpec,
     File,
+    InputMultiObject,
     InputMultiPath,
     Str,
     TraitedSpec,
     traits,
 )
+
+from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -147,3 +152,48 @@ class CompositeInvTransformUtil(ANTSCommand):
         if self.inputs.process == "assemble":
             outputs["out_file"] = os.path.abspath(self.inputs.out_file)
         return outputs
+
+
+class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
+    # Nipype's version doesn't have GenericLabel
+    interpolation = traits.Enum(
+        "Linear",
+        "NearestNeighbor",
+        "CosineWindowedSinc",
+        "WelchWindowedSinc",
+        "HammingWindowedSinc",
+        "LanczosWindowedSinc",
+        "MultiLabel",
+        "Gaussian",
+        "BSpline",
+        "GenericLabel",
+        argstr="%s",
+        usedefault=True,
+    )
+    transforms = InputMultiObject(
+        traits.Either(File(exists=True), "identity"),
+        argstr="%s",
+        mandatory=True,
+        desc="transform files",
+    )
+
+
+class ApplyTransforms(_ApplyTransforms):
+    """ApplyTransforms from nipype as workflow.
+
+    This is a modification of the ApplyTransforms interface,
+    with an updated set of inputs and a different default output image name.
+    """
+
+    input_spec = _ApplyTransformsInputSpec
+
+    def _run_interface(self, runtime):
+        # Run normally
+        self.inputs.output_image = fname_presuffix(
+            self.inputs.input_image,
+            suffix="_trans.nii.gz",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        runtime = super(ApplyTransforms, self)._run_interface(runtime)
+        return runtime

@@ -1,11 +1,11 @@
 """Plotting workflows."""
 from nipype import Function
 from nipype.interfaces import utility as niu
-from nipype.interfaces.ants.resampling import ApplyTransforms
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary

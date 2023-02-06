@@ -7,7 +7,6 @@ import numpy as np
 from nilearn.input_data import NiftiLabelsMasker
 from nilearn.plotting import plot_matrix
 from nipype import logging
-from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -137,33 +136,6 @@ class NiftiConnect(SimpleInterface):
         np.savetxt(self._results["fcon_matrix_tsv"], correlation_matrices, delimiter="\t")
         np.savetxt(self._results["parcel_coverage_file"], parcel_coverage, delimiter="\t")
 
-        return runtime
-
-
-class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
-    transforms = InputMultiObject(
-        traits.Either(File(exists=True), "identity"),
-        argstr="%s",
-        mandatory=True,
-        desc="transform files",
-    )
-
-
-class ApplyTransformsx(ApplyTransforms):
-    """ApplyTransforms from nipype as workflow.
-
-    This is a modification of the ApplyTransforms interface,
-    with an updated set of inputs and a different default output image name.
-    """
-
-    input_spec = _ApplyTransformsInputSpec
-
-    def _run_interface(self, runtime):
-        # Run normally
-        self.inputs.output_image = fname_presuffix(
-            self.inputs.input_image, suffix="_trans.nii.gz", newpath=runtime.cwd, use_ext=False
-        )
-        runtime = super(ApplyTransformsx, self)._run_interface(runtime)
         return runtime
 
 

@@ -10,10 +10,9 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.ants import ApplyTransforms, CompositeInvTransformUtil, ConvertTransformFile
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
-from xcp_d.interfaces.connectivity import ApplyTransformsx
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.interfaces.workbench import (  # MB,TM
@@ -134,7 +133,7 @@ def init_warp_anats_to_template_wf(
     else:
         # Warp the native T1w-space T1w and T1w segmentation files to the selected standard space.
         warp_t1w_to_template = pe.Node(
-            ApplyTransformsx(
+            ApplyTransforms(
                 num_threads=2,
                 reference_image=template_file,
                 interpolation="LanczosWindowedSinc",
@@ -156,7 +155,7 @@ def init_warp_anats_to_template_wf(
         # fmt:on
 
         warp_t1seg_to_template = pe.Node(
-            ApplyTransformsx(
+            ApplyTransforms(
                 num_threads=2,
                 reference_image=template_file,
                 interpolation="GenericLabel",

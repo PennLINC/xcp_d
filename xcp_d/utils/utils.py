@@ -7,9 +7,10 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from nipype.interfaces.ants import ApplyTransforms
 from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
+
+from xcp_d.interfaces.ants import ApplyTransforms
 
 
 def _t12native(fname):
