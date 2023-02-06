@@ -34,8 +34,8 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _NiftiConnectOutputSpec(TraitedSpec):
-    timeseries = File(exists=True, mandatory=True, desc=" time series file")
-    correlations = File(exists=True, mandatory=True, desc=" time series file")
+    timeseries = File(exists=True, mandatory=True, desc="Parcellated time series file.")
+    correlations = File(exists=True, mandatory=True, desc="Correlation matrix file.")
     coverage = File(exists=True, mandatory=True, desc="Parcel-wise coverage file.")
 
 
@@ -57,9 +57,14 @@ class NiftiConnect(SimpleInterface):
         atlas_labels = self.inputs.atlas_labels
 
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
+        node_labels_df.sort_index(inplace=True)  # ensure index is in order
 
         # Explicitly remove label corresponding to background (index=0), if present.
         if 0 in node_labels_df.index:
+            LOGGER.warning(
+                "Index value of 0 found in atlas labels file. "
+                "Will assume this describes the background and ignore it."
+            )
             node_labels_df = node_labels_df.drop(index=[0])
 
         node_labels = node_labels_df["name"].tolist()
@@ -267,6 +272,7 @@ class CiftiConnect(SimpleInterface):
         atlas_img = nb.load(atlas_file)
         pscalar_img = nb.load(pscalar_file)
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
+        node_labels_df.sort_index(inplace=True)  # ensure index is in order
 
         data_arr = data_img.get_fdata()
         atlas_arr = np.squeeze(atlas_img.get_fdata())  # first dim is singleton
@@ -290,6 +296,10 @@ class CiftiConnect(SimpleInterface):
 
         # Explicitly remove label corresponding to background (index=0), if present.
         if 0 in node_labels_df.index:
+            LOGGER.warning(
+                "Index value of 0 found in atlas labels file. "
+                "Will assume this describes the background and ignore it."
+            )
             node_labels_df = node_labels_df.drop(index=[0])
 
         expected_cifti_node_labels = node_labels_df["cifti_name"].tolist()

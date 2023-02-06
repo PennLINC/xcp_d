@@ -226,7 +226,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     # fmt:off
     workflow.connect([
         (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (atlas_name_grabber, matrix_plot, [("atlas_names", "atlas_names")]),
         (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
