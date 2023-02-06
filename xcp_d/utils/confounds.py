@@ -633,7 +633,10 @@ def motion_regression_filter(
             * sampling_frequency
         )
         if lowpass_hz_adjusted != lowpass_hz:
-            print("Low-pass filter frequency changed.")
+            warnings.warn(
+                "Low-pass filter frequency changed "
+                f"({lowpass_hz} --> {lowpass_hz_adjusted} Hz)."
+            )
 
         b, a = butter(
             motion_filter_order / 2,
@@ -663,7 +666,11 @@ def motion_regression_filter(
             * sampling_frequency
         )
         if not np.array_equal(stopband_hz, stopband_hz_adjusted):
-            print("Low-pass filter frequencies changed.")
+            warnings.warn(
+                "Band-stop filter frequencies changed "
+                f"({stopband_hz[0]} --> {stopband_hz_adjusted[0]}, "
+                f"{stopband_hz[1]} --> {stopband_hz_adjusted[1]} Hz)."
+            )
 
         # Convert stopband to a single notch frequency.
         freq_to_remove = np.mean(stopband_hz_adjusted)
