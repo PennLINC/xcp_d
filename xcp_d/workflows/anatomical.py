@@ -10,7 +10,11 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces.ants import ApplyTransforms, CompositeInvTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.ants import (
+    ApplyTransforms,
+    CompositeInvTransformUtil,
+    ConvertTransformFile,
+)
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
