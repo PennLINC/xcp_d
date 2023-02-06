@@ -1,4 +1,6 @@
 """Tests for filtering methods."""
+import re
+
 import numpy as np
 import pytest
 from scipy import signal
@@ -46,11 +48,12 @@ def test_motion_filtering_lp():
     assert np.allclose(np.squeeze(lowpass_data_test), lowpass_data_true)
 
     # Use freq above Nyquist, and function will automatically modify the filter.
-    with pytest.raises(
-        match=(
-            "Low-pass filter frequency is above Nyquist frequency (1.25 Hz), "
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Low-pass filter frequency is above Nyquist frequency (0.625 Hz), "
             "so it has been changed (0.7 --> 0.55 Hz)."
-        )
+        ),
     ):
         motion_regression_filter(
             raw_data,
@@ -100,8 +103,9 @@ def test_motion_filtering_notch():
     # Use band above Nyquist, and function will automatically modify the filter.
     # NOTE: In this case, the min and max end up flipped for some reason.
     with pytest.warns(
-        match=(
-            "One or both filter frequencies are above Nyquist frequency (1.25 Hz), "
+        UserWarning,
+        match=re.escape(
+            "One or both filter frequencies are above Nyquist frequency (0.625 Hz), "
             "so they have been changed (0.7 --> 0.55, 0.75 --> 0.5 Hz)."
         ),
     ):
