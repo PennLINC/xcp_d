@@ -148,7 +148,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
         ApplyTransformsx(
-            interpolation="MultiLabel",
+            interpolation="GenericLabel",
             input_image_type=3,
             dimension=3,
         ),

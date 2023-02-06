@@ -302,7 +302,7 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 input_image=dseg_file,
-                interpolation="MultiLabel",
+                interpolation="GenericLabel",
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,

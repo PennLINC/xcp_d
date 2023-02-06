@@ -159,7 +159,7 @@ def init_warp_anats_to_template_wf(
             ApplyTransformsx(
                 num_threads=2,
                 reference_image=template_file,
-                interpolation="MultiLabel",
+                interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
             ),
