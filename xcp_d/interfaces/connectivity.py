@@ -28,9 +28,19 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc="filtered file")
-    mask = File(exists=True, mandator=True, desc="brain mask file")
+    mask = File(exists=True, mandatory=True, desc="brain mask file")
     atlas = File(exists=True, mandatory=True, desc="atlas file")
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
+    min_coverage = traits.Float(
+        default=0.5,
+        usedefault=True,
+        desc=(
+            "Coverage threshold to apply to parcels. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one. "
+            "Default is 0.5."
+        ),
+    )
 
 
 class _NiftiConnectOutputSpec(TraitedSpec):
@@ -55,6 +65,7 @@ class NiftiConnect(SimpleInterface):
         mask = self.inputs.mask
         atlas = self.inputs.atlas
         atlas_labels = self.inputs.atlas_labels
+        coverage_threshold = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
@@ -84,8 +95,6 @@ class NiftiConnect(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-
-        coverage_threshold = 0.5
 
         # Before anything, we need to measure coverage
         atlas_img = nb.load(atlas)
@@ -118,8 +127,12 @@ class NiftiConnect(SimpleInterface):
         n_nodes = len(node_labels)
         n_found_nodes = coverage_thresholded.size
         n_bad_nodes = np.sum(parcel_coverage == 0)
-        n_poor_nodes = np.sum(np.logical_and(parcel_coverage > 0, parcel_coverage < 0.5))
-        n_partial_nodes = np.sum(np.logical_and(parcel_coverage >= 0.5, parcel_coverage < 1))
+        n_poor_parcels = np.sum(
+            np.logical_and(parcel_coverage > 0, parcel_coverage < coverage_threshold)
+        )
+        n_partial_parcels = np.sum(
+            np.logical_and(parcel_coverage >= coverage_threshold, parcel_coverage < 1)
+        )
 
         if n_found_nodes != n_nodes:
             LOGGER.warning(
@@ -129,15 +142,15 @@ class NiftiConnect(SimpleInterface):
         if n_bad_nodes:
             LOGGER.warning(f"{n_bad_nodes}/{n_nodes} of parcels have 0% coverage.")
 
-        if n_poor_nodes:
+        if n_poor_parcels:
             LOGGER.warning(
-                f"{n_poor_nodes}/{n_nodes} of parcels have <50% coverage. "
+                f"{n_poor_parcels}/{n_nodes} of parcels have <50% coverage. "
                 "These parcels' time series will be replaced with zeros."
             )
 
-        if n_partial_nodes:
+        if n_partial_parcels:
             LOGGER.warning(
-                f"{n_partial_nodes}/{n_nodes} of parcels have at least one uncovered "
+                f"{n_partial_parcels}/{n_nodes} of parcels have at least one uncovered "
                 "voxel, but have enough good voxels to be useable. "
                 "The bad voxels will be ignored and the parcels' time series will be "
                 "calculated from the remaining voxels."
