@@ -326,7 +326,6 @@ produced by the regression.
     # fmt:on
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
-        TR=TR,
         min_coverage=min_coverage,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
