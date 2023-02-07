@@ -17,6 +17,8 @@ from niworkflows.interfaces.fixes import (
     _FixTraitApplyTransformsInputSpec,
 )
 
+from xcp_d.utils.filemanip import fname_presuffix
+
 LOGGER = logging.getLogger("nipype.interface")
 
 
@@ -182,3 +184,14 @@ class ApplyTransforms(FixHeaderApplyTransforms):
     """
 
     input_spec = _ApplyTransformsInputSpec
+
+    def _run_interface(self, runtime):
+        # Run normally
+        self.inputs.output_image = fname_presuffix(
+            self.inputs.input_image,
+            suffix="_trans.nii.gz",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        runtime = super(ApplyTransforms, self)._run_interface(runtime)
+        return runtime
