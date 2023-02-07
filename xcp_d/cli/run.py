@@ -21,6 +21,7 @@ from xcp_d.cli.parser_utils import (
     _DeprecatedStoreAction040,
     _float_or_auto,
     _int_or_auto,
+    _restricted_float,
     check_deps,
     json_file,
 )
@@ -208,6 +209,19 @@ def get_parser():
             "Must be a folder containing confounds files, "
             "in which case the file with the name matching the fMRIPrep confounds "
             "file will be selected. "
+        ),
+    )
+    g_param.add_argument(
+        "--min_coverage",
+        "--min-coverage",
+        required=False,
+        default=0.5,
+        type=_restricted_float,
+        help=(
+            "Coverage threshold to apply to parcels in each atlas. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one. "
+            "Default is 0.5."
         ),
     )
 
@@ -888,6 +902,7 @@ Running xcp_d version {__version__}:
         process_surfaces=opts.process_surfaces,
         dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
+        min_coverage=opts.min_coverage,
         name="xcpd_wf",
     )
 

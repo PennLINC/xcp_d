@@ -43,6 +43,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's define the inputs and create the node
     connectivity_wf = init_nifti_functional_connectivity_wf(
         output_dir=tmpdir,
+        min_coverage=0.5,
         mem_gb=4,
         name="connectivity_wf",
         omp_nthreads=2,
@@ -136,6 +137,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf = init_cifti_functional_connectivity_wf(
         TR=TR,
         output_dir=tmpdir,
+        min_coverage=0.5,
         mem_gb=4,
         omp_nthreads=2,
         name="connectivity_wf",
@@ -152,7 +154,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     parc_file = os.path.join(
         parc_dir,
-        "parcellated_prepared_timeseries.dtseries.ptseries.nii",
+        "parcellated_fake_signal_file_timeseries.dtseries.ptseries.nii",
     )
     assert os.path.isfile(parc_file), os.listdir(parc_dir)
 
@@ -171,9 +173,9 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     pconn_file = os.path.join(
         corr_dir,
-        "correlation_matrix_parcellated_prepared_timeseries.dtseries.ptseries.pconn.nii",
+        "correlation_matrix_parcellated_fake_signal_file_timeseries.dtseries.ptseries.pconn.nii",
     )
-    assert os.path.isfile(pconn_file), os.lsitdir(corr_dir)
+    assert os.path.isfile(pconn_file), os.listdir(corr_dir)
 
     # Read it out
     xcp_array = nb.load(pconn_file).get_fdata().T
