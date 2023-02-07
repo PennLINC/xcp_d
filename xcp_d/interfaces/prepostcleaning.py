@@ -19,7 +19,6 @@ from xcp_d.utils.modified_data import (
     compute_fd,
     downcast_to_32,
     generate_mask,
-    interpolate_masked_data,
 )
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -405,71 +404,6 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
-        return runtime
-
-
-class _InterpolateInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
-    bold_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
-    tmask = File(exists=True, mandatory=True, desc="temporal mask")
-    mask_file = File(exists=True, mandatory=False, desc="required for nifti")
-    TR = traits.Float(mandatory=True, desc="repetition time in TR")
-
-
-class _InterpolateOutputSpec(TraitedSpec):
-    bold_interpolated = File(exists=True, mandatory=True, desc=" fmriprep censored")
-
-
-class Interpolate(SimpleInterface):
-    """Interpolates scrubbed/regressed BOLD data based on temporal mask.
-
-    Interpolation takes in the scrubbed/regressed bold file and temporal mask,
-    subs in the scrubbed values with 0, and then uses scipy's
-    interpolate functionality to interpolate values into these 0s.
-    It outputs the interpolated file.
-    """
-
-    input_spec = _InterpolateInputSpec
-    output_spec = _InterpolateOutputSpec
-
-    def _run_interface(self, runtime):
-        # Read in regressed bold data and temporal mask
-        # from censorscrub
-        bold_data = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask_file)
-
-        tmask_df = pd.read_table(self.inputs.tmask)
-        tmask_arr = tmask_df["framewise_displacement"].values
-
-        # check if any volumes were censored - if they were,
-        # put 0s in their place.
-        if bold_data.shape[1] != len(tmask_arr):
-            data_with_zeros = np.zeros([bold_data.shape[0], len(tmask_arr)])
-            data_with_zeros[:, tmask_arr == 0] = bold_data
-        else:
-            data_with_zeros = bold_data
-
-        # interpolate the data using scipy's interpolation functionality
-        interpolated_data = interpolate_masked_data(
-            bold_data=data_with_zeros,
-            tmask=tmask_arr,
-            TR=self.inputs.TR,
-        )
-
-        # save out results
-        self._results["bold_interpolated"] = fname_presuffix(
-            self.inputs.in_file,
-            newpath=os.getcwd(),
-            use_ext=True,
-        )
-
-        write_ndata(
-            data_matrix=interpolated_data,
-            template=self.inputs.bold_file,
-            mask=self.inputs.mask_file,
-            TR=self.inputs.TR,
-            filename=self._results["bold_interpolated"],
-        )
-
         return runtime
 
 

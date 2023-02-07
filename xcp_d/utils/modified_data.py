@@ -63,63 +63,6 @@ def generate_mask(fd_res, fd_thresh):
     return tmask
 
 
-def interpolate_masked_data(bold_data, tmask, TR=1):
-    """Interpolate masked data.
-
-    No interpolation will be performed if more than 50% of the volumes in the BOLD data are
-    flagged by the temporal mask.
-
-    NOTE: TS- Why are slice times being inferred from the number of volumes?
-    Am I missing something?
-
-    Parameters
-    ----------
-    bold_data : numpy.ndarray of shape (S, T)
-        The BOLD data to interpolate.
-        T = time, S = samples.
-    tmask : numpy.ndarray of shape (T)
-        A temporal mask in which ones indicate volumes to be flagged and interpolated across.
-    TR : float, optional
-        The repetition time of the BOLD data, in seconds. Default is 1.
-
-    Returns
-    -------
-    bold_data_interpolated : numpy.ndarray of shape (S, T)
-        The interpolated BOLD data.
-    """
-    # import interpolate functionality
-    from scipy.interpolate import interp1d
-
-    # Confirm that interpolation can be correctly performed
-    bold_data_interpolated = bold_data
-    if np.mean(tmask) == 0:
-        print("No flagged volume, interpolation will not be done.")
-    elif np.mean(tmask) > 0.5:
-        print("More than 50% of volumes are flagged, interpolation will not be done.")
-    else:
-        # Create slice time array
-        slice_times = TR * np.arange(0, (bold_data.shape[1]), 1)
-        # then add all the times which were not scrubbed. Append the last
-        # time to the end
-        slice_times_extended = np.append(slice_times[tmask == 0], slice_times[-1])
-        # Stack bold data: all timepoints not scrubbed are appended to
-        # the last timepoint
-        clean_volume = np.hstack(
-            (bold_data[:, (tmask == 0)], np.reshape(bold_data[:, -1], [bold_data.shape[0], 1]))
-        )
-
-        # looping through each voxel
-        for voxel in range(0, bold_data.shape[0]):
-            # create interpolation function
-            interpolation_function = interp1d(slice_times_extended, clean_volume[voxel, :])
-            # create data
-            interpolated_data = interpolation_function(slice_times)
-            # if the data was scrubbed, replace it with the interpolated data
-            bold_data_interpolated[voxel, (tmask == 1)] = interpolated_data[tmask == 1]
-
-    return bold_data_interpolated
-
-
 def _drop_dummy_scans(bold_file, dummy_scans):
     """Remove the first X volumes from a BOLD file.
 
