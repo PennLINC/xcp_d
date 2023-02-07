@@ -10,8 +10,6 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
 
-from xcp_d.interfaces.ants import ApplyTransforms
-
 
 def _t12native(fname):
     """Select T1w-to-scanner transform associated with a given BOLD file.
@@ -65,6 +63,8 @@ def get_segfile(bold_file):
     -----
     Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
+    from xcp_d.interfaces.ants import ApplyTransforms
+
     # get transform files
     dd = Path(os.path.dirname(bold_file))
     anatdir = str(dd.parent) + "/anat"
