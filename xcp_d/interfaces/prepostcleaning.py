@@ -583,20 +583,15 @@ class _CiftiPrepareForParcellationInputSpec(BaseInterfaceInputSpec):
         ),
     )
     TR = traits.Float(mandatory=True, desc="Repetition time, in seconds.")
-    out_file = File(
-        "prepared_timeseries.dtseries.nii",
+    min_coverage = traits.Float(
+        default=0.5,
         usedefault=True,
-        exists=False,
         desc=(
-            "The name of the modified file to write out. "
-            "prepared_timeseries.dtseries.nii by default."
+            "Coverage threshold to apply to parcels. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one. "
+            "Default is 0.5."
         ),
-    )
-    parcel_coverage_file = File(
-        "parcel_coverage.dscalar.nii",
-        usedefault=True,
-        exists=False,
-        desc="An atlas-specific file with the coverage for each parcel.",
     )
 
 
@@ -606,7 +601,7 @@ class _CiftiPrepareForParcellationOutputSpec(TraitedSpec):
 
 
 class CiftiPrepareForParcellation(SimpleInterface):
-    """Apply 50% coverage threshold to parcellated data.
+    """Apply coverage threshold to parcellated data.
 
     This interface takes a CIFTI atlas and a CIFTI data file, and ensures that
     missing data in the data file is handled appropriately.
@@ -614,8 +609,8 @@ class CiftiPrepareForParcellation(SimpleInterface):
     (i.e., are time series of all zeros or NaNs)
     are replaced with time series of all NaNs,
     so that the CIFTI parcellation step will ignore those vertices.
-    Next, any parcels with <50% coverage will have all associated vertices in the data file
-    replaced with *zeros* (overwriting any NaNs).
+    Next, any parcels with coverage less than the threshold will have all associated vertices in
+    the data file replaced with *zeros* (overwriting any NaNs).
     This way, the parcellation will return a summary time series of zeros.
     Any parcels with all NaNs will raise an error in the parcellation step, so we must use zeros
     for these vertices instead.
@@ -628,7 +623,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
         data_file = self.inputs.data_file
         atlas_file = self.inputs.atlas_file
         TR = self.inputs.TR
-        coverage_threshold = 0.5
+        min_coverage = self.inputs.min_coverage
 
         assert data_file.endswith(".dtseries.nii")
         assert atlas_file.endswith(".dlabel.nii"), atlas_file
@@ -648,7 +643,7 @@ class CiftiPrepareForParcellation(SimpleInterface):
 
         # The problem is that wb_command -cifti-parcellate will raise an error if a whole parcel is
         # NaNs, so we must replace entirely-bad parcels with zeros instead.
-        n_partially_covered_parcels, n_poorly_covered_parcels, n_uncovered_parcels = 0, 0, 0
+        n_partial_parcels, n_poor_parcels, n_bad_parcels = 0, 0, 0
         parcel_ids = np.unique(atlas_data)[1:]
         n_parcels = parcel_ids.size
         parcel_coverages = np.zeros_like(atlas_data, dtype=np.float32)
@@ -667,51 +662,59 @@ class CiftiPrepareForParcellation(SimpleInterface):
                 # If the whole parcel is bad, replace all of the values with zeros.
                 data[parcel_idx, :] = 0
 
-                n_uncovered_parcels += 1
+                n_bad_parcels += 1
 
-            elif parcel_coverage < coverage_threshold:
-                # If the parcel has >=50% bad data, replace all of the values with zeros.
+            elif parcel_coverage < min_coverage:
+                # If the parcel has >=threshold% bad data, replace all of the values with zeros.
                 data[parcel_idx, :] = 0
 
-                n_poorly_covered_parcels += 1
+                n_poor_parcels += 1
 
             elif parcel_coverage < 1:
                 # If the parcel has < 50% bad data, keep the parcel, but make a note.
-                n_partially_covered_parcels += 1
+                n_partial_parcels += 1
 
-        if n_uncovered_parcels:
-            LOGGER.warning(f"{n_uncovered_parcels}/{n_parcels} of parcels have 0% coverage.")
+        if n_bad_parcels:
+            LOGGER.warning(f"{n_bad_parcels}/{n_parcels} of parcels have 0% coverage.")
 
-        if n_poorly_covered_parcels:
+        if n_poor_parcels:
             LOGGER.warning(
-                f"{n_poorly_covered_parcels}/{n_parcels} of parcels have <50% coverage. "
+                f"{n_poor_parcels}/{n_parcels} of parcels have <50% coverage. "
                 "These parcels' time series will be replaced with zeros."
             )
 
-        if n_partially_covered_parcels:
+        if n_partial_parcels:
             LOGGER.warning(
-                f"{n_partially_covered_parcels}/{n_parcels} of parcels have at least one "
+                f"{n_partial_parcels}/{n_parcels} of parcels have at least one "
                 "uncovered vertex, but have enough good vertices to be useable. "
                 "The bad vertices will be ignored and the parcels' time series will be "
                 "calculated from the remaining vertices."
             )
 
-        out_file = os.path.abspath(self.inputs.out_file)
+        self._results["out_file"] = fname_presuffix(
+            data_file,
+            suffix="_timeseries.dtseries.nii",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
         write_ndata(
             data_matrix=data,
             template=data_file,
-            filename=out_file,
+            filename=self._results["out_file"],
             TR=TR,
         )
-        self._results["out_file"] = out_file
 
-        parcel_coverage_file = os.path.abspath(self.inputs.parcel_coverage_file)
+        self._results["parcel_coverage_file"] = fname_presuffix(
+            data_file,
+            suffix="_coverage.dscalar.nii",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
         write_ndata(
             data_matrix=parcel_coverages,
             template=atlas_file,
-            filename=parcel_coverage_file,
+            filename=self._results["parcel_coverage_file"],
             TR=TR,
         )
-        self._results["parcel_coverage_file"] = parcel_coverage_file
 
         return runtime

@@ -65,6 +65,7 @@ def init_ciftipostprocess_wf(
     despike,
     dcan_qc,
     n_runs,
+    min_coverage,
     omp_nthreads,
     layout=None,
     name="cifti_process_wf",
@@ -118,6 +119,7 @@ def init_ciftipostprocess_wf(
                 despike=True,
                 dcan_qc=True,
                 n_runs=1,
+                min_coverage=0.5,
                 omp_nthreads=1,
                 layout=layout,
                 name="cifti_postprocess_wf",
@@ -152,6 +154,7 @@ def init_ciftipostprocess_wf(
     dcan_qc : bool
         Whether to run DCAN QC or not.
     n_runs
+    min_coverage
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s
@@ -299,6 +302,7 @@ produced by the regression.
 
     fcon_ts_wf = init_cifti_functional_connectivity_wf(
         TR=TR,
+        min_coverage=min_coverage,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         name="cifti_ts_con_wf",

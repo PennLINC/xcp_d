@@ -66,6 +66,7 @@ def init_boldpostprocess_wf(
     n_runs,
     despike,
     dcan_qc,
+    min_coverage,
     layout=None,
     name="bold_postprocess_wf",
 ):
@@ -118,6 +119,7 @@ def init_boldpostprocess_wf(
                 despike=True,
                 dcan_qc=True,
                 n_runs=1,
+                min_coverage=0.5,
                 omp_nthreads=1,
                 layout=layout,
                 name="nifti_postprocess_wf",
@@ -156,6 +158,7 @@ def init_boldpostprocess_wf(
         If True, run 3dDespike from AFNI
     dcan_qc : bool
         Whether to run DCAN QC or not.
+    min_coverage
     layout : BIDSLayout object
         BIDS dataset layout
     %(name)s
@@ -328,6 +331,7 @@ produced by the regression.
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
         output_dir=output_dir,
+        min_coverage=min_coverage,
         mem_gb=mem_gbx["timeseries"],
         name="fcons_ts_wf",
         omp_nthreads=omp_nthreads,
