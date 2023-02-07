@@ -8,13 +8,9 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import (
-    ApplyTransformsx,
-    CiftiConnect,
-    ConnectPlot,
-    NiftiConnect,
-)
+from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
@@ -167,8 +163,8 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
-        ApplyTransformsx(
-            interpolation="MultiLabel",
+        ApplyTransforms(
+            interpolation="GenericLabel",
             input_image_type=3,
             dimension=3,
         ),
