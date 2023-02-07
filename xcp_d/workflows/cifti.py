@@ -574,7 +574,6 @@ produced by the regression.
         (censor_scrub, denoise_bold, [("tmask", "censoring_file")]),
         (censor_scrub, denoise_bold_unfiltered, [("tmask", "censoring_file")]),
     ])
-    # fmt:on
 
     # residual smoothing
     workflow.connect([(denoise_bold, resd_smoothing_wf, [('out_file', 'inputnode.bold_file')])])

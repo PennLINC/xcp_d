@@ -600,7 +600,7 @@ produced by the regression.
     # fmt:on
 
     # residual smoothing
-    workflow.connect([(denoise_bold, resd_smoothing_wf, [('out_file', 'inputnode.bold_file')])])
+    workflow.connect([(denoise_bold, resd_smoothing_wf, [("out_file", "inputnode.bold_file")])])
 
     # functional connect workflow
     # fmt:off
