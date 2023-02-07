@@ -57,7 +57,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.base_dir = tmpdir
     connectivity_wf.run()
 
-    n_nodes, n_nodes_in_atlas = 1000, 998
+    n_nodes, n_nodes_in_atlas = 1000, 1000
 
     # Let's find the correct time series file
     connect_dir = os.path.join(
@@ -111,7 +111,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert correlations_arr.shape == (n_nodes_in_atlas, n_nodes_in_atlas)
 
     # The masker.labels_ attribute only contains the labels that were found
-    assert idx_not_in_atlas.size == 2
+    assert idx_not_in_atlas.size == 0
     assert idx_in_atlas.size == n_nodes_in_atlas
 
     # The "ground truth" matrix
