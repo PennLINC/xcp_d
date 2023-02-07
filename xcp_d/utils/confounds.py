@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from nilearn.interfaces.fmriprep import load_confounds
 from nipype import logging
-from scipy.signal import filtfilt, firwin, iirnotch
+from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
@@ -128,7 +128,8 @@ def load_motion(
     ----------
     .. footbibliography::
     """
-    assert motion_filter_type in ("lp", "notch", None), motion_filter_type
+    if motion_filter_type not in ("lp", "notch", None):
+        raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
     motion_confounds_df = confounds_df[
@@ -137,18 +138,14 @@ def load_motion(
 
     # Apply LP or notch filter
     if motion_filter_type in ("lp", "notch"):
-        # TODO: Eliminate need for transpose. We control the filter function,
-        # so we can make it work on RxT data instead of TxR.
-        motion_confounds = motion_confounds_df.to_numpy().T
         motion_confounds = motion_regression_filter(
-            data=motion_confounds,
+            data=motion_confounds_df.to_numpy(),
             TR=TR,
             motion_filter_type=motion_filter_type,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds = motion_confounds.T  # Transpose motion confounds back to RxT
         motion_confounds_df = pd.DataFrame(
             data=motion_confounds,
             columns=motion_confounds_df.columns,
@@ -349,6 +346,73 @@ def describe_regression(params, custom_confounds_file):
 
 
 @fill_doc
+def describe_censoring(
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    head_radius,
+    fd_thresh,
+):
+    """Build a text description of the motion parameter filtering and FD censoring process.
+
+    Parameters
+    ----------
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(head_radius)s
+    %(fd_thresh)s
+
+    Returns
+    -------
+    desc : str
+        A text description of the censoring procedure.
+    """
+    from num2words import num2words
+
+    filter_str, filter_post_str = "", ""
+    if motion_filter_type:
+        if motion_filter_type == "notch":
+            filter_sub_str = (
+                f"band-stop filtered to remove signals between {band_stop_min} and "
+                f"{band_stop_max} breaths-per-minute using a(n) "
+                f"{num2words(motion_filter_order, ordinal=True)}-order notch filter, "
+                "based on @fair2020correction"
+            )
+        else:  # lp
+            filter_sub_str = (
+                f"low-pass filtered below {band_stop_min} breaths-per-minute using a(n) "
+                f"{num2words(motion_filter_order, ordinal=True)}-order Butterworth filter, "
+                "based on @gratton2020removal"
+            )
+
+        filter_str = (
+            f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
+        )
+        filter_post_str = (
+            "The filtered versions of the motion traces and framewise displacement were not used "
+            "for denoising."
+        )
+
+    if isinstance(head_radius, float):
+        fd_substr = f"{head_radius} mm"
+    else:
+        fd_substr = "estimated from the preprocessed brain mask"
+
+    desc = (
+        f"In order to identify high-motion outlier volumes, {filter_str}"
+        "framewise displacement was calculated using the formula from @power_fd_dvars, "
+        f"with a head radius {fd_substr}. "
+        f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
+        f"greater than {fd_thresh} mm were flagged as outliers and excluded from nuisance "
+        f"regression [@power_fd_dvars]. {filter_post_str}"
+    )
+    return desc
+
+
+@fill_doc
 def load_confound_matrix(params, img_file, custom_confounds=None):
     """Load a subset of the confounds associated with a given file.
 
@@ -509,40 +573,48 @@ def motion_regression_filter(
 
     Parameters
     ----------
-    data : numpy.ndarray
-        Data to filter.
+    data : (T, R) numpy.ndarray
+        Data to filter. T = time, R = motion regressors
+        The filter will be applied independently to each variable, across time.
     TR : float
         Repetition time of the data.
-    motion_filter_type : {"lp", "notch"}
-        The type of motion filter to apply.
-        If "notch", the frequencies between ``band_stop_min`` and ``band_stop_max`` will be
-        removed.
-        If "lp", the frequencies above ``band_stop_min`` will be removed.
+    %(motion_filter_type)s
         If not "notch" or "lp", an exception will be raised.
     %(band_stop_min)s
     %(band_stop_max)s
-    motion_filter_order : int, optional
-        Default is 4.
+    %(motion_filter_order)s
 
     Returns
     -------
-    data : numpy.ndarray
-        Filtered data.
+    data : (T, R) numpy.ndarray
+        Filtered data. Same shape as the original data.
+
+    Notes
+    -----
+    Low-pass filtering (``motion_filter_type = "lp"``) is performed with a Butterworth filter,
+    as in :footcite:t:`gratton2020removal`.
+    The order of the Butterworth filter is determined by ``motion_filter_order``,
+    although the original paper used a first-order filter.
+    The original paper also used zero-padding with a padding size of 100.
+    We use constant-padding, with the default padding size determined by
+    :func:`scipy.signal.filtfilt`.
+
+    Band-stop filtering (``motion_filter_type = "notch"``) is performed with a notch filter,
+    as in :footcite:t:`fair2020correction`.
+    This filter uses the mean of the stopband frequencies as the target frequency,
+    and the range between the two frequencies as the bandwidth.
+    The filter is applied with constant-padding, using the default padding size determined by
+    :func:`scipy.signal.filtfilt`.
 
     References
     ----------
     .. footbibliography::
     """
-    assert motion_filter_type in ("lp", "notch")
+    if motion_filter_type not in ("lp", "notch"):
+        raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
-    # casting all variables
-    TR = float(TR)
-    order = float(motion_filter_order)
-
-    filtered_data = data.copy()
-
-    sampling_frequency = 1.0 / TR
-    nyquist_frequency = sampling_frequency / 2.0
+    sampling_frequency = 1 / TR
+    nyquist_frequency = sampling_frequency / 2
 
     if motion_filter_type == "lp":  # low-pass filter
         # Remove any frequencies above band_stop_min.
@@ -551,19 +623,29 @@ def motion_regression_filter(
         if band_stop_max:
             warnings.warn("The parameter 'band_stop_max' will be ignored.")
 
-        low_pass_freq_hertz = band_stop_min / 60  # change BPM to right time unit
+        lowpass_hz = band_stop_min / 60  # change BPM to right time unit
 
-        # cutting frequency
-        cutting_frequency = np.abs(
-            low_pass_freq_hertz
-            - (np.floor((low_pass_freq_hertz + nyquist_frequency) / sampling_frequency))
+        # Adjust frequency in case Nyquist is below cutoff.
+        # This won't have an effect if the data have a fast enough sampling rate.
+        lowpass_hz_adjusted = np.abs(
+            lowpass_hz
+            - (np.floor((lowpass_hz + nyquist_frequency) / sampling_frequency))
             * sampling_frequency
         )
-        # cutting frequency normalized between 0 and nyquist
-        Wn = np.amin(cutting_frequency) / nyquist_frequency  # cutoffs
-        filt_num = firwin(int(order) + 1, Wn, pass_zero="lowpass")  # create b_filt
-        filt_denom = 1.0
-        num_f_apply = 1  # num of times to apply
+        if lowpass_hz_adjusted != lowpass_hz:
+            warnings.warn(
+                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_frequency} Hz), "
+                f"so it has been changed ({lowpass_hz} --> {lowpass_hz_adjusted} Hz)."
+            )
+
+        b, a = butter(
+            motion_filter_order / 2,
+            lowpass_hz_adjusted,
+            btype="lowpass",
+            output="ba",
+            fs=sampling_frequency,
+        )
+        filtered_data = filtfilt(b, a, data, axis=0, padtype="constant", padlen=data.shape[0] - 1)
 
     elif motion_filter_type == "notch":  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
@@ -573,27 +655,43 @@ def motion_regression_filter(
         assert band_stop_min > 0
         assert band_stop_min < band_stop_max
 
-        # bandwidth as an array
-        bandstop_band = np.array([band_stop_min, band_stop_max])
-        bandstop_band_hz = bandstop_band / 60  # change BPM to Hertz
-        cutting_frequencies = np.abs(
-            bandstop_band_hz
-            - (np.floor((bandstop_band_hz + nyquist_frequency) / sampling_frequency))
+        stopband = np.array([band_stop_min, band_stop_max])
+        stopband_hz = stopband / 60  # change BPM to Hertz
+
+        # Adjust frequencies in case Nyquist is within/below band.
+        # This won't have an effect if the data have a fast enough sampling rate.
+        stopband_hz_adjusted = np.abs(
+            stopband_hz
+            - (np.floor((stopband_hz + nyquist_frequency) / sampling_frequency))
             * sampling_frequency
         )
+        if not np.array_equal(stopband_hz, stopband_hz_adjusted):
+            warnings.warn(
+                "One or both filter frequencies are above Nyquist frequency "
+                f"({nyquist_frequency} Hz), "
+                "so they have been changed "
+                f"({stopband_hz[0]} --> {stopband_hz_adjusted[0]}, "
+                f"{stopband_hz[1]} --> {stopband_hz_adjusted[1]} Hz)."
+            )
 
-        # normalize cutting frequency
-        W_notch = cutting_frequencies / nyquist_frequency
-        Wn = np.mean(W_notch)
-        Wd = np.diff(W_notch)
-        bandwidth = np.abs(Wd)  # bandwidth
-        # create filter coefficients
-        filt_num, filt_denom = iirnotch(Wn, Wn / bandwidth)
-        num_f_apply = np.int(np.floor(order / 2))  # how many times to apply filter
+        # Convert stopband to a single notch frequency.
+        freq_to_remove = np.mean(stopband_hz_adjusted)
+        bandwidth = np.abs(np.diff(stopband_hz_adjusted))
 
-    for i_iter in range(num_f_apply):
-        for j_row in range(data.shape[0]):  # apply filters across columns
-            filtered_data[j_row, :] = filtfilt(filt_num, filt_denom, filtered_data[j_row, :])
+        # Create filter coefficients.
+        b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
+        n_filter_applications = int(np.floor(motion_filter_order / 2))
+
+        filtered_data = data.copy()
+        for _ in range(n_filter_applications):
+            filtered_data = filtfilt(
+                b,
+                a,
+                filtered_data,
+                axis=0,
+                padtype="constant",
+                padlen=data.shape[0] - 1,
+            )
 
     return filtered_data
 

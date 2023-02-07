@@ -165,19 +165,23 @@ docdict[
     "motion_filter_type"
 ] = """
 motion_filter_type : {None, "lp", "notch"}
-    Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+    Type of filter to use for removing respiratory artifact from motion regressors.
+
     If None, no filter will be applied.
 
-    If the filter type is set to "notch", then both ``band_stop_min`` and ``band_stop_max``
-    must be defined.
-    If the filter type is set to "lp", then only ``band_stop_max`` must be defined.
+    If the filter type is set to "notch", frequencies between
+    ``band_stop_min`` and ``band_stop_max`` will be removed with a notch filter.
+    In this case, both ``band_stop_min`` and ``band_stop_max`` must be defined.
+
+    If "lp", frequencies above ``band_stop_min`` will be removed with a Butterworth filter.
+    In this case, only ``band_stop_min`` must be defined.
 """
 
 docdict[
     "motion_filter_order"
 ] = """
 motion_filter_order : :obj:`int`
-    Number of filter coefficients for the band-stop filter, for filtering motion regressors.
+    Number of filter coefficients for the motion parameter filter.
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is used in conjunction with ``band_stop_max`` and ``band_stop_min``.
 """
@@ -186,7 +190,7 @@ docdict[
     "band_stop_min"
 ] = """
 band_stop_min : :obj:`float` or None
-    Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    Lower frequency for the motion parameter filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     If used with the "lp" ``motion_filter_type``, this parameter essentially corresponds to a
     low-pass filter (the maximum allowed frequency in the filtered data).
@@ -215,7 +219,7 @@ docdict[
     "band_stop_max"
 ] = """
 band_stop_max : :obj:`float` or None
-    Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    Upper frequency for the motion parameter filter, in breaths-per-minute (bpm).
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is only used if ``motion-filter-type`` is set to "notch".
     This parameter is used in conjunction with ``motion_filter_order`` and ``band_stop_min``.

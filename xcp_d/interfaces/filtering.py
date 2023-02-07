@@ -43,12 +43,12 @@ class FilteringData(SimpleInterface):
         # filter the data
         if self.inputs.bandpass_filter:
             filt_data = butter_bandpass(
-                data=data_matrix,
+                data=data_matrix.T,
                 fs=1 / self.inputs.TR,
                 lowpass=self.inputs.lowpass,
                 highpass=self.inputs.highpass,
                 order=self.inputs.filter_order,
-            )
+            ).T
         else:
             filt_data = data_matrix  # no filtering!
 
