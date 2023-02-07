@@ -98,8 +98,8 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert ground_truth.shape == (400, 400)
 
     # Parcels with <50% coverage should have NaNs
-    # We know that 10 of the parcels in the 400-parcel Schaefer are flagged
-    assert np.sum(np.isnan(np.diag(xcp_array))) == 10
+    # We know that 14 of the parcels in the 400-parcel Schaefer are flagged
+    assert np.sum(np.isnan(np.diag(xcp_array))) == 14
 
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
