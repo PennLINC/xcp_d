@@ -7,7 +7,6 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from nipype.interfaces.ants import ApplyTransforms
 from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
 
@@ -64,6 +63,8 @@ def get_segfile(bold_file):
     -----
     Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
+    from xcp_d.interfaces.ants import ApplyTransforms
+
     # get transform files
     dd = Path(os.path.dirname(bold_file))
     anatdir = str(dd.parent) + "/anat"
