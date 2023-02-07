@@ -440,7 +440,7 @@ produced by the regression.
 
     plot_design_matrix_node = pe.Node(
         Function(
-            input_names=["design_matrix"],
+            input_names=["design_matrix", "censoring_file"],
             output_names=["design_matrix_figure"],
             function=plot_design_matrix,
         ),
@@ -502,11 +502,15 @@ produced by the regression.
                 ("out_file", "confounds_file"),
             ]),
             (remove_dummy_scans, censor_scrub, [
-                ("bold_file_dropped_TR", "in_file"),
-                ("confounds_file_dropped_TR", "confounds_file"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
+            ]),
+            (remove_dummy_scans, denoise_bold, [
+                ("confounds_file_dropped_TR", "confounds_file"),
+            ]),
+            (remove_dummy_scans, denoise_bold_unfiltered, [
+                ("confounds_file_dropped_TR", "confounds_file"),
             ]),
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
@@ -517,9 +521,6 @@ produced by the regression.
     else:
         # fmt:off
         workflow.connect([
-            (downcast_data, censor_scrub, [
-                ('bold_file', 'in_file'),
-            ]),
             (inputnode, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
@@ -527,9 +528,6 @@ produced by the regression.
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
-            ]),
-            (consolidate_confounds_node, censor_scrub, [
-                ("out_file", "confounds_file"),
             ]),
         ])
         # fmt:on
@@ -539,8 +537,11 @@ produced by the regression.
         (determine_head_radius, censor_scrub, [
             ("head_radius", "head_radius"),
         ]),
+        (consolidate_confounds_node, plot_design_matrix_node, [
+            ("out_file", "design_matrix"),
+        ]),
         (censor_scrub, plot_design_matrix_node, [
-            ("confounds_censored", "design_matrix"),
+            ("tmask", "censoring_file"),
         ]),
     ])
     # fmt:on
@@ -562,35 +563,47 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (censor_scrub, despike3d, [('bold_censored', 'in_file')]),
             (despike3d, denoise_bold, [('out_file', 'in_file')]),
+            (despike3d, denoise_bold_unfiltered, [('out_file', 'in_file')]),
         ])
+
+        if dummy_scans:
+            workflow.connect([(remove_dummy_scans, despike3d, [('bold_file', 'in_file')])])
+        else:
+            workflow.connect([(downcast_data, despike3d, [('bold_file', 'in_file')])])
         # fmt:on
 
+    elif dummy_scans:
+        # fmt:off
+        workflow.connect([
+            (remove_dummy_scans, denoise_bold, [('bold_file', 'in_file')]),
+            (remove_dummy_scans, denoise_bold_unfiltered, [('bold_file', 'in_file')]),
+        ])
+        # fmt:on
     else:
         # fmt:off
         workflow.connect([
-            (censor_scrub, denoise_bold, [('bold_censored', 'in_file')]),
+            (downcast_data, denoise_bold, [('bold_file', 'in_file')]),
+            (downcast_data, denoise_bold_unfiltered, [('bold_file', 'in_file')]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
         (downcast_data, denoise_bold, [('bold_mask', 'mask')]),
-        (censor_scrub, denoise_bold, [
-            ('confounds_censored', 'confounds_file'),
-            ("tmask", "censoring_file"),
-        ]),
+        (downcast_data, denoise_bold_unfiltered, [('bold_mask', 'mask')]),
+        (consolidate_confounds_node, denoise_bold, [('out_file', 'confounds_file')]),
+        (consolidate_confounds_node, denoise_bold_unfiltered, [('out_file', 'confounds_file')]),
+        (censor_scrub, denoise_bold, [("tmask", "censoring_file")]),
+        (censor_scrub, denoise_bold_unfiltered, [("tmask", "censoring_file")]),
     ])
     # fmt:on
 
     # residual smoothing
-    # fmt:off
-    workflow.connect([
-        (denoise_bold, resd_smoothing_wf, [('out_file', 'inputnode.bold_file')]),
-    ])
+    workflow.connect([(denoise_bold, resd_smoothing_wf, [('out_file', 'inputnode.bold_file')])])
 
     # functional connect workflow
+    # fmt:off
     workflow.connect([
         (downcast_data, fcon_ts_wf, [
             ('bold_file', 'inputnode.bold_file'),

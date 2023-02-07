@@ -1,7 +1,6 @@
 """Interfaces for the post-processing workflows."""
 import os
 
-import nibabel as nb
 import numpy as np
 import pandas as pd
 from nipype import logging
@@ -249,16 +248,10 @@ class RemoveTR(SimpleInterface):
 
 
 class _CensorScrubInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc=" Partially processed bold or nifti")
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
         desc="Framewise displacement threshold. All values above this will be dropped.",
-    )
-    confounds_file = File(
-        exists=True,
-        mandatory=True,
-        desc="File with selected confounds for denoising.",
     )
     fmriprep_confounds_file = File(
         exists=True,
@@ -288,17 +281,6 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
 
 
 class _CensorScrubOutputSpec(TraitedSpec):
-    bold_censored = File(exists=True, mandatory=True, desc="FD-censored bold file")
-    fmriprep_confounds_censored = File(
-        exists=True,
-        mandatory=True,
-        desc="fmriprep_confounds_file censored",
-    )
-    confounds_censored = File(
-        exists=True,
-        mandatory=True,
-        desc="confounds_file censored",
-    )
     tmask = File(
         exists=True,
         mandatory=True,
@@ -326,13 +308,12 @@ class _CensorScrubOutputSpec(TraitedSpec):
 class CensorScrub(SimpleInterface):
     """Generate a temporal mask based on recalculated FD.
 
-    Takes in confound files, bold file to be censored, and information about filtering-
+    Takes in confound files and information about filtering-
     including band stop values and motion filter type.
     Then proceeds to create a motion-filtered confounds matrix and recalculates FD from
     filtered motion parameters.
-    Finally generates temporal mask with volumes above FD threshold set to 1,
-    then dropped from both confounds file and bolds file.
-    Outputs temporal mask, framewise displacement timeseries and censored bold files.
+    Finally generates temporal mask with volumes above FD threshold set to 1.
+    Outputs temporal mask and framewise displacement timeseries.
     """
 
     input_spec = _CensorScrubInputSpec
@@ -340,9 +321,9 @@ class CensorScrub(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Read in fmriprep confounds tsv to calculate FD
-        fmriprep_confounds_tsv_uncensored = pd.read_table(self.inputs.fmriprep_confounds_file)
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         motion_df = load_motion(
-            fmriprep_confounds_tsv_uncensored.copy(),
+            fmriprep_confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
@@ -350,83 +331,20 @@ class CensorScrub(SimpleInterface):
             band_stop_max=self.inputs.band_stop_max,
         )
 
-        fd_timeseries_uncensored = compute_fd(
+        fd_timeseries = compute_fd(
             confound=motion_df,
             head_radius=self.inputs.head_radius,
         )
-        motion_df["framewise_displacement"] = fd_timeseries_uncensored
-
-        # Read in confounds file and bold file to be censored
-        confounds_tsv_uncensored = pd.read_table(self.inputs.confounds_file)
-        bold_file_uncensored = nb.load(self.inputs.in_file).get_fdata()
+        motion_df["framewise_displacement"] = fd_timeseries
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
         tmask = generate_mask(
-            fd_res=fd_timeseries_uncensored,
+            fd_res=fd_timeseries,
             fd_thresh=self.inputs.fd_thresh,
         )
-        if np.sum(tmask) > 0:  # If any FD values exceed the threshold
-            if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
-                bold_file_censored = bold_file_uncensored[:, :, :, tmask == 0]
-            else:
-                bold_file_censored = bold_file_uncensored[tmask == 0, :]
-
-            fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored.loc[tmask == 0]
-            confounds_tsv_censored = confounds_tsv_uncensored.loc[tmask == 0]
-
-        else:  # No censoring needed
-            bold_file_censored = bold_file_uncensored
-            fmriprep_confounds_tsv_censored = fmriprep_confounds_tsv_uncensored
-            confounds_tsv_censored = confounds_tsv_uncensored
-
-        # Turn censored bold into image
-        if nb.load(self.inputs.in_file).ndim > 2:
-            # If it's a Nifti image
-            bold_file_censored = nb.Nifti1Image(
-                bold_file_censored,
-                affine=nb.load(self.inputs.in_file).affine,
-                header=nb.load(self.inputs.in_file).header,
-            )
-        else:
-            # If it's a Cifti image
-            original_image = nb.load(self.inputs.in_file)
-            time_axis, brain_model_axis = [
-                original_image.header.get_axis(i) for i in range(original_image.ndim)
-            ]
-            new_total_volumes = bold_file_censored.shape[0]
-            censored_time_axis = time_axis[:new_total_volumes]
-            # Note: not an error. A time axis cannot be accessed with irregularly
-            # spaced values. Since we use the tmask for marking the volumes removed,
-            # the time axis also is not used further in XCP.
-            censored_header = nb.cifti2.Cifti2Header.from_axes(
-                (censored_time_axis, brain_model_axis)
-            )
-            bold_file_censored = nb.Cifti2Image(
-                bold_file_censored,
-                header=censored_header,
-                nifti_header=original_image.nifti_header,
-            )
 
         # get the output
-        self._results["bold_censored"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_censored",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        self._results["fmriprep_confounds_censored"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_fmriprep_confounds_censored.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        self._results["confounds_censored"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_selected_confounds_censored.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
         self._results["tmask"] = fname_presuffix(
             self.inputs.in_file,
             suffix="_desc-fd_outliers.tsv",
@@ -440,14 +358,6 @@ class CensorScrub(SimpleInterface):
             use_ext=False,
         )
 
-        bold_file_censored.to_filename(self._results["bold_censored"])
-
-        fmriprep_confounds_tsv_censored.to_csv(
-            self._results["fmriprep_confounds_censored"],
-            index=False,
-            header=True,
-            sep="\t",
-        )
         outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
         outliers_df.to_csv(
             self._results["tmask"],
@@ -493,11 +403,6 @@ class CensorScrub(SimpleInterface):
             self._results["filtered_motion"],
             index=False,
             header=True,
-            sep="\t",
-        )
-        confounds_tsv_censored.to_csv(
-            self._results["confounds_censored"],
-            index=False,
             sep="\t",
         )
         return runtime

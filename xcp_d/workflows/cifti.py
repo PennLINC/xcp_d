@@ -471,11 +471,13 @@ produced by the regression.
                 ("out_file", "confounds_file"),
             ]),
             (remove_dummy_scans, censor_scrub, [
-                ("bold_file_dropped_TR", "in_file"),
-                ("confounds_file_dropped_TR", "confounds_file"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
+            ]),
+            (remove_dummy_scans, denoise_bold, [
+                ("bold_file_dropped_TR", "in_file"),
+                ("confounds_file_dropped_TR", "confounds_file"),
             ]),
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
