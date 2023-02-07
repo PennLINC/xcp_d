@@ -217,7 +217,7 @@ class _DenoiseNiftiInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="An image to do math on.",
     )
-    mask_file = File(
+    mask = File(
         exists=True,
         mandatory=True,
         desc="An image to do math on.",
@@ -261,7 +261,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         # Use a NiftiMasker instead of apply_mask to retain TR in the image header.
         # Note that this doesn't use any of the masker's denoising capabilities.
         masker = maskers.NiftiMasker(
-            mask_img=self.inputs.mask_file,
+            mask_img=self.inputs.mask,
             runs=None,
             smoothing_fwhm=None,
             standardize=False,
