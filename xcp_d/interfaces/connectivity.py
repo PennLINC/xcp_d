@@ -379,7 +379,7 @@ class CiftiConnect(SimpleInterface):
 
                 if parcel_coverage < coverage_threshold:
                     # If the parcel has >=50% bad data, replace all of the values with zeros.
-                    data_arr[parcel_idx, :] = np.nan
+                    data_arr[:, parcel_idx] = np.nan
 
                 parcels_in_atlas.append(parcel_name)
                 parcel_data = data_arr[:, parcel_idx]
