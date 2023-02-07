@@ -461,3 +461,152 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
         brain_radius = head_radius
 
     return brain_radius
+
+
+def denoise_nifti_with_nilearn(
+    bold_file,
+    mask_file,
+    confounds_file,
+    censoring_file,
+    low_pass,
+    high_pass,
+    TR,
+):
+    """Denoise fMRI data with Nilearn.
+
+    Parameters
+    ----------
+    bold_file : str or niimg
+    mask_file : str
+    confounds : pandas.DataFrame
+    low_pass : float
+    high_pass : float
+    TR : float
+    tmask : str
+    """
+    import os
+
+    from nilearn import maskers
+
+    from xcp_d.utils.utils import _denoise_with_nilearn
+
+    out_file = os.path.abspath("desc-denoised_bold.nii.gz")
+
+    # Use a NiftiMasker instead of apply_mask to retain TR in the image header.
+    # Note that this doesn't use any of the masker's denoising capabilities.
+    masker = maskers.NiftiMasker(
+        mask_img=mask_file,
+        runs=None,
+        smoothing_fwhm=None,
+        standardize=False,
+        standardize_confounds=False,  # non-default
+        detrend=False,
+        high_variance_confounds=False,
+        low_pass=None,
+        high_pass=None,
+        t_r=None,
+        target_affine=None,
+        target_shape=None,
+    )
+    raw_data = masker.fit_transform(bold_file)
+
+    clean_data = _denoise_with_nilearn(
+        raw_data=raw_data,
+        confounds_file=confounds_file,
+        censoring_file=censoring_file,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+    )
+
+    clean_img = masker.inverse_transform(clean_data)
+
+    clean_img.to_filename(out_file)
+    return out_file
+
+
+def denoise_cifti_with_nilearn(
+    bold_file,
+    confounds_file,
+    censoring_file,
+    low_pass,
+    high_pass,
+    TR,
+):
+    """Denoise a CIFTI file with Nilearn.
+
+    The CIFTI file must be read into an array before Nilearn can be called.
+    """
+    import os
+
+    from xcp_d.utils.utils import _denoise_with_nilearn
+    from xcp_d.utils.write_save import read_ndata, write_ndata
+
+    out_file = os.path.abspath("desc-denoised_bold.dtseries.nii")
+
+    raw_data = read_ndata(bold_file)
+
+    # Transpose from SxT (xcpd order) to TxS (nilearn order)
+    raw_data = raw_data.T
+
+    clean_data = _denoise_with_nilearn(
+        raw_data=raw_data,
+        confounds_file=confounds_file,
+        censoring_file=censoring_file,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+    )
+
+    # Transpose from TxS (nilearn order) to SxT (xcpd order)
+    clean_data = clean_data.T
+
+    write_ndata(clean_data, template=bold_file, filename=out_file, TR=TR)
+
+    return out_file
+
+
+def _denoise_with_nilearn(
+    raw_data,
+    confounds_file,
+    censoring_file,
+    lowpass,
+    highpass,
+    filter_order,
+    TR,
+):
+    """Denoise an array with Nilearn.
+
+    This step does the following.
+    Linearly detrend, but don't mean-center, the BOLD data.
+    Regress out confounds from BOLD data.
+    Use list of outliers to censor BOLD data during regression.
+    Temporally filter BOLD data.
+    """
+    import pandas as pd
+    from nilearn import signal
+
+    n_volumes = raw_data.shape[0]
+    confounds_df = pd.read_table(confounds_file)
+
+    sample_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
+    sample_mask = np.where(~sample_mask_bool)[0]
+
+    clean_data = signal.clean(
+        signals=raw_data,
+        detrend=True,
+        standardize=False,
+        sample_mask=sample_mask,
+        confounds=confounds_df,
+        standardize_confounds=True,
+        filter="butterworth",
+        low_pass=lowpass,
+        high_pass=highpass,
+        t_r=TR,
+        ensure_finite=True,
+        butterworth__order=filter_order,
+        butterworth__padtype="constant",  # constant is similar to zero-padding
+        butterworth__padlen=n_volumes - 1,  # maximum allowed pad length
+    )
+
+    return clean_data
