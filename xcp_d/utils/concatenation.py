@@ -31,7 +31,6 @@ LOGGER = logging.getLogger("nipype.interface")
 def concatenate_derivatives(
     fmri_dir,
     output_dir,
-    work_dir,
     subjects,
     cifti,
     dcan_qc,
@@ -54,8 +53,6 @@ def concatenate_derivatives(
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
     output_dir : str
         Path to location of xcpd derivatives.
-    work_dir : str
-        Working directory.
     subjects : list of str
         List of subjects to run concatenation on.
     cifti : bool
@@ -379,7 +376,6 @@ def concatenate_derivatives(
                             mask=mask,
                             seg_data=segfile,
                             TR=TR,
-                            work_dir=work_dir,
                         )
                         LOGGER.debug("plot_fmri_es done")
 

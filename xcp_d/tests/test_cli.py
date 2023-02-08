@@ -122,7 +122,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         subjects=["01"],
         fmri_dir=data_dir,
         output_dir=os.path.join(out_dir, "xcp_d"),
-        work_dir=work_dir,
         cifti=opts.cifti,
         dcan_qc=opts.dcan_qc,
         dummy_scans=opts.dummy_scans,
