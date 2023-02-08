@@ -108,7 +108,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--combineruns",
         "--dcan-qc",
         "--dummy-scans=auto",
-        "--fd-thresh=0.04",
+        "--fd-thresh=0.2",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
