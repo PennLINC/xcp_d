@@ -11,7 +11,7 @@ def test_plot_fmri_es(fmriprep_with_freesurfer_data, tmp_path_factory):
     preprocessed_file = fmriprep_with_freesurfer_data["cifti_file"]
     residuals_file = fmriprep_with_freesurfer_data["cifti_file"]
     denoised_file = fmriprep_with_freesurfer_data["cifti_file"]
-    dummy_scans = 5
+    dummy_scans = 0
     # Using unfiltered FD instead of calculating filtered version.
     filtered_motion = fmriprep_with_freesurfer_data["confounds_file"]
     unprocessed_filename = os.path.join(tmpdir, "unprocessed.svg")

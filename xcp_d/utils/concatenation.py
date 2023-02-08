@@ -20,7 +20,7 @@ from xcp_d.utils.modified_data import _drop_dummy_scans
 from xcp_d.utils.plotting import plot_fmri_es
 from xcp_d.utils.qcmetrics import compute_dvars, make_dcan_df
 from xcp_d.utils.utils import get_segfile
-from xcp_d.utils.write_save import read_ndata, write_ndata
+from xcp_d.utils.write_save import read_ndata
 
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
 path_patterns = _pybids_spec["default_path_patterns"]
@@ -321,28 +321,6 @@ def concatenate_derivatives(
                             mask = None
                             segfile = None
 
-                        # Create a censored version of the denoised file,
-                        # because denoised_file is from before interpolation.
-                        concat_censored_file = os.path.join(
-                            tmpdir,
-                            f"filtereddata{preproc_files[0].extension}",
-                        )
-                        tmask_df = pd.read_table(concat_outlier_file)
-                        tmask_arr = tmask_df["framewise_displacement"].values
-                        tmask_bool = ~tmask_arr.astype(bool)
-                        temp_data_arr = read_ndata(
-                            datafile=concat_denoised_file,
-                            maskfile=mask,
-                        )
-                        temp_data_arr = temp_data_arr[:, tmask_bool]
-                        write_ndata(
-                            data_matrix=temp_data_arr,
-                            template=concat_denoised_file,
-                            filename=concat_censored_file,
-                            mask=mask,
-                            TR=TR,
-                        )
-
                         # Calculate DVARS from preprocessed BOLD
                         raw_dvars = []
                         for i_file, preproc_file in enumerate(preproc_files):
@@ -353,9 +331,6 @@ def concatenate_derivatives(
 
                         raw_dvars = np.concatenate(raw_dvars)
 
-                        # Censor DVARS
-                        raw_dvars = raw_dvars[tmask_bool]
-
                         # Calculate DVARS from denoised BOLD
                         denoised_dvars = []
                         for denoised_file in denoised_files:
@@ -364,9 +339,6 @@ def concatenate_derivatives(
                             denoised_dvars.append(dvar)
 
                         denoised_dvars = np.concatenate(denoised_dvars)
-
-                        # Censor DVARS
-                        denoised_dvars = denoised_dvars[tmask_bool]
 
                         # Start on carpet plots
                         LOGGER.debug("Generating carpet plots")
@@ -395,10 +367,9 @@ def concatenate_derivatives(
                         LOGGER.debug("Starting plot_fmri_es")
                         plot_fmri_es(
                             preprocessed_file=concat_preproc_file,
-                            residuals_file=concat_censored_file,
+                            residuals_file=concat_denoised_file,
                             denoised_file=concat_denoised_file,
                             dummy_scans=0,
-                            tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
                             residuals_dvars=denoised_dvars,
