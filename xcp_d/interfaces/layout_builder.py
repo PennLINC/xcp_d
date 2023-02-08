@@ -178,9 +178,9 @@ class ExecutiveSummary(object):
 
         for task_entity_set in task_entity_sets:
             task_file_figures = task_entity_set.copy()
-            task_file_figures["key"] = (
-                f"task-{task_entity_set['task']}_run-{task_entity_set.get('run', 0)}"
-            )
+            task_file_figures[
+                "key"
+            ] = f"task-{task_entity_set['task']}_run-{task_entity_set.get('run', 0)}"
 
             query = {
                 "subject": self.subject_id,
