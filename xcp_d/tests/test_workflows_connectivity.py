@@ -103,7 +103,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
     idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
     idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
-    n_partial_nodes = np.where(coverage_df["coverage"] > 0.5)[0].size
+    n_partial_nodes = np.where(coverage_df["coverage"] >= 0.5)[0].size
 
     # Drop missing parcels
     correlations_arr = correlations_arr[idx_in_atlas, :]

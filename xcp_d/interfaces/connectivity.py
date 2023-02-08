@@ -120,10 +120,7 @@ class NiftiConnect(SimpleInterface):
         )
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
-        parcel_coverage = np.round(
-            np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels),
-            4,
-        )
+        parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
         coverage_thresholded = parcel_coverage < coverage_threshold
 
         n_nodes = len(node_labels)
@@ -376,10 +373,7 @@ class CiftiConnect(SimpleInterface):
                 bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
 
                 # Determine the percentage of vertices with good data
-                parcel_coverage = np.round(
-                    1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size),
-                    4,
-                )
+                parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
                 coverage_df.loc[parcel_name, "coverage"] = parcel_coverage
 
                 if parcel_coverage < coverage_threshold:
