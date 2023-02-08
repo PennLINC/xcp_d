@@ -481,8 +481,8 @@ produced by the regression.
         (determine_head_radius, qc_report_wf, [
             ("head_radius", "inputnode.head_radius"),
         ]),
-        (regression_wf, qc_report_wf, [
-            ("res_file", "inputnode.cleaned_unfiltered_file"),
+        (interpolate_wf, qc_report_wf, [
+            ("bold_interpolated", "inputnode.cleaned_unfiltered_file"),
         ]),
     ])
     # fmt:on

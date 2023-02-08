@@ -438,7 +438,6 @@ def plot_fmri_es(
     preprocessed_file,
     residuals_file,
     denoised_file,
-    tmask,
     dummy_scans,
     filtered_motion,
     unprocessed_filename,
@@ -462,8 +461,6 @@ def plot_fmri_es(
         nifti or cifti after regression, filtering, and interpolation
     mask :
         mask for nifti if available
-    tmask :
-       temporal censoring mask
     %(dummy_scans)s
     seg_data :
         3 tissues seg_data files
@@ -481,20 +478,9 @@ def plot_fmri_es(
     residuals_data_arr = read_ndata(datafile=residuals_file, maskfile=mask)
     denoised_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
 
-    tmask_df = pd.read_table(tmask)
-    tmask_arr = tmask_df["framewise_displacement"].values
-    tmask_bool = ~tmask_arr.astype(bool)
-
-    assert tmask_arr.size == denoised_data_arr.shape[1]
-
     # Remove dummy time from the raw_data_arr if needed
     if dummy_scans > 0:
         raw_data_arr = raw_data_arr[:, dummy_scans:]
-
-    # Censor the interpolated data and raw_data_arr
-    if sum(tmask_arr) > 0:
-        raw_data_arr = raw_data_arr[:, tmask_bool]
-        denoised_data_arr = denoised_data_arr[:, tmask_bool]
 
     if not isinstance(raw_dvars, np.ndarray):
         raw_dvars = compute_dvars(raw_data_arr)
@@ -525,7 +511,7 @@ def plot_fmri_es(
     sns.set_style("whitegrid")
 
     # Create dataframes for the bold_data DVARS, FD
-    DVARS_timeseries = pd.DataFrame(
+    dvars_regressors = pd.DataFrame(
         {
             "Pre regression": raw_dvars,
             "Post regression": residuals_dvars,
@@ -533,7 +519,7 @@ def plot_fmri_es(
         }
     )
 
-    FD_timeseries = pd.DataFrame(
+    fd_regressor = pd.DataFrame(
         {
             "FD": pd.read_table(filtered_motion)["framewise_displacement"].values,
         }
@@ -600,7 +586,7 @@ def plot_fmri_es(
         grid = fig.add_gridspec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
 
         plot_confounds_es(
-            time_series=DVARS_timeseries,
+            time_series=dvars_regressors,
             grid_spec_ts=grid[0],
             TR=TR,
             ylabel="DVARS",
@@ -622,7 +608,7 @@ def plot_fmri_es(
             legend=False,
         )
         plot_confounds_es(
-            time_series=FD_timeseries,
+            time_series=fd_regressor,
             grid_spec_ts=grid[4],
             TR=TR,
             hide_x=False,

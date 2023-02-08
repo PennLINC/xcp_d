@@ -391,7 +391,6 @@ def init_qc_report_wf(
                 ("cleaned_unfiltered_file", "regressed_data"),
                 ("cleaned_file", "residual_data"),
                 ("filtered_motion", "filtered_motion"),
-                ("tmask", "tmask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
         ])

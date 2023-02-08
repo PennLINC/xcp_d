@@ -450,7 +450,11 @@ class QCPlots(SimpleInterface):
 
 class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
     rawdata = File(exists=True, mandatory=True, desc="Raw data")
-    regressed_data = File(exists=True, mandatory=True, desc="Data after regression")
+    regressed_data = File(
+        exists=True,
+        mandatory=True,
+        desc="Data after regression and interpolation, but not filtering.",
+    )
     residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
     filtered_motion = File(
         exists=True,
@@ -461,7 +465,6 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
 
     # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
-    tmask = File(exists=True, mandatory=False, desc="Temporal mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
     dummy_scans = traits.Int(
         0,
@@ -515,7 +518,6 @@ class QCPlotsES(SimpleInterface):
             preprocessed_file=self.inputs.rawdata,
             residuals_file=self.inputs.regressed_data,
             denoised_file=self.inputs.residual_data,
-            tmask=self.inputs.tmask,
             dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
             mask=mask_file,
