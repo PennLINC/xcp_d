@@ -582,8 +582,11 @@ def plot_fmri_es(
         data_arr = data_arrays[i_fig]
 
         # Plot the data and confounds, plus the carpet plot
+        plt.cla()
+        plt.clf()
+
         fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
-        grid = fig.add_gridspec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
+        grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
 
         plot_confounds_es(
             time_series=dvars_regressors,
