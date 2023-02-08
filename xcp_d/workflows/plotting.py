@@ -3,9 +3,9 @@ from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
 from xcp_d.interfaces.report import FunctionalSummary
@@ -302,7 +302,7 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 input_image=dseg_file,
-                interpolation="MultiLabel",
+                interpolation="GenericLabel",
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,

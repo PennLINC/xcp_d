@@ -3,11 +3,11 @@ import os
 
 import nibabel as nb
 import numpy as np
-import pytest
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.interfaces.prepostcleaning import CiftiZerosToNaNs, ConvertTo32
-from xcp_d.interfaces.workbench import CiftiParcellate
+from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation, ConvertTo32
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
+from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
 def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -112,130 +112,11 @@ def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_facto
     assert int32_img.dataobj.dtype == np.int32
 
 
-@pytest.mark.skip(reason="The cifti atlas and data files' get_fdata vertex orders do not match.")
-def test_cifti_parcellation(fmriprep_with_freesurfer_data, tmp_path_factory):
-    """Check that the CIFTI parcellation approach works."""
-    tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation")
-
-    atlas_file = pkgrf(
-        "xcp_d",
-        "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii",
-    )
-    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
-
-    cifti_img = nb.load(cifti_file)
-    atlas_img = nb.load(atlas_file)
-
-    cifti_data = cifti_img.get_fdata()
-    atlas_data = atlas_img.get_fdata()[0, :]
-
-    # Select half of the vertices in node 5
-    node_5 = np.where(atlas_data == 5)[0]
-    node_5_good = node_5[::2]
-    node_5_bad = node_5[1::2]
-    # Select all of the vertices in node 10
-    node_10 = np.where(atlas_data == 10)[0]
-
-    cifti_data = np.random.normal(loc=100, scale=5, size=cifti_data.shape)
-    cifti_data_zeros = cifti_data.copy()
-    cifti_data_nans = cifti_data.copy()
-    cifti_data_500s = cifti_data.copy()
-
-    cifti_data_zeros[:, node_5_bad] = 0
-    cifti_data_zeros[:, node_10] = 0
-    cifti_data_nans[:, node_5_bad] = np.nan
-    cifti_data_nans[:, node_10] = np.nan
-    cifti_data_500s[:, node_5_bad] = 500
-    cifti_data_500s[:, node_10] = 500
-
-    node_5_good_mean = np.mean(cifti_data[:, node_5_good], axis=1)
-    node_5_500s_mean = np.mean(cifti_data_500s[:, node_5], axis=1)
-    node_10_zeros_mean = np.zeros(cifti_data.shape[0])
-    node_10_500s_mean = np.full(cifti_data.shape[0], 500)
-
-    # Parcellate the original file
-    cifti_file_sim = os.path.join(tmpdir, "cifti_simulated.dtseries.nii")
-    cifti_img_sim = nb.Cifti2Image(
-        dataobj=cifti_data,
-        header=cifti_img.header,
-        file_map=cifti_img.file_map,
-        nifti_header=cifti_img.nifti_header,
-    )
-    cifti_img_sim.to_filename(cifti_file_sim)
-
-    orig_cifti_parc = _run_parcellation(cifti_file_sim, atlas_file, tmpdir)
-    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
-    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
-    assert not np.allclose(node_5_good_mean, orig_cifti_node_5)
-    assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
-    assert not np.allclose(node_10_zeros_mean, orig_cifti_node_10)
-    assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
-
-    # Parcellate and check the zeroed-out file
-    # The zeros should be ignored.
-    cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
-    cifti_img_zeros = nb.Cifti2Image(
-        dataobj=cifti_data_zeros,
-        header=cifti_img.header,
-        file_map=cifti_img.file_map,
-        nifti_header=cifti_img.nifti_header,
-    )
-    cifti_img_zeros.to_filename(cifti_file_zeros)
-
-    orig_cifti_parc = _run_parcellation(cifti_file_zeros, atlas_file, tmpdir)
-    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
-    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
-    assert np.allclose(node_5_good_mean, orig_cifti_node_5)
-    assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
-    assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
-    assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
-
-    # Parcellate and check the NaNed-out file
-    cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
-    cifti_img_nans = nb.Cifti2Image(
-        dataobj=cifti_data_nans,
-        header=cifti_img.header,
-        file_map=cifti_img.file_map,
-        nifti_header=cifti_img.nifti_header,
-    )
-    cifti_img_nans.to_filename(cifti_file_nans)
-
-    orig_cifti_parc = _run_parcellation(cifti_file_nans, atlas_file, tmpdir)
-    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
-    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
-    assert np.allclose(node_5_good_mean, orig_cifti_node_5)
-    assert not np.allclose(node_5_500s_mean, orig_cifti_node_5)
-    assert np.allclose(node_10_zeros_mean, orig_cifti_node_10)
-    assert not np.allclose(node_10_500s_mean, orig_cifti_node_10)
-
-    # Parcellate and check the 500-filled file
-    cifti_file_500s = os.path.join(tmpdir, "cifti_500s.dtseries.nii")
-    cifti_img_500s = nb.Cifti2Image(
-        dataobj=cifti_data_500s,
-        header=cifti_img.header,
-        file_map=cifti_img.file_map,
-        nifti_header=cifti_img.nifti_header,
-    )
-    cifti_img_500s.to_filename(cifti_file_500s)
-
-    orig_cifti_parc = _run_parcellation(cifti_file_500s, atlas_file, tmpdir)
-    orig_cifti_parc_data = nb.load(orig_cifti_parc).get_fdata()
-    orig_cifti_node_5 = orig_cifti_parc_data[:, 4]
-    orig_cifti_node_10 = orig_cifti_parc_data[:, 9]
-    assert not np.allclose(node_5_good_mean, orig_cifti_node_5)
-    assert np.allclose(node_5_500s_mean, orig_cifti_node_5)
-    assert not np.allclose(node_10_zeros_mean, orig_cifti_node_10)
-    assert np.allclose(node_10_500s_mean, orig_cifti_node_10)
-
-
 def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Check that the CIFTI parcellation approach works.
 
     This is a basic version of ``test_cifti_parcellation``.
-    Instead of testing across whole nodes, this test only changes a single vertex.
+    Instead of testing across whole parcels, this test only changes a single vertex.
     """
     tmpdir = tmp_path_factory.mktemp("test_cifti_parcellation_basic")
 
@@ -247,7 +128,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     cifti_data = cifti_img.get_fdata()
     cifti_data = np.ones(cifti_data.shape)
 
-    # Parcellate the simulated file to find the node associated with the modified vertex.
+    # Parcellate the simulated file to find the parcel associated with the modified vertex.
     VERTEX_IDX = 60000
     cifti_data_locator = cifti_data.copy()
     cifti_data_locator[:, VERTEX_IDX] = 1000000
@@ -265,7 +146,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     loc_node = np.where(cifti_data_loc_parc[0, :] > 1)[0][0]
 
     # Create file with one vertex that is all zeros.
-    # The zeros should be ignored, so the affected node should have all ones.
+    # The zeros should be ignored, so the affected parcel should have all ones.
     cifti_data_zeros = cifti_data.copy()
     cifti_data_zeros[:, VERTEX_IDX] = 0
     cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
@@ -283,7 +164,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
 
     # Create file with one vertex that has a zero in first timepoint.
     # The single zero should be treated as real data,
-    # so the affected node should have a value < 1 in the affected timepoint.
+    # so the affected parcel should have a value < 1 in the affected timepoint.
     cifti_data_zeros = cifti_data.copy()
     cifti_data_zeros[0, VERTEX_IDX] = 0
     cifti_file_zeros = os.path.join(tmpdir, "cifti_zeros.dtseries.nii")
@@ -300,7 +181,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     assert cifti_data_zeros_parc[0, loc_node] < 1
 
     # Create file with one vertex that is all NaNs.
-    # The NaNs should be ignored, so the affected node should have all ones.
+    # The NaNs should be ignored, so the affected parcel should have all zeros.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[:, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
@@ -317,7 +198,7 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
     assert np.all(cifti_data_nans_parc[:, loc_node] == 1)
 
     # Create file with one vertex that is has a NaN in the first timepoint.
-    # The NaN should be ignored, so the affected node should have all ones.
+    # The NaN should be ignored, so the affected parcel should have all zeros.
     cifti_data_nans = cifti_data.copy()
     cifti_data_nans[0, VERTEX_IDX] = np.nan
     cifti_file_nans = os.path.join(tmpdir, "cifti_nans.dtseries.nii")
@@ -335,11 +216,90 @@ def test_cifti_parcellation_basic(fmriprep_with_freesurfer_data, tmp_path_factor
 
 
 def _run_parcellation(in_file, atlas_file, tmpdir):
-    replace_empty_vertices = CiftiZerosToNaNs()
-    replace_empty_vertices.inputs.in_file = in_file
-    replace_results = replace_empty_vertices.run(cwd=tmpdir)
+    # Resample the atlas to the same order as the data file.
+    ccdft = CiftiCreateDenseFromTemplate()
+    ccdft.inputs.template_cifti = in_file
+    ccdft.inputs.label = atlas_file
+    ccdft.inputs.cifti_out = "resampled_atlas.dlabel.nii"
+    ccdft_results = ccdft.run(cwd=tmpdir)
+
+    # Zero out any parcels that have <50% coverage.
+    cpfp = CiftiPrepareForParcellation()
+    cpfp.inputs.data_file = in_file
+    cpfp.inputs.atlas_file = ccdft_results.outputs.cifti_out
+    cpfp.inputs.TR = 1
+    replace_results = cpfp.run(cwd=tmpdir)
+
+    # Apply the parcellation.
     parcellate_data = CiftiParcellate(direction="COLUMN", only_numeric=True)
     parcellate_data.inputs.in_file = replace_results.outputs.out_file
     parcellate_data.inputs.atlas_label = atlas_file
     parc_results = parcellate_data.run(cwd=tmpdir)
+
     return parc_results.outputs.out_file
+
+
+def test_cifti_parcellation_resampling(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test CIFTI parcellation with resampling."""
+    tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
+
+    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    atlas_file = pkgrf(
+        "xcp_d",
+        "data/ciftiatlas/Schaefer2018_100Parcels_17Networks_order.dlabel.nii",
+    )
+    N_PARCELS = 100
+
+    ccdft = CiftiCreateDenseFromTemplate()
+    ccdft.inputs.template_cifti = boldfile
+    ccdft.inputs.label = atlas_file
+    ccdft.inputs.cifti_out = "resampled_atlas.dlabel.nii"
+    ccdft.run(cwd=tmpdir)
+
+    resampled_atlas_file = os.path.join(tmpdir, "resampled_atlas.dlabel.nii")
+    assert os.path.isfile(resampled_atlas_file)
+
+    original_atlas_data = read_ndata(atlas_file)
+    original_atlas_data = original_atlas_data[:, 0]  # squeeze to 1D
+
+    resampled_atlas_data = read_ndata(resampled_atlas_file)
+    resampled_atlas_data = resampled_atlas_data[:, 0]  # squeeze to 1D
+
+    bold_data = read_ndata(boldfile)
+    assert bold_data.shape[0] != original_atlas_data.shape[0]
+    assert bold_data.shape[0] == resampled_atlas_data.shape[0]
+
+    parcellated_bold_data = np.zeros_like(bold_data)
+    for i_parcel in range(1, N_PARCELS + 1):
+        parcel_idx = resampled_atlas_data == i_parcel
+        parcellated_bold_data[parcel_idx, :] = i_parcel
+
+    modified_data_file = os.path.join(tmpdir, "modified_data.dtseries.nii")
+    write_ndata(parcellated_bold_data, boldfile, modified_data_file)
+    assert os.path.isfile(modified_data_file)
+
+    # The modified data file should match the resampled atlas file
+    parcellated_modified_data_file = _run_parcellation(
+        modified_data_file,
+        resampled_atlas_file,
+        tmpdir,
+    )
+    parcellated_data = read_ndata(parcellated_modified_data_file)
+    assert parcellated_data.shape == (N_PARCELS, bold_data.shape[1])
+
+    for i_parcel in range(parcellated_data.shape[0]):
+        parcel_val = i_parcel + 1
+        assert np.all(parcellated_data[i_parcel, :] == parcel_val)
+
+    # The modified data file should also match the original atlas file
+    parcellated_modified_data_file = _run_parcellation(
+        modified_data_file,
+        atlas_file,
+        tmpdir,
+    )
+    parcellated_data = read_ndata(parcellated_modified_data_file)
+    assert parcellated_data.shape == (N_PARCELS, bold_data.shape[1])
+
+    for i_parcel in range(parcellated_data.shape[0]):
+        parcel_val = i_parcel + 1
+        assert np.all(parcellated_data[i_parcel, :] == parcel_val)

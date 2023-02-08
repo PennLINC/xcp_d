@@ -76,6 +76,19 @@ def _float_or_auto(string, is_parser=True):
     return floatarg
 
 
+def _restricted_float(x):
+    """From https://stackoverflow.com/a/12117065/2589328."""
+    try:
+        x = float(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{x} not a floating-point literal")
+
+    if x < 0.0 or x > 1.0:
+        raise argparse.ArgumentTypeError(f"{x} not in range [0.0, 1.0]")
+
+    return x
+
+
 class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 
