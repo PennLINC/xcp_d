@@ -7,7 +7,6 @@ import numpy as np
 from nilearn.input_data import NiftiLabelsMasker
 from nilearn.plotting import plot_matrix
 from nipype import logging
-from nipype.interfaces.ants.resampling import ApplyTransforms, ApplyTransformsInputSpec
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -24,13 +23,23 @@ LOGGER = logging.getLogger("nipype.interface")
 
 class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc="filtered file")
-    mask = File(exists=True, mandator=True, desc="brain mask file")
+    mask = File(exists=True, mandatory=True, desc="brain mask file")
     atlas = File(exists=True, mandatory=True, desc="atlas file")
+    min_coverage = traits.Float(
+        default=0.5,
+        usedefault=True,
+        desc=(
+            "Coverage threshold to apply to parcels. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one. "
+            "Default is 0.5."
+        ),
+    )
 
 
 class _NiftiConnectOutputSpec(TraitedSpec):
-    time_series_tsv = File(exists=True, mandatory=True, desc=" time series file")
-    fcon_matrix_tsv = File(exists=True, mandatory=True, desc=" time series file")
+    time_series_tsv = File(exists=True, mandatory=True, desc="Parcellated time series file.")
+    fcon_matrix_tsv = File(exists=True, mandatory=True, desc="Correlation matrix file.")
     parcel_coverage_file = File(exists=True, mandatory=True, desc="Parcel-wise coverage file.")
 
 
@@ -49,6 +58,7 @@ class NiftiConnect(SimpleInterface):
         filtered_file = self.inputs.filtered_file
         mask = self.inputs.mask
         atlas = self.inputs.atlas
+        coverage_threshold = self.inputs.min_coverage
 
         self._results["time_series_tsv"] = fname_presuffix(
             filtered_file,
@@ -68,8 +78,6 @@ class NiftiConnect(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-
-        coverage_threshold = 0.5
 
         # Before anything, we need to measure coverage
         atlas_img = nb.load(atlas)
@@ -96,22 +104,22 @@ class NiftiConnect(SimpleInterface):
         coverage_thresholded = parcel_coverage < coverage_threshold
 
         n_nodes = coverage_thresholded.size
-        n_bad_nodes = np.sum(parcel_coverage == 0)
-        n_poor_nodes = np.sum(np.logical_and(parcel_coverage > 0, parcel_coverage < 0.5))
-        n_partial_nodes = np.sum(np.logical_and(parcel_coverage >= 0.5, parcel_coverage < 1))
+        n_bad_parcels = np.sum(parcel_coverage == 0)
+        n_poor_parcels = np.sum(np.logical_and(parcel_coverage > 0, parcel_coverage < 0.5))
+        n_partial_parcels = np.sum(np.logical_and(parcel_coverage >= 0.5, parcel_coverage < 1))
 
-        if n_bad_nodes:
-            LOGGER.warning(f"{n_bad_nodes}/{n_nodes} of parcels have 0% coverage.")
+        if n_bad_parcels:
+            LOGGER.warning(f"{n_bad_parcels}/{n_nodes} of parcels have 0% coverage.")
 
-        if n_poor_nodes:
+        if n_poor_parcels:
             LOGGER.warning(
-                f"{n_poor_nodes}/{n_nodes} of parcels have <50% coverage. "
+                f"{n_poor_parcels}/{n_nodes} of parcels have <50% coverage. "
                 "These parcels' time series will be replaced with zeros."
             )
 
-        if n_partial_nodes:
+        if n_partial_parcels:
             LOGGER.warning(
-                f"{n_partial_nodes}/{n_nodes} of parcels have at least one uncovered "
+                f"{n_partial_parcels}/{n_nodes} of parcels have at least one uncovered "
                 "voxel, but have enough good voxels to be useable. "
                 "The bad voxels will be ignored and the parcels' time series will be "
                 "calculated from the remaining voxels."
@@ -137,33 +145,6 @@ class NiftiConnect(SimpleInterface):
         np.savetxt(self._results["fcon_matrix_tsv"], correlation_matrices, delimiter="\t")
         np.savetxt(self._results["parcel_coverage_file"], parcel_coverage, delimiter="\t")
 
-        return runtime
-
-
-class _ApplyTransformsInputSpec(ApplyTransformsInputSpec):
-    transforms = InputMultiObject(
-        traits.Either(File(exists=True), "identity"),
-        argstr="%s",
-        mandatory=True,
-        desc="transform files",
-    )
-
-
-class ApplyTransformsx(ApplyTransforms):
-    """ApplyTransforms from nipype as workflow.
-
-    This is a modification of the ApplyTransforms interface,
-    with an updated set of inputs and a different default output image name.
-    """
-
-    input_spec = _ApplyTransformsInputSpec
-
-    def _run_interface(self, runtime):
-        # Run normally
-        self.inputs.output_image = fname_presuffix(
-            self.inputs.input_image, suffix="_trans.nii.gz", newpath=runtime.cwd, use_ext=False
-        )
-        runtime = super(ApplyTransformsx, self)._run_interface(runtime)
         return runtime
 
 

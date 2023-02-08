@@ -8,8 +8,9 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import ApplyTransformsx, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.connectivity import ConnectPlot, NiftiConnect
 from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
 from xcp_d.interfaces.workbench import (
     CiftiCorrelation,
@@ -25,6 +26,7 @@ from xcp_d.utils.utils import get_std2bold_xforms
 @fill_doc
 def init_nifti_functional_connectivity_wf(
     output_dir,
+    min_coverage,
     mem_gb,
     omp_nthreads,
     name="nifti_fcon_wf",
@@ -39,6 +41,7 @@ def init_nifti_functional_connectivity_wf(
             from xcp_d.workflows.connectivity import init_nifti_functional_connectivity_wf
             wf = init_nifti_functional_connectivity_wf(
                 output_dir=".",
+                min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="nifti_fcon_wf",
@@ -85,8 +88,9 @@ atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
 the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
-In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either ignored,
-when the parcel had >50% coverage, or were set to zero, when the parcel had <50% coverage.
+In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
+ignored, when the parcel had >{min_coverage * 100}% coverage,
+or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 """
 
     inputnode = pe.Node(
@@ -147,8 +151,8 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
-        ApplyTransformsx(
-            interpolation="MultiLabel",
+        ApplyTransforms(
+            interpolation="GenericLabel",
             input_image_type=3,
             dimension=3,
         ),
@@ -159,7 +163,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     )
 
     nifti_connect = pe.MapNode(
-        NiftiConnect(),
+        NiftiConnect(min_coverage=min_coverage),
         name="nifti_connect",
         iterfield=["atlas"],
         mem_gb=mem_gb,
@@ -235,6 +239,7 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
 def init_cifti_functional_connectivity_wf(
     TR,
     output_dir,
+    min_coverage,
     mem_gb,
     omp_nthreads,
     name="cifti_fcon_wf",
@@ -250,6 +255,7 @@ def init_cifti_functional_connectivity_wf(
             wf = init_cifti_functional_connectivity_wf(
                 TR=1.,
                 output_dir=".",
+                min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="cifti_fcon_wf",
@@ -286,7 +292,7 @@ def init_cifti_functional_connectivity_wf(
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
     workflow = Workflow(name=name)
-    workflow.__desc__ = """
+    workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@hcppipelines] for the following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
@@ -295,8 +301,9 @@ the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topog
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
-In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either ignored,
-when the parcel had >50% coverage, or were set to zero, when the parcel had <50% coverage.
+In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either
+ignored, when the parcel had >{min_coverage * 100}% coverage,
+or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 """
 
     inputnode = pe.Node(
@@ -347,13 +354,12 @@ when the parcel had >50% coverage, or were set to zero, when the parcel had <50%
     # fmt:on
 
     prepare_data_for_parcellation = pe.MapNode(
-        CiftiPrepareForParcellation(),
+        CiftiPrepareForParcellation(min_coverage=min_coverage, TR=TR),
         name="prepare_data_for_parcellation",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["atlas_file"],
     )
-    prepare_data_for_parcellation.inputs.TR = TR
 
     # fmt:off
     workflow.connect([
