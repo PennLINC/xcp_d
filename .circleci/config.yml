@@ -17,7 +17,7 @@ runinstall: &runinstall
     git checkout $CIRCLE_BRANCH
     echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
     echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
-    pip install .[tests] --no-input --progress-bar off
+    pip install .[tests] --progress-bar off
 
     # Write the config file
     mkdir ~/.nipype
