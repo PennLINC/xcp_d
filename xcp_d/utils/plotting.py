@@ -524,15 +524,18 @@ def plot_fmri_es(
     raw_data_arr = read_ndata(datafile=preprocessed_file, maskfile=mask)
     residuals_data_arr = read_ndata(datafile=residuals_file, maskfile=mask)
     denoised_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
+
     tmask_df = pd.read_table(tmask)
     tmask_arr = tmask_df["framewise_displacement"].values
     tmask_bool = ~tmask_arr.astype(bool)
 
-    # Let's remove dummy time from the raw_data_arr if needed
+    assert tmask_arr.size == denoised_data_arr.shape[1]
+
+    # Remove dummy time from the raw_data_arr if needed
     if dummy_scans > 0:
         raw_data_arr = raw_data_arr[:, dummy_scans:]
 
-    # Let's censor the interpolated data and raw_data_arr:
+    # Censor the interpolated data and raw_data_arr
     if sum(tmask_arr) > 0:
         raw_data_arr = raw_data_arr[:, tmask_bool]
         denoised_data_arr = denoised_data_arr[:, tmask_bool]
@@ -547,6 +550,14 @@ def plot_fmri_es(
         denoised_dvars = compute_dvars(denoised_data_arr)
 
     if not (raw_dvars.shape == residuals_dvars.shape == denoised_dvars.shape):
+        raise ValueError(
+            "Shapes do not match:\n"
+            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
+            f"\t{residuals_file}: {residuals_data_arr.shape}\n"
+            f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
+        )
+
+    if not (raw_data_arr.shape == residuals_data_arr.shape == denoised_data_arr.shape):
         raise ValueError(
             "Shapes do not match:\n"
             f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
@@ -594,10 +605,8 @@ def plot_fmri_es(
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask)
-    denoised_data = read_ndata(datafile=denoised_file, maskfile=mask)
-    scaled_raw_data = scale_to_min_max(raw_data, -600, 600)
-    scaled_denoised_data = scale_to_min_max(denoised_data, -600, 600)
+    scaled_raw_data = scale_to_min_max(raw_data_arr, -600, 600)
+    scaled_denoised_data = scale_to_min_max(denoised_data_arr, -600, 600)
 
     # Make a temporary file for niftis and ciftis
     if preprocessed_file.endswith(".nii.gz"):
@@ -610,14 +619,14 @@ def plot_fmri_es(
     # Write out the scaled data
     scaled_raw_file = write_ndata(
         data_matrix=scaled_raw_data,
-        template=preprocessed_file,
+        template=residuals_file,  # residuals file is censored, so length matches
         filename=scaled_raw_file,
         mask=mask,
         TR=TR,
     )
     scaled_denoised_file = write_ndata(
         data_matrix=scaled_denoised_data,
-        template=denoised_file,
+        template=residuals_file,  # residuals file is censored, so length matches
         filename=scaled_denoised_file,
         mask=mask,
         TR=TR,
