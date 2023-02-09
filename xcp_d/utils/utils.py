@@ -591,13 +591,13 @@ def _denoise_with_nilearn(
     confounds_df = pd.read_table(confounds_file)
 
     signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
-    noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
     if signal_columns:
         warnings.warn(
             "Signal columns detected. "
             "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
             f"{', '.join(signal_columns)}"
         )
+        noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
         temp_confounds_df = confounds_df[noise_columns].copy()
         signal_regressors = confounds_df[signal_columns].to_numpy()
         noise_regressors = temp_confounds_df.to_numpy()
