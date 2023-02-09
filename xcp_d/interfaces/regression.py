@@ -118,7 +118,7 @@ class Regress(SimpleInterface):
                 standardize=False,
                 sample_mask=None,
                 confounds=confound,
-                standardize_confounds=False,  # do we want to set this to True?
+                standardize_confounds=True,  # do we want to set this to True?
                 filter=None,
                 low_pass=None,
                 high_pass=None,
