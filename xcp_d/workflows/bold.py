@@ -529,6 +529,12 @@ produced by the regression.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
+            (consolidate_confounds_node, denoise_bold, [
+                ('out_file', 'confounds_file'),
+            ]),
+            (consolidate_confounds_node, denoise_bold_unfiltered, [
+                ('out_file', 'confounds_file'),
+            ]),
         ])
         # fmt:on
 
@@ -568,7 +574,9 @@ produced by the regression.
         ])
 
         if dummy_scans:
-            workflow.connect([(remove_dummy_scans, despike3d, [('bold_file', 'in_file')])])
+            workflow.connect([
+                (remove_dummy_scans, despike3d, [('bold_file_dropped_TR', 'in_file')]),
+            ])
         else:
             workflow.connect([(downcast_data, despike3d, [('bold_file', 'in_file')])])
         # fmt:on
@@ -576,8 +584,8 @@ produced by the regression.
     elif dummy_scans:
         # fmt:off
         workflow.connect([
-            (remove_dummy_scans, denoise_bold, [('bold_file', 'in_file')]),
-            (remove_dummy_scans, denoise_bold_unfiltered, [('bold_file', 'in_file')]),
+            (remove_dummy_scans, denoise_bold, [('bold_file_dropped_TR', 'in_file')]),
+            (remove_dummy_scans, denoise_bold_unfiltered, [('bold_file_dropped_TR', 'in_file')]),
         ])
         # fmt:on
     else:
@@ -592,8 +600,6 @@ produced by the regression.
     workflow.connect([
         (downcast_data, denoise_bold, [('bold_mask', 'mask')]),
         (downcast_data, denoise_bold_unfiltered, [('bold_mask', 'mask')]),
-        (consolidate_confounds_node, denoise_bold, [('out_file', 'confounds_file')]),
-        (consolidate_confounds_node, denoise_bold_unfiltered, [('out_file', 'confounds_file')]),
         (censor_scrub, denoise_bold, [("tmask", "censoring_file")]),
         (censor_scrub, denoise_bold_unfiltered, [("tmask", "censoring_file")]),
     ])

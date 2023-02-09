@@ -44,7 +44,6 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--fd-thresh=0.04",
         "--head_radius=40",
         "--smoothing=6",
-        "-vvv",
         "--motion-filter-type=notch",
         "--band-stop-min=12",
         "--band-stop-max=18",
