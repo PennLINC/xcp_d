@@ -4,6 +4,7 @@
 import glob
 import os
 import tempfile
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -588,6 +589,23 @@ def _denoise_with_nilearn(
 
     n_volumes = raw_data.shape[0]
     confounds_df = pd.read_table(confounds_file)
+
+    signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
+    noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
+    if signal_columns:
+        warnings.warn(
+            "Signal columns detected. "
+            "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
+            f"{', '.join(signal_columns)}"
+        )
+        temp_confounds_df = confounds_df[noise_columns].copy()
+        signal_regressors = confounds_df[signal_columns].to_numpy()
+        noise_regressors = temp_confounds_df.to_numpy()
+        betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
+        pred_noise_regressors = np.dot(signal_regressors, betas)
+        orth_noise_regressors = noise_regressors - pred_noise_regressors
+        temp_confounds_df.loc[:, :] = orth_noise_regressors
+        confounds_df = temp_confounds_df
 
     sample_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
     sample_mask = np.where(~sample_mask_bool)[0]
