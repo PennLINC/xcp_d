@@ -587,7 +587,7 @@ def _denoise_with_nilearn(
     import pandas as pd
     from nilearn import signal
 
-    n_volumes = raw_data.shape[0]
+    n_volumes, n_voxels = raw_data.shape
     confounds_df = pd.read_table(confounds_file)
 
     signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
@@ -607,8 +607,8 @@ def _denoise_with_nilearn(
         temp_confounds_df.loc[:, :] = orth_noise_regressors
         confounds_df = temp_confounds_df
 
-    sample_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
-    sample_mask = np.where(~sample_mask_bool)[0]
+    outlier_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
+    sample_mask = np.where(~outlier_mask_bool)[0]
 
     clean_data = signal.clean(
         signals=raw_data,
@@ -626,5 +626,16 @@ def _denoise_with_nilearn(
         butterworth__padtype="constant",  # constant is similar to zero-padding
         butterworth__padlen=n_volumes - 1,  # maximum allowed pad length
     )
+
+    if np.any(outlier_mask_bool):
+        # The cleaned data are censored, but not interpolated.
+        clean_data_interpolated = np.zeros((n_volumes, n_voxels), dtype=clean_data.dtype)
+        clean_data_interpolated[sample_mask, :] = clean_data
+        clean_data_interpolated = signal._interpolate_volumes(
+            clean_data_interpolated,
+            sample_mask=sample_mask,
+            t_r=TR,
+        )
+        clean_data = clean_data_interpolated
 
     return clean_data

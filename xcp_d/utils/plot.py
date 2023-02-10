@@ -1231,11 +1231,12 @@ def plot_design_matrix(design_matrix, censoring_file=None):
             data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),
             columns=[f"outlier{i}" for i in range(1, n_outliers + 1)],
         )
-        outlier_idx = np.where(censoring_df["framewise_displacement"] == 1)[0]
-        for i, idx in enumerate(outlier_idx):
-            new_df.iloc[idx, i] = 1
+        outlier_idx = np.where(censoring_df["framewise_displacement"])[0]
+        for i_outlier, outlier_col in enumerate(new_df.columns):
+            outlier_row = outlier_idx[i_outlier]
+            new_df.loc[outlier_row, outlier_col] = 1
 
-        design_matrix_df = pd.concat((design_matrix_df, outlier_idx), axis=1)
+        design_matrix_df = pd.concat((design_matrix_df, new_df), axis=1)
 
     design_matrix_figure = os.path.abspath("design_matrix.svg")
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
