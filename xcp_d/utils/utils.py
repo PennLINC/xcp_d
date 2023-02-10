@@ -608,7 +608,7 @@ def _denoise_with_nilearn(
         confounds_df = temp_confounds_df
 
     outlier_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
-    sample_mask = np.where(~outlier_mask_bool)[0]
+    sample_mask = ~outlier_mask_bool
 
     clean_data = signal.clean(
         signals=raw_data,
