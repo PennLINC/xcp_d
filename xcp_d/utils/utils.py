@@ -607,35 +607,46 @@ def _denoise_with_nilearn(
         temp_confounds_df.loc[:, :] = orth_noise_regressors
         confounds_df = temp_confounds_df
 
-    outlier_mask_bool = pd.read_table(censoring_file)["framewise_displacement"].values.astype(bool)
-    sample_mask = ~outlier_mask_bool
+    censoring_df = pd.read_table(censoring_file)
+    sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
-    clean_data = signal.clean(
-        signals=raw_data,
+    # Per xcp_d's style, censor the data first
+    raw_data_censored = raw_data[sample_mask, :]
+
+    # Then detrend and regress
+    clean_data_censored = signal.clean(
+        signals=raw_data_censored,
         detrend=True,
         standardize=False,
         sample_mask=sample_mask,
         confounds=confounds_df,
         standardize_confounds=True,
-        filter="butterworth",
-        low_pass=lowpass,
-        high_pass=highpass,
+        filter=None,
         t_r=TR,
         ensure_finite=True,
-        butterworth__order=filter_order,
-        butterworth__padtype="constant",  # constant is similar to zero-padding
-        butterworth__padlen=n_volumes - 1,  # maximum allowed pad length
     )
 
-    if np.any(outlier_mask_bool):
-        # The cleaned data are censored, but not interpolated.
-        clean_data_interpolated = np.zeros((n_volumes, n_voxels), dtype=clean_data.dtype)
-        clean_data_interpolated[sample_mask, :] = clean_data
-        clean_data_interpolated = signal._interpolate_volumes(
-            clean_data_interpolated,
-            sample_mask=sample_mask,
-            t_r=TR,
+    # Now interpolate with cubic spline interpolation
+    clean_data_interp = np.zeros((n_volumes, n_voxels), dtype=clean_data_censored.dtype)
+    clean_data_interp[sample_mask, :] = clean_data_censored
+    clean_data_interp = signal._interpolate_volumes(
+        clean_data_interp,
+        sample_mask=sample_mask,
+        t_r=TR,
+    )
+
+    # Now filter
+    if lowpass is not None and highpass is not None:
+        clean_data = signal.butterworth(
+            clean_data_interp,
+            sampling_rate=1 / TR,
+            low_pass=lowpass,
+            high_pass=highpass,
+            order=filter_order // 2,
+            padtype="constant",  # constant is similar to zero-padding
+            padlen=n_volumes - 1,  # maximum allowed pad length
         )
-        clean_data = clean_data_interpolated
+    else:
+        clean_data = clean_data_interp
 
     return clean_data
