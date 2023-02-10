@@ -345,16 +345,14 @@ class CensorScrub(SimpleInterface):
 
         # get the output
         self._results["tmask"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_desc-fd_outliers.tsv",
+            "desc-fd_outliers.tsv",
             newpath=runtime.cwd,
-            use_ext=False,
+            use_ext=True,
         )
         self._results["filtered_motion"] = fname_presuffix(
-            self.inputs.in_file,
-            suffix="_desc-filtered_motion.tsv",
+            "desc-filtered_motion.tsv",
             newpath=runtime.cwd,
-            use_ext=False,
+            use_ext=True,
         )
 
         outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
