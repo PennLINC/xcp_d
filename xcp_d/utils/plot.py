@@ -1219,6 +1219,7 @@ def plot_design_matrix(design_matrix, censoring_file=None):
     """
     import os
 
+    import numpy as np
     import pandas as pd
     from nilearn import plotting
 
