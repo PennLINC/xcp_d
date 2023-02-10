@@ -373,21 +373,31 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def butter_bandpass(data, fs, lowpass, highpass, order=2):
+def butter_bandpass(
+    data,
+    sampling_rate,
+    low_pass,
+    high_pass,
+    padtype="constant",
+    padlen=None,
+    order=2,
+):
     """Apply a Butterworth bandpass filter to data.
 
     Parameters
     ----------
     data : (T, S) numpy.ndarray
         Time by voxels/vertices array of data.
-    fs : float
+    sampling_rate : float
         Sampling frequency. 1/TR(s).
-    lowpass : float
+    low_pass : float
         frequency, in Hertz
-    highpass : float
+    high_pass : float
         frequency, in Hertz
+    padlen
+    padtype
     order : int
-        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+        The order of the filter.
 
     Returns
     -------
@@ -395,11 +405,11 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
         The filtered data.
     """
     b, a = butter(
-        order / 2,
-        [highpass, lowpass],
+        order,
+        [high_pass, low_pass],
         btype="bandpass",
         output="ba",
-        fs=fs,  # eliminates need to normalize cutoff frequencies
+        fs=sampling_rate,  # eliminates need to normalize cutoff frequencies
     )
 
     filtered_data = np.zeros_like(data)  # create something to populate filtered values with
@@ -410,8 +420,8 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
             b,
             a,
             data[:, i_voxel],
-            padtype="constant",
-            padlen=data.shape[0] - 1,
+            padtype=padtype,
+            padlen=padlen,
         )
 
     return filtered_data
@@ -637,7 +647,8 @@ def _denoise_with_nilearn(
 
     # Now filter
     if lowpass is not None and highpass is not None:
-        clean_data = signal.butterworth(
+        # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
+        butter_bandpass(
             clean_data_interp,
             sampling_rate=1 / TR,
             low_pass=lowpass,
