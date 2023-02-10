@@ -12,8 +12,8 @@ RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
     pip install --no-cache-dir "/src/xcp_d[all]" && \
     chmod -R a+rX /usr/local/miniconda; sync && \
     chmod +x /usr/local/miniconda/bin/*; sync && \
-    conda clean -y --all && sync && \
-    conda clean -tipsy && sync
+    conda clean -y --all; sync && \
+    conda clean -tipsy; sync
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
     find $HOME -type f -exec chmod go=u {} + && \
