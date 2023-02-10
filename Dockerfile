@@ -9,8 +9,11 @@ ARG VERSION=0.0.1
 # Force static versioning within container
 RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
     echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in && \
-    pip install --no-cache-dir "/src/xcp_d[all]"
-
+    pip install --no-cache-dir "/src/xcp_d[all]" && \
+    chmod -R a+rX /usr/local/miniconda; sync && \
+    chmod +x /usr/local/miniconda/bin/*; sync && \
+    conda clean -y --all && sync && \
+    conda clean -tipsy && sync
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
     find $HOME -type f -exec chmod go=u {} + && \
@@ -20,7 +23,6 @@ RUN ldconfig
 WORKDIR /tmp/
 
 ENTRYPOINT ["/usr/local/miniconda/bin/xcp_d"]
-
 
 ARG BUILD_DATE
 ARG VCS_REF
