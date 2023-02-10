@@ -412,7 +412,7 @@ produced by the regression.
 
     plot_design_matrix_node = pe.Node(
         Function(
-            input_names=["design_matrix"],
+            input_names=["design_matrix", "censoring_file"],
             output_names=["design_matrix_figure"],
             function=plot_design_matrix,
         ),
@@ -481,6 +481,9 @@ produced by the regression.
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
+            (remove_dummy_scans, plot_design_matrix_node, [
+                ("confounds_file_dropped_TR", "design_matrix"),
+            ]),
         ])
         # fmt:on
 
@@ -499,6 +502,9 @@ produced by the regression.
             (consolidate_confounds_node, denoise_bold_unfiltered, [
                 ('out_file', 'confounds_file'),
             ]),
+            (consolidate_confounds_node, plot_design_matrix_node, [
+                ("out_file", "design_matrix"),
+            ]),
         ])
         # fmt:on
 
@@ -506,9 +512,6 @@ produced by the regression.
     workflow.connect([
         (determine_head_radius, censor_scrub, [
             ("head_radius", "head_radius"),
-        ]),
-        (consolidate_confounds_node, plot_design_matrix_node, [
-            ("out_file", "design_matrix"),
         ]),
         (censor_scrub, plot_design_matrix_node, [
             ("tmask", "censoring_file"),
