@@ -617,11 +617,13 @@ def _denoise_with_nilearn(
         temp_confounds_df.loc[:, :] = orth_noise_regressors
         confounds_df = temp_confounds_df
 
+    confounds = confounds_df.to_numpy()
     censoring_df = pd.read_table(censoring_file)
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
     # Per xcp_d's style, censor the data first
     raw_data_censored = raw_data[sample_mask, :]
+    confounds_censored = confounds[sample_mask, :]
 
     # Then detrend and regress
     clean_data_censored = signal.clean(
@@ -629,7 +631,7 @@ def _denoise_with_nilearn(
         detrend=True,
         standardize=False,
         sample_mask=sample_mask,
-        confounds=confounds_df,
+        confounds=confounds_censored,
         standardize_confounds=True,
         filter=None,
         t_r=TR,
