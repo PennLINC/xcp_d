@@ -478,6 +478,9 @@ produced by the regression.
             (remove_dummy_scans, denoise_bold, [
                 ("confounds_file_dropped_TR", "confounds_file"),
             ]),
+            (remove_dummy_scans, denoise_bold_unfiltered, [
+                ("confounds_file_dropped_TR", "confounds_file"),
+            ]),
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
