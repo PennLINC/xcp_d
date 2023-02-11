@@ -652,7 +652,7 @@ def _denoise_with_nilearn(
     # Now filter
     if lowpass is not None and highpass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
-        butter_bandpass(
+        clean_data = butter_bandpass(
             clean_data_interp,
             sampling_rate=1 / TR,
             low_pass=lowpass,
