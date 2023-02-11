@@ -632,7 +632,7 @@ def _denoise_with_nilearn(
         signals=raw_data_censored,
         detrend=True,
         standardize=False,
-        sample_mask=sample_mask,
+        sample_mask=None,
         confounds=confounds_df_censored,
         standardize_confounds=True,
         filter=None,
