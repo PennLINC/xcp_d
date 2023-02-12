@@ -1,7 +1,7 @@
 """Tests for smoothing methods."""
 import os
-import tempfile
 import re
+import tempfile
 
 import numpy as np
 from nipype.interfaces.workbench import CiftiSmooth

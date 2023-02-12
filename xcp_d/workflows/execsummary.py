@@ -11,7 +11,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.surfplotting import PlotImage
+from xcp_d.interfaces.plotting import AnatomicalPlot
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.execsummary import (
@@ -353,7 +353,7 @@ def init_execsummary_wf(
     )[0]
 
     # Plot the reference bold image
-    plot_boldref = pe.Node(PlotImage(), name="plot_boldref")
+    plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
 
     # fmt:off
     workflow.connect([
