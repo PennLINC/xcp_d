@@ -24,7 +24,7 @@ from xcp_d.utils.confounds import (
     get_customfile,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.plot import plot_design_matrix
+from xcp_d.utils.plotting import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflows.execsummary import init_execsummary_wf

@@ -583,7 +583,6 @@ def main(args=None):
                 subjects=subject_list,
                 fmri_dir=str(fmri_dir),
                 output_dir=str(Path(str(output_dir)) / "xcp_d/"),
-                work_dir=work_dir,
                 cifti=opts.cifti,
                 dcan_qc=opts.dcan_qc,
                 dummy_scans=opts.dummy_scans,

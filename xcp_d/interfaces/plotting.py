@@ -1,12 +1,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Quality control plotting interfaces."""
+"""Plotting interfaces."""
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from nilearn.plotting import plot_anat
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -20,7 +21,7 @@ from nipype.interfaces.base.traits_extension import isdefined
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
-from xcp_d.utils.plot import FMRIPlot
+from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -183,7 +184,7 @@ class CensoringPlot(SimpleInterface):
         return runtime
 
 
-class _QCPlotInputSpec(BaseInterfaceInputSpec):
+class _QCPlotsInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Raw bold file from fMRIPrep")
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask")
@@ -205,14 +206,14 @@ class _QCPlotInputSpec(BaseInterfaceInputSpec):
     bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
 
 
-class _QCPlotOutputSpec(TraitedSpec):
+class _QCPlotsOutputSpec(TraitedSpec):
     qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
     raw_qcplot = File(exists=True, mandatory=True, desc="qc plot before regression")
     clean_qcplot = File(exists=True, mandatory=True, desc="qc plot after regression")
 
 
-class QCPlot(SimpleInterface):
-    """Generate a quality control (QC) figure.
+class QCPlots(SimpleInterface):
+    """Generate pre- and post-processing quality control (QC) figures.
 
     Examples
     --------
@@ -221,20 +222,20 @@ class QCPlot(SimpleInterface):
     >>> tmpdir = TemporaryDirectory()
     >>> os.chdir(tmpdir.name)
     .. doctest::
-    computeqcwf = QCPlot()
-    computeqcwf.inputs.cleaned_file = datafile
-    computeqcwf.inputs.bold_file = rawbold
-    computeqcwf.inputs.TR = TR
-    computeqcwf.inputs.tmask = temporalmask
-    computeqcwf.inputs.mask_file = mask
-    computeqcwf.inputs.dummy_scans = dummy_scans
-    computeqcwf.run()
+    qcplots = QCPlots()
+    qcplots.inputs.cleaned_file = datafile
+    qcplots.inputs.bold_file = rawbold
+    qcplots.inputs.TR = TR
+    qcplots.inputs.tmask = temporalmask
+    qcplots.inputs.mask_file = mask
+    qcplots.inputs.dummy_scans = dummy_scans
+    qcplots.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
     """
 
-    input_spec = _QCPlotInputSpec
-    output_spec = _QCPlotOutputSpec
+    input_spec = _QCPlotsInputSpec
+    output_spec = _QCPlotsOutputSpec
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
@@ -443,5 +444,113 @@ class QCPlot(SimpleInterface):
             use_ext=False,
         )
         df.to_csv(self._results["qc_file"], index=False, header=True)
+
+        return runtime
+
+
+class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
+    rawdata = File(exists=True, mandatory=True, desc="Raw data")
+    regressed_data = File(
+        exists=True,
+        mandatory=True,
+        desc="Data after regression and interpolation, but not filtering.",
+    )
+    residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
+    filtered_motion = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with filtered motion parameters.",
+    )
+    TR = traits.Float(default_value=1, desc="Repetition time")
+
+    # Optional inputs
+    mask = File(exists=True, mandatory=False, desc="Bold mask")
+    seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
+    dummy_scans = traits.Int(
+        0,
+        usedefault=True,
+        desc="Number of dummy volumes to drop from the beginning of the run.",
+    )
+
+
+class _QCPlotsESOutputSpec(TraitedSpec):
+    before_process = File(exists=True, mandatory=True, desc=".SVG file before processing")
+    after_process = File(exists=True, mandatory=True, desc=".SVG file after processing")
+
+
+class QCPlotsES(SimpleInterface):
+    """Plot fd, dvars, and carpet plots of the bold data before and after regression/filtering.
+
+    This is essentially equivalent to the QCPlots
+    (which are paired pre- and post-processing FMRIPlots), but adapted for the executive summary.
+
+    It takes in the data that's regressed, the data that's filtered and regressed,
+    as well as the segmentation files, TR, FD, bold_mask and unprocessed data.
+
+    It outputs the .SVG files before after processing has taken place.
+    """
+
+    input_spec = _QCPlotsESInputSpec
+    output_spec = _QCPlotsESOutputSpec
+
+    def _run_interface(self, runtime):
+        before_process_fn = fname_presuffix(
+            "carpetplot_before_",
+            suffix="file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        after_process_fn = fname_presuffix(
+            "carpetplot_after_",
+            suffix="file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        mask_file = self.inputs.mask
+        mask_file = mask_file if isdefined(mask_file) else None
+
+        segmentation_file = self.inputs.seg_data
+        segmentation_file = segmentation_file if isdefined(segmentation_file) else None
+
+        self._results["before_process"], self._results["after_process"] = plot_fmri_es(
+            preprocessed_file=self.inputs.rawdata,
+            residuals_file=self.inputs.regressed_data,
+            denoised_file=self.inputs.residual_data,
+            dummy_scans=self.inputs.dummy_scans,
+            TR=self.inputs.TR,
+            mask=mask_file,
+            filtered_motion=self.inputs.filtered_motion,
+            seg_data=segmentation_file,
+            processed_filename=after_process_fn,
+            unprocessed_filename=before_process_fn,
+        )
+
+        return runtime
+
+
+class _AnatomicalPlotInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True, desc="plot image")
+
+
+class _AnatomicalPlotOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="out image")
+
+
+class AnatomicalPlot(SimpleInterface):
+    """Python class to plot x,y, and z of image data."""
+
+    input_spec = _AnatomicalPlotInputSpec
+    output_spec = _AnatomicalPlotOutputSpec
+
+    def _run_interface(self, runtime):
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file, suffix="_file.svg", newpath=runtime.cwd, use_ext=False
+        )
+
+        fig = plt.figure(constrained_layout=False, figsize=(25, 10))
+        plot_anat(self.inputs.in_file, draw_cross=False, figure=fig)
+        fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
 
         return runtime

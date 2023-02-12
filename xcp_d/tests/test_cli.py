@@ -44,9 +44,8 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--fd-thresh=0.04",
         "--head_radius=40",
         "--smoothing=6",
-        "--motion-filter-type=notch",
-        "--band-stop-min=12",
-        "--band-stop-max=18",
+        "--motion-filter-type=lp",
+        "--band-stop-min=6",
         "--min-coverage=1",
     ]
     opts = get_parser().parse_args(parameters)
@@ -96,18 +95,19 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
+        "--nuisance-regressors=acompcor_gsr",
         "--despike",
         "--head_radius=40",
         "--smoothing=6",
-        "-v",
-        "--motion-filter-type=lp",
-        "--band-stop-min=6",
+        "--motion-filter-type=notch",
+        "--band-stop-min=12",
+        "--band-stop-max=18",
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
         "--dcan-qc",
         "--dummy-scans=auto",
-        "--fd-thresh=0.04",
+        "--fd-thresh=0.2",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
@@ -122,7 +122,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         subjects=["01"],
         fmri_dir=data_dir,
         output_dir=os.path.join(out_dir, "xcp_d"),
-        work_dir=work_dir,
         cifti=opts.cifti,
         dcan_qc=opts.dcan_qc,
         dummy_scans=opts.dummy_scans,
