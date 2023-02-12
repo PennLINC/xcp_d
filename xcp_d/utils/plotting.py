@@ -45,17 +45,7 @@ def _decimate_data(data, seg_data, size):
     return data, seg_data
 
 
-def plotimage(img, out_file):
-    """Plot anatomical image and save to file."""
-    from nilearn.plotting import plot_anat
-
-    fig = plt.figure(constrained_layout=False, figsize=(25, 10))
-    plot_anat(img, draw_cross=False, figure=fig)
-    fig.savefig(out_file, bbox_inches="tight", pad_inches=None)
-    return out_file
-
-
-def confoundplot(
+def plot_confounds(
     time_series,
     grid_spec_ts,
     gs_dist=None,
@@ -256,17 +246,17 @@ def confoundplot(
     return time_series_axis, grid_specification
 
 
-def confoundplotx(
+def plot_confounds_es(
     time_series,
     grid_spec_ts,
     TR=None,
     hide_x=True,
     ylims=None,
     ylabel=None,
-    FD=False,
-    work_dir=None,
+    is_fd=False,
+    is_whole_brain=False,
 ):
-    """Create confounds plot."""
+    """Create confounds plot for the executive summary."""
     sns.set_style("whitegrid")
 
     # Define TR and number of frames
@@ -280,7 +270,11 @@ def confoundplotx(
 
     # Define nested GridSpec
     grid_specification = mgs.GridSpecFromSubplotSpec(
-        1, 2, subplot_spec=grid_spec_ts, width_ratios=[1, 100], wspace=0.0
+        1,
+        2,
+        subplot_spec=grid_spec_ts,
+        width_ratios=[1, 100],
+        wspace=0.0,
     )
 
     time_series_axis = plt.subplot(grid_specification[1])
@@ -306,129 +300,125 @@ def confoundplotx(
     # Set y-axis labels
     if ylabel:
         time_series_axis.set_ylabel(ylabel)
-    if work_dir is not None:
-        time_series.to_csv(f"/{work_dir}/{ylabel}_tseries.npy")
-    columns = time_series.columns
-    maximum_value = []
-    minimum_value = []
 
-    if FD is True:
+    columns = time_series.columns
+    maximum_values = []
+    minimum_values = []
+
+    if is_fd:
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=3, color="black")
-            maximum_value.append(max(time_series[c]))
-            minimum_value.append(min(time_series[c]))
+            maximum_values.append(max(time_series[c]))
+            minimum_values.append(min(time_series[c]))
 
             # Threshold fd at 0.1, 0.2 and 0.5 and plot
             time_series_axis.axhline(
                 y=1, color="lightgray", linestyle="-", linewidth=10, alpha=0.5
             )
-            fda = time_series[c].copy()
-            FD_timeseries = time_series[c].copy()
-            FD_timeseries[FD_timeseries > 0] = 1.05
-            time_series_axis.plot(fda, ".", color="gray", markersize=40)
-            time_series_axis.plot(FD_timeseries, ".", color="gray", markersize=40)
 
-            time_series_axis.axhline(y=0.05, color="gray", linestyle="-", linewidth=10, alpha=0.5)
-            fda[fda < 0.05] = np.nan
-            FD_timeseries = time_series[c].copy()
-            FD_timeseries[FD_timeseries >= 0.05] = 1.05
-            FD_timeseries[FD_timeseries < 0.05] = np.nan
-            time_series_axis.plot(fda, ".", color="gray", markersize=40)
-            time_series_axis.plot(FD_timeseries, ".", color="gray", markersize=40)
+            # Plot zero line
+            fd_dots = time_series[c].copy()
+            fd_line = time_series[c].copy()
 
-            time_series_axis.axhline(
-                y=0.1, color="#66c2a5", linestyle="-", linewidth=10, alpha=0.5
-            )
-            fda[fda < 0.1] = np.nan
-            FD_timeseries = time_series[c].copy()
-            FD_timeseries[FD_timeseries >= 0.1] = 1.05
-            FD_timeseries[FD_timeseries < 0.1] = np.nan
-            time_series_axis.plot(fda, ".", color="#66c2a5", markersize=40)
-            time_series_axis.plot(FD_timeseries, ".", color="#66c2a5", markersize=40)
+            fd_dots[fd_dots < 0] = np.nan
+            fd_line[fd_line > 0] = 1.05
+            time_series_axis.plot(fd_dots, ".", color="gray", markersize=40)
+            time_series_axis.plot(fd_line, ".", color="gray", markersize=40)
 
-            time_series_axis.axhline(
-                y=0.2, color="#fc8d62", linestyle="-", linewidth=10, alpha=0.5
-            )
-            fda[fda < 0.2] = np.nan
-            FD_timeseries = time_series[c].copy()
-            FD_timeseries[FD_timeseries >= 0.2] = 1.05
-            FD_timeseries[FD_timeseries < 0.2] = np.nan
-            time_series_axis.plot(fda, ".", color="#fc8d62", markersize=40)
-            time_series_axis.plot(FD_timeseries, ".", color="#fc8d62", markersize=40)
+            THRESHOLDS = [0.05, 0.1, 0.2, 0.5]
+            COLORS = ["gray", "#66c2a5", "#fc8d62", "#8da0cb"]
+            for i_thresh, threshold in enumerate(THRESHOLDS):
+                color = COLORS[i_thresh]
 
-            time_series_axis.axhline(
-                y=0.5, color="#8da0cb", linestyle="-", linewidth=10, alpha=0.5
-            )
-            fda[fda < 0.5] = np.nan
-            FD_timeseries = time_series[c].copy()
-            FD_timeseries[FD_timeseries >= 0.5] = 1.05
-            FD_timeseries[FD_timeseries < 0.5] = np.nan
-            time_series_axis.plot(fda, ".", color="#8da0cb", markersize=40)
-            time_series_axis.plot(FD_timeseries, ".", color="#8da0cb", markersize=40)
+                time_series_axis.axhline(
+                    y=threshold,
+                    color=color,
+                    linestyle="-",
+                    linewidth=10,
+                    alpha=0.5,
+                )
 
-            #  Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
-            good_vols = len(time_series[c][time_series[c] < 0.1])
-            time_series_axis.text(
-                1.01,
-                0.1,
-                good_vols,
-                c="#66c2a5",
-                verticalalignment="top",
-                horizontalalignment="left",
-                transform=time_series_axis.transAxes,
-                fontsize=30,
-            )
-            good_vols = len(time_series[c][time_series[c] < 0.2])
-            time_series_axis.text(
-                1.01,
-                0.2,
-                good_vols,
-                c="#fc8d62",
-                verticalalignment="top",
-                horizontalalignment="left",
-                transform=time_series_axis.transAxes,
-                fontsize=30,
-            )
-            good_vols = len(time_series[c][time_series[c] < 0.5])
-            time_series_axis.text(
-                1.01,
-                0.5,
-                good_vols,
-                c="#8da0cb",
-                verticalalignment="top",
-                horizontalalignment="left",
-                transform=time_series_axis.transAxes,
-                fontsize=30,
-            )
-            good_vols = len(time_series[c][time_series[c] < 0.05])
-            time_series_axis.text(
-                1.01,
-                0.05,
-                good_vols,
-                c="grey",
-                verticalalignment="top",
-                horizontalalignment="left",
-                transform=time_series_axis.transAxes,
-                fontsize=30,
-            )
+                fd_dots[fd_dots < threshold] = np.nan
+                time_series_axis.plot(fd_dots, ".", color=color, markersize=40)
+
+                fd_line = time_series[c].copy()
+                fd_line[fd_line >= threshold] = 1.05
+                fd_line[fd_line < threshold] = np.nan
+                time_series_axis.plot(fd_line, ".", color=color, markersize=40)
+
+                # Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
+                good_vols = len(time_series[c][time_series[c] < threshold])
+                time_series_axis.text(
+                    1.01,
+                    threshold,
+                    good_vols,
+                    c=color,
+                    verticalalignment="top",
+                    horizontalalignment="left",
+                    transform=time_series_axis.transAxes,
+                    fontsize=30,
+                )
+
+    elif is_whole_brain:
+        # Plot the whole brain mean and std.
+        # Mean scale on the left, std scale on the right.
+        mean_line = time_series_axis.plot(
+            time_series["Mean"],
+            label="Mean",
+            linewidth=10,
+            alpha=0.5,
+        )
+        maximum_values.append(max(time_series["Mean"]))
+        minimum_values.append(min(time_series["Mean"]))
+        ax_right = time_series_axis.twinx()
+        ax_right.set_ylabel("Standard Deviation")
+        std_line = ax_right.plot(
+            time_series["Std"],
+            label="Std",
+            color="orange",
+            linewidth=10,
+            alpha=0.5,
+        )
+
+        std_mean = np.mean(time_series["Std"])
+        ax_right.set_ylim(
+            (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
+            (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
+        )
+        ax_right.yaxis.label.set_fontsize(30)
+        for item in ax_right.get_yticklabels():
+            item.set_fontsize(30)
+
+        lines = mean_line + std_line
+        line_labels = [line.get_label() for line in lines]
+        time_series_axis.legend(lines, line_labels, fontsize=40)
+
     else:  # If no thresholding
         for c in columns:
             time_series_axis.plot(time_series[c], label=c, linewidth=10, alpha=0.5)
-            maximum_value.append(max(time_series[c]))
-            minimum_value.append(min(time_series[c]))
+            maximum_values.append(max(time_series[c]))
+            minimum_values.append(min(time_series[c]))
 
     # Set limits and format
-    minimum_x_value = [abs(x) for x in minimum_value]
+    minimum_x_value = [abs(x) for x in minimum_values]
 
     time_series_axis.set_xlim((0, ntsteps - 1))
-    time_series_axis.legend(fontsize=40)
-    if FD is True:
+    if is_fd is True:
+        time_series_axis.legend(fontsize=40)
         time_series_axis.set_ylim(0, 1.1)
         time_series_axis.set_yticks([0, 0.05, 0.1, 0.2, 0.5, 1])
     elif ylims:
+        time_series_axis.legend(fontsize=40)
         time_series_axis.set_ylim(ylims)
+    elif is_whole_brain:
+        mean_mean = np.mean(time_series["Mean"])
+        time_series_axis.set_ylim(
+            (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
+            (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
+        )
     else:
-        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_value)])
+        time_series_axis.legend(fontsize=40)
+        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
 
     for item in (
         [time_series_axis.title, time_series_axis.xaxis.label, time_series_axis.yaxis.label]
@@ -444,11 +434,10 @@ def confoundplotx(
 
 
 @fill_doc
-def plot_svgx(
+def plot_fmri_es(
     preprocessed_file,
     residuals_file,
     denoised_file,
-    tmask,
     dummy_scans,
     filtered_motion,
     unprocessed_filename,
@@ -459,9 +448,8 @@ def plot_svgx(
     raw_dvars=None,
     residuals_dvars=None,
     denoised_dvars=None,
-    work_dir=None,
 ):
-    """Generate carpet plot with DVARS, FD, and WB.
+    """Generate carpet plot with DVARS, FD, and WB for the executive summary.
 
     Parameters
     ----------
@@ -473,8 +461,6 @@ def plot_svgx(
         nifti or cifti after regression, filtering, and interpolation
     mask :
         mask for nifti if available
-    tmask :
-       temporal censoring mask
     %(dummy_scans)s
     seg_data :
         3 tissues seg_data files
@@ -491,18 +477,10 @@ def plot_svgx(
     raw_data_arr = read_ndata(datafile=preprocessed_file, maskfile=mask)
     residuals_data_arr = read_ndata(datafile=residuals_file, maskfile=mask)
     denoised_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
-    tmask_df = pd.read_table(tmask)
-    tmask_arr = tmask_df["framewise_displacement"].values
-    tmask_bool = ~tmask_arr.astype(bool)
 
-    # Let's remove dummy time from the raw_data_arr if needed
+    # Remove dummy time from the raw_data_arr if needed
     if dummy_scans > 0:
         raw_data_arr = raw_data_arr[:, dummy_scans:]
-
-    # Let's censor the interpolated data and raw_data_arr:
-    if sum(tmask_arr) > 0:
-        raw_data_arr = raw_data_arr[:, tmask_bool]
-        denoised_data_arr = denoised_data_arr[:, tmask_bool]
 
     if not isinstance(raw_dvars, np.ndarray):
         raw_dvars = compute_dvars(raw_data_arr)
@@ -521,11 +499,19 @@ def plot_svgx(
             f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
         )
 
+    if not (raw_data_arr.shape == residuals_data_arr.shape == denoised_data_arr.shape):
+        raise ValueError(
+            "Shapes do not match:\n"
+            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
+            f"\t{residuals_file}: {residuals_data_arr.shape}\n"
+            f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
+        )
+
     # Formatting & setting of files
     sns.set_style("whitegrid")
 
     # Create dataframes for the bold_data DVARS, FD
-    DVARS_timeseries = pd.DataFrame(
+    dvars_regressors = pd.DataFrame(
         {
             "Pre regression": raw_dvars,
             "Post regression": residuals_dvars,
@@ -533,7 +519,7 @@ def plot_svgx(
         }
     )
 
-    FD_timeseries = pd.DataFrame(
+    fd_regressor = pd.DataFrame(
         {
             "FD": pd.read_table(filtered_motion)["framewise_displacement"].values,
         }
@@ -541,7 +527,10 @@ def plot_svgx(
 
     # The mean and standard deviation of raw data
     unprocessed_data_timeseries = pd.DataFrame(
-        {"Mean": np.nanmean(raw_data_arr, axis=0), "Std": np.nanstd(raw_data_arr, axis=0)}
+        {
+            "Mean": np.nanmean(raw_data_arr, axis=0),
+            "Std": np.nanstd(raw_data_arr, axis=0),
+        }
     )
 
     # The mean and standard deviation of filtered data
@@ -558,10 +547,8 @@ def plot_svgx(
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    raw_data = read_ndata(datafile=preprocessed_file, maskfile=mask)
-    denoised_data = read_ndata(datafile=denoised_file, maskfile=mask)
-    scaled_raw_data = scale_to_min_max(raw_data, -600, 600)
-    scaled_denoised_data = scale_to_min_max(denoised_data, -600, 600)
+    scaled_raw_data = scale_to_min_max(raw_data_arr, -600, 600)
+    scaled_denoised_data = scale_to_min_max(denoised_data_arr, -600, 600)
 
     # Make a temporary file for niftis and ciftis
     if preprocessed_file.endswith(".nii.gz"):
@@ -574,99 +561,68 @@ def plot_svgx(
     # Write out the scaled data
     scaled_raw_file = write_ndata(
         data_matrix=scaled_raw_data,
-        template=preprocessed_file,
+        template=residuals_file,  # residuals file is censored, so length matches
         filename=scaled_raw_file,
         mask=mask,
         TR=TR,
     )
     scaled_denoised_file = write_ndata(
         data_matrix=scaled_denoised_data,
-        template=denoised_file,
+        template=residuals_file,  # residuals file is censored, so length matches
         filename=scaled_denoised_file,
         mask=mask,
         TR=TR,
     )
-    # Plot the data and confounds, plus the carpet plot
-    plt.cla()
-    plt.clf()
-    unprocessed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
-    confoundplotx(
-        time_series=DVARS_timeseries,
-        grid_spec_ts=grid[0],
-        TR=TR,
-        ylabel="DVARS",
-        hide_x=True,
-    )
-    confoundplotx(
-        time_series=unprocessed_data_timeseries,
-        grid_spec_ts=grid[1],
-        TR=TR,
-        hide_x=True,
-        ylabel="WB",
-    )
-    plot_carpet(
-        func=scaled_raw_file,
-        atlaslabels=atlaslabels,
-        TR=TR,
-        subplot=grid[3],
-        legend=False,
-    )
-    confoundplotx(
-        time_series=FD_timeseries,
-        grid_spec_ts=grid[4],
-        TR=TR,
-        hide_x=False,
-        ylims=[0, 1],
-        ylabel="FD[mm]",
-        FD=True,
-    )
 
-    # Save out the before processing file
-    unprocessed_figure.savefig(unprocessed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+    files_for_carpet = [scaled_raw_file, scaled_denoised_file]
+    figure_names = [unprocessed_filename, processed_filename]
+    data_arrays = [unprocessed_data_timeseries, processed_data_timeseries]
+    for i_fig, figure_name in enumerate(figure_names):
+        file_for_carpet = files_for_carpet[i_fig]
+        data_arr = data_arrays[i_fig]
 
-    plt.cla()
-    plt.clf()
+        # Plot the data and confounds, plus the carpet plot
+        plt.cla()
+        plt.clf()
 
-    # Plot the data and confounds, plus the carpet plot
-    processed_figure = plt.figure(constrained_layout=True, figsize=(22.5, 30))
-    grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
+        fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
+        grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
 
-    confoundplotx(
-        time_series=DVARS_timeseries,
-        grid_spec_ts=grid[0],
-        TR=TR,
-        ylabel="DVARS",
-        hide_x=True,
-        work_dir=work_dir,
-    )
-    confoundplotx(
-        time_series=processed_data_timeseries,
-        grid_spec_ts=grid[1],
-        TR=TR,
-        hide_x=True,
-        ylabel="WB",
-        work_dir=work_dir,
-    )
+        plot_confounds_es(
+            time_series=dvars_regressors,
+            grid_spec_ts=grid[0],
+            TR=TR,
+            ylabel="DVARS",
+            hide_x=True,
+        )
+        plot_confounds_es(
+            time_series=data_arr,
+            grid_spec_ts=grid[1],
+            TR=TR,
+            hide_x=True,
+            ylabel="WB",
+            is_whole_brain=True,
+        )
+        plot_carpet(
+            func=file_for_carpet,
+            atlaslabels=atlaslabels,
+            TR=TR,
+            subplot=grid[3],
+            legend=False,
+        )
+        plot_confounds_es(
+            time_series=fd_regressor,
+            grid_spec_ts=grid[4],
+            TR=TR,
+            hide_x=False,
+            ylims=[0, 1],
+            ylabel="FD[mm]",
+            is_fd=True,
+        )
 
-    plot_carpet(
-        func=scaled_denoised_file,
-        atlaslabels=atlaslabels,
-        TR=TR,
-        subplot=grid[3],
-        legend=True,
-    )
-    confoundplotx(
-        time_series=FD_timeseries,
-        grid_spec_ts=grid[4],
-        TR=TR,
-        hide_x=False,
-        ylims=[0, 1],
-        ylabel="FD[mm]",
-        FD=True,
-        work_dir=work_dir,
-    )
-    processed_figure.savefig(processed_filename, bbox_inches="tight", pad_inches=None, dpi=300)
+        # Save out the before processing file
+        fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
+
     # Save out the after processing file
     return unprocessed_filename, processed_filename
 
@@ -761,7 +717,7 @@ class FMRIPlot:
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
             time_series = kwargs.pop("values")
-            confoundplot(
+            plot_confounds(
                 time_series, grid[grid_id], TR=self.TR, color=palette[i], name=name, **kwargs
             )
             grid_id += 1
@@ -1111,7 +1067,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     from nilearn import plotting as plott
     from templateflow.api import get as get_template
 
-    from xcp_d.utils.plot import surf_data_from_cifti
+    from xcp_d.utils.plotting import surf_data_from_cifti
 
     density = parse_file_entities(bold_file).get("den", "32k")
     if density == "91k":
@@ -1225,71 +1181,3 @@ def plot_design_matrix(design_matrix):
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
 
     return design_matrix_figure
-
-
-def plot_ribbon_svg(template, in_file):
-    """Plot the anatomical template and ribbon in a static SVG file."""
-    import os
-
-    import matplotlib.pyplot as plt
-    import nibabel as nib
-    import numpy as np
-    from matplotlib.patches import Rectangle
-    from nilearn.image import math_img
-    from nilearn.plotting import plot_anat
-
-    plot_file = os.path.abspath("ribbon.svg")
-
-    # Set vmax to 95-th percentile of T1w image
-    t1w_img = nib.load(template)
-    vmax = np.percentile(t1w_img.get_fdata(), 95)
-
-    # Coerce to ints
-    img = math_img("img.astype(int)", img=in_file)
-    white_img = math_img("img == 1", img=img)
-    pial_img = math_img("img == 2", img=img)
-    both_img = math_img("img == 3", img=img)
-
-    fig = plt.figure(
-        figsize=(25, 10),
-    )
-    display = plot_anat(
-        template,
-        draw_cross=False,
-        vmax=vmax,
-        figure=fig,
-    )
-    display.add_contours(
-        white_img,
-        contours=1,
-        antialiased=False,
-        linewidths=1.0,
-        levels=[0],
-        colors=["purple"],
-    )
-    display.add_contours(
-        pial_img,
-        contours=1,
-        antialiased=False,
-        linewidths=1.0,
-        levels=[0],
-        colors=["green"],
-    )
-    display.add_contours(
-        both_img,
-        contours=1,
-        antialiased=False,
-        linewidths=1.0,
-        levels=[0],
-        colors=["red"],
-    )
-    # We generate a legend using the trick described on
-    # http://matplotlib.sourceforge.net/users/legend_guide.httpml#using-proxy-artist
-    p1 = Rectangle((0, 0), 1, 1, fc="purple", label="White Matter")
-    p2 = Rectangle((0, 0), 1, 1, fc="green", label="Pial")
-    p3 = Rectangle((0, 0), 1, 1, fc="red", label="Both Somehow")
-    plt.legend([p1, p2, p3], ["White Matter", "Pial", "Both Somehow"], fontsize=18)
-
-    fig.savefig(plot_file, bbox_inches="tight", pad_inches=None)
-    # return fig
-    return plot_file
