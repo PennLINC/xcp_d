@@ -87,6 +87,8 @@ def fmriprep_with_freesurfer_data(datasets):
         func_dir,
         "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_boldref.nii.gz",
     )
+    files["t1w"] = os.path.join(anat_dir, "sub-01_desc-preproc_T1w.nii.gz")
+    files["t1seg"] = os.path.join(anat_dir, "sub-01_desc-aseg_dseg.nii.gz")
 
     return files
 
