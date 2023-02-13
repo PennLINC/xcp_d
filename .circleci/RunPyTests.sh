@@ -32,13 +32,20 @@ run_pytest_cmd () {
         cfg_arg="-v ${CFG}:/nipype/nipype.cfg --env NIPYPE_CONFIG_DIR=/nipype"
     fi
 
+    # Is there a Freesurfer license?
+    fslicense_arg=""
+    FS_LICENSE=$(printenv FS_LICENSE)
+    if [[ -n "${FS_LICENSE}" ]]; then
+        fslicense_arg="-v ${FS_LICENSE}:/license.txt --env FS_LICENSE=/license.txt"
+    fi
+
     # Otherwise we're going to use docker from the outside
     bids_mount="-v ${data_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
     PYTEST_RUN="docker run --rm -ti -u $(id -u) --entrypoint pytest "
-    PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cfg_arg} ${bids_mount} ${output_mount} ${IMAGE} "
     PYTEST_RUN+='--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /usr/local/miniconda/lib/python3.8/site-packages/xcp_d'
+    PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_mount} ${output_mount} ${IMAGE} "
 
   fi
 

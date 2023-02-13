@@ -10,6 +10,7 @@ from xcp_d.workflows import anatomical
 
 @pytest.fixture
 def surface_files(datasets, tmp_path_factory):
+    """Collect real and fake surface files to test the anatomical workflow."""
     tmpdir = tmp_path_factory.mktemp("surface_files")
     anat_dir = os.path.join(datasets["ds001419"], "sub-01", "anat")
 
@@ -68,15 +69,16 @@ def test_init_warp_surfaces_to_template_wf_01(
     surface_files,
     tmp_path_factory,
 ):
+    """Test surface-warping workflow with all surfaces available in standard space."""
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_01")
 
     subject_id = "01"
-    standard_spaces_available = {
+    surfaces_found = {
         "mesh": True,
         "morphometry": True,
         "shape": True,
     }
-    surfaces_found = {
+    standard_spaces_available = {
         "mesh": True,
         "morphometry": True,
         "shape": True,
@@ -86,8 +88,8 @@ def test_init_warp_surfaces_to_template_wf_01(
         fmri_dir=datasets["ds001419"],
         subject_id=subject_id,
         output_dir=tmpdir,
-        standard_spaces_available=standard_spaces_available,
         surfaces_found=surfaces_found,
+        standard_spaces_available=standard_spaces_available,
         omp_nthreads=1,
         mem_gb=0.1,
     )
@@ -121,8 +123,8 @@ def test_init_warp_surfaces_to_template_wf_01(
     wf.base_dir = tmpdir
     wf.run()
 
+    # All of the possible fsLR surfaces should be available.
     out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
-
     for key, filename in surface_files.items():
         if "fsLR" in key:
             out_fname = os.path.basename(filename)
@@ -136,29 +138,30 @@ def test_init_warp_surfaces_to_template_wf_02(
     surface_files,
     tmp_path_factory,
 ):
+    """Test surface-warping workflow with all surfaces available, but none in standard space."""
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_02")
 
     test_data_dir = get_test_data_path()
     os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     subject_id = "01"
-    standard_spaces_available = {
-        "mesh": False,
-        "morphometry": False,
-        "shape": False,
-    }
     surfaces_found = {
         "mesh": True,
         "morphometry": True,
         "shape": True,
+    }
+    standard_spaces_available = {
+        "mesh": False,
+        "morphometry": False,
+        "shape": False,
     }
 
     wf = anatomical.init_warp_surfaces_to_template_wf(
         fmri_dir=datasets["ds001419"],
         subject_id=subject_id,
         output_dir=tmpdir,
-        standard_spaces_available=standard_spaces_available,
         surfaces_found=surfaces_found,
+        standard_spaces_available=standard_spaces_available,
         omp_nthreads=1,
         mem_gb=0.1,
     )
@@ -192,8 +195,8 @@ def test_init_warp_surfaces_to_template_wf_02(
     wf.base_dir = tmpdir
     wf.run()
 
+    # All of the possible fsLR surfaces should be available.
     out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
-
     for key, filename in surface_files.items():
         if "fsLR" in key:
             out_fname = os.path.basename(filename)
@@ -207,29 +210,35 @@ def test_init_warp_surfaces_to_template_wf_03(
     surface_files,
     tmp_path_factory,
 ):
+    """Test surface-warping workflow with all surfaces available and some in standard space.
+
+    With standard-space meshes, but native-space morphometries and shapes,
+    the morphometries will be generated from scratch using the standard-space meshes,
+    while the shapes will be warped from native to standard space.
+    """
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_03")
 
     test_data_dir = get_test_data_path()
     os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     subject_id = "01"
-    standard_spaces_available = {
-        "mesh": True,
-        "morphometry": False,
-        "shape": False,
-    }
     surfaces_found = {
         "mesh": True,
         "morphometry": True,
         "shape": True,
+    }
+    standard_spaces_available = {
+        "mesh": True,
+        "morphometry": False,
+        "shape": False,
     }
 
     wf = anatomical.init_warp_surfaces_to_template_wf(
         fmri_dir=datasets["ds001419"],
         subject_id=subject_id,
         output_dir=tmpdir,
-        standard_spaces_available=standard_spaces_available,
         surfaces_found=surfaces_found,
+        standard_spaces_available=standard_spaces_available,
         omp_nthreads=1,
         mem_gb=0.1,
     )
@@ -263,8 +272,85 @@ def test_init_warp_surfaces_to_template_wf_03(
     wf.base_dir = tmpdir
     wf.run()
 
+    # All of the possible fsLR surfaces should be available.
     out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
+    for key, filename in surface_files.items():
+        if "fsLR" in key:
+            out_fname = os.path.basename(filename)
+            out_file = os.path.join(out_anat_dir, out_fname)
+            assert os.path.isfile(out_file)
 
+
+def test_init_warp_surfaces_to_template_wf_04(
+    datasets,
+    fmriprep_with_freesurfer_data,
+    surface_files,
+    tmp_path_factory,
+):
+    """Test surface-warping workflow with all surfaces available and some in standard space.
+
+    With standard-space meshes, but native-space morphometries and shapes,
+    the morphometries will be generated from scratch using the standard-space meshes,
+    while the shapes will be warped from native to standard space.
+    """
+    tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_04")
+
+    test_data_dir = get_test_data_path()
+    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
+
+    subject_id = "01"
+    surfaces_found = {
+        "mesh": True,
+        "morphometry": True,
+        "shape": True,
+    }
+    standard_spaces_available = {
+        "mesh": False,
+        "morphometry": True,
+        "shape": True,
+    }
+
+    wf = anatomical.init_warp_surfaces_to_template_wf(
+        fmri_dir=datasets["ds001419"],
+        subject_id=subject_id,
+        output_dir=tmpdir,
+        surfaces_found=surfaces_found,
+        standard_spaces_available=standard_spaces_available,
+        omp_nthreads=1,
+        mem_gb=0.1,
+    )
+
+    wf.inputs.inputnode.lh_pial_surf = surface_files["fsLR_lh_pial"]
+    wf.inputs.inputnode.rh_pial_surf = surface_files["fsLR_rh_pial"]
+    wf.inputs.inputnode.lh_wm_surf = surface_files["fsLR_lh_wm"]
+    wf.inputs.inputnode.rh_wm_surf = surface_files["fsLR_rh_wm"]
+    # optional surface morphometry files
+    wf.inputs.inputnode.lh_midthickness_surf = surface_files["native_lh_midthickness"]
+    wf.inputs.inputnode.rh_midthickness_surf = surface_files["native_rh_midthickness"]
+    wf.inputs.inputnode.lh_inflated_surf = surface_files["native_lh_inflated"]
+    wf.inputs.inputnode.rh_inflated_surf = surface_files["native_rh_inflated"]
+    wf.inputs.inputnode.lh_vinflated_surf = surface_files["native_lh_vinflated"]
+    wf.inputs.inputnode.rh_vinflated_surf = surface_files["native_rh_vinflated"]
+    # optional surface shape files
+    wf.inputs.inputnode.lh_sulcal_depth = surface_files["native_lh_sulcal_depth"]
+    wf.inputs.inputnode.rh_sulcal_depth = surface_files["native_rh_sulcal_depth"]
+    wf.inputs.inputnode.lh_sulcal_curv = surface_files["native_lh_sulcal_curv"]
+    wf.inputs.inputnode.rh_sulcal_curv = surface_files["native_rh_sulcal_curv"]
+    wf.inputs.inputnode.lh_cortical_thickness = surface_files["native_lh_cortical_thickness"]
+    wf.inputs.inputnode.rh_cortical_thickness = surface_files["native_rh_cortical_thickness"]
+    # transforms (only used if warp_to_standard is True)
+    wf.inputs.inputnode.t1w_to_template_xform = fmriprep_with_freesurfer_data[
+        "t1w_to_template_xform"
+    ]
+    wf.inputs.inputnode.template_to_t1w_xform = fmriprep_with_freesurfer_data[
+        "template_to_t1w_xform"
+    ]
+
+    wf.base_dir = tmpdir
+    wf.run()
+
+    # All of the possible fsLR surfaces should be available.
+    out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
     for key, filename in surface_files.items():
         if "fsLR" in key:
             out_fname = os.path.basename(filename)
