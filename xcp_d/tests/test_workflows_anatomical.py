@@ -25,7 +25,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
         mem_gb=0.1,
         name="warp_anats_to_template_wf",
     )
-    wf.inputs.inputnode.t1w_to_template_xform = t1w_to_template_xform
+    wf.inputs.inputnode.t1w_to_template = t1w_to_template_xform
     wf.inputs.inputnode.t1w = t1w
     wf.inputs.inputnode.t1seg = t1seg
     wf.inputs.inputnode.t2w = t2w
