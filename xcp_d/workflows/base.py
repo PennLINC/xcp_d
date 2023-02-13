@@ -514,7 +514,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
-    if surfaces_found and dcan_qc:
+    if surfaces_found["mesh"] and dcan_qc:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             output_dir=output_dir,
@@ -523,7 +523,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,
         )
 
-    if process_surfaces and surfaces_found and cifti:
+    if process_surfaces and surfaces_found["mesh"] and cifti:
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
@@ -576,7 +576,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-    elif surfaces_found and dcan_qc and not process_surfaces:
+    elif surfaces_found["mesh"] and dcan_qc and not process_surfaces:
         # Use native-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
@@ -590,7 +590,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-    elif process_surfaces and not surfaces_found:
+    elif process_surfaces and not surfaces_found["mesh"]:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
