@@ -53,8 +53,8 @@ xcp_d-combineqc
    xcp_d.interfaces.bids
    xcp_d.interfaces.c3
    xcp_d.interfaces.connectivity
+   xcp_d.interfaces.executive_summary
    xcp_d.interfaces.filtering
-   xcp_d.interfaces.layout_builder
    xcp_d.interfaces.nilearn
    xcp_d.interfaces.prepostcleaning
    xcp_d.interfaces.qc_plot
@@ -89,7 +89,7 @@ xcp_d-combineqc
    xcp_d.utils.fcon
    xcp_d.utils.filemanip
    xcp_d.utils.modified_data
-   xcp_d.utils.plot
+   xcp_d.utils.plotting
    xcp_d.utils.qcmetrics
    xcp_d.utils.sentry
    xcp_d.utils.utils

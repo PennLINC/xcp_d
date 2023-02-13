@@ -12,7 +12,7 @@ from templateflow.api import get as get_template
 from xcp_d.utils.filemanip import split_filename
 
 
-def read_ndata(datafile, maskfile=None, scale=0):
+def read_ndata(datafile, maskfile=None):
     """Read nifti or cifti file.
 
     Parameters
@@ -22,7 +22,6 @@ def read_ndata(datafile, maskfile=None, scale=0):
     maskfile : str
         Path to a binary mask.
         Unused for CIFTI data.
-    scale : ?
 
     Outputs
     -------
@@ -30,7 +29,8 @@ def read_ndata(datafile, maskfile=None, scale=0):
         Vertices or voxels by timepoints.
     """
     # read cifti series
-    if datafile.endswith(".dtseries.nii"):
+    cifti_extensions = [".dtseries.nii", ".dlabel.nii", ".ptseries.nii"]
+    if any([datafile.endswith(ext) for ext in cifti_extensions]):
         data = nb.load(datafile).get_fdata()
 
     # or nifti data, mask is required
@@ -43,9 +43,6 @@ def read_ndata(datafile, maskfile=None, scale=0):
 
     # transpose from TxS to SxT
     data = data.T
-
-    if scale > 0:
-        data = scalex(data, -scale, scale)
 
     return data
 
@@ -74,7 +71,7 @@ def get_cifti_intents():
     return CIFTI_INTENTS
 
 
-def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
+def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     """Save numpy array to a nifti or cifti file.
 
     Parameters
@@ -90,7 +87,6 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
         The mask is only used for nifti files- masking is not supported in ciftis.
         Default is None.
     TR : float, optional
-    scale : float, optional
 
     Returns
     -------
@@ -111,9 +107,6 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1, scale=0):
         assert os.path.isfile(mask), f"The mask file does not exist: {mask}"
     else:
         raise ValueError(f"Unknown extension for {template}")
-
-    if scale > 0:
-        data_matrix = scalex(data_matrix, -scale, scale)
 
     # transpose from SxT to TxS
     data_matrix = data_matrix.T
@@ -250,14 +243,3 @@ def read_gii(surf_gii):
         for arr in range(len(bold_data.darrays)):
             gifti_data[:, arr] = bold_data.darrays[arr].data
     return gifti_data
-
-
-def scalex(X, x_min, x_max):
-    """Scale data to between minimum and maximum values."""
-    nom = (X - X.min()) * (x_max - x_min)
-    denom = X.max() - X.min()
-
-    if denom == 0:
-        denom = 1
-
-    return x_min + (nom / denom)

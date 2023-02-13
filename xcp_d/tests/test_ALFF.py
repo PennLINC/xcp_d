@@ -3,8 +3,8 @@
 # Necessary imports
 
 import os
-import nibabel as nb
 
+import nibabel as nb
 from numpy.fft import fft, ifft
 
 from xcp_d.utils.bids import _get_tr

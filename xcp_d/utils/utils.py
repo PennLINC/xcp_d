@@ -6,9 +6,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import nibabel as nb
 import numpy as np
-from nipype.interfaces.ants import ApplyTransforms
 from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
 
@@ -65,6 +63,8 @@ def get_segfile(bold_file):
     -----
     Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
+    from xcp_d.interfaces.ants import ApplyTransforms
+
     # get transform files
     dd = Path(os.path.dirname(bold_file))
     anatdir = str(dd.parent) + "/anat"
@@ -372,85 +372,45 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def zscore_nifti(img, outputname, mask=None):
-    """Normalize (z-score) a NIFTI image.
-
-    Image and mask must be in the same space.
-    TODO: Use Nilearn for masking.
-
-    Parameters
-    ----------
-    img : str
-        Path to the NIFTI image to z-score.
-    outputname : str
-        Output filename.
-    mask : str or None, optional
-        Path to binary mask file. Default is None.
-
-    Returns
-    -------
-    outputname : str
-        Output filename. Same as the ``outputname`` parameter.
-    """
-    img = nb.load(img)
-
-    if mask:
-        # z-score the data
-        maskdata = nb.load(mask).get_fdata()
-        imgdata = img.get_fdata()
-        meandata = imgdata[maskdata > 0].mean()
-        stddata = imgdata[maskdata > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-        # values where the mask is less than 1 are set to 0
-        zscore_fdata[maskdata < 1] = 0
-    else:
-        # z-score the data
-        imgdata = img.get_fdata()
-        meandata = imgdata[np.abs(imgdata) > 0].mean()
-        stddata = imgdata[np.abs(imgdata) > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-
-    # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata, affine=img.affine, header=img.header)
-    dataout.to_filename(outputname)
-    return outputname
-
-
 def butter_bandpass(data, fs, lowpass, highpass, order=2):
     """Apply a Butterworth bandpass filter to data.
 
     Parameters
     ----------
-    data : numpy.ndarray
-        Voxels/vertices by timepoints dimension.
+    data : (T, S) numpy.ndarray
+        Time by voxels/vertices array of data.
     fs : float
         Sampling frequency. 1/TR(s).
     lowpass : float
-        frequency
+        frequency, in Hertz
     highpass : float
-        frequency
+        frequency, in Hertz
     order : int
         The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
 
     Returns
     -------
-    filtered_data : numpy.ndarray
+    filtered_data : (T, S) numpy.ndarray
         The filtered data.
     """
-    nyq = 0.5 * fs  # nyquist frequency
+    b, a = butter(
+        order / 2,
+        [highpass, lowpass],
+        btype="bandpass",
+        output="ba",
+        fs=fs,  # eliminates need to normalize cutoff frequencies
+    )
 
-    # normalize the cutoffs
-    lowcut = np.float(highpass) / nyq
-    highcut = np.float(lowpass) / nyq
-
-    b, a = butter(order / 2, [lowcut, highcut], btype="band")  # get filter coeff
-
-    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
+    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
-    for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(
-            b, a, data[ii, :], padtype="odd", padlen=3 * (max(len(b), len(a)) - 1)
+    for i_voxel in range(filtered_data.shape[1]):
+        filtered_data[:, i_voxel] = filtfilt(
+            b,
+            a,
+            data[:, i_voxel],
+            padtype="constant",
+            padlen=data.shape[0] - 1,
         )
 
     return filtered_data

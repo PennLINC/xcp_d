@@ -68,6 +68,7 @@ def init_xcpd_wf(
     process_surfaces=False,
     dcan_qc=False,
     input_type="fmriprep",
+    min_coverage=0.5,
     name="xcpd_wf",
 ):
     """Build and organize execution of xcp_d pipeline.
@@ -121,6 +122,7 @@ def init_xcpd_wf(
                 process_surfaces=False,
                 dcan_qc=False,
                 input_type="fmriprep",
+                min_coverage=0.5,
                 name="xcpd_wf",
             )
 
@@ -168,6 +170,7 @@ def init_xcpd_wf(
     dcan_qc : bool
         Whether to run DCAN QC or not.
     %(input_type)s
+    min_coverage
     %(name)s
 
     References
@@ -209,6 +212,7 @@ def init_xcpd_wf(
             process_surfaces=process_surfaces,
             dcan_qc=dcan_qc,
             input_type=input_type,
+            min_coverage=min_coverage,
             name=f"single_subject_{subject_id}_wf",
         )
 
@@ -252,6 +256,7 @@ def init_subject_wf(
     dcan_qc,
     output_dir,
     input_type,
+    min_coverage,
     name,
 ):
     """Organize the postprocessing pipeline for a single subject.
@@ -294,6 +299,7 @@ def init_subject_wf(
                 layout=None,
                 dcan_qc=False,
                 input_type="fmriprep",
+                min_coverage=0.5,
                 name="single_subject_sub-01_wf",
             )
 
@@ -335,6 +341,7 @@ def init_subject_wf(
         Whether to run DCAN QC or not.
     %(subject_id)s
     %(input_type)s
+    min_coverage
     %(name)s
 
     References
@@ -516,7 +523,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,
         )
 
-    if process_surfaces and surfaces_found:
+    if process_surfaces and surfaces_found and cifti:
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
@@ -569,7 +576,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-    elif surfaces_found and dcan_qc:
+    elif surfaces_found and dcan_qc and not process_surfaces:
         # Use native-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
@@ -583,7 +590,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-    elif process_surfaces:
+    elif process_surfaces and not surfaces_found:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
@@ -617,6 +624,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fd_thresh=fd_thresh,
             dcan_qc=dcan_qc,
             output_dir=output_dir,
+            min_coverage=min_coverage,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
 

@@ -3,13 +3,12 @@ from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.qc_plot import CensoringPlot, QCPlot
+from xcp_d.interfaces.plotting import CensoringPlot, QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
-from xcp_d.interfaces.surfplotting import PlotSVGData
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import _make_dcan_qc_file
 from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
@@ -302,7 +301,7 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 input_image=dseg_file,
-                interpolation="MultiLabel",
+                interpolation="GenericLabel",
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
@@ -317,7 +316,7 @@ def init_qc_report_wf(
         # fmt:on
 
     qcreport = pe.Node(
-        QCPlot(
+        QCPlots(
             TR=TR,
             template_mask=nlin2009casym_brain_mask,
         ),
@@ -379,7 +378,7 @@ def init_qc_report_wf(
 
         # Generate preprocessing and postprocessing carpet plots.
         plot_executive_summary_carpets = pe.Node(
-            PlotSVGData(TR=TR),
+            QCPlotsES(TR=TR),
             name="plot_executive_summary_carpets",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
@@ -392,7 +391,6 @@ def init_qc_report_wf(
                 ("cleaned_unfiltered_file", "regressed_data"),
                 ("cleaned_file", "residual_data"),
                 ("filtered_motion", "filtered_motion"),
-                ("tmask", "tmask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
         ])
