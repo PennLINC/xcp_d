@@ -9,7 +9,6 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     """Test xcp_d.workflows.anatomical.init_warp_anats_to_template_wf."""
     tmpdir = tmp_path_factory.mktemp("test_nifti_conn")
 
-    output_dir = os.path.join(tmpdir, "out")
     t1w_to_template_xform = fmriprep_with_freesurfer_data["t1w_to_template_xform"]
     t1w = fmriprep_with_freesurfer_data["t1w"]
     t1seg = fmriprep_with_freesurfer_data["t1seg"]
@@ -17,7 +16,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     shutil.copyfile(t1w, t2w)
 
     wf = anatomical.init_warp_anats_to_template_wf(
-        output_dir=output_dir,
+        output_dir=tmpdir,
         input_type="fmriprep",
         t2w_available=True,
         target_space="MNI152NLin2009cAsym",
@@ -32,26 +31,21 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     wf.base_dir = tmpdir
     wf.run()
 
+    out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
     out_t1w = os.path.join(
-        output_dir,
-        "sub-01",
-        "anat",
+        out_anat_dir,
         "sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz",
     )
-    assert os.path.isfile(out_t1w)
+    assert os.path.isfile(out_t1w), os.listdir(out_anat_dir)
 
     out_t2w = os.path.join(
-        output_dir,
-        "sub-01",
-        "anat",
+        out_anat_dir,
         "sub-01_space-MNI152NLin2009cAsym_desc-preproc_T2w.nii.gz",
     )
-    assert os.path.isfile(out_t2w)
+    assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
 
     out_t1seg = os.path.join(
-        output_dir,
-        "sub-01",
-        "anat",
+        out_anat_dir,
         "sub-01_space-MNI152NLin2009cAsym_desc-aseg_dseg.nii.gz",
     )
-    assert os.path.isfile(out_t1seg)
+    assert os.path.isfile(out_t1seg), os.listdir(out_anat_dir)
