@@ -373,7 +373,7 @@ def init_subject_wf(
             fields=[
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
-                "t2w",
+                "t2w",  # optional
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
                 "template_to_t1w_xform",  # not used by cifti workflow
