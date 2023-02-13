@@ -69,7 +69,11 @@ def test_init_warp_surfaces_to_template_wf_01(
     surface_files,
     tmp_path_factory,
 ):
-    """Test surface-warping workflow with all surfaces available in standard space."""
+    """Test surface-warping workflow with all surfaces available in standard space.
+
+    No transforms should be applied, but all of the standard-space should be copied over to the
+    derivatives folder.
+    """
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_01")
 
     subject_id = "01"
@@ -138,7 +142,10 @@ def test_init_warp_surfaces_to_template_wf_02(
     surface_files,
     tmp_path_factory,
 ):
-    """Test surface-warping workflow with all surfaces available, but none in standard space."""
+    """Test surface-warping workflow with all surfaces available, but none in standard space.
+
+    The transforms should be applied and all of the standard-space outputs should be generated.
+    """
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_02")
 
     test_data_dir = get_test_data_path()
