@@ -228,7 +228,7 @@ def init_warp_anats_to_template_wf(
             workflow.connect([
                 (inputnode, t2w_transform, [
                     ("t2w", "input_image"),
-                    ("t1w_to_mni", "transforms"),
+                    ("t1w_to_template", "transforms"),
                 ]),
                 (t2w_transform, ds_t2w_std, [
                     ("output_image", "in_file"),
