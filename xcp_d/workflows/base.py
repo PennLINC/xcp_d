@@ -359,7 +359,7 @@ def init_subject_wf(
         layout=layout,
     )
 
-    surface_data, standard_space_surfaces, surfaces_found = collect_surface_data(
+    surfaces_found, standard_space_surfaces, surface_data = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
