@@ -152,7 +152,14 @@ def init_warp_anats_to_template_wf(
                 run_without_submitting=False,
             )
 
-            workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
+            # fmt:off
+            workflow.connect([
+                (inputnode, ds_t2w_std, [
+                    ("t2w", "in_file"),
+                    ("t2w", "source_file"),
+                ]),
+            ])
+            # fmt:on
 
     else:
         # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
@@ -217,7 +224,8 @@ def init_warp_anats_to_template_wf(
             ds_t2w_std = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    space="MNI152NLin6Asym",
+                    space=target_space,
+                    cohort=cohort,
                     extension=".nii.gz",
                 ),
                 name="ds_t2w_std",
@@ -230,9 +238,8 @@ def init_warp_anats_to_template_wf(
                     ("t2w", "input_image"),
                     ("t1w_to_template", "transforms"),
                 ]),
-                (t2w_transform, ds_t2w_std, [
-                    ("output_image", "in_file"),
-                ]),
+                (t2w_transform, ds_t2w_std, [("output_image", "in_file")]),
+                (inputnode, ds_t2w_std, [("t2w", "source_file")]),
             ])
             # fmt:on
 
