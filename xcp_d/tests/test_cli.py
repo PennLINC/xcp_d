@@ -18,7 +18,7 @@ from xcp_d.utils.concatenation import concatenate_derivatives
 
 
 @pytest.mark.ds001419_nifti
-def test_ds001419_nifti(datasets, output_dir, working_dir, fslicense):
+def test_ds001419_nifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = "test_ds001419_nifti"
 
@@ -75,7 +75,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir, fslicense):
 
 
 @pytest.mark.ds001419_cifti
-def test_ds001419_cifti(datasets, output_dir, working_dir, fslicense):
+def test_ds001419_cifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = "test_ds001419_cifti"
 
@@ -145,7 +145,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir, fslicense):
 
 
 @pytest.mark.fmriprep_without_freesurfer
-def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir, fslicense):
+def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
 
     Notes
@@ -202,7 +202,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir, fslicens
 
 
 @pytest.mark.nibabies
-def test_nibabies(datasets, output_dir, working_dir, fslicense):
+def test_nibabies(datasets, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
 

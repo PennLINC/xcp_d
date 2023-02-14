@@ -119,7 +119,7 @@ def fmriprep_without_freesurfer_data(datasets):
     return files
 
 
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def fslicense(working_dir):
     """Set the FreeSurfer license as an environment variable."""
     FS_LICENSE = os.path.join(working_dir, "license.txt")
