@@ -373,6 +373,7 @@ def init_subject_wf(
             fields=[
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
+                "t2w",  # optional
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
                 "template_to_t1w_xform",  # not used by cifti workflow
@@ -402,6 +403,7 @@ def init_subject_wf(
     )
     inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
+    inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
     inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
@@ -499,6 +501,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     warp_anats_to_template_wf = init_warp_anats_to_template_wf(
         output_dir=output_dir,
         input_type=input_type,
+        t2w_available=subj_data["t2w"] is not None,
         target_space=target_space,
         omp_nthreads=omp_nthreads,
         mem_gb=5,  # RF: need to change memory size
@@ -508,6 +511,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     workflow.connect([
         (inputnode, warp_anats_to_template_wf, [
             ("t1w", "inputnode.t1w"),
+            ("t2w", "inputnode.t2w"),
             ("t1w_seg", "inputnode.t1seg"),
             ("t1w_to_template_xform", "inputnode.t1w_to_template"),
         ]),
