@@ -1,4 +1,5 @@
 """Fixtures for the CircleCI tests."""
+import base64
 import os
 
 import pytest
@@ -116,3 +117,15 @@ def fmriprep_without_freesurfer_data(datasets):
     )
 
     return files
+
+
+@pytest.fixture
+def fslicense(working_dir):
+    """Set the FreeSurfer license as an environment variable."""
+    FS_LICENSE = os.path.join(working_dir, "license.txt")
+    os.environ["FS_LICENSE"] = FS_LICENSE
+    LICENSE_CODE = (
+        "bWF0dGhldy5jaWVzbGFrQHBzeWNoLnVjc2IuZWR1CjIwNzA2CipDZmVWZEg1VVQ4clkKRlNCWVouVWtlVElDdwo="
+    )
+    with open(FS_LICENSE, "w") as f:
+        f.write(base64.b64decode(LICENSE_CODE).decode())

@@ -18,7 +18,7 @@ from xcp_d.utils.concatenation import concatenate_derivatives
 
 
 @pytest.mark.ds001419_nifti
-def test_ds001419_nifti(datasets, output_dir, working_dir):
+def test_ds001419_nifti(datasets, output_dir, working_dir, fslicense):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = "test_ds001419_nifti"
 
@@ -27,7 +27,6 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
 
     parameters = [
@@ -76,7 +75,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
 
 
 @pytest.mark.ds001419_cifti
-def test_ds001419_cifti(datasets, output_dir, working_dir):
+def test_ds001419_cifti(datasets, output_dir, working_dir, fslicense):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = "test_ds001419_cifti"
 
@@ -85,7 +84,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
 
     parameters = [
@@ -147,7 +145,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
 
 
 @pytest.mark.fmriprep_without_freesurfer
-def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
+def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir, fslicense):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
 
     Notes
@@ -163,7 +161,6 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     os.makedirs(custom_confounds_dir, exist_ok=True)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     # Create custom confounds folder
     for run in [1, 2]:
@@ -205,7 +202,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
 
 
 @pytest.mark.nibabies
-def test_nibabies(datasets, output_dir, working_dir):
+def test_nibabies(datasets, output_dir, working_dir, fslicense):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
 
@@ -214,7 +211,6 @@ def test_nibabies(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     parameters = [
         data_dir,
