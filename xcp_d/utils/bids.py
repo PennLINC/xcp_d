@@ -411,7 +411,7 @@ def collect_surface_data(layout, participant_label):
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     standard_spaces : :obj:`dict`
-        True if standard-space surface fiels were found. False if they were not.
+        True if standard-space surface files were found. False if they were not.
     surface_files_found : :obj:`dict`
         True if surface files were found at all. False if they were not.
     """
@@ -506,53 +506,7 @@ def collect_surface_data(layout, participant_label):
         shape_queries,
     )
 
-    # Now let's try finding the surface morphometry files
-    # These surfaces may be in native or standard space.
-    # We only want HCP-style (desc = hcp) versions of these files.
-    morph_queries = {
-        "lh_midthickness_surf": {
-            "hemi": "L",
-            "desc": "hcp",
-            "suffix": "midthickness",
-        },
-        "rh_midthickness_surf": {
-            "hemi": "R",
-            "desc": "hcp",
-            "suffix": "midthickness",
-        },
-        "lh_inflated_surf": {
-            "hemi": "L",
-            "desc": "hcp",
-            "suffix": "inflated",
-        },
-        "rh_inflated_surf": {
-            "hemi": "R",
-            "desc": "hcp",
-            "suffix": "inflated",
-        },
-        "lh_vinflated_surf": {
-            "hemi": "L",
-            "desc": "hcp",
-            "suffix": "vinflated",
-        },
-        "rh_vinflated_surf": {
-            "hemi": "R",
-            "desc": "hcp",
-            "suffix": "vinflated",
-        },
-    }
-
-    (
-        surface_files_found["morphometry"],
-        standard_spaces["morphometry"],
-        morph_files,
-    ) = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        morph_queries,
-    )
-
-    surface_files = {**mesh_files, **shape_files, **morph_files}
+    surface_files = {**mesh_files, **shape_files}
 
     LOGGER.debug(
         f"Collected surface data:\n"

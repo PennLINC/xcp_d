@@ -20,33 +20,17 @@ def surface_files(datasets, tmp_path_factory):
         "native_rh_pial": os.path.join(anat_dir, "sub-01_hemi-R_pial.surf.gii"),
         "native_rh_wm": os.path.join(anat_dir, "sub-01_hemi-R_smoothwm.surf.gii"),
         # Copied files
-        "native_lh_inflated": os.path.join(tmpdir, "sub-01_hemi-L_desc-hcp_inflated.surf.gii"),
-        "native_lh_midthickness": os.path.join(
-            tmpdir, "sub-01_hemi-L_desc-hcp_midthickness.surf.gii"
-        ),
-        "native_lh_vinflated": os.path.join(tmpdir, "sub-01_hemi-L_desc-hcp_vinflated.surf.gii"),
         "native_lh_sulcal_depth": os.path.join(tmpdir, "sub-01_hemi-L_sulc.shape.gii"),
         "native_lh_sulcal_curv": os.path.join(tmpdir, "sub-01_hemi-L_curv.shape.gii"),
         "native_lh_cortical_thickness": os.path.join(tmpdir, "sub-01_hemi-L_thickness.shape.gii"),
-        "native_rh_inflated": os.path.join(tmpdir, "sub-01_hemi-R_desc-hcp_inflated.surf.gii"),
-        "native_rh_midthickness": os.path.join(
-            tmpdir, "sub-01_hemi-R_desc-hcp_midthickness.surf.gii"
-        ),
-        "native_rh_vinflated": os.path.join(tmpdir, "sub-01_hemi-R_desc-hcp_vinflated.surf.gii"),
         "native_rh_sulcal_depth": os.path.join(tmpdir, "sub-01_hemi-R_sulc.shape.gii"),
         "native_rh_sulcal_curv": os.path.join(tmpdir, "sub-01_hemi-R_curv.shape.gii"),
         "native_rh_cortical_thickness": os.path.join(tmpdir, "sub-01_hemi-R_thickness.shape.gii"),
     }
 
-    shutil.copyfile(files["native_lh_pial"], files["native_lh_midthickness"])
-    shutil.copyfile(files["native_lh_pial"], files["native_lh_inflated"])
-    shutil.copyfile(files["native_lh_pial"], files["native_lh_vinflated"])
     shutil.copyfile(files["native_lh_pial"], files["native_lh_sulcal_depth"])
     shutil.copyfile(files["native_lh_pial"], files["native_lh_sulcal_curv"])
     shutil.copyfile(files["native_lh_pial"], files["native_lh_cortical_thickness"])
-    shutil.copyfile(files["native_rh_pial"], files["native_rh_midthickness"])
-    shutil.copyfile(files["native_rh_pial"], files["native_rh_inflated"])
-    shutil.copyfile(files["native_rh_pial"], files["native_rh_vinflated"])
     shutil.copyfile(files["native_rh_pial"], files["native_rh_sulcal_depth"])
     shutil.copyfile(files["native_rh_pial"], files["native_rh_sulcal_curv"])
     shutil.copyfile(files["native_rh_pial"], files["native_rh_cortical_thickness"])
@@ -79,12 +63,10 @@ def test_init_warp_surfaces_to_template_wf_01(
     subject_id = "01"
     surfaces_found = {
         "mesh": True,
-        "morphometry": True,
         "shape": True,
     }
     standard_spaces_available = {
         "mesh": True,
-        "morphometry": True,
         "shape": True,
     }
 
@@ -102,13 +84,6 @@ def test_init_warp_surfaces_to_template_wf_01(
     wf.inputs.inputnode.rh_pial_surf = surface_files["fsLR_rh_pial"]
     wf.inputs.inputnode.lh_wm_surf = surface_files["fsLR_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["fsLR_rh_wm"]
-    # optional surface morphometry files
-    wf.inputs.inputnode.lh_midthickness_surf = surface_files["fsLR_lh_midthickness"]
-    wf.inputs.inputnode.rh_midthickness_surf = surface_files["fsLR_rh_midthickness"]
-    wf.inputs.inputnode.lh_inflated_surf = surface_files["fsLR_lh_inflated"]
-    wf.inputs.inputnode.rh_inflated_surf = surface_files["fsLR_rh_inflated"]
-    wf.inputs.inputnode.lh_vinflated_surf = surface_files["fsLR_lh_vinflated"]
-    wf.inputs.inputnode.rh_vinflated_surf = surface_files["fsLR_rh_vinflated"]
     # optional surface shape files
     wf.inputs.inputnode.lh_sulcal_depth = surface_files["fsLR_lh_sulcal_depth"]
     wf.inputs.inputnode.rh_sulcal_depth = surface_files["fsLR_rh_sulcal_depth"]
@@ -154,12 +129,10 @@ def test_init_warp_surfaces_to_template_wf_02(
     subject_id = "01"
     surfaces_found = {
         "mesh": True,
-        "morphometry": True,
         "shape": True,
     }
     standard_spaces_available = {
         "mesh": False,
-        "morphometry": False,
         "shape": False,
     }
 
@@ -177,13 +150,6 @@ def test_init_warp_surfaces_to_template_wf_02(
     wf.inputs.inputnode.rh_pial_surf = surface_files["native_rh_pial"]
     wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
-    # optional surface morphometry files
-    wf.inputs.inputnode.lh_midthickness_surf = surface_files["native_lh_midthickness"]
-    wf.inputs.inputnode.rh_midthickness_surf = surface_files["native_rh_midthickness"]
-    wf.inputs.inputnode.lh_inflated_surf = surface_files["native_lh_inflated"]
-    wf.inputs.inputnode.rh_inflated_surf = surface_files["native_rh_inflated"]
-    wf.inputs.inputnode.lh_vinflated_surf = surface_files["native_lh_vinflated"]
-    wf.inputs.inputnode.rh_vinflated_surf = surface_files["native_rh_vinflated"]
     # optional surface shape files
     wf.inputs.inputnode.lh_sulcal_depth = surface_files["native_lh_sulcal_depth"]
     wf.inputs.inputnode.rh_sulcal_depth = surface_files["native_rh_sulcal_depth"]
@@ -219,9 +185,8 @@ def test_init_warp_surfaces_to_template_wf_03(
 ):
     """Test surface-warping workflow with all surfaces available and some in standard space.
 
-    With standard-space meshes, but native-space morphometries and shapes,
-    the morphometries will be generated from scratch using the standard-space meshes,
-    while the shapes will be warped from native to standard space.
+    With standard-space meshes, but native-space shapes,
+    the shapes will be warped from native to standard space.
     """
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_03")
 
@@ -231,12 +196,10 @@ def test_init_warp_surfaces_to_template_wf_03(
     subject_id = "01"
     surfaces_found = {
         "mesh": True,
-        "morphometry": True,
         "shape": True,
     }
     standard_spaces_available = {
         "mesh": True,
-        "morphometry": False,
         "shape": False,
     }
 
@@ -254,13 +217,6 @@ def test_init_warp_surfaces_to_template_wf_03(
     wf.inputs.inputnode.rh_pial_surf = surface_files["fsLR_rh_pial"]
     wf.inputs.inputnode.lh_wm_surf = surface_files["fsLR_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["fsLR_rh_wm"]
-    # optional surface morphometry files
-    wf.inputs.inputnode.lh_midthickness_surf = surface_files["native_lh_midthickness"]
-    wf.inputs.inputnode.rh_midthickness_surf = surface_files["native_rh_midthickness"]
-    wf.inputs.inputnode.lh_inflated_surf = surface_files["native_lh_inflated"]
-    wf.inputs.inputnode.rh_inflated_surf = surface_files["native_rh_inflated"]
-    wf.inputs.inputnode.lh_vinflated_surf = surface_files["native_lh_vinflated"]
-    wf.inputs.inputnode.rh_vinflated_surf = surface_files["native_rh_vinflated"]
     # optional surface shape files
     wf.inputs.inputnode.lh_sulcal_depth = surface_files["native_lh_sulcal_depth"]
     wf.inputs.inputnode.rh_sulcal_depth = surface_files["native_rh_sulcal_depth"]
@@ -296,9 +252,8 @@ def test_init_warp_surfaces_to_template_wf_04(
 ):
     """Test surface-warping workflow with all surfaces available and some in standard space.
 
-    With standard-space meshes, but native-space morphometries and shapes,
-    the morphometries will be generated from scratch using the standard-space meshes,
-    while the shapes will be warped from native to standard space.
+    With standard-space shapes, but native-space meshes,
+    the meshes will be warped from native to standard space.
     """
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_04")
 
@@ -308,12 +263,10 @@ def test_init_warp_surfaces_to_template_wf_04(
     subject_id = "01"
     surfaces_found = {
         "mesh": True,
-        "morphometry": True,
         "shape": True,
     }
     standard_spaces_available = {
         "mesh": False,
-        "morphometry": True,
         "shape": True,
     }
 
@@ -331,13 +284,6 @@ def test_init_warp_surfaces_to_template_wf_04(
     wf.inputs.inputnode.rh_pial_surf = surface_files["fsLR_rh_pial"]
     wf.inputs.inputnode.lh_wm_surf = surface_files["fsLR_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["fsLR_rh_wm"]
-    # optional surface morphometry files
-    wf.inputs.inputnode.lh_midthickness_surf = surface_files["native_lh_midthickness"]
-    wf.inputs.inputnode.rh_midthickness_surf = surface_files["native_rh_midthickness"]
-    wf.inputs.inputnode.lh_inflated_surf = surface_files["native_lh_inflated"]
-    wf.inputs.inputnode.rh_inflated_surf = surface_files["native_rh_inflated"]
-    wf.inputs.inputnode.lh_vinflated_surf = surface_files["native_lh_vinflated"]
-    wf.inputs.inputnode.rh_vinflated_surf = surface_files["native_rh_vinflated"]
     # optional surface shape files
     wf.inputs.inputnode.lh_sulcal_depth = surface_files["native_lh_sulcal_depth"]
     wf.inputs.inputnode.rh_sulcal_depth = surface_files["native_rh_sulcal_depth"]
