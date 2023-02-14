@@ -13,25 +13,25 @@ def pytest_addoption(parser):
 
 
 # Set up the commandline options as fixtures
-@pytest.fixture
+@pytest.fixture(scope="session")
 def data_dir(request):
     """Grab data directory."""
     return request.config.getoption("--data_dir")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def working_dir(request):
     """Grab working directory."""
     return request.config.getoption("--working_dir")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def output_dir(request):
     """Grab output directory."""
     return request.config.getoption("--output_dir")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def datasets(data_dir):
     """Locate downloaded datasets."""
     dsets = {}
@@ -44,7 +44,7 @@ def datasets(data_dir):
     return dsets
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def fmriprep_with_freesurfer_data(datasets):
     """Collect a list of files from ds001419 that will be used by misc. tests."""
     subj_dir = os.path.join(datasets["ds001419"], "sub-01")
@@ -92,7 +92,7 @@ def fmriprep_with_freesurfer_data(datasets):
     return files
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def fmriprep_without_freesurfer_data(datasets):
     """Collect a list of fmriprepwithoutfreesurfer files that will be used by misc. tests."""
     subj_dir = os.path.join(datasets["fmriprep_without_freesurfer"], "sub-01")
