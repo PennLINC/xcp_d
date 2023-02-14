@@ -22,13 +22,17 @@ def data_dir(request):
 @pytest.fixture(scope="session")
 def working_dir(request):
     """Grab working directory."""
-    return request.config.getoption("--working_dir")
+    workdir = request.config.getoption("--working_dir")
+    os.makedirs(workdir, exist_ok=True)
+    return workdir
 
 
 @pytest.fixture(scope="session")
 def output_dir(request):
     """Grab output directory."""
-    return request.config.getoption("--output_dir")
+    outdir = request.config.getoption("--output_dir")
+    os.makedirs(outdir, exist_ok=True)
+    return outdir
 
 
 @pytest.fixture(scope="session")
