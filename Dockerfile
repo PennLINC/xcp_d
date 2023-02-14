@@ -1,5 +1,5 @@
 
-FROM pennlinc/xcp_d_build:0.0.6rc5
+FROM pennlinc/xcp_d_build:0.0.6rc6
 
 # Installing xcp_d
 COPY . /src/xcp_d
