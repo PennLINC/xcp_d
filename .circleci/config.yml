@@ -2,7 +2,7 @@ version: 2.1
 
 .dockersetup: &dockersetup
   docker:
-    - image: pennbbl/xcpd_build:0.0.6rc1
+    - image: pennlinc/xcp_d_build:0.0.6rc5
   working_directory: /src/xcp_d
 
 runinstall: &runinstall
