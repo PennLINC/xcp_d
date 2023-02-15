@@ -25,7 +25,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
-    alff_compute_wf = init_compute_alff_wf(
+    compute_alff_wf = init_compute_alff_wf(
         omp_nthreads=2,
         bold_file=bold_file,
         mem_gb=4,
@@ -34,22 +34,19 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
         highpass=0.01,
         cifti=False,
         smoothing=6,
+        name="compute_alff_wf",
     )
 
     # Let's move to a temporary directory before running
     tempdir = tmp_path_factory.mktemp("test_ALFF_nifti")
-    alff_compute_wf.base_dir = tempdir
-    alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_compute_wf.inputs.inputnode.clean_bold = bold_file
-    alff_compute_wf.run()
+    compute_alff_wf.base_dir = tempdir
+    compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
+    compute_alff_wf.inputs.inputnode.clean_bold = bold_file
+    compute_alff_res = compute_alff_wf.run()
+    nodes = {node.fullname: node for node in compute_alff_res.nodes}
 
     # Let's get the mean of the ALFF for later comparison
-    original_alff = os.path.join(
-        tempdir,
-        "compute_alff_wf",
-        "alff_compt",
-        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold_alff.nii.gz",
-    )
+    original_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
     # Now let's do an FFT
@@ -76,13 +73,14 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     # to the original ALFF - it should increase since we increased
     # the amplitude in low frequencies for a voxel
     tempdir = tmp_path_factory.mktemp("test_ALFF_nifti_dir2")
-    alff_compute_wf.base_dir = tempdir
-    alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_compute_wf.inputs.inputnode.clean_bold = filename
-    alff_compute_wf.run()
+    compute_alff_wf.base_dir = tempdir
+    compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
+    compute_alff_wf.inputs.inputnode.clean_bold = filename
+    compute_alff_res = compute_alff_wf.run()
+    nodes = {node.fullname: node for node in compute_alff_res.nodes}
 
     # Let's get the new ALFF mean
-    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/editedfile_alff.nii.gz")
+    new_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
@@ -102,7 +100,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
-    alff_compute_wf = init_compute_alff_wf(
+    compute_alff_wf = init_compute_alff_wf(
         omp_nthreads=2,
         bold_file=bold_file,
         mem_gb=4,
@@ -115,18 +113,14 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Let's move to a temporary directory before running
     tempdir = tmp_path_factory.mktemp("test_ALFF_cifti")
-    alff_compute_wf.base_dir = tempdir
-    alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_compute_wf.inputs.inputnode.clean_bold = bold_file
-    alff_compute_wf.run()
+    compute_alff_wf.base_dir = tempdir
+    compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
+    compute_alff_wf.inputs.inputnode.clean_bold = bold_file
+    compute_alff_res = compute_alff_wf.run()
+    nodes = {node.fullname: node for node in compute_alff_res.nodes}
 
     # Let's get the mean of the data for later comparison
-    original_alff = os.path.join(
-        tempdir,
-        "compute_alff_wf",
-        "alff_compt",
-        "sub-01_task-rest_space-fsLR_den-91k_bold_alff.dscalar.nii",
-    )
+    original_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
     original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
     # Now let's do an FFT
@@ -149,13 +143,14 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Now let's compute ALFF for the new file and see how it compares
     tempdir = tmp_path_factory.mktemp("test_ALFF_cifti_dir2")
-    alff_compute_wf.base_dir = tempdir
-    alff_compute_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_compute_wf.inputs.inputnode.clean_bold = filename
-    alff_compute_wf.run()
+    compute_alff_wf.base_dir = tempdir
+    compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
+    compute_alff_wf.inputs.inputnode.clean_bold = filename
+    compute_alff_res = compute_alff_wf.run()
+    nodes = {node.fullname: node for node in compute_alff_res.nodes}
 
     # Let's get the new ALFF mean
-    new_alff = os.path.join(tempdir, "compute_alff_wf/alff_compt/editedfile_alff.dscalar.nii")
+    new_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
     assert os.path.isfile(new_alff)
     new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
