@@ -640,8 +640,8 @@ def init_warp_surfaces_to_template_wf(
             # fmt:off
             workflow.connect([
                 (standard_space_surfaces_holder, ds_standard_space_surfaces, [
-                    ("outlist", "in_file"),
-                    ("outlist", "source_file"),
+                    ("standard_space_surfaces", "in_file"),
+                    ("standard_space_surfaces", "source_file"),
                 ])
             ])
             # fmt:on
