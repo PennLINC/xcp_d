@@ -209,6 +209,13 @@ Running ``xcp_d`` via Singularity containers
 If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using Singularity.
 See :ref:`installation_container_technologies` for installation instructions.
 
+.. warning::
+
+   ``xcp_d`` (and perhaps other Docker-based Singularity images) may not work with Singularity <=2.4.
+   We strongly recommend using Singularity 3+.
+   For more information, see `this xcp_d issue <https://github.com/PennLINC/xcp_d/issues/793>`_ and
+   `this Singularity issue <https://github.com/apptainer/singularity/issues/884>`_.
+
 If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run *xcp_d*.
 
 .. code-block:: bash
