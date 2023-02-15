@@ -8,6 +8,7 @@ import numpy as np
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows import restingstate
+from xcp_d.tests.utils import get_nodes
 
 
 def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -41,7 +42,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.clean_bold = bold_file
     compute_alff_res = compute_alff_wf.run()
-    nodes = {node.fullname: node for node in compute_alff_res.nodes}
+    nodes = get_nodes(compute_alff_res)
 
     # Let's get the mean of the ALFF for later comparison
     original_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
@@ -75,7 +76,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.clean_bold = filename
     compute_alff_res = compute_alff_wf.run()
-    nodes = {node.fullname: node for node in compute_alff_res.nodes}
+    nodes = get_nodes(compute_alff_res)
 
     # Let's get the new ALFF mean
     new_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
@@ -115,7 +116,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.clean_bold = bold_file
     compute_alff_res = compute_alff_wf.run()
-    nodes = {node.fullname: node for node in compute_alff_res.nodes}
+    nodes = get_nodes(compute_alff_res)
 
     # Let's get the mean of the data for later comparison
     original_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
@@ -145,7 +146,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.clean_bold = filename
     compute_alff_res = compute_alff_wf.run()
-    nodes = {node.fullname: node for node in compute_alff_res.nodes}
+    nodes = get_nodes(compute_alff_res)
 
     # Let's get the new ALFF mean
     new_alff = nodes["compute_alff_wf.alff_compt"].get_output("alff_out")
@@ -191,13 +192,11 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     reho_wf.inputs.inputnode.bold_mask = bold_mask
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = bold_file
-    reho_wf.run()
+    reho_res = reho_wf.run()
+    nodes = get_nodes(reho_res)
 
     # Get the original mean of the ReHo for later comparison
-    original_reho = os.path.join(
-        reho_wf.base_dir,
-        "nifti_reho_wf/reho_3d/reho.nii.gz",
-    )
+    original_reho = nodes["nifti_reho_wf.reho_3d"].get_output("out_file")
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
     original_bold_data = read_ndata(bold_file, bold_mask)
 
@@ -214,10 +213,11 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Run ReHo again
     assert os.path.isfile(noisy_bold_file)
     reho_wf.inputs.inputnode.clean_bold = noisy_bold_file
-    reho_wf.run()
+    reho_res = reho_wf.run()
+    nodes = get_nodes(reho_res)
 
     # Has the new ReHo's mean decreased?
-    new_reho = os.path.join(reho_wf.base_dir, "nifti_reho_wf/reho_3d/reho.nii.gz")
+    new_reho = nodes["nifti_reho_wf.reho_3d"].get_output("out_file")
     new_reho_mean = nb.load(new_reho).get_fdata().mean()
     assert new_reho_mean < original_reho_mean
 
@@ -242,15 +242,11 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = orig_bold_file
-    reho_wf.run()
+    reho_res = reho_wf.run()
+    nodes = get_nodes(reho_res)
 
     # Get the original mean of the ReHo for later comparison
-    original_reho = os.path.join(
-        tempdir,
-        "orig_reho_wf",
-        "merge_cifti",
-        "reho_combined.dscalar.nii",
-    )
+    original_reho = nodes["orig_reho_wf.merge_cifti"].get_output("out_file")
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
 
     # Add some noise to the original data and write it out
@@ -268,14 +264,10 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.clean_bold = noisy_bold_file
-    reho_wf.run()
+    reho_res = reho_wf.run()
+    nodes = get_nodes(reho_res)
 
     # Has the new ReHo's mean decreased?
-    noisy_reho = os.path.join(
-        tempdir,
-        "noisy_reho_wf",
-        "merge_cifti",
-        "reho_combined.dscalar.nii",
-    )
+    noisy_reho = nodes["noisy_reho_wf.merge_cifti"].get_output("out_file")
     noisy_reho_mean = nb.load(noisy_reho).get_fdata().mean()
     assert noisy_reho_mean < original_reho_mean
