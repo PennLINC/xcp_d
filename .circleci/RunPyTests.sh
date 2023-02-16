@@ -62,7 +62,6 @@ get_bids_data ${TESTDIR} sub01
 get_bids_data ${TESTDIR} ds001419-fmriprep
 
 CFG=${TESTDIR}/data/nipype.cfg
-export FS_LICENSE=${TESTDIR}/data/license.txt
 
 TESTNAME=run_pytest
 setup_dir ${TESTDIR}/${TESTNAME}

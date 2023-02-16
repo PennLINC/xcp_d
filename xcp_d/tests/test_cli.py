@@ -27,7 +27,6 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
 
     parameters = [
@@ -85,7 +84,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
 
     parameters = [
@@ -163,7 +161,6 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     os.makedirs(custom_confounds_dir, exist_ok=True)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     # Create custom confounds folder
     for run in [1, 2]:
@@ -214,7 +211,6 @@ def test_nibabies(datasets, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
 
     parameters = [
         data_dir,

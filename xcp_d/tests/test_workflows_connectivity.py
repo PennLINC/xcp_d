@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from nilearn.input_data import NiftiLabelsMasker
 
+from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
@@ -55,20 +56,19 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.ref_file = boldref
     connectivity_wf.base_dir = tmpdir
-    connectivity_wf.run()
+    connectivity_wf_res = connectivity_wf.run()
+    nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the correct time series file
-    timeseries_file = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/nifti_connect/mapflow/_nifti_connect3/fake_signal_filetime_series.tsv",
-    )
+    timeseries_file = nodes["connectivity_wf.nifti_connect"].get_output(
+        "time_series_tsv"
+    )[3]
     assert os.path.isfile(timeseries_file)
 
     # Let's find the correct correlation matrix file
-    corr_mat_file = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/nifti_connect/mapflow/_nifti_connect3/fake_signal_filefcon_matrix.tsv",
-    )
+    corr_mat_file = nodes["connectivity_wf.nifti_connect"].get_output(
+        "fcon_matrix_tsv"
+    )[3]
     assert os.path.isfile(corr_mat_file)
 
     # Read that into a df
@@ -77,11 +77,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert xcp_array.shape == (400, 400)
 
     # Now let's get the ground truth. First, we should locate the atlas
-    atlas_file = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/warp_atlases_to_bold_space/mapflow/_warp_atlases_to_bold_space3",
-        "Schaefer2018_400Parcels_17Networks_order_FSLMNI152_2mm_trans.nii.gz",
-    )
+    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output(
+        "output_image"
+    )[3]
     assert os.path.isfile(atlas_file)
 
     # Masking img
@@ -145,18 +143,12 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.base_dir = tmpdir
-    connectivity_wf.run()
+    connectivity_wf_res = connectivity_wf.run()
+    nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the correct parcellated file
-    parc_dir = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/parcellate_data/mapflow/_parcellate_data3",
-    )
-    parc_file = os.path.join(
-        parc_dir,
-        "parcellated_fake_signal_file_timeseries.dtseries.ptseries.nii",
-    )
-    assert os.path.isfile(parc_file), os.listdir(parc_dir)
+    parc_file = nodes["connectivity_wf.parcellate_data"].get_output("out_file")[3]
+    assert os.path.isfile(parc_file)
 
     # Let's read out the parcellated time series and get its corr coeff
     parc_data = nb.load(parc_file).get_fdata().T
@@ -167,15 +159,8 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     good_parcels_idx = np.where(~np.isnan(np.diag(ground_truth)))[0]
 
     # Let's find the correct correlation matrix file
-    corr_dir = os.path.join(
-        connectivity_wf.base_dir,
-        "connectivity_wf/correlate_data/mapflow/_correlate_data3",
-    )
-    pconn_file = os.path.join(
-        corr_dir,
-        "correlation_matrix_parcellated_fake_signal_file_timeseries.dtseries.ptseries.pconn.nii",
-    )
-    assert os.path.isfile(pconn_file), os.listdir(corr_dir)
+    pconn_file = nodes["connectivity_wf.correlate_data"].get_output("out_file")[3]
+    assert os.path.isfile(pconn_file)
 
     # Read it out
     xcp_array = nb.load(pconn_file).get_fdata().T
