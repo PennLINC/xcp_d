@@ -649,6 +649,14 @@ def build_workflow(opts, retval):
         )
         retval["return_code"] = 1
 
+    if not (fmri_dir / "dataset_description.json").is_file():
+        build_log.error(
+            "No dataset_description.json file found in input directory. "
+            "Make sure to point to the specific pipeline's derivatives folder. "
+            "For example, use '/dset/derivatives/fmriprep', not /dset/derivatives'."
+        )
+        retval["return_code"] = 1
+
     if opts.analysis_level != "participant":
         build_log.error('Please select analysis level "participant"')
         retval["return_code"] = 1
