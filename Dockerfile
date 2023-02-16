@@ -1,7 +1,6 @@
+FROM pennlinc/xcp_d_build:0.0.6rc7
 
-FROM pennlinc/xcp_d_build:0.0.6rc5
-
-# Installing xcp_d
+# Install xcp_d
 COPY . /src/xcp_d
 
 ARG VERSION=0.0.1
@@ -11,7 +10,6 @@ RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
     echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in && \
     pip install --no-cache-dir "/src/xcp_d[all]"
 
-
 RUN find $HOME -type d -exec chmod go=u {} + && \
     find $HOME -type f -exec chmod go=u {} + && \
     rm -rf $HOME/.npm $HOME/.conda $HOME/.empty
@@ -20,7 +18,6 @@ RUN ldconfig
 WORKDIR /tmp/
 
 ENTRYPOINT ["/usr/local/miniconda/bin/xcp_d"]
-
 
 ARG BUILD_DATE
 ARG VCS_REF
