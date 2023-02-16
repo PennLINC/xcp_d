@@ -62,13 +62,13 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's find the correct time series file
     timeseries_file = nodes["connectivity_wf.nifti_connect"].get_output(
         "time_series_tsv"
-    )[2]
+    )[3]
     assert os.path.isfile(timeseries_file)
 
     # Let's find the correct correlation matrix file
     corr_mat_file = nodes["connectivity_wf.nifti_connect"].get_output(
         "fcon_matrix_tsv"
-    )[2]
+    )[3]
     assert os.path.isfile(corr_mat_file)
 
     # Read that into a df
@@ -79,7 +79,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Now let's get the ground truth. First, we should locate the atlas
     atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output(
         "output_image"
-    )[2]
+    )[3]
     assert os.path.isfile(atlas_file)
 
     # Masking img
@@ -147,7 +147,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the correct parcellated file
-    parc_file = nodes["connectivity_wf.parcellate_data"].get_output("out_file")[2]
+    parc_file = nodes["connectivity_wf.parcellate_data"].get_output("out_file")[3]
     assert os.path.isfile(parc_file)
 
     # Let's read out the parcellated time series and get its corr coeff
@@ -159,7 +159,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     good_parcels_idx = np.where(~np.isnan(np.diag(ground_truth)))[0]
 
     # Let's find the correct correlation matrix file
-    pconn_file = nodes["connectivity_wf.correlate_data"].get_output("out_file")[2]
+    pconn_file = nodes["connectivity_wf.correlate_data"].get_output("out_file")[3]
     assert os.path.isfile(pconn_file)
 
     # Read it out
