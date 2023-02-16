@@ -18,7 +18,7 @@ from nipype.interfaces.base import (
     isdefined,
     traits,
 )
-from nipype.interfaces.fsl import FSLCommand, FSLCommandInputSpec
+from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
 
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
