@@ -174,7 +174,7 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, input_type, bold_file)
+    run_data = collect_run_data(layout, input_type, bold_file, cifti=True)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
@@ -245,6 +245,7 @@ produced by the regression.
         niu.IdentityInterface(
             fields=[
                 "bold_file",
+                "ref_file",
                 "custom_confounds_file",
                 "t1w",
                 "t1seg",
@@ -712,7 +713,7 @@ produced by the regression.
     # executive summary workflow
     if dcan_qc:
         executive_summary_wf = init_execsummary_wf(
-            bold_file=bold_file,
+            bold_file=run_data["nifti_file"],
             layout=layout,
             output_dir=output_dir,
             name="executive_summary_wf",
@@ -725,7 +726,6 @@ produced by the regression.
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
             (inputnode, executive_summary_wf, [
-                ('bold_file', 'inputnode.bold_file'),
                 ("ref_file", "inputnode.boldref_file"),
             ]),
         ])

@@ -191,7 +191,7 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, input_type, bold_file)
+    run_data = collect_run_data(layout, input_type, bold_file, cifti=False)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 

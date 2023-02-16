@@ -310,6 +310,7 @@ def init_execsummary_wf(
     ----------
     bold_file
         BOLD data before post-processing.
+        A NIFTI file, not a CIFTI.
     %(output_dir)s
     layout
     %(name)s
@@ -318,10 +319,10 @@ def init_execsummary_wf(
     ------
     bold_file
         BOLD data before post-processing.
+        A NIFTI file, not a CIFTI.
         Set from the parameter.
     boldref_file
         The boldref file associated with the BOLD file.
-        This should only be defined (and used) for NIFTI inputs.
     """
     workflow = Workflow(name=name)
 
