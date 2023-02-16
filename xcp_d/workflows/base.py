@@ -383,13 +383,6 @@ def init_subject_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # hcp-style morphometry files
-                "lh_midthickness_surf",
-                "rh_midthickness_surf",
-                "lh_inflated_surf",
-                "rh_inflated_surf",
-                "lh_vinflated_surf",
-                "rh_vinflated_surf",
                 # shape files
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
@@ -414,14 +407,6 @@ def init_subject_wf(
     inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
     inputnode.inputs.lh_wm_surf = surface_data["lh_wm_surf"]
     inputnode.inputs.rh_wm_surf = surface_data["rh_wm_surf"]
-
-    # optional surface morphometry files (used by surface-warping workflow)
-    inputnode.inputs.lh_midthickness_surf = surface_data["lh_midthickness_surf"]
-    inputnode.inputs.rh_midthickness_surf = surface_data["rh_midthickness_surf"]
-    inputnode.inputs.lh_inflated_surf = surface_data["lh_inflated_surf"]
-    inputnode.inputs.rh_inflated_surf = surface_data["rh_inflated_surf"]
-    inputnode.inputs.lh_inflated_surf = surface_data["lh_vinflated_surf"]
-    inputnode.inputs.rh_inflated_surf = surface_data["rh_vinflated_surf"]
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.lh_sulcal_depth = surface_data["lh_sulcal_depth"]
