@@ -590,6 +590,7 @@ def collect_run_data(layout, input_type, bold_file, cifti):
             bids_file.path,
             strict=False,
             space=allowed_nifti_spaces,
+            desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],
         )
