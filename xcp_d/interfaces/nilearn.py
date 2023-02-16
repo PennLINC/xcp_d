@@ -166,7 +166,7 @@ class MeanImage(NilearnBaseInterface, SimpleInterface):
     def _run_interface(self, runtime):
         from nilearn.image import mean_img
 
-        avg_img = mean_img(img=self.inputs.in_file)
+        avg_img = mean_img(imgs=self.inputs.in_file)
         self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
         avg_img.to_filename(self._results["out_file"])
 
