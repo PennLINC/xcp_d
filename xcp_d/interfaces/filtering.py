@@ -38,18 +38,17 @@ class FilteringData(SimpleInterface):
     output_spec = _FilteringDataOutputSpec
 
     def _run_interface(self, runtime):
-
         # get the nifti/cifti into  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         # filter the data
         if self.inputs.bandpass_filter:
             filt_data = butter_bandpass(
-                data=data_matrix,
+                data=data_matrix.T,
                 fs=1 / self.inputs.TR,
                 lowpass=self.inputs.lowpass,
                 highpass=self.inputs.highpass,
                 order=self.inputs.filter_order,
-            )
+            ).T
         else:
             filt_data = data_matrix  # no filtering!
 

@@ -76,7 +76,7 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
 
     fromwhat = traits.Str(
         mandatory=True,
-        argstr="-from-%s ",
+        argstr="-from-%s",
         position=0,
         desc="world, itk, or flirt",
     )
@@ -84,18 +84,18 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="The input file",
     )
 
     towhat = traits.Str(
         mandatory=True,
-        argstr="-to-%s ",
+        argstr="-to-%s",
         position=2,
         desc="world, itk, or flirt",
     )
-    out_file = traits.File(
+    out_file = File(
         argstr="%s",
         name_source="in_file",
         name_template="%s_world.nii.gz",
@@ -115,7 +115,7 @@ class ConvertAffine(WBCommand):
 
     input_spec = _ConvertAffineInputSpec
     output_spec = _ConvertAffineOutputSpec
-    _cmd = "wb_command -convert-affine "
+    _cmd = "wb_command -convert-affine"
 
 
 class _ApplyAffineInputSpec(CommandLineInputSpec):
@@ -175,7 +175,7 @@ class ApplyAffine(WBCommand):
 
     input_spec = _ApplyAffineInputSpec
     output_spec = _ApplyAffineOutputSpec
-    _cmd = "wb_command -surface-apply-affine "
+    _cmd = "wb_command -surface-apply-affine"
 
 
 class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
@@ -192,7 +192,7 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     warpfield = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="The warpfield file",
     )
@@ -206,7 +206,7 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     )
 
     forward_warp = File(
-        argstr="-fnirt %s ",
+        argstr="-fnirt %s",
         position=3,
         desc="fnirt forward warpfield",
     )
@@ -242,7 +242,7 @@ class ApplyWarpfield(WBCommand):
 
     input_spec = _ApplyWarpfieldInputSpec
     output_spec = _ApplyWarpfieldOutputSpec
-    _cmd = "wb_command -surface-apply-warpfield "
+    _cmd = "wb_command -surface-apply-warpfield"
 
 
 class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
@@ -251,7 +251,7 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="a sphere with the desired output mesh",
     )
@@ -259,7 +259,7 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     sphere_project_to = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="a sphere that aligns with sphere-in",
     )
@@ -267,7 +267,7 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
     sphere_unproject_from = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=2,
         desc="deformed to the desired output space",
     )
@@ -302,15 +302,15 @@ class SurfaceSphereProjectUnproject(WBCommand):
 
     input_spec = _SurfaceSphereProjectUnprojectInputSpec
     output_spec = _SurfaceSphereProjectUnprojectOutputSpec
-    _cmd = "wb_command -surface-sphere-project-unproject "
+    _cmd = "wb_command -surface-sphere-project-unproject"
 
 
 class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
-    in_transform = traits.File(exists=True, argstr="%s", mandatory=True, position=0)
+    in_transform = File(exists=True, argstr="%s", mandatory=True, position=0)
 
 
 class _ChangeXfmTypeOutputSpec(TraitedSpec):
-    out_transform = traits.File(exists=True)
+    out_transform = File(exists=True)
 
 
 class ChangeXfmType(SimpleInterface):
@@ -340,7 +340,7 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
     surface_in1 = File(
         exists=True,
         mandatory=True,
-        argstr="-surf %s ",
+        argstr="-surf %s",
         position=1,
         desc="specify a surface to include in the average",
     )
@@ -348,7 +348,7 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
     surface_in2 = File(
         exists=True,
         mandatory=True,
-        argstr="-surf %s ",
+        argstr="-surf %s",
         position=2,
         desc="specify a surface to include in the average",
     )
@@ -357,7 +357,7 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
         name_source="surface_in1",
         keep_extension=False,
         name_template="%s-avg.surf.gii",
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="output - the output averaged surface",
     )
@@ -397,7 +397,7 @@ class SurfaceAverage(WBCommand):
 
     input_spec = _SurfaceAverageInputSpec
     output_spec = _SurfaceAverageOutputSpec
-    _cmd = "wb_command -surface-average "
+    _cmd = "wb_command -surface-average"
 
 
 class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
@@ -406,7 +406,7 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
     anatomical_surface_in = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="the anatomical surface",
     )
@@ -415,7 +415,7 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         name_source="anatomical_surface_in",
         keep_extension=False,
         name_template="%s-hcpinflated.surf.gii",
-        argstr="%s ",
+        argstr="%s",
         position=1,
         desc="output - the output inflated surface",
     )
@@ -424,14 +424,14 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         name_source="anatomical_surface_in",
         keep_extension=False,
         name_template="%s-hcpveryinflated.surf.gii",
-        argstr="%s ",
+        argstr="%s",
         position=2,
         desc="output - the output very inflated surface",
     )
 
     iterations_scale_value = traits.Float(
         mandatory=False,
-        argstr="-iterations-scale %f ",
+        argstr="-iterations-scale %f",
         position=3,
         desc="iterations-scale value",
     )
@@ -466,7 +466,7 @@ class SurfaceGenerateInflated(WBCommand):
 
     input_spec = _SurfaceGenerateInflatedInputSpec
     output_spec = _SurfaceGenerateInflatedOutputSpec
-    _cmd = "wb_command -surface-generate-inflated "
+    _cmd = "wb_command -surface-generate-inflated"
 
 
 class _CiftiCorrelationInputSpec(CommandLineInputSpec):
@@ -475,79 +475,79 @@ class _CiftiCorrelationInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
         desc="The input ptseries or dense series",
     )
     out_file = File(
         name_source=["in_file"],
-        name_template="correlation_matrix_%s.nii",
-        keep_extension=True,
-        argstr=" %s",
+        name_template="correlation_matrix_%s.pconn.nii",
+        keep_extension=False,
+        argstr="%s",
         position=1,
         desc="The output CIFTI",
     )
 
     roi_override = traits.Bool(
-        argstr="-roi-override %s ",
+        argstr="-roi-override %s",
         position=2,
-        desc=" perform correlation from a subset of rows to all rows",
+        desc="perform correlation from a subset of rows to all rows",
     )
 
     left_roi = File(
         exists=True,
         position=3,
         argstr="-left-roi %s",
-        desc="Specify the left roi metric  to use",
+        desc="use an roi for left hempsphere",
     )
 
     right_roi = File(
         exists=True,
         position=5,
         argstr="-right-roi %s",
-        desc="Specify the right  roi metric  to use",
+        desc="use an roi for right hempsphere",
     )
     cerebellum_roi = File(
         exists=True,
         position=6,
         argstr="-cerebellum-roi %s",
-        desc="specify the cerebellum meytric to use",
+        desc="use an roi for cerebellum",
     )
 
     vol_roi = File(
         exists=True,
         position=7,
         argstr="-vol-roi %s",
-        desc="volume roi to use",
+        desc="use an roi for volume",
     )
 
     cifti_roi = File(
         exists=True,
         position=8,
         argstr="-cifti-roi %s",
-        desc="cifti roi to use",
+        desc="use a cifti file for combined rois",
     )
     weights_file = File(
         exists=True,
         position=9,
         argstr="-weights %s",
-        desc="specify the cerebellum surface  metricto use",
+        desc="specify column weights",
     )
 
     fisher_ztrans = traits.Bool(
         position=10,
         argstr="-fisher-z",
-        desc=" fisherz transfrom",
+        desc="apply fisher small z transform (ie, artanh) to correlation",
     )
     no_demean = traits.Bool(
         position=11,
-        argstr="-fisher-z",
-        desc=" fisherz transfrom",
+        argstr="-no-demean",
+        desc="instead of correlation, do dot product of rows, then normalize by diagonal",
     )
     compute_covariance = traits.Bool(
         position=12,
-        argstr="-covariance ",
-        desc=" compute covariance instead of correlation",
+        argstr="-covariance",
+        desc="compute covariance instead of correlation",
     )
 
 
@@ -584,46 +584,46 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
-        desc="The input CIFTI file",
+        desc="The cifti file to parcellate",
     )
-    atlas_label = traits.File(
+    atlas_label = File(
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=1,
-        desc="atlas label, in mm",
+        desc="A cifti label file to use for the parcellation",
     )
     direction = traits.Enum(
         "ROW",
         "COLUMN",
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=2,
-        desc="which dimension to smooth along, ROW or COLUMN",
+        desc="Which mapping to parcellate (integer, ROW, or COLUMN)",
     )
     out_file = File(
         name_source=["in_file"],
-        name_template="parcelated_%s.nii",
-        keep_extension=True,
-        argstr=" %s",
+        name_template="parcellated_%s.ptseries.nii",
+        keep_extension=False,
+        argstr="%s",
         position=3,
-        desc="The output CIFTI",
+        desc="Output cifti file",
     )
 
+    # NOTE: These are not organized well.
+    # -spatial-weights should appear before any in this group.
     spatial_weights = traits.Str(
-        argstr="-spatial-weights ",
+        argstr="-spatial-weights",
         position=4,
-        desc=" spatial weight file",
+        desc="Use voxel volume and either vertex areas or metric files as weights",
     )
-
     left_area_surf = File(
         exists=True,
         position=5,
         argstr="-left-area-surface %s",
         desc="Specify the left surface to use",
     )
-
     right_area_surf = File(
         exists=True,
         position=6,
@@ -636,14 +636,12 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         argstr="-cerebellum-area-surf %s",
         desc="specify the cerebellum surface to use",
     )
-
     left_area_metric = File(
         exists=True,
         position=8,
         argstr="-left-area-metric %s",
         desc="Specify the left surface metric to use",
     )
-
     right_area_metric = File(
         exists=True,
         position=9,
@@ -661,13 +659,34 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
         exists=True,
         position=11,
         argstr="-cifti-weights %s",
-        desc="cifti file containing weights",
+        desc="Use a cifti file containing weights",
     )
-    cor_method = traits.Str(
+    cor_method = traits.Enum(
+        "MEAN",
+        "MAX",
+        "MIN",
+        "INDEXMAX",
+        "INDEXMIN",
+        "SUM",
+        "PRODUCT",
+        "STDEV",
+        "SAMPSTDEV",
+        "VARIANCE",
+        "TSNR",
+        "COV",
+        "L2NORM",
+        "MEDIAN",
+        "MODE",
+        "COUNT_NONZERO",
         position=12,
-        default="MEAN ",
+        default="MEAN",
         argstr="-method %s",
-        desc=" correlation method, option inlcude MODE",
+        desc="Specify method of parcellation (default MEAN, or MODE if label data)",
+    )
+    only_numeric = traits.Bool(
+        position=13,
+        argstr="-only-numeric",
+        desc="Exclude non-numeric values",
     )
 
 
@@ -693,7 +712,7 @@ class CiftiParcellate(WBCommand):
     >>> ciftiparcel.cmdline
     wb_command -cifti-parcellate sub-01XX_task-rest.dtseries.nii \
     schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii   COLUMN \
-    sub_01XX_task-rest.ptseries.nii
+    sub_01XX_task-rest.pconn.nii
     """
 
     input_spec = _CiftiParcellateInputSpec
@@ -967,6 +986,135 @@ class CiftiCreateDenseScalar(WBCommand):
     _cmd = "wb_command -cifti-create-dense-scalar"
 
 
+class _ShowSceneInputSpec(CommandLineInputSpec):
+    scene_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+    )
+    scene_name_or_number = traits.Either(
+        traits.Int,
+        traits.Str,
+        mandatory=True,
+        position=1,
+        argstr="%s",
+        desc="name or number (starting at one) of the scene in the scene file",
+    )
+    out_file = File(
+        exists=False,
+        mandatory=False,
+        argstr="%s",
+        genfile=True,
+        position=2,
+        desc="output image file name",
+    )
+    image_width = traits.Int(
+        mandatory=True,
+        argstr="%s",
+        position=3,
+        desc="width of output image(s), in pixels",
+    )
+    image_height = traits.Int(
+        mandatory=True,
+        argstr="%s",
+        position=4,
+        desc="height of output image(s), in pixels",
+    )
+
+
+class _ShowSceneOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="output image file name")
+
+
+class ShowScene(WBCommand):
+    """Offscreen rendering of scene to an image file.
+
+    Notes
+    -----
+    wb_command -show-scene
+        <scene-file> - scene file
+        <scene-name-or-number> - name or number (starting at one) of the scene in
+            the scene file
+        <image-file-name> - output image file name
+        <image-width> - width of output image(s), in pixels
+        <image-height> - height of output image(s), in pixels
+
+        [-use-window-size] - Override image size with window size
+
+        [-no-scene-colors] - Do not use background and foreground colors in scene
+
+        [-set-map-yoke] - Override selected map index for a map yoking group.
+            <Map Yoking Roman Numeral> - Roman numeral identifying the map yoking
+            group (I, II, III, IV, V, VI, VII, VIII, IX, X)
+            <Map Index> - Map index for yoking group.  Indices start at 1 (one)
+
+        [-conn-db-login] - Login for scenes with files in Connectome Database
+            <Username> - Connectome DB Username
+            <Password> - Connectome DB Password
+
+        Render content of browser windows displayed in a scene into image
+        file(s).  The image file name should be similar to "capture.png".  If
+        there is only one image to render, the image name will not change.  If
+        there is more than one image to render, an index will be inserted into
+        the image name: "capture_01.png", "capture_02.png" etc.
+
+        If the scene references files in the Connectome Database,
+        the "-conn-db-login" option is available for providing the
+        username and password.  If this options is not specified,
+        the username and password stored in the user's preferences
+        is used.
+
+        The image format is determined by the image file extension.
+        The available image formats may vary by operating system.
+        Image formats available on this system are:
+            bmp
+            jpeg
+            jpg
+            png
+            ppm
+            tif
+            tiff
+
+        The result of using the "-use-window-size" option
+        is dependent upon the version used to create the scene.
+            * Versions 1.2 and newer contain the width and
+            height of the graphics region.  The output image
+            will be the width and height from the scene and
+            the image width and height specified on the command
+            line is ignored.
+            * If the scene does not contain the width and height
+            of the graphics region, the width and height specified
+            on the command line is used for the size of the
+            output image.
+    """
+
+    input_spec = _ShowSceneInputSpec
+    output_spec = _ShowSceneOutputSpec
+    _cmd = "wb_command -show-scene"
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_outfilename())
+        return outputs
+
+    def _gen_filename(self, name):
+        if name == "out_file":
+            return self._gen_outfilename()
+        else:
+            return None
+
+    def _gen_outfilename(self):
+        frame_number = self.inputs.scene_name_or_number
+        if isinstance(frame_number, int):
+            # Add a bunch of leading zeros for easy sorting
+            out_file = f"frame_{frame_number:06g}.png"
+        else:
+            out_file = f"frame_{frame_number}.png"
+
+        return out_file
+
+
 class _CiftiConvertInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiConvert command."""
 
@@ -1048,3 +1196,69 @@ class CiftiConvert(WBCommand):
         outputs = self.output_spec().get()
         outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
         return outputs
+
+
+class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiCreateDenseFromTemplate command."""
+
+    template_cifti = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="File to match brainordinates of.",
+    )
+    cifti_out = File(
+        name_source=["label"],
+        name_template="resampled_%s.dlabel.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=1,
+        desc="The output cifti file.",
+    )
+    label = File(
+        exists=True,
+        mandatory=True,
+        argstr="-cifti %s",
+        position=2,
+        desc="Use input data from surface label files. Input label file.",
+    )
+
+
+class _CiftiCreateDenseFromTemplateOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCreateDenseFromTemplate command."""
+
+    cifti_out = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCreateDenseFromTemplate(WBCommand):
+    """Create CIFTI with matching dense map.
+
+    This command helps you make a new dscalar, dtseries, or dlabel cifti file
+    that matches the brainordinate space used in another cifti file.  The
+    template file must have the desired brainordinate space in the mapping
+    along the column direction (for dtseries, dscalar, dlabel, and symmetric
+    dconn this is always the case).  All input cifti files must have a brain
+    models mapping along column and use the same volume space and/or surface
+    vertex count as the template for structures that they contain.  If any
+    input files contain label data, then input files with non-label data are
+    not allowed, and the -series option may not be used.
+
+    Any structure that isn't covered by an input is filled with zeros or the
+    unlabeled key.
+
+    Examples
+    --------
+    >>> ccdft = CiftiCreateDenseFromTemplate()
+    >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
+    >>> ccdft.inputs.label = "parcellation.dlabel.nii"
+    >>> ccdft.cmdline
+    wb_command -cifti-create-dense-from-template \
+        sub-01_task-rest_bold.dtseries.nii \
+        resampled_parcellation.dlabel.nii \
+        -label parcellation.dlabel.nii
+    """
+
+    input_spec = _CiftiCreateDenseFromTemplateInputSpec
+    output_spec = _CiftiCreateDenseFromTemplateOutputSpec
+    _cmd = "wb_command -cifti-create-dense-from-template"

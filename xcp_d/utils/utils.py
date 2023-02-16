@@ -6,9 +6,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import nibabel as nb
 import numpy as np
-from nipype.interfaces.ants import ApplyTransforms
 from scipy.signal import butter, filtfilt
 from templateflow.api import get as get_template
 
@@ -65,6 +63,8 @@ def get_segfile(bold_file):
     -----
     Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
+    from xcp_d.interfaces.ants import ApplyTransforms
+
     # get transform files
     dd = Path(os.path.dirname(bold_file))
     anatdir = str(dd.parent) + "/anat"
@@ -142,22 +142,16 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     Only used for QCReport in init_boldpostprocess_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    import os
-    import re
-
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.utils.bids import get_entity
+
     # Extract the space of the BOLD file
-    file_base = os.path.basename(bold_file)
-    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not bold_space:
-        bold_space = "native"
-    else:
-        bold_space = bold_space[0]
+    bold_space = get_entity(bold_file, "space")
 
     if bold_space in ("native", "T1w"):
-        base_std_space = re.findall("from-([a-zA-Z0-9]+)", template_to_t1w)[0]
+        base_std_space = get_entity(template_to_t1w, "from")
     elif f"from-{bold_space}" not in template_to_t1w:
         raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
 
@@ -276,22 +270,18 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
     Can easily be added in the future.
     """
     import os
-    import re
 
     from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.utils.bids import get_entity
+
     # Extract the space of the BOLD file
-    file_base = os.path.basename(bold_file)
-    bold_space = re.findall("space-([a-zA-Z0-9]+)", file_base)
-    if not bold_space:
-        bold_space = "native"
-    else:
-        bold_space = bold_space[0]
+    bold_space = get_entity(bold_file, "space")
 
     # Check that the MNI-to-T1w xform is from the right space
     if bold_space in ("native", "T1w"):
-        base_std_space = re.findall("from-([a-zA-Z0-9]+)", template_to_t1w)[0]
+        base_std_space = get_entity(template_to_t1w, "from")
     elif f"from-{bold_space}" not in template_to_t1w:
         raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
 
@@ -360,6 +350,7 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
             transform_list = [t1w_to_native, template_to_t1w]
 
     else:
+        file_base = os.path.basename(bold_file)
         raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
 
     return transform_list
@@ -381,85 +372,92 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def zscore_nifti(img, outputname, mask=None):
-    """Normalize (z-score) a NIFTI image.
-
-    Image and mask must be in the same space.
-    TODO: Use Nilearn for masking.
-
-    Parameters
-    ----------
-    img : str
-        Path to the NIFTI image to z-score.
-    outputname : str
-        Output filename.
-    mask : str or None, optional
-        Path to binary mask file. Default is None.
-
-    Returns
-    -------
-    outputname : str
-        Output filename. Same as the ``outputname`` parameter.
-    """
-    img = nb.load(img)
-
-    if mask:
-        # z-score the data
-        maskdata = nb.load(mask).get_fdata()
-        imgdata = img.get_fdata()
-        meandata = imgdata[maskdata > 0].mean()
-        stddata = imgdata[maskdata > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-        # values where the mask is less than 1 are set to 0
-        zscore_fdata[maskdata < 1] = 0
-    else:
-        # z-score the data
-        imgdata = img.get_fdata()
-        meandata = imgdata[np.abs(imgdata) > 0].mean()
-        stddata = imgdata[np.abs(imgdata) > 0].std()
-        zscore_fdata = (imgdata - meandata) / stddata
-
-    # turn image to nifti and write it out
-    dataout = nb.Nifti1Image(zscore_fdata, affine=img.affine, header=img.header)
-    dataout.to_filename(outputname)
-    return outputname
-
-
 def butter_bandpass(data, fs, lowpass, highpass, order=2):
     """Apply a Butterworth bandpass filter to data.
 
     Parameters
     ----------
-    data : numpy.ndarray
-        Voxels/vertices by timepoints dimension.
+    data : (T, S) numpy.ndarray
+        Time by voxels/vertices array of data.
     fs : float
         Sampling frequency. 1/TR(s).
     lowpass : float
-        frequency
+        frequency, in Hertz
     highpass : float
-        frequency
+        frequency, in Hertz
     order : int
         The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
 
     Returns
     -------
-    filtered_data : numpy.ndarray
+    filtered_data : (T, S) numpy.ndarray
         The filtered data.
     """
-    nyq = 0.5 * fs  # nyquist frequency
+    b, a = butter(
+        order / 2,
+        [highpass, lowpass],
+        btype="bandpass",
+        output="ba",
+        fs=fs,  # eliminates need to normalize cutoff frequencies
+    )
 
-    # normalize the cutoffs
-    lowcut = np.float(highpass) / nyq
-    highcut = np.float(lowpass) / nyq
-
-    b, a = butter(order / 2, [lowcut, highcut], btype="band")  # get filter coeff
-
-    filtered_data = np.zeros(data.shape)  # create something to populate filtered values with
+    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
-    for ii in range(filtered_data.shape[0]):
-        filtered_data[ii, :] = filtfilt(
-            b, a, data[ii, :], padtype="odd", padlen=3 * (max(len(b), len(a)) - 1)
+    for i_voxel in range(filtered_data.shape[1]):
+        filtered_data[:, i_voxel] = filtfilt(
+            b,
+            a,
+            data[:, i_voxel],
+            padtype="constant",
+            padlen=data.shape[0] - 1,
         )
 
     return filtered_data
+
+
+def estimate_brain_radius(mask_file, head_radius="auto"):
+    """Estimate brain radius from binary brain mask file.
+
+    Parameters
+    ----------
+    mask_file : str
+        Binary brain mask file, in nifti format.
+    head_radius : float or "auto", optional
+        Head radius to use. Either a number, in millimeters, or "auto".
+        If set to "auto", the brain radius will be estimated from the mask file.
+        Default is "auto".
+
+    Returns
+    -------
+    brain_radius : float
+        Estimated brain radius, in millimeters.
+
+    Notes
+    -----
+    This function estimates the brain radius based on the brain volume,
+    assuming that the brain is a sphere.
+    This was Paul Taylor's idea, shared in this NeuroStars post:
+    https://neurostars.org/t/estimating-head-brain-radius-automatically/24290/2.
+    """
+    import nibabel as nb
+    import numpy as np
+    from nipype import logging
+
+    LOGGER = logging.getLogger("nipype.utils")
+
+    if head_radius == "auto":
+        mask_img = nb.load(mask_file)
+        mask_data = mask_img.get_fdata()
+        n_voxels = np.sum(mask_data)
+        voxel_size = np.prod(mask_img.header.get_zooms())
+        volume = n_voxels * voxel_size
+
+        brain_radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
+
+        LOGGER.info(f"Brain radius estimated at {brain_radius} mm.")
+
+    else:
+        brain_radius = head_radius
+
+    return brain_radius

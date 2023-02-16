@@ -12,10 +12,10 @@ xcp_d-combineqc
    :prog: xcp_d-combineqc
 
 
-:mod:`xcp_d.workflow`: Workflows
+:mod:`xcp_d.workflows`: Workflows
 --------------------------------
 
-.. automodule:: xcp_d.workflow
+.. automodule:: xcp_d.workflows
    :no-members:
    :no-inherited-members:
 
@@ -25,16 +25,16 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   workflow.base
-   workflow.bold
-   workflow.cifti
-   workflow.anatomical
-   workflow.connectivity
-   workflow.execsummary
-   workflow.outputs
-   workflow.plotting
-   workflow.postprocessing
-   workflow.restingstate
+   xcp_d.workflows.base
+   xcp_d.workflows.bold
+   xcp_d.workflows.cifti
+   xcp_d.workflows.anatomical
+   xcp_d.workflows.connectivity
+   xcp_d.workflows.execsummary
+   xcp_d.workflows.outputs
+   xcp_d.workflows.plotting
+   xcp_d.workflows.postprocessing
+   xcp_d.workflows.restingstate
 
 :mod:`xcp_d.interfaces`: Nipype Interfaces
 ------------------------------------------
@@ -49,21 +49,21 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   interfaces.ants
-   interfaces.bids
-   interfaces.c3
-   interfaces.connectivity
-   interfaces.filtering
-   interfaces.layout_builder
-   interfaces.nilearn
-   interfaces.prepostcleaning
-   interfaces.qc_plot
-   interfaces.regression
-   interfaces.report_core
-   interfaces.report
-   interfaces.resting_state
-   interfaces.surfplotting
-   interfaces.workbench
+   xcp_d.interfaces.ants
+   xcp_d.interfaces.bids
+   xcp_d.interfaces.c3
+   xcp_d.interfaces.connectivity
+   xcp_d.interfaces.executive_summary
+   xcp_d.interfaces.filtering
+   xcp_d.interfaces.nilearn
+   xcp_d.interfaces.prepostcleaning
+   xcp_d.interfaces.qc_plot
+   xcp_d.interfaces.regression
+   xcp_d.interfaces.report_core
+   xcp_d.interfaces.report
+   xcp_d.interfaces.resting_state
+   xcp_d.interfaces.surfplotting
+   xcp_d.interfaces.workbench
 
 :mod:`xcp_d.utils`: Miscellaneous Utility Functions
 ---------------------------------------------------
@@ -78,19 +78,19 @@ xcp_d-combineqc
    :toctree: generated/
    :template: module.rst
 
-   utils.atlas
-   utils.bids
-   utils.concatenation
-   utils.confounds
-   utils.dcan2fmriprep
-   utils.hcp2fmriprep
-   utils.doc
-   utils.execsummary
-   utils.fcon
-   utils.filemanip
-   utils.modified_data
-   utils.plot
-   utils.qcmetrics
-   utils.sentry
-   utils.utils
-   utils.write_save
+   xcp_d.utils.atlas
+   xcp_d.utils.bids
+   xcp_d.utils.concatenation
+   xcp_d.utils.confounds
+   xcp_d.utils.dcan2fmriprep
+   xcp_d.utils.hcp2fmriprep
+   xcp_d.utils.doc
+   xcp_d.utils.execsummary
+   xcp_d.utils.fcon
+   xcp_d.utils.filemanip
+   xcp_d.utils.modified_data
+   xcp_d.utils.plotting
+   xcp_d.utils.qcmetrics
+   xcp_d.utils.sentry
+   xcp_d.utils.utils
+   xcp_d.utils.write_save

@@ -6,7 +6,6 @@ import tempfile
 from json import loads
 from pathlib import Path
 
-import h5py
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
@@ -18,10 +17,10 @@ from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import _drop_dummy_scans
-from xcp_d.utils.plot import plot_svgx
-from xcp_d.utils.qcmetrics import compute_dvars
+from xcp_d.utils.plotting import plot_fmri_es
+from xcp_d.utils.qcmetrics import compute_dvars, make_dcan_df
 from xcp_d.utils.utils import get_segfile
-from xcp_d.utils.write_save import read_ndata, write_ndata
+from xcp_d.utils.write_save import read_ndata
 
 _pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
 path_patterns = _pybids_spec["default_path_patterns"]
@@ -30,9 +29,8 @@ LOGGER = logging.getLogger("nipype.interface")
 
 @fill_doc
 def concatenate_derivatives(
-    fmridir,
-    outputdir,
-    work_dir,
+    fmri_dir,
+    output_dir,
     subjects,
     cifti,
     dcan_qc,
@@ -51,12 +49,10 @@ def concatenate_derivatives(
 
     Parameters
     ----------
-    fmridir : str
+    fmri_dir : str
         Path to preprocessed derivatives (not xcpd post-processed derivatives).
-    outputdir : str
+    output_dir : str
         Path to location of xcpd derivatives.
-    work_dir : str
-        Working directory.
     subjects : list of str
         List of subjects to run concatenation on.
     cifti : bool
@@ -72,12 +68,12 @@ def concatenate_derivatives(
     # At least for pybids ~0.15.1.
     # TODO: Find a way to support the xcpd config file in the BIDSLayout.
     layout_xcpd = BIDSLayout(
-        outputdir,
+        output_dir,
         validate=False,
         derivatives=True,
     )
     layout_fmriprep = BIDSLayout(
-        fmridir,
+        fmri_dir,
         validate=False,
         derivatives=True,
         config=["bids", "derivatives"],
@@ -137,24 +133,7 @@ def concatenate_derivatives(
                         **task_entities,
                     )
                     if len(motion_files) == 1:
-                        if dcan_qc:
-                            # Make DCAN HDF5 file from single motion file
-                            dcan_df_file = (
-                                f"{'.'.join(motion_files[0].path.split('.')[:-1])}-DCAN.hdf5"
-                            )
-
-                            # Get TR from one of the preproc files
-                            preproc_files = layout_fmriprep.get(
-                                desc=["preproc", None],
-                                suffix="bold",
-                                extension=img_extensions,
-                                **task_entities,
-                            )
-                            TR = _get_tr(preproc_files[0].path)
-
-                            make_dcan_df([motion_files[0].path], dcan_df_file, TR)
-                            LOGGER.debug(f"Only one run found for task {task}")
-
+                        LOGGER.debug(f"Only one run found for task {task}")
                         continue
                     elif len(motion_files) == 0:
                         LOGGER.warning(f"No motion files found for task {task}")
@@ -179,12 +158,6 @@ def concatenate_derivatives(
                 )
                 TR = _get_tr(preproc_files[0].path)
 
-                # Make DCAN HDF5 file for each of the motion files
-                if dcan_qc:
-                    for motion_file in motion_files:
-                        dcan_df_file = f"{'.'.join(motion_file.path.split('.')[:-1])}-DCAN.hdf5"
-                        make_dcan_df([motion_file.path], dcan_df_file, TR)
-
                 # Concatenate motion files
                 motion_file_names = ", ".join([motion_file.path for motion_file in motion_files])
                 LOGGER.debug(f"Concatenating motion files: {motion_file_names}")
@@ -193,10 +166,14 @@ def concatenate_derivatives(
 
                 # Make DCAN HDF5 file from concatenated motion file
                 if dcan_qc:
-                    concat_dcan_df_file = (
-                        f"{'.'.join(concat_motion_file.split('.')[:-1])}-DCAN.hdf5"
+                    concat_dcan_df_file = concat_motion_file.replace(
+                        "desc-filtered_motion.tsv",
+                        "desc-dcan_qc.hdf5",
+                    ).replace(
+                        "_motion.tsv",
+                        "desc-dcan_qc.hdf5",
                     )
-                    make_dcan_df([concat_motion_file], concat_dcan_df_file, TR)
+                    make_dcan_df(concat_motion_file, concat_dcan_df_file, TR)
 
                 # Concatenate outlier files
                 outlier_files = layout_xcpd.get(
@@ -341,28 +318,6 @@ def concatenate_derivatives(
                             mask = None
                             segfile = None
 
-                        # Create a censored version of the denoised file,
-                        # because denoised_file is from before interpolation.
-                        concat_censored_file = os.path.join(
-                            tmpdir,
-                            f"filtereddata{preproc_files[0].extension}",
-                        )
-                        tmask_df = pd.read_table(concat_outlier_file)
-                        tmask_arr = tmask_df["framewise_displacement"].values
-                        tmask_bool = ~tmask_arr.astype(bool)
-                        temp_data_arr = read_ndata(
-                            datafile=concat_denoised_file,
-                            maskfile=mask,
-                        )
-                        temp_data_arr = temp_data_arr[:, tmask_bool]
-                        write_ndata(
-                            data_matrix=temp_data_arr,
-                            template=concat_denoised_file,
-                            filename=concat_censored_file,
-                            mask=mask,
-                            TR=TR,
-                        )
-
                         # Calculate DVARS from preprocessed BOLD
                         raw_dvars = []
                         for i_file, preproc_file in enumerate(preproc_files):
@@ -373,9 +328,6 @@ def concatenate_derivatives(
 
                         raw_dvars = np.concatenate(raw_dvars)
 
-                        # Censor DVARS
-                        raw_dvars = raw_dvars[tmask_bool]
-
                         # Calculate DVARS from denoised BOLD
                         denoised_dvars = []
                         for denoised_file in denoised_files:
@@ -384,9 +336,6 @@ def concatenate_derivatives(
                             denoised_dvars.append(dvar)
 
                         denoised_dvars = np.concatenate(denoised_dvars)
-
-                        # Censor DVARS
-                        denoised_dvars = denoised_dvars[tmask_bool]
 
                         # Start on carpet plots
                         LOGGER.debug("Generating carpet plots")
@@ -412,13 +361,12 @@ def concatenate_derivatives(
                             validate=False,
                         )
 
-                        LOGGER.debug("Starting plot_svgx")
-                        plot_svgx(
+                        LOGGER.debug("Starting plot_fmri_es")
+                        plot_fmri_es(
                             preprocessed_file=concat_preproc_file,
-                            residuals_file=concat_censored_file,
+                            residuals_file=concat_denoised_file,
                             denoised_file=concat_denoised_file,
                             dummy_scans=0,
-                            tmask=concat_outlier_file,
                             filtered_motion=concat_motion_file,
                             raw_dvars=raw_dvars,
                             residuals_dvars=denoised_dvars,
@@ -428,9 +376,8 @@ def concatenate_derivatives(
                             mask=mask,
                             seg_data=segfile,
                             TR=TR,
-                            work_dir=work_dir,
                         )
-                        LOGGER.debug("plot_svgx done")
+                        LOGGER.debug("plot_fmri_es done")
 
                     # Now timeseries files
                     atlases = layout_xcpd.get_atlases(
@@ -460,74 +407,6 @@ def concatenate_derivatives(
                             raise ValueError(
                                 f"Unknown extension for {atlas_timeseries_files[0].path}"
                             )
-
-
-def make_dcan_df(fds_files, name, TR):
-    """Create an HDF5-format file containing a DCAN-format dataset.
-
-    Parameters
-    ----------
-    fds_files : list of str
-        List of files from which to extract information.
-    name : str
-        Name of the HDF5-format file to be created.
-    TR : float
-        Repetition time.
-
-    Notes
-    -----
-    FD_threshold: a number >= 0 that represents the FD threshold used to calculate
-    the metrics in this list.
-    frame_removal: a binary vector/array the same length as the number of frames
-    in the concatenated time series, indicates whether a frame is removed (1) or
-    not (0)
-    format_string (legacy): a string that denotes how the frames were excluded
-    -- uses a notation devised by Avi Snyder
-    total_frame_count: a whole number that represents the total number of frames
-    in the concatenated series
-    remaining_frame_count: a whole number that represents the number of remaining
-    frames in the concatenated series
-    remaining_seconds: a whole number that represents the amount of time remaining
-    after thresholding
-    remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
-    remaining frames
-    """
-    LOGGER.debug(f"Generating DCAN file: {name}")
-
-    # Load filtered framewise_displacement values from files and concatenate
-    filtered_motion_dfs = [pd.read_table(fds_file) for fds_file in fds_files]
-    filtered_motion_df = pd.concat(filtered_motion_dfs, axis=0)
-    fd = filtered_motion_df["framewise_displacement"].values
-
-    with h5py.File(name, "w") as dcan:
-        for thresh in np.linspace(0, 1, 101):
-            thresh = np.around(thresh, 2)
-
-            dcan.create_dataset(f"/dcan_motion/fd_{thresh}/skip", data=0, dtype="float")
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/binary_mask",
-                data=(fd > thresh).astype(int),
-                dtype="float",
-            )
-            dcan.create_dataset(f"/dcan_motion/fd_{thresh}/threshold", data=thresh, dtype="float")
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/total_frame_count", data=len(fd), dtype="float"
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
-                data=len(fd[fd <= thresh]),
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_seconds",
-                data=len(fd[fd <= thresh]) * TR,
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
-                data=(fd[fd <= thresh]).mean(),
-                dtype="float",
-            )
 
 
 def concatenate_tsv_files(tsv_files, fileout):

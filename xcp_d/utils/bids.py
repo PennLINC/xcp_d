@@ -5,13 +5,13 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import logging
 import os
 import warnings
 
 import nibabel as nb
 import yaml
 from bids import BIDSLayout
+from nipype import logging
 from packaging.version import Version
 
 from xcp_d.utils.doc import fill_doc
@@ -37,6 +37,10 @@ INPUT_TYPE_ALLOWED_SPACES = {
             "MNI152NLin2009cAsym",
         ],
     },
+}
+# The volumetric NIFTI template associated with each supported CIFTI template.
+ASSOCIATED_TEMPLATES = {
+    "fsLR": "MNI152NLin6Asym",
 }
 
 
@@ -186,7 +190,21 @@ def collect_data(
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         # native T1w-space, preprocessed T1w file
-        "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
+        "t1w": {
+            "datatype": "anat",
+            "space": None,
+            "desc": "preproc",
+            "suffix": "T1w",
+            "extension": ".nii.gz",
+        },
+        # native T2w-space, preprocessed T1w file
+        "t2w": {
+            "datatype": "anat",
+            "space": [None, "T1w"],
+            "desc": "preproc",
+            "suffix": "T2w",
+            "extension": ".nii.gz",
+        },
         # native T1w-space dseg file, but not aseg or aparcaseg
         "t1w_seg": {
             "datatype": "anat",
@@ -199,7 +217,7 @@ def collect_data(
         # from entity will be set later
         "template_to_t1w_xform": {
             "datatype": "anat",
-            "to": "T1w",
+            "to": ["T1w", "T2w"],
             "suffix": "xfm",
         },
         # native T1w-space brain mask
@@ -214,7 +232,7 @@ def collect_data(
         # to entity will be set later
         "t1w_to_template_xform": {
             "datatype": "anat",
-            "from": "T1w",
+            "from": ["T1w", "T2w"],
             "suffix": "xfm",
         },
     }
@@ -222,6 +240,9 @@ def collect_data(
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
         queries["bold"]["extension"] = ".nii.gz"
+
+    # List any fields that aren't required
+    OPTIONAL_FIELDS = ["t2w"]
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
@@ -254,31 +275,24 @@ def collect_data(
         raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
 
     if not cifti:
-        # use the BOLD file's space if the BOLD file is a nifti
+        # use the BOLD file's space if the BOLD file is a nifti.
         queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
         queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
     else:
-        # Select the best *volumetric* space, based on available nifti BOLD files.
+        # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
         temp_query = queries["t1w_to_template_xform"].copy()
-        temp_allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        volumetric_space = ASSOCIATED_TEMPLATES[space]
 
-        for space in temp_allowed_spaces:
-            temp_query["to"] = space
-            transform_files = layout.get(**temp_query)
-            if transform_files:
-                queries["t1w_to_template_xform"]["to"] = space
-                queries["template_to_t1w_xform"]["from"] = space
-                break
-
+        temp_query["to"] = volumetric_space
+        transform_files = layout.get(**temp_query)
         if not transform_files:
-            allowed_space_str = ", ".join(temp_allowed_spaces)
             raise FileNotFoundError(
-                f"No nifti transforms found to allowed spaces ({allowed_space_str})"
+                f"No nifti transforms found to allowed space ({volumetric_space})"
             )
+
+        queries["t1w_to_template_xform"]["to"] = volumetric_space
+        queries["template_to_t1w_xform"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -305,10 +319,17 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != "bold" and isinstance(filenames, list):
-            if not filenames:
+            if field not in OPTIONAL_FIELDS and not filenames:
                 raise FileNotFoundError(f"No {field} found with query: {queries[field]}")
 
-            subj_data[field] = filenames[0]
+            if len(filenames) == 1:
+                subj_data[field] = filenames[0]
+            elif len(filenames) > 1:
+                filenames_str = "\n\t".join(filenames)
+                LOGGER.warning(f"Multiple files found for query '{field}':\n\t{filenames_str}")
+                subj_data[field] = filenames[0]
+            else:
+                subj_data[field] = None
 
     LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
@@ -353,12 +374,12 @@ def collect_surface_data(layout, participant_label):
             "desc": None,
             "suffix": "pial",
         },
-        "lh_smoothwm_surf": {
+        "lh_wm_surf": {
             "hemi": "L",
             "desc": None,
             "suffix": "smoothwm",
         },
-        "rh_smoothwm_surf": {
+        "rh_wm_surf": {
             "hemi": "R",
             "desc": None,
             "suffix": "smoothwm",
@@ -687,32 +708,6 @@ def _add_subject_prefix(subid):
     return "-".join(("sub", subid))
 
 
-def _getsesid(filename):
-    """Get session id from filename if available.
-
-    Parameters
-    ----------
-    filename : str
-        The BIDS filename from which to extract the session ID.
-
-    Returns
-    -------
-    ses_id : str or None
-        The session ID in the filename.
-        If the file does not have a session entity, ``None`` will be returned.
-    """
-    ses_id = None
-    base_filename = os.path.basename(filename)
-
-    file_id = base_filename.split("_")
-    for k in file_id:
-        if "ses" in k:
-            ses_id = k.split("-")[1]
-            break
-
-    return ses_id
-
-
 def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
@@ -782,3 +777,84 @@ def get_freesurfer_dir(fmri_dir):
         raise NotADirectoryError("No FreeSurfer derivatives found.")
 
     return freesurfer_path
+
+
+def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
+    """Find FreeSurfer sphere file.
+
+    Parameters
+    ----------
+    freesurfer_path : str
+        Path to the FreeSurfer derivatives.
+    subject_id : str
+        Subject ID. This may or may not be prefixed with "sub-".
+    hemisphere : {"L", "R"}
+        The hemisphere to grab.
+
+    Returns
+    -------
+    sphere_raw : str
+        Sphere file for the requested subject and hemisphere.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the sphere file cannot be found.
+    """
+    import os
+
+    assert hemisphere in ("L", "R"), hemisphere
+
+    if not subject_id.startswith("sub-"):
+        subject_id = "sub-" + subject_id
+
+    sphere_raw = os.path.join(
+        freesurfer_path,
+        subject_id,
+        "surf",
+        f"{hemisphere.lower()}h.sphere.reg",
+    )
+
+    if not os.path.isfile(sphere_raw):
+        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
+
+    return sphere_raw
+
+
+def get_entity(filename, entity):
+    """Extract a given entity from a BIDS filename via string manipulation.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the BIDS file.
+    entity : str
+        The entity to extract from the filename.
+
+    Returns
+    -------
+    entity_value : str or None
+        The BOLD file's entity value associated with the requested entity.
+    """
+    import re
+
+    folder, file_base = os.path.split(filename)
+
+    # Allow + sign, which is not allowed in BIDS,
+    # but is used by templateflow for the MNIInfant template.
+    entity_values = re.findall(f"{entity}-([a-zA-Z0-9+]+)", file_base)
+    if len(entity_values) < 1:
+        entity_value = None
+    else:
+        entity_value = entity_values[0]
+
+    if entity == "space" and entity_value is None:
+        foldername = os.path.basename(folder)
+        if foldername == "anat":
+            entity_value = "T1w"
+        elif foldername == "func":
+            entity_value = "native"
+        else:
+            raise ValueError(f"Unknown space for {filename}")
+
+    return entity_value
