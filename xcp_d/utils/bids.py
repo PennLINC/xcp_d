@@ -190,7 +190,21 @@ def collect_data(
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
         # native T1w-space, preprocessed T1w file
-        "t1w": {"datatype": "anat", "space": None, "suffix": "T1w", "extension": ".nii.gz"},
+        "t1w": {
+            "datatype": "anat",
+            "space": None,
+            "desc": "preproc",
+            "suffix": "T1w",
+            "extension": ".nii.gz",
+        },
+        # native T2w-space, preprocessed T1w file
+        "t2w": {
+            "datatype": "anat",
+            "space": [None, "T1w"],
+            "desc": "preproc",
+            "suffix": "T2w",
+            "extension": ".nii.gz",
+        },
         # native T1w-space dseg file, but not aseg or aparcaseg
         "t1w_seg": {
             "datatype": "anat",
@@ -203,7 +217,7 @@ def collect_data(
         # from entity will be set later
         "template_to_t1w_xform": {
             "datatype": "anat",
-            "to": "T1w",
+            "to": ["T1w", "T2w"],
             "suffix": "xfm",
         },
         # native T1w-space brain mask
@@ -218,7 +232,7 @@ def collect_data(
         # to entity will be set later
         "t1w_to_template_xform": {
             "datatype": "anat",
-            "from": "T1w",
+            "from": ["T1w", "T2w"],
             "suffix": "xfm",
         },
     }
@@ -226,6 +240,9 @@ def collect_data(
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
         queries["bold"]["extension"] = ".nii.gz"
+
+    # List any fields that aren't required
+    OPTIONAL_FIELDS = ["t2w"]
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
@@ -302,10 +319,17 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != "bold" and isinstance(filenames, list):
-            if not filenames:
+            if field not in OPTIONAL_FIELDS and not filenames:
                 raise FileNotFoundError(f"No {field} found with query: {queries[field]}")
 
-            subj_data[field] = filenames[0]
+            if len(filenames) == 1:
+                subj_data[field] = filenames[0]
+            elif len(filenames) > 1:
+                filenames_str = "\n\t".join(filenames)
+                LOGGER.warning(f"Multiple files found for query '{field}':\n\t{filenames_str}")
+                subj_data[field] = filenames[0]
+            else:
+                subj_data[field] = None
 
     LOGGER.debug(f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 

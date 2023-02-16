@@ -12,6 +12,8 @@ assignees: ''
 ## Additional details
 <!--Please fill in the following details-->
 - xcp_d version:
+- Docker version:
+- Singularity version:
 
 ### What were you trying to do?
 

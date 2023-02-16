@@ -9,6 +9,11 @@ import numpy as np
 from bids.layout import BIDSLayout
 
 
+def get_nodes(wf_results):
+    """Load nodes from a Nipype workflow's results."""
+    return {node.fullname: node for node in wf_results.nodes}
+
+
 def get_test_data_path():
     """Return the path to test datasets, terminated with separator.
 
