@@ -91,6 +91,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         out_dir,
         "participant",
         f"-w={work_dir}",
+        "-vv",
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",

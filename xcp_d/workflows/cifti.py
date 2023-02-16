@@ -174,7 +174,7 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, input_type, bold_file)
+    run_data = collect_run_data(layout, input_type, bold_file, cifti=True)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 

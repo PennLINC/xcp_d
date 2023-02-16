@@ -12,11 +12,13 @@ from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
+    InputMultiPath,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
-from nipype.interfaces.base.traits_extension import isdefined
+from nipype.interfaces.fsl import FSLCommand, FSLCommandInputSpec
 
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
@@ -554,3 +556,48 @@ class AnatomicalPlot(SimpleInterface):
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
 
         return runtime
+
+
+class _PNGAppendInputSpec(FSLCommandInputSpec):
+    in_files = InputMultiPath(
+        exists=True,
+        position=0,
+        argstr="%s",
+        mandatory=True,
+        desc="input images to combine",
+    )
+    out_file = File(
+        position=-1,
+        genfile=True,
+        argstr="%s",
+        desc="picture to write",
+        hash_files=False,
+    )
+
+
+class _PNGAppendOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="picture to write")
+
+
+class PNGAppend(FSLCommand):
+    """Use FSL's pngappend command."""
+
+    _cmd = "pngappend"
+    input_spec = _PNGAppendInputSpec
+    output_spec = _PNGAppendOutputSpec
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        out_file = self.inputs.out_file
+        if not isdefined(out_file):
+            out_file = self._gen_fname(self.inputs.in_files[0], ext=".gif")
+
+        outputs["out_file"] = os.path.abspath(out_file)
+
+        return outputs
+
+    def _gen_filename(self, name):
+        if name == "out_file":
+            return self._list_outputs()["out_file"]
+
+        return None

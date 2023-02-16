@@ -4,6 +4,7 @@
 import fnmatch
 import os
 
+from nilearn import image
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -351,6 +352,42 @@ def init_execsummary_wf(
     bold_t1w_registration_file = fnmatch.filter(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]
+
+    # Plot the mean bold image
+    calculate_mean_bold = pe.Node(
+        Function(
+            input_names=[""],
+            output_names=[""],
+            function=image.mean_img,
+        )
+    )
+    plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, calculate_mean_bold, [("bold_file", "in_file")]),
+        (calculate_mean_bold, plot_meanbold, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    # Write out the figures.
+    ds_meanbold_figure = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc="mean",
+        ),
+        name="ds_meanbold_figure",
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_meanbold_figure, [("bold_file", "source_file")]),
+        (plot_meanbold, ds_meanbold_figure, [("out_file", "in_file")]),
+    ])
+    # fmt:on
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
