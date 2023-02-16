@@ -4,7 +4,6 @@
 import fnmatch
 import os
 
-from nilearn import image
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -12,6 +11,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.nilearn import MeanImage
 from xcp_d.interfaces.plotting import AnatomicalPlot
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
@@ -354,13 +354,7 @@ def init_execsummary_wf(
     )[0]
 
     # Plot the mean bold image
-    calculate_mean_bold = pe.Node(
-        Function(
-            input_names=[""],
-            output_names=[""],
-            function=image.mean_img,
-        )
-    )
+    calculate_mean_bold = pe.Node(MeanImage(), name="calculate_mean_bold")
     plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
 
     # fmt:off
