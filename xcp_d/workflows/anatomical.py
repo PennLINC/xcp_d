@@ -840,6 +840,15 @@ def init_warp_surfaces_to_template_wf(
             ])
             # fmt:on
 
+        # fmt:off
+        workflow.connect([
+            (standard_space_meshes, outputnode, [
+                ("pial_surf", f"{hemi_label}_pial_surf"),
+                ("wm_surf", f"{hemi_label}_wm_surf"),
+            ]),
+        ])
+        # fmt:on
+
     return workflow
 
 
