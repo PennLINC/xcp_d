@@ -2,6 +2,7 @@
 import os
 import shutil
 
+from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import anatomical
 
 
@@ -29,23 +30,15 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     wf.inputs.inputnode.t1seg = t1seg
     wf.inputs.inputnode.t2w = t2w
     wf.base_dir = tmpdir
-    wf.run()
+    wf_res = wf.run()
+    wf_nodes = get_nodes(wf_res)
 
     out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
-    out_t1w = os.path.join(
-        out_anat_dir,
-        "sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz",
-    )
+    out_t1w = wf_nodes["warp_anats_to_template_wf.ds_t1w_std"].get_output("out_file")
     assert os.path.isfile(out_t1w), os.listdir(out_anat_dir)
 
-    out_t2w = os.path.join(
-        out_anat_dir,
-        "sub-01_space-MNI152NLin2009cAsym_desc-preproc_T2w.nii.gz",
-    )
+    out_t2w = wf_nodes["warp_anats_to_template_wf.ds_t2w_std"].get_output("out_file")
     assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
 
-    out_t1seg = os.path.join(
-        out_anat_dir,
-        "sub-01_space-MNI152NLin2009cAsym_desc-aseg_dseg.nii.gz",
-    )
+    out_t1seg = wf_nodes["warp_anats_to_template_wf.ds_t1seg_std"].get_output("out_file")
     assert os.path.isfile(out_t1seg), os.listdir(out_anat_dir)
