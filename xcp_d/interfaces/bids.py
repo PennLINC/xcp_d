@@ -7,7 +7,7 @@ from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDa
 from pkg_resources import resource_filename as pkgrf
 
 # NOTE: Modified for xcpd's purposes
-_pybids_spec = loads(Path(pkgrf("xcp_d", "data/nipreps.json")).read_text())
+_pybids_spec = loads(Path(pkgrf("xcp_d", "data/xcp_d_bids_config.json")).read_text())
 BIDS_DERIV_ENTITIES = frozenset({e["name"] for e in _pybids_spec["entities"]})
 BIDS_DERIV_PATTERNS = tuple(_pybids_spec["default_path_patterns"])
 LOGGER = logging.getLogger("nipype.interface")
