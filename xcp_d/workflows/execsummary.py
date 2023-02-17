@@ -379,7 +379,9 @@ def init_execsummary_functional_plots_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_registration_figure, [("preproc_nifti", "source_file")]),
+        (inputnode, ds_registration_figure, [
+            ("preproc_nifti", "source_file"),
+        ]),
     ])
     # fmt:on
 
