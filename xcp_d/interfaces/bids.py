@@ -17,15 +17,6 @@ merged_entities = {**bids_config.entities, **deriv_config.entities}
 merged_entities = {k: v.pattern for k, v in merged_entities.items()}
 merged_entities = {**merged_entities, **xcp_d_entities}
 merged_entities = [{"name": k, "pattern": v} for k, v in merged_entities.items()]
-merged_file_patterns = sorted(
-    list(
-        set(
-            bids_config.default_path_patterns
-            + deriv_config.default_path_patterns
-            + xcp_d_spec["default_path_patterns"]
-        )
-    )
-)
 config_entities = frozenset({e["name"] for e in merged_entities})
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -41,4 +32,4 @@ class DerivativesDataSink(BaseDerivativesDataSink):
     _allowed_entities = set(config_entities)
     _config_entities = config_entities
     _config_entities_dict = merged_entities
-    _file_patterns = merged_file_patterns
+    _file_patterns = xcp_d_spec["default_path_patterns"]
