@@ -11,7 +11,7 @@ from pkg_resources import resource_filename as pkgrf
 xcp_d_spec = loads(Path(pkgrf("xcp_d", "data/xcp_d_bids_config.json")).read_text())
 bids_config = Config.load("bids")
 deriv_config = Config.load("derivatives")
-merged_entities = {**bids_config.entities, **deriv_config.entities, **xcp_d_spec["entities"]}
+merged_entities = {**bids_config.entities, **deriv_config.entities, **xcp_d_spec["entities"][0]}
 merged_file_patterns = sorted(
     list(
         set(
