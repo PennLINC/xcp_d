@@ -22,4 +22,5 @@ class DerivativesDataSink(BaseDerivativesDataSink):
     out_path_base = "xcp_d"
     _allowed_entities = set(BIDS_DERIV_ENTITIES)
     _config_entities = BIDS_DERIV_ENTITIES
+    _config_entities_dict = _pybids_spec["entities"]
     _file_patterns = BIDS_DERIV_PATTERNS
