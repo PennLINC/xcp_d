@@ -2,6 +2,10 @@
   "name": "xcp_d",
   "entities": [
     {
+      "name": "datatype",
+      "pattern": "[/\\\\]+(anat|beh|dwi|eeg|figures|fmap|func|ieeg|meg|micr|perf|pet)[/\\\\]+"
+    },
+    {
       "name": "cohort",
       "pattern": "[_/\\\\]+cohort-0*(\\d+)",
       "dtype": "int"
