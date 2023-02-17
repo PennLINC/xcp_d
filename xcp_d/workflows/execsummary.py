@@ -5,14 +5,15 @@ import fnmatch
 import os
 
 from nipype import Function, logging
+from nipype.interfaces import fsl
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import MeanImage
-from xcp_d.interfaces.plotting import AnatomicalPlot
+from xcp_d.interfaces.nilearn import BinaryMath, MeanImage
+from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.execsummary import (
@@ -452,9 +453,9 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_t1w_on_task_wf, [
-                ("preproc_nifti", "underlay_file"),
-                ("t1w", "overlay_file"),
-                ("preproc_nifti", "name_source"),
+                ("preproc_nifti", "inputnode.underlay_file"),
+                ("t1w", "inputnode.overlay_file"),
+                ("preproc_nifti", "inputnode.name_source"),
             ]),
         ])
         # fmt:on
@@ -468,9 +469,9 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_t1w_wf, [
-                ("t1w", "underlay_file"),
-                ("preproc_nifti", "overlay_file"),
-                ("preproc_nifti", "name_source"),
+                ("t1w", "inputnode.underlay_file"),
+                ("preproc_nifti", "inputnode.overlay_file"),
+                ("preproc_nifti", "inputnode.name_source"),
             ]),
         ])
         # fmt:on
@@ -485,9 +486,9 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_t2w_on_task_wf, [
-                ("preproc_nifti", "underlay_file"),
-                ("t2w", "overlay_file"),
-                ("preproc_nifti", "name_source"),
+                ("preproc_nifti", "inputnode.underlay_file"),
+                ("t2w", "inputnode.overlay_file"),
+                ("preproc_nifti", "inputnode.name_source"),
             ]),
         ])
         # fmt:on
@@ -501,9 +502,9 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_t2w_wf, [
-                ("t2w", "underlay_file"),
-                ("preproc_nifti", "overlay_file"),
-                ("preproc_nifti", "name_source"),
+                ("t2w", "inputnode.underlay_file"),
+                ("preproc_nifti", "inputnode.overlay_file"),
+                ("preproc_nifti", "inputnode.name_source"),
             ]),
         ])
         # fmt:on
@@ -555,9 +556,9 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_t1w_on_atlas_wf, [
-                ("template", "underlay_file"),
-                ("t1w", "overlay_file"),
-                ("t1w", "name_source"),
+                ("template", "inputnode.underlay_file"),
+                ("t1w", "inputnode.overlay_file"),
+                ("t1w", "inputnode.name_source"),
             ]),
         ])
         # fmt:on
@@ -571,14 +572,95 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_atlas_on_t1w_wf, [
-                ("t1w", "underlay_file"),
-                ("template", "overlay_file"),
-                ("t1w", "name_source"),
+                ("t1w", "inputnode.underlay_file"),
+                ("template", "inputnode.overlay_file"),
+                ("t1w", "inputnode.name_source"),
             ]),
         ])
         # fmt:on
 
     # TODO: Add subcortical overlay images as well.
+    # 1. Binarize atlas.
+    # 2.
+
+    return workflow
+
+
+def init_plot_custom_slices_wf(
+    output_dir,
+    desc,
+    name="plot_custom_slices_wf",
+):
+    # NOTE: These slices are almost certainly specific to a given MNI template and
+    # resolution.
+    SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
+    SLICE_NUMBERS = [36, 45, 52, 43, 54, 65, 23, 33, 39]
+
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "underlay_file",
+                "overlay_file",
+                "name_source",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    # slices/slicer does not do well trying to make the red outline when it
+    # cannot find the edges, so cannot use the ROI files with some low intensities.
+    binarize_edges = pe.Node(
+        BinaryMath(expression="img.astype(bool).astype(int)"),
+        name="binarize_edges",
+    )
+
+    workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
+
+    make_image = pe.MapNode(
+        fsl.Slicer(args="-u -L"),
+        name="make_image",
+        iterfield=["single_slice", "slice_number"],
+    )
+    make_image.inputs.single_slice = SINGLE_SLICES
+    make_image.inputs.slice_number = SLICE_NUMBERS
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, make_image, [("underlay_file", "in_file")]),
+        (binarize_edges, make_image, [("out_file", "image_edges")]),
+    ])
+    # fmt:on
+
+    combine_images = pe.Node(
+        PNGAppend(),
+        name="combine_images",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (make_image, combine_images, [("out_file", "in_files")]),
+    ])
+    # fmt:on
+
+    ds_overlay_figure = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc=desc,
+        ),
+        name="ds_overlay_figure",
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
+        (combine_images, ds_overlay_figure, [("out_file", "in_file")]),
+    ])
+    # fmt:on
 
     return workflow
 
