@@ -53,7 +53,7 @@ xcp_d-combineqc
    xcp_d.interfaces.bids
    xcp_d.interfaces.c3
    xcp_d.interfaces.connectivity
-   xcp_d.interfaces.executive_summary
+   xcp_d.interfaces.execsummary
    xcp_d.interfaces.filtering
    xcp_d.interfaces.nilearn
    xcp_d.interfaces.prepostcleaning
