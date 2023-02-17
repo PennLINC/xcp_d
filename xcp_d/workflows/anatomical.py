@@ -94,12 +94,12 @@ def init_warp_anats_to_template_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template", "template"]),
         name="inputnode",
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t1seg"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "template"]),
         name="outputnode",
     )
 
@@ -111,6 +111,9 @@ def init_warp_anats_to_template_wf(
     template_file = str(
         get_template(template=target_space, cohort=cohort, resolution=1, desc=None, suffix="T1w")
     )
+    inputnode.inputs.template = template_file
+
+    workflow.connect([(inputnode, outputnode, [("template", "template")])])
 
     if input_type in ("dcan", "hcp"):
         # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
@@ -166,7 +169,6 @@ def init_warp_anats_to_template_wf(
         warp_t1w_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
-                reference_image=template_file,
                 interpolation="LanczosWindowedSinc",
                 input_image_type=3,
                 dimension=3,
@@ -181,6 +183,7 @@ def init_warp_anats_to_template_wf(
             (inputnode, warp_t1w_to_template, [
                 ("t1w", "input_image"),
                 ("t1w_to_template", "transforms"),
+                ("template", "reference_image"),
             ]),
         ])
         # fmt:on
@@ -188,7 +191,6 @@ def init_warp_anats_to_template_wf(
         warp_t1seg_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
-                reference_image=template_file,
                 interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
@@ -203,6 +205,7 @@ def init_warp_anats_to_template_wf(
             (inputnode, warp_t1seg_to_template, [
                 ("t1seg", "input_image"),
                 ("t1w_to_template", "transforms"),
+                ("template", "reference_image"),
             ]),
         ])
         # fmt:on
@@ -211,7 +214,6 @@ def init_warp_anats_to_template_wf(
             t2w_transform = pe.Node(
                 ApplyTransforms(
                     num_threads=2,
-                    reference_image=template_file,
                     interpolation="LanczosWindowedSinc",
                     input_image_type=3,
                     dimension=3,
@@ -237,6 +239,7 @@ def init_warp_anats_to_template_wf(
                 (inputnode, t2w_transform, [
                     ("t2w", "input_image"),
                     ("t1w_to_template", "transforms"),
+                    ("template", "reference_image"),
                 ]),
                 (t2w_transform, ds_t2w_std, [("output_image", "in_file")]),
                 (inputnode, ds_t2w_std, [("t2w", "source_file")]),
@@ -277,6 +280,13 @@ def init_warp_anats_to_template_wf(
         (ds_t1seg_std, outputnode, [("out_file", "t1seg")]),
     ])
     # fmt:on
+
+    if t2w_available:
+        # fmt:off
+        workflow.connect([
+            (ds_t2w_std, outputnode, [("out_file", "t2w")]),
+        ])
+        # fmt:on
 
     return workflow
 

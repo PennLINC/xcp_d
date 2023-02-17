@@ -72,19 +72,29 @@ class ExecutiveSummary(object):
             "SagittalInsulaTemporalHippocampalSulcus",
         ]
         ANAT_REGISTRATION_DESCS = [
-            "AtlasInT1w",
-            "T1wInAtlas",
-            "AtlasInSubcorticals",
-            "SubcorticalsInAtlas",
+            "AtlasOnT1w",
+            "T1wOnAtlas",
+            "AtlasOnSubcorticals",
+            "SubcorticalsOnAtlas",
         ]
         ANAT_REGISTRATION_TITLES = [
-            "Atlas In T1w",
-            "T1w In Atlas",
-            "Atlas in Subcorticals",
-            "Subcorticals in Atlas",
+            "Atlas On T1w",
+            "T1w On Atlas",
+            "Atlas On Subcorticals",
+            "Subcorticals On Atlas",
         ]
-        TASK_REGISTRATION_DESCS = ["TaskInT1", "T1InTask"]
-        TASK_REGISTRATION_TITLES = ["Task in T1", "T1 in Task"]
+        TASK_REGISTRATION_DESCS = [
+            "TaskOnT1w",
+            "T1wOnTask",
+            "TaskOnT2w",
+            "T2wOnTask",
+        ]
+        TASK_REGISTRATION_TITLES = [
+            "Task On T1w",
+            "T1w On Task",
+            "Task On T2w",
+            "T2w On Task",
+        ]
         ORDERING = [
             "session",
             "task",

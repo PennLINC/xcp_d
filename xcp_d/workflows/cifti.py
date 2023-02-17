@@ -33,7 +33,7 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
-from xcp_d.workflows.execsummary import init_execsummary_wf
+from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_writederivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
 from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
@@ -125,7 +125,6 @@ def init_ciftipostprocess_wf(
                 name="cifti_postprocess_wf",
             )
             wf.inputs.inputnode.t1w = subj_data["t1w"]
-            wf.inputs.inputnode.t1seg = subj_data["t1w_seg"]
 
     Parameters
     ----------
@@ -167,7 +166,14 @@ def init_ciftipostprocess_wf(
     custom_confounds_file
         custom regressors
     t1w
-    t1seg
+        Preprocessed T1w image, warped to standard space.
+        Fed from the subject workflow.
+    t2w
+        Preprocessed T2w image, warped to standard space.
+        Fed from the subject workflow.
+    t1w_mask
+        T1w brain mask, used to estimate head/brain radius.
+        Fed from the subject workflow.
     fmriprep_confounds_tsv
 
     References
@@ -248,7 +254,6 @@ produced by the regression.
                 "ref_file",
                 "custom_confounds_file",
                 "t1w",
-                "t1seg",
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
                 "dummy_scans",
@@ -276,8 +281,6 @@ produced by the regression.
     workflow.connect([
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
-            ("t1w", "t1w"),
-            ("t1seg", "t1seg"),
             ("t1w_mask", "t1w_mask"),
         ]),
     ])
@@ -712,24 +715,27 @@ produced by the regression.
 
     # executive summary workflow
     if dcan_qc:
-        executive_summary_wf = init_execsummary_wf(
-            bold_file=run_data["nifti_file"],
-            layout=layout,
+        execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
+            preproc_nifti=run_data["nifti_file"],
+            t1w_available=True,
+            t2w_available=False,
             output_dir=output_dir,
-            name="executive_summary_wf",
+            layout=layout,
+            name="execsummary_functional_plots_wf",
         )
 
-        # fmt:off
         # Use inputnode for executive summary instead of downcast_data
         # because T1w is used as name source.
+        # fmt:off
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
-            (inputnode, executive_summary_wf, [
-                ("ref_file", "inputnode.boldref_file"),
+            (inputnode, execsummary_functional_plots_wf, [
+                ("ref_file", "inputnode.boldref"),
+                ("t1w", "inputnode.t1w"),
+                ("t2w", "inputnode.t2w"),
             ]),
         ])
-        # fmt:on
 
     return workflow
 

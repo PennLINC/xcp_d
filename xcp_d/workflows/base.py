@@ -32,7 +32,10 @@ from xcp_d.workflows.anatomical import (
 )
 from xcp_d.workflows.bold import init_boldpostprocess_wf
 from xcp_d.workflows.cifti import init_ciftipostprocess_wf
-from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
+from xcp_d.workflows.execsummary import (
+    init_brainsprite_figures_wf,
+    init_execsummary_anatomical_plots_wf,
+)
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -489,7 +492,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         t2w_available=subj_data["t2w"] is not None,
         target_space=target_space,
         omp_nthreads=omp_nthreads,
-        mem_gb=5,  # RF: need to change memory size
+        mem_gb=5,
     )
 
     # fmt:off
@@ -502,6 +505,22 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ]),
     ])
     # fmt:on
+
+    if dcan_qc:
+        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+            t1w_available=subj_data["t1w"] is not None,
+            output_dir=output_dir,
+            name="execsummary_anatomical_plots_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (warp_anats_to_template_wf, execsummary_anatomical_plots_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.template", "inputnode.template"),
+            ]),
+        ])
+        # fmt:on
 
     if surfaces_found and dcan_qc:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
@@ -612,10 +631,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         # fmt:off
         workflow.connect([
-            (inputnode, bold_postproc_wf, [
-                ('t1w', 'inputnode.t1w'),
-                ('t1w_seg', 'inputnode.t1seg'),
-                ('t1w_mask', 'inputnode.t1w_mask'),
+            (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
+            (warp_anats_to_template_wf, bold_postproc_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.t2w", "inputnode.t2w"),
             ]),
         ])
         if not cifti:

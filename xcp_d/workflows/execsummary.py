@@ -298,49 +298,59 @@ def init_brainsprite_figures_wf(
 
 
 @fill_doc
-def init_execsummary_wf(
-    bold_file,
+def init_execsummary_functional_plots_wf(
+    preproc_nifti,
+    t1w_available,
+    t2w_available,
     output_dir,
     layout,
-    name="execsummary_wf",
+    name="execsummary_functional_plots_wf",
 ):
-    """Generate the figures for an executive summary.
+    """Generate the functional figures for an executive summary.
 
     Parameters
     ----------
-    bold_file
+    preproc_nifti
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
+    t1w_available : bool
+        Generally True.
+    t2w_available : bool
+        Generally False.
     %(output_dir)s
     layout
     %(name)s
 
     Inputs
     ------
-    bold_file
+    preproc_nifti
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
         Set from the parameter.
-    boldref_file
+    boldref
         The boldref file associated with the BOLD file.
+    t1w
+    t2w
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_file",
-                "boldref_file",
+                "preproc_nifti",
+                "boldref",
+                "t1w",
+                "t2w",  # optional
             ]
         ),  # a nifti boldref
         name="inputnode",
     )
-    inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.preproc_nifti = preproc_nifti
 
     # Get bb_registration_file prefix from fmriprep
     # TODO: Replace with interfaces.
     all_files = list(layout.get_files())
-    current_bold_file = os.path.basename(bold_file)
+    current_bold_file = os.path.basename(preproc_nifti)
     if "_space" in current_bold_file:
         bb_register_prefix = current_bold_file.split("_space")[0]
     else:
@@ -354,13 +364,31 @@ def init_execsummary_wf(
         all_files, "*" + bb_register_prefix + registration_file[0]
     )[0]
 
+    ds_registration_figure = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            in_file=bold_t1w_registration_file,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc="bbregister",
+        ),
+        name="ds_registration_figure",
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_registration_figure, [("preproc_nifti", "source_file")]),
+    ])
+    # fmt:on
+
     # Plot the mean bold image
     calculate_mean_bold = pe.Node(MeanImage(), name="calculate_mean_bold")
     plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
 
     # fmt:off
     workflow.connect([
-        (inputnode, calculate_mean_bold, [("bold_file", "in_file")]),
+        (inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")]),
         (calculate_mean_bold, plot_meanbold, [("out_file", "in_file")]),
     ])
     # fmt:on
@@ -379,7 +407,7 @@ def init_execsummary_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_meanbold_figure, [("bold_file", "source_file")]),
+        (inputnode, ds_meanbold_figure, [("preproc_nifti", "source_file")]),
         (plot_meanbold, ds_meanbold_figure, [("out_file", "in_file")]),
     ])
     # fmt:on
@@ -389,7 +417,7 @@ def init_execsummary_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, plot_boldref, [("boldref_file", "in_file")]),
+        (inputnode, plot_boldref, [("boldref", "in_file")]),
     ])
     # fmt:on
 
@@ -407,27 +435,211 @@ def init_execsummary_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_boldref_figure, [("bold_file", "source_file")]),
+        (inputnode, ds_boldref_figure, [("preproc_nifti", "source_file")]),
         (plot_boldref, ds_boldref_figure, [("out_file", "in_file")]),
     ])
     # fmt:on
 
-    ds_registration_figure = pe.Node(
+    # Start plotting the overlay figures
+    # T1 in Task, Task in T1, Task in T2, T2 in Task
+    if t1w_available:
+        plot_t1w_on_task_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="T1wOnTask",
+            name="plot_t1w_on_task_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_t1w_on_task_wf, [
+                ("preproc_nifti", "underlay_file"),
+                ("t1w", "overlay_file"),
+                ("preproc_nifti", "name_source"),
+            ]),
+        ])
+        # fmt:on
+
+        plot_task_on_t1w_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="TaskOnT1w",
+            name="plot_task_on_t1w_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_task_on_t1w_wf, [
+                ("t1w", "underlay_file"),
+                ("preproc_nifti", "overlay_file"),
+                ("preproc_nifti", "name_source"),
+            ]),
+        ])
+        # fmt:on
+
+    if t2w_available:
+        plot_t2w_on_task_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="T2wOnTask",
+            name="plot_t2w_on_task_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_t2w_on_task_wf, [
+                ("preproc_nifti", "underlay_file"),
+                ("t2w", "overlay_file"),
+                ("preproc_nifti", "name_source"),
+            ]),
+        ])
+        # fmt:on
+
+        plot_task_on_t2w_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="TaskOnT2w",
+            name="plot_task_on_t2w_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_task_on_t2w_wf, [
+                ("t2w", "underlay_file"),
+                ("preproc_nifti", "overlay_file"),
+                ("preproc_nifti", "name_source"),
+            ]),
+        ])
+        # fmt:on
+
+    return workflow
+
+
+@fill_doc
+def init_execsummary_anatomical_plots_wf(
+    t1w_available,
+    output_dir,
+    name="execsummary_anatomical_plots_wf",
+):
+    """Generate the anatomical figures for an executive summary.
+
+    Parameters
+    ----------
+    t1w_available : bool
+        Generally True.
+    %(output_dir)s
+    %(name)s
+
+    Inputs
+    ------
+    t1w
+    template
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "t1w",
+                "template",
+            ]
+        ),
+        name="inputnode",
+    )
+
+    # Start plotting the overlay figures
+    # Atlas in T1w, T1w in Atlas
+    if t1w_available:
+        plot_t1w_on_atlas_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="T1wOnAtlas",
+            name="plot_t1w_on_atlas_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_t1w_on_atlas_wf, [
+                ("template", "underlay_file"),
+                ("t1w", "overlay_file"),
+                ("t1w", "name_source"),
+            ]),
+        ])
+        # fmt:on
+
+        plot_atlas_on_t1w_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="AtlasOnT1w",
+            name="plot_atlas_on_t1w_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_atlas_on_t1w_wf, [
+                ("t1w", "underlay_file"),
+                ("template", "overlay_file"),
+                ("t1w", "name_source"),
+            ]),
+        ])
+        # fmt:on
+
+    # TODO: Add subcortical overlay images as well.
+
+    return workflow
+
+
+def init_plot_overlay_wf(
+    output_dir,
+    desc,
+    name="plot_overlay_wf",
+):
+    """Use the default slices from slicesdir to make a plot."""
+    from xcp_d.interfaces.plotting import SlicesDir
+
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "underlay_file",
+                "overlay_file",
+                "name_source",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    plot_overlay_figure = pe.Node(
+        SlicesDir(out_extension=".png"),
+        name="plot_overlay_figure",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, plot_overlay_figure, [
+            ("underlay_file", "in_files"),
+            ("overlay_file", "outline_image"),
+        ]),
+    ])
+    # fmt:on
+
+    ds_overlay_figure = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            in_file=bold_t1w_registration_file,
             dismiss_entities=["den"],
             datatype="figures",
-            desc="bbregister",
+            desc=desc,
         ),
-        name="ds_registration_figure",
+        name="ds_overlay_figure",
         run_without_submitting=True,
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_registration_figure, [("bold_file", "source_file")]),
+        (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
+        (plot_overlay_figure, ds_overlay_figure, [
+            (("out_files", _select_first_in_list), "in_file"),
+        ]),
     ])
     # fmt:on
 
     return workflow
+
+
+def _select_first_in_list(lst):
+    return lst[0]
