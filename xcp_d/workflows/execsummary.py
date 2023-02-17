@@ -586,13 +586,23 @@ def init_execsummary_anatomical_plots_wf(
     return workflow
 
 
+@fill_doc
 def init_plot_custom_slices_wf(
     output_dir,
     desc,
     name="plot_custom_slices_wf",
 ):
-    # NOTE: These slices are almost certainly specific to a given MNI template and
-    # resolution.
+    """Plot a custom selection of slices with Slicer.
+
+    Parameters
+    ----------
+    %(output_dir)s
+    desc : str
+        String to be used as ``desc`` entity in output filename.
+    %(name)s
+        Default is "plot_custom_slices_wf".
+    """
+    # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
     SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
     SLICE_NUMBERS = [36, 45, 52, 43, 54, 65, 23, 33, 39]
 

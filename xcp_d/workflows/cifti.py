@@ -254,6 +254,7 @@ produced by the regression.
                 "ref_file",
                 "custom_confounds_file",
                 "t1w",
+                "t2w",
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
                 "dummy_scans",
