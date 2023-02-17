@@ -33,11 +33,6 @@
       "pattern": "[_/\\\\]+dir-([a-zA-Z0-9]+)"
     },
     {
-      "name": "run",
-      "pattern": "[_/\\\\]+run-0*(\\d+)",
-      "dtype": "int"
-    },
-    {
       "name": "proc",
       "pattern": "[_/\\\\]+proc-([a-zA-Z0-9]+)"
     },
