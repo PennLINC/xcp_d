@@ -612,6 +612,15 @@ def init_execsummary_anatomical_plots_wf(
             name="resample_t1w",
         )
 
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_t1w, [
+                ("t1w", "input_image"),
+                ("template", "reference_image"),
+            ])
+        ])
+        # fmt:on
+
         plot_t1w_on_atlas_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="T1wOnAtlas",
