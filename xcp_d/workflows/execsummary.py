@@ -737,6 +737,7 @@ def init_plot_custom_slices_wf(
             dismiss_entities=["den"],
             datatype="figures",
             desc=desc,
+            extension=".png",
         ),
         name="ds_overlay_figure",
         run_without_submitting=True,
@@ -793,6 +794,7 @@ def init_plot_overlay_wf(
             dismiss_entities=["den"],
             datatype="figures",
             desc=desc,
+            extension=".png",
         ),
         name="ds_overlay_figure",
         run_without_submitting=True,
@@ -806,7 +808,3 @@ def init_plot_overlay_wf(
     # fmt:on
 
     return workflow
-
-
-def _select_first_in_list(lst):
-    return lst[0]
