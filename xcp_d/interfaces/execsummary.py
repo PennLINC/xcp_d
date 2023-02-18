@@ -196,7 +196,7 @@ class ExecutiveSummary(object):
                 "subject": self.subject_id,
                 "desc": "precarpetplot",
                 "suffix": "bold",
-                "extension": ".svg",
+                "extension": [".svg", ".png"],
                 **task_entity_set,
             }
 
