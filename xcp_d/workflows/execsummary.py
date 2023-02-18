@@ -801,9 +801,7 @@ def init_plot_overlay_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
-        (plot_overlay_figure, ds_overlay_figure, [
-            (("out_files", _select_first_in_list), "in_file"),
-        ]),
+        (plot_overlay_figure, ds_overlay_figure, [("out_files", "in_file")]),
     ])
     # fmt:on
 
