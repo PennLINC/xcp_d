@@ -11,6 +11,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import BinaryMath, MeanImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
@@ -445,7 +446,28 @@ def init_execsummary_functional_plots_wf(
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
-    if t1w_available and not t1w_available:
+    if t1w_available:
+        # Resample T1w to match resolution of task data
+        resample_t1w = pe.Node(
+            ApplyTransforms(
+                num_threads=2,
+                interpolation="LanczosWindowedSinc",
+                input_image_type=3,
+                dimension=3,
+                transforms=["identity"],
+            ),
+            name="resample_t1w",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_t1w, [
+                ("t1w", "input_image"),
+                ("preproc_nifti", "reference_image"),
+            ]),
+        ])
+        # fmt:on
+
         plot_t1w_on_task_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="T1wOnTask",
@@ -456,8 +478,10 @@ def init_execsummary_functional_plots_wf(
         workflow.connect([
             (inputnode, plot_t1w_on_task_wf, [
                 ("preproc_nifti", "inputnode.underlay_file"),
-                ("t1w", "inputnode.overlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
+            ]),
+            (resample_t1w, plot_t1w_on_task_wf, [
+                ("output_image", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -471,14 +495,37 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_t1w_wf, [
-                ("t1w", "inputnode.underlay_file"),
                 ("preproc_nifti", "inputnode.overlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
+            ]),
+            (resample_t1w, plot_task_on_t1w_wf, [
+                ("output_image", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
 
-    if t2w_available and not t2w_available:
+    if t2w_available:
+        # Resample T2w to match resolution of task data
+        resample_t2w = pe.Node(
+            ApplyTransforms(
+                num_threads=2,
+                interpolation="LanczosWindowedSinc",
+                input_image_type=3,
+                dimension=3,
+                transforms=["identity"],
+            ),
+            name="resample_t2w",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_t2w, [
+                ("t2w", "input_image"),
+                ("preproc_nifti", "reference_image"),
+            ]),
+        ])
+        # fmt:on
+
         plot_t2w_on_task_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="T2wOnTask",
@@ -489,8 +536,10 @@ def init_execsummary_functional_plots_wf(
         workflow.connect([
             (inputnode, plot_t2w_on_task_wf, [
                 ("preproc_nifti", "inputnode.underlay_file"),
-                ("t2w", "inputnode.overlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
+            ]),
+            (resample_t2w, plot_t2w_on_task_wf, [
+                ("output_image", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -504,9 +553,11 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_t2w_wf, [
-                ("t2w", "inputnode.underlay_file"),
                 ("preproc_nifti", "inputnode.overlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
+            ]),
+            (resample_t2w, plot_task_on_t2w_wf, [
+                ("output_image", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
@@ -549,6 +600,18 @@ def init_execsummary_anatomical_plots_wf(
     # Start plotting the overlay figures
     # Atlas in T1w, T1w in Atlas
     if t1w_available:
+        # Resample T1w to match resolution of template data
+        resample_t1w = pe.Node(
+            ApplyTransforms(
+                num_threads=2,
+                interpolation="LanczosWindowedSinc",
+                input_image_type=3,
+                dimension=3,
+                transforms=["identity"],
+            ),
+            name="resample_t1w",
+        )
+
         plot_t1w_on_atlas_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="T1wOnAtlas",
@@ -559,8 +622,10 @@ def init_execsummary_anatomical_plots_wf(
         workflow.connect([
             (inputnode, plot_t1w_on_atlas_wf, [
                 ("template", "inputnode.underlay_file"),
-                ("t1w", "inputnode.overlay_file"),
                 ("t1w", "inputnode.name_source"),
+            ]),
+            (resample_t1w, plot_t1w_on_atlas_wf, [
+                ("output_image", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -574,16 +639,17 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_atlas_on_t1w_wf, [
-                ("t1w", "inputnode.underlay_file"),
                 ("template", "inputnode.overlay_file"),
                 ("t1w", "inputnode.name_source"),
+            ]),
+            (resample_t1w, plot_atlas_on_t1w_wf, [
+                ("output_image", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
 
     # TODO: Add subcortical overlay images as well.
     # 1. Binarize atlas.
-    # 2.
 
     return workflow
 
