@@ -643,7 +643,9 @@ class SlicesDir(FSLCommand):
         outputs["out_dir"] = out_dir
         outputs["out_files"] = [
             self._gen_fname(
-                basename=f.replace(os.sep, "_"), cwd=out_dir, ext=self.inputs.out_extension
+                basename=f.replace(os.sep, "_"),
+                cwd=out_dir,
+                ext=self.inputs.out_extension,
             )
             for f in self.inputs.in_files
         ]

@@ -445,7 +445,7 @@ def init_execsummary_functional_plots_wf(
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
-    if t1w_available:
+    if t1w_available and not t1w_available:
         plot_t1w_on_task_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="T1wOnTask",
@@ -478,7 +478,7 @@ def init_execsummary_functional_plots_wf(
         ])
         # fmt:on
 
-    if t2w_available:
+    if t2w_available and not t2w_available:
         plot_t2w_on_task_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="T2wOnTask",
