@@ -131,6 +131,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary = {}
 
     # Collect anatomical files to copy
+    anat_dir_orig += '/MNINonLinear/'
     t1w_orig = os.path.join(anat_dir_orig, "T1w_restore.nii.gz")
     t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
@@ -206,7 +207,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Collect functional files to copy
     subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "Results", "*")))
-    subject_task_folders = [task for task in subject_task_folders if task.endswith(["RL", "LR"])]
+    subject_task_folders = [task for task in subject_task_folders if task.endswith("RL")
+                            or task.endswith("LR")]
 
     for subject_task_folder in subject_task_folders:
         # NOTE: What is the first element in the folder name?
@@ -313,7 +315,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             mvreg[col] = mvreg[col] * np.pi / 180
 
         # set first row of derivative columns to nan, for fMRIPrep compatibility
-        deriv_columns = [c for c in mvreg.columns if c.endwith("derivative1")]
+        deriv_columns = [c for c in mvreg.columns if c.endswith("derivative1")]
         for col in deriv_columns:
             mvreg.loc[0, col] = None
 
