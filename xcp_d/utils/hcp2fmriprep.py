@@ -4,6 +4,7 @@
 import glob
 import logging
 import os
+import tempfile
 
 import nibabel as nb
 import numpy as np
@@ -161,15 +162,25 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     )
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
+     # Create empty files to substitute as volume templates
+    affine = np.eye(4)
+    matrix = np.zeros(16)
+    nifti_file = nb.Nifti1Image(matrix, affine)
+    tempdir = tempfile.mkdtemp()
+    fake_nifti_1 = tempdir + "/fakenifti1.nii.gz"
+    fake_nifti_2 = tempdir + "/fakenifti2.nii.gz"
+    nb.save(nifti_file, fake_nifti_1)
+    nb.save(nifti_file, fake_nifti_2)
+
     # Grab transforms
-    t1w_to_template_orig = os.path.join(xforms_dir_orig, "standard2acpc_dc.nii.gz")
+    t1w_to_template_orig = fake_nifti_1
     t1w_to_template_fmriprep = os.path.join(
         anat_dir_fmriprep,
         f"{sub_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
     )
     copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
 
-    template_to_t1w_orig = os.path.join(xforms_dir_orig, "acpc_dc2standard.nii.gz")
+    template_to_t1w_orig = fake_nifti_2
     template_to_t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
         f"{sub_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
@@ -206,8 +217,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     print("finished collecting anat files")
 
-    # Collect functional files to copy
 
+    # Collect functional files to copy
     subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "MNINonLinear/Results",
                                                          "*")))
     subject_task_folders = [task for task in subject_task_folders if task.endswith("RL")
@@ -402,6 +413,10 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     for key, values in copy_dictionary.items():
         for item in values:
             scans_dict[item] = key
+
+    # Make sure the fake files are represented accurately
+    scans_dict[template_to_t1w_orig] = 'NA'
+    scans_dict[t1w_to_template_orig] = 'NA'
 
     scans_tuple = tuple(scans_dict.items())
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
