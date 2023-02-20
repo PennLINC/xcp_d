@@ -261,8 +261,8 @@ def collect_data(
             "t1w_seg": {
                 "datatype": "anat",
                 "space": None,
-                "desc": None,
-                "suffix": "aparcaseg_dseg",
+                "desc": "aparcaseg",
+                "suffix": "dseg",
                 "extension": ".nii.gz",
             },
             # transform from standard space to T1w space
