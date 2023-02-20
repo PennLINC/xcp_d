@@ -131,9 +131,9 @@ class ExecutiveSummary(object):
 
             # Get structural registration files.
             structural_files[modality]["registration_files"] = []
-            structural_files[modality]["registration_titles"] = ANAT_REGISTRATION_TITLES.format(
-                modality=modality,
-            )
+            structural_files[modality]["registration_titles"] = [
+                title.format(modality=modality) for title in ANAT_REGISTRATION_TITLES
+            ]
             for registration_desc in ANAT_REGISTRATION_DESCS:
                 query["desc"] = registration_desc
                 found_file = self._get_bids_file(query)
