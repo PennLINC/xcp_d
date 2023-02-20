@@ -472,7 +472,7 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="BOLD file after denoising, interpolation, and filtering",
     )
-    tmask = File(
+    temporal_mask = File(
         exists=True,
         mandatory=True,
         desc=(
@@ -511,7 +511,7 @@ class Censor(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Read in temporal mask
-        temporal_mask = pd.read_table(self.inputs.tmask)
+        temporal_mask = pd.read_table(self.inputs.temporal_mask)
 
         if np.sum(temporal_mask) == 0:  # No censoring needed
             self._results["bold_censored"] = self.inputs.in_file
