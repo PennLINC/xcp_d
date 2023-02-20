@@ -59,6 +59,15 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
 
 3. Functional outputs: Functional outputs consist of processed/denoised BOLD data, timeseries, functional connectivity matrices, and resting-state derivatives.
 
+   .. important::
+
+     Prior to version 0.3.3, the denoised data outputted by ``xcp_d`` was interpolated,
+     meaning that high-motion volumes were replaced with interpolated data prior to temporal filtering.
+     **This was a bug.**
+     From 0.3.3 on, we have started to only write out the censored version of the denoised data,
+     with high-motion volumes completely removed.
+     This extends to the parcellated time series and correlation matrices as well.
+
    a. Denoised or residual BOLD data::
 
           xcp_d/
@@ -113,7 +122,7 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
                          <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 
      .. important::
-          The smoothed ALFF image will only be generated is smoothing is enabled
+          The smoothed ALFF image will only be generated if smoothing is enabled
           (e.g., with the ``--smoothing parameter``).
 
      .. important::
