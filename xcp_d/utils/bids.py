@@ -207,12 +207,12 @@ def collect_data(
                 "suffix": "T2w",
                 "extension": ".nii.gz",
             },
-            # native T1w-space aparcaseg_dseg file
+            # native T1w-space dseg file
             "t1w_seg": {
                 "datatype": "anat",
                 "space": None,
                 "desc": None,
-                "suffix": "aparcaseg_dseg",
+                "suffix": "dseg",
                 "extension": ".nii.gz",
             },
             # transform from standard space to T1w space
@@ -257,12 +257,12 @@ def collect_data(
                 "suffix": "T2w",
                 "extension": ".nii.gz",
             },
-            # native T1w-space dseg file, but not aseg or aparcaseg
+            # native T1w-space aparcaseg_dseg file
             "t1w_seg": {
                 "datatype": "anat",
                 "space": None,
                 "desc": None,
-                "suffix": "dseg",
+                "suffix": "aparcaseg_dseg",
                 "extension": ".nii.gz",
             },
             # transform from standard space to T1w space
