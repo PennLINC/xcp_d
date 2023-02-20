@@ -466,8 +466,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=preproc_files[0],
-            desc="summary",
             datatype="figures",
+            desc="summary",
         ),
         name="ds_report_summary",
     )
