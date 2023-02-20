@@ -466,6 +466,105 @@ class CensorScrub(SimpleInterface):
         return runtime
 
 
+class _CensorInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="BOLD file after denoising, interpolation, and filtering",
+    )
+    tmask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all motion outlier volumes set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+
+
+class _CensorOutputSpec(TraitedSpec):
+    bold_censored = File(
+        exists=True,
+        mandatory=True,
+        desc="Censored bold file",
+    )
+    confounds_censored = File(
+        exists=True,
+        mandatory=True,
+        desc="confounds_file censored",
+    )
+    motion_censored = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Framewise displacement timeseries. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+
+
+class Censor(SimpleInterface):
+    """Apply temporal mask to data."""
+
+    input_spec = _CensorInputSpec
+    output_spec = _CensorOutputSpec
+
+    def _run_interface(self, runtime):
+        # Read in temporal mask
+        temporal_mask = pd.read_table(self.inputs.tmask)
+
+        if np.sum(temporal_mask) == 0:  # No censoring needed
+            self._results["bold_censored"] = self.inputs.in_file
+            return runtime
+
+        # Read in other files
+        bold_img_interp = nb.load(self.inputs.in_file)
+        bold_data_interp = bold_img_interp.get_fdata()
+
+        if bold_img_interp.ndim > 2:  # If Nifti
+            bold_data_censored = bold_data_interp[:, :, :, temporal_mask == 0]
+        else:
+            bold_data_censored = bold_data_interp[temporal_mask == 0, :]
+
+        # Turn censored bold into image
+        if nb.load(self.inputs.in_file).ndim > 2:
+            # If it's a Nifti image
+            bold_img_censored = nb.Nifti1Image(
+                bold_data_censored,
+                affine=bold_img_interp.affine,
+                header=bold_img_interp.header,
+            )
+        else:
+            # If it's a Cifti image
+            time_axis, brain_model_axis = [
+                bold_img_interp.header.get_axis(i) for i in range(bold_img_interp.ndim)
+            ]
+            new_total_volumes = bold_data_censored.shape[0]
+            censored_time_axis = time_axis[:new_total_volumes]
+            # Note: not an error. A time axis cannot be accessed with irregularly
+            # spaced values. Since we use the tmask for marking the volumes removed,
+            # the time axis also is not used further in XCP.
+            censored_header = nb.cifti2.Cifti2Header.from_axes(
+                (censored_time_axis, brain_model_axis)
+            )
+            bold_img_censored = nb.Cifti2Image(
+                bold_data_censored,
+                header=censored_header,
+                nifti_header=bold_img_interp.nifti_header,
+            )
+
+        # get the output
+        self._results["bold_censored"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_censored",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+
+        bold_img_censored.to_filename(self._results["bold_censored"])
+        return runtime
+
+
 class _InterpolateInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc=" censored or clean bold")
     bold_file = File(exists=True, mandatory=True, desc=" censored or clean bold")

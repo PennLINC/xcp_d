@@ -14,6 +14,7 @@ from num2words import num2words
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.filtering import FilteringData
 from xcp_d.interfaces.prepostcleaning import (
+    Censor,
     CensorScrub,
     ConvertTo32,
     Interpolate,
@@ -403,6 +404,20 @@ produced by the regression.
         n_procs=omp_nthreads,
     )
 
+    censor_interpolated_data = pe.Node(
+        Censor(),
+        name="censor_interpolated_data",
+        mem_gb=mem_gbx["timeseries"],
+        omp_nthreads=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (filtering_wf, censor_interpolated_data, [("filtered_file", "in_file")]),
+        (censor_scrub, censor_interpolated_data, [("tmask", "temporal_mask")]),
+    ])
+    # fmt:on
+
     consolidate_confounds_node = pe.Node(
         Function(
             input_names=[
@@ -594,8 +609,9 @@ produced by the regression.
                                                        'in_file')])])
 
     # residual smoothing
-    workflow.connect([(filtering_wf, resd_smoothing_wf,
-                       [('filtered_file', 'inputnode.bold_file')])])
+    workflow.connect([
+        (censor_interpolated_data, resd_smoothing_wf, [('bold_censored', 'inputnode.bold_file')]),
+    ])
 
     # functional connect workflow
     workflow.connect([
@@ -606,24 +622,26 @@ produced by the regression.
         ]),
         (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
-        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')])
+        (censor_interpolated_data, fcon_ts_wf, [('bold_censored', 'inputnode.clean_bold')]),
     ])
 
     # reho and alff
     workflow.connect([
         (downcast_data, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (censor_interpolated_data, reho_compute_wf, [('bold_censored', 'inputnode.clean_bold')]),
     ])
 
     if bandpass_filter:
         workflow.connect([
             (downcast_data, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+            (censor_interpolated_data, alff_compute_wf, [
+                ('bold_censored', 'inputnode.clean_bold'),
+            ]),
         ])
 
     # qc report
     workflow.connect([
-        (filtering_wf, qc_report_wf, [('filtered_file', 'inputnode.cleaned_file')]),
+        (censor_interpolated_data, qc_report_wf, [('bold_censored', 'inputnode.cleaned_file')]),
         (censor_scrub, qc_report_wf, [
             ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
@@ -637,8 +655,8 @@ produced by the regression.
         (consolidate_confounds_node, write_derivative_wf, [
             ('out_file', 'inputnode.confounds_file'),
         ]),
-        (filtering_wf, write_derivative_wf, [
-            ('filtered_file', 'inputnode.processed_bold'),
+        (censor_interpolated_data, write_derivative_wf, [
+            ('bold_censored', 'inputnode.processed_bold'),
         ]),
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),
