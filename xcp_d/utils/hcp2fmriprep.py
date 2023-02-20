@@ -51,7 +51,7 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
         "T2w_restore",
         "T2w_restore_brain",
         "aparc",
-        "aparc+aseg",
+        "aparc.a2009s+aseg",
         "brainmask_fs",
         "fsaverage_LR32k",
         "ribbon",
@@ -60,16 +60,16 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     ]
 
     if participant_ids is None:
-        subject_folders = sorted(glob.glob(os.path.join(in_dir, "*")))
+        subject_folders = sorted(glob.glob(os.path.join(in_dir, "*/*.L.BA.164k_fs_LR.label.gii")))
         subject_folders = [
-            subject_folder for subject_folder in subject_folders if os.path.isdir(subject_folder)
+            subject_folder for subject_folder in subject_folders if os.path.exists(subject_folder)
         ]
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
         all_subject_ids = []
         for subject_id in participant_ids:
             subject_id = subject_id.split(".")[0]
             if subject_id not in all_subject_ids and subject_id not in EXCLUDE_LIST:
-                all_subject_ids.append(subject_id)
+                all_subject_ids.append("sub-" + str(subject_id))
 
             participant_ids = all_subject_ids
 
@@ -114,7 +114,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     anat_dir_orig = in_dir  # just for readability
     # NOTE: This is probably wrong.
-    xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
+    xforms_dir_orig = os.path.join(anat_dir_orig, "MNINonLinear/xfms")
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
     anat_dir_fmriprep = os.path.join(subject_dir_fmriprep, "anat")
@@ -154,7 +154,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     )
     copy_dictionary[ribbon_orig] = [ribbon_fmriprep]
 
-    dseg_orig = os.path.join(anat_dir_orig, "aparc+aseg.nii.gz")
+    dseg_orig = os.path.join(anat_dir_orig, "aparc.a2009s+aseg.nii.gz")
     dseg_fmriprep = os.path.join(
         anat_dir_fmriprep,
         f"{sub_ent}_{volspace_ent}_{res_ent}_desc-aparcaseg_dseg.nii.gz",
@@ -162,14 +162,14 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
     # Grab transforms
-    t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
+    t1w_to_template_orig = os.path.join(xforms_dir_orig, "standard2acpc_dc.nii.gz")
     t1w_to_template_fmriprep = os.path.join(
         anat_dir_fmriprep,
         f"{sub_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
     )
     copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
 
-    template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
+    template_to_t1w_orig = os.path.join(xforms_dir_orig, "acpc_dc2standard.nii.gz")
     template_to_t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
         f"{sub_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
@@ -177,7 +177,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
 
     # Grab surface morphometry files
-    fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
+    anat_dir_orig = in_dir
+    fsaverage_dir_orig = os.path.join(anat_dir_orig, "MNINonLinear/fsaverage_LR32k")
 
     SURFACE_DICT = {
         "R.midthickness": "hemi-R_desc-hcp_midthickness",
@@ -206,10 +207,11 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     print("finished collecting anat files")
 
     # Collect functional files to copy
-    subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "Results", "*")))
+
+    subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "MNINonLinear/Results",
+                                                         "*")))
     subject_task_folders = [task for task in subject_task_folders if task.endswith("RL")
                             or task.endswith("LR")]
-
     for subject_task_folder in subject_task_folders:
         # NOTE: What is the first element in the folder name?
         _, task_id, dir_id = os.path.basename(subject_task_folder).split("_")
@@ -247,7 +249,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Grab transforms
         # TODO: Find actual native-to-T1w transform
-        native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_ent}2T1w.nii.gz")
+        native_to_t1w_orig = os.path.join(xforms_dir_orig, "acpc_dc2standard.nii.gz")
         native_to_t1w_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.nii.gz",
@@ -255,7 +257,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
         # TODO: Find actual T1w-to-native transform
-        t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_ent}.nii.gz")
+        t1w_to_native_orig = os.path.join(xforms_dir_orig, f"standard2acpc_dc.nii.gz")
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.nii.gz",
@@ -285,7 +287,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         }
         bold_cifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_ent}_{task_ent}_{dir_ent}_space-fsLR_den-91k_bold.json",
+            f"{sub_ent}_{task_ent}_{dir_ent}_space-fsLR_den-91k_bold.dtseries.json",
         )
         writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 

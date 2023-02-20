@@ -765,7 +765,7 @@ def build_workflow(opts, retval):
 
         fmri_dir = converted_fmri_dir
 
-    if not (fmri_dir / "dataset_description.json").is_file():
+    if not os.path.exists((os.path.join(fmri_dir, "dataset_description.json"))):
         build_log.error(
             "No dataset_description.json file found in input directory. "
             "Make sure to point to the specific pipeline's derivatives folder. "
