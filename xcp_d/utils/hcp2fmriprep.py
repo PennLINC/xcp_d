@@ -162,7 +162,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     )
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
-     # Create empty files to substitute as volume templates
+    # Create empty files to substitute as volume templates
     affine = np.eye(4)
     matrix = np.zeros(16)
     nifti_file = nb.Nifti1Image(matrix, affine)
@@ -216,7 +216,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[surf_orig] = [surf_fmriprep]
 
     print("finished collecting anat files")
-
 
     # Collect functional files to copy
     subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "MNINonLinear/Results",
@@ -378,6 +377,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             f"{regressors_file_base}.json",
         )
         regressors.to_json(regressors_json_fmriprep)
+
+    print("Finished collecting func files")
 
     # Copy HCP files to fMRIPrep folder
     for file_orig, files_fmriprep in copy_dictionary.items():
