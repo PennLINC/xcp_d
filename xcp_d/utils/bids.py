@@ -207,7 +207,7 @@ def collect_data(
                 "suffix": "T2w",
                 "extension": ".nii.gz",
             },
-            # native T1w-space aseg/aparcseg-dseg file
+            # native T1w-space aparcaseg_dseg file
             "t1w_seg": {
                 "datatype": "anat",
                 "space": None,
