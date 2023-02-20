@@ -586,6 +586,7 @@ def init_execsummary_anatomical_plots_wf(
     Inputs
     ------
     t1w
+    t2w
     template
     """
     workflow = Workflow(name=name)
@@ -594,6 +595,7 @@ def init_execsummary_anatomical_plots_wf(
         niu.IdentityInterface(
             fields=[
                 "t1w",
+                "t2w",
                 "template",
             ]
         ),
