@@ -509,6 +509,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     if dcan_qc:
         execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
             t1w_available=subj_data["t1w"] is not None,
+            t2w_available=subj_data["t2w"] is not None,
             output_dir=output_dir,
             name="execsummary_anatomical_plots_wf",
         )
@@ -517,6 +518,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         workflow.connect([
             (warp_anats_to_template_wf, execsummary_anatomical_plots_wf, [
                 ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.t2w", "inputnode.t2w"),
                 ("outputnode.template", "inputnode.template"),
             ]),
         ])

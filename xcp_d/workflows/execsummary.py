@@ -568,6 +568,7 @@ def init_execsummary_functional_plots_wf(
 @fill_doc
 def init_execsummary_anatomical_plots_wf(
     t1w_available,
+    t2w_available,
     output_dir,
     name="execsummary_anatomical_plots_wf",
 ):
@@ -577,6 +578,8 @@ def init_execsummary_anatomical_plots_wf(
     ----------
     t1w_available : bool
         Generally True.
+    t2w_available : bool
+        Generally False.
     %(output_dir)s
     %(name)s
 
@@ -623,7 +626,7 @@ def init_execsummary_anatomical_plots_wf(
 
         plot_t1w_on_atlas_wf = init_plot_overlay_wf(
             output_dir=output_dir,
-            desc="T1wOnAtlas",
+            desc="AnatOnAtlas",
             name="plot_t1w_on_atlas_wf",
         )
 
@@ -641,7 +644,7 @@ def init_execsummary_anatomical_plots_wf(
 
         plot_atlas_on_t1w_wf = init_plot_overlay_wf(
             output_dir=output_dir,
-            desc="AtlasOnT1w",
+            desc="AtlasOnAnat",
             name="plot_atlas_on_t1w_wf",
         )
 
@@ -652,6 +655,65 @@ def init_execsummary_anatomical_plots_wf(
                 ("t1w", "inputnode.name_source"),
             ]),
             (resample_t1w, plot_atlas_on_t1w_wf, [
+                ("output_image", "inputnode.underlay_file"),
+            ]),
+        ])
+        # fmt:on
+
+    # Atlas in T2w, T2w in Atlas
+    if t2w_available:
+        # Resample T2w to match resolution of template data
+        resample_t2w = pe.Node(
+            ApplyTransforms(
+                num_threads=2,
+                interpolation="LanczosWindowedSinc",
+                input_image_type=3,
+                dimension=3,
+                transforms=["identity"],
+            ),
+            name="resample_t2w",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_t2w, [
+                ("t2w", "input_image"),
+                ("template", "reference_image"),
+            ])
+        ])
+        # fmt:on
+
+        plot_t2w_on_atlas_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="AnatOnAtlas",
+            name="plot_t2w_on_atlas_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_t2w_on_atlas_wf, [
+                ("template", "inputnode.underlay_file"),
+                ("t2w", "inputnode.name_source"),
+            ]),
+            (resample_t2w, plot_t2w_on_atlas_wf, [
+                ("output_image", "inputnode.overlay_file"),
+            ]),
+        ])
+        # fmt:on
+
+        plot_atlas_on_t2w_wf = init_plot_overlay_wf(
+            output_dir=output_dir,
+            desc="AtlasOnAnat",
+            name="plot_atlas_on_t2w_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_atlas_on_t2w_wf, [
+                ("template", "inputnode.overlay_file"),
+                ("t2w", "inputnode.name_source"),
+            ]),
+            (resample_t2w, plot_atlas_on_t2w_wf, [
                 ("output_image", "inputnode.underlay_file"),
             ]),
         ])
