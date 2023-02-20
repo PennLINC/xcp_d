@@ -512,6 +512,7 @@ class Censor(SimpleInterface):
     def _run_interface(self, runtime):
         # Read in temporal mask
         temporal_mask = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask = temporal_mask["framewise_displacement"].to_numpy()
 
         if np.sum(temporal_mask) == 0:  # No censoring needed
             self._results["bold_censored"] = self.inputs.in_file
