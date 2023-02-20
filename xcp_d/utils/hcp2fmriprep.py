@@ -378,7 +378,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         regressors.to_json(regressors_json_fmriprep)
 
-    print("Finished collecting func files")
+    print("finished collecting func files")
 
     # Copy HCP files to fMRIPrep folder
     for file_orig, files_fmriprep in copy_dictionary.items():
@@ -392,6 +392,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         for file_fmriprep in files_fmriprep:
             copyfileobj_example(file_orig, file_fmriprep)
+    print("finished copying files")
 
     # Write the dataset description out last
     dataset_description_dict = {
