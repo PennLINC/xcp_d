@@ -362,10 +362,12 @@ class CensorScrub(SimpleInterface):
             fd_thresh=self.inputs.fd_thresh,
         )
         if np.mean(tmask) > 0.5:
-            LOGGER.error(
+            msg = (
                 f"More than 50% of volumes in {self.inputs.in_file} are flagged as high motion. "
                 "This run will not be denoised."
             )
+            LOGGER.error(msg)
+            raise ValueError(msg)
 
         if np.sum(tmask) > 0:  # If any FD values exceed the threshold
             if nb.load(self.inputs.in_file).ndim > 2:  # If Nifti
