@@ -597,9 +597,14 @@ produced by the regression.
     ])
 
     # add filtering workflow
-    workflow.connect([(downcast_data, filtering_wf, [('bold_mask', 'mask')]),
-                      (interpolate_wf, filtering_wf, [('bold_interpolated',
-                                                       'in_file')])])
+    workflow.connect([
+        (downcast_data, filtering_wf, [('bold_mask', 'mask')]),
+        (interpolate_wf, filtering_wf, [('bold_interpolated', 'in_file')]),
+        (censor_scrub, filtering_wf, [
+            ("tmask", "temporal_mask"),
+            ("tmask_metadata", "mask_metadata"),
+        ]),
+    ])
 
     # residual smoothing
     workflow.connect([(filtering_wf, resd_smoothing_wf,
@@ -631,9 +636,11 @@ produced by the regression.
 
     # qc report
     workflow.connect([
-        (filtering_wf, qc_report_wf, [('filtered_file', 'inputnode.cleaned_file')]),
+        (filtering_wf, qc_report_wf, [
+            ('filtered_file', 'inputnode.cleaned_file'),
+            ('filtered_mask', 'inputnode.tmask'),
+        ]),
         (censor_scrub, qc_report_wf, [
-            ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
         ]),
     ])
@@ -657,8 +664,10 @@ produced by the regression.
         (censor_scrub, write_derivative_wf, [
             ('filtered_motion', 'inputnode.filtered_motion'),
             ('filtered_motion_metadata', 'inputnode.filtered_motion_metadata'),
-            ('tmask', 'inputnode.tmask'),
-            ('tmask_metadata', 'inputnode.tmask_metadata'),
+        ]),
+        (filtering_wf, write_derivative_wf, [
+            ('filtered_mask', 'inputnode.tmask'),
+            ('mask_metadata', 'inputnode.tmask_metadata'),
         ]),
         (reho_compute_wf, write_derivative_wf, [
             ('outputnode.reho_out', 'inputnode.reho_out'),
