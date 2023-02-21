@@ -67,7 +67,11 @@ class FilteringData(SimpleInterface):
             order=self.inputs.filter_order,
         ).T
         temporal_mask["filtered_outliers"] = butter_bandpass(
-            temporal_mask["framewise_displacement"].to_numpy()
+            temporal_mask["framewise_displacement"].to_numpy(),
+            fs=1 / self.inputs.TR,
+            lowpass=self.inputs.lowpass,
+            highpass=self.inputs.highpass,
+            order=self.inputs.filter_order,
         )
         outliers_metadata["filtered_outliers"] = {
             "Description": (
