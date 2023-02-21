@@ -75,7 +75,7 @@ class FilteringData(SimpleInterface):
             highpass=self.inputs.highpass,
             order=self.inputs.filter_order,
         )
-        temporal_mask["filtered_outliers"] = np.squeeze(filtered_temporal_mask)
+        temporal_mask_df["filtered_outliers"] = np.squeeze(filtered_temporal_mask)
         outliers_metadata["filtered_outliers"] = {
             "Description": (
                 "Outlier timeseries, bandpass filtered to identify volumes that have been "
@@ -110,6 +110,6 @@ class FilteringData(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-        temporal_mask.to_csv(self._results["filtered_mask"], sep="\t", index=False)
+        temporal_mask_df.to_csv(self._results["filtered_mask"], sep="\t", index=False)
 
         return runtime
