@@ -132,7 +132,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary = {}
 
     # Collect anatomical files to copy
-    anat_dir_orig += '/MNINonLinear/'
+    anat_dir_orig += "/MNINonLinear/"
     t1w_orig = os.path.join(anat_dir_orig, "T1w_restore.nii.gz")
     t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
@@ -217,10 +217,12 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     print("finished collecting anat files")
 
     # Collect functional files to copy
-    subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "MNINonLinear/Results",
-                                                         "*")))
-    subject_task_folders = [task for task in subject_task_folders if task.endswith("RL")
-                            or task.endswith("LR")]
+    subject_task_folders = sorted(
+        glob.glob(os.path.join(anat_dir_orig, "MNINonLinear/Results", "*"))
+    )
+    subject_task_folders = [
+        task for task in subject_task_folders if task.endswith("RL") or task.endswith("LR")
+    ]
     for subject_task_folder in subject_task_folders:
         # NOTE: What is the first element in the folder name?
         _, task_id, dir_id = os.path.basename(subject_task_folder).split("_")
@@ -416,8 +418,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             scans_dict[item] = key
 
     # Make sure the fake files are represented accurately
-    scans_dict[template_to_t1w_orig] = 'NA'
-    scans_dict[t1w_to_template_orig] = 'NA'
+    scans_dict[template_to_t1w_orig] = "NA"
+    scans_dict[t1w_to_template_orig] = "NA"
 
     scans_tuple = tuple(scans_dict.items())
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])

@@ -185,7 +185,7 @@ def collect_data(
             derivatives=True,
             config=["bids", "derivatives"],
         )
-    if input_type != 'hcp':
+    if input_type != "hcp":
         queries = {
             # all preprocessed BOLD files in the right space/resolution/density
             "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
@@ -637,7 +637,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             suffix="boldref",
         )
 
-    if input_type == 'hcp':
+    if input_type == "hcp":
         run_data["boldmask"] = layout.get(desc="brain", datatype="anat")
 
     LOGGER.debug(

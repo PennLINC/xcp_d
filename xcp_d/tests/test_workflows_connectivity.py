@@ -60,15 +60,11 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the correct time series file
-    timeseries_file = nodes["connectivity_wf.nifti_connect"].get_output(
-        "time_series_tsv"
-    )[3]
+    timeseries_file = nodes["connectivity_wf.nifti_connect"].get_output("time_series_tsv")[3]
     assert os.path.isfile(timeseries_file)
 
     # Let's find the correct correlation matrix file
-    corr_mat_file = nodes["connectivity_wf.nifti_connect"].get_output(
-        "fcon_matrix_tsv"
-    )[3]
+    corr_mat_file = nodes["connectivity_wf.nifti_connect"].get_output("fcon_matrix_tsv")[3]
     assert os.path.isfile(corr_mat_file)
 
     # Read that into a df
@@ -77,9 +73,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert xcp_array.shape == (400, 400)
 
     # Now let's get the ground truth. First, we should locate the atlas
-    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output(
-        "output_image"
-    )[3]
+    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output("output_image")[3]
     assert os.path.isfile(atlas_file)
 
     # Masking img
