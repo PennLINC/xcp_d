@@ -203,14 +203,14 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         "R.white": "hemi-R_smoothwm",
         "L.white": "hemi-L_smoothwm",
     }
-
+    fsaverage_dir_fmriprep = anat_dir_fmriprep.replace('anat','freesurfer')
     for in_str, out_str in SURFACE_DICT.items():
         surf_orig = os.path.join(
             fsaverage_dir_orig,
             f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
         )
         surf_fmriprep = os.path.join(
-            anat_dir_fmriprep,
+            fsaverage_dir_fmriprep,
             f"{sub_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
         )
         copy_dictionary[surf_orig] = [surf_fmriprep]
