@@ -499,7 +499,7 @@ def init_execsummary_functional_plots_wf(
             (inputnode, plot_task_on_t1w_wf, [
                 ("preproc_nifti", "inputnode.name_source"),
             ]),
-            (calculate_mean_bold, plot_t1w_on_task_wf, [
+            (calculate_mean_bold, plot_task_on_t1w_wf, [
                 ("out_file", "inputnode.overlay_file"),
             ]),
             (resample_t1w, plot_task_on_t1w_wf, [
