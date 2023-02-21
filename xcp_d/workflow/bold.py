@@ -641,7 +641,7 @@ produced by the regression.
 
     # qc report
     workflow.connect([
-        (censor_interpolated_data, qc_report_wf, [('bold_censored', 'inputnode.cleaned_file')]),
+        (filtering_wf, qc_report_wf, [('filtered_file', 'inputnode.cleaned_file')]),
         (censor_scrub, qc_report_wf, [
             ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
