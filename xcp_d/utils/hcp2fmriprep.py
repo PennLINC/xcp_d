@@ -268,7 +268,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
         # TODO: Find actual T1w-to-native transform
-        t1w_to_native_orig = os.path.join(xforms_dir_orig, f"standard2acpc_dc.nii.gz")
+        t1w_to_native_orig = os.path.join(xforms_dir_orig, "standard2acpc_dc.nii.gz")
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.nii.gz",
