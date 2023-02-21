@@ -11,7 +11,6 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import BinaryMath, MeanImage, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
