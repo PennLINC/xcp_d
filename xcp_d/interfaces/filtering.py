@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Handling filtering."""
+import numpy as np
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
@@ -56,7 +57,8 @@ class FilteringData(SimpleInterface):
 
         # get the nifti/cifti into  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
-        temporal_mask = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask_df = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask = temporal_mask_df["framewise_displacement"].to_numpy()
         outliers_metadata = self.inputs.mask_metadata
 
         filt_data = butter_bandpass(
@@ -66,13 +68,14 @@ class FilteringData(SimpleInterface):
             highpass=self.inputs.highpass,
             order=self.inputs.filter_order,
         ).T
-        temporal_mask["filtered_outliers"] = butter_bandpass(
-            temporal_mask["framewise_displacement"].to_numpy(),
+        filtered_temporal_mask = butter_bandpass(
+            temporal_mask[:, None],
             fs=1 / self.inputs.TR,
             lowpass=self.inputs.lowpass,
             highpass=self.inputs.highpass,
             order=self.inputs.filter_order,
         )
+        temporal_mask["filtered_outliers"] = np.squeeze(filtered_temporal_mask)
         outliers_metadata["filtered_outliers"] = {
             "Description": (
                 "Outlier timeseries, bandpass filtered to identify volumes that have been "
