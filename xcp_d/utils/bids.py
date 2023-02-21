@@ -274,6 +274,7 @@ def collect_data(
             # native T1w-space brain mask
             "t1w_mask": {
                 "datatype": "anat",
+                "space": None,
                 "desc": "brain",
                 "suffix": "mask",
                 "extension": ".nii.gz",
