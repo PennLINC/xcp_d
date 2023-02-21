@@ -51,13 +51,13 @@ class FilteringData(SimpleInterface):
             LOGGER.debug("Not running bandpass filter.")
             self._results["filtered_file"] = self.inputs.in_file
             self._results["filtered_mask"] = self.inputs.temporal_mask
-            self._results["tmask_metadata"] = self.inputs.tmask_metadata
+            self._results["mask_metadata"] = self.inputs.mask_metadata
             return runtime
 
         # get the nifti/cifti into  matrix
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         temporal_mask = pd.read_table(self.inputs.temporal_mask)
-        outliers_metadata = self.inputs.tmask_metadata
+        outliers_metadata = self.inputs.mask_metadata
 
         filt_data = butter_bandpass(
             data=data_matrix.T,
@@ -76,7 +76,7 @@ class FilteringData(SimpleInterface):
             ),
             "Threshold": outliers_metadata["framewise_displacement"]["Threshold"],
         }
-        self._results["tmask_metadata"] = outliers_metadata
+        self._results["mask_metadata"] = outliers_metadata
 
         # write out the data
         if self.inputs.in_file.endswith(".dtseries.nii"):
