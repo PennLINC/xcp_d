@@ -13,7 +13,7 @@ from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import BinaryMath, MeanImage
+from xcp_d.interfaces.nilearn import BinaryMath, MeanImage, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
@@ -449,21 +449,17 @@ def init_execsummary_functional_plots_wf(
     if t1w_available:
         # Resample T1w to match resolution of task data
         resample_t1w = pe.Node(
-            ApplyTransforms(
-                num_threads=2,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-                transforms=["identity"],
-            ),
+            ResampleToImage(),
             name="resample_t1w",
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, resample_t1w, [
-                ("t1w", "input_image"),
-                ("preproc_nifti", "reference_image"),
+                ("t1w", "in_file"),
+            ]),
+            (calculate_mean_bold, resample_t1w, [
+                ("out_file", "target_file"),
             ]),
         ])
         # fmt:on
@@ -483,7 +479,7 @@ def init_execsummary_functional_plots_wf(
                 ("out_file", "inputnode.underlay_file"),
             ]),
             (resample_t1w, plot_t1w_on_task_wf, [
-                ("output_image", "inputnode.overlay_file"),
+                ("out_file", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -503,7 +499,7 @@ def init_execsummary_functional_plots_wf(
                 ("out_file", "inputnode.overlay_file"),
             ]),
             (resample_t1w, plot_task_on_t1w_wf, [
-                ("output_image", "inputnode.underlay_file"),
+                ("out_file", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
@@ -511,21 +507,17 @@ def init_execsummary_functional_plots_wf(
     if t2w_available:
         # Resample T2w to match resolution of task data
         resample_t2w = pe.Node(
-            ApplyTransforms(
-                num_threads=2,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-                transforms=["identity"],
-            ),
+            ResampleToImage(),
             name="resample_t2w",
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, resample_t2w, [
-                ("t2w", "input_image"),
-                ("preproc_nifti", "reference_image"),
+                ("t2w", "in_file"),
+            ]),
+            (calculate_mean_bold, resample_t2w, [
+                ("out_file", "target_file"),
             ]),
         ])
         # fmt:on
@@ -543,7 +535,7 @@ def init_execsummary_functional_plots_wf(
                 ("preproc_nifti", "inputnode.name_source"),
             ]),
             (resample_t2w, plot_t2w_on_task_wf, [
-                ("output_image", "inputnode.overlay_file"),
+                ("out_file", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -561,7 +553,7 @@ def init_execsummary_functional_plots_wf(
                 ("preproc_nifti", "inputnode.name_source"),
             ]),
             (resample_t2w, plot_task_on_t2w_wf, [
-                ("output_image", "inputnode.underlay_file"),
+                ("out_file", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
@@ -611,21 +603,15 @@ def init_execsummary_anatomical_plots_wf(
     if t1w_available:
         # Resample T1w to match resolution of template data
         resample_t1w = pe.Node(
-            ApplyTransforms(
-                num_threads=2,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-                transforms=["identity"],
-            ),
+            ResampleToImage(),
             name="resample_t1w",
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, resample_t1w, [
-                ("t1w", "input_image"),
-                ("template", "reference_image"),
+                ("t1w", "in_file"),
+                ("template", "target_file"),
             ])
         ])
         # fmt:on
@@ -643,7 +629,7 @@ def init_execsummary_anatomical_plots_wf(
                 ("t1w", "inputnode.name_source"),
             ]),
             (resample_t1w, plot_t1w_on_atlas_wf, [
-                ("output_image", "inputnode.overlay_file"),
+                ("out_file", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -661,7 +647,7 @@ def init_execsummary_anatomical_plots_wf(
                 ("t1w", "inputnode.name_source"),
             ]),
             (resample_t1w, plot_atlas_on_t1w_wf, [
-                ("output_image", "inputnode.underlay_file"),
+                ("out_file", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
@@ -670,21 +656,15 @@ def init_execsummary_anatomical_plots_wf(
     if t2w_available:
         # Resample T2w to match resolution of template data
         resample_t2w = pe.Node(
-            ApplyTransforms(
-                num_threads=2,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-                transforms=["identity"],
-            ),
+            ResampleToImage(),
             name="resample_t2w",
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, resample_t2w, [
-                ("t2w", "input_image"),
-                ("template", "reference_image"),
+                ("t2w", "in_file"),
+                ("template", "target_file"),
             ])
         ])
         # fmt:on
@@ -702,7 +682,7 @@ def init_execsummary_anatomical_plots_wf(
                 ("t2w", "inputnode.name_source"),
             ]),
             (resample_t2w, plot_t2w_on_atlas_wf, [
-                ("output_image", "inputnode.overlay_file"),
+                ("out_file", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
@@ -720,7 +700,7 @@ def init_execsummary_anatomical_plots_wf(
                 ("t2w", "inputnode.name_source"),
             ]),
             (resample_t2w, plot_atlas_on_t2w_wf, [
-                ("output_image", "inputnode.underlay_file"),
+                ("out_file", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on

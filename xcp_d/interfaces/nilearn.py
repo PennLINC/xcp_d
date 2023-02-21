@@ -171,3 +171,52 @@ class MeanImage(NilearnBaseInterface, SimpleInterface):
         avg_img.to_filename(self._results["out_file"])
 
         return runtime
+
+
+class _ResampleToImageInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="An image to average over time.",
+    )
+    target_file = File(
+        exists=True,
+        mandatory=True,
+        desc="",
+    )
+    out_file = File(
+        "out_img.nii.gz",
+        usedefault=True,
+        exists=False,
+        desc="The name of the resampled file to write out. out_img.nii.gz by default.",
+    )
+
+
+class _ResampleToImageOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="Resampled output file.",
+    )
+
+
+class ResampleToImage(NilearnBaseInterface, SimpleInterface):
+    """Resample a source image on a target image.
+
+    No registration is performed: the image should already be aligned.
+    """
+
+    input_spec = _ResampleToImageInputSpec
+    output_spec = _ResampleToImageOutputSpec
+
+    def _run_interface(self, runtime):
+        from nilearn.image import resample_to_img
+
+        resampled_img = resample_to_img(
+            source_img=self.inputs.in_file,
+            target_img=self.inputs.target_file,
+            interpolation="continuous",
+        )
+        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
+        resampled_img.to_filename(self._results["out_file"])
+
+        return runtime
