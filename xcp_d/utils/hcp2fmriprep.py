@@ -210,12 +210,10 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
         )
         surf_fmriprep = os.path.join(
-            fsaverage_dir_fmriprep,
+            fsaverage_dir_orig,
             f"{sub_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
         )
         copy_dictionary[surf_orig] = [surf_fmriprep]
-        print(surf_orig)
-        print(surf_fmriprep)
 
     print("finished collecting anat files")
 
