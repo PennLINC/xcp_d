@@ -197,8 +197,6 @@ def collect_data(
                 "suffix": "T1w",
                 "extension": ".nii.gz",
             },
-
-
             # native T2w-space, preprocessed T1w file
             "t2w": {
                 "datatype": "anat",
@@ -260,7 +258,6 @@ def collect_data(
             # native T1w-space aparcaseg_dseg file
             "t1w_seg": {
                 "datatype": "anat",
-                "space": None,
                 "desc": "aparcaseg",
                 "suffix": "dseg",
                 "extension": ".nii.gz",
@@ -275,7 +272,6 @@ def collect_data(
             # native T1w-space brain mask
             "t1w_mask": {
                 "datatype": "anat",
-                "space": None,
                 "desc": "brain",
                 "suffix": "mask",
                 "extension": ".nii.gz",
@@ -447,7 +443,7 @@ def collect_surface_data(layout, participant_label):
         subject=participant_label,
         datatype="anat",
         space="fsLR",
-        res="32k",
+        den="32k",
         extension=".surf.gii",
         **temp_query,
     )
@@ -463,7 +459,7 @@ def collect_surface_data(layout, participant_label):
     if standard_space_surfaces:
         query_extras = {
             "space": "fsLR",
-            "res": "32k",
+            "den": "32k",
         }
     else:
         query_extras = {
@@ -640,6 +636,9 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             space=allowed_nifti_spaces,
             suffix="boldref",
         )
+
+    if input_type == 'hcp':
+        run_data["boldmask"] = layout.get(desc="brain", datatype="anat")
 
     LOGGER.debug(
         f"Collected run data for {bold_file}:\n"
