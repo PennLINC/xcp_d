@@ -140,7 +140,7 @@ jobs:
           paths:
               - .coverage.ds001419_nifti
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
+          path: /src/xcp_d/.circleci
 
   nibabies:
     <<: *dockersetup

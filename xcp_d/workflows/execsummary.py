@@ -477,8 +477,10 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_t1w_on_task_wf, [
-                ("preproc_nifti", "inputnode.underlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
+            ]),
+            (calculate_mean_bold, plot_t1w_on_task_wf, [
+                ("out_file", "inputnode.underlay_file"),
             ]),
             (resample_t1w, plot_t1w_on_task_wf, [
                 ("output_image", "inputnode.overlay_file"),
@@ -495,8 +497,10 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_t1w_wf, [
-                ("preproc_nifti", "inputnode.overlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
+            ]),
+            (calculate_mean_bold, plot_t1w_on_task_wf, [
+                ("out_file", "inputnode.overlay_file"),
             ]),
             (resample_t1w, plot_task_on_t1w_wf, [
                 ("output_image", "inputnode.underlay_file"),
