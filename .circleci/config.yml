@@ -169,7 +169,7 @@ jobs:
           paths:
               - .coverage.nibabies
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
+          path: /src/xcp_d/.circleci/
 
   cifti_with_freesurfer:
     <<: *dockersetup

@@ -141,7 +141,7 @@ def init_writederivatives_wf(
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=["atlas", "den", "res", "space", "desc"],
+            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
             suffix="outliers",
             extension=".tsv",
             source_file=bold_file,
@@ -163,7 +163,7 @@ def init_writederivatives_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=bold_file,
-            dismiss_entities=["atlas", "den", "res", "space", "desc"],
+            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
@@ -185,7 +185,7 @@ def init_writederivatives_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=bold_file,
-            dismiss_entities=["space", "den", "res"],
+            dismiss_entities=["space", "cohort", "den", "res"],
             datatype="func",
             suffix="design",
             extension=".tsv",

@@ -235,7 +235,6 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
-            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
             suffix="dseg",
             extension=".nii.gz",
         ),

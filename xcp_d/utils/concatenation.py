@@ -22,7 +22,7 @@ from xcp_d.utils.qcmetrics import compute_dvars, make_dcan_df
 from xcp_d.utils.utils import get_segfile
 from xcp_d.utils.write_save import read_ndata
 
-_pybids_spec = loads(Path(_pkgres("xcp_d", "data/nipreps.json")).read_text())
+_pybids_spec = loads(Path(_pkgres("xcp_d", "data/xcp_d_bids_config.json")).read_text())
 path_patterns = _pybids_spec["default_path_patterns"]
 LOGGER = logging.getLogger("nipype.interface")
 
