@@ -126,7 +126,7 @@ get_config_data() {
 
     # Write the config file
     CFG=${WORKDIR}/data/nipype.cfg
-    printf "[execution]\nstop_on_first_crash = true\n" > ${CFG}
+    printf "[execution]\nstop_on_first_crash = false\n" > ${CFG}
     echo "poll_sleep_duration = 0.01" >> ${CFG}
     echo "hash_method = content" >> ${CFG}
     export NIPYPE_CONFIG=$CFG
