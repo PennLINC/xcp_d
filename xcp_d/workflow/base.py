@@ -561,7 +561,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fd_thresh=fd_thresh,
         )
         if is_bad_run:
-            LOGGER.error(
+            LOGGER.important(
                 f"More than 50% of volumes in {bold_file} are high-motion outliers. "
                 "This run will not be processed."
             )
