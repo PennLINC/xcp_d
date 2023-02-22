@@ -27,7 +27,7 @@ def flag_bad_run(
     head_radius,
     fd_thresh,
 ):
-    """Generate a temporal mask.
+    """Determine if a run has too many high-motion volumes to continue processing.
 
     Parameters
     ----------
@@ -44,7 +44,7 @@ def flag_bad_run(
     Returns
     -------
     is_bad_run : :obj:`bool`
-        True if the run has >50% high-motion volumes.
+        True if the run has >50%% high-motion volumes.
         False otherwise.
     """
     dummy_scans = _infer_dummy_scans(
@@ -67,20 +67,15 @@ def flag_bad_run(
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
     )
-    fd_arr = compute_fd(
-        confound=motion_df,
-        head_radius=head_radius,
-    )
+    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
 
     # Generate temporal mask with all timepoints have FD over threshold set to 1.
-    outliers_arr = generate_mask(
-        fd_res=fd_arr,
-        fd_thresh=fd_thresh,
-    )
+    outliers_arr = generate_mask(fd_res=fd_arr, fd_thresh=fd_thresh)
 
     # Determine proportion of outlier volumes in run.
     proportion_outliers = np.mean(outliers_arr)
 
+    # Runs with >50% high-motion outliers are "bad".
     is_bad_run = proportion_outliers > 0.5
     return is_bad_run
 
