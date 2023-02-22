@@ -22,7 +22,6 @@ from xcp_d.interfaces.prepostcleaning import (
 )
 from xcp_d.interfaces.regression import Regress
 from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,
     describe_regression,
@@ -30,7 +29,6 @@ from xcp_d.utils.confounds import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
-from xcp_d.utils.modified_data import generate_temporal_mask
 from xcp_d.utils.plot import plot_design_matrix
 from xcp_d.workflow.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -60,12 +58,12 @@ def init_boldpostprocess_wf(
     omp_nthreads,
     dummytime,
     dummy_scans,
-    input_type,
     output_dir,
     fd_thresh,
     n_runs,
     despike,
     dcan_qc,
+    run_data,
     layout=None,
     name="bold_postprocess_wf",
 ):
@@ -86,7 +84,6 @@ def init_boldpostprocess_wf(
 
             layout, subj_data = collect_data(
                 bids_dir=fmri_dir,
-                input_type="fmriprep",
                 participant_label="01",
                 task="imagery",
                 bids_validate=False,
@@ -95,6 +92,13 @@ def init_boldpostprocess_wf(
 
             bold_file = subj_data["bold"][0]
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
+            run_data = {
+                "boldref": "",
+                "confounds": "",
+                "t1w_to_native_xform": "",
+                "boldmask": "",
+                "bold_metadata": {"RepetitionTime": 2},
+            }
 
             wf = init_boldpostprocess_wf(
                 bold_file=bold_file,
@@ -111,12 +115,12 @@ def init_boldpostprocess_wf(
                 params="27P",
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
-                input_type="fmriprep",
                 dummy_scans=0,
                 dummytime=0,
                 fd_thresh=0.2,
                 despike=True,
                 dcan_qc=True,
+                run_data=run_data,
                 n_runs=1,
                 omp_nthreads=1,
                 layout=layout,
@@ -137,8 +141,6 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
-    input_type: str
-        type of input
     bold_file: str
         bold file for post processing
     %(head_radius)s
@@ -190,32 +192,38 @@ def init_boldpostprocess_wf(
     """
     workflow = Workflow(name=name)
 
-    run_data = collect_run_data(layout, input_type, bold_file)
-
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
-    proportion_outliers = generate_temporal_mask(
-        fmriprep_confounds_file=run_data["confounds"],
-        dummy_scans=dummy_scans,
-        TR=TR,
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        head_radius=head_radius,
-        fd_thresh=fd_thresh,
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "bold_file",
+                "ref_file",
+                "bold_mask",
+                "custom_confounds_file",
+                "template_to_t1w",
+                "t1w",
+                "t1seg",
+                "t1w_mask",
+                "fmriprep_confounds_tsv",
+                "t1w_to_native",
+                "dummy_scans",
+            ],
+        ),
+        name="inputnode",
     )
-    if proportion_outliers > 0.5:
-        LOGGER.error(
-            f"More than 50% of volumes in {bold_file} are high-motion outliers. "
-            "This run will not be processed."
-        )
-        return workflow
+
+    inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.ref_file = run_data["boldref"]
+    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
+    inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
+    inputnode.inputs.dummy_scans = dummy_scans
 
     # TODO: This is a workaround for a bug in nibabies.
     # Once https://github.com/nipreps/nibabies/issues/245 is resolved
     # and a new release is made, remove this.
     mask_file = check_binary_mask(run_data["boldmask"])
+    inputnode.inputs.bold_mask = mask_file
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
@@ -224,6 +232,7 @@ def init_boldpostprocess_wf(
         custom_confounds_folder,
         run_data["confounds"],
     )
+    inputnode.inputs.custom_confounds_file = custom_confounds_file
     regression_description = describe_regression(params, custom_confounds_file)
 
     filter_str, filter_post_str = "", ""
@@ -297,33 +306,6 @@ Any volumes censored earlier in the workflow were then interpolated in the resid
 produced by the regression.
 {bandpass_str}
 """
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "bold_file",
-                "ref_file",
-                "bold_mask",
-                "custom_confounds_file",
-                "template_to_t1w",
-                "t1w",
-                "t1seg",
-                "t1w_mask",
-                "fmriprep_confounds_tsv",
-                "t1w_to_native",
-                "dummy_scans",
-            ],
-        ),
-        name="inputnode",
-    )
-
-    inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.ref_file = run_data["boldref"]
-    inputnode.inputs.bold_mask = mask_file
-    inputnode.inputs.custom_confounds_file = custom_confounds_file
-    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
-    inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
-    inputnode.inputs.dummy_scans = dummy_scans
 
     mem_gbx = _create_mem_gb(bold_file)
 

@@ -20,11 +20,13 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     collect_data,
+    collect_run_data,
     collect_surface_data,
     get_preproc_pipeline_info,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.modified_data import flag_bad_run
 from xcp_d.workflow.anatomical import init_anatomical_wf, init_t1w_wf
 from xcp_d.workflow.bold import init_boldpostprocess_wf
 from xcp_d.workflow.cifti import init_ciftipostprocess_wf
@@ -545,8 +547,27 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
+        run_data = collect_run_data(layout, input_type, bold_file)
+
+        is_bad_run = flag_bad_run(
+            fmriprep_confounds_file=run_data["confounds"],
+            dummy_scans=dummy_scans,
+            TR=run_data["bold_metadata"]["RepetitionTime"],
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            head_radius=head_radius,
+            fd_thresh=fd_thresh,
+        )
+        if is_bad_run:
+            LOGGER.error(
+                f"More than 50% of volumes in {bold_file} are high-motion outliers. "
+                "This run will not be processed."
+            )
+            continue
+
         bold_postproc_wf = postproc_wf_function(
-            input_type=input_type,
             bold_file=bold_file,
             lower_bpf=lower_bpf,
             upper_bpf=upper_bpf,

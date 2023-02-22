@@ -16,7 +16,7 @@ LOGGER = logging.getLogger("nipype.utils")
 
 
 @fill_doc
-def generate_temporal_mask(
+def flag_bad_run(
     *,
     fmriprep_confounds_file,
     dummy_scans,
@@ -44,7 +44,9 @@ def generate_temporal_mask(
 
     Returns
     -------
-    proportion_outliers
+    is_bad_run : :obj:`bool`
+        True if the run has >50% high-motion volumes.
+        False otherwise.
     """
     dummy_scans = _infer_dummy_scans(
         dummy_scans=dummy_scans,
@@ -79,7 +81,9 @@ def generate_temporal_mask(
 
     # Determine proportion of outlier volumes in run.
     proportion_outliers = np.mean(outliers_arr)
-    return proportion_outliers
+
+    is_bad_run = proportion_outliers > 0.5
+    return is_bad_run
 
 
 @fill_doc
