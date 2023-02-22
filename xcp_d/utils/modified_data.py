@@ -5,12 +5,81 @@ import os
 
 import nibabel as nb
 import numpy as np
+import pandas as pd
 from nipype import logging
 
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger("nipype.utils")
+
+
+@fill_doc
+def generate_temporal_mask(
+    *,
+    fmriprep_confounds_file,
+    dummy_scans,
+    TR,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    head_radius,
+    fd_thresh,
+):
+    """Generate a temporal mask.
+
+    Parameters
+    ----------
+    %(fmriprep_confounds_file)s
+    %(dummy_scans)s
+    %(TR)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(head_radius)s
+    %(fd_thresh)s
+
+    Returns
+    -------
+    proportion_outliers
+    """
+    dummy_scans = _infer_dummy_scans(
+        dummy_scans=dummy_scans,
+        confounds_file=fmriprep_confounds_file,
+    )
+
+    # Read in fmriprep confounds tsv to calculate FD
+    fmriprep_confounds_df = pd.read_table(fmriprep_confounds_file)
+
+    # Remove dummy volumes
+    fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
+
+    # Calculate filtered FD
+    motion_df = load_motion(
+        fmriprep_confounds_df,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+    )
+    fd_arr = compute_fd(
+        confound=motion_df,
+        head_radius=head_radius,
+    )
+
+    # Generate temporal mask with all timepoints have FD over threshold set to 1.
+    outliers_arr = generate_mask(
+        fd_res=fd_arr,
+        fd_thresh=fd_thresh,
+    )
+
+    # Determine proportion of outlier volumes in run.
+    proportion_outliers = np.mean(outliers_arr)
+    return proportion_outliers
 
 
 @fill_doc
@@ -94,8 +163,6 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
     bold_data_interpolated = bold_data
     if np.mean(tmask) == 0:
         print("No flagged volume, interpolation will not be done.")
-    elif np.mean(tmask) > 0.5:
-        print("More than 50% of volumes are flagged, interpolation will not be done.")
     else:
         # Create slice time array
         slice_times = TR * np.arange(0, (bold_data.shape[1]), 1)
@@ -105,7 +172,10 @@ def interpolate_masked_data(bold_data, tmask, TR=1):
         # Stack bold data: all timepoints not scrubbed are appended to
         # the last timepoint
         clean_volume = np.hstack(
-            (bold_data[:, (tmask == 0)], np.reshape(bold_data[:, -1], [bold_data.shape[0], 1]))
+            (
+                bold_data[:, (tmask == 0)],
+                np.reshape(bold_data[:, -1], [bold_data.shape[0], 1]),
+            )
         )
 
         # looping through each voxel

@@ -30,6 +30,7 @@ from xcp_d.utils.confounds import (
     get_customfile,
 )
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.modified_data import generate_temporal_mask
 from xcp_d.utils.plot import plot_design_matrix
 from xcp_d.workflow.connectivity import init_cifti_functional_connectivity_wf
 from xcp_d.workflow.execsummary import init_execsummary_wf
@@ -170,9 +171,29 @@ def init_ciftipostprocess_wf(
     ----------
     .. footbibliography::
     """
+    workflow = Workflow(name=name)
+
     run_data = collect_run_data(layout, input_type, bold_file)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
+
+    proportion_outliers = generate_temporal_mask(
+        fmriprep_confounds_file=run_data["confounds"],
+        dummy_scans=dummy_scans,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        head_radius=head_radius,
+        fd_thresh=fd_thresh,
+    )
+    if proportion_outliers > 0.5:
+        LOGGER.error(
+            f"More than 50% of volumes in {bold_file} are high-motion outliers. "
+            "This run will not be processed."
+        )
+        return workflow
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
