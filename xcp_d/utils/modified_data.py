@@ -17,7 +17,6 @@ LOGGER = logging.getLogger("nipype.utils")
 
 @fill_doc
 def flag_bad_run(
-    *,
     fmriprep_confounds_file,
     dummy_scans,
     TR,
