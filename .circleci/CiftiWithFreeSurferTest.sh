@@ -40,7 +40,7 @@ XCPD_CMD="$BASE_XCPD_CMD \
     --combineruns \
     --dcan-qc \
     --dummy-scans auto \
-    --fd-thresh 0.04"
+    --fd-thresh 0.3"
 
 echo $XCPD_CMD
 
