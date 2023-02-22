@@ -12,7 +12,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import BinaryMath, MeanImage, ResampleToImage
+from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
@@ -386,7 +386,10 @@ def init_execsummary_functional_plots_wf(
     # fmt:on
 
     # Plot the mean bold image
-    calculate_mean_bold = pe.Node(MeanImage(), name="calculate_mean_bold")
+    calculate_mean_bold = pe.Node(
+        BinaryMath(expression="np.mean(img, axis=3)"),
+        name="calculate_mean_bold",
+    )
     plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
 
     # fmt:off

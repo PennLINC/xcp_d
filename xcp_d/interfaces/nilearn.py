@@ -136,43 +136,6 @@ class BinaryMath(NilearnBaseInterface, SimpleInterface):
         return runtime
 
 
-class _MeanImageInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="An image to average over time.",
-    )
-    out_file = File(
-        "out_img.nii.gz",
-        usedefault=True,
-        exists=False,
-        desc="The name of the averaged file to write out. out_img.nii.gz by default.",
-    )
-
-
-class _MeanImageOutputSpec(TraitedSpec):
-    out_file = File(
-        exists=True,
-        desc="Mathified output file.",
-    )
-
-
-class MeanImage(NilearnBaseInterface, SimpleInterface):
-    """Get the mean over time of a 4D NIFTI image."""
-
-    input_spec = _MeanImageInputSpec
-    output_spec = _MeanImageOutputSpec
-
-    def _run_interface(self, runtime):
-        from nilearn.image import mean_img
-
-        avg_img = mean_img(imgs=self.inputs.in_file)
-        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
-        avg_img.to_filename(self._results["out_file"])
-
-        return runtime
-
-
 class _ResampleToImageInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
