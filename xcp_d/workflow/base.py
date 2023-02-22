@@ -589,6 +589,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dummy_scans=dummy_scans,
             fd_thresh=fd_thresh,
             dcan_qc=dcan_qc,
+            run_data=run_data,
             output_dir=output_dir,
             name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
         )
