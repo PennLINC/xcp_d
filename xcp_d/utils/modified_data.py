@@ -34,7 +34,7 @@ def generate_temporal_mask(
     ----------
     fmriprep_confounds_file
     %(dummy_scans)s
-    %(TR)s
+    TR
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s
