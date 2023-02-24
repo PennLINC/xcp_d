@@ -455,7 +455,7 @@ produced by the regression.
             ("bold_file", "inputnode.preprocessed_bold_file"),
         ]),
         (regression_wf, qc_report_wf, [
-            ("res_file", "inputnode.cleaned_unfiltered_file"),
+            ("res_file", "inputnode.interpolated_unfiltered_file"),
         ]),
     ])
     # fmt:on
@@ -607,10 +607,15 @@ produced by the regression.
 
     # qc report
     workflow.connect([
-        (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
+        (filtering_wf, qc_report_wf, [
+            ("filtered_file", "inputnode.interpolated_filtered_file"),
+        ]),
         (censor_scrub, qc_report_wf, [
             ("tmask", "inputnode.tmask"),
             ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
+        (censor_interpolated_data, qc_report_wf, [
+            ("bold_censored", "inputnode.censored_filtered_file"),
         ]),
     ])
 

@@ -77,11 +77,14 @@ def init_qc_report_wf(
     preprocessed_bold_file
         Used for naming outputs and finding related files.
         Also used for carpet plots.
-    cleaned_unfiltered_file
-        Used for carpet plots.
+    interpolated_unfiltered_file
+        Used for DCAN carpet plots.
         Only used if dcan_qc is True.
-    cleaned_file
-        Used for carpet plots.
+    interpolated_filtered_file
+        Used for DCAN carpet plots.
+        Only used if dcan_qc is True.
+    censored_filtered_file
+        Used for LINC carpet plots.
     boldref
         Only used with non-CIFTI data.
     bold_mask
@@ -106,8 +109,9 @@ def init_qc_report_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold_file",
-                "cleaned_file",
-                "cleaned_unfiltered_file",
+                "censored_filtered_file",
+                "interpolated_unfiltered_file",
+                "interpolated_filtered_file",
                 "dummy_scans",
                 "filtered_motion",
                 "tmask",
@@ -316,7 +320,7 @@ def init_qc_report_wf(
         ])
         # fmt:on
 
-    qcreport = pe.Node(
+    qc_report = pe.Node(
         QCPlot(
             TR=TR,
             template_mask=nlin2009casym_brain_mask,
@@ -329,13 +333,13 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, qcreport, [
+        (inputnode, qc_report, [
             ("preprocessed_bold_file", "bold_file"),
-            ("cleaned_file", "cleaned_file"),
+            ("censored_filtered_file", "cleaned_file"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
         ]),
-        (qcreport, outputnode, [
+        (qc_report, outputnode, [
             ("qc_file", "qc_file"),
         ]),
     ])
@@ -354,8 +358,10 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, plot_executive_summary_carpets, [
                 ("preprocessed_bold_file", "rawdata"),
-                ("cleaned_unfiltered_file", "regressed_data"),
-                ("cleaned_file", "residual_data"),
+                # The interpolated, but not filtered, denoised data
+                ("interpolated_unfiltered_file", "regressed_data"),
+                # The interpolated and filtered denoised data
+                ("interpolated_filtered_file", "residual_data"),
                 ("filtered_motion", "filtered_motion"),
                 ("tmask", "tmask"),
                 ("dummy_scans", "dummy_scans"),
@@ -417,23 +423,23 @@ def init_qc_report_wf(
     if not cifti:
         # fmt:off
         workflow.connect([
-            (inputnode, qcreport, [
+            (inputnode, qc_report, [
                 ("t1w_mask", "t1w_mask"),
                 ("bold_mask", "mask_file"),
             ]),
-            (warp_dseg_to_bold, qcreport, [
+            (warp_dseg_to_bold, qc_report, [
                 ("output_image", "seg_file"),
             ]),
-            (warp_boldmask_to_t1w, qcreport, [
+            (warp_boldmask_to_t1w, qc_report, [
                 ("output_image", "bold2T1w_mask"),
             ]),
-            (warp_boldmask_to_mni, qcreport, [
+            (warp_boldmask_to_mni, qc_report, [
                 ("output_image", "bold2temp_mask"),
             ]),
         ])
         # fmt:on
     else:
-        qcreport.inputs.mask_file = None
+        qc_report.inputs.mask_file = None
 
     functional_qc = pe.Node(
         FunctionalSummary(TR=TR),
@@ -445,7 +451,7 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, functional_qc, [("preprocessed_bold_file", "bold_file")]),
-        (qcreport, functional_qc, [("qc_file", "qc_file")]),
+        (qc_report, functional_qc, [("qc_file", "qc_file")]),
     ])
     # fmt:on
 
@@ -499,8 +505,8 @@ def init_qc_report_wf(
         (inputnode, ds_report_postprocessing, [("preprocessed_bold_file", "source_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
-        (qcreport, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
-        (qcreport, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
+        (qc_report, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
+        (qc_report, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
     ])
     # fmt:on
 
