@@ -221,6 +221,10 @@ def consolidate_confounds(
         params=params,
         custom_confounds=custom_confounds_file,
     )
+    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
+    linear_trend = np.arange(confounds_df.shape[0])
+    linear_trend -= np.mean(linear_trend)
+    confounds_df["linear_trend"] = linear_trend
 
     out_file = os.path.abspath("confounds.tsv")
     confounds_df.to_csv(out_file, sep="\t", index=False)
