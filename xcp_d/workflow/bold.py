@@ -485,7 +485,7 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
-            ("bold_file", "inputnode.preprocessed_bold_file"),
+            ("bold_file", "inputnode.preprocessed_bold"),
             ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
@@ -493,7 +493,7 @@ produced by the regression.
             ("t1w_to_native", "inputnode.t1w_to_native"),
         ]),
         (regression_wf, qc_report_wf, [
-            ("res_file", "inputnode.interpolated_unfiltered_file"),
+            ("res_file", "inputnode.interpolated_unfiltered_bold"),
         ]),
     ])
     # fmt:on
@@ -643,14 +643,14 @@ produced by the regression.
     # qc report
     workflow.connect([
         (filtering_wf, qc_report_wf, [
-            ('filtered_file', 'inputnode.interpolated_filtered_file'),
+            ('filtered_file', 'inputnode.interpolated_filtered_bold'),
         ]),
         (censor_scrub, qc_report_wf, [
             ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
         ]),
         (censor_interpolated_data, qc_report_wf, [
-            ("bold_censored", "inputnode.censored_filtered_file"),
+            ("bold_censored", "inputnode.censored_filtered_bold"),
         ]),
     ])
     # fmt:on
@@ -660,6 +660,9 @@ produced by the regression.
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [
             ('out_file', 'inputnode.confounds_file'),
+        ]),
+        (filtering_wf, write_derivative_wf, [
+            ('filtered_file', 'inputnode.interpolated_filtered_bold'),
         ]),
         (censor_interpolated_data, write_derivative_wf, [
             ('bold_censored', 'inputnode.processed_bold'),

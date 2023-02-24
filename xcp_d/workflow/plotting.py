@@ -74,16 +74,16 @@ def init_qc_report_wf(
 
     Inputs
     ------
-    preprocessed_bold_file
+    preprocessed_bold
         Used for naming outputs and finding related files.
         Also used for carpet plots.
-    interpolated_unfiltered_file
+    interpolated_unfiltered_bold
         Used for DCAN carpet plots.
         Only used if dcan_qc is True.
-    interpolated_filtered_file
+    interpolated_filtered_bold
         Used for DCAN carpet plots.
         Only used if dcan_qc is True.
-    censored_filtered_file
+    censored_filtered_bold
         Used for LINC carpet plots.
     boldref
         Only used with non-CIFTI data.
@@ -108,10 +108,10 @@ def init_qc_report_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "preprocessed_bold_file",
-                "censored_filtered_file",
-                "interpolated_unfiltered_file",
-                "interpolated_filtered_file",
+                "preprocessed_bold",
+                "censored_filtered_bold",
+                "interpolated_unfiltered_bold",
+                "interpolated_filtered_bold",
                 "dummy_scans",
                 "filtered_motion",
                 "tmask",
@@ -155,7 +155,7 @@ def init_qc_report_wf(
         (inputnode, censor_report, [
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
-            ("preprocessed_bold_file", "bold_file"),
+            ("preprocessed_bold", "bold_file"),
         ]),
     ])
     # fmt:on
@@ -190,7 +190,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, get_native2space_transforms, [
-                ("preprocessed_bold_file", "bold_file"),
+                ("preprocessed_bold", "bold_file"),
                 ("template_to_t1w", "template_to_t1w"),
                 ("t1w_to_native", "t1w_to_native"),
             ]),
@@ -258,7 +258,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, get_mni_to_bold_xforms, [
-                ("preprocessed_bold_file", "bold_file"),
+                ("preprocessed_bold", "bold_file"),
                 ("template_to_t1w", "template_to_t1w"),
                 ("t1w_to_native", "t1w_to_native"),
             ]),
@@ -334,8 +334,8 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, qc_report, [
-            ("preprocessed_bold_file", "bold_file"),
-            ("censored_filtered_file", "cleaned_file"),
+            ("preprocessed_bold", "bold_file"),
+            ("censored_filtered_bold", "cleaned_file"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
         ]),
@@ -357,11 +357,11 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_executive_summary_carpets, [
-                ("preprocessed_bold_file", "rawdata"),
+                ("preprocessed_bold", "rawdata"),
                 # The interpolated, but not filtered, denoised data
-                ("interpolated_unfiltered_file", "regressed_data"),
+                ("interpolated_unfiltered_bold", "regressed_data"),
                 # The interpolated and filtered denoised data
-                ("interpolated_filtered_file", "residual_data"),
+                ("interpolated_filtered_bold", "residual_data"),
                 ("filtered_motion", "filtered_motion"),
                 ("tmask", "tmask"),
                 ("dummy_scans", "dummy_scans"),
@@ -406,10 +406,10 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_preproc_executive_summary_carpet, [
-                ("preprocessed_bold_file", "source_file"),
+                ("preprocessed_bold", "source_file"),
             ]),
             (inputnode, ds_postproc_executive_summary_carpet, [
-                ("preprocessed_bold_file", "source_file"),
+                ("preprocessed_bold", "source_file"),
             ]),
             (plot_executive_summary_carpets, ds_preproc_executive_summary_carpet, [
                 ("before_process", "in_file"),
@@ -450,7 +450,7 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, functional_qc, [("preprocessed_bold_file", "bold_file")]),
+        (inputnode, functional_qc, [("preprocessed_bold", "bold_file")]),
         (qc_report, functional_qc, [("qc_file", "qc_file")]),
     ])
     # fmt:on
@@ -499,10 +499,10 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_report_censoring, [("preprocessed_bold_file", "source_file")]),
-        (inputnode, ds_report_qualitycontrol, [("preprocessed_bold_file", "source_file")]),
-        (inputnode, ds_report_preprocessing, [("preprocessed_bold_file", "source_file")]),
-        (inputnode, ds_report_postprocessing, [("preprocessed_bold_file", "source_file")]),
+        (inputnode, ds_report_censoring, [("preprocessed_bold", "source_file")]),
+        (inputnode, ds_report_qualitycontrol, [("preprocessed_bold", "source_file")]),
+        (inputnode, ds_report_preprocessing, [("preprocessed_bold", "source_file")]),
+        (inputnode, ds_report_postprocessing, [("preprocessed_bold", "source_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
         (qc_report, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
