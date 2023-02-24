@@ -737,6 +737,7 @@ produced by the regression.
                 ("t2w", "inputnode.t2w"),
             ]),
         ])
+        # fmt:on
 
     return workflow
 
