@@ -327,6 +327,7 @@ produced by the regression.
         bold_file=bold_file,
         bandpass_filter=bandpass_filter,
         params=params,
+        dcan_qc=dcan_qc,
         cifti=True,
         output_dir=output_dir,
         lowpass=upper_bpf,

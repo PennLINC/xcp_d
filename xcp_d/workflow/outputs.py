@@ -18,6 +18,7 @@ def init_writederivatives_wf(
     motion_filter_type,
     smoothing,
     params,
+    dcan_qc,
     cifti,
     output_dir,
     TR,
@@ -57,6 +58,7 @@ def init_writederivatives_wf(
     %(smoothing)s
     %(params)s
     %(cifti)s
+    dcan_qc
     output_dir : str
         output directory
     TR : float
@@ -74,10 +76,12 @@ def init_writederivatives_wf(
         List of paths to ROI-to-ROI correlation files.
     qc_file
         quality control files
+    interpolated_filtered_bold
+        clean bold after regression, interpolation, and filtering, but not censoring
     processed_bold
-        clean bold after regression and filtering
+        clean bold after regression, interpolation, filtering, and censoring
     smoothed_bold
-        smoothed clean bold
+        clean bold after regression, interpolation, filtering, censoring, and smoothing
     alff_out
         alff niifti
     smoothed_alff
@@ -98,6 +102,7 @@ def init_writederivatives_wf(
                 "confounds_file",
                 "correlations",
                 "qc_file",
+                "interpolated_filtered_bold",
                 "processed_bold",
                 "smoothed_bold",
                 "alff_out",
@@ -186,6 +191,21 @@ def init_writederivatives_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
+
+        if dcan_qc:
+            ds_interpolated_denoised_bold = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    meta_dict=cleaned_data_dictionary,
+                    source_file=bold_file,
+                    desc="interpolated",
+                    extension=".nii.gz",
+                    compression=True,
+                ),
+                name="ds_interpolated_denoised_bold",
+                run_without_submitting=True,
+                mem_gb=2,
+            )
 
         write_derivative_qcfile_wf = pe.Node(
             DerivativesDataSink(
@@ -305,6 +325,22 @@ def init_writederivatives_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
+
+        if dcan_qc:
+            ds_interpolated_denoised_bold = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    meta_dict=cleaned_data_dictionary,
+                    source_file=bold_file,
+                    dismiss_entities=["den"],
+                    desc="interpolated",
+                    den="91k",
+                    extension=".dtseries.nii",
+                ),
+                name="ds_interpolated_denoised_bold",
+                run_without_submitting=True,
+                mem_gb=2,
+            )
 
         write_derivative_qcfile_wf = pe.Node(
             DerivativesDataSink(
@@ -428,6 +464,15 @@ def init_writederivatives_wf(
         (inputnode, timeseries_wf, [('timeseries', 'in_file'), ('atlas_names', 'atlas')]),
         (inputnode, correlations_wf, [('correlations', 'in_file'), ('atlas_names', 'atlas')]),
     ])
+
+    if dcan_qc:
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_interpolated_denoised_bold, [
+                ("interpolated_filtered_bold", "in_file"),
+            ]),
+        ])
+        # fmt:on
 
     if bandpass_filter:
         workflow.connect([
