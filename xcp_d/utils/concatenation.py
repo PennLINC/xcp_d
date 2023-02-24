@@ -239,6 +239,28 @@ def concatenate_derivatives(
                     LOGGER.debug(f"Concatenating postprocessed file: {concat_denoised_file}")
                     _concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=0)
 
+                    # Concatenate interpolated, denoised BOLD files
+                    interp_denoised_files = layout_xcpd.get(
+                        run=runs,
+                        desc="interpolated",
+                        suffix="bold",
+                        extension=img_extensions,
+                        **space_entities,
+                    )
+                    concat_interp_denoised_file = _get_concat_name(
+                        layout_xcpd,
+                        interp_denoised_files[0],
+                    )
+                    LOGGER.debug(
+                        "Concatenating interpolated postprocessed file: "
+                        f"{concat_interp_denoised_file}"
+                    )
+                    _concatenate_niimgs(
+                        interp_denoised_files,
+                        concat_interp_denoised_file,
+                        dummy_scans=0,
+                    )
+
                     # Concatenate smoothed BOLD files if they exist
                     smooth_denoised_files = layout_xcpd.get(
                         run=runs,
@@ -249,7 +271,8 @@ def concatenate_derivatives(
                     )
                     if len(smooth_denoised_files):
                         concat_smooth_denoised_file = _get_concat_name(
-                            layout_xcpd, smooth_denoised_files[0]
+                            layout_xcpd,
+                            smooth_denoised_files[0],
                         )
                         LOGGER.debug(
                             "Concatenating smoothed postprocessed file: "
