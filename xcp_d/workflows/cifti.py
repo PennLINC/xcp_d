@@ -12,14 +12,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.filtering import FilteringData
-from xcp_d.interfaces.prepostcleaning import (
-    CensorScrub,
-    ConvertTo32,
-    Interpolate,
-    RemoveTR,
-)
-from xcp_d.interfaces.regression import Regress
+from xcp_d.interfaces.nilearn import DenoiseCifti
+from xcp_d.interfaces.prepostcleaning import CensorScrub, ConvertTo32, RemoveTR
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
@@ -369,15 +363,15 @@ produced by the regression.
         omp_nthreads=omp_nthreads,
     )
 
-    filtering_wf = pe.Node(
-        FilteringData(
+    denoise_bold = pe.Node(
+        DenoiseCifti(
             TR=TR,
             lowpass=upper_bpf,
             highpass=lower_bpf,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter,
         ),
-        name="filtering_wf",
+        name="denoise_bold",
         mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,
     )
@@ -408,25 +402,11 @@ produced by the regression.
 
     plot_design_matrix_node = pe.Node(
         Function(
-            input_names=["design_matrix"],
+            input_names=["design_matrix", "censoring_file"],
             output_names=["design_matrix_figure"],
             function=plot_design_matrix,
         ),
         name="plot_design_matrix_node",
-    )
-
-    regression_wf = pe.Node(
-        Regress(TR=TR, params=params),
-        name="regression_wf",
-        mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
-    )
-
-    interpolate_wf = pe.Node(
-        Interpolate(TR=TR),
-        name="interpolation_wf",
-        mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
     )
 
     qc_report_wf = init_qc_report_wf(
@@ -452,8 +432,8 @@ produced by the regression.
         (determine_head_radius, qc_report_wf, [
             ("head_radius", "inputnode.head_radius"),
         ]),
-        (interpolate_wf, qc_report_wf, [
-            ("bold_interpolated", "inputnode.cleaned_unfiltered_file"),
+        (denoise_bold, qc_report_wf, [
+            ("uncensored_denoised_bold", "inputnode.cleaned_unfiltered_file"),
         ]),
     ])
     # fmt:on
@@ -481,14 +461,18 @@ produced by the regression.
                 ("out_file", "confounds_file"),
             ]),
             (remove_dummy_scans, censor_scrub, [
-                ("bold_file_dropped_TR", "in_file"),
-                ("confounds_file_dropped_TR", "confounds_file"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
             ]),
+            (remove_dummy_scans, denoise_bold, [
+                ("confounds_file_dropped_TR", "confounds_file"),
+            ]),
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
+            ]),
+            (remove_dummy_scans, plot_design_matrix_node, [
+                ("confounds_file_dropped_TR", "design_matrix"),
             ]),
         ])
         # fmt:on
@@ -499,25 +483,25 @@ produced by the regression.
             (inputnode, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
-            (downcast_data, censor_scrub, [
-                ('bold_file', 'in_file'),
-            ]),
             (inputnode, censor_scrub, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
-            (consolidate_confounds_node, censor_scrub, [
-                ("out_file", "confounds_file"),
+            (consolidate_confounds_node, denoise_bold, [('out_file', 'confounds_file')]),
+            (consolidate_confounds_node, plot_design_matrix_node, [
+                ("out_file", "design_matrix"),
             ]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (determine_head_radius, censor_scrub, [("head_radius", "head_radius")]),
+        (determine_head_radius, censor_scrub, [
+            ("head_radius", "head_radius"),
+        ]),
         (censor_scrub, plot_design_matrix_node, [
-            ("confounds_censored", "design_matrix"),
+            ("tmask", "censoring_file"),
         ]),
     ])
     # fmt:on
@@ -549,62 +533,62 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (censor_scrub, convert_to_nifti, [("bold_censored", "in_file")]),
             (convert_to_nifti, despike3d, [("out_file", "in_file")]),
-            (censor_scrub, convert_to_cifti, [("bold_censored", "cifti_template")]),
+            (downcast_data, convert_to_cifti, [("bold_file", "cifti_template")]),
             (despike3d, convert_to_cifti, [("out_file", "in_file")]),
-            (convert_to_cifti, regression_wf, [("out_file", "in_file")]),
+            (convert_to_cifti, denoise_bold, [('out_file', 'preprocessed_bold')]),
         ])
+
+        if dummy_scans:
+            workflow.connect([
+                (remove_dummy_scans, convert_to_nifti, [('bold_file_dropped_TR', 'in_file')]),
+            ])
+        else:
+            workflow.connect([(downcast_data, convert_to_nifti, [('bold_file', 'in_file')])])
         # fmt:on
 
+    elif dummy_scans:
+        # fmt:off
+        workflow.connect([
+            (remove_dummy_scans, denoise_bold, [('bold_file_dropped_TR', 'preprocessed_bold')]),
+        ])
+        # fmt:on
     else:
         # fmt:off
         workflow.connect([
-            (censor_scrub, regression_wf, [('bold_censored', 'in_file')]),
+            (downcast_data, denoise_bold, [('bold_file', 'preprocessed_bold')]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (censor_scrub, regression_wf, [('confounds_censored', 'confounds')]),
+        (censor_scrub, denoise_bold, [("tmask", "censoring_file")]),
     ])
-    # fmt:on
-
-    # interpolation workflow
-    # fmt:off
-    workflow.connect([
-        (downcast_data, interpolate_wf, [('bold_file', 'bold_file')]),
-        (censor_scrub, interpolate_wf, [('tmask', 'tmask')]),
-        (regression_wf, interpolate_wf, [('res_file', 'in_file')])
-    ])
-
-    # add filtering workflow
-    workflow.connect([(interpolate_wf, filtering_wf, [('bold_interpolated',
-                                                       'in_file')])])
 
     # residual smoothing
-    workflow.connect([(filtering_wf, resd_smoothing_wf,
-                       [('filtered_file', 'inputnode.bold_file')])])
+    workflow.connect([
+        (denoise_bold, resd_smoothing_wf, [('filtered_denoised_bold', 'inputnode.bold_file')]),
+    ])
 
     # functional connectivity workflow
     workflow.connect([
         (inputnode, fcon_ts_wf, [('bold_file', 'inputnode.bold_file')]),
-        (filtering_wf, fcon_ts_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (denoise_bold, fcon_ts_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
     ])
 
     # reho and alff
     workflow.connect([
-        (filtering_wf, reho_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+        (denoise_bold, reho_compute_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
     ])
 
     if bandpass_filter:
         workflow.connect([
-            (filtering_wf, alff_compute_wf, [('filtered_file', 'inputnode.clean_bold')]),
+            (denoise_bold, alff_compute_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
         ])
 
     # qc report
     workflow.connect([
-        (filtering_wf, qc_report_wf, [("filtered_file", "inputnode.cleaned_file")]),
+        (denoise_bold, qc_report_wf, [("filtered_denoised_bold", "inputnode.cleaned_file")]),
         (censor_scrub, qc_report_wf, [
             ("tmask", "inputnode.tmask"),
             ("filtered_motion", "inputnode.filtered_motion"),
@@ -616,8 +600,8 @@ produced by the regression.
         (consolidate_confounds_node, write_derivative_wf, [
             ('out_file', 'inputnode.confounds_file'),
         ]),
-        (filtering_wf, write_derivative_wf, [
-            ('filtered_file', 'inputnode.processed_bold'),
+        (denoise_bold, write_derivative_wf, [
+            ('filtered_denoised_bold', 'inputnode.processed_bold'),
         ]),
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),

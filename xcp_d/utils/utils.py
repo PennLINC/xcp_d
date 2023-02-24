@@ -4,6 +4,7 @@
 import glob
 import os
 import tempfile
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -372,21 +373,31 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def butter_bandpass(data, fs, lowpass, highpass, order=2):
+def butter_bandpass(
+    data,
+    sampling_rate,
+    low_pass,
+    high_pass,
+    padtype="constant",
+    padlen=None,
+    order=2,
+):
     """Apply a Butterworth bandpass filter to data.
 
     Parameters
     ----------
     data : (T, S) numpy.ndarray
         Time by voxels/vertices array of data.
-    fs : float
+    sampling_rate : float
         Sampling frequency. 1/TR(s).
-    lowpass : float
+    low_pass : float
         frequency, in Hertz
-    highpass : float
+    high_pass : float
         frequency, in Hertz
+    padlen
+    padtype
     order : int
-        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+        The order of the filter.
 
     Returns
     -------
@@ -394,11 +405,11 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
         The filtered data.
     """
     b, a = butter(
-        order / 2,
-        [highpass, lowpass],
+        order,
+        [high_pass, low_pass],
         btype="bandpass",
         output="ba",
-        fs=fs,  # eliminates need to normalize cutoff frequencies
+        fs=sampling_rate,  # eliminates need to normalize cutoff frequencies
     )
 
     filtered_data = np.zeros_like(data)  # create something to populate filtered values with
@@ -409,8 +420,8 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
             b,
             a,
             data[:, i_voxel],
-            padtype="constant",
-            padlen=data.shape[0] - 1,
+            padtype=padtype,
+            padlen=padlen,
         )
 
     return filtered_data
@@ -461,3 +472,122 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
         brain_radius = head_radius
 
     return brain_radius
+
+
+def _denoise_with_nilearn(
+    preprocessed_bold,
+    confounds_file,
+    censoring_file,
+    lowpass,
+    highpass,
+    filter_order,
+    TR,
+):
+    """Denoise an array with Nilearn.
+
+    This step does the following.
+    Linearly detrend, but don't mean-center, the BOLD data.
+    Regress out confounds from BOLD data.
+    Use list of outliers to censor BOLD data during regression.
+    Temporally filter BOLD data.
+
+    Parameters
+    ----------
+    preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
+        Preprocessed BOLD data, after dummy volume removal,
+        but without any additional censoring.
+    confounds_file : str
+    censoring_file : str
+    lowpass, highpass : float or None
+    filter_order : int
+    TR : float
+
+    Returns
+    -------
+    uncensored_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The result of denoising the full (uncensored) preprocessed BOLD data using
+        betas estimated using the *censored* BOLD data and nuisance regressors.
+    interpolated_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The result of denoising the censored preprocessed BOLD data,
+        followed by cubic spline interpolation.
+    filtered_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The result of denoising the censored preprocessed BOLD data,
+        followed by cubic spline interpolation and band-pass filtering.
+    """
+    import pandas as pd
+    from nilearn import signal
+
+    n_volumes, n_voxels = preprocessed_bold.shape
+    confounds_df = pd.read_table(confounds_file)
+
+    assert "intercept" in confounds_df.columns
+    assert "linear_trend" in confounds_df.columns
+    assert confounds_df.columns[-1] == "intercept"
+
+    censoring_df = pd.read_table(censoring_file)
+    sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
+
+    # Per xcp_d's style, censor the data first
+    preprocessed_bold_censored = preprocessed_bold[sample_mask, :]
+    confounds = confounds_df.to_numpy()
+    confounds_censored = confounds[sample_mask, :]
+    confounds_df_censored = pd.DataFrame(data=confounds_censored, columns=confounds_df.columns)
+
+    # Orthogonalize censored nuisance regressors w.r.t. any censored signal regressors
+    signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
+    if signal_columns:
+        warnings.warn(
+            "Signal columns detected. "
+            "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
+            f"{', '.join(signal_columns)}"
+        )
+        noise_columns = [c for c in confounds_df_censored.columns if not c.startswith("signal__")]
+        # Don't orthogonalize the intercept or linear trend regressors
+        columns_to_denoise = [c for c in noise_columns if c not in ["linear_trend", "intercept"]]
+        temp_confounds_df = confounds_df_censored[noise_columns].copy()
+
+        signal_regressors = confounds_df_censored[signal_columns].to_numpy()
+        noise_regressors = confounds_df_censored[columns_to_denoise].to_numpy()
+        signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
+        pred_noise_regressors = np.dot(signal_regressors, signal_betas)
+        orth_noise_regressors = noise_regressors - pred_noise_regressors
+        temp_confounds_df.loc[:, columns_to_denoise] = orth_noise_regressors
+        confounds_df_censored = temp_confounds_df
+
+    nuisance_arr = confounds_df_censored.to_numpy()
+    # mean-center everything but the intercept to be safe
+    nuisance_arr[:, :-1] -= np.mean(nuisance_arr[:, :-1], axis=0)
+    nuisance_censored = nuisance_arr[sample_mask, :]
+
+    betas = np.linalg.lstsq(nuisance_censored, preprocessed_bold_censored, rcond=None)[0]
+    uncensored_denoised_bold = preprocessed_bold - np.dot(nuisance_arr, betas)
+    censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
+
+    # Now interpolate with cubic spline interpolation
+    interpolated_denoised_bold = np.zeros(
+        (n_volumes, n_voxels),
+        dtype=censored_denoised_bold.dtype,
+    )
+    interpolated_denoised_bold[sample_mask, :] = censored_denoised_bold
+    interpolated_denoised_bold = signal._interpolate_volumes(
+        interpolated_denoised_bold,
+        sample_mask=sample_mask,
+        t_r=TR,
+    )
+
+    # Now filter
+    if lowpass is not None and highpass is not None:
+        # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
+        filtered_denoised_bold = butter_bandpass(
+            interpolated_denoised_bold.copy(),
+            sampling_rate=1 / TR,
+            low_pass=lowpass,
+            high_pass=highpass,
+            order=filter_order / 2,
+            padtype="constant",
+            padlen=n_volumes - 1,
+        )
+    else:
+        filtered_denoised_bold = interpolated_denoised_bold
+
+    return uncensored_denoised_bold, interpolated_denoised_bold, filtered_denoised_bold

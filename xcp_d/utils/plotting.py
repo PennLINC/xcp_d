@@ -1158,13 +1158,15 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     return output_path
 
 
-def plot_design_matrix(design_matrix):
+def plot_design_matrix(design_matrix, censoring_file=None):
     """Plot design matrix TSV with Nilearn.
 
     Parameters
     ----------
     design_matrix : str
         Path to TSV file containing the design matrix.
+    censoring_file : str, optional
+        Path to TSV file containing a list of volumes to censor.
 
     Returns
     -------
@@ -1173,10 +1175,25 @@ def plot_design_matrix(design_matrix):
     """
     import os
 
+    import numpy as np
     import pandas as pd
     from nilearn import plotting
 
     design_matrix_df = pd.read_table(design_matrix)
+    if censoring_file:
+        censoring_df = pd.read_table(censoring_file)
+        n_outliers = censoring_df["framewise_displacement"].sum()
+        new_df = pd.DataFrame(
+            data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),
+            columns=[f"outlier{i}" for i in range(1, n_outliers + 1)],
+        )
+        outlier_idx = np.where(censoring_df["framewise_displacement"])[0]
+        for i_outlier, outlier_col in enumerate(new_df.columns):
+            outlier_row = outlier_idx[i_outlier]
+            new_df.loc[outlier_row, outlier_col] = 1
+
+        design_matrix_df = pd.concat((design_matrix_df, new_df), axis=1)
+
     design_matrix_figure = os.path.abspath("design_matrix.svg")
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
 
