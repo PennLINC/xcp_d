@@ -140,21 +140,26 @@ class BinaryMath(NilearnBaseInterface, SimpleInterface):
         return runtime
 
 
-class _DenoiseCiftiInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
+class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
+    """Used directly by the CIFTI interface, and modified slightly for the NIFTI one."""
+
+    preprocessed_bold = File(
         exists=True,
         mandatory=True,
-        desc="An image to do math on.",
+        desc=(
+            "Preprocessed BOLD data, after dummy volume removal, "
+            "but without any additional censoring."
+        ),
     )
     confounds_file = File(
         exists=True,
         mandatory=True,
-        desc="An image to do math on.",
+        desc="A tab-delimited file containing the confounds to remove from the BOLD data.",
     )
     censoring_file = File(
         exists=True,
         mandatory=True,
-        desc="An image to do math on.",
+        desc="The tab-delimited high-motion outliers file.",
     )
     TR = traits.Float(mandatory=True, desc="Repetition time")
     bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
@@ -163,18 +168,37 @@ class _DenoiseCiftiInputSpec(BaseInterfaceInputSpec):
     filter_order = traits.Int(mandatory=True, default_value=2, desc="Filter order")
 
 
-class _DenoiseCiftiOutputSpec(TraitedSpec):
-    out_file = File(
+class _DenoiseImageOutputSpec(TraitedSpec):
+    """Used by both the CIFTI and NIFTI interfaces."""
+
+    uncensored_denoised_bold = File(
         exists=True,
-        desc="Denoised output file.",
+        desc=(
+            "The result of denoising the full (uncensored) preprocessed BOLD data using "
+            "betas estimated using the *censored* BOLD data and nuisance regressors."
+        ),
+    )
+    unfiltered_denoised_bold = File(
+        exists=True,
+        desc=(
+            "The result of denoising the censored preprocessed BOLD data, "
+            "followed by cubic spline interpolation."
+        ),
+    )
+    filtered_denoised_bold = File(
+        exists=True,
+        desc=(
+            "The result of denoising the censored preprocessed BOLD data, "
+            "followed by cubic spline interpolation and band-pass filtering."
+        ),
     )
 
 
 class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
     """Denoise a CIFTI BOLD file with Nilearn."""
 
-    input_spec = _DenoiseCiftiInputSpec
-    output_spec = _DenoiseCiftiOutputSpec
+    input_spec = _DenoiseImageInputSpec
+    output_spec = _DenoiseImageOutputSpec
 
     def _run_interface(self, runtime):
         if not self.inputs.bandpass_filter:
@@ -182,13 +206,17 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         else:
             lowpass, highpass = self.inputs.lowpass, self.inputs.highpass
 
-        raw_data = read_ndata(self.inputs.in_file)
+        preprocessed_bold_arr = read_ndata(self.inputs.preprocessed_bold)
 
         # Transpose from SxT (xcpd order) to TxS (nilearn order)
-        raw_data = raw_data.T
+        preprocessed_bold_arr = preprocessed_bold_arr.T
 
-        clean_data = _denoise_with_nilearn(
-            raw_data=raw_data,
+        (
+            uncensored_denoised_bold,
+            unfiltered_denoised_bold,
+            filtered_denoised_bold,
+        ) = _denoise_with_nilearn(
+            preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             censoring_file=self.inputs.censoring_file,
             lowpass=lowpass,
@@ -198,51 +226,51 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         )
 
         # Transpose from TxS (nilearn order) to SxT (xcpd order)
-        clean_data = clean_data.T
+        uncensored_denoised_bold = uncensored_denoised_bold.T
+        unfiltered_denoised_bold = unfiltered_denoised_bold.T
+        filtered_denoised_bold = filtered_denoised_bold.T
 
-        self._results["out_file"] = os.path.join(runtime.cwd, "denoised.dtseries.nii")
-
+        self._results["uncensored_denoised_bold"] = os.path.join(
+            runtime.cwd,
+            "uncensored_denoised.dtseries.nii",
+        )
         write_ndata(
-            clean_data,
+            uncensored_denoised_bold,
             template=self.inputs.in_file,
-            filename=self._results["out_file"],
+            filename=self._results["uncensored_denoised_bold"],
             TR=self.inputs.TR,
         )
+
+        self._results["unfiltered_denoised_bold"] = os.path.join(
+            runtime.cwd,
+            "unfiltered_denoised_bold.dtseries.nii",
+        )
+        write_ndata(
+            unfiltered_denoised_bold,
+            template=self.inputs.in_file,
+            filename=self._results["unfiltered_denoised_bold"],
+            TR=self.inputs.TR,
+        )
+
+        self._results["filtered_denoised_bold"] = os.path.join(
+            runtime.cwd,
+            "filtered_denoised.dtseries.nii",
+        )
+        write_ndata(
+            filtered_denoised_bold,
+            template=self.inputs.in_file,
+            filename=self._results["filtered_denoised_bold"],
+            TR=self.inputs.TR,
+        )
+
         return runtime
 
 
-class _DenoiseNiftiInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="An image to do math on.",
-    )
+class _DenoiseNiftiInputSpec(_DenoiseImageInputSpec):
     mask = File(
         exists=True,
         mandatory=True,
-        desc="An image to do math on.",
-    )
-    confounds_file = File(
-        exists=True,
-        mandatory=True,
-        desc="An image to do math on.",
-    )
-    censoring_file = File(
-        exists=True,
-        mandatory=True,
-        desc="An image to do math on.",
-    )
-    TR = traits.Float(mandatory=True, desc="Repetition time")
-    bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
-    lowpass = traits.Float(mandatory=True, default_value=0.10, desc="Lowpass filter in Hz")
-    highpass = traits.Float(mandatory=True, default_value=0.01, desc="Highpass filter in Hz")
-    filter_order = traits.Int(mandatory=True, default_value=2, desc="Filter order")
-
-
-class _DenoiseNiftiOutputSpec(TraitedSpec):
-    out_file = File(
-        exists=True,
-        desc="Denoised output file.",
+        desc="A binary brain mask.",
     )
 
 
@@ -250,7 +278,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
     """Denoise a NIfTI BOLD file with Nilearn."""
 
     input_spec = _DenoiseNiftiInputSpec
-    output_spec = _DenoiseNiftiOutputSpec
+    output_spec = _DenoiseImageOutputSpec
 
     def _run_interface(self, runtime):
         if not self.inputs.bandpass_filter:
@@ -274,10 +302,14 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             target_affine=None,
             target_shape=None,
         )
-        raw_data = masker.fit_transform(self.inputs.in_file)
+        preprocessed_bold_arr = masker.fit_transform(self.inputs.preprocessed_bold)
 
-        clean_data = _denoise_with_nilearn(
-            raw_data=raw_data,
+        (
+            uncensored_denoised_bold,
+            unfiltered_denoised_bold,
+            filtered_denoised_bold,
+        ) = _denoise_with_nilearn(
+            preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             censoring_file=self.inputs.censoring_file,
             lowpass=lowpass,
@@ -286,8 +318,25 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             TR=self.inputs.TR,
         )
 
-        clean_img = masker.inverse_transform(clean_data)
+        self._results["uncensored_denoised_bold"] = os.path.join(
+            runtime.cwd,
+            "uncensored_denoised.nii.gz",
+        )
+        uncensored_denoised_img = masker.inverse_transform(uncensored_denoised_bold)
+        uncensored_denoised_img.to_filename(self._results["uncensored_denoised_bold"])
 
-        self._results["out_file"] = os.path.join(runtime.cwd, "denoised.nii.gz")
-        clean_img.to_filename(self._results["out_file"])
+        self._results["unfiltered_denoised_bold"] = os.path.join(
+            runtime.cwd,
+            "unfiltered_denoised.nii.gz",
+        )
+        unfiltered_denoised_img = masker.inverse_transform(unfiltered_denoised_bold)
+        unfiltered_denoised_img.to_filename(self._results["unfiltered_denoised_bold"])
+
+        self._results["filtered_denoised_bold"] = os.path.join(
+            runtime.cwd,
+            "filtered_denoised.nii.gz",
+        )
+        filtered_denoised_img = masker.inverse_transform(filtered_denoised_bold)
+        filtered_denoised_img.to_filename(self._results["filtered_denoised_bold"])
+
         return runtime

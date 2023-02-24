@@ -400,20 +400,6 @@ produced by the regression.
         n_procs=omp_nthreads,
     )
 
-    # For the DCAN QC plot
-    denoise_bold_unfiltered = pe.Node(
-        DenoiseNifti(
-            TR=TR,
-            lowpass=upper_bpf,
-            highpass=lower_bpf,
-            filter_order=bpf_order,
-            bandpass_filter=False,
-        ),
-        name="denoise_bold_unfiltered",
-        mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
-    )
-
     consolidate_confounds_node = pe.Node(
         Function(
             input_names=[
@@ -475,8 +461,8 @@ produced by the regression.
         (determine_head_radius, qc_report_wf, [
             ("head_radius", "inputnode.head_radius"),
         ]),
-        (denoise_bold_unfiltered, qc_report_wf, [
-            ("out_file", "inputnode.cleaned_unfiltered_file"),
+        (denoise_bold, qc_report_wf, [
+            ("uncensored_denoised_bold", "inputnode.cleaned_unfiltered_file"),
         ]),
     ])
     # fmt:on
@@ -509,9 +495,6 @@ produced by the regression.
             (remove_dummy_scans, denoise_bold, [
                 ("confounds_file_dropped_TR", "confounds_file"),
             ]),
-            (remove_dummy_scans, denoise_bold_unfiltered, [
-                ("confounds_file_dropped_TR", "confounds_file"),
-            ]),
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
@@ -533,9 +516,6 @@ produced by the regression.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
             (consolidate_confounds_node, denoise_bold, [
-                ('out_file', 'confounds_file'),
-            ]),
-            (consolidate_confounds_node, denoise_bold_unfiltered, [
                 ('out_file', 'confounds_file'),
             ]),
             (consolidate_confounds_node, plot_design_matrix_node, [
@@ -572,8 +552,7 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (despike3d, denoise_bold, [('out_file', 'in_file')]),
-            (despike3d, denoise_bold_unfiltered, [('out_file', 'in_file')]),
+            (despike3d, denoise_bold, [('out_file', 'preprocessed_bold')]),
         ])
 
         if dummy_scans:
@@ -587,29 +566,29 @@ produced by the regression.
     elif dummy_scans:
         # fmt:off
         workflow.connect([
-            (remove_dummy_scans, denoise_bold, [('bold_file_dropped_TR', 'in_file')]),
-            (remove_dummy_scans, denoise_bold_unfiltered, [('bold_file_dropped_TR', 'in_file')]),
+            (remove_dummy_scans, denoise_bold, [('bold_file_dropped_TR', 'preprocessed_bold')]),
         ])
         # fmt:on
     else:
         # fmt:off
         workflow.connect([
-            (downcast_data, denoise_bold, [('bold_file', 'in_file')]),
-            (downcast_data, denoise_bold_unfiltered, [('bold_file', 'in_file')]),
+            (downcast_data, denoise_bold, [('bold_file', 'preprocessed_bold')]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
         (downcast_data, denoise_bold, [('bold_mask', 'mask')]),
-        (downcast_data, denoise_bold_unfiltered, [('bold_mask', 'mask')]),
         (censor_scrub, denoise_bold, [("tmask", "censoring_file")]),
-        (censor_scrub, denoise_bold_unfiltered, [("tmask", "censoring_file")]),
     ])
     # fmt:on
 
     # residual smoothing
-    workflow.connect([(denoise_bold, resd_smoothing_wf, [("out_file", "inputnode.bold_file")])])
+    # fmt:off
+    workflow.connect([
+        (denoise_bold, resd_smoothing_wf, [("filtered_denoised_bold", "inputnode.bold_file")]),
+    ])
+    # fmt:on
 
     # functional connect workflow
     # fmt:off
@@ -621,24 +600,24 @@ produced by the regression.
         ]),
         (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
-        (denoise_bold, fcon_ts_wf, [('out_file', 'inputnode.clean_bold')])
+        (denoise_bold, fcon_ts_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
     workflow.connect([
         (downcast_data, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (denoise_bold, reho_compute_wf, [('out_file', 'inputnode.clean_bold')]),
+        (denoise_bold, reho_compute_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
     ])
 
     if bandpass_filter:
         workflow.connect([
             (downcast_data, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-            (denoise_bold, alff_compute_wf, [('out_file', 'inputnode.clean_bold')]),
+            (denoise_bold, alff_compute_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
         ])
 
     # qc report
     workflow.connect([
-        (denoise_bold, qc_report_wf, [('out_file', 'inputnode.cleaned_file')]),
+        (denoise_bold, qc_report_wf, [('filtered_denoised_bold', 'inputnode.cleaned_file')]),
         (censor_scrub, qc_report_wf, [
             ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
@@ -653,7 +632,7 @@ produced by the regression.
             ('out_file', 'inputnode.confounds_file'),
         ]),
         (denoise_bold, write_derivative_wf, [
-            ('out_file', 'inputnode.processed_bold'),
+            ('filtered_denoised_bold', 'inputnode.processed_bold'),
         ]),
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),
