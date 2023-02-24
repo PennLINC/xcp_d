@@ -20,7 +20,6 @@ from xcp_d.utils.modified_data import (
     downcast_to_32,
     generate_mask,
 )
-from xcp_d.utils.write_save import read_ndata, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 

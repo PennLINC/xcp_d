@@ -427,13 +427,13 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
-            ("bold_file", "inputnode.preprocessed_bold_file"),
+            ("bold_file", "inputnode.preprocessed_bold"),
         ]),
         (determine_head_radius, qc_report_wf, [
             ("head_radius", "inputnode.head_radius"),
         ]),
         (denoise_bold, qc_report_wf, [
-            ("uncensored_denoised_bold", "inputnode.cleaned_unfiltered_file"),
+            ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
         ]),
     ])
     # fmt:on
@@ -588,7 +588,9 @@ produced by the regression.
 
     # qc report
     workflow.connect([
-        (denoise_bold, qc_report_wf, [("filtered_denoised_bold", "inputnode.cleaned_file")]),
+        (denoise_bold, qc_report_wf, [
+            ("filtered_denoised_bold", "inputnode.filtered_denoised_bold"),
+        ]),
         (censor_scrub, qc_report_wf, [
             ("tmask", "inputnode.tmask"),
             ("filtered_motion", "inputnode.filtered_motion"),

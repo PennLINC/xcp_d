@@ -453,13 +453,29 @@ class QCPlots(SimpleInterface):
 
 
 class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
-    rawdata = File(exists=True, mandatory=True, desc="Raw data")
-    regressed_data = File(
+    preprocessed_bold = File(
         exists=True,
         mandatory=True,
-        desc="Data after regression and interpolation, but not filtering.",
+        desc=(
+            "Preprocessed BOLD file, after mean-centering and detrending "
+            "*using only the low-motion volumes*."
+        ),
     )
-    residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
+    uncensored_denoised_bold = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Data after regression and interpolation, but not filtering."
+            "The preprocessed BOLD data are censored, mean-centered, detrended, "
+            "and denoised to get the betas, and then the full, uncensored preprocessed BOLD data "
+            "are denoised using those betas."
+        ),
+    )
+    filtered_denoised_bold = File(
+        exists=True,
+        mandatory=True,
+        desc="Data after filtering, interpolation, etc. This is not plotted.",
+    )
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -498,14 +514,14 @@ class QCPlotsES(SimpleInterface):
     output_spec = _QCPlotsESOutputSpec
 
     def _run_interface(self, runtime):
-        before_process_fn = fname_presuffix(
+        preprocessed_bold_figure = fname_presuffix(
             "carpetplot_before_",
             suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        after_process_fn = fname_presuffix(
+        denoised_bold_figure = fname_presuffix(
             "carpetplot_after_",
             suffix="file.svg",
             newpath=runtime.cwd,
@@ -519,16 +535,16 @@ class QCPlotsES(SimpleInterface):
         segmentation_file = segmentation_file if isdefined(segmentation_file) else None
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
-            preprocessed_file=self.inputs.rawdata,
-            residuals_file=self.inputs.regressed_data,
-            denoised_file=self.inputs.residual_data,
+            preprocessed_bold=self.inputs.preprocessed_bold,
+            uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
+            filtered_denoised_bold=self.inputs.filtered_denoised_bold,
             dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
             mask=mask_file,
             filtered_motion=self.inputs.filtered_motion,
             seg_data=segmentation_file,
-            processed_filename=after_process_fn,
-            unprocessed_filename=before_process_fn,
+            preprocessed_bold_figure=preprocessed_bold_figure,
+            denoised_bold_figure=denoised_bold_figure,
         )
 
         return runtime

@@ -214,6 +214,8 @@ def consolidate_confounds(
     """
     import os
 
+    import numpy as np
+
     from xcp_d.utils.confounds import load_confound_matrix
 
     confounds_df = load_confound_matrix(

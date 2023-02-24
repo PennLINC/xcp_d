@@ -12,7 +12,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.nilearn import NilearnBaseInterface
 
-from xcp_d.utils.utils import _denoise_with_nilearn
+from xcp_d.utils.utils import denoise_with_nilearn
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
@@ -262,7 +262,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             uncensored_denoised_bold,
             unfiltered_denoised_bold,
             filtered_denoised_bold,
-        ) = _denoise_with_nilearn(
+        ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             censoring_file=self.inputs.censoring_file,
@@ -283,7 +283,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         )
         write_ndata(
             uncensored_denoised_bold,
-            template=self.inputs.in_file,
+            template=self.inputs.preprocessed_bold,
             filename=self._results["uncensored_denoised_bold"],
             TR=self.inputs.TR,
         )
@@ -294,7 +294,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         )
         write_ndata(
             unfiltered_denoised_bold,
-            template=self.inputs.in_file,
+            template=self.inputs.preprocessed_bold,
             filename=self._results["unfiltered_denoised_bold"],
             TR=self.inputs.TR,
         )
@@ -305,7 +305,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         )
         write_ndata(
             filtered_denoised_bold,
-            template=self.inputs.in_file,
+            template=self.inputs.preprocessed_bold,
             filename=self._results["filtered_denoised_bold"],
             TR=self.inputs.TR,
         )
@@ -355,7 +355,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             uncensored_denoised_bold,
             unfiltered_denoised_bold,
             filtered_denoised_bold,
-        ) = _denoise_with_nilearn(
+        ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             censoring_file=self.inputs.censoring_file,

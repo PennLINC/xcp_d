@@ -28,13 +28,13 @@ SUBJECT_TEMPLATE = """\
 
 QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t<ul class="elem-desc">
-\t\t\t<li>BOLD volume space: {space}s</li>
-\t\t\t<li>Repetition Time (TR): {TR:.03g}s</li>
+\t\t\t<li>BOLD volume space: {space}</li>
+\t\t\t<li>Repetition Time (TR): {TR:.03g}</li>
 \t\t\t<li>Mean Framewise Displacement: {meanFD}</li>
 \t\t\t<li>Mean Relative RMS Motion: {meanRMS}</li>
 \t\t\t<li>Max Relative RMS Motion: {maxRMS}</li>
 \t\t\t<li>DVARS Before and After Processing : {dvars_before_after}</li>
-\t\t\t<li>Correlation between DVARS and FD  Before and After Processing : {corrfddv}</li>
+\t\t\t<li>Correlation between DVARS and FD Before and After Processing : {corrfddv}</li>
 \t\t\t<li>Number of Volumes Censored : {volcensored}</li>
 \t\t</ul>
 """

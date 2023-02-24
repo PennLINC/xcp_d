@@ -3,6 +3,7 @@ import os
 
 import nibabel as nb
 import numpy as np
+import pandas as pd
 
 from xcp_d.interfaces import nilearn
 
@@ -87,3 +88,139 @@ def test_nilearn_resampletoimage(fmriprep_with_freesurfer_data, tmp_path_factory
     assert out_img.ndim == 3
     assert np.array_equal(target_img.affine, out_img.affine)
     assert np.array_equal(target_img.header.get_zooms(), out_img.header.get_zooms())
+
+
+def test_nilearn_denoisenifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test xcp_d.interfaces.nilearn.DenoiseNifti."""
+    tmpdir = tmp_path_factory.mktemp("test_nilearn_denoisenifti")
+
+    preprocessed_bold = fmriprep_with_freesurfer_data["nifti_file"]
+    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
+
+    # Select some confounds to use for denoising
+    confounds_df = pd.read_table(confounds_file)
+    reduced_confounds_df = confounds_df[["csf", "white_matter"]]
+    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
+    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
+    reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
+    reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
+
+    # Create the censoring file
+    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
+    assert censoring_df["framewise_displacement"].sum() > 0
+    censoring_file = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+
+    preprocessed_img = nb.load(preprocessed_bold)
+
+    interface = nilearn.DenoiseNifti(
+        preprocessed_bold=preprocessed_bold,
+        confounds_file=reduced_confounds_file,
+        censoring_file=censoring_file,
+        mask=mask,
+        TR=2,
+        bandpass_filter=True,
+        highpass=0.01,
+        lowpass=0.08,
+        filter_order=2,
+    )
+    results = interface.run(cwd=tmpdir)
+
+    _check_denoising_outputs(preprocessed_img, results.outputs, cifti=False)
+
+
+def test_nilearn_denoisecifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test xcp_d.interfaces.nilearn.DenoiseCifti."""
+    tmpdir = tmp_path_factory.mktemp("test_nilearn_denoisecifti")
+
+    preprocessed_bold = fmriprep_with_freesurfer_data["cifti_file"]
+    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
+
+    # Select some confounds to use for denoising
+    confounds_df = pd.read_table(confounds_file)
+    reduced_confounds_df = confounds_df[["csf", "white_matter"]]
+    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
+    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
+    reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
+    reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
+
+    # Create the censoring file
+    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
+    assert censoring_df["framewise_displacement"].sum() > 0
+    censoring_file = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+
+    preprocessed_img = nb.load(preprocessed_bold)
+
+    interface = nilearn.DenoiseCifti(
+        preprocessed_bold=preprocessed_bold,
+        confounds_file=reduced_confounds_file,
+        censoring_file=censoring_file,
+        TR=2,
+        bandpass_filter=True,
+        highpass=0.01,
+        lowpass=0.08,
+        filter_order=2,
+    )
+    results = interface.run(cwd=tmpdir)
+
+    _check_denoising_outputs(preprocessed_img, results.outputs, cifti=True)
+
+
+def _check_denoising_outputs(preprocessed_img, outputs, cifti):
+    if cifti:
+        ndim = 2
+        hdr_attr = "nifti_header"
+    else:
+        ndim = 4
+        hdr_attr = "header"
+
+    preprocessed_img_header = getattr(preprocessed_img, hdr_attr)
+
+    # uncensored_denoised_bold is the size of the full run
+    assert os.path.isfile(outputs.uncensored_denoised_bold)
+    uncensored_denoised_img = nb.load(outputs.uncensored_denoised_bold)
+    uncensored_denoised_img_header = getattr(uncensored_denoised_img, hdr_attr)
+    assert uncensored_denoised_img.ndim == ndim
+    assert uncensored_denoised_img.shape == preprocessed_img.shape
+    assert np.array_equal(
+        preprocessed_img_header.get_sform(),
+        preprocessed_img_header.get_sform(),
+    )
+    assert np.array_equal(
+        uncensored_denoised_img_header.get_zooms()[:-1],
+        preprocessed_img_header.get_zooms()[:-1],
+    )
+
+    # unfiltered_denoised_bold is the censored, denoised, and interpolated data
+    assert os.path.isfile(outputs.unfiltered_denoised_bold)
+    unfiltered_denoised_img = nb.load(outputs.unfiltered_denoised_bold)
+    unfiltered_denoised_img_header = getattr(unfiltered_denoised_img, hdr_attr)
+    assert unfiltered_denoised_img.ndim == ndim
+    assert unfiltered_denoised_img.shape == preprocessed_img.shape
+    assert np.array_equal(
+        unfiltered_denoised_img_header.get_sform(),
+        preprocessed_img_header.get_sform(),
+    )
+    assert np.array_equal(
+        unfiltered_denoised_img_header.get_zooms()[:-1],
+        preprocessed_img_header.get_zooms()[:-1],
+    )
+
+    # filtered_denoised_bold is the censored, denoised, interpolated, and filtered data
+    assert os.path.isfile(outputs.filtered_denoised_bold)
+    filtered_denoised_img = nb.load(outputs.filtered_denoised_bold)
+    filtered_denoised_img_header = getattr(filtered_denoised_img, hdr_attr)
+    assert filtered_denoised_img.ndim == ndim
+    assert filtered_denoised_img.shape == preprocessed_img.shape
+    assert np.array_equal(
+        filtered_denoised_img_header.get_sform(),
+        preprocessed_img_header.get_sform(),
+    )
+    assert np.array_equal(
+        filtered_denoised_img_header.get_zooms()[:-1],
+        preprocessed_img_header.get_zooms()[:-1],
+    )

@@ -8,8 +8,6 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-from scipy.signal import butter, filtfilt
-from templateflow.api import get as get_template
 
 
 def _t12native(fname):
@@ -64,6 +62,8 @@ def get_segfile(bold_file):
     -----
     Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
+    from templateflow.api import get as get_template
+
     from xcp_d.interfaces.ants import ApplyTransforms
 
     # get transform files
@@ -404,6 +404,8 @@ def butter_bandpass(
     filtered_data : (T, S) numpy.ndarray
         The filtered data.
     """
+    from scipy.signal import butter, filtfilt
+
     b, a = butter(
         order,
         [high_pass, low_pass],
@@ -474,7 +476,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     return brain_radius
 
 
-def _denoise_with_nilearn(
+def denoise_with_nilearn(
     preprocessed_bold,
     confounds_file,
     censoring_file,
@@ -485,11 +487,16 @@ def _denoise_with_nilearn(
 ):
     """Denoise an array with Nilearn.
 
-    This step does the following.
-    Linearly detrend, but don't mean-center, the BOLD data.
-    Regress out confounds from BOLD data.
-    Use list of outliers to censor BOLD data during regression.
-    Temporally filter BOLD data.
+    This step does the following:
+
+        1. Orthogonalize nuisance regressors w.r.t. any signal regressors.
+        2. Censor the data and associated confounds.
+        3. Mean-center the censored and uncensored confounds, based on the censored confounds.
+        4. Estimate betas using only the censored data.
+        5. Apply the betas to denoise the *full* (uncensored) BOLD data.
+        6. Apply the betas to denoise the censored BOLD data.
+        7. Interpolate the censored, denoised data.
+        8. Bandpass filter the interpolated, denoised data.
 
     Parameters
     ----------
@@ -497,22 +504,31 @@ def _denoise_with_nilearn(
         Preprocessed BOLD data, after dummy volume removal,
         but without any additional censoring.
     confounds_file : str
+        Path to TSV file containing selected confounds, after dummy volume removal,
+        but without any additional censoring.
     censoring_file : str
+        Path to TSV file containing one column with zeros for low-motion volumes and
+        ones for high-motion outliers.
     lowpass, highpass : float or None
+        Lowpass and highpass thresholds, in Hertz.
     filter_order : int
+        Filter order.
     TR : float
+        Repetition time, in seconds.
 
     Returns
     -------
     uncensored_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
         The result of denoising the full (uncensored) preprocessed BOLD data using
         betas estimated using the *censored* BOLD data and nuisance regressors.
+        This is only used for DCAN figures.
     interpolated_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
         The result of denoising the censored preprocessed BOLD data,
         followed by cubic spline interpolation.
     filtered_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
         The result of denoising the censored preprocessed BOLD data,
         followed by cubic spline interpolation and band-pass filtering.
+        This is the primary output.
     """
     import pandas as pd
     from nilearn import signal
@@ -527,13 +543,7 @@ def _denoise_with_nilearn(
     censoring_df = pd.read_table(censoring_file)
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
-    # Per xcp_d's style, censor the data first
-    preprocessed_bold_censored = preprocessed_bold[sample_mask, :]
-    confounds = confounds_df.to_numpy()
-    confounds_censored = confounds[sample_mask, :]
-    confounds_df_censored = pd.DataFrame(data=confounds_censored, columns=confounds_df.columns)
-
-    # Orthogonalize censored nuisance regressors w.r.t. any censored signal regressors
+    # Orthogonalize full nuisance regressors w.r.t. any signal regressors
     signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
     if signal_columns:
         warnings.warn(
@@ -541,29 +551,39 @@ def _denoise_with_nilearn(
             "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
             f"{', '.join(signal_columns)}"
         )
-        noise_columns = [c for c in confounds_df_censored.columns if not c.startswith("signal__")]
+        noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
         # Don't orthogonalize the intercept or linear trend regressors
         columns_to_denoise = [c for c in noise_columns if c not in ["linear_trend", "intercept"]]
-        temp_confounds_df = confounds_df_censored[noise_columns].copy()
+        temp_confounds_df = confounds_df[noise_columns].copy()
 
-        signal_regressors = confounds_df_censored[signal_columns].to_numpy()
-        noise_regressors = confounds_df_censored[columns_to_denoise].to_numpy()
+        signal_regressors = confounds_df[signal_columns].to_numpy()
+        noise_regressors = confounds_df[columns_to_denoise].to_numpy()
         signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
         pred_noise_regressors = np.dot(signal_regressors, signal_betas)
         orth_noise_regressors = noise_regressors - pred_noise_regressors
         temp_confounds_df.loc[:, columns_to_denoise] = orth_noise_regressors
-        confounds_df_censored = temp_confounds_df
+        confounds_df = temp_confounds_df
 
-    nuisance_arr = confounds_df_censored.to_numpy()
-    # mean-center everything but the intercept to be safe
-    nuisance_arr[:, :-1] -= np.mean(nuisance_arr[:, :-1], axis=0)
+    # Censor the data and confounds
+    preprocessed_bold_censored = preprocessed_bold[sample_mask, :]
+    nuisance_arr = confounds_df.to_numpy()
     nuisance_censored = nuisance_arr[sample_mask, :]
 
+    # Mean-center all of the confounds, except the intercept, to be safe
+    nuisance_censored_mean = np.mean(nuisance_censored[:, :-1], axis=0)
+    nuisance_arr[:, :-1] -= nuisance_censored_mean
+    nuisance_censored[:, :-1] -= nuisance_censored_mean  # use censored mean on full regressors
+
+    # Estimate betas using only the censored data
     betas = np.linalg.lstsq(nuisance_censored, preprocessed_bold_censored, rcond=None)[0]
+
+    # Apply the betas to denoise the *full* (uncensored) BOLD data
     uncensored_denoised_bold = preprocessed_bold - np.dot(nuisance_arr, betas)
+
+    # Also denoise the censored BOLD data
     censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
 
-    # Now interpolate with cubic spline interpolation
+    # Now interpolate the censored, denoised data with cubic spline interpolation
     interpolated_denoised_bold = np.zeros(
         (n_volumes, n_voxels),
         dtype=censored_denoised_bold.dtype,
@@ -575,7 +595,7 @@ def _denoise_with_nilearn(
         t_r=TR,
     )
 
-    # Now filter
+    # Now apply the bandpass filter to the interpolated, denoised data
     if lowpass is not None and highpass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
         filtered_denoised_bold = butter_bandpass(
