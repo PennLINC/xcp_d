@@ -523,7 +523,7 @@ def collect_surface_data(layout, participant_label):
     return out_surface_files, standard_space_surfaces, surfaces_found
 
 
-def collect_run_data(layout, input_type, bold_file, cifti=False):
+def collect_run_data(layout, input_type, bold_file, cifti):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -532,9 +532,8 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
         The BIDSLayout object used to grab files from the dataset.
     bold_file : :obj:`str`
         Path to the BOLD file.
-    cifti : :obj:`bool`, optional
+    cifti : :obj:`bool`
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-        Default is False.
     input_type: :obj:`str`
         Input type.
 
@@ -587,8 +586,16 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             space=allowed_nifti_spaces,
             suffix="boldref",
         )
+        run_data["nifti_file"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            space=allowed_nifti_spaces,
+            desc="preproc",
+            suffix="bold",
+            extension=[".nii", ".nii.gz"],
+        )
 
-    LOGGER.debug(
+    LOGGER.info(
         f"Collected run data for {bold_file}:\n"
         f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
     )

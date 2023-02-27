@@ -72,19 +72,29 @@ class ExecutiveSummary(object):
             "SagittalInsulaTemporalHippocampalSulcus",
         ]
         ANAT_REGISTRATION_DESCS = [
-            "AtlasInT1w",
-            "T1wInAtlas",
-            "AtlasInSubcorticals",
-            "SubcorticalsInAtlas",
+            "AtlasOnAnat",
+            "AnatOnAtlas",
+            "AtlasOnSubcorticals",
+            "SubcorticalsOnAtlas",
         ]
         ANAT_REGISTRATION_TITLES = [
-            "Atlas In T1w",
-            "T1w In Atlas",
-            "Atlas in Subcorticals",
-            "Subcorticals in Atlas",
+            "Atlas On {modality}",  # noqa: FS003
+            "{modality} On Atlas",  # noqa: FS003
+            "Atlas On {modality} Subcorticals",  # noqa: FS003
+            "{modality} Subcorticals On Atlas",  # noqa: FS003
         ]
-        TASK_REGISTRATION_DESCS = ["TaskInT1", "T1InTask"]
-        TASK_REGISTRATION_TITLES = ["Task in T1", "T1 in Task"]
+        TASK_REGISTRATION_DESCS = [
+            "TaskOnT1w",
+            "T1wOnTask",
+            "TaskOnT2w",
+            "T2wOnTask",
+        ]
+        TASK_REGISTRATION_TITLES = [
+            "Task On T1w",
+            "T1w On Task",
+            "Task On T2w",
+            "T2w On Task",
+        ]
         ORDERING = [
             "session",
             "task",
@@ -103,16 +113,15 @@ class ExecutiveSummary(object):
         structural_files = {}
         for modality in ["T1w", "T2w"]:
             structural_files[modality] = {}
+            query["suffix"] = modality
 
             # Get mosaic file for brainsprite.
             query["desc"] = "mosaic"
-            query["suffix"] = modality
             query["extension"] = ".png"
             mosaic = self._get_bids_file(query)
             structural_files[modality]["mosaic"] = mosaic
 
             # Get slicewise PNG files for brainsprite.
-            query["extension"] = ".png"
             structural_files[modality]["slices"] = []
             for slicewise_png_desc in ANAT_SLICEWISE_PNG_DESCS:
                 query["desc"] = slicewise_png_desc
@@ -122,7 +131,9 @@ class ExecutiveSummary(object):
 
             # Get structural registration files.
             structural_files[modality]["registration_files"] = []
-            structural_files[modality]["registration_titles"] = ANAT_REGISTRATION_TITLES
+            structural_files[modality]["registration_titles"] = [
+                title.format(modality=modality) for title in ANAT_REGISTRATION_TITLES
+            ]
             for registration_desc in ANAT_REGISTRATION_DESCS:
                 query["desc"] = registration_desc
                 found_file = self._get_bids_file(query)
@@ -186,7 +197,7 @@ class ExecutiveSummary(object):
                 "subject": self.subject_id,
                 "desc": "precarpetplot",
                 "suffix": "bold",
-                "extension": ".svg",
+                "extension": [".svg", ".png"],
                 **task_entity_set,
             }
 
