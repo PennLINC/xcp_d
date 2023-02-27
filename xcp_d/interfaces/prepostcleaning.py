@@ -1,6 +1,7 @@
 """Interfaces for the post-processing workflows."""
 import os
 
+import nibabel as nb
 import numpy as np
 import pandas as pd
 from nipype import logging
@@ -14,12 +15,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import (
-    _drop_dummy_scans,
-    compute_fd,
-    downcast_to_32,
-    flag_motion_outliers,
-)
+from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd, downcast_to_32
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -337,10 +333,8 @@ class FlagMotionOutliers(SimpleInterface):
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
-        tmask = flag_motion_outliers(
-            fd_res=fd_timeseries,
-            fd_thresh=self.inputs.fd_thresh,
-        )
+        outlier_mask = np.zeros(len(fd_timeseries), dtype=int)
+        outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
 
         # get the output
         self._results["tmask"] = fname_presuffix(
@@ -354,7 +348,7 @@ class FlagMotionOutliers(SimpleInterface):
             use_ext=True,
         )
 
-        outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
+        outliers_df = pd.DataFrame(data=outlier_mask, columns=["framewise_displacement"])
         outliers_df.to_csv(
             self._results["tmask"],
             index=False,
@@ -482,7 +476,7 @@ class Censor(SimpleInterface):
             new_total_volumes = bold_data_censored.shape[0]
             censored_time_axis = time_axis[:new_total_volumes]
             # Note: not an error. A time axis cannot be accessed with irregularly
-            # spaced values. Since we use the tmask for marking the volumes removed,
+            # spaced values. Since we use the outlier_mask for marking the volumes removed,
             # the time axis also is not used further in XCP.
             censored_header = nb.cifti2.Cifti2Header.from_axes(
                 (censored_time_axis, brain_model_axis)

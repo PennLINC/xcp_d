@@ -41,28 +41,6 @@ def compute_fd(confound, head_radius=50):
     return fdres
 
 
-@fill_doc
-def flag_motion_outliers(fd_res, fd_thresh):
-    """Create binary temporal mask flagging high-motion volumes.
-
-    Parameters
-    ----------
-    fd_res : numpy.ndarray of shape (T)
-        Framewise displacement time series.
-        T = time.
-    %(fd_thresh)s
-
-    Returns
-    -------
-    tmask : numpy.ndarray of shape (T)
-        The temporal mask. Zeros are low-motion volumes. Ones are high-motion volumes.
-    """
-    tmask = np.zeros(len(fd_res), dtype=int)
-    tmask[fd_res > fd_thresh] = 1
-
-    return tmask
-
-
 def _drop_dummy_scans(bold_file, dummy_scans):
     """Remove the first X volumes from a BOLD file.
 
