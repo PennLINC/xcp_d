@@ -13,7 +13,11 @@ from num2words import num2words
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import DenoiseNifti
-from xcp_d.interfaces.prepostcleaning import FlagMotionOutliers, ConvertTo32, RemoveDummyVolumes
+from xcp_d.interfaces.prepostcleaning import (
+    ConvertTo32,
+    FlagMotionOutliers,
+    RemoveDummyVolumes,
+)
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
