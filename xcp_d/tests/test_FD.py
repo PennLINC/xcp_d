@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from xcp_d.interfaces.prepostcleaning import CensorScrub
+from xcp_d.interfaces.prepostcleaning import FlagMotionOutliers
 
 
 def test_fd_interface_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -23,7 +23,7 @@ def test_fd_interface_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
     # Run workflow
-    cscrub = CensorScrub()
+    cscrub = FlagMotionOutliers()
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.2
     cscrub.inputs.motion_filter_type = None
@@ -63,7 +63,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
     # Run workflow
-    cscrub = CensorScrub()
+    cscrub = FlagMotionOutliers()
     cscrub.inputs.TR = 0.8
     cscrub.inputs.fd_thresh = 0.2
     cscrub.inputs.motion_filter_type = None
@@ -104,7 +104,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
 #     df.to_csv(confounds_tsv, sep='\t', index=False, header=True)
 
 #     # Run workflow
-#     cscrub = CensorScrub()
+#     cscrub = FlagMotionOutliers()
 #     cscrub.inputs.in_file = boldfile
 #     cscrub.inputs.TR = 0.8
 #     cscrub.inputs.fd_thresh = 0.2
@@ -145,7 +145,7 @@ def test_fd_interface_nifti(data_dir, tmp_path_factory):
 #     df.to_csv(confounds_tsv, sep='\t', index=False, header=True)
 
 #     # Run workflow
-#     cscrub = CensorScrub()
+#     cscrub = FlagMotionOutliers()
 #     cscrub.inputs.in_file = boldfile
 #     cscrub.inputs.TR = 0.8
 #     cscrub.inputs.fd_thresh = 0.2

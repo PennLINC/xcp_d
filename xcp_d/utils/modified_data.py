@@ -42,7 +42,7 @@ def compute_fd(confound, head_radius=50):
 
 
 @fill_doc
-def generate_mask(fd_res, fd_thresh):
+def flag_motion_outliers(fd_res, fd_thresh):
     """Create binary temporal mask flagging high-motion volumes.
 
     Parameters

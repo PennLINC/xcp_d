@@ -13,7 +13,7 @@ from num2words import num2words
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import DenoiseCifti
-from xcp_d.interfaces.prepostcleaning import CensorScrub, ConvertTo32, RemoveTR
+from xcp_d.interfaces.prepostcleaning import FlagMotionOutliers, ConvertTo32, RemoveDummyVolumes
 from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.bids import collect_run_data
@@ -342,7 +342,7 @@ produced by the regression.
     )
 
     censor_scrub = pe.Node(
-        CensorScrub(
+        FlagMotionOutliers(
             TR=TR,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
@@ -441,7 +441,7 @@ produced by the regression.
     # Remove TR first
     if dummy_scans:
         remove_dummy_scans = pe.Node(
-            RemoveTR(),
+            RemoveDummyVolumes(),
             name="remove_dummy_scans",
             mem_gb=mem_gbx["timeseries"],
         )

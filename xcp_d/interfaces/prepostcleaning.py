@@ -18,7 +18,7 @@ from xcp_d.utils.modified_data import (
     _drop_dummy_scans,
     compute_fd,
     downcast_to_32,
-    generate_mask,
+    flag_motion_outliers,
 )
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -125,7 +125,7 @@ class ConvertTo32(SimpleInterface):
         return runtime
 
 
-class _RemoveTRInputSpec(BaseInterfaceInputSpec):
+class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
     dummy_scans = traits.Either(
         traits.Int,
@@ -149,7 +149,7 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _RemoveTROutputSpec(TraitedSpec):
+class _RemoveDummyVolumesOutputSpec(TraitedSpec):
     confounds_file_dropped_TR = File(
         exists=True,
         mandatory=True,
@@ -170,15 +170,15 @@ class _RemoveTROutputSpec(TraitedSpec):
     dummy_scans = traits.Int(desc="Number of volumes dropped.")
 
 
-class RemoveTR(SimpleInterface):
+class RemoveDummyVolumes(SimpleInterface):
     """Removes initial volumes from a nifti or cifti file.
 
     A bold file and its corresponding confounds TSV (fmriprep format)
     are adjusted to remove the first n seconds of data.
     """
 
-    input_spec = _RemoveTRInputSpec
-    output_spec = _RemoveTROutputSpec
+    input_spec = _RemoveDummyVolumesInputSpec
+    output_spec = _RemoveDummyVolumesOutputSpec
 
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
@@ -245,7 +245,7 @@ class RemoveTR(SimpleInterface):
         return runtime
 
 
-class _CensorScrubInputSpec(BaseInterfaceInputSpec):
+class _FlagMotionOutliersInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
@@ -278,7 +278,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _CensorScrubOutputSpec(TraitedSpec):
+class _FlagMotionOutliersOutputSpec(TraitedSpec):
     tmask = File(
         exists=True,
         mandatory=True,
@@ -303,7 +303,7 @@ class _CensorScrubOutputSpec(TraitedSpec):
     )
 
 
-class CensorScrub(SimpleInterface):
+class FlagMotionOutliers(SimpleInterface):
     """Generate a temporal mask based on recalculated FD.
 
     Takes in confound files and information about filtering-
@@ -314,8 +314,8 @@ class CensorScrub(SimpleInterface):
     Outputs temporal mask and framewise displacement timeseries.
     """
 
-    input_spec = _CensorScrubInputSpec
-    output_spec = _CensorScrubOutputSpec
+    input_spec = _FlagMotionOutliersInputSpec
+    output_spec = _FlagMotionOutliersOutputSpec
 
     def _run_interface(self, runtime):
         # Read in fmriprep confounds tsv to calculate FD
@@ -337,7 +337,7 @@ class CensorScrub(SimpleInterface):
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
-        tmask = generate_mask(
+        tmask = flag_motion_outliers(
             fd_res=fd_timeseries,
             fd_thresh=self.inputs.fd_thresh,
         )
@@ -401,11 +401,7 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
-        confounds_tsv_censored.to_csv(
-            self._results["confounds_censored"],
-            index=False,
-            sep="\t",
-        )
+
         return runtime
 
 
