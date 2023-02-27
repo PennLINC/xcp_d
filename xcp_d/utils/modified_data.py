@@ -5,8 +5,10 @@ import os
 
 import nibabel as nb
 import numpy as np
+import pandas as pd
 from nipype import logging
 
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
@@ -177,3 +179,69 @@ def scale_to_min_max(X, x_min, x_max):
         denom = 1
 
     return x_min + (nom / denom)
+
+
+@fill_doc
+def flag_bad_run(
+    fmriprep_confounds_file,
+    dummy_scans,
+    TR,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    head_radius,
+    fd_thresh,
+):
+    """Determine if a run has too many high-motion volumes to continue processing.
+
+    Parameters
+    ----------
+    fmriprep_confounds_file
+    %(dummy_scans)s
+    TR
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(head_radius)s
+    %(fd_thresh)s
+
+    Returns
+    -------
+    is_bad_run : :obj:`bool`
+        True if the run has >50%% high-motion volumes.
+        False otherwise.
+    """
+    dummy_scans = _infer_dummy_scans(
+        dummy_scans=dummy_scans,
+        confounds_file=fmriprep_confounds_file,
+    )
+
+    # Read in fmriprep confounds tsv to calculate FD
+    fmriprep_confounds_df = pd.read_table(fmriprep_confounds_file)
+
+    # Remove dummy volumes
+    fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
+
+    # Calculate filtered FD
+    motion_df = load_motion(
+        fmriprep_confounds_df,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+    )
+    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
+
+    # Generate temporal mask with all timepoints have FD over threshold set to 1.
+    outliers_arr = np.zeros(len(fd_arr), dtype=int)
+    outliers_arr[fd_arr > fd_thresh] = 1
+
+    # Determine proportion of outlier volumes in run.
+    proportion_outliers = np.mean(outliers_arr)
+
+    # Runs with >50% high-motion outliers are "bad".
+    is_bad_run = proportion_outliers > 0.5
+    return is_bad_run
