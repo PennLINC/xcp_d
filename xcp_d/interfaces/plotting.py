@@ -11,12 +11,16 @@ from nilearn.plotting import plot_anat
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
+    Directory,
     File,
+    InputMultiPath,
+    OutputMultiPath,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
-from nipype.interfaces.base.traits_extension import isdefined
+from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
 
 from xcp_d.utils.confounds import load_confound, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
@@ -449,13 +453,29 @@ class QCPlots(SimpleInterface):
 
 
 class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
-    rawdata = File(exists=True, mandatory=True, desc="Raw data")
-    regressed_data = File(
+    preprocessed_bold = File(
         exists=True,
         mandatory=True,
-        desc="Data after regression and interpolation, but not filtering.",
+        desc=(
+            "Preprocessed BOLD file, after mean-centering and detrending "
+            "*using only the low-motion volumes*."
+        ),
     )
-    residual_data = File(exists=True, mandatory=True, desc="Data after filtering")
+    uncensored_denoised_bold = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Data after regression and interpolation, but not filtering."
+            "The preprocessed BOLD data are censored, mean-centered, detrended, "
+            "and denoised to get the betas, and then the full, uncensored preprocessed BOLD data "
+            "are denoised using those betas."
+        ),
+    )
+    filtered_denoised_bold = File(
+        exists=True,
+        mandatory=True,
+        desc="Data after filtering, interpolation, etc. This is not plotted.",
+    )
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -494,14 +514,14 @@ class QCPlotsES(SimpleInterface):
     output_spec = _QCPlotsESOutputSpec
 
     def _run_interface(self, runtime):
-        before_process_fn = fname_presuffix(
+        preprocessed_bold_figure = fname_presuffix(
             "carpetplot_before_",
             suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        after_process_fn = fname_presuffix(
+        denoised_bold_figure = fname_presuffix(
             "carpetplot_after_",
             suffix="file.svg",
             newpath=runtime.cwd,
@@ -515,16 +535,16 @@ class QCPlotsES(SimpleInterface):
         segmentation_file = segmentation_file if isdefined(segmentation_file) else None
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
-            preprocessed_file=self.inputs.rawdata,
-            residuals_file=self.inputs.regressed_data,
-            denoised_file=self.inputs.residual_data,
+            preprocessed_bold=self.inputs.preprocessed_bold,
+            uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
+            filtered_denoised_bold=self.inputs.filtered_denoised_bold,
             dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
             mask=mask_file,
             filtered_motion=self.inputs.filtered_motion,
             seg_data=segmentation_file,
-            processed_filename=after_process_fn,
-            unprocessed_filename=before_process_fn,
+            preprocessed_bold_figure=preprocessed_bold_figure,
+            denoised_bold_figure=denoised_bold_figure,
         )
 
         return runtime
@@ -554,3 +574,144 @@ class AnatomicalPlot(SimpleInterface):
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
 
         return runtime
+
+
+class _SlicesDirInputSpec(FSLCommandInputSpec):
+    is_pairs = traits.Bool(
+        argstr="-o",
+        position=0,
+        desc="filelist is pairs ( <underlying> <red-outline> ) of images",
+    )
+    outline_image = File(
+        exists=True,
+        argstr="-p %s",
+        position=1,
+        desc="use <image> as red-outline image on top of all images in <filelist>",
+    )
+    edge_threshold = traits.Float(
+        argstr="-e %.03f",
+        position=2,
+        desc=(
+            "use the specified threshold for edges (if >0 use this proportion of max-min, "
+            "if <0, use the absolute value)"
+        ),
+    )
+    output_odd_axials = traits.Bool(
+        argstr="-S",
+        position=3,
+        desc="output every second axial slice rather than just 9 ortho slices",
+    )
+
+    in_files = InputMultiPath(
+        File(exists=True),
+        argstr="%s",
+        mandatory=True,
+        position=-1,
+        desc="List of files to process.",
+    )
+
+    out_extension = traits.Enum(
+        (".gif", ".png", ".svg"),
+        default=".gif",
+        usedefault=True,
+        desc="Convenience parameter to let xcp_d select the extension.",
+    )
+
+
+class _SlicesDirOutputSpec(TraitedSpec):
+    out_dir = Directory(exists=True, desc="Output directory.")
+    out_files = OutputMultiPath(File(exists=True), desc="List of generated PNG files.")
+
+
+class SlicesDir(FSLCommand):
+    """Run slicesdir.
+
+    Notes
+    -----
+    Usage: slicesdir [-o] [-p <image>] [-e <thr>] [-S] <filelist>
+    -o         :  filelist is pairs ( <underlying> <red-outline> ) of images
+    -p <image> :  use <image> as red-outline image on top of all images in <filelist>
+    -e <thr>   :  use the specified threshold for edges (if >0 use this proportion of max-min,
+                  if <0, use the absolute value)
+    -S         :  output every second axial slice rather than just 9 ortho slices
+    """
+
+    _cmd = "slicesdir"
+    input_spec = _SlicesDirInputSpec
+    output_spec = _SlicesDirOutputSpec
+
+    def _list_outputs(self):
+        """Create a Bunch which contains all possible files generated by running the interface.
+
+        Some files are always generated, others depending on which ``inputs`` options are set.
+
+        Returns
+        -------
+        outputs : Bunch object
+            Bunch object containing all possible files generated by
+            interface object.
+            If None, file was not generated
+            Else, contains path, filename of generated outputfile
+        """
+        outputs = self._outputs().get()
+
+        out_dir = os.path.abspath(os.path.join(os.getcwd(), "slicesdir"))
+        outputs["out_dir"] = out_dir
+        outputs["out_files"] = [
+            self._gen_fname(
+                basename=f.replace(os.sep, "_"),
+                cwd=out_dir,
+                ext=self.inputs.out_extension,
+            )
+            for f in self.inputs.in_files
+        ]
+        return outputs
+
+    def _gen_filename(self, name):
+        if name == "out_files":
+            return self._list_outputs()[name]
+
+        return None
+
+
+class _PNGAppendInputSpec(FSLCommandInputSpec):
+    in_files = InputMultiPath(
+        File(exists=True),
+        mandatory=True,
+        position=0,
+        desc="List of files to process.",
+    )
+    out_file = File(exists=False, mandatory=True, position=1, desc="Output file.")
+
+
+class _PNGAppendOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PNGAppend(FSLCommand):
+    """Run pngappend.
+
+    Notes
+    -----
+    pngappend  -  append PNG files horizontally and/or vertically into a new PNG (or GIF) file
+
+    Usage: pngappend <input 1> <+|-> [n] <input 2> [<+|-> [n] <input n>]  output>
+
+    + appends horizontally,
+    - appends vertically (i.e. works like a linebreak)
+    [n] number ofgap pixels
+    note that files with .gif extension will be input/output in GIF format
+    """
+
+    _cmd = "pngappend"
+    input_spec = _PNGAppendInputSpec
+    output_spec = _PNGAppendOutputSpec
+
+    def _format_arg(self, name, spec, value):
+        if name == "in_files":
+            if isinstance(value, str):
+                value = [value]
+
+            return " + ".join(value)
+
+        return super(PNGAppend, self)._format_arg(name, spec, value)

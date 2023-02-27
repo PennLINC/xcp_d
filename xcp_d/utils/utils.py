@@ -4,11 +4,10 @@
 import glob
 import os
 import tempfile
+import warnings
 from pathlib import Path
 
 import numpy as np
-from scipy.signal import butter, filtfilt
-from templateflow.api import get as get_template
 
 
 def _t12native(fname):
@@ -63,6 +62,8 @@ def get_segfile(bold_file):
     -----
     Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
     """
+    from templateflow.api import get as get_template
+
     from xcp_d.interfaces.ants import ApplyTransforms
 
     # get transform files
@@ -372,33 +373,45 @@ def fwhm2sigma(fwhm):
     return fwhm / np.sqrt(8 * np.log(2))
 
 
-def butter_bandpass(data, fs, lowpass, highpass, order=2):
+def butter_bandpass(
+    data,
+    sampling_rate,
+    low_pass,
+    high_pass,
+    padtype="constant",
+    padlen=None,
+    order=2,
+):
     """Apply a Butterworth bandpass filter to data.
 
     Parameters
     ----------
     data : (T, S) numpy.ndarray
         Time by voxels/vertices array of data.
-    fs : float
+    sampling_rate : float
         Sampling frequency. 1/TR(s).
-    lowpass : float
+    low_pass : float
         frequency, in Hertz
-    highpass : float
+    high_pass : float
         frequency, in Hertz
+    padlen
+    padtype
     order : int
-        The order of the filter. This will be divided by 2 when calling scipy.signal.butter.
+        The order of the filter.
 
     Returns
     -------
     filtered_data : (T, S) numpy.ndarray
         The filtered data.
     """
+    from scipy.signal import butter, filtfilt
+
     b, a = butter(
-        order / 2,
-        [highpass, lowpass],
+        order,
+        [high_pass, low_pass],
         btype="bandpass",
         output="ba",
-        fs=fs,  # eliminates need to normalize cutoff frequencies
+        fs=sampling_rate,  # eliminates need to normalize cutoff frequencies
     )
 
     filtered_data = np.zeros_like(data)  # create something to populate filtered values with
@@ -409,8 +422,8 @@ def butter_bandpass(data, fs, lowpass, highpass, order=2):
             b,
             a,
             data[:, i_voxel],
-            padtype="constant",
-            padlen=data.shape[0] - 1,
+            padtype=padtype,
+            padlen=padlen,
         )
 
     return filtered_data
@@ -461,3 +474,140 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
         brain_radius = head_radius
 
     return brain_radius
+
+
+def denoise_with_nilearn(
+    preprocessed_bold,
+    confounds_file,
+    censoring_file,
+    lowpass,
+    highpass,
+    filter_order,
+    TR,
+):
+    """Denoise an array with Nilearn.
+
+    This step does the following:
+
+        1. Orthogonalize nuisance regressors w.r.t. any signal regressors.
+        2. Censor the data and associated confounds.
+        3. Mean-center the censored and uncensored confounds, based on the censored confounds.
+        4. Estimate betas using only the censored data.
+        5. Apply the betas to denoise the *full* (uncensored) BOLD data.
+        6. Apply the betas to denoise the censored BOLD data.
+        7. Interpolate the censored, denoised data.
+        8. Bandpass filter the interpolated, denoised data.
+
+    Parameters
+    ----------
+    preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
+        Preprocessed BOLD data, after dummy volume removal,
+        but without any additional censoring.
+    confounds_file : str
+        Path to TSV file containing selected confounds, after dummy volume removal,
+        but without any additional censoring.
+    censoring_file : str
+        Path to TSV file containing one column with zeros for low-motion volumes and
+        ones for high-motion outliers.
+    lowpass, highpass : float or None
+        Lowpass and highpass thresholds, in Hertz.
+    filter_order : int
+        Filter order.
+    TR : float
+        Repetition time, in seconds.
+
+    Returns
+    -------
+    uncensored_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The result of denoising the full (uncensored) preprocessed BOLD data using
+        betas estimated using the *censored* BOLD data and nuisance regressors.
+        This is only used for DCAN figures.
+    interpolated_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The result of denoising the censored preprocessed BOLD data,
+        followed by cubic spline interpolation.
+    filtered_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The result of denoising the censored preprocessed BOLD data,
+        followed by cubic spline interpolation and band-pass filtering.
+        This is the primary output.
+    """
+    import pandas as pd
+    from nilearn import signal
+
+    n_volumes, n_voxels = preprocessed_bold.shape
+    confounds_df = pd.read_table(confounds_file)
+
+    assert "intercept" in confounds_df.columns
+    assert "linear_trend" in confounds_df.columns
+    assert confounds_df.columns[-1] == "intercept"
+
+    censoring_df = pd.read_table(censoring_file)
+    sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
+
+    # Orthogonalize full nuisance regressors w.r.t. any signal regressors
+    signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
+    if signal_columns:
+        warnings.warn(
+            "Signal columns detected. "
+            "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
+            f"{', '.join(signal_columns)}"
+        )
+        noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
+        # Don't orthogonalize the intercept or linear trend regressors
+        columns_to_denoise = [c for c in noise_columns if c not in ["linear_trend", "intercept"]]
+        temp_confounds_df = confounds_df[noise_columns].copy()
+
+        signal_regressors = confounds_df[signal_columns].to_numpy()
+        noise_regressors = confounds_df[columns_to_denoise].to_numpy()
+        signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
+        pred_noise_regressors = np.dot(signal_regressors, signal_betas)
+        orth_noise_regressors = noise_regressors - pred_noise_regressors
+        temp_confounds_df.loc[:, columns_to_denoise] = orth_noise_regressors
+        confounds_df = temp_confounds_df
+
+    # Censor the data and confounds
+    preprocessed_bold_censored = preprocessed_bold[sample_mask, :]
+    nuisance_arr = confounds_df.to_numpy()
+    nuisance_censored = nuisance_arr[sample_mask, :]
+
+    # Mean-center all of the confounds, except the intercept, to be safe
+    nuisance_censored_mean = np.mean(nuisance_censored[:, :-1], axis=0)
+    nuisance_arr[:, :-1] -= nuisance_censored_mean
+    nuisance_censored[:, :-1] -= nuisance_censored_mean  # use censored mean on full regressors
+
+    # Estimate betas using only the censored data
+    betas = np.linalg.lstsq(nuisance_censored, preprocessed_bold_censored, rcond=None)[0]
+
+    # Apply the betas to denoise the *full* (uncensored) BOLD data
+    uncensored_denoised_bold = preprocessed_bold - np.dot(nuisance_arr, betas)
+
+    # Also denoise the censored BOLD data
+    censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
+
+    # Now interpolate the censored, denoised data with cubic spline interpolation
+    interpolated_denoised_bold = np.zeros(
+        (n_volumes, n_voxels),
+        dtype=censored_denoised_bold.dtype,
+    )
+    interpolated_denoised_bold[sample_mask, :] = censored_denoised_bold
+    interpolated_denoised_bold = signal._interpolate_volumes(
+        interpolated_denoised_bold,
+        sample_mask=sample_mask,
+        t_r=TR,
+    )
+
+    # Now apply the bandpass filter to the interpolated, denoised data
+    if lowpass is not None and highpass is not None:
+        # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
+        filtered_denoised_bold = butter_bandpass(
+            interpolated_denoised_bold.copy(),
+            sampling_rate=1 / TR,
+            low_pass=lowpass,
+            high_pass=highpass,
+            order=filter_order / 2,
+            padtype="constant",
+            padlen=n_volumes - 1,
+        )
+    else:
+        filtered_denoised_bold = interpolated_denoised_bold
+
+    return uncensored_denoised_bold, interpolated_denoised_bold, filtered_denoised_bold

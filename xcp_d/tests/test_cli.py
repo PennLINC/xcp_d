@@ -43,7 +43,6 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--fd-thresh=0.04",
         "--head_radius=40",
         "--smoothing=6",
-        "-vvv",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
@@ -181,7 +180,6 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         "--head_radius 40 "
         "--smoothing 6 "
         "-f 100 "
-        "-vv "
         "--nuisance-regressors 27P "
         "--disable-bandpass-filter "
         "--dcan-qc "
@@ -223,7 +221,6 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=6",
         "--fd-thresh=100",
-        "-vv",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
