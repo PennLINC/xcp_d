@@ -14,12 +14,12 @@ from num2words import num2words
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import DenoiseNifti
 from xcp_d.interfaces.prepostcleaning import (
+    Censor,
     ConvertTo32,
     FlagMotionOutliers,
     RemoveDummyVolumes,
 )
 from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.utils.bids import collect_run_data
 from xcp_d.utils.confounds import (
     consolidate_confounds,
     describe_censoring,
@@ -64,6 +64,7 @@ def init_boldpostprocess_wf(
     n_runs,
     despike,
     dcan_qc,
+    run_data,
     min_coverage,
     layout=None,
     name="bold_postprocess_wf",
@@ -94,6 +95,13 @@ def init_boldpostprocess_wf(
 
             bold_file = subj_data["bold"][0]
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
+            run_data = {
+                "boldref": "",
+                "confounds": "",
+                "t1w_to_native_xform": "",
+                "boldmask": "",
+                "bold_metadata": {"RepetitionTime": 2},
+            }
 
             wf = init_boldpostprocess_wf(
                 bold_file=bold_file,
@@ -110,12 +118,12 @@ def init_boldpostprocess_wf(
                 params="27P",
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
-                input_type="fmriprep",
                 dummy_scans=0,
                 dummytime=0,
                 fd_thresh=0.2,
                 despike=True,
                 dcan_qc=True,
+                run_data=run_data,
                 n_runs=1,
                 min_coverage=0.5,
                 omp_nthreads=1,
@@ -136,8 +144,6 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
-    input_type: str
-        type of input
     bold_file: str
         bold file for post processing
     %(head_radius)s
@@ -155,6 +161,7 @@ def init_boldpostprocess_wf(
         If True, run 3dDespike from AFNI
     dcan_qc : bool
         Whether to run DCAN QC or not.
+    run_data : dict
     min_coverage
     layout : BIDSLayout object
         BIDS dataset layout
@@ -191,9 +198,34 @@ def init_boldpostprocess_wf(
     ----------
     .. footbibliography::
     """
-    run_data = collect_run_data(layout, input_type, bold_file, cifti=False)
+    workflow = Workflow(name=name)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "bold_file",
+                "ref_file",
+                "bold_mask",
+                "custom_confounds_file",
+                "template_to_t1w",
+                "t1w",
+                "t1seg",
+                "t1w_mask",
+                "fmriprep_confounds_tsv",
+                "t1w_to_native",
+                "dummy_scans",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    inputnode.inputs.bold_file = bold_file
+    inputnode.inputs.ref_file = run_data["boldref"]
+    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
+    inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
+    inputnode.inputs.dummy_scans = dummy_scans
 
     # TODO: This is a workaround for a bug in nibabies.
     # Once https://github.com/nipreps/nibabies/issues/245 is resolved
