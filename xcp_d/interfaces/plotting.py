@@ -189,7 +189,16 @@ class CensoringPlot(SimpleInterface):
 
 
 class _QCPlotsInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True, mandatory=True, desc="Raw bold file from fMRIPrep")
+    name_source = File(
+        exists=True,
+        mandatory=True,
+        desc="Preprocessed BOLD file. Used to find files.",
+    )
+    bold_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Preprocessed BOLD file. Used in carpet plot.",
+    )
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask")
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
@@ -228,6 +237,7 @@ class QCPlots(SimpleInterface):
     .. doctest::
     qcplots = QCPlots()
     qcplots.inputs.cleaned_file = datafile
+    qcplots.inputs.name_source = rawbold
     qcplots.inputs.bold_file = rawbold
     qcplots.inputs.TR = TR
     qcplots.inputs.tmask = temporalmask
@@ -243,7 +253,7 @@ class QCPlots(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
-        confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
+        confound_matrix = load_confound(datafile=self.inputs.name_source)[0]
         preproc_motion_df = load_motion(
             confound_matrix.copy(),
             TR=self.inputs.TR,
@@ -306,7 +316,7 @@ class QCPlots(SimpleInterface):
 
         # Get file names to write out & write data out
         dropped_bold_file = fname_presuffix(
-            self.inputs.bold_file,
+            self.inputs.name_source,
             newpath=runtime.cwd,
             suffix="_dropped",
             use_ext=True,
@@ -359,7 +369,7 @@ class QCPlots(SimpleInterface):
 
             # Get temporary filename and write data out
             dropped_clean_file = fname_presuffix(
-                self.inputs.bold_file,
+                self.inputs.name_source,
                 newpath=runtime.cwd,
                 suffix="_droppedClean",
                 use_ext=True,
@@ -420,7 +430,7 @@ class QCPlots(SimpleInterface):
 
         # Get the different components in the bold file name
         # eg: ['sub-colornest001', 'ses-1'], etc.
-        _, bold_file_name = os.path.split(self.inputs.bold_file)
+        _, bold_file_name = os.path.split(self.inputs.name_source)
         bold_file_name_components = bold_file_name.split("_")
 
         # Fill out dictionary with entities from filename

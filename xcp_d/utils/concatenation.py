@@ -16,7 +16,6 @@ from pkg_resources import resource_filename as _pkgres
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.confounds import _infer_dummy_scans, get_confounds_tsv
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import _drop_dummy_scans
 from xcp_d.utils.plotting import plot_fmri_es
 from xcp_d.utils.qcmetrics import compute_dvars, make_dcan_df
 from xcp_d.utils.utils import get_segfile
@@ -162,7 +161,7 @@ def concatenate_derivatives(
                 motion_file_names = ", ".join([motion_file.path for motion_file in motion_files])
                 LOGGER.debug(f"Concatenating motion files: {motion_file_names}")
                 concat_motion_file = _get_concat_name(layout_xcpd, motion_files[0])
-                concatenate_tsv_files(motion_files, concat_motion_file)
+                concatenate_tsvs(motion_files, concat_motion_file)
 
                 # Make DCAN HDF5 file from concatenated motion file
                 if dcan_qc:
@@ -188,7 +187,7 @@ def concatenate_derivatives(
                 )
                 LOGGER.debug(f"Concatenating outlier files: {outlier_file_names}")
                 concat_outlier_file = _get_concat_name(layout_xcpd, outlier_files[0])
-                concat_outlier_file = concatenate_tsv_files(outlier_files, concat_outlier_file)
+                concat_outlier_file = concatenate_tsvs(outlier_files, concat_outlier_file)
 
                 # otherwise, concatenate stuff
                 output_spaces = layout_xcpd.get_spaces(
@@ -214,7 +213,7 @@ def concatenate_derivatives(
                     )
                     concat_denoised_file = _get_concat_name(layout_xcpd, denoised_files[0])
                     LOGGER.debug(f"Concatenating postprocessed file: {concat_denoised_file}")
-                    _concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=0)
+                    concatenate_niimgs(denoised_files, concat_denoised_file, dummy_scans=0)
 
                     # Concatenate smoothed BOLD files if they exist
                     smooth_denoised_files = layout_xcpd.get(
@@ -232,7 +231,7 @@ def concatenate_derivatives(
                             "Concatenating smoothed postprocessed file: "
                             f"{concat_smooth_denoised_file}"
                         )
-                        _concatenate_niimgs(
+                        concatenate_niimgs(
                             smooth_denoised_files,
                             concat_smooth_denoised_file,
                             dummy_scans=0,
@@ -287,7 +286,7 @@ def concatenate_derivatives(
                             runwise_dummy_scans = [dummy_scans] * len(preproc_files)
 
                         # Concatenate preprocessed files, but drop dummy scans from each run
-                        _concatenate_niimgs(
+                        concatenate_niimgs(
                             preproc_files,
                             concat_preproc_file,
                             dummy_scans=runwise_dummy_scans,
@@ -396,9 +395,9 @@ def concatenate_derivatives(
                         )
                         concat_file = _get_concat_name(layout_xcpd, atlas_timeseries_files[0])
                         if atlas_timeseries_files[0].extension == ".tsv":
-                            concatenate_tsv_files(atlas_timeseries_files, concat_file)
+                            concatenate_tsvs(atlas_timeseries_files, concat_file)
                         elif atlas_timeseries_files[0].extension == ".ptseries.nii":
-                            _concatenate_niimgs(
+                            concatenate_niimgs(
                                 atlas_timeseries_files,
                                 concat_file,
                                 dummy_scans=0,
@@ -409,30 +408,31 @@ def concatenate_derivatives(
                             )
 
 
-def concatenate_tsv_files(tsv_files, fileout):
+def concatenate_tsvs(tsv_files, out_file):
     """Concatenate framewise displacement time series across files.
 
-    This function doesn't return anything, but it writes out the ``fileout`` file.
+    This function doesn't return anything, but it writes out the ``out_file`` file.
 
     Parameters
     ----------
     tsv_files : list of str
         Paths to TSV files to concatenate.
-    fileout : str
+    out_file : str
         Path to the file that will be written out.
     """
     # TODO: Support headers in timeseries files
-    if tsv_files[0].path.endswith("timeseries.tsv"):
+    if tsv_files[0].endswith("timeseries.tsv"):
         # timeseries files have no header
-        data = [np.loadtxt(tsv_file.path, delimiter="\t") for tsv_file in tsv_files]
+        data = [np.loadtxt(tsv_file, delimiter="\t") for tsv_file in tsv_files]
         data = np.vstack(data)
-        np.savetxt(fileout, data, fmt="%.5f", delimiter="\t")
+        np.savetxt(out_file, data, fmt="%.5f", delimiter="\t")
     else:
         # other tsv files have a header
-        data = [pd.read_table(tsv_file.path) for tsv_file in tsv_files]
+        data = [pd.read_table(tsv_file) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
-        data.to_csv(fileout, sep="\t", index=False)
-    return fileout
+        data.to_csv(out_file, sep="\t", index=False)
+
+    return out_file
 
 
 def _get_concat_name(layout_xcpd, in_file):
@@ -458,12 +458,8 @@ def _sanitize_entities(dict_):
     return dict_
 
 
-def _concatenate_niimgs(files, out_file, dummy_scans=0):
+def concatenate_niimgs(files, out_file):
     """Concatenate niimgs.
-
-    This is generally a very simple proposition (especially with niftis).
-    However, sometimes we need to account for dummy scans- especially when we want to use
-    the non-steady-state volume indices from fMRIPrep.
 
     Parameters
     ----------
@@ -471,51 +467,10 @@ def _concatenate_niimgs(files, out_file, dummy_scans=0):
         List of BOLD files to concatenate over the time dimension.
     out_file : :obj:`str`
         The concatenated file to write out.
-    dummy_scans : int or list of int, optional
-        The number of dummy scans to drop from the beginning of each file before concatenation.
-        If None (default), no volumes will be dropped.
-        If an integer, the same number of volumes will be dropped from each file.
-        If "auto", this function will attempt to find each file's associated confounds file,
-        load it, and determine the number of non-steady-state volumes estimated by the
-        preprocessing workflow.
     """
-    assert isinstance(dummy_scans, (int, list))
-
-    is_nifti = files[0].extension == ".nii.gz"
-    use_temp_files = False
-
-    if isinstance(dummy_scans, list):
-        assert all([isinstance(val, int) for val in dummy_scans])
-        runwise_dummy_scans = dummy_scans
+    is_cifti = files[0].endswith(".dtseries.nii")
+    if is_cifti:
+        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(files)}")
     else:
-        runwise_dummy_scans = [dummy_scans] * len(files)
-
-    if dummy_scans != 0:
-        bold_imgs = [
-            _drop_dummy_scans(f.path, dummy_scans=runwise_dummy_scans[i])
-            for i, f in enumerate(files)
-        ]
-        if is_nifti:
-            bold_files = bold_imgs
-        else:
-            # Create temporary files for cifti images
-            use_temp_files = True
-            bold_files = []
-            for i_img, img in enumerate(bold_imgs):
-                temporary_file = f"temp_{i_img}{files[0].extension}"
-                img.to_filename(temporary_file)
-                bold_files.append(temporary_file)
-
-    else:
-        bold_files = [f.path for f in files]
-
-    if is_nifti:
-        concat_preproc_img = concat_imgs(bold_files)
+        concat_preproc_img = concat_imgs(files)
         concat_preproc_img.to_filename(out_file)
-    else:
-        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(bold_files)}")
-
-        if use_temp_files:
-            # Delete temporary files
-            for bold_file in bold_files:
-                os.remove(bold_file)

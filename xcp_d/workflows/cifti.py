@@ -170,6 +170,15 @@ def init_ciftipostprocess_wf(
         Fed from the subject workflow.
     fmriprep_confounds_tsv
 
+    Outputs
+    -------
+    preprocessed_bold
+    confounds_file
+    filtered_motion
+    temporal_mask
+    uncensored_denoised_bold
+    filtered_denoised_bold
+
     References
     ----------
     .. footbibliography::
@@ -263,6 +272,25 @@ produced by the regression.
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
 
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "name_source",
+                "preprocessed_bold",
+                "confounds_file",
+                "filtered_motion",
+                "temporal_mask",
+                "uncensored_denoised_bold",
+                "filtered_denoised_bold",
+                "smoothed_denoised_bold",
+                "boldref",
+                "bold_mask",  # will not be defined
+                "t1w_to_native_xform",  # will not be defined
+            ],
+        ),
+        name="outputnode",
+    )
+
     mem_gbx = _create_mem_gb(bold_file)
 
     downcast_data = pe.Node(
@@ -274,6 +302,10 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
+        (inputnode, outputnode, [
+            ("bold_file", "name_source"),
+            ("ref_file", "boldref"),
+        ]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
             ("t1w_mask", "t1w_mask"),
@@ -427,6 +459,7 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
+            ("bold_file", "inputnode.name_source"),
             ("bold_file", "inputnode.preprocessed_bold"),
         ]),
         (determine_head_radius, qc_report_wf, [
@@ -434,6 +467,10 @@ produced by the regression.
         ]),
         (denoise_bold, qc_report_wf, [
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
+        ]),
+        (denoise_bold, outputnode, [
+            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
+            ("filtered_denoised_bold", "filtered_denoised_bold"),
         ]),
     ])
     # fmt:on
@@ -459,6 +496,10 @@ produced by the regression.
             ]),
             (consolidate_confounds_node, remove_dummy_scans, [
                 ("out_file", "confounds_file"),
+            ]),
+            (remove_dummy_scans, outputnode, [
+                ("bold_file_dropped_TR", "preprocessed_bold"),
+                ("confounds_file_dropped_TR", "confounds_file"),
             ]),
             (remove_dummy_scans, censor_scrub, [
                 # fMRIPrep confounds file is needed for filtered motion.
@@ -488,6 +529,10 @@ produced by the regression.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
+            (inputnode, outputnode, [("bold_file", "preprocessed_bold")]),
+            (consolidate_confounds_node, outputnode, [
+                ("out_file", "confounds_file"),
+            ]),
             (consolidate_confounds_node, denoise_bold, [('out_file', 'confounds_file')]),
             (consolidate_confounds_node, plot_design_matrix_node, [
                 ("out_file", "design_matrix"),
@@ -502,6 +547,10 @@ produced by the regression.
         ]),
         (censor_scrub, plot_design_matrix_node, [
             ("tmask", "censoring_file"),
+        ]),
+        (censor_scrub, outputnode, [
+            ("filtered_motion", "filtered_motion"),
+            ("tmask", "temporal_mask"),
         ]),
     ])
     # fmt:on
@@ -607,6 +656,9 @@ produced by the regression.
         ]),
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),
+        ]),
+        (resd_smoothing_wf, outputnode, [
+            ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
         ]),
         (resd_smoothing_wf, write_derivative_wf, [
             ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),

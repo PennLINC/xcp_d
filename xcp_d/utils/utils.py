@@ -611,3 +611,8 @@ def denoise_with_nilearn(
         filtered_denoised_bold = interpolated_denoised_bold
 
     return uncensored_denoised_bold, interpolated_denoised_bold, filtered_denoised_bold
+
+
+def _select_first(lst):
+    """Select the first element in a list."""
+    return lst[0]
