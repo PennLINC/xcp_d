@@ -77,8 +77,11 @@ def init_qc_report_wf(
     uncensored_denoised_bold
         Used for carpet plots.
         Only used if dcan_qc is True.
-    filtered_denoised_bold
-        Used for carpet plots.
+    interpolated_filtered_bold
+        Used for DCAN carpet plots.
+        Only used if dcan_qc is True.
+    censored_filtered_bold
+        Used for LINC carpet plots.
     boldref
         Only used with non-CIFTI data.
     bold_mask
@@ -104,8 +107,9 @@ def init_qc_report_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold",
-                "filtered_denoised_bold",
                 "uncensored_denoised_bold",
+                "interpolated_filtered_bold",
+                "censored_filtered_bold",
                 "dummy_scans",
                 "filtered_motion",
                 "tmask",
@@ -329,7 +333,7 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, qcreport, [
             ("preprocessed_bold", "bold_file"),
-            ("filtered_denoised_bold", "cleaned_file"),
+            ("censored_filtered_bold", "cleaned_file"),
             ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
@@ -389,7 +393,7 @@ def init_qc_report_wf(
             (inputnode, plot_executive_summary_carpets, [
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-                ("filtered_denoised_bold", "filtered_denoised_bold"),
+                ("interpolated_filtered_bold", "filtered_denoised_bold"),
                 ("filtered_motion", "filtered_motion"),
                 ("dummy_scans", "dummy_scans"),
             ]),
