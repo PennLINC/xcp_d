@@ -58,7 +58,6 @@ def init_boldpostprocess_wf(
     omp_nthreads,
     dummytime,
     dummy_scans,
-    input_type,
     output_dir,
     fd_thresh,
     n_runs,
@@ -231,6 +230,7 @@ def init_boldpostprocess_wf(
     # Once https://github.com/nipreps/nibabies/issues/245 is resolved
     # and a new release is made, remove this.
     mask_file = check_binary_mask(run_data["boldmask"])
+    inputnode.inputs.bold_mask = mask_file
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
@@ -239,6 +239,8 @@ def init_boldpostprocess_wf(
         custom_confounds_folder,
         run_data["confounds"],
     )
+    inputnode.inputs.custom_confounds_file = custom_confounds_file
+
     regression_description = describe_regression(params, custom_confounds_file)
     censoring_description = describe_censoring(
         motion_filter_type=motion_filter_type,
@@ -248,8 +250,6 @@ def init_boldpostprocess_wf(
         head_radius=head_radius,
         fd_thresh=fd_thresh,
     )
-
-    workflow = Workflow(name=name)
 
     if dummy_scans == 0 and dummytime != 0:
         dummy_scans = int(np.ceil(dummytime / TR))
@@ -293,33 +293,6 @@ Any volumes censored earlier in the workflow were then interpolated in the resid
 produced by the regression.
 {bandpass_str}
 """
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "bold_file",
-                "ref_file",
-                "bold_mask",
-                "custom_confounds_file",
-                "template_to_t1w",
-                "t1w",
-                "t2w",
-                "t1w_mask",
-                "fmriprep_confounds_tsv",
-                "t1w_to_native",
-                "dummy_scans",
-            ],
-        ),
-        name="inputnode",
-    )
-
-    inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.ref_file = run_data["boldref"]
-    inputnode.inputs.bold_mask = mask_file
-    inputnode.inputs.custom_confounds_file = custom_confounds_file
-    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
-    inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
-    inputnode.inputs.dummy_scans = dummy_scans
 
     mem_gbx = _create_mem_gb(bold_file)
 
@@ -401,7 +374,7 @@ produced by the regression.
         name="write_derivative_wf",
     )
 
-    censor_scrub = pe.Node(
+    flag_motion_outliers = pe.Node(
         FlagMotionOutliers(
             TR=TR,
             band_stop_min=band_stop_min,
@@ -435,6 +408,20 @@ produced by the regression.
         mem_gb=mem_gbx["timeseries"],
         n_procs=omp_nthreads,
     )
+
+    censor_interpolated_data = pe.Node(
+        Censor(),
+        name="censor_interpolated_data",
+        mem_gb=mem_gbx["timeseries"],
+        omp_nthreads=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (denoise_bold, censor_interpolated_data, [("filtered_denoised_bold", "in_file")]),
+        (flag_motion_outliers, censor_interpolated_data, [("tmask", "temporal_mask")]),
+    ])
+    # fmt:on
 
     consolidate_confounds_node = pe.Node(
         Function(
@@ -523,7 +510,7 @@ produced by the regression.
             (consolidate_confounds_node, remove_dummy_scans, [
                 ("out_file", "confounds_file"),
             ]),
-            (remove_dummy_scans, censor_scrub, [
+            (remove_dummy_scans, flag_motion_outliers, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
@@ -546,7 +533,7 @@ produced by the regression.
             (inputnode, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
             ]),
-            (inputnode, censor_scrub, [
+            (inputnode, flag_motion_outliers, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
@@ -562,10 +549,10 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
-        (determine_head_radius, censor_scrub, [
+        (determine_head_radius, flag_motion_outliers, [
             ("head_radius", "head_radius"),
         ]),
-        (censor_scrub, plot_design_matrix_node, [
+        (flag_motion_outliers, plot_design_matrix_node, [
             ("tmask", "censoring_file"),
         ]),
     ])
@@ -615,14 +602,14 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (downcast_data, denoise_bold, [('bold_mask', 'mask')]),
-        (censor_scrub, denoise_bold, [("tmask", "censoring_file")]),
+        (flag_motion_outliers, denoise_bold, [("tmask", "censoring_file")]),
     ])
     # fmt:on
 
     # residual smoothing
     # fmt:off
     workflow.connect([
-        (denoise_bold, resd_smoothing_wf, [("filtered_denoised_bold", "inputnode.bold_file")]),
+        (censor_interpolated_data, resd_smoothing_wf, [("censored_bold", "inputnode.bold_file")]),
     ])
     # fmt:on
 
@@ -636,19 +623,21 @@ produced by the regression.
         ]),
         (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
                                  ('t1w_to_native', 'inputnode.t1w_to_native')]),
-        (denoise_bold, fcon_ts_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')])
+        (censor_interpolated_data, fcon_ts_wf, [('censored_bold', 'inputnode.clean_bold')])
     ])
 
     # reho and alff
     workflow.connect([
         (downcast_data, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (denoise_bold, reho_compute_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
+        (censor_interpolated_data, reho_compute_wf, [('censored_bold', 'inputnode.clean_bold')]),
     ])
 
     if bandpass_filter:
         workflow.connect([
             (downcast_data, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-            (denoise_bold, alff_compute_wf, [('filtered_denoised_bold', 'inputnode.clean_bold')]),
+            (censor_interpolated_data, alff_compute_wf, [
+                ('censored_bold', 'inputnode.clean_bold'),
+            ]),
         ])
 
     # qc report
@@ -656,7 +645,7 @@ produced by the regression.
         (denoise_bold, qc_report_wf, [
             ('filtered_denoised_bold', 'inputnode.filtered_denoised_bold'),
         ]),
-        (censor_scrub, qc_report_wf, [
+        (flag_motion_outliers, qc_report_wf, [
             ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
         ]),
@@ -670,7 +659,10 @@ produced by the regression.
             ('out_file', 'inputnode.confounds_file'),
         ]),
         (denoise_bold, write_derivative_wf, [
-            ('filtered_denoised_bold', 'inputnode.processed_bold'),
+            ('filtered_denoised_bold', 'inputnode.interpolated_filtered_bold'),
+        ]),
+        (censor_interpolated_data, write_derivative_wf, [
+            ("censored_bold", "inputnode.processed_bold"),
         ]),
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),
@@ -678,7 +670,7 @@ produced by the regression.
         (resd_smoothing_wf, write_derivative_wf, [
             ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
         ]),
-        (censor_scrub, write_derivative_wf, [
+        (flag_motion_outliers, write_derivative_wf, [
             ('filtered_motion', 'inputnode.filtered_motion'),
             ('filtered_motion_metadata', 'inputnode.filtered_motion_metadata'),
             ('tmask', 'inputnode.tmask'),
