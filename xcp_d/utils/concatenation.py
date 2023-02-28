@@ -387,8 +387,8 @@ def concatenate_derivatives(
                         LOGGER.debug("Starting plot_fmri_es")
                         plot_fmri_es(
                             preprocessed_bold=concat_preproc_file,
-                            uncensored_denoised_bold=concat_denoised_file,
-                            filtered_denoised_bold=concat_denoised_file,
+                            uncensored_denoised_bold=concat_interp_denoised_file,
+                            filtered_denoised_bold=concat_interp_denoised_file,
                             dummy_scans=0,
                             filtered_motion=concat_motion_file,
                             preprocessed_bold_dvars=raw_dvars,
