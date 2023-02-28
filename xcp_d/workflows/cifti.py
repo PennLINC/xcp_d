@@ -345,6 +345,7 @@ produced by the regression.
         bandpass_filter=bandpass_filter,
         params=params,
         cifti=True,
+        dcan_qc=dcan_qc,
         output_dir=output_dir,
         lowpass=upper_bpf,
         highpass=lower_bpf,
