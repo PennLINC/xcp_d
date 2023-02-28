@@ -353,8 +353,8 @@ def concatenate_derivatives(
 
                         # Calculate DVARS from denoised BOLD
                         denoised_dvars = []
-                        for denoised_file in denoised_files:
-                            dvar = compute_dvars(read_ndata(denoised_file.path, mask))
+                        for interp_denoised_file in interp_denoised_files:
+                            dvar = compute_dvars(read_ndata(interp_denoised_file.path, mask))
                             dvar[0] = np.mean(dvar)
                             denoised_dvars.append(dvar)
 
