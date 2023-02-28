@@ -617,6 +617,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             band_stop_max=band_stop_max,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
+            brain_mask=subj_data["t1w_mask"],
         )
         if is_bad_run:
             LOGGER.warning(
