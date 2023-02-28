@@ -605,7 +605,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
     # for hints on iteration
     for i_run, bold_file in enumerate(preproc_files):
-        run_data = collect_run_data(layout, input_type, bold_file)
+        run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
 
         is_bad_run = flag_bad_run(
             fmriprep_confounds_file=run_data["confounds"],
