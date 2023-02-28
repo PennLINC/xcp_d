@@ -36,7 +36,7 @@ def compute_fd(confound, head_radius=50):
     confound = confound.replace(np.nan, 0)
     mpars = confound[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
-    diff[:, 3:6] *= head_radius
+    diff[:, 3:6] = diff[:, 3:6] * head_radius
     fd_res = np.abs(diff).sum(axis=1)
     fdres = np.hstack([0, fd_res])
 
