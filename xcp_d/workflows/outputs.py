@@ -60,7 +60,7 @@ def init_writederivatives_wf(
     %(smoothing)s
     %(params)s
     %(cifti)s
-    %(dcan_qc)s
+    dcan_qc
     output_dir : str
         output directory
     TR : float
