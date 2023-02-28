@@ -210,6 +210,7 @@ def init_boldpostprocess_wf(
                 "custom_confounds_file",
                 "template_to_t1w",
                 "t1w",
+                "t2w",
                 "t1seg",
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
