@@ -617,12 +617,15 @@ produced by the regression.
 
     # qc report
     workflow.connect([
-        (denoise_bold, qc_report_wf, [
-            ("filtered_denoised_bold", "inputnode.filtered_denoised_bold"),
-        ]),
         (flag_motion_outliers, qc_report_wf, [
-            ("tmask", "inputnode.tmask"),
+            ('tmask', 'inputnode.tmask'),
             ("filtered_motion", "inputnode.filtered_motion"),
+        ]),
+        (denoise_bold, qc_report_wf, [
+            ('filtered_denoised_bold', 'inputnode.interpolated_filtered_bold'),
+        ]),
+        (censor_interpolated_data, qc_report_wf, [
+            ('censored_bold', 'inputnode.censored_filtered_bold'),
         ]),
     ])
 
