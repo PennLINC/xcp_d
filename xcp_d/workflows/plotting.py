@@ -19,9 +19,6 @@ def init_qc_report_wf(
     output_dir,
     TR,
     motion_filter_type,
-    band_stop_max,
-    band_stop_min,
-    motion_filter_order,
     fd_thresh,
     mem_gb,
     omp_nthreads,
@@ -41,9 +38,6 @@ def init_qc_report_wf(
                 output_dir=".",
                 TR=0.5,
                 motion_filter_type=None,
-                band_stop_max=0,
-                band_stop_min=0,
-                motion_filter_order=1,
                 fd_thresh=0.2,
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -57,9 +51,6 @@ def init_qc_report_wf(
     %(output_dir)s
     TR
     %(motion_filter_type)s
-    %(band_stop_max)s
-    %(band_stop_min)s
-    %(motion_filter_order)s
     %(fd_thresh)s
     %(mem_gb)s
     %(omp_nthreads)s
@@ -92,6 +83,7 @@ def init_qc_report_wf(
     t1w_to_native
         Only used with non-CIFTI data.
     %(dummy_scans)s
+    fmriprep_confounds_file
     %(head_radius)s
     tmask
     filtered_motion
@@ -99,8 +91,6 @@ def init_qc_report_wf(
     Outputs
     -------
     qc_file
-    segmentation_file
-        Used for the concatenation workflow.
     """
     workflow = Workflow(name=name)
 
@@ -112,6 +102,7 @@ def init_qc_report_wf(
                 "filtered_denoised_bold",
                 "uncensored_denoised_bold",
                 "dummy_scans",
+                "fmriprep_confounds_file",
                 "filtered_motion",
                 "tmask",
                 "head_radius",
@@ -130,7 +121,6 @@ def init_qc_report_wf(
         niu.IdentityInterface(
             fields=[
                 "qc_file",
-                "segmentation_file",
             ],
         ),
         name="outputnode",
@@ -140,9 +130,6 @@ def init_qc_report_wf(
         CensoringPlot(
             TR=TR,
             motion_filter_type=motion_filter_type,
-            band_stop_max=band_stop_max,
-            band_stop_min=band_stop_min,
-            motion_filter_order=motion_filter_order,
             fd_thresh=fd_thresh,
         ),
         name="censor_report",
@@ -156,7 +143,8 @@ def init_qc_report_wf(
             ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
-            ("name_source", "bold_file"),
+            ("filtered_motion", "filtered_motion"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
         ]),
     ])
     # fmt:on
@@ -318,7 +306,6 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
             (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
-            (warp_dseg_to_bold, outputnode, [("output_image", "segmentation_file")]),
         ])
         # fmt:on
 
@@ -338,6 +325,7 @@ def init_qc_report_wf(
             ("name_source", "name_source"),
             ("preprocessed_bold", "bold_file"),
             ("filtered_denoised_bold", "cleaned_file"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
@@ -379,7 +367,7 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_dcan_qc, [("preprocessed_bold", "source_file")]),
+            (inputnode, ds_dcan_qc, [("name_source", "source_file")]),
             (make_dcan_qc_file, ds_dcan_qc, [("dcan_df_file", "in_file")]),
         ])
         # fmt:on
@@ -441,10 +429,10 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_preproc_executive_summary_carpet, [
-                ("preprocessed_bold", "source_file"),
+                ("name_source", "source_file"),
             ]),
             (inputnode, ds_postproc_executive_summary_carpet, [
-                ("preprocessed_bold", "source_file"),
+                ("name_source", "source_file"),
             ]),
             (plot_executive_summary_carpets, ds_preproc_executive_summary_carpet, [
                 ("before_process", "in_file"),
@@ -490,18 +478,6 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
-    ds_report_censoring = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            datatype="figures",
-            desc="censoring",
-            suffix="motion",
-            extension=".svg",
-        ),
-        name="ds_report_censoring",
-        run_without_submitting=False,
-    )
-
     ds_report_qualitycontrol = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -534,14 +510,31 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_report_censoring, [("name_source", "source_file")]),
         (inputnode, ds_report_qualitycontrol, [("name_source", "source_file")]),
         (inputnode, ds_report_preprocessing, [("name_source", "source_file")]),
         (inputnode, ds_report_postprocessing, [("name_source", "source_file")]),
-        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
         (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
         (qcreport, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
         (qcreport, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_report_censoring = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            datatype="figures",
+            desc="censoring",
+            suffix="motion",
+            extension=".svg",
+        ),
+        name="ds_report_censoring",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_censoring, [("name_source", "source_file")]),
+        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
     ])
     # fmt:on
 

@@ -10,7 +10,7 @@ from xcp_d.interfaces.concatenation import (
     FilterOutFailedRuns,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _select_first
+from xcp_d.utils.utils import _select_first, estimate_brain_radius
 from xcp_d.workflows.plotting import init_qc_report_wf
 
 
@@ -18,9 +18,6 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 def init_concatenate_data_wf(
     output_dir,
     motion_filter_type,
-    band_stop_max,
-    band_stop_min,
-    motion_filter_order,
     fd_thresh,
     mem_gb,
     omp_nthreads,
@@ -42,9 +39,6 @@ def init_concatenate_data_wf(
             wf = init_concatenate_data_wf(
                 output_dir=".",
                 motion_filter_type=None,
-                motion_filter_order=4,
-                band_stop_min=12,
-                band_stop_max=20,
                 fd_thresh=0.2,
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -59,7 +53,13 @@ def init_concatenate_data_wf(
     ----------
     %(output_dir)s
     %(motion_filter_type)s
+    fd_thresh
+    mem_gb
+    omp_nthreads
+    TR
+    smooth
     %(cifti)s
+    dcan_qc
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -70,8 +70,6 @@ def init_concatenate_data_wf(
         These are used as the bases for concatenated output filenames.
     preprocessed_bold : :obj:`list` of :obj:`str`
         The preprocessed BOLD files, after dummy volume removal.
-    confounds_file : :obj:`list` of :obj:`str`
-        TSV files with selected confounds for individual BOLD runs.
     filtered_motion : :obj:`list` of :obj:`str`
         TSV files with filtered motion parameters, used for FD calculation.
     temporal_mask : :obj:`list` of :obj:`str`
@@ -85,25 +83,37 @@ def init_concatenate_data_wf(
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
     t1w_mask : :obj:`str`
     boldref
+    head_radius
+    atlas_names
+    timeseries
+    timeseries_ciftis
     """
     workflow = Workflow(name=name)
+
+    workflow.__desc__ = """\
+    Postprocessing derivatives from multi-run tasks were then concatenated across runs.
+    """
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "confounds_file",
+                "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
                 "uncensored_denoised_bold",
                 "filtered_denoised_bold",
                 "smoothed_denoised_bold",
+                "head_radius",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
                 "t1w_to_native_xform",  # only for niftis, from postproc workflows
                 "t1w_mask",  # only for niftis, from data collection
                 "template_to_t1w_xform",  # only for niftis, from data collection
+                "atlas_names",  # this will be exactly the same across runs
+                "timeseries",
+                "timeseries_ciftis",  # only for ciftis, from postproc workflows
             ],
         ),
         name="inputnode",
@@ -118,6 +128,24 @@ def init_concatenate_data_wf(
     workflow.connect([(inputnode, clean_name_source, [("name_source", "name_source")])])
     # fmt:on
 
+    get_head_radius = pe.Node(
+        niu.Function(
+            function=estimate_brain_radius,
+            input_names=["mask_file", "head_radius"],
+            output_names=["head_radius"],
+        ),
+        name="get_head_radius",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_head_radius, [
+            ("t1w_mask", "mask_file"),
+            ("head_radius", "head_radius"),
+        ]),
+    ])
+    # fmt:on
+
     filter_out_failed_runs = pe.Node(
         FilterOutFailedRuns(),
         name="filter_out_failed_runs",
@@ -127,7 +155,7 @@ def init_concatenate_data_wf(
     workflow.connect([
         (inputnode, filter_out_failed_runs, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("confounds_file", "confounds_file"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
@@ -136,6 +164,9 @@ def init_concatenate_data_wf(
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
             ("t1w_to_native_xform", "t1w_to_native_xform"),
+            ("atlas_names", "atlas_names"),
+            ("timeseries", "timeseries"),
+            ("timeseries_ciftis", "timeseries_ciftis"),
         ])
     ])
     # fmt:on
@@ -149,25 +180,23 @@ def init_concatenate_data_wf(
     workflow.connect([
         (filter_out_failed_runs, concatenate_inputs, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("confounds_file", "confounds_file"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
             ("filtered_denoised_bold", "filtered_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
+            ("timeseries", "timeseries"),
+            ("timeseries_ciftis", "timeseries_ciftis"),
         ]),
     ])
     # fmt:on
 
-    # Now, I need to take the concatenation node's outputs and run the QC report workflow on
-    # each of them.
+    # Now, run the QC report workflow on the concatenated BOLD file.
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
         TR=TR,
         motion_filter_type=motion_filter_type,
-        band_stop_max=band_stop_max,
-        band_stop_min=band_stop_min,
-        motion_filter_order=motion_filter_order,
         fd_thresh=fd_thresh,
         mem_gb=mem_gb,
         omp_nthreads=omp_nthreads,
@@ -175,6 +204,7 @@ def init_concatenate_data_wf(
         dcan_qc=dcan_qc,
         name="concat_qc_report_wf",
     )
+    qc_report_wf.inputs.inputnode.dummy_scans = 0
 
     # fmt:off
     workflow.connect([
@@ -183,6 +213,7 @@ def init_concatenate_data_wf(
             ("t1w_mask", "inputnode.t1w_mask"),
         ]),
         (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),
+        (get_head_radius, qc_report_wf, [("head_radius", "inputnode.head_radius")]),
         (filter_out_failed_runs, qc_report_wf, [
             # nifti-only inputs
             (("bold_mask", _select_first), "inputnode.bold_mask"),
@@ -193,29 +224,10 @@ def init_concatenate_data_wf(
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
             ("filtered_denoised_bold", "inputnode.filtered_denoised_bold"),
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
+            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
             ("temporal_mask", "inputnode.tmask"),
         ]),
-    ])
-    # fmt:on
-
-    ds_confounds_file = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["space", "cohort", "den", "res"],
-            datatype="func",
-            suffix="design",
-            extension=".tsv",
-        ),
-        name="ds_confounds_file",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (clean_name_source, ds_confounds_file, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_confounds_file, [("confounds_file", "in_file")]),
     ])
     # fmt:on
 
@@ -258,6 +270,27 @@ def init_concatenate_data_wf(
     ])
     # fmt:on
 
+    ds_timeseries = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["desc"],
+            suffix="timeseries",
+            extension=".tsv",
+        ),
+        name="ds_timeseries",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
+        (filter_out_failed_runs, ds_timeseries, [(("atlas_names", _select_first), "atlas")]),
+        (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
+    ])
+    # fmt:on
+
     if cifti:
         ds_filtered_denoised_bold = pe.Node(
             DerivativesDataSink(
@@ -272,12 +305,37 @@ def init_concatenate_data_wf(
             mem_gb=2,
         )
 
+        ds_timeseries_cifti_files = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                check_hdr=False,
+                dismiss_entities=["desc", "den"],
+                den="91k",
+                suffix="timeseries",
+                extension=".ptseries.nii",
+            ),
+            name="ds_timeseries_cifti_files",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
+            (filter_out_failed_runs, ds_timeseries_cifti_files, [
+                (("atlas_names", _select_first), "atlas"),
+            ]),
+            (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
+        ])
+        # fmt:on
+
         if smooth:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     dismiss_entities=["den"],
-                    desc="smoothDenoised",
+                    desc="denoisedSmoothed",
                     den="91k",
                     extension=".dtseries.nii",
                 ),
@@ -301,7 +359,7 @@ def init_concatenate_data_wf(
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    desc="smoothDenoised",
+                    desc="denoisedSmoothed",
                     extension=".nii.gz",
                     compression=True,
                 ),

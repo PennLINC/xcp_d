@@ -1,4 +1,5 @@
 """Interfaces for the concatenation workflow."""
+import itertools
 import os
 import re
 
@@ -24,10 +25,10 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Preprocessed BOLD files, after dummy volume removal.",
     )
-    confounds_file = traits.List(
+    fmriprep_confounds_file = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="TSV files with selected confounds for individual BOLD runs.",
+        desc="TSV files with fMRIPrep confounds for individual BOLD runs.",
     )
     filtered_motion = traits.List(
         File(exists=True),
@@ -56,6 +57,20 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         ),
         desc="Smoothed, denoised BOLD data. Optional.",
     )
+    timeseries = traits.List(
+        traits.List(File(exists=True)),
+        desc="List of lists of parcellated time series TSV files.",
+    )
+    timeseries_ciftis = traits.List(
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
+        desc=(
+            "List of lists of parcellated time series CIFTI files. "
+            "Only defined for CIFTI processing."
+        ),
+    )
     cifti = traits.Bool(
         mandatory=True,
         desc="Whether the data are CIFTIs (True) or NIFTIs (False).",
@@ -67,9 +82,9 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
         exists=True,
         desc="Concatenated preprocessed BOLD file.",
     )
-    confounds_file = File(
+    fmriprep_confounds_file = File(
         exists=True,
-        desc="Concatenated TSV file with selected confounds.",
+        desc="Concatenated TSV file with fMRIPrep confounds.",
     )
     filtered_motion = File(
         exists=True,
@@ -92,6 +107,18 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
         Undefined,
         desc="Concatenated, smoothed, denoised BOLD data. Optional.",
     )
+    timeseries = traits.List(
+        File(exists=True),
+        desc="Concatenated list of parcellated time series TSV files.",
+    )
+    timeseries_ciftis = traits.Either(
+        traits.List(File(exists=True)),
+        Undefined,
+        desc=(
+            "Concatenated list of parcellated time series CIFTI files. "
+            "Only defined for CIFTI processing."
+        ),
+    )
 
 
 class ConcatenateInputs(SimpleInterface):
@@ -101,40 +128,59 @@ class ConcatenateInputs(SimpleInterface):
     output_spec = _ConcatenateInputsOutputSpec
 
     def _run_interface(self, runtime):
-        niimg_inputs = {
+        merge_inputs = {
             "preprocessed_bold": self.inputs.preprocessed_bold,
             "uncensored_denoised_bold": self.inputs.uncensored_denoised_bold,
             "filtered_denoised_bold": self.inputs.filtered_denoised_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
-        }
-        tsv_inputs = {
-            "confounds_file": self.inputs.confounds_file,
+            "timeseries_ciftis": self.inputs.timeseries_ciftis,
+            "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
             "filtered_motion": self.inputs.filtered_motion,
             "temporal_mask": self.inputs.temporal_mask,
+            "timeseries": self.inputs.timeseries,
         }
 
-        for niimg_name, run_files in niimg_inputs.items():
-            LOGGER.warning(f"Concatenating {niimg_name}")
+        for name, run_files in merge_inputs.items():
+            LOGGER.info(f"Concatenating {name}")
             if len(run_files) == 0 or not isdefined(run_files):
-                LOGGER.warning(f"No {niimg_name} files found")
-                self._results[niimg_name] = Undefined
+                LOGGER.warning(f"No {name} files found")
+                self._results[name] = Undefined
                 continue
 
-            # TODO: We may need to support ptseries inputs.
-            if self.inputs.cifti:
-                out_file = os.path.join(runtime.cwd, f"{niimg_name}.dtseries.nii")
+            elif isinstance(run_files[0], list) and not isdefined(run_files[0][0]):
+                LOGGER.warning(f"No {name} files found")
+                self._results[name] = Undefined
+                continue
+
+            if isinstance(run_files[0], list):
+                # Files are organized in a list of lists, like parcellated time series.
+                transposed_run_files = list(
+                    map(list, itertools.zip_longest(*run_files, fillvalue=None))
+                )
+                out_files = []
+                for i_atlas, parc_files in enumerate(transposed_run_files):
+                    extension = ".".join(os.path.basename(parc_files[0]).split(".")[1:])
+                    out_file = os.path.join(runtime.cwd, f"{name}_{i_atlas}.{extension}")
+                    if out_file.endswith(".tsv"):
+                        concatenate_tsvs(parc_files, out_file=out_file)
+                    else:
+                        concatenate_niimgs(parc_files, out_file=out_file)
+
+                    assert os.path.isfile(out_file), f"Output file {out_file} not created."
+                    out_files.append(out_file)
+
+                self._results[name] = out_files
             else:
-                out_file = os.path.join(runtime.cwd, f"{niimg_name}.nii.gz")
+                # Files are a single list of paths.
+                extension = ".".join(os.path.basename(run_files[0]).split(".")[1:])
+                out_file = os.path.join(runtime.cwd, f"{name}.{extension}")
+                if out_file.endswith(".tsv"):
+                    concatenate_tsvs(run_files, out_file=out_file)
+                else:
+                    concatenate_niimgs(run_files, out_file=out_file)
 
-            concatenate_niimgs(run_files, out_file=out_file)
-            assert os.path.isfile(out_file), f"Output file {out_file} not created."
-            self._results[niimg_name] = out_file
-
-        for tsv_name, run_files in tsv_inputs.items():
-            LOGGER.info(f"Concatenating {tsv_name}")
-            out_file = os.path.join(runtime.cwd, f"{tsv_name}.tsv")
-            concatenate_tsvs(run_files, out_file=out_file)
-            self._results[tsv_name] = out_file
+                assert os.path.isfile(out_file), f"Output file {out_file} not created."
+                self._results[name] = out_file
 
         return runtime
 
@@ -145,10 +191,10 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Preprocessed BOLD files, after dummy volume removal.",
     )
-    confounds_file = traits.List(
+    fmriprep_confounds_file = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="TSV files with selected confounds for individual BOLD runs.",
+        desc="TSV files with fMRIPrep confounds for individual BOLD runs.",
     )
     filtered_motion = traits.List(
         File(exists=True),
@@ -173,22 +219,40 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
     smoothed_denoised_bold = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="Smoothed, denoised BOLD data.",
+        desc="Smoothed, denoised BOLD data. Only set if smoothing was done in postprocessing",
     )
     bold_mask = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="Smoothed, denoised BOLD data.",
+        desc="BOLD-based brain mask file. Only used for NIFTI processing.",
     )
     boldref = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="Smoothed, denoised BOLD data.",
+        desc="BOLD reference files. Only used for NIFTI processing.",
     )
     t1w_to_native_xform = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="Smoothed, denoised BOLD data.",
+        desc="T1w-to-native space transform files. Only used for NIFTI processing.",
+    )
+    atlas_names = traits.List(
+        traits.List(traits.Str),
+        mandatory=True,
+        desc="List of lists of atlas names, corresponding to timeseries and timeseries_ciftis.",
+    )
+    timeseries = traits.List(
+        traits.List(File(exists=True)),
+        mandatory=True,
+        desc="List of lists of parcellated time series TSV files.",
+    )
+    timeseries_ciftis = traits.Either(
+        traits.List(traits.List(File(exists=True))),
+        Undefined,
+        desc=(
+            "List of lists of parcellated time series CIFTI files. "
+            "Only defined for CIFTI processing."
+        ),
     )
 
 
@@ -197,9 +261,9 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         File(exists=True),
         desc="Preprocessed BOLD files, after dummy volume removal.",
     )
-    confounds_file = traits.List(
+    fmriprep_confounds_file = traits.List(
         File(exists=True),
-        desc="TSV files with selected confounds for individual BOLD runs.",
+        desc="fMRIPrep confounds files, after dummy volume removal.",
     )
     filtered_motion = traits.List(
         File(exists=True),
@@ -248,6 +312,24 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         Undefined,
         desc="Smoothed, denoised BOLD data.",
     )
+    atlas_names = traits.List(
+        traits.List(traits.Str),
+        desc="List of lists of atlas names, corresponding to timeseries and timeseries_ciftis.",
+    )
+    timeseries = traits.List(
+        traits.List(File(exists=True)),
+        desc="List of lists of parcellated time series TSV files.",
+    )
+    timeseries_ciftis = traits.List(
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
+        desc=(
+            "List of lists of parcellated time series CIFTI files. "
+            "Only defined for CIFTI processing."
+        ),
+    )
 
 
 class FilterOutFailedRuns(SimpleInterface):
@@ -260,7 +342,7 @@ class FilterOutFailedRuns(SimpleInterface):
         filtered_denoised_bold = self.inputs.filtered_denoised_bold
         inputs_to_filter = {
             "preprocessed_bold": self.inputs.preprocessed_bold,
-            "confounds_file": self.inputs.confounds_file,
+            "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
             "filtered_motion": self.inputs.filtered_motion,
             "temporal_mask": self.inputs.temporal_mask,
             "uncensored_denoised_bold": self.inputs.uncensored_denoised_bold,
@@ -268,6 +350,9 @@ class FilterOutFailedRuns(SimpleInterface):
             "bold_mask": self.inputs.bold_mask,
             "boldref": self.inputs.boldref,
             "t1w_to_native_xform": self.inputs.t1w_to_native_xform,
+            "atlas_names": self.inputs.atlas_names,
+            "timeseries": self.inputs.timeseries,
+            "timeseries_ciftis": self.inputs.timeseries_ciftis,
         }
 
         n_runs = len(filtered_denoised_bold)

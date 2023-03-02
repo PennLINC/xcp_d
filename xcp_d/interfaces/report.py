@@ -120,8 +120,16 @@ class SubjectSummary(SummaryInterface):
 class _FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for FunctionalSummary."""
 
-    bold_file = traits.File(exists=True, mandatory=True, desc="cifti or bold File")
-    qc_file = traits.File(exists=True, desc="qc file")
+    bold_file = traits.File(
+        exists=False,
+        mandatory=True,
+        desc=(
+            "CIFTI or NIfTI BOLD file. "
+            "This file does not need to exist, "
+            "because this input is just used for extracting filename information."
+        ),
+    )
+    qc_file = traits.File(exists=True, mandatory=True, desc="qc file")
     TR = traits.Float(
         mandatory=True,
         desc="Repetition time",
@@ -136,21 +144,20 @@ class FunctionalSummary(SummaryInterface):
 
     def _generate_segment(self):
         space = get_entity(self.inputs.bold_file, "space")
-        TR = self.inputs.TR
         qcfile = pd.read_csv(self.inputs.qc_file)
-        meanFD = f"{round(qcfile['meanFD'][0], 4)} "
-        meanRMS = f" {round(qcfile['relMeansRMSMotion'][0], 4)} "
-        maxRMS = f" {round(qcfile['relMaxRMSMotion'][0], 4)} "
-        dvars = f"  {round(qcfile['meanDVInit'][0], 4)},{round(qcfile['meanDVFinal'][0], 4)} "
+        meanFD = str(round(qcfile["meanFD"][0], 4))
+        meanRMS = str(round(qcfile["relMeansRMSMotion"][0], 4))
+        maxRMS = str(round(qcfile["relMaxRMSMotion"][0], 4))
+        dvars = f"{round(qcfile['meanDVInit'][0], 4)}, {round(qcfile['meanDVFinal'][0], 4)}"
         fd_dvars_correlation = (
-            f" {round(qcfile['motionDVCorrInit'][0], 4)},  "
-            f"{round(qcfile['motionDVCorrFinal'][0], 4)} "
+            f"{round(qcfile['motionDVCorrInit'][0], 4)}, "
+            f"{round(qcfile['motionDVCorrFinal'][0], 4)}"
         )
-        num_vols_censored = f" {round(qcfile['num_censored_volumes'][0], 4)} "
+        num_vols_censored = str(round(qcfile["num_censored_volumes"][0], 4))
 
         return QC_TEMPLATE.format(
             space=space,
-            TR=TR,
+            TR=self.inputs.TR,
             meanFD=meanFD,
             meanRMS=meanRMS,
             maxRMS=maxRMS,

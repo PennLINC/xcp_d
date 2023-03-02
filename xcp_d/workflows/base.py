@@ -627,7 +627,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
-                "confounds_file",
+                "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
                 "uncensored_denoised_bold",
@@ -636,9 +636,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "t1w_to_native_xform",
                 "bold_mask",
                 "boldref",
+                "atlas_names",  # this will be exactly the same across runs
+                "timeseries",
+                "timeseries_ciftis",
             ]
             merge_dict = {
-                io_name: pe.Node(niu.Merge(n_task_runs), name=f"collect_{io_name}_{ent_set}")
+                io_name: pe.Node(
+                    niu.Merge(n_task_runs, no_flatten=True),
+                    name=f"collect_{io_name}_{ent_set}",
+                )
                 for io_name in merge_elements
             }
 
@@ -703,9 +709,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,
-                band_stop_max=band_stop_max,
-                band_stop_min=band_stop_min,
-                motion_filter_order=motion_filter_order,
                 fd_thresh=fd_thresh,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
@@ -715,6 +718,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 dcan_qc=dcan_qc,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
+            concatenate_data_wf.inputs.inputnode.head_radius = head_radius
 
             # fmt:off
             workflow.connect([

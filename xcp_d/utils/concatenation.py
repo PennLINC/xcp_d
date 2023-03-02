@@ -3,9 +3,11 @@
 """Functions for concatenating scans across runs."""
 import os
 import tempfile
+from contextlib import suppress
 from json import loads
 from pathlib import Path
 
+import nibabel as nb
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
@@ -420,14 +422,14 @@ def concatenate_tsvs(tsv_files, out_file):
     out_file : str
         Path to the file that will be written out.
     """
-    # TODO: Support headers in timeseries files
-    if tsv_files[0].endswith("timeseries.tsv"):
-        # timeseries files have no header
+    try:
+        # Assume file has no header first.
+        # If it has a header with string column names, this will go the except clause.
         data = [np.loadtxt(tsv_file, delimiter="\t") for tsv_file in tsv_files]
         data = np.vstack(data)
         np.savetxt(out_file, data, fmt="%.5f", delimiter="\t")
-    else:
-        # other tsv files have a header
+    except ValueError:
+        # Load file with header.
         data = [pd.read_table(tsv_file) for tsv_file in tsv_files]
         data = pd.concat(data, axis=0)
         data.to_csv(out_file, sep="\t", index=False)
@@ -468,9 +470,12 @@ def concatenate_niimgs(files, out_file):
     out_file : :obj:`str`
         The concatenated file to write out.
     """
-    is_cifti = files[0].endswith(".dtseries.nii")
-    if is_cifti:
-        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(files)}")
-    else:
+    is_nifti = False
+    with suppress(nb.filebasedimages.ImageFileError):
+        is_nifti = isinstance(nb.load(files[0]), nb.Nifti1Image)
+
+    if is_nifti:
         concat_preproc_img = concat_imgs(files)
         concat_preproc_img.to_filename(out_file)
+    else:
+        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(files)}")

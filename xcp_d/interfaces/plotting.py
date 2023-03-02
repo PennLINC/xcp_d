@@ -22,7 +22,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
 
-from xcp_d.utils.confounds import load_confound, load_motion
+from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
@@ -33,29 +33,13 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(
-        exists=True,
-        mandatory=True,
-        desc="Raw bold file from fMRIPrep. Used only to identify the right confounds file.",
-    )
+    fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
+    filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask.")
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
     motion_filter_type = traits.Either(None, traits.Str, mandatory=True)
-    motion_filter_order = traits.Int(mandatory=True)
-    band_stop_min = traits.Either(
-        None,
-        traits.Float,
-        mandatory=True,
-        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
-    )
-    band_stop_max = traits.Either(
-        None,
-        traits.Float,
-        mandatory=True,
-        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
-    )
     fd_thresh = traits.Float(mandatory=True, desc="Framewise displacement threshold.")
 
 
@@ -78,9 +62,9 @@ class CensoringPlot(SimpleInterface):
         palette = sns.color_palette("colorblind", 4)
 
         # Load confound matrix and load motion with motion filtering
-        confound_matrix = load_confound(datafile=self.inputs.bold_file)[0]
+        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         preproc_motion_df = load_motion(
-            confound_matrix.copy(),
+            confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=None,
         )
@@ -107,10 +91,10 @@ class CensoringPlot(SimpleInterface):
         if not isdefined(dummy_scans):
             dummy_scans = 0
 
-        if self.inputs.dummy_scans:
+        if dummy_scans:
             ax.axvspan(
                 0,
-                self.inputs.dummy_scans * self.inputs.TR,
+                dummy_scans * self.inputs.TR,
                 label="Dummy Volumes",
                 alpha=0.5,
                 color=palette[1],
@@ -136,18 +120,9 @@ class CensoringPlot(SimpleInterface):
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
-            filtered_motion_df = load_motion(
-                confound_matrix.copy(),
-                TR=self.inputs.TR,
-                motion_filter_type=self.inputs.motion_filter_type,
-                motion_filter_order=self.inputs.motion_filter_order,
-                band_stop_min=self.inputs.band_stop_min,
-                band_stop_max=self.inputs.band_stop_max,
-            )
-            filtered_fd_timeseries = compute_fd(
-                confound=filtered_motion_df,
-                head_radius=self.inputs.head_radius,
-            )
+            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
+                "framewise_displacement"
+            ]
 
             ax.plot(
                 time_array,
@@ -190,9 +165,14 @@ class CensoringPlot(SimpleInterface):
 
 class _QCPlotsInputSpec(BaseInterfaceInputSpec):
     name_source = File(
-        exists=True,
+        exists=False,
         mandatory=True,
-        desc="Preprocessed BOLD file. Used to find files.",
+        desc=(
+            "Preprocessed BOLD file. Used to find files. "
+            "In the case of the concatenation workflow, "
+            "this may be a nonexistent file "
+            "(i.e., the preprocessed BOLD file, with the run entity removed)."
+        ),
     )
     bold_file = File(
         exists=True,
@@ -201,6 +181,11 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
     )
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     tmask = File(exists=True, mandatory=True, desc="Temporal mask")
+    fmriprep_confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds file, after dummy scans removal",
+    )
     cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
@@ -253,9 +238,9 @@ class QCPlots(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
-        confound_matrix = load_confound(datafile=self.inputs.name_source)[0]
+        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         preproc_motion_df = load_motion(
-            confound_matrix.copy(),
+            confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=None,
         )
@@ -266,14 +251,11 @@ class QCPlots(SimpleInterface):
         postproc_fd_timeseries = preproc_fd_timeseries.copy()
 
         # Get rmsd
-        rmsd = confound_matrix["rmsd"]
+        rmsd = confounds_df["rmsd"]
 
         # Drop volumes from time series
         # NOTE: TS- Why drop dummy volumes in preprocessed plot?
         dummy_scans = self.inputs.dummy_scans
-        preproc_fd_timeseries = preproc_fd_timeseries[dummy_scans:]
-        postproc_fd_timeseries = postproc_fd_timeseries[dummy_scans:]
-        rmsd = rmsd[dummy_scans:]
 
         if self.inputs.tmask:  # If a tmask is provided, find # vols censored
             tmask_df = pd.read_table(self.inputs.tmask)
@@ -281,20 +263,6 @@ class QCPlots(SimpleInterface):
             num_censored_volumes = np.sum(tmask_arr)
         else:
             num_censored_volumes = 0
-
-        # Compute the DVARS for both bold files provided
-        dvars_before_processing = compute_dvars(
-            read_ndata(
-                datafile=self.inputs.bold_file,
-                maskfile=self.inputs.mask_file,
-            )[:, dummy_scans:],
-        )
-        dvars_after_processing = compute_dvars(
-            read_ndata(
-                datafile=self.inputs.cleaned_file,
-                maskfile=self.inputs.mask_file,
-            ),
-        )
 
         # get QC plot names
         self._results["raw_qcplot"] = fname_presuffix(
@@ -309,27 +277,49 @@ class QCPlots(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        raw_data_removed_TR = read_ndata(
-            datafile=self.inputs.bold_file,
-            maskfile=self.inputs.mask_file,
-        )[:, dummy_scans:]
+        if dummy_scans > 0:
+            raw_data_removed_TR = read_ndata(
+                datafile=self.inputs.bold_file,
+                maskfile=self.inputs.mask_file,
+            )[:, dummy_scans:]
 
-        # Get file names to write out & write data out
-        dropped_bold_file = fname_presuffix(
-            self.inputs.name_source,
-            newpath=runtime.cwd,
-            suffix="_dropped",
-            use_ext=True,
+            dvars_before_processing = compute_dvars(raw_data_removed_TR)
+
+            # Get file names to write out & write data out
+            dropped_bold_file = fname_presuffix(
+                self.inputs.name_source,
+                newpath=runtime.cwd,
+                suffix="_dropped",
+                use_ext=True,
+            )
+
+            write_ndata(
+                data_matrix=raw_data_removed_TR,
+                template=self.inputs.bold_file,
+                mask=self.inputs.mask_file,
+                filename=dropped_bold_file,
+                TR=self.inputs.TR,
+            )
+        else:
+            dropped_bold_file = self.inputs.bold_file
+
+            dvars_before_processing = compute_dvars(
+                read_ndata(
+                    datafile=self.inputs.bold_file,
+                    maskfile=self.inputs.mask_file,
+                )
+            )
+
+        dvars_after_processing = compute_dvars(
+            read_ndata(
+                datafile=self.inputs.cleaned_file,
+                maskfile=self.inputs.mask_file,
+            ),
         )
-
-        write_ndata(
-            data_matrix=raw_data_removed_TR,
-            template=self.inputs.bold_file,
-            mask=self.inputs.mask_file,
-            filename=dropped_bold_file,
-            TR=self.inputs.TR,
-        )
-
+        if preproc_fd_timeseries.size != dvars_before_processing.size:
+            raise ValueError(
+                f"FD {preproc_fd_timeseries.size} != DVARS {dvars_before_processing.size}\n"
+            )
         preproc_confounds = pd.DataFrame(
             {
                 "FD": preproc_fd_timeseries,
