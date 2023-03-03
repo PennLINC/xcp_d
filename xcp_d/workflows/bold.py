@@ -123,6 +123,8 @@ def init_boldpostprocess_wf(
 
     Parameters
     ----------
+    bold_file: str
+        bold file for post processing
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -132,28 +134,22 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
-    input_type: str
-        type of input
-    bold_file: str
-        bold file for post processing
+    %(input_type)s
     %(head_radius)s
     %(params)s
-    custom_confounds: str
-        path to cusrtom nuissance regressors
+    custom_confounds_folder : str
+        path to custom nuisance regressors
     %(omp_nthreads)s
     %(dummytime)s
     %(dummy_scans)s
-    output_dir : str
-        Directory in which to save xcp_d output
+    %(output_dir)s
     %(fd_thresh)s
     n_runs
     despike: bool
         If True, run 3dDespike from AFNI
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
+    %(dcan_qc)s
     min_coverage
-    layout : BIDSLayout object
-        BIDS dataset layout
+    %(layout)s
     %(name)s
 
     Inputs
@@ -185,12 +181,22 @@ def init_boldpostprocess_wf(
 
     Outputs
     -------
-    preprocessed_bold
+    %(name_source)s
+    preprocessed_bold : str
+        The preprocessed BOLD file, after dummy scan removal.
+    %(filtered_motion)s
+    %(temporal_mask)s
+    fmriprep_confounds_file
+    %(uncensored_denoised_bold)s
+    %(filtered_denoised_bold)s
+    %(smoothed_denoised_bold)s
+    boldref
     bold_mask
-    filtered_motion
-    temporal_mask
-    uncensored_denoised_bold
-    filtered_denoised_bold
+    t1w_to_native_xform
+    %(atlas_names)s
+    %(timeseries)s
+    %(timeseries_ciftis)s
+        This will not be defined.
 
     References
     ----------

@@ -71,10 +71,6 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
             "Only defined for CIFTI processing."
         ),
     )
-    cifti = traits.Bool(
-        mandatory=True,
-        desc="Whether the data are CIFTIs (True) or NIFTIs (False).",
-    )
 
 
 class _ConcatenateInputsOutputSpec(TraitedSpec):
@@ -142,7 +138,7 @@ class ConcatenateInputs(SimpleInterface):
 
         for name, run_files in merge_inputs.items():
             LOGGER.info(f"Concatenating {name}")
-            if len(run_files) == 0 or not isdefined(run_files):
+            if len(run_files) == 0 or any(not isdefined(f) for f in run_files):
                 LOGGER.warning(f"No {name} files found")
                 self._results[name] = Undefined
                 continue

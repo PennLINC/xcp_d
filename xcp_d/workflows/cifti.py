@@ -123,7 +123,7 @@ def init_ciftipostprocess_wf(
     Parameters
     ----------
     bold_file
-    input_type
+    %(input_type)s
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -137,19 +137,17 @@ def init_ciftipostprocess_wf(
     %(params)s
     %(output_dir)s
     custom_confounds_folder: str
-        path to cusrtom nuissance regressors
+        path to custom nuisance regressors
     %(omp_nthreads)s
     %(dummytime)s
     %(dummy_scans)s
     %(fd_thresh)s
     despike: bool
         afni depsike
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
+    %(dcan_qc)s
     n_runs
     min_coverage
-    layout : BIDSLayout object
-        BIDS dataset layout
+    %(layout)s
     %(name)s
         Default is 'cifti_postprocess_wf'.
 
@@ -172,11 +170,23 @@ def init_ciftipostprocess_wf(
 
     Outputs
     -------
-    preprocessed_bold
-    filtered_motion
-    temporal_mask
-    uncensored_denoised_bold
-    filtered_denoised_bold
+    %(name_source)s
+    preprocessed_bold : str
+        The preprocessed BOLD file, after dummy scan removal.
+    %(filtered_motion)s
+    %(temporal_mask)s
+    fmriprep_confounds_file
+    %(uncensored_denoised_bold)s
+    %(filtered_denoised_bold)s
+    %(smoothed_denoised_bold)s
+    boldref
+    bold_mask
+        This will not be defined.
+    t1w_to_native_xform
+        This will not be defined.
+    %(atlas_names)s
+    %(timeseries)s
+    %(timeseries_ciftis)s
 
     References
     ----------

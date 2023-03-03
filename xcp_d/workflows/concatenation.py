@@ -53,40 +53,43 @@ def init_concatenate_data_wf(
     ----------
     %(output_dir)s
     %(motion_filter_type)s
-    fd_thresh
-    mem_gb
-    omp_nthreads
+    %(fd_thresh)s
+    %(mem_gb)s
+    %(omp_nthreads)s
     TR
     smooth
     %(cifti)s
-    dcan_qc
+    %(dcan_qc)s
     %(name)s
         Default is "concatenate_data_wf".
 
     Inputs
     ------
-    name_source : :obj:`list` of :obj:`str`
-        The preprocessed BOLD files that were post-processed with XCP-D.
+    %(name_source)s
+        One list entry for each run.
         These are used as the bases for concatenated output filenames.
     preprocessed_bold : :obj:`list` of :obj:`str`
         The preprocessed BOLD files, after dummy volume removal.
-    filtered_motion : :obj:`list` of :obj:`str`
-        TSV files with filtered motion parameters, used for FD calculation.
-    temporal_mask : :obj:`list` of :obj:`str`
-        TSV files with high-motion outliers indexed.
-    uncensored_denoised_bold : :obj:`list` of :obj:`str`
-        Denoised BOLD data.
-    filtered_denoised_bold : :obj:`list` of :obj:`str`
-        Denoised BOLD data.
+    %(filtered_motion)s
+        One list entry for each run.
+    %(temporal_mask)s
+        One list entry for each run.
+    %(uncensored_denoised_bold)s
+        One list entry for each run.
+    %(filtered_denoised_bold)s
+        One list entry for each run.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
     t1w_mask : :obj:`str`
-    boldref
-    head_radius
-    atlas_names
-    timeseries
-    timeseries_ciftis
+    boldref : :obj:`str`
+    %(head_radius)s
+    %(atlas_names)s
+        This will be a list of lists, with one sublist for each run.
+    %(timeseries)s
+        This will be a list of lists, with one sublist for each run.
+    %(timeseries_ciftis)s
+        This will be a list of lists, with one sublist for each run.
     """
     workflow = Workflow(name=name)
 
@@ -172,7 +175,7 @@ def init_concatenate_data_wf(
     # fmt:on
 
     concatenate_inputs = pe.Node(
-        ConcatenateInputs(cifti=cifti),
+        ConcatenateInputs(),
         name="concatenate_inputs",
     )
 

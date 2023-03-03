@@ -55,22 +55,20 @@ def init_qc_report_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
-    dcan_qc : bool
-        Whether to generate figures for the executive summary or not.
+    %(dcan_qc)s
     %(name)s
         Default is "qc_report_wf".
 
     Inputs
     ------
-    name_source
-        Used for naming outputs and finding related files.
+    %(name_source)s
     preprocessed_bold
         The preprocessed BOLD files. Typically the same as ``name_source``.
         Used for carpet plots.
-    uncensored_denoised_bold
+    %(uncensored_denoised_bold)s
         Used for carpet plots.
         Only used if dcan_qc is True.
-    filtered_denoised_bold
+    %(filtered_denoised_bold)s
         Used for carpet plots.
     boldref
         Only used with non-CIFTI data.
@@ -86,7 +84,7 @@ def init_qc_report_wf(
     fmriprep_confounds_file
     %(head_radius)s
     tmask
-    filtered_motion
+    %(filtered_motion)s
 
     Outputs
     -------
