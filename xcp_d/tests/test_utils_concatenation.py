@@ -24,8 +24,8 @@ def test_concatenate_tsvs(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(concat_tsv_file_with_header)
     tsv_df = pd.read_table(tsv_file_with_header)
     concat_tsv_df = pd.read_table(concat_tsv_file_with_header)
-    assert concat_tsv_df.columns == tsv_df.columns
     assert concat_tsv_df.shape[0] == tsv_df.shape[0] * n_repeats
+    assert concat_tsv_df.shape[1] == tsv_df.shape[1]
 
     # Now, concatenate TSVs without headers
     tsv_file_without_header = os.path.join(tmpdir, "without_header.tsv")
@@ -38,10 +38,10 @@ def test_concatenate_tsvs(fmriprep_with_freesurfer_data, tmp_path_factory):
         out_file=concat_tsv_file_without_header,
     )
     assert os.path.isfile(concat_tsv_file_without_header)
-    tsv_df = pd.read_table(tsv_file_without_header)
-    concat_tsv_df = pd.read_table(concat_tsv_file_without_header)
-    assert concat_tsv_df.columns == tsv_df.columns
-    assert concat_tsv_df.shape[0] == tsv_df.shape[0] * n_repeats
+    tsv_arr = np.loadtxt(tsv_file_without_header)
+    concat_tsv_arr = np.loadtxt(concat_tsv_file_without_header)
+    assert concat_tsv_arr.shape[0] == tsv_arr.shape[0] * n_repeats
+    assert concat_tsv_arr.shape[1] == tsv_arr.shape[1]
 
 
 def test_concatenate_niimgs(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -76,5 +76,5 @@ def test_concatenate_niimgs(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(concat_cifti_file)
     cifti_img = nb.load(cifti_file)
     concat_cifti_img = nb.load(concat_cifti_file)
-    assert concat_cifti_img.shape[0] == cifti_img.shape[0]
-    assert concat_cifti_img.shape[1] == cifti_img.shape[1] * n_repeats
+    assert concat_cifti_img.shape[0] == cifti_img.shape[0] * n_repeats
+    assert concat_cifti_img.shape[1] == cifti_img.shape[1]
