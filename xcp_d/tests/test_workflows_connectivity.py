@@ -5,7 +5,7 @@ import sys
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiLabelsMasker
+from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr

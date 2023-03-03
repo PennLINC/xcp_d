@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiLabelsMasker
+from nilearn.maskers import NiftiLabelsMasker
 from nilearn.plotting import plot_matrix
 from nipype import logging
 from nipype.interfaces.base import (
