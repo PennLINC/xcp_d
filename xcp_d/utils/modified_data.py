@@ -201,7 +201,7 @@ def flag_bad_run(
     ----------
     %(fmriprep_confounds_file)s
     %(dummy_scans)s
-    TR
+    %(TR)s
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s

@@ -170,11 +170,11 @@ def collect_data(
     bids_validate
     bids_filters
     %(cifti)s
-    layout
+    %(layout)s
 
     Returns
     -------
-    layout : pybids.layout.BIDSLayout
+    %(layout)s
     subj_data : dict
     """
     if not isinstance(layout, BIDSLayout):
@@ -335,6 +335,7 @@ def collect_data(
     return layout, subj_data
 
 
+@fill_doc
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
@@ -344,8 +345,7 @@ def collect_surface_data(layout, participant_label):
 
     Parameters
     ----------
-    layout : :obj:`bids.BIDSLayout`
-        Layout object indexing the preprocessed derivatives.
+    %(layout)s
     participant_label : :obj:`str`
         Subject ID.
 
@@ -522,19 +522,18 @@ def collect_surface_data(layout, participant_label):
     return out_surface_files, standard_space_surfaces, surfaces_found
 
 
+@fill_doc
 def collect_run_data(layout, input_type, bold_file, cifti):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
-    layout : :obj:`bids.layout.BIDSLayout`
-        The BIDSLayout object used to grab files from the dataset.
+    %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    cifti : :obj:`bool`
+    %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-    input_type: :obj:`str`
-        Input type.
+    %(input_type)s
 
     Returns
     -------

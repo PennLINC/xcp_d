@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from nipype import logging
 
+from xcp_d.utils.doc import fill_doc
+
 LOGGER = logging.getLogger("nipype.utils")
 
 
@@ -215,17 +217,16 @@ def _make_dcan_qc_file(filtered_motion, TR):
     return dcan_df_file
 
 
-def make_dcan_df(filtered_motion_file, name, TR):
+@fill_doc
+def make_dcan_df(filtered_motion, name, TR):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
     ----------
-    filtered_motion_file : str
-        File from which to extract information.
+    %(filtered_motion)s
     name : str
         Name of the HDF5-format file to be created.
-    TR : float
-        Repetition time.
+    %(TR)s
 
     Notes
     -----
@@ -248,7 +249,7 @@ def make_dcan_df(filtered_motion_file, name, TR):
     LOGGER.debug(f"Generating DCAN file: {name}")
 
     # Load filtered framewise_displacement values from file
-    filtered_motion_df = pd.read_table(filtered_motion_file)
+    filtered_motion_df = pd.read_table(filtered_motion)
     fd = filtered_motion_df["framewise_displacement"].values
 
     with h5py.File(name, "w") as dcan:

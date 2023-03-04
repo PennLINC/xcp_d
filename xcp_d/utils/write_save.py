@@ -9,6 +9,7 @@ import numpy as np
 from nilearn import masking
 from templateflow.api import get as get_template
 
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import split_filename
 
 
@@ -71,6 +72,7 @@ def get_cifti_intents():
     return CIFTI_INTENTS
 
 
+@fill_doc
 def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     """Save numpy array to a nifti or cifti file.
 
@@ -86,7 +88,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         The path to a binary mask file.
         The mask is only used for nifti files- masking is not supported in ciftis.
         Default is None.
-    TR : float, optional
+    %(TR)s
 
     Returns
     -------

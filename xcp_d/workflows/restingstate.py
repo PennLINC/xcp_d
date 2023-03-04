@@ -56,8 +56,7 @@ def init_compute_alff_wf(
     Parameters
     ----------
     %(mem_gb)s
-    TR : float
-        repetition time
+    %(TR)s
     lowpass : float
         low pass filter
     highpass : float

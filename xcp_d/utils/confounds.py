@@ -106,17 +106,13 @@ def load_motion(
     ----------
     confounds_df : pandas.DataFrame
         The confounds DataFrame from which to extract the six basic motion regressors.
-    TR : float
-        The repetition time of the associated scan.
-    motion_filter_type : {"lp", "notch", None}
-        The filter type to use.
+    %(TR)s
+    %(motion_filter_type)s
         If "lp" or "notch", that filtering will be done in this function.
         Otherwise, no filtering will be applied.
     %(band_stop_min)s
     %(band_stop_max)s
-    motion_filter_order : int, optional
-        This only has an impact if ``motion_filter_type`` is "lp" or "notch".
-        Default is 4.
+    %(motion_filter_order)s
 
     Returns
     -------
@@ -586,8 +582,7 @@ def motion_regression_filter(
     data : (T, R) numpy.ndarray
         Data to filter. T = time, R = motion regressors
         The filter will be applied independently to each variable, across time.
-    TR : float
-        Repetition time of the data.
+    %(TR)s
     %(motion_filter_type)s
         If not "notch" or "lp", an exception will be raised.
     %(band_stop_min)s

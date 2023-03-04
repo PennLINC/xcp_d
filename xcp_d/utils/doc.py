@@ -100,6 +100,13 @@ boldref : :obj:`str`
 """
 
 docdict[
+    "TR"
+] = """
+TR : :obj:`float`
+    Repetition time of the BOLD run, in seconds.
+"""
+
+docdict[
     "fmriprep_confounds_file"
 ] = """
 fmriprep_confounds_file : :obj:`str`

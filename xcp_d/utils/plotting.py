@@ -454,17 +454,11 @@ def plot_fmri_es(
     ----------
     preprocessed_bold : str
         Preprocessed BOLD file, dummy scan removal.
-    uncensored_denoised_bold : str
-        BOLD file after regression and interpolation, but not filtering.
-        The preprocessed BOLD data are censored and denoised to get the betas,
-        and then the full, uncensored preprocessed BOLD data are denoised using those betas.
-    interpolated_filtered_bold : str
-        BOLD file after regression, interpolation, and filtering.
-    TR : float
-        Repetition time, in seconds.
+    %(uncensored_denoised_bold)s
+    %(interpolated_filtered_bold)s
+    %(TR)s
     %(dummy_scans)s
-    filtered_motion : str
-       Filtered motion parameters, including framewise displacement, in a TSV file.
+    %(filtered_motion)s
     preprocessed_bold_figure : str
         output file svg before processing
     denoised_bold_figure : str
@@ -643,6 +637,7 @@ def plot_fmri_es(
     return preprocessed_bold_figure, denoised_bold_figure
 
 
+@fill_doc
 class FMRIPlot:
     """Generates the fMRI Summary Plot.
 
@@ -653,7 +648,7 @@ class FMRIPlot:
     data
     confound_file
     seg_file
-    TR
+    %(TR)s
     usecols
     units
     vlines

@@ -60,11 +60,10 @@ def init_writederivatives_wf(
     %(smoothing)s
     %(params)s
     %(cifti)s
-    dcan_qc
+    %(dcan_qc)s
     output_dir : str
         output directory
-    TR : float
-        repetition time in seconds
+    %(TR)s
     %(name)s
         Default is "fcons_ts_wf".
 
@@ -72,12 +71,9 @@ def init_writederivatives_wf(
     ------
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
-    timeseries : list of str
-        List of paths to parcellated time series files.
-    correlations : list of str
-        List of paths to ROI-to-ROI correlation files.
-    coverage_files : list of str
-        List of paths to atlas-specific coverage files.
+    %(timeseries)s
+    %(correlations)s
+    %(coverage_files)s
     qc_file
         LINC-style quality control file
     %(interpolated_filtered_bold)s
@@ -92,9 +88,9 @@ def init_writederivatives_wf(
         smoothed alff
     reho
     confounds_file
-    filtered_motion
+    %(filtered_motion)s
     filtered_motion_metadata
-    temporal_mask
+    %(temporal_mask)s
     tmask_metadata
     %(dummy_scans)s
     """

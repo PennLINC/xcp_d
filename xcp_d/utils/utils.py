@@ -479,6 +479,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     return brain_radius
 
 
+@fill_doc
 def denoise_with_nilearn(
     preprocessed_bold,
     confounds_file,
@@ -509,28 +510,21 @@ def denoise_with_nilearn(
     confounds_file : str
         Path to TSV file containing selected confounds, after dummy volume removal,
         but without any additional censoring.
-    temporal_mask : str
-        Path to TSV file containing one column with zeros for low-motion volumes and
-        ones for high-motion outliers.
+    %(temporal_mask)s
     lowpass, highpass : float or None
         Lowpass and highpass thresholds, in Hertz.
     filter_order : int
         Filter order.
-    TR : float
-        Repetition time, in seconds.
+    %(TR)s
 
     Returns
     -------
-    uncensored_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The result of denoising the full (uncensored) preprocessed BOLD data using
-        betas estimated using the *censored* BOLD data and nuisance regressors.
-        This is only used for DCAN figures.
-    interpolated_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The result of denoising the censored preprocessed BOLD data,
-        followed by cubic spline interpolation.
-    interpolated_filtered_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The result of denoising the censored preprocessed BOLD data,
-        followed by cubic spline interpolation and band-pass filtering.
+    %(uncensored_denoised_bold)s
+        Returned as a :obj:`numpy.ndarray` of shape (T, S)
+    %(interpolated_denoised_bold)s
+        Returned as a :obj:`numpy.ndarray` of shape (T, S)
+    %(interpolated_filtered_bold)s
+        Returned as a :obj:`numpy.ndarray` of shape (T, S)
         This is the primary output.
     """
     import pandas as pd
