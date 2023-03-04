@@ -42,29 +42,29 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_boldpostprocess_wf(
+    bold_file,
+    bandpass_filter,
     high_pass,
     low_pass,
     bpf_order,
     motion_filter_type,
     motion_filter_order,
-    bandpass_filter,
     band_stop_min,
     band_stop_max,
     smoothing,
-    bold_file,
     head_radius,
     params,
+    output_dir,
     custom_confounds_folder,
-    omp_nthreads,
     dummytime,
     dummy_scans,
-    output_dir,
     fd_thresh,
-    n_runs,
     despike,
     dcan_qc,
     run_data,
+    n_runs,
     min_coverage,
+    omp_nthreads,
     layout=None,
     name="bold_postprocess_wf",
 ):
@@ -117,8 +117,8 @@ def init_boldpostprocess_wf(
                 params="27P",
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
-                dummy_scans=0,
                 dummytime=0,
+                dummy_scans=0,
                 fd_thresh=0.2,
                 despike=True,
                 dcan_qc=True,
@@ -147,18 +147,19 @@ def init_boldpostprocess_wf(
     %(smoothing)s
     %(head_radius)s
     %(params)s
-    custom_confounds_folder : str
-        path to custom nuisance regressors
-    %(omp_nthreads)s
+    %(output_dir)s
+    %(custom_confounds_folder)s
     %(dummytime)s
     %(dummy_scans)s
-    %(output_dir)s
     %(fd_thresh)s
-    n_runs
     %(despike)s
     %(dcan_qc)s
     run_data : dict
+    n_runs
+        Number of runs being postprocessed by XCP-D.
+        This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(omp_nthreads)s
     %(layout)s
     %(name)s
         Default is "nifti_postprocess_wf".
@@ -172,10 +173,8 @@ def init_boldpostprocess_wf(
     bold_mask
         bold_mask from fmriprep
         Loaded in this workflow.
-    custom_confounds_folder
-        custom regressors
+    %(custom_confounds_file)s
     %(template_to_t1w_xfm)s
-        MNI to T1W ants Transformation file/h5
         Fed from the subject workflow.
     t1w
         Preprocessed T1w image, warped to standard space.
@@ -183,11 +182,14 @@ def init_boldpostprocess_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
+    t1seg
     t1w_mask
         T1w brain mask, used to estimate head/brain radius.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
         Loaded in this workflow.
+    %(t1w_to_native_xfm)s
+    %(dummy_scans)s
 
     Outputs
     -------
@@ -203,7 +205,7 @@ def init_boldpostprocess_wf(
     %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
-    t1w_to_native_xfm
+    %(t1w_to_native_xfm)s
     %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s

@@ -22,7 +22,7 @@ def init_concatenate_data_wf(
     mem_gb,
     omp_nthreads,
     TR,
-    smooth,
+    smoothing,
     cifti,
     dcan_qc,
     name="concatenate_data_wf",
@@ -43,7 +43,7 @@ def init_concatenate_data_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
                 TR=2,
-                smooth=False,
+                smoothing=None,
                 cifti=False,
                 dcan_qc=True,
                 name="concatenate_data_wf",
@@ -57,7 +57,7 @@ def init_concatenate_data_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(TR)s
-    smooth
+    %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
     %(name)s
@@ -340,7 +340,7 @@ def init_concatenate_data_wf(
         ])
         # fmt:on
 
-        if smooth:
+        if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -380,7 +380,7 @@ def init_concatenate_data_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
-        if smooth:
+        if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -413,7 +413,7 @@ def init_concatenate_data_wf(
     ])
     # fmt:on
 
-    if smooth:
+    if smoothing:
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_smoothed_denoised_bold, [("name_source", "source_file")]),

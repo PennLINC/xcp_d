@@ -136,7 +136,7 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
 docdict[
     "dcan_qc"
 ] = """
-dcan_qc : obj:`bool`
+dcan_qc : :obj:`bool`
     This flag determines if DCAN-related QC steps will be taken.
     Enabling this flag will trigger the following steps:
 
@@ -148,16 +148,33 @@ dcan_qc : obj:`bool`
 docdict[
     "smoothing"
 ] = """
-smoothing : float
+smoothing : :obj:`float`
     The full width at half maximum (FWHM), in millimeters,
     of the Gaussian smoothing kernel that will be applied to the post-processed and denoised data.
     ALFF and ReHo outputs will also be smoothing with this kernel.
 """
 
 docdict[
+    "custom_confounds_folder"
+] = """
+custom_confounds_folder : :obj:`str` or None
+    Path to folder containing custom nuisance regressors.
+    Must be a folder containing confounds files,
+    in which case the file with the name matching the preprocessing confounds file will be
+    selected.
+"""
+
+docdict[
+    "custom_confounds_file"
+] = """
+custom_confounds_file : :obj:`str` or None
+    Path to custom nuisance regressors.
+"""
+
+docdict[
     "head_radius"
 ] = """
-head_radius : float or "auto"
+head_radius : :obj:`float` or "auto"
     Radius of the head, in millimeters, for framewise displacement calculation.
 
     ``xcp_d``'s default head radius is 50. The recommended value for infants is 35.
@@ -168,7 +185,7 @@ head_radius : float or "auto"
 docdict[
     "fd_thresh"
 ] = """
-fd_thresh : float
+fd_thresh : :obj:`float`
     Framewise displacement threshold for censoring, in millimeters.
     Any framewise displacement values higher than the threshold are flagged as "high motion".
     Default is 0.2 mm.

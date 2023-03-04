@@ -80,15 +80,13 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
 
     Parameters
     ----------
-    custom_confounds_folder : str or None
-        The path to the custom confounds file.
+    %(custom_confounds_folder)s
     %(fmriprep_confounds_file)s
         We expect the custom confounds file to have the same name.
 
     Returns
     -------
-    custom_confounds_file : str or None
-        The appropriate custom confounds file.
+    %(custom_confounds_file)s
     """
     import os
 
@@ -159,7 +157,7 @@ def describe_regression(params, custom_confounds_file):
     Parameters
     ----------
     %(params)s
-    custom_confounds_file : str or None
+    %(custom_confounds_file)s
 
     Returns
     -------

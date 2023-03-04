@@ -83,13 +83,23 @@ def init_warp_anats_to_template_wf(
     t1w : str
         Path to the preprocessed T1w file.
         This file may be in standard space or native T1w space.
-    t2w : str
+    t2w : str or None
         Path to the preprocessed T2w file.
         This file may be in standard space or native T1w space.
     t1seg : str
         Path to the T1w segmentation file.
     %(t1w_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
+    template : str
+
+    Outputs
+    -------
+    t1w : str
+        Path to the preprocessed T1w file in standard space.
+    t2w : str or None
+        Path to the preprocessed T2w file in standard space.
+    t1seg : str
+    template : str
     """
     workflow = Workflow(name=name)
 
@@ -395,6 +405,13 @@ def init_warp_surfaces_to_template_wf(
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
 
+    Outputs
+    -------
+    lh_pial_surf, rh_pial_surf : :obj:`str`
+        Left- and right-hemisphere pial surface files, in standard space.
+    lh_wm_surf, rh_wm_surf : :obj:`str`
+        Left- and right-hemisphere smoothed white matter surface files, in standard space.
+
     Notes
     -----
     If "hcp" or "dcan" input type, standard-space surface files will be collected from the
@@ -680,7 +697,7 @@ def init_generate_hcp_surfaces_wf(
 
     Parameters
     ----------
-    output_dir
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s

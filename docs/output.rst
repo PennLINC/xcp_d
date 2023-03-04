@@ -120,13 +120,13 @@ a. Denoised or residual BOLD data::
 
       .. code-block:: json-object
 
-      {
-         "Freq Band": [ 0.01, 0.08],
-         "RepetitionTime": 2.0,
-         "compression": true,
-         "dummy vols": 0,
-         "nuisance parameters": "27P",
-      }
+         {
+            "Freq Band": [ 0.01, 0.08],
+            "RepetitionTime": 2.0,
+            "compression": true,
+            "dummy vols": 0,
+            "nuisance parameters": "27P",
+         }
 
 b. Functional timeseries and connectivity matrices.
    This includes the atlases used to extract the timeseries.::

@@ -66,7 +66,7 @@ def init_ciftipostprocess_wf(
     min_coverage,
     omp_nthreads,
     layout=None,
-    name="cifti_process_wf",
+    name="cifti_postprocess_wf",
 ):
     """Organize the cifti processing workflow.
 
@@ -146,9 +146,7 @@ def init_ciftipostprocess_wf(
     %(head_radius)s
     %(params)s
     %(output_dir)s
-    custom_confounds_folder: str
-        path to custom nuisance regressors
-    %(omp_nthreads)s
+    %(custom_confounds_folder)s
     %(dummytime)s
     %(dummy_scans)s
     %(fd_thresh)s
@@ -156,7 +154,10 @@ def init_ciftipostprocess_wf(
     %(dcan_qc)s
     run_data : dict
     n_runs
+        Number of runs being postprocessed by XCP-D.
+        This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(omp_nthreads)s
     %(layout)s
     %(name)s
         Default is "cifti_postprocess_wf".
@@ -165,8 +166,8 @@ def init_ciftipostprocess_wf(
     ------
     bold_file
         CIFTI file
-    custom_confounds_file
-        custom regressors
+    %(boldref)s
+    %(custom_confounds_file)s
     t1w
         Preprocessed T1w image, warped to standard space.
         Fed from the subject workflow.
@@ -177,23 +178,25 @@ def init_ciftipostprocess_wf(
         T1w brain mask, used to estimate head/brain radius.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
+    %(dummy_scans)s
 
     Outputs
     -------
     %(name_source)s
     preprocessed_bold : str
         The preprocessed BOLD file, after dummy scan removal.
-    %(filtered_motion)s
-    %(temporal_mask)s
     %(fmriprep_confounds_file)s
         After dummy scan removal.
+    %(filtered_motion)s
+    %(temporal_mask)s
     %(uncensored_denoised_bold)s
     %(interpolated_filtered_bold)s
+    %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
         This will not be defined.
-    t1w_to_native_xfm
+    %(t1w_to_native_xfm)s
         This will not be defined.
     %(atlas_names)s
     %(timeseries)s

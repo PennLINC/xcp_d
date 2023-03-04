@@ -153,7 +153,7 @@ def init_xcpd_wf(
     %(band_stop_max)s
     %(omp_nthreads)s
     %(cifti)s
-    task_id : str or None
+    task_id : :obj:`str` or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     bids_filters : dict or None
     %(output_dir)s
@@ -166,10 +166,7 @@ def init_xcpd_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds_folder : str or None
-        Path to custom nuisance regressors.
-        Must be a folder containing confounds files,
-        in which case the file with the name matching the fMRIPrep confounds file will be selected.
+    %(custom_confounds_folder)s
     %(dummytime)s
     %(dummy_scans)s
     %(process_surfaces)s
@@ -236,35 +233,35 @@ def init_xcpd_wf(
 
 @fill_doc
 def init_subject_wf(
-    layout,
+    fmri_dir,
+    subject_id,
+    input_type,
+    process_surfaces,
+    combineruns,
+    cifti,
+    task_id,
+    bids_filters,
+    bandpass_filter,
     high_pass,
     low_pass,
     bpf_order,
-    motion_filter_order,
     motion_filter_type,
-    bandpass_filter,
+    motion_filter_order,
     band_stop_min,
     band_stop_max,
-    fmri_dir,
-    omp_nthreads,
-    subject_id,
-    cifti,
-    despike,
+    smoothing,
     head_radius,
     params,
+    output_dir,
+    custom_confounds_folder,
     dummytime,
     dummy_scans,
     fd_thresh,
-    task_id,
-    bids_filters,
-    smoothing,
-    custom_confounds_folder,
-    process_surfaces,
+    despike,
     dcan_qc,
-    output_dir,
-    input_type,
     min_coverage,
-    combineruns,
+    omp_nthreads,
+    layout,
     name,
 ):
     """Organize the postprocessing pipeline for a single subject.
@@ -281,8 +278,11 @@ def init_subject_wf(
 
             wf = init_subject_wf(
                 fmri_dir=fmri_dir,
-                output_dir=".",
                 subject_id="01",
+                input_type="fmriprep",
+                process_surfaces=False,
+                combineruns=False,
+                cifti=False,
                 task_id="imagery",
                 bids_filters=None,
                 bandpass_filter=True,
@@ -293,60 +293,54 @@ def init_subject_wf(
                 motion_filter_order=4,
                 band_stop_min=12,
                 band_stop_max=20,
-                cifti=False,
-                despike=True,
+                smoothing=6.,
                 head_radius=50,
                 params="36P",
+                output_dir=".",
+                custom_confounds_folder=None,
                 dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
-                smoothing=6.,
-                custom_confounds_folder=None,
-                process_surfaces=False,
+                despike=True,
+                dcan_qc=False,
+                min_coverage=0.5,
                 omp_nthreads=1,
                 layout=None,
-                dcan_qc=False,
-                input_type="fmriprep",
-                min_coverage=0.5,
-                combineruns=False,
                 name="single_subject_sub-01_wf",
             )
 
     Parameters
     ----------
-    %(layout)s
+    %(fmri_dir)s
+    %(subject_id)s
+    %(input_type)s
+    %(process_surfaces)s
+    combineruns
+    %(cifti)s
+    task_id : :obj:`str` or None
+        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
+    bids_filters : dict or None
     %(bandpass_filter)s
     %(high_pass)s
     %(low_pass)s
-    %(despike)s
     %(bpf_order)s
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    %(fmri_dir)s
-    %(omp_nthreads)s
-    %(cifti)s
-    task_id : str or None
-        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
-    bids_filters : dict or None
-    %(output_dir)s
-    %(fd_thresh)s
+    %(smoothing)s
     %(head_radius)s
     %(params)s
-    %(smoothing)s
-    custom_confounds_folder : str or None
-        Path to custom nuisance regressors.
-        Must be a folder containing confounds files,
-        in which case the file with the name matching the fMRIPrep confounds file will be selected.
+    %(output_dir)s
+    %(custom_confounds_folder)s
     %(dummytime)s
     %(dummy_scans)s
-    %(process_surfaces)s
+    %(fd_thresh)s
+    %(despike)s
     %(dcan_qc)s
-    %(subject_id)s
-    %(input_type)s
     %(min_coverage)s
-    combineruns
+    %(omp_nthreads)s
+    %(layout)s
     %(name)s
 
     References
@@ -667,6 +661,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             n_good_volumes_in_task.append(n_good_volumes_in_run)
             bold_postproc_wf = postproc_wf_function(
                 bold_file=bold_file,
+                bandpass_filter=bandpass_filter,
                 high_pass=high_pass,
                 low_pass=low_pass,
                 bpf_order=bpf_order,
@@ -674,22 +669,21 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 motion_filter_order=motion_filter_order,
                 band_stop_min=band_stop_min,
                 band_stop_max=band_stop_max,
-                bandpass_filter=bandpass_filter,
                 smoothing=smoothing,
-                params=params,
                 head_radius=head_radius,
-                omp_nthreads=omp_nthreads,
-                n_runs=n_runs,
+                params=params,
+                output_dir=output_dir,
                 custom_confounds_folder=custom_confounds_folder,
-                layout=layout,
-                despike=despike,
                 dummytime=dummytime,
                 dummy_scans=dummy_scans,
                 fd_thresh=fd_thresh,
+                despike=despike,
                 dcan_qc=dcan_qc,
                 run_data=run_data,
-                output_dir=output_dir,
+                n_runs=n_runs,
                 min_coverage=min_coverage,
+                omp_nthreads=omp_nthreads,
+                layout=layout,
                 name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
             )
             run_counter += 1
@@ -737,7 +731,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 TR=TR,
-                smooth=bool(smoothing),
+                smoothing=smoothing,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
                 name=f"concatenate_entity_set_{ent_set}_wf",
