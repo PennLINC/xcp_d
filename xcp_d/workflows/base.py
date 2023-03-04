@@ -673,7 +673,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 continue
 
             bold_postproc_wf = postproc_wf_function(
-                input_type=input_type,
                 bold_file=bold_file,
                 lower_bpf=lower_bpf,
                 upper_bpf=upper_bpf,
