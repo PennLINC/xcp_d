@@ -164,6 +164,7 @@ def init_boldpostprocess_wf(
     min_coverage
     %(layout)s
     %(name)s
+        Default is "nifti_postprocess_wf".
 
     Inputs
     ------
@@ -393,8 +394,8 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (fcon_ts_wf, outputnode, [
-            ('outputnode.atlas_names', 'atlas_names'),
-            ('outputnode.timeseries', 'timeseries'),
+            ("outputnode.atlas_names", "atlas_names"),
+            ("outputnode.timeseries", "timeseries"),
         ]),
     ])
     # fmt:on
@@ -613,7 +614,7 @@ produced by the regression.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
             (consolidate_confounds_node, denoise_bold, [
-                ('out_file', 'confounds_file'),
+                ("out_file", "confounds_file"),
             ]),
             (consolidate_confounds_node, plot_design_matrix_node, [
                 ("out_file", "design_matrix"),
@@ -653,33 +654,33 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (despike3d, denoise_bold, [('out_file', 'preprocessed_bold')]),
+            (despike3d, denoise_bold, [("out_file", "preprocessed_bold")]),
         ])
 
         if dummy_scans:
             workflow.connect([
-                (remove_dummy_scans, despike3d, [('bold_file_dropped_TR', 'in_file')]),
+                (remove_dummy_scans, despike3d, [("bold_file_dropped_TR", "in_file")]),
             ])
         else:
-            workflow.connect([(downcast_data, despike3d, [('bold_file', 'in_file')])])
+            workflow.connect([(downcast_data, despike3d, [("bold_file", "in_file")])])
         # fmt:on
 
     elif dummy_scans:
         # fmt:off
         workflow.connect([
-            (remove_dummy_scans, denoise_bold, [('bold_file_dropped_TR', 'preprocessed_bold')]),
+            (remove_dummy_scans, denoise_bold, [("bold_file_dropped_TR", "preprocessed_bold")]),
         ])
         # fmt:on
     else:
         # fmt:off
         workflow.connect([
-            (downcast_data, denoise_bold, [('bold_file', 'preprocessed_bold')]),
+            (downcast_data, denoise_bold, [("bold_file", "preprocessed_bold")]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (downcast_data, denoise_bold, [('bold_mask', 'mask')]),
+        (downcast_data, denoise_bold, [("bold_mask", "mask")]),
         (flag_motion_outliers, denoise_bold, [("temporal_mask", "temporal_mask")]),
     ])
     # fmt:on
@@ -695,40 +696,40 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (downcast_data, fcon_ts_wf, [
-            ('bold_file', 'inputnode.bold_file'),
+            ("bold_file", "inputnode.bold_file"),
             ("bold_mask", "inputnode.bold_mask"),
-            ('ref_file', 'inputnode.ref_file'),
+            ("ref_file", "inputnode.ref_file"),
         ]),
-        (inputnode, fcon_ts_wf, [('template_to_t1w', 'inputnode.template_to_t1w'),
-                                 ('t1w_to_native', 'inputnode.t1w_to_native')]),
-        (censor_interpolated_data, fcon_ts_wf, [('censored_bold', 'inputnode.clean_bold')])
+        (inputnode, fcon_ts_wf, [("template_to_t1w", "inputnode.template_to_t1w"),
+                                 ("t1w_to_native", "inputnode.t1w_to_native")]),
+        (censor_interpolated_data, fcon_ts_wf, [("censored_bold", "inputnode.clean_bold")])
     ])
 
     # reho and alff
     workflow.connect([
-        (downcast_data, reho_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (censor_interpolated_data, reho_compute_wf, [('censored_bold', 'inputnode.clean_bold')]),
+        (downcast_data, reho_compute_wf, [("bold_mask", "inputnode.bold_mask")]),
+        (censor_interpolated_data, reho_compute_wf, [("censored_bold", "inputnode.clean_bold")]),
     ])
 
     if bandpass_filter:
         workflow.connect([
-            (downcast_data, alff_compute_wf, [('bold_mask', 'inputnode.bold_mask')]),
+            (downcast_data, alff_compute_wf, [("bold_mask", "inputnode.bold_mask")]),
             (censor_interpolated_data, alff_compute_wf, [
-                ('censored_bold', 'inputnode.clean_bold'),
+                ("censored_bold", "inputnode.clean_bold"),
             ]),
         ])
 
     # qc report
     workflow.connect([
         (flag_motion_outliers, qc_report_wf, [
-            ('temporal_mask', 'inputnode.temporal_mask'),
+            ("temporal_mask", "inputnode.temporal_mask"),
             ("filtered_motion", "inputnode.filtered_motion"),
         ]),
         (denoise_bold, qc_report_wf, [
-            ('interpolated_filtered_bold', 'inputnode.interpolated_filtered_bold'),
+            ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
         ]),
         (censor_interpolated_data, qc_report_wf, [
-            ('censored_bold', 'inputnode.censored_filtered_bold'),
+            ("censored_bold", "inputnode.censored_filtered_bold"),
         ]),
     ])
     # fmt:on
@@ -737,37 +738,37 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (consolidate_confounds_node, write_derivative_wf, [
-            ('out_file', 'inputnode.confounds_file'),
+            ("out_file", "inputnode.confounds_file"),
         ]),
         (denoise_bold, write_derivative_wf, [
-            ('interpolated_filtered_bold', 'inputnode.interpolated_filtered_bold'),
+            ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
         ]),
         (censor_interpolated_data, write_derivative_wf, [
             ("censored_bold", "inputnode.processed_bold"),
         ]),
         (qc_report_wf, write_derivative_wf, [
-            ('outputnode.qc_file', 'inputnode.qc_file'),
+            ("outputnode.qc_file", "inputnode.qc_file"),
         ]),
         (resd_smoothing_wf, outputnode, [
             ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
         ]),
         (resd_smoothing_wf, write_derivative_wf, [
-            ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),
+            ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
         ]),
         (flag_motion_outliers, write_derivative_wf, [
-            ('filtered_motion', 'inputnode.filtered_motion'),
-            ('filtered_motion_metadata', 'inputnode.filtered_motion_metadata'),
-            ('temporal_mask', 'inputnode.temporal_mask'),
-            ('tmask_metadata', 'inputnode.tmask_metadata'),
+            ("filtered_motion", "inputnode.filtered_motion"),
+            ("filtered_motion_metadata", "inputnode.filtered_motion_metadata"),
+            ("temporal_mask", "inputnode.temporal_mask"),
+            ("tmask_metadata", "inputnode.tmask_metadata"),
         ]),
         (reho_compute_wf, write_derivative_wf, [
-            ('outputnode.reho_out', 'inputnode.reho_out'),
+            ("outputnode.reho_out", "inputnode.reho_out"),
         ]),
         (fcon_ts_wf, write_derivative_wf, [
-            ('outputnode.atlas_names', 'inputnode.atlas_names'),
-            ('outputnode.correlations', 'inputnode.correlations'),
-            ('outputnode.timeseries', 'inputnode.timeseries'),
-            ('outputnode.coverage', 'inputnode.coverage_files'),
+            ("outputnode.atlas_names", "inputnode.atlas_names"),
+            ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.timeseries", "inputnode.timeseries"),
+            ("outputnode.coverage", "inputnode.coverage_files"),
         ]),
     ])
     # fmt:on
@@ -776,8 +777,8 @@ produced by the regression.
         # fmt:off
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
-                ('outputnode.alff_out', 'inputnode.alff_out'),
-                ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
+                ("outputnode.alff_out", "inputnode.alff_out"),
+                ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
         ])
         # fmt:on
@@ -820,8 +821,8 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        (fcon_ts_wf, ds_report_connectivity, [('outputnode.connectplot', 'in_file')]),
-        (reho_compute_wf, ds_report_rehoplot, [('outputnode.rehoplot', 'in_file')]),
+        (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")]),
+        (reho_compute_wf, ds_report_rehoplot, [("outputnode.rehoplot", "in_file")]),
     ])
     # fmt:on
 
@@ -839,7 +840,7 @@ produced by the regression.
 
         # fmt:off
         workflow.connect([
-            (alff_compute_wf, ds_report_alffplot, [('outputnode.alffplot', 'in_file')]),
+            (alff_compute_wf, ds_report_alffplot, [("outputnode.alffplot", "in_file")]),
         ])
         # fmt:on
 
