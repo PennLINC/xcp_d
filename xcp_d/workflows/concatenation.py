@@ -85,7 +85,7 @@ def init_concatenate_data_wf(
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
     t1w_mask : :obj:`str`
     %(template_to_t1w_xfm)s
-    boldref : :obj:`str`
+    %(boldref)s
     %(head_radius)s
     %(atlas_names)s
         This will be a list of lists, with one sublist for each run.

@@ -328,8 +328,7 @@ def init_execsummary_functional_plots_wf(
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
         Set from the parameter.
-    boldref
-        The boldref file associated with the BOLD file.
+    %(boldref)s
     t1w
     t2w
     """

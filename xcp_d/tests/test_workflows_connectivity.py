@@ -54,7 +54,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
-    connectivity_wf.inputs.inputnode.ref_file = boldref
+    connectivity_wf.inputs.inputnode.boldref = boldref
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)

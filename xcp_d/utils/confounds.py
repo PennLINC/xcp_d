@@ -154,6 +154,7 @@ def load_motion(
     return motion_confounds_df
 
 
+@fill_doc
 def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.
 
@@ -161,8 +162,7 @@ def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
     ----------
     custom_confounds_folder : str or None
         The path to the custom confounds file.
-    fmriprep_confounds_file : str
-        Path to the confounds file from the preprocessing pipeline.
+    %(fmriprep_confounds_file)s
         We expect the custom confounds file to have the same name.
 
     Returns

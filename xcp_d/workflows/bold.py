@@ -170,8 +170,7 @@ def init_boldpostprocess_wf(
     ------
     bold_file
         BOLD series NIfTI file
-    ref_file
-        Bold reference file from fmriprep
+    %(boldref)s
         Loaded in this workflow.
     bold_mask
         bold_mask from fmriprep
@@ -190,7 +189,7 @@ def init_boldpostprocess_wf(
     t1w_mask
         T1w brain mask, used to estimate head/brain radius.
         Fed from the subject workflow.
-    fmriprep_confounds_tsv
+    %(fmriprep_confounds_file)s
         Loaded in this workflow.
 
     Outputs
@@ -200,11 +199,12 @@ def init_boldpostprocess_wf(
         The preprocessed BOLD file, after dummy scan removal.
     %(filtered_motion)s
     %(temporal_mask)s
-    fmriprep_confounds_file
+    %(fmriprep_confounds_file)s
+        After dummy scan removal.
     %(uncensored_denoised_bold)s
     %(interpolated_filtered_bold)s
     %(smoothed_denoised_bold)s
-    boldref
+    %(boldref)s
     bold_mask
     t1w_to_native_xfm
     %(atlas_names)s
@@ -224,7 +224,7 @@ def init_boldpostprocess_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
-                "ref_file",
+                "boldref",
                 "bold_mask",
                 "custom_confounds_file",
                 "template_to_t1w_xfm",
@@ -232,7 +232,7 @@ def init_boldpostprocess_wf(
                 "t2w",
                 "t1seg",
                 "t1w_mask",
-                "fmriprep_confounds_tsv",
+                "fmriprep_confounds_file",
                 "t1w_to_native_xfm",
                 "dummy_scans",
             ],
@@ -241,8 +241,8 @@ def init_boldpostprocess_wf(
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.ref_file = run_data["boldref"]
-    inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
+    inputnode.inputs.boldref = run_data["boldref"]
+    inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
     inputnode.inputs.t1w_to_native_xfm = run_data["t1w_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
 
@@ -354,13 +354,13 @@ produced by the regression.
         ]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
-            ("ref_file", "ref_file"),
+            ("boldref", "boldref"),
             ("bold_mask", "bold_mask"),
             ("t1w_mask", "t1w_mask"),
         ]),
         (downcast_data, outputnode, [
             ("bold_mask", "bold_mask"),
-            ("ref_file", "boldref"),
+            ("boldref", "boldref"),
         ]),
     ])
     # fmt:on
@@ -530,7 +530,7 @@ produced by the regression.
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("ref_file", "inputnode.boldref"),
+            ("boldref", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
             ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
@@ -561,7 +561,7 @@ produced by the regression.
                 ("dummy_scans", "dummy_scans"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
-                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ]),
             (downcast_data, remove_dummy_scans, [("bold_file", "bold_file")]),
             (consolidate_confounds_node, remove_dummy_scans, [("out_file", "confounds_file")]),
@@ -592,16 +592,16 @@ produced by the regression.
             (inputnode, qc_report_wf, [
                 ("bold_file", "inputnode.preprocessed_bold"),
                 ("dummy_scans", "inputnode.dummy_scans"),
-                ("fmriprep_confounds_tsv", "inputnode.fmriprep_confounds_file"),
+                ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ]),
             (inputnode, flag_motion_outliers, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
-                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ]),
             (inputnode, outputnode, [
                 ("bold_file", "preprocessed_bold"),
-                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ]),
             (consolidate_confounds_node, denoise_bold, [("out_file", "confounds_file")]),
             (consolidate_confounds_node, plot_design_matrix_node, [("out_file", "design_matrix")]),
@@ -678,7 +678,7 @@ produced by the regression.
         (downcast_data, fcon_ts_wf, [
             ("bold_file", "inputnode.bold_file"),
             ("bold_mask", "inputnode.bold_mask"),
-            ("ref_file", "inputnode.ref_file"),
+            ("boldref", "inputnode.boldref"),
         ]),
         (inputnode, fcon_ts_wf, [
             ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
@@ -836,7 +836,7 @@ produced by the regression.
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
             (inputnode, execsummary_functional_plots_wf, [
-                ("ref_file", "inputnode.boldref"),
+                ("boldref", "inputnode.boldref"),
                 ("t1w", "inputnode.t1w"),
                 ("t2w", "inputnode.t2w"),
             ]),

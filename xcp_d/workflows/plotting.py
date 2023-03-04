@@ -73,7 +73,7 @@ def init_qc_report_wf(
         Only used if dcan_qc is True.
     %(censored_filtered_bold)s
         Used for LINC carpet plots.
-    boldref
+    %(boldref)s
         Only used with non-CIFTI data.
     bold_mask
         Only used with non-CIFTI data.
@@ -84,7 +84,7 @@ def init_qc_report_wf(
     %(t1w_to_native_xfm)s
         Only used with non-CIFTI data.
     %(dummy_scans)s
-    fmriprep_confounds_file
+    %(fmriprep_confounds_file)s
     %(head_radius)s
     %(temporal_mask)s
     %(filtered_motion)s

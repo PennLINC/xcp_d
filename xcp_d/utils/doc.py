@@ -92,6 +92,21 @@ name_source : :obj:`str`
 """
 
 docdict[
+    "boldref"
+] = """
+boldref : :obj:`str`
+    Path to the BOLD reference file associated with the target BOLD run.
+    This comes from the preprocessing derivatives.
+"""
+
+docdict[
+    "fmriprep_confounds_file"
+] = """
+fmriprep_confounds_file : :obj:`str`
+    Confounds TSV file from preprocessing derivatives.
+"""
+
+docdict[
     "params"
 ] = """
 params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \

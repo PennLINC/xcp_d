@@ -54,7 +54,7 @@ def init_nifti_functional_connectivity_wf(
     ------
     bold_file
         Used for names.
-    ref_file
+    %(boldref)s
     clean_bold
         clean bold after filtered out nuisscance and filtering
     %(template_to_t1w_xfm)s
@@ -92,7 +92,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
             fields=[
                 "bold_file",
                 "bold_mask",
-                "ref_file",
+                "boldref",
                 "clean_bold",
                 "template_to_t1w_xfm",
                 "t1w_to_native_xfm",
@@ -176,7 +176,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     # fmt:off
     workflow.connect([
         (inputnode, warp_atlases_to_bold_space, [
-            ("ref_file", "reference_image"),
+            ("boldref", "reference_image"),
         ]),
         (atlas_file_grabber, warp_atlases_to_bold_space, [
             ("atlas_file", "input_image"),

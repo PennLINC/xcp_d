@@ -28,7 +28,7 @@ class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         usedefault=True,
     )
-    ref_file = traits.Either(
+    boldref = traits.Either(
         None,
         File(exists=True),
         desc="BOLD reference file",
@@ -72,7 +72,7 @@ class _ConvertTo32OutputSpec(TraitedSpec):
         desc="BOLD file",
         mandatory=False,
     )
-    ref_file = traits.Either(
+    boldref = traits.Either(
         None,
         File(exists=True),
         desc="BOLD reference file",
@@ -112,7 +112,7 @@ class ConvertTo32(SimpleInterface):
 
     def _run_interface(self, runtime):
         self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
-        self._results["ref_file"] = downcast_to_32(self.inputs.ref_file)
+        self._results["boldref"] = downcast_to_32(self.inputs.boldref)
         self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
         self._results["t1w"] = downcast_to_32(self.inputs.t1w)
         self._results["t1seg"] = downcast_to_32(self.inputs.t1seg)
