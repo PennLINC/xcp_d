@@ -64,7 +64,7 @@ class NiftiConnect(SimpleInterface):
         mask = self.inputs.mask
         atlas = self.inputs.atlas
         atlas_labels = self.inputs.atlas_labels
-        coverage_threshold = self.inputs.min_coverage
+        min_coverage = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
@@ -121,16 +121,16 @@ class NiftiConnect(SimpleInterface):
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
         parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
-        coverage_thresholded = parcel_coverage < coverage_threshold
+        coverage_thresholded = parcel_coverage < min_coverage
 
         n_nodes = len(node_labels)
         n_found_nodes = coverage_thresholded.size
         n_bad_nodes = np.sum(parcel_coverage == 0)
         n_poor_parcels = np.sum(
-            np.logical_and(parcel_coverage > 0, parcel_coverage < coverage_threshold)
+            np.logical_and(parcel_coverage > 0, parcel_coverage < min_coverage)
         )
         n_partial_parcels = np.sum(
-            np.logical_and(parcel_coverage >= coverage_threshold, parcel_coverage < 1)
+            np.logical_and(parcel_coverage >= min_coverage, parcel_coverage < 1)
         )
 
         if n_found_nodes != n_nodes:
@@ -276,7 +276,7 @@ class CiftiConnect(SimpleInterface):
     output_spec = _CiftiConnectOutputSpec
 
     def _run_interface(self, runtime):
-        coverage_threshold = self.inputs.min_coverage
+        min_coverage = self.inputs.min_coverage
         data_file = self.inputs.data_file
         atlas_file = self.inputs.atlas_file
         pscalar_file = self.inputs.parcellated_atlas
@@ -384,7 +384,7 @@ class CiftiConnect(SimpleInterface):
                 parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
                 coverage_df.loc[parcel_name, "coverage"] = parcel_coverage
 
-                if parcel_coverage < coverage_threshold:
+                if parcel_coverage < min_coverage:
                     # If the parcel has >=50% bad data, replace all of the values with zeros.
                     data_arr[:, parcel_idx] = np.nan
 

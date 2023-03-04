@@ -152,12 +152,11 @@ def init_ciftipostprocess_wf(
     %(dummytime)s
     %(dummy_scans)s
     %(fd_thresh)s
-    despike: bool
-        afni depsike
+    %(despike)s
     %(dcan_qc)s
     run_data : dict
     n_runs
-    min_coverage
+    %(min_coverage)s
     %(layout)s
     %(name)s
         Default is "cifti_postprocess_wf".

@@ -144,8 +144,7 @@ def init_xcpd_wf(
     %(bandpass_filter)s
     %(high_pass)s
     %(low_pass)s
-    despike: bool
-        afni depsike
+    %(despike)s
     %(bpf_order)s
     %(analysis_level)s
     %(motion_filter_type)s
@@ -176,7 +175,7 @@ def init_xcpd_wf(
     %(process_surfaces)s
     %(dcan_qc)s
     %(input_type)s
-    min_coverage
+    %(min_coverage)s
     combineruns
     %(name)s
 
@@ -319,8 +318,7 @@ def init_subject_wf(
     %(bandpass_filter)s
     %(high_pass)s
     %(low_pass)s
-    despike: bool
-        afni depsike
+    %(despike)s
     %(bpf_order)s
     %(motion_filter_type)s
     %(motion_filter_order)s
@@ -347,7 +345,7 @@ def init_subject_wf(
     %(dcan_qc)s
     %(subject_id)s
     %(input_type)s
-    min_coverage
+    %(min_coverage)s
     combineruns
     %(name)s
 

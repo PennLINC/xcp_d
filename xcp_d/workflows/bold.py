@@ -155,11 +155,10 @@ def init_boldpostprocess_wf(
     %(output_dir)s
     %(fd_thresh)s
     n_runs
-    despike: bool
-        If True, run 3dDespike from AFNI
+    %(despike)s
     %(dcan_qc)s
     run_data : dict
-    min_coverage
+    %(min_coverage)s
     %(layout)s
     %(name)s
         Default is "nifti_postprocess_wf".

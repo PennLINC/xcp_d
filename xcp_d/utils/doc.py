@@ -356,6 +356,28 @@ dummy_scans : :obj:`int` or "auto"
 """
 
 docdict[
+    "min_coverage"
+] = """
+min_coverage : :obj:`float`
+    Coverage threshold to apply to parcels in each atlas.
+    Any parcels with lower coverage than the threshold will be replaced with NaNs.
+    Must be a value between zero and one.
+    Default is 0.5.
+"""
+
+docdict[
+    "despike"
+] = """
+despike : :obj:`bool`
+    If True, the BOLD data will be despiked before censoring/denoising/filtering/interpolation.
+    If False, no despiking will be performed.
+
+    For NIFTI data, despiking is performed with AFNI's 3dDespike.
+    For CIFTI data, the data will be converted to NIFTI format, 3dDespike will be run, and then
+    the despiked data will be converted back to CIFTI format.
+"""
+
+docdict[
     "filtered_motion"
 ] = """
 filtered_motion : :obj:`str`

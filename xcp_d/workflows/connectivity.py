@@ -44,7 +44,7 @@ def init_nifti_functional_connectivity_wf(
     Parameters
     ----------
     %(output_dir)s
-    min_coverage
+    %(min_coverage)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -280,7 +280,7 @@ def init_cifti_functional_connectivity_wf(
     Parameters
     ----------
     %(output_dir)s
-    min_coverage
+    %(min_coverage)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
