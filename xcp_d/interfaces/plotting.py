@@ -409,7 +409,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
             "are denoised using those betas."
         ),
     )
-    filtered_denoised_bold = File(
+    interpolated_filtered_bold = File(
         exists=True,
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
@@ -475,7 +475,7 @@ class QCPlotsES(SimpleInterface):
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
             uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
-            filtered_denoised_bold=self.inputs.filtered_denoised_bold,
+            interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
             dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
             mask=mask_file,

@@ -387,7 +387,7 @@ def init_qc_report_wf(
             (inputnode, plot_executive_summary_carpets, [
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-                ("interpolated_filtered_bold", "filtered_denoised_bold"),
+                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
                 ("filtered_motion", "filtered_motion"),
                 ("dummy_scans", "dummy_scans"),
             ]),

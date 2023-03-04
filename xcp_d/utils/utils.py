@@ -525,7 +525,7 @@ def denoise_with_nilearn(
     interpolated_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
         The result of denoising the censored preprocessed BOLD data,
         followed by cubic spline interpolation.
-    filtered_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
+    interpolated_filtered_bold : :obj:`numpy.ndarray` of shape (T, S)
         The result of denoising the censored preprocessed BOLD data,
         followed by cubic spline interpolation and band-pass filtering.
         This is the primary output.
@@ -598,7 +598,7 @@ def denoise_with_nilearn(
     # Now apply the bandpass filter to the interpolated, denoised data
     if lowpass is not None and highpass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
-        filtered_denoised_bold = butter_bandpass(
+        interpolated_filtered_bold = butter_bandpass(
             interpolated_denoised_bold.copy(),
             sampling_rate=1 / TR,
             low_pass=lowpass,
@@ -608,9 +608,9 @@ def denoise_with_nilearn(
             padlen=n_volumes - 1,
         )
     else:
-        filtered_denoised_bold = interpolated_denoised_bold
+        interpolated_filtered_bold = interpolated_denoised_bold
 
-    return uncensored_denoised_bold, interpolated_denoised_bold, filtered_denoised_bold
+    return uncensored_denoised_bold, interpolated_denoised_bold, interpolated_filtered_bold
 
 
 def _select_first(lst):

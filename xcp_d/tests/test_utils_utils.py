@@ -51,7 +51,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     (
         uncensored_denoised_bold,
         unfiltered_denoised_bold,
-        filtered_denoised_bold,
+        interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
@@ -64,13 +64,13 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert unfiltered_denoised_bold.shape == (n_volumes, n_voxels)
-    assert filtered_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
     # Now, no filtering
     (
         uncensored_denoised_bold,
         unfiltered_denoised_bold,
-        filtered_denoised_bold,
+        interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
@@ -83,7 +83,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert unfiltered_denoised_bold.shape == (n_volumes, n_voxels)
-    assert filtered_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
     # Finally, do the orthogonalization
     reduced_confounds_df["signal__test"] = confounds_df["global_signal"]
@@ -97,7 +97,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     (
         uncensored_denoised_bold,
         unfiltered_denoised_bold,
-        filtered_denoised_bold,
+        interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=orth_confounds_file,
@@ -110,4 +110,4 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert unfiltered_denoised_bold.shape == (n_volumes, n_voxels)
-    assert filtered_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)

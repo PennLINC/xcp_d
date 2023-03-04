@@ -437,7 +437,7 @@ def plot_confounds_es(
 def plot_fmri_es(
     preprocessed_bold,
     uncensored_denoised_bold,
-    filtered_denoised_bold,
+    interpolated_filtered_bold,
     TR,
     dummy_scans,
     filtered_motion,
@@ -460,7 +460,7 @@ def plot_fmri_es(
         BOLD file after regression and interpolation, but not filtering.
         The preprocessed BOLD data are censored and denoised to get the betas,
         and then the full, uncensored preprocessed BOLD data are denoised using those betas.
-    filtered_denoised_bold : str
+    interpolated_filtered_bold : str
         BOLD file after regression, interpolation, and filtering.
     TR : float
         Repetition time, in seconds.
@@ -486,7 +486,7 @@ def plot_fmri_es(
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
-    filtered_denoised_bold_arr = read_ndata(datafile=filtered_denoised_bold, maskfile=mask)
+    filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
 
     # Remove dummy time from the preprocessed_bold_arr if needed
     if dummy_scans > 0:
@@ -510,7 +510,7 @@ def plot_fmri_es(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
             f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     if not (
@@ -522,7 +522,7 @@ def plot_fmri_es(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
             f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     # Formatting & setting of files

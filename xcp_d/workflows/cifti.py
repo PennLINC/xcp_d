@@ -188,7 +188,7 @@ def init_ciftipostprocess_wf(
     %(temporal_mask)s
     fmriprep_confounds_file
     %(uncensored_denoised_bold)s
-    %(filtered_denoised_bold)s
+    %(interpolated_filtered_bold)s
     %(smoothed_denoised_bold)s
     boldref
     bold_mask
@@ -453,7 +453,7 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
-        (denoise_bold, censor_interpolated_data, [("filtered_denoised_bold", "in_file")]),
+        (denoise_bold, censor_interpolated_data, [("interpolated_filtered_bold", "in_file")]),
         (flag_motion_outliers, censor_interpolated_data, [("tmask", "temporal_mask")]),
         (censor_interpolated_data, outputnode, [("censored_bold", "censored_filtered_bold")]),
     ])
@@ -518,7 +518,7 @@ produced by the regression.
         ]),
         (denoise_bold, outputnode, [
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("filtered_denoised_bold", "interpolated_filtered_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
         ]),
     ])
     # fmt:on
@@ -694,7 +694,7 @@ produced by the regression.
             ("filtered_motion", "inputnode.filtered_motion"),
         ]),
         (denoise_bold, qc_report_wf, [
-            ('filtered_denoised_bold', 'inputnode.interpolated_filtered_bold'),
+            ('interpolated_filtered_bold', 'inputnode.interpolated_filtered_bold'),
         ]),
         (censor_interpolated_data, qc_report_wf, [
             ('censored_bold', 'inputnode.censored_filtered_bold'),
@@ -707,7 +707,7 @@ produced by the regression.
             ('out_file', 'inputnode.confounds_file'),
         ]),
         (denoise_bold, write_derivative_wf, [
-            ('filtered_denoised_bold', 'inputnode.interpolated_filtered_bold'),
+            ('interpolated_filtered_bold', 'inputnode.interpolated_filtered_bold'),
         ]),
         (censor_interpolated_data, write_derivative_wf, [
             ("censored_bold", "inputnode.processed_bold"),
