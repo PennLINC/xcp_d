@@ -120,7 +120,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="BOLD reference files. Only used for NIFTI processing.",
     )
-    t1w_to_native_xform = traits.Either(
+    t1w_to_native_xfm = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
         desc="T1w-to-native space transform files. Only used for NIFTI processing.",
@@ -195,7 +195,7 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         ),
         desc="Smoothed, denoised BOLD data.",
     )
-    t1w_to_native_xform = traits.List(
+    t1w_to_native_xfm = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
@@ -240,7 +240,7 @@ class FilterOutFailedRuns(SimpleInterface):
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "bold_mask": self.inputs.bold_mask,
             "boldref": self.inputs.boldref,
-            "t1w_to_native_xform": self.inputs.t1w_to_native_xform,
+            "t1w_to_native_xfm": self.inputs.t1w_to_native_xfm,
             "atlas_names": self.inputs.atlas_names,
             "timeseries": self.inputs.timeseries,
             "timeseries_ciftis": self.inputs.timeseries_ciftis,

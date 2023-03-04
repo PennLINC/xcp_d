@@ -57,8 +57,8 @@ def init_nifti_functional_connectivity_wf(
     ref_file
     clean_bold
         clean bold after filtered out nuisscance and filtering
-    %(template_to_t1w)s
-    t1w_to_native
+    %(template_to_t1w_xfm)s
+    %(t1w_to_native_xfm)s
 
     Outputs
     -------
@@ -66,8 +66,7 @@ def init_nifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
-    coverage : list of str
-        Paths to atlas-specific coverage files.
+    %(coverage)s
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -95,8 +94,8 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
                 "bold_mask",
                 "ref_file",
                 "clean_bold",
-                "template_to_t1w",
-                "t1w_to_native",
+                "template_to_t1w_xfm",
+                "t1w_to_native_xfm",
             ],
         ),
         name="inputnode",
@@ -144,7 +143,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     get_transforms_to_bold_space = pe.Node(
         Function(
-            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
+            input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
             output_names=["transformfile"],
             function=get_std2bold_xforms,
         ),
@@ -155,8 +154,8 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     workflow.connect([
         (inputnode, get_transforms_to_bold_space, [
             ("bold_file", "bold_file"),
-            ("template_to_t1w", "template_to_t1w"),
-            ("t1w_to_native", "t1w_to_native"),
+            ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+            ("t1w_to_native_xfm", "t1w_to_native_xfm"),
         ]),
     ])
     # fmt:on
@@ -303,8 +302,8 @@ def init_cifti_functional_connectivity_wf(
     %(timeseries_ciftis)s
     %(correlations)s
     %(correlation_ciftis)s
-    coverage : list of str
-        Paths to atlas-specific coverage files.
+    %(coverage)s
+    %(coverage_ciftis)s
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -332,7 +331,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         niu.IdentityInterface(
             fields=[
                 "atlas_names",
-                "coverage_pscalar",
+                "coverage_ciftis",
                 "timeseries_ciftis",
                 "correlation_ciftis",
                 "coverage",
@@ -420,7 +419,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         (resample_atlas_to_data, cifti_connect, [("cifti_out", "atlas_file")]),
         (parcellate_atlas, cifti_connect, [("out_file", "parcellated_atlas")]),
         (cifti_connect, outputnode, [
-            ("coverage_pscalar", "coverage_pscalar"),
+            ("coverage_ciftis", "coverage_ciftis"),
             ("timeseries_ciftis", "timeseries_ciftis"),
             ("correlation_ciftis", "correlation_ciftis"),
             ("coverage", "coverage"),

@@ -391,8 +391,8 @@ def init_subject_wf(
                 "t2w",  # optional
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
-                "template_to_t1w_xform",  # not used by cifti workflow
-                "t1w_to_template_xform",
+                "template_to_t1w_xfm",  # not used by cifti workflow
+                "t1w_to_template_xfm",
                 # surface files
                 "lh_pial_surf",
                 "rh_pial_surf",
@@ -414,8 +414,8 @@ def init_subject_wf(
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-    inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
-    inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
+    inputnode.inputs.template_to_t1w_xfm = subj_data["template_to_t1w_xfm"]
+    inputnode.inputs.t1w_to_template_xfm = subj_data["t1w_to_template_xfm"]
 
     # surface files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
@@ -496,7 +496,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     # Extract target volumetric space for T1w image
-    target_space = get_entity(subj_data["t1w_to_template_xform"], "to")
+    target_space = get_entity(subj_data["t1w_to_template_xfm"], "to")
 
     warp_anats_to_template_wf = init_warp_anats_to_template_wf(
         output_dir=output_dir,
@@ -513,7 +513,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
             ("t1w_seg", "inputnode.t1seg"),
-            ("t1w_to_template_xform", "inputnode.t1w_to_template"),
+            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
         ]),
     ])
     # fmt:on
@@ -570,8 +570,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_inflated_surf", "inputnode.rh_inflated_surf"),
                 ("lh_vinflated_surf", "inputnode.lh_vinflated_surf"),
                 ("rh_vinflated_surf", "inputnode.rh_vinflated_surf"),
-                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
-                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
         ])
         # fmt:on
@@ -636,7 +636,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "interpolated_filtered_bold",
                 "censored_filtered_bold",
                 "smoothed_denoised_bold",
-                "t1w_to_native_xform",
+                "t1w_to_native_xfm",
                 "bold_mask",
                 "boldref",
                 "atlas_names",  # this will be exactly the same across runs
@@ -716,7 +716,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 # fmt:off
                 workflow.connect([
                     (inputnode, bold_postproc_wf, [
-                        ("template_to_t1w_xform", "inputnode.template_to_t1w"),
+                        ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
                     ]),
                 ])
                 # fmt:on
@@ -748,7 +748,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             workflow.connect([
                 (inputnode, concatenate_data_wf, [
                     ("t1w_mask", "inputnode.t1w_mask"),
-                    ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+                    ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
                 ]),
             ])
             # fmt:on

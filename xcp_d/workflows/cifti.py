@@ -97,7 +97,7 @@ def init_ciftipostprocess_wf(
             run_data = {
                 "boldref": "",
                 "confounds": "",
-                "t1w_to_native_xform": "",
+                "t1w_to_native_xfm": "",
                 "boldmask": "",
                 "bold_metadata": {"RepetitionTime": 2},
             }
@@ -193,7 +193,7 @@ def init_ciftipostprocess_wf(
     boldref
     bold_mask
         This will not be defined.
-    t1w_to_native_xform
+    t1w_to_native_xfm
         This will not be defined.
     %(atlas_names)s
     %(timeseries)s
@@ -307,7 +307,7 @@ produced by the regression.
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",  # will not be defined
-                "t1w_to_native_xform",  # will not be defined
+                "t1w_to_native_xfm",  # will not be defined
                 "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",
@@ -707,7 +707,7 @@ produced by the regression.
         (reho_compute_wf, write_derivative_wf, [("outputnode.reho_out", "inputnode.reho")]),
         (fcon_ts_wf, write_derivative_wf, [
             ("outputnode.atlas_names", "inputnode.atlas_names"),
-            ("outputnode.coverage_pscalar", "inputnode.coverage_ciftis"),
+            ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
             ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
             ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
             ("outputnode.coverage", "inputnode.coverage_files"),

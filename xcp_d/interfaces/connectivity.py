@@ -248,7 +248,7 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _CiftiConnectOutputSpec(TraitedSpec):
-    coverage_pscalar = File(exists=True, mandatory=True, desc="Coverage CIFTI file.")
+    coverage_ciftis = File(exists=True, mandatory=True, desc="Coverage CIFTI file.")
     timeseries_ciftis = File(
         exists=True,
         mandatory=True,
@@ -446,12 +446,12 @@ class CiftiConnect(SimpleInterface):
             pscalar_img.header,
             nifti_header=pscalar_img.nifti_header,
         )
-        self._results["coverage_pscalar"] = fname_presuffix(
+        self._results["coverage_ciftis"] = fname_presuffix(
             "coverage.pscalar.nii",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        coverage_img.to_filename(self._results["coverage_pscalar"])
+        coverage_img.to_filename(self._results["coverage_ciftis"])
 
         # Save out the timeseries CIFTI
         time_axis = data_img.header.get_axis(0)

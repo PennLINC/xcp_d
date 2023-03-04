@@ -49,7 +49,7 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
     smoothed_denoised_bold = Undefined
     bold_mask = Undefined
     boldref = Undefined
-    t1w_to_native_xform = Undefined
+    t1w_to_native_xfm = Undefined
 
     # Now the lists of lists
     atlas_names = [["a", "b", "c"]] * n_runs
@@ -67,7 +67,7 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
         smoothed_denoised_bold=smoothed_denoised_bold,
         bold_mask=bold_mask,
         boldref=boldref,
-        t1w_to_native_xform=t1w_to_native_xform,
+        t1w_to_native_xfm=t1w_to_native_xfm,
         atlas_names=atlas_names,
         timeseries=timeseries,
         timeseries_ciftis=timeseries_ciftis,
@@ -84,7 +84,7 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
     assert len(out.smoothed_denoised_bold) == n_good_runs
     assert len(out.bold_mask) == n_good_runs
     assert len(out.boldref) == n_good_runs
-    assert len(out.t1w_to_native_xform) == n_good_runs
+    assert len(out.t1w_to_native_xfm) == n_good_runs
     assert len(out.atlas_names) == n_good_runs
     assert len(out.timeseries) == n_good_runs
     assert len(out.timeseries_ciftis) == n_good_runs

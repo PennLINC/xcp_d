@@ -84,6 +84,7 @@ def init_concatenate_data_wf(
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
     t1w_mask : :obj:`str`
+    %(template_to_t1w_xfm)s
     boldref : :obj:`str`
     %(head_radius)s
     %(atlas_names)s
@@ -114,9 +115,9 @@ def init_concatenate_data_wf(
                 "head_radius",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
-                "t1w_to_native_xform",  # only for niftis, from postproc workflows
+                "t1w_to_native_xfm",  # only for niftis, from postproc workflows
                 "t1w_mask",  # only for niftis, from data collection
-                "template_to_t1w_xform",  # only for niftis, from data collection
+                "template_to_t1w_xfm",  # only for niftis, from data collection
                 "atlas_names",  # this will be exactly the same across runs
                 "timeseries",
                 "timeseries_ciftis",  # only for ciftis, from postproc workflows
@@ -170,7 +171,7 @@ def init_concatenate_data_wf(
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
-            ("t1w_to_native_xform", "t1w_to_native_xform"),
+            ("t1w_to_native_xfm", "t1w_to_native_xfm"),
             ("atlas_names", "atlas_names"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
@@ -217,7 +218,7 @@ def init_concatenate_data_wf(
     # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
-            ("template_to_t1w_xform", "inputnode.template_to_t1w"),
+            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ("t1w_mask", "inputnode.t1w_mask"),
         ]),
         (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),
@@ -226,7 +227,7 @@ def init_concatenate_data_wf(
             # nifti-only inputs
             (("bold_mask", _select_first), "inputnode.bold_mask"),
             (("boldref", _select_first), "inputnode.boldref"),
-            (("t1w_to_native_xform", _select_first), "inputnode.t1w_to_native"),
+            (("t1w_to_native_xfm", _select_first), "inputnode.t1w_to_native_xfm"),
         ]),
         (concatenate_inputs, qc_report_wf, [
             ("preprocessed_bold", "inputnode.preprocessed_bold"),

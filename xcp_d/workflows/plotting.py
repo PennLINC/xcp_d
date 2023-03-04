@@ -79,14 +79,14 @@ def init_qc_report_wf(
         Only used with non-CIFTI data.
     t1w_mask
         Only used with non-CIFTI data.
-    %(template_to_t1w)s
+    %(template_to_t1w_xfm)s
         Only used with non-CIFTI data.
-    t1w_to_native
+    %(t1w_to_native_xfm)s
         Only used with non-CIFTI data.
     %(dummy_scans)s
     fmriprep_confounds_file
     %(head_radius)s
-    temporal_mask
+    %(temporal_mask)s
     %(filtered_motion)s
 
     Outputs
@@ -112,8 +112,8 @@ def init_qc_report_wf(
                 "bold_mask",
                 "t1w_mask",
                 "boldref",
-                "template_to_t1w",
-                "t1w_to_native",
+                "template_to_t1w_xfm",
+                "t1w_to_native_xfm",
             ],
         ),
         name="inputnode",
@@ -166,7 +166,7 @@ def init_qc_report_wf(
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
+                input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
                 output_names=[
                     "bold_to_std_xforms",
                     "bold_to_std_xforms_invert",
@@ -182,8 +182,8 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, get_native2space_transforms, [
                 ("name_source", "bold_file"),
-                ("template_to_t1w", "template_to_t1w"),
-                ("t1w_to_native", "t1w_to_native"),
+                ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+                ("t1w_to_native_xfm", "t1w_to_native_xfm"),
             ]),
         ])
         # fmt:on
@@ -224,9 +224,7 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_boldmask_to_mni, [
-                ("bold_mask", "input_image"),
-            ]),
+            (inputnode, warp_boldmask_to_mni, [("bold_mask", "input_image")]),
             (get_native2space_transforms, warp_boldmask_to_mni, [
                 ("bold_to_std_xforms", "transforms"),
                 ("bold_to_std_xforms_invert", "invert_transform_flags"),
@@ -239,7 +237,7 @@ def init_qc_report_wf(
         # Given that xcp-d doesn't process native-space data, this transform will never be used.
         get_mni_to_bold_xforms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
+                input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
                 output_names=["transform_list"],
                 function=get_std2bold_xforms,
             ),
@@ -250,8 +248,8 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, get_mni_to_bold_xforms, [
                 ("name_source", "bold_file"),
-                ("template_to_t1w", "template_to_t1w"),
-                ("t1w_to_native", "t1w_to_native"),
+                ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+                ("t1w_to_native_xfm", "t1w_to_native_xfm"),
             ]),
         ])
         # fmt:on
@@ -332,9 +330,7 @@ def init_qc_report_wf(
             ("temporal_mask", "temporal_mask"),
             ("dummy_scans", "dummy_scans"),
         ]),
-        (qcreport, outputnode, [
-            ("qc_file", "qc_file"),
-        ]),
+        (qcreport, outputnode, [("qc_file", "qc_file")]),
     ])
     # fmt:on
 
@@ -396,9 +392,7 @@ def init_qc_report_wf(
         if not cifti:
             # fmt:off
             workflow.connect([
-                (inputnode, plot_executive_summary_carpets, [
-                    ("bold_mask", "mask"),
-                ]),
+                (inputnode, plot_executive_summary_carpets, [("bold_mask", "mask")]),
                 (warp_dseg_to_bold, plot_executive_summary_carpets, [
                     ("output_image", "seg_data"),
                 ]),
@@ -429,12 +423,8 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_preproc_executive_summary_carpet, [
-                ("name_source", "source_file"),
-            ]),
-            (inputnode, ds_postproc_executive_summary_carpet, [
-                ("name_source", "source_file"),
-            ]),
+            (inputnode, ds_preproc_executive_summary_carpet, [("name_source", "source_file")]),
+            (inputnode, ds_postproc_executive_summary_carpet, [("name_source", "source_file")]),
             (plot_executive_summary_carpets, ds_preproc_executive_summary_carpet, [
                 ("before_process", "in_file"),
             ]),
@@ -451,15 +441,9 @@ def init_qc_report_wf(
                 ("t1w_mask", "t1w_mask"),
                 ("bold_mask", "mask_file"),
             ]),
-            (warp_dseg_to_bold, qcreport, [
-                ("output_image", "seg_file"),
-            ]),
-            (warp_boldmask_to_t1w, qcreport, [
-                ("output_image", "bold2T1w_mask"),
-            ]),
-            (warp_boldmask_to_mni, qcreport, [
-                ("output_image", "bold2temp_mask"),
-            ]),
+            (warp_dseg_to_bold, qcreport, [("output_image", "seg_file")]),
+            (warp_boldmask_to_t1w, qcreport, [("output_image", "bold2T1w_mask")]),
+            (warp_boldmask_to_mni, qcreport, [("output_image", "bold2temp_mask")]),
         ])
         # fmt:on
     else:

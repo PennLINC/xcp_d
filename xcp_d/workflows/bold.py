@@ -97,7 +97,7 @@ def init_boldpostprocess_wf(
             run_data = {
                 "boldref": "",
                 "confounds": "",
-                "t1w_to_native_xform": "",
+                "t1w_to_native_xfm": "",
                 "boldmask": "",
                 "bold_metadata": {"RepetitionTime": 2},
             }
@@ -130,7 +130,7 @@ def init_boldpostprocess_wf(
                 name="nifti_postprocess_wf",
             )
             wf.inputs.inputnode.t1w = subj_data["t1w"]
-            wf.inputs.inputnode.template_to_t1w = subj_data["template_to_t1w_xform"]
+            wf.inputs.inputnode.template_to_t1w_xfm = subj_data["template_to_t1w_xfm"]
 
     Parameters
     ----------
@@ -178,7 +178,7 @@ def init_boldpostprocess_wf(
         Loaded in this workflow.
     custom_confounds_folder
         custom regressors
-    %(template_to_t1w)s
+    %(template_to_t1w_xfm)s
         MNI to T1W ants Transformation file/h5
         Fed from the subject workflow.
     t1w
@@ -206,7 +206,7 @@ def init_boldpostprocess_wf(
     %(smoothed_denoised_bold)s
     boldref
     bold_mask
-    t1w_to_native_xform
+    t1w_to_native_xfm
     %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s
@@ -227,13 +227,13 @@ def init_boldpostprocess_wf(
                 "ref_file",
                 "bold_mask",
                 "custom_confounds_file",
-                "template_to_t1w",
+                "template_to_t1w_xfm",
                 "t1w",
                 "t2w",
                 "t1seg",
                 "t1w_mask",
                 "fmriprep_confounds_tsv",
-                "t1w_to_native",
+                "t1w_to_native_xfm",
                 "dummy_scans",
             ],
         ),
@@ -243,7 +243,7 @@ def init_boldpostprocess_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.ref_file = run_data["boldref"]
     inputnode.inputs.fmriprep_confounds_tsv = run_data["confounds"]
-    inputnode.inputs.t1w_to_native = run_data["t1w_to_native_xform"]
+    inputnode.inputs.t1w_to_native_xfm = run_data["t1w_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
 
     # TODO: This is a workaround for a bug in nibabies.
@@ -328,7 +328,7 @@ produced by the regression.
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",
-                "t1w_to_native_xform",
+                "t1w_to_native_xfm",
                 "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",  # will not be defined
@@ -350,7 +350,7 @@ produced by the regression.
     workflow.connect([
         (inputnode, outputnode, [
             ("bold_file", "name_source"),
-            ("t1w_to_native", "t1w_to_native_xform"),
+            ("t1w_to_native_xfm", "t1w_to_native_xfm"),
         ]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
@@ -533,8 +533,8 @@ produced by the regression.
             ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
-            ("template_to_t1w", "inputnode.template_to_t1w"),
-            ("t1w_to_native", "inputnode.t1w_to_native"),
+            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
         ]),
         (determine_head_radius, qc_report_wf, [("head_radius", "inputnode.head_radius")]),
         (denoise_bold, qc_report_wf, [
@@ -681,8 +681,8 @@ produced by the regression.
             ("ref_file", "inputnode.ref_file"),
         ]),
         (inputnode, fcon_ts_wf, [
-            ("template_to_t1w", "inputnode.template_to_t1w"),
-            ("t1w_to_native", "inputnode.t1w_to_native"),
+            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
         ]),
         (censor_interpolated_data, fcon_ts_wf, [("censored_bold", "inputnode.clean_bold")]),
     ])

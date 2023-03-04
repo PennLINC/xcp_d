@@ -88,13 +88,13 @@ def init_warp_anats_to_template_wf(
         This file may be in standard space or native T1w space.
     t1seg : str
         Path to the T1w segmentation file.
-    %(t1w_to_template)s
+    %(t1w_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template", "template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template_xfm", "template"]),
         name="inputnode",
     )
 
@@ -182,7 +182,7 @@ def init_warp_anats_to_template_wf(
         workflow.connect([
             (inputnode, warp_t1w_to_template, [
                 ("t1w", "input_image"),
-                ("t1w_to_template", "transforms"),
+                ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
         ])
@@ -204,7 +204,7 @@ def init_warp_anats_to_template_wf(
         workflow.connect([
             (inputnode, warp_t1seg_to_template, [
                 ("t1seg", "input_image"),
-                ("t1w_to_template", "transforms"),
+                ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
         ])
@@ -238,7 +238,7 @@ def init_warp_anats_to_template_wf(
             workflow.connect([
                 (inputnode, t2w_transform, [
                     ("t2w", "input_image"),
-                    ("t1w_to_template", "transforms"),
+                    ("t1w_to_template_xfm", "transforms"),
                     ("template", "reference_image"),
                 ]),
                 (t2w_transform, ds_t2w_std, [("output_image", "in_file")]),
@@ -342,17 +342,13 @@ def init_warp_surfaces_to_template_wf(
 
     Inputs
     ------
-    t1w_to_template_xform : str
-        The transform from T1w space to template space.
-
+    %(t1w_to_template_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
 
         If ``warp_to_standard`` is False, this file is unused.
-    template_to_t1w_xform : str
-        The transform from template space to T1w space.
-
+    %(template_to_t1w_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
@@ -427,8 +423,8 @@ def init_warp_surfaces_to_template_wf(
                 "lh_vinflated_surf",
                 "rh_vinflated_surf",
                 # transforms (only used if warp_to_standard is True)
-                "t1w_to_template_xform",
-                "template_to_t1w_xform",
+                "t1w_to_template_xfm",
+                "template_to_t1w_xfm",
             ],
         ),
         name="inputnode",
@@ -538,8 +534,8 @@ def init_warp_surfaces_to_template_wf(
         # fmt:off
         workflow.connect([
             (inputnode, update_xform_wf, [
-                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
-                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
         ])
         # fmt:on
@@ -836,9 +832,9 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     Inputs
     ------
-    t1w_to_template_xform
+    t1w_to_template_xfm
         ANTS/fMRIPrep-style H5 transform from T1w image to template.
-    template_to_t1w_xform
+    template_to_t1w_xfm
         ANTS/fMRIPrep-style H5 transform from template to T1w image.
 
     Outputs
@@ -853,7 +849,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w_to_template_xform", "template_to_t1w_xform"]),
+        niu.IdentityInterface(fields=["t1w_to_template_xfm", "template_to_t1w_xfm"]),
         name="inputnode",
     )
 
@@ -876,7 +872,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     # fmt:off
     workflow.connect([
-        (inputnode, disassemble_h5, [("t1w_to_template_xform", "in_file")]),
+        (inputnode, disassemble_h5, [("t1w_to_template_xfm", "in_file")]),
     ])
     # fmt:on
 
@@ -895,7 +891,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     # fmt:off
     workflow.connect([
-        (inputnode, disassemble_h5_inv, [("template_to_t1w_xform", "in_file")]),
+        (inputnode, disassemble_h5_inv, [("template_to_t1w_xfm", "in_file")]),
     ])
     # fmt:on
 

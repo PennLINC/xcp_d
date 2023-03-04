@@ -24,9 +24,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
-    template_to_t1w_xform = fmriprep_with_freesurfer_data["template_to_t1w_xform"]
+    template_to_t1w_xfm = fmriprep_with_freesurfer_data["template_to_t1w_xfm"]
     boldref = fmriprep_with_freesurfer_data["boldref"]
-    t1w_to_native_xform = fmriprep_with_freesurfer_data["t1w_to_native_xform"]
+    t1w_to_native_xfm = fmriprep_with_freesurfer_data["t1w_to_native_xfm"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -49,8 +49,8 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         name="connectivity_wf",
         omp_nthreads=2,
     )
-    connectivity_wf.inputs.inputnode.template_to_t1w = template_to_t1w_xform
-    connectivity_wf.inputs.inputnode.t1w_to_native = t1w_to_native_xform
+    connectivity_wf.inputs.inputnode.template_to_t1w_xfm = template_to_t1w_xfm
+    connectivity_wf.inputs.inputnode.t1w_to_native_xfm = t1w_to_native_xfm
     connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
@@ -157,7 +157,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the cifti files
-    pscalar = nodes["connectivity_wf.cifti_connect"].get_output("coverage_pscalar")[9]
+    pscalar = nodes["connectivity_wf.cifti_connect"].get_output("coverage_ciftis")[9]
     assert os.path.isfile(pscalar)
     timeseries_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("timeseries_ciftis")[9]
     assert os.path.isfile(timeseries_ciftis)

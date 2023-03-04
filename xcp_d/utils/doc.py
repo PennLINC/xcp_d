@@ -59,18 +59,26 @@ analysis_level : {"participant"}
 """
 
 docdict[
-    "t1w_to_template"
+    "t1w_to_template_xfm"
 ] = """
-t1w_to_template : :obj:`str`
+t1w_to_template_xfm : :obj:`str`
     Path to the T1w-to-MNI transform file.
     May be "identity", for testing purposes.
 """
 
 docdict[
-    "template_to_t1w"
+    "template_to_t1w_xfm"
 ] = """
-template_to_t1w : :obj:`str`
+template_to_t1w_xfm : :obj:`str`
     Path to the MNI-to-T1w transform file.
+    May be "identity", for testing purposes.
+"""
+
+docdict[
+    "t1w_to_native_xfm"
+] = """
+t1w_to_native_xfm : :obj:`str`
+    Path to the T1w-to-native BOLD space transform file.
     May be "identity", for testing purposes.
 """
 
@@ -397,6 +405,20 @@ atlas_names : :obj:`list` of :obj:`str`
     The atlases include: "Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417",
     "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", "Schaefer917",
     "Schaefer1017", "Glasser", "Gordon", and "subcortical" (Tian).
+"""
+
+docdict[
+    "coverage"
+] = """
+coverage : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific coverage TSV files.
+"""
+
+docdict[
+    "coverage_ciftis"
+] = """
+coverage_ciftis : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific coverage CIFTI (pscalar) files.
 """
 
 docdict[
