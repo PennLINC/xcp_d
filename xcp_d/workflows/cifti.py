@@ -711,7 +711,7 @@ produced by the regression.
             ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
             ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
             ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
-            ("outputnode.coverage", "inputnode.coverage_files"),
+            ("outputnode.coverage", "inputnode.coverage"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.correlations", "inputnode.correlations"),
         ]),

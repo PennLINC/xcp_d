@@ -73,7 +73,10 @@ def init_writederivatives_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
-    %(coverage_files)s
+    %(coverage)s
+    %(timeseries_ciftis)s
+    %(correlation_ciftis)s
+    %(coverage_ciftis)s
     qc_file
         LINC-style quality control file
     %(interpolated_filtered_bold)s
@@ -101,7 +104,7 @@ def init_writederivatives_wf(
             fields=[
                 "atlas_names",
                 "confounds_file",
-                "coverage_files",
+                "coverage",
                 "timeseries",
                 "correlations",
                 "qc_file",
@@ -245,7 +248,7 @@ def init_writederivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_coverage_files, [
-            ("coverage_files", "in_file"),
+            ("coverage", "in_file"),
             ("atlas_names", "atlas"),
         ]),
         (inputnode, ds_timeseries, [
