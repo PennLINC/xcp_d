@@ -9,6 +9,7 @@ Processing Pipeline Details
 **********
 Input data
 **********
+
 The default inputs to ``xcp_d`` are the outputs of  ``fMRIPrep`` and ``Nibabies``.
 ``xcp_d`` can also minimally process ``HCP`` data, which requires the ``--input-type hcp`` flag.
 
@@ -22,10 +23,11 @@ See :ref:`usage_inputs` for information on input dataset structures.
 
 Anatomical processing
 =====================
-
+:func:`~xcp_d.workflows.anatomical.init_warp_anats_to_template_wf`
 
 Surface normalization
 ---------------------
+:func:`~xcp_d.workflows.anatomical.init_warp_surfaces_to_template_wf`
 
 If the ``--warp-surfaces-native2std`` is used, then fsnative surface files from the preprocessing
 derivatives will be warped to fsLR-32k space.
@@ -216,6 +218,7 @@ These volumes will later be removed from the denoised data.
 
 Despiking [OPTIONAL]
 ====================
+:class:`~xcp_d.interfaces.resting_state.DespikePatch`
 
 Despiking is a process in which large spikes in the BOLD times series are truncated.
 Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those
@@ -227,7 +230,7 @@ It can be added to the command line arguments with ``--despike``.
 
 Denoising
 =========
-
+:class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, :class:`~xcp_d.interfaces.nilearn.DenoiseCifti`
 
 Temporal censoring
 ------------------
@@ -301,6 +304,7 @@ Bandpass filtering can be disabled with the ``--disable-bandpass-filter`` flag.
 
 Re-censoring
 ------------
+:class:`~xcp_d.interfaces.prepostcleaning.Censor`
 
 After bandpass filtering, high motion volumes are removed from the
 ``filtered, interpolated, denoised BOLD`` once again, to produce ``filtered, denoised BOLD``.
@@ -315,6 +319,7 @@ These include regional homogeneity (ReHo) and amplitude of low-frequency fluctua
 
 ALFF
 ----
+:func:`~xcp_d.workflows.restingstate.init_compute_alff_wf`
 
 
 Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is used.
@@ -322,10 +327,14 @@ Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is 
 
 ReHo
 ----
+:func:`~xcp_d.workflows.restingstate.init_nifti_reho_wf`,
+:func:`~xcp_d.workflows.restingstate.init_cifti_reho_wf`
 
 
 Parcellation and functional connectivity estimation
 ===================================================
+:func:`~xcp_d.workflows.connectivity.init_nifti_functional_connectivity_wf`,
+:func:`~xcp_d.workflows.connectivity.init_cifti_functional_connectivity_wf`
 
 The ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
 which extracts parcel-wise time series from the BOLD using several atlases:
@@ -343,11 +352,13 @@ series and correlation matrices are written out.
 
 Smoothing [OPTIONAL]
 ====================
+:func:`~xcp_d.workflows.postprocessing.init_resd_smoothing_wf`
 
 The ``filtered, interpolated, denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
 
 Concatenation of functional derivatives [OPTIONAL]
 ==================================================
+:func:`~xcp_d.workflows.concatenation.init_concatenate_data_wf`
 
 .. important::
    If a set of related runs do not have enough low-motion data, then the concatenation workflow
@@ -357,6 +368,7 @@ Concatenation of functional derivatives [OPTIONAL]
 
 Quality control
 ===============
+:func:`~xcp_d.workflows.plotting.init_qc_report_wf`
 
 The quality control (QC) in ``XCP-D`` estimates the quality of BOLD data before and after
 regression and also estimates BOLD-T1w coregistration and BOLD-Template normalization
