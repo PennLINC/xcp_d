@@ -159,10 +159,10 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's find the cifti files
     pscalar = nodes["connectivity_wf.cifti_connect"].get_output("coverage_pscalar")[9]
     assert os.path.isfile(pscalar)
-    ptseries = nodes["connectivity_wf.cifti_connect"].get_output("ptseries")[9]
-    assert os.path.isfile(ptseries)
-    pconn = nodes["connectivity_wf.cifti_connect"].get_output("pconn")[9]
-    assert os.path.isfile(pconn)
+    timeseries_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("timeseries_ciftis")[9]
+    assert os.path.isfile(timeseries_ciftis)
+    correlation_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("correlation_ciftis")[9]
+    assert os.path.isfile(correlation_ciftis)
 
     # Let's find the tsv files
     coverage = nodes["connectivity_wf.cifti_connect"].get_output("coverage")[9]
@@ -175,9 +175,9 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's read in the ciftis' data
     pscalar_arr = nb.load(pscalar).get_fdata().T
     assert pscalar_arr.shape == (1000, 1)
-    ptseries_arr = nb.load(ptseries).get_fdata()
+    ptseries_arr = nb.load(timeseries_ciftis).get_fdata()
     assert ptseries_arr.shape == (60, 1000)
-    pconn_arr = nb.load(pconn).get_fdata()
+    pconn_arr = nb.load(correlation_ciftis).get_fdata()
     assert pconn_arr.shape == (1000, 1000)
 
     # Read in the tsvs' data

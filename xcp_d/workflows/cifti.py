@@ -369,7 +369,7 @@ produced by the regression.
         (fcon_ts_wf, outputnode, [
             ("outputnode.atlas_names", "atlas_names"),
             ("outputnode.timeseries", "timeseries"),
-            ("outputnode.ptseries", "timeseries_ciftis"),
+            ("outputnode.timeseries_ciftis", "timeseries_ciftis"),
         ]),
     ])
     # fmt:on
@@ -733,8 +733,8 @@ produced by the regression.
         (fcon_ts_wf, write_derivative_wf, [
             ('outputnode.atlas_names', 'inputnode.atlas_names'),
             ('outputnode.coverage_pscalar', 'inputnode.coverage_ciftis'),
-            ('outputnode.ptseries', 'inputnode.timeseries_ciftis'),
-            ('outputnode.pconn', 'inputnode.correlation_ciftis'),
+            ('outputnode.timeseries_ciftis', 'inputnode.timeseries_ciftis'),
+            ('outputnode.correlation_ciftis', 'inputnode.correlation_ciftis'),
             ('outputnode.coverage', 'inputnode.coverage_files'),
             ('outputnode.timeseries', 'inputnode.timeseries'),
             ('outputnode.correlations', 'inputnode.correlations'),

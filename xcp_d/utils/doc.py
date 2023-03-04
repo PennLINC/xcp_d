@@ -419,8 +419,16 @@ docdict[
     "correlations"
 ] = """
 correlations : :obj:`list` of :obj:`str`
-    List of paths to atlas-specific ROI-to-ROI correlation files.
+    List of paths to atlas-specific ROI-to-ROI correlation TSV files.
     These correlations are produced from the ``timeseries`` outputs.
+"""
+
+docdict[
+    "correlation_ciftis"
+] = """
+correlation_ciftis : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific ROI-to-ROI correlation CIFTI (pconn) files.
+    These correlations are produced from the ``timeseries_cifti`` outputs.
 """
 
 docdict_indented = {}

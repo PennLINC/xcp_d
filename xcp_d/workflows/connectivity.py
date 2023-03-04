@@ -300,11 +300,9 @@ def init_cifti_functional_connectivity_wf(
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
-    ptseries
-        Paths to CIFTI-format timeseries files.
+    %(timeseries_ciftis)s
     %(correlations)s
-    pconn
-        Paths to CIFTI-format correlation matrices.
+    %(correlation_ciftis)s
     coverage : list of str
         Paths to atlas-specific coverage files.
     connectplot : str
@@ -335,8 +333,8 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
             fields=[
                 "atlas_names",
                 "coverage_pscalar",
-                "ptseries",
-                "pconn",
+                "timeseries_ciftis",
+                "correlation_ciftis",
                 "coverage",
                 "timeseries",
                 "correlations",
@@ -423,8 +421,8 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         (parcellate_atlas, cifti_connect, [("out_file", "parcellated_atlas")]),
         (cifti_connect, outputnode, [
             ("coverage_pscalar", "coverage_pscalar"),
-            ("ptseries", "ptseries"),
-            ("pconn", "pconn"),
+            ("timeseries_ciftis", "timeseries_ciftis"),
+            ("correlation_ciftis", "correlation_ciftis"),
             ("coverage", "coverage"),
             ("timeseries", "timeseries"),
             ("correlations", "correlations"),

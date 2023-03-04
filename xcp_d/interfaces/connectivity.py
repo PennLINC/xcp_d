@@ -249,8 +249,16 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 class _CiftiConnectOutputSpec(TraitedSpec):
     coverage_pscalar = File(exists=True, mandatory=True, desc="Coverage CIFTI file.")
-    ptseries = File(exists=True, mandatory=True, desc="Parcellated data CIFTI file.")
-    pconn = File(exists=True, mandatory=True, desc="Correlation matrix pconn.nii file.")
+    timeseries_ciftis = File(
+        exists=True,
+        mandatory=True,
+        desc="Parcellated data ptseries.nii file.",
+    )
+    correlation_ciftis = File(
+        exists=True,
+        mandatory=True,
+        desc="Correlation matrix pconn.nii file.",
+    )
     coverage = File(exists=True, mandatory=True, desc="Coverage tsv file.")
     timeseries = File(exists=True, mandatory=True, desc="Parcellated data tsv file.")
     correlations = File(exists=True, mandatory=True, desc="Correlation matrix tsv file.")
@@ -455,12 +463,12 @@ class CiftiConnect(SimpleInterface):
             new_header,
             nifti_header=nifti_header,
         )
-        self._results["ptseries"] = fname_presuffix(
+        self._results["timeseries_ciftis"] = fname_presuffix(
             "timeseries.ptseries.nii",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        timeseries_img.to_filename(self._results["ptseries"])
+        timeseries_img.to_filename(self._results["timeseries_ciftis"])
 
         # Save out the correlation matrix CIFTI
         new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
@@ -471,12 +479,12 @@ class CiftiConnect(SimpleInterface):
             new_header,
             nifti_header=nifti_header,
         )
-        self._results["pconn"] = fname_presuffix(
+        self._results["correlation_ciftis"] = fname_presuffix(
             "correlations.pconn.nii",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        conn_img.to_filename(self._results["pconn"])
+        conn_img.to_filename(self._results["correlation_ciftis"])
 
         return runtime
 
