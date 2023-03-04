@@ -1,19 +1,21 @@
 .. include:: links.rst
 
-================
+################
 Developers - API
-================
+################
 
+***************
 xcp_d-combineqc
----------------
+***************
 
 .. argparse::
    :ref: xcp_d.cli.combineqc.get_parser
    :prog: xcp_d-combineqc
 
 
+*********************************
 :mod:`xcp_d.workflows`: Workflows
---------------------------------
+*********************************
 
 .. automodule:: xcp_d.workflows
    :no-members:
@@ -37,8 +39,10 @@ xcp_d-combineqc
    xcp_d.workflows.postprocessing
    xcp_d.workflows.restingstate
 
+
+******************************************
 :mod:`xcp_d.interfaces`: Nipype Interfaces
-------------------------------------------
+******************************************
 
 .. automodule:: xcp_d.interfaces
    :no-members:
@@ -65,8 +69,10 @@ xcp_d-combineqc
    xcp_d.interfaces.surfplotting
    xcp_d.interfaces.workbench
 
+
+***************************************************
 :mod:`xcp_d.utils`: Miscellaneous Utility Functions
----------------------------------------------------
+***************************************************
 
 .. automodule:: xcp_d.utils
    :no-members:

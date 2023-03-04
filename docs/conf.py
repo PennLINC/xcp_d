@@ -12,6 +12,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+# Notes on XCP-D-specific style:
+# 1. For rst headings, we use the following convention, based on
+#    https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#sections:
+#        # with overline, for parts
+#        * with overline, for chapters
+#        = for sections
+#        - for subsections
+#        ^ for subsubsections
+#        " for paragraphs
 import os
 import sys
 from datetime import datetime

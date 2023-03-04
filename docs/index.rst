@@ -6,8 +6,9 @@
    .. include:: ../LICENSE
 
 
+********
 Contents
---------
+********
 
 .. toctree::
    :maxdepth: 3

@@ -1,28 +1,30 @@
 
 .. include:: links.rst
 
-----------------
+################
 General Workflow
-----------------
+################
 
+**********
 Input data
-----------
+**********
 The default inputs to ``xcp_d`` are the outputs of  ``fMRIPrep`` and ``Nibabies``.
 ``xcp_d`` can also minimally process ``HCP`` data, which requires the ``--input-type hcp`` flag.
 
 
+****************
 Processing Steps
-----------------
+****************
 
-0.  Data is read in.
-    See :ref:`usage_inputs` for information on input dataset structures.
+0. Data is read in.
+   See :ref:`usage_inputs` for information on input dataset structures.
 
-1.  Remove dummy time [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing.
-    These volumes are usually refered to as dummy time. It can be added to the command line with ``-d X`` where X is in seconds.
-    The number of volumes to be dropped is equal to X divided by the TR (rounded down).
-    For example, if your TR is .72, and you want to remove the first 2 volumes, you should enter: ``-d 1.44``.
-    Most default scanning sequences include dummy volumes that are not reconstructed.
-    However, some users still prefer to remove the first reconstructed few volumes.
+1. Remove dummy scans [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped or deleted before processing.
+   These volumes are usually refered to as dummy time. It can be added to the command line with ``-d X`` where X is in seconds.
+   The number of volumes to be dropped is equal to X divided by the TR (rounded down).
+   For example, if your TR is .72, and you want to remove the first 2 volumes, you should enter: ``-d 1.44``.
+   Most default scanning sequences include dummy volumes that are not reconstructed.
+   However, some users still prefer to remove the first reconstructed few volumes.
 
 2.  Confound regressors selection:
     The confound regressors configurations in the table below are implemented in ``xcp_d`` with 36P as the default.
@@ -186,8 +188,10 @@ Processing Steps
     c.  BOLD-T1w coregistration quality - Dice, Jaccard, Coverage and Cross-correlation indices
     d.  BOLD-Template normalization quality - Dice, Jaccard, Coverage and Cross-correlation indices
 
+
+*******
 Outputs
--------
+*******
 
 XCP-D generates four main types of outputs for every subject.
 
@@ -211,9 +215,10 @@ Fourth, the anatomical data (processed T1w processed and segmentation files) are
 If both images are not in MNI2006 space, they are resampled to MNI space.
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space (fsLR-32K).
 
-See `Outputs`_ for file details about xcp_d outputs.
+See :doc:`outputs` for file details about xcp_d outputs.
 
+**********
 References
-----------
+**********
 
 .. footbibliography::

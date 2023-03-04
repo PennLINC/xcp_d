@@ -1,9 +1,9 @@
 
 .. include:: links.rst
 
-----------------
+################
 Outputs of xcp_d
-----------------
+################
 
 The  ``xcp_d`` outputs are written out in BIDS format and consist of three main parts.
 
@@ -28,8 +28,9 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    issue in the ``xcp_d`` repository.
 
 
+***************
 Summary Reports
-===============
+***************
 
 There are two summary reports - a Nipreps-style participant summary and an executive summary per
 session (if ``--dcan-qc`` is used).
@@ -43,9 +44,11 @@ The executive summary is based on the DCAN lab's
       sub-<label>[_ses-<label>]_executive_summary.html
 
 
+******************
 Anatomical Outputs
-==================
-Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI spaces::
+******************
+Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI
+spaces::
 
    xcp_d/
       sub-<label>/[ses-<label>/]
@@ -68,8 +71,9 @@ in the preprocessed dataset, then these surfaces will be warped to fsLR space at
             <source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
 
 
+******************
 Functional Outputs
-==================
+******************
 
 Functional outputs consist of processed/denoised BOLD data, timeseries,
 functional connectivity matrices, and resting-state derivatives.
