@@ -541,9 +541,7 @@ produced by the regression.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
             ]),
-            (remove_dummy_scans, denoise_bold, [
-                ("confounds_file_dropped_TR", "confounds_file"),
-            ]),
+            (remove_dummy_scans, denoise_bold, [("confounds_file_dropped_TR", "confounds_file")]),
             (remove_dummy_scans, qc_report_wf, [
                 ("bold_file_dropped_TR", "inputnode.preprocessed_bold"),
                 ("dummy_scans", "inputnode.dummy_scans"),
@@ -695,12 +693,8 @@ produced by the regression.
         (censor_interpolated_data, write_derivative_wf, [
             ("censored_bold", "inputnode.processed_bold"),
         ]),
-        (qc_report_wf, write_derivative_wf, [
-            ("outputnode.qc_file", "inputnode.qc_file"),
-        ]),
-        (resd_smoothing_wf, outputnode, [
-            ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
-        ]),
+        (qc_report_wf, write_derivative_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
+        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
         (resd_smoothing_wf, write_derivative_wf, [
             ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
         ]),
@@ -710,9 +704,7 @@ produced by the regression.
             ("temporal_mask", "inputnode.temporal_mask"),
             ("tmask_metadata", "inputnode.tmask_metadata"),
         ]),
-        (reho_compute_wf, write_derivative_wf, [
-            ("outputnode.reho_out", "inputnode.reho_out"),
-        ]),
+        (reho_compute_wf, write_derivative_wf, [("outputnode.reho_out", "inputnode.reho")]),
         (fcon_ts_wf, write_derivative_wf, [
             ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.coverage_pscalar", "inputnode.coverage_ciftis"),
@@ -727,7 +719,7 @@ produced by the regression.
     if bandpass_filter:
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
-                ("outputnode.alff_out", "inputnode.alff_out"),
+                ("outputnode.alff_out", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
         ])

@@ -376,11 +376,7 @@ produced by the regression.
     determine_head_radius.inputs.head_radius = head_radius
 
     # fmt:off
-    workflow.connect([
-        (downcast_data, determine_head_radius, [
-            ("t1w_mask", "mask_file"),
-        ]),
-    ])
+    workflow.connect([(downcast_data, determine_head_radius, [("t1w_mask", "mask_file")])])
     # fmt:on
 
     fcon_ts_wf = init_nifti_functional_connectivity_wf(
@@ -540,9 +536,7 @@ produced by the regression.
             ("template_to_t1w", "inputnode.template_to_t1w"),
             ("t1w_to_native", "inputnode.t1w_to_native"),
         ]),
-        (determine_head_radius, qc_report_wf, [
-            ("head_radius", "inputnode.head_radius"),
-        ]),
+        (determine_head_radius, qc_report_wf, [("head_radius", "inputnode.head_radius")]),
         (denoise_bold, qc_report_wf, [
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
         ]),
@@ -570,9 +564,7 @@ produced by the regression.
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
             (downcast_data, remove_dummy_scans, [("bold_file", "bold_file")]),
-            (consolidate_confounds_node, remove_dummy_scans, [
-                ("out_file", "confounds_file"),
-            ]),
+            (consolidate_confounds_node, remove_dummy_scans, [("out_file", "confounds_file")]),
             (remove_dummy_scans, outputnode, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
@@ -582,9 +574,7 @@ produced by the regression.
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
             ]),
-            (remove_dummy_scans, denoise_bold, [
-                ("confounds_file_dropped_TR", "confounds_file"),
-            ]),
+            (remove_dummy_scans, denoise_bold, [("confounds_file_dropped_TR", "confounds_file")]),
             (remove_dummy_scans, qc_report_wf, [
                 ("bold_file_dropped_TR", "inputnode.preprocessed_bold"),
                 ("dummy_scans", "inputnode.dummy_scans"),
@@ -613,23 +603,15 @@ produced by the regression.
                 ("bold_file", "preprocessed_bold"),
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
-            (consolidate_confounds_node, denoise_bold, [
-                ("out_file", "confounds_file"),
-            ]),
-            (consolidate_confounds_node, plot_design_matrix_node, [
-                ("out_file", "design_matrix"),
-            ]),
+            (consolidate_confounds_node, denoise_bold, [("out_file", "confounds_file")]),
+            (consolidate_confounds_node, plot_design_matrix_node, [("out_file", "design_matrix")]),
         ])
         # fmt:on
 
     # fmt:off
     workflow.connect([
-        (determine_head_radius, flag_motion_outliers, [
-            ("head_radius", "head_radius"),
-        ]),
-        (flag_motion_outliers, plot_design_matrix_node, [
-            ("temporal_mask", "temporal_mask"),
-        ]),
+        (determine_head_radius, flag_motion_outliers, [("head_radius", "head_radius")]),
+        (flag_motion_outliers, plot_design_matrix_node, [("temporal_mask", "temporal_mask")]),
         (flag_motion_outliers, outputnode, [
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
@@ -653,9 +635,7 @@ produced by the regression.
         )
 
         # fmt:off
-        workflow.connect([
-            (despike3d, denoise_bold, [("out_file", "preprocessed_bold")]),
-        ])
+        workflow.connect([(despike3d, denoise_bold, [("out_file", "preprocessed_bold")])])
 
         if dummy_scans:
             workflow.connect([
@@ -700,9 +680,11 @@ produced by the regression.
             ("bold_mask", "inputnode.bold_mask"),
             ("ref_file", "inputnode.ref_file"),
         ]),
-        (inputnode, fcon_ts_wf, [("template_to_t1w", "inputnode.template_to_t1w"),
-                                 ("t1w_to_native", "inputnode.t1w_to_native")]),
-        (censor_interpolated_data, fcon_ts_wf, [("censored_bold", "inputnode.clean_bold")])
+        (inputnode, fcon_ts_wf, [
+            ("template_to_t1w", "inputnode.template_to_t1w"),
+            ("t1w_to_native", "inputnode.t1w_to_native"),
+        ]),
+        (censor_interpolated_data, fcon_ts_wf, [("censored_bold", "inputnode.clean_bold")]),
     ])
 
     # reho and alff
@@ -746,12 +728,8 @@ produced by the regression.
         (censor_interpolated_data, write_derivative_wf, [
             ("censored_bold", "inputnode.processed_bold"),
         ]),
-        (qc_report_wf, write_derivative_wf, [
-            ("outputnode.qc_file", "inputnode.qc_file"),
-        ]),
-        (resd_smoothing_wf, outputnode, [
-            ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
-        ]),
+        (qc_report_wf, write_derivative_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
+        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
         (resd_smoothing_wf, write_derivative_wf, [
             ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
         ]),
@@ -761,9 +739,7 @@ produced by the regression.
             ("temporal_mask", "inputnode.temporal_mask"),
             ("tmask_metadata", "inputnode.tmask_metadata"),
         ]),
-        (reho_compute_wf, write_derivative_wf, [
-            ("outputnode.reho_out", "inputnode.reho_out"),
-        ]),
+        (reho_compute_wf, write_derivative_wf, [("outputnode.reho_out", "inputnode.reho")]),
         (fcon_ts_wf, write_derivative_wf, [
             ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.correlations", "inputnode.correlations"),
@@ -777,7 +753,7 @@ produced by the regression.
         # fmt:off
         workflow.connect([
             (alff_compute_wf, write_derivative_wf, [
-                ("outputnode.alff_out", "inputnode.alff_out"),
+                ("outputnode.alff_out", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
         ])
