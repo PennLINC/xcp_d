@@ -24,7 +24,7 @@ from xcp_d.utils.confounds import (
     consolidate_confounds,
     describe_censoring,
     describe_regression,
-    get_customfile,
+    get_custom_confounds,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
@@ -252,7 +252,7 @@ def init_boldpostprocess_wf(
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
     # used for the boilerplate.
-    custom_confounds_file = get_customfile(
+    custom_confounds_file = get_custom_confounds(
         custom_confounds_folder,
         run_data["confounds"],
     )

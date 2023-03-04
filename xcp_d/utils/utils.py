@@ -1,113 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
-import glob
-import os
-import tempfile
 import warnings
-from pathlib import Path
 
 import numpy as np
 
 from xcp_d.utils.doc import fill_doc
-
-
-@fill_doc
-def _t12native(fname):
-    """Select T1w-to-scanner transform associated with a given BOLD file.
-
-    TODO: Update names and refactor
-
-    Parameters
-    ----------
-    fname : str
-        The BOLD file from which to identify the transform.
-
-    Returns
-    -------
-    %(t1w_to_native_xfm)s
-
-    Notes
-    -----
-    Only used in get_segfile, which should be removed ASAP.
-    """
-    import os
-
-    pth, fname = os.path.split(fname)
-    file_prefix = fname.split("space-")[0]
-    t1w_to_native_xfm = os.path.join(pth, f"{file_prefix}from-T1w_to-scanner_mode-image_xfm.txt")
-
-    if not os.path.isfile(t1w_to_native_xfm):
-        raise FileNotFoundError(f"File not found: {t1w_to_native_xfm}")
-
-    return t1w_to_native_xfm
-
-
-def get_segfile(bold_file):
-    """Select the segmentation file associated with a given BOLD file.
-
-    This function identifies the appropriate MNI-space discrete segmentation file for carpet
-    plots, then applies the necessary transforms to warp the file into BOLD reference space.
-    The warped segmentation file will be written to a temporary file and its path returned.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the BOLD file.
-
-    Returns
-    -------
-    segfile : str
-        The associated segmentation file.
-
-    Notes
-    -----
-    Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
-    """
-    from templateflow.api import get as get_template
-
-    from xcp_d.interfaces.ants import ApplyTransforms
-
-    # get transform files
-    dd = Path(os.path.dirname(bold_file))
-    anatdir = str(dd.parent) + "/anat"
-
-    if Path(anatdir).is_dir():
-        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
-    else:
-        anatdir = str(dd.parent.parent) + "/anat"
-        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
-
-    transformfilex = get_std2bold_xforms(
-        bold_file=bold_file,
-        template_to_t1w_xfm=mni_to_t1,
-        t1w_to_native_xfm=_t12native(bold_file),
-    )
-
-    boldref = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
-
-    segfile = tempfile.mkdtemp() + "segfile.nii.gz"
-    carpet = str(
-        get_template(
-            "MNI152NLin2009cAsym",
-            resolution=1,
-            desc="carpet",
-            suffix="dseg",
-            extension=[".nii", ".nii.gz"],
-        ),
-    )
-
-    # seg_data file to bold space
-    at = ApplyTransforms()
-    at.inputs.dimension = 3
-    at.inputs.input_image = carpet
-    at.inputs.reference_image = boldref
-    at.inputs.output_image = segfile
-    at.inputs.interpolation = "MultiLabel"
-    at.inputs.transforms = transformfilex
-    os.system(at.cmdline)
-
-    return segfile
 
 
 def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):

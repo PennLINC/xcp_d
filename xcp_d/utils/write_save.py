@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Utilities to read and write nifiti and cifti data."""
 import os
-import subprocess
 
 import nibabel as nb
 import numpy as np
@@ -167,37 +166,6 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     img.to_filename(filename)
 
     return filename
-
-
-def run_shell(cmd, env=os.environ):
-    """Run shell in python.
-
-    Parameters
-    ----------
-    cmd : str
-        shell command that wanted to be run
-    env
-        Environment variables.
-
-    Returns
-    -------
-    output
-    error
-    """
-    if type(cmd) is list:
-        cmd = " ".join(cmd)
-
-    call_command = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        shell=True,
-    )
-    output, error = call_command.communicate("Hello from the other side!")
-    call_command.wait()
-
-    return output, error
 
 
 def write_gii(datat, template, filename, hemi):
