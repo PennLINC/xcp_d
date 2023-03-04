@@ -110,15 +110,15 @@ def test_nilearn_denoisenifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     censoring_df = confounds_df[["framewise_displacement"]]
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
     assert censoring_df["framewise_displacement"].sum() > 0
-    censoring_file = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     preprocessed_img = nb.load(preprocessed_bold)
 
     interface = nilearn.DenoiseNifti(
         preprocessed_bold=preprocessed_bold,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         mask=mask,
         TR=2,
         bandpass_filter=True,
@@ -150,15 +150,15 @@ def test_nilearn_denoisecifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     censoring_df = confounds_df[["framewise_displacement"]]
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
     assert censoring_df["framewise_displacement"].sum() > 0
-    censoring_file = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     preprocessed_img = nb.load(preprocessed_bold)
 
     interface = nilearn.DenoiseCifti(
         preprocessed_bold=preprocessed_bold,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         TR=2,
         bandpass_filter=True,
         highpass=0.01,

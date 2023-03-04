@@ -1194,14 +1194,14 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     return output_path
 
 
-def plot_design_matrix(design_matrix, censoring_file=None):
+def plot_design_matrix(design_matrix, temporal_mask=None):
     """Plot design matrix TSV with Nilearn.
 
     Parameters
     ----------
     design_matrix : str
         Path to TSV file containing the design matrix.
-    censoring_file : str, optional
+    temporal_mask : str, optional
         Path to TSV file containing a list of volumes to censor.
 
     Returns
@@ -1216,8 +1216,8 @@ def plot_design_matrix(design_matrix, censoring_file=None):
     from nilearn import plotting
 
     design_matrix_df = pd.read_table(design_matrix)
-    if censoring_file:
-        censoring_df = pd.read_table(censoring_file)
+    if temporal_mask:
+        censoring_df = pd.read_table(temporal_mask)
         n_outliers = censoring_df["framewise_displacement"].sum()
         new_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),

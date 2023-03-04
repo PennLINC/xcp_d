@@ -479,7 +479,7 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (denoise_bold, censor_interpolated_data, [("interpolated_filtered_bold", "in_file")]),
-        (flag_motion_outliers, censor_interpolated_data, [("tmask", "temporal_mask")]),
+        (flag_motion_outliers, censor_interpolated_data, [("temporal_mask", "temporal_mask")]),
         (censor_interpolated_data, outputnode, [("censored_bold", "censored_filtered_bold")]),
     ])
     # fmt:on
@@ -510,7 +510,7 @@ produced by the regression.
 
     plot_design_matrix_node = pe.Node(
         Function(
-            input_names=["design_matrix", "censoring_file"],
+            input_names=["design_matrix", "temporal_mask"],
             output_names=["design_matrix_figure"],
             function=plot_design_matrix,
         ),
@@ -533,7 +533,6 @@ produced by the regression.
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("bold_file", "inputnode.preprocessed_bold"),
             ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
@@ -586,6 +585,7 @@ produced by the regression.
                 ("confounds_file_dropped_TR", "confounds_file"),
             ]),
             (remove_dummy_scans, qc_report_wf, [
+                ("bold_file_dropped_TR", "inputnode.preprocessed_bold"),
                 ("dummy_scans", "inputnode.dummy_scans"),
                 ("fmriprep_confounds_file_dropped_TR", "inputnode.fmriprep_confounds_file"),
             ]),
@@ -599,6 +599,7 @@ produced by the regression.
         # fmt:off
         workflow.connect([
             (inputnode, qc_report_wf, [
+                ("bold_file", "inputnode.preprocessed_bold"),
                 ("dummy_scans", "inputnode.dummy_scans"),
                 ("fmriprep_confounds_tsv", "inputnode.fmriprep_confounds_file"),
             ]),
@@ -626,11 +627,11 @@ produced by the regression.
             ("head_radius", "head_radius"),
         ]),
         (flag_motion_outliers, plot_design_matrix_node, [
-            ("tmask", "censoring_file"),
+            ("temporal_mask", "temporal_mask"),
         ]),
         (flag_motion_outliers, outputnode, [
             ("filtered_motion", "filtered_motion"),
-            ("tmask", "temporal_mask"),
+            ("temporal_mask", "temporal_mask"),
         ]),
     ])
     # fmt:on
@@ -679,7 +680,7 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (downcast_data, denoise_bold, [('bold_mask', 'mask')]),
-        (flag_motion_outliers, denoise_bold, [("tmask", "censoring_file")]),
+        (flag_motion_outliers, denoise_bold, [("temporal_mask", "temporal_mask")]),
     ])
     # fmt:on
 
@@ -720,7 +721,7 @@ produced by the regression.
     # qc report
     workflow.connect([
         (flag_motion_outliers, qc_report_wf, [
-            ('tmask', 'inputnode.tmask'),
+            ('temporal_mask', 'inputnode.temporal_mask'),
             ("filtered_motion", "inputnode.filtered_motion"),
         ]),
         (denoise_bold, qc_report_wf, [
@@ -756,7 +757,7 @@ produced by the regression.
         (flag_motion_outliers, write_derivative_wf, [
             ('filtered_motion', 'inputnode.filtered_motion'),
             ('filtered_motion_metadata', 'inputnode.filtered_motion_metadata'),
-            ('tmask', 'inputnode.tmask'),
+            ('temporal_mask', 'inputnode.temporal_mask'),
             ('tmask_metadata', 'inputnode.tmask_metadata'),
         ]),
         (reho_compute_wf, write_derivative_wf, [

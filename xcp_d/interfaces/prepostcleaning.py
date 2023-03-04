@@ -275,7 +275,7 @@ class _FlagMotionOutliersInputSpec(BaseInterfaceInputSpec):
 
 
 class _FlagMotionOutliersOutputSpec(TraitedSpec):
-    tmask = File(
+    temporal_mask = File(
         exists=True,
         mandatory=True,
         desc=(
@@ -284,7 +284,7 @@ class _FlagMotionOutliersOutputSpec(TraitedSpec):
         ),
     )
     tmask_metadata = traits.Dict(
-        desc="Metadata associated with the tmask output.",
+        desc="Metadata associated with the temporal_mask output.",
     )
     filtered_motion = File(
         exists=True,
@@ -337,7 +337,7 @@ class FlagMotionOutliers(SimpleInterface):
         outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
 
         # get the output
-        self._results["tmask"] = fname_presuffix(
+        self._results["temporal_mask"] = fname_presuffix(
             "desc-fd_outliers.tsv",
             newpath=runtime.cwd,
             use_ext=True,
@@ -350,7 +350,7 @@ class FlagMotionOutliers(SimpleInterface):
 
         outliers_df = pd.DataFrame(data=outlier_mask, columns=["framewise_displacement"])
         outliers_df.to_csv(
-            self._results["tmask"],
+            self._results["temporal_mask"],
             index=False,
             header=True,
             sep="\t",
@@ -476,7 +476,7 @@ class Censor(SimpleInterface):
             new_total_volumes = bold_data_censored.shape[0]
             censored_time_axis = time_axis[:new_total_volumes]
             # Note: not an error. A time axis cannot be accessed with irregularly
-            # spaced values. Since we use the tmask for marking the volumes removed,
+            # spaced values. Since we use the temporal_mask for marking the volumes removed,
             # the time axis also is not used further in XCP.
             censored_header = nb.cifti2.Cifti2Header.from_axes(
                 (censored_time_axis, brain_model_axis)

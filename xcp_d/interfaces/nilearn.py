@@ -203,7 +203,7 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="A tab-delimited file containing the confounds to remove from the BOLD data.",
     )
-    censoring_file = File(
+    temporal_mask = File(
         exists=True,
         mandatory=True,
         desc="The tab-delimited high-motion outliers file.",
@@ -265,7 +265,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
-            censoring_file=self.inputs.censoring_file,
+            temporal_mask=self.inputs.temporal_mask,
             lowpass=lowpass,
             highpass=highpass,
             filter_order=self.inputs.filter_order,
@@ -358,7 +358,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
-            censoring_file=self.inputs.censoring_file,
+            temporal_mask=self.inputs.temporal_mask,
             lowpass=lowpass,
             highpass=highpass,
             filter_order=self.inputs.filter_order,

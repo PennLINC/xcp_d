@@ -63,15 +63,15 @@ def init_qc_report_wf(
     ------
     %(name_source)s
     preprocessed_bold
-        The preprocessed BOLD files. Typically the same as ``name_source``.
+        The preprocessed BOLD file, after dummy scan removal.
         Used for carpet plots.
     %(uncensored_denoised_bold)s
         Used for carpet plots.
         Only used if dcan_qc is True.
-    interpolated_filtered_bold
+    %(interpolated_filtered_bold)s
         Used for DCAN carpet plots.
         Only used if dcan_qc is True.
-    censored_filtered_bold
+    %(censored_filtered_bold)s
         Used for LINC carpet plots.
     boldref
         Only used with non-CIFTI data.
@@ -86,7 +86,7 @@ def init_qc_report_wf(
     %(dummy_scans)s
     fmriprep_confounds_file
     %(head_radius)s
-    tmask
+    temporal_mask
     %(filtered_motion)s
 
     Outputs
@@ -106,7 +106,7 @@ def init_qc_report_wf(
                 "dummy_scans",
                 "fmriprep_confounds_file",
                 "filtered_motion",
-                "tmask",
+                "temporal_mask",
                 "head_radius",
                 # nifti-only inputs
                 "bold_mask",
@@ -143,7 +143,7 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, censor_report, [
             ("head_radius", "head_radius"),
-            ("tmask", "tmask"),
+            ("temporal_mask", "temporal_mask"),
             ("dummy_scans", "dummy_scans"),
             ("filtered_motion", "filtered_motion"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
@@ -329,7 +329,7 @@ def init_qc_report_wf(
             ("censored_filtered_bold", "cleaned_file"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("head_radius", "head_radius"),
-            ("tmask", "tmask"),
+            ("temporal_mask", "temporal_mask"),
             ("dummy_scans", "dummy_scans"),
         ]),
         (qcreport, outputnode, [

@@ -94,7 +94,7 @@ def init_writederivatives_wf(
     confounds_file
     filtered_motion
     filtered_motion_metadata
-    tmask
+    temporal_mask
     tmask_metadata
     %(dummy_scans)s
     """
@@ -119,7 +119,7 @@ def init_writederivatives_wf(
                 "reho_out",
                 "filtered_motion",
                 "filtered_motion_metadata",
-                "tmask",
+                "temporal_mask",
                 "tmask_metadata",
                 "dummy_scans",
                 # cifti-only inputs
@@ -202,7 +202,7 @@ def init_writederivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_temporal_mask, [('tmask', 'in_file')]),
+        (inputnode, ds_temporal_mask, [('temporal_mask', 'in_file')]),
         (inputnode, ds_filtered_motion, [('filtered_motion', 'in_file')]),
         (inputnode, ds_confounds, [('confounds_file', 'in_file')])
     ])

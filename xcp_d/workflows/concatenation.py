@@ -235,7 +235,7 @@ def init_concatenate_data_wf(
             ("censored_filtered_bold", "inputnode.censored_filtered_bold"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
-            ("temporal_mask", "inputnode.tmask"),
+            ("temporal_mask", "inputnode.temporal_mask"),
         ]),
     ])
     # fmt:on

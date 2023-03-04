@@ -35,7 +35,7 @@ LOGGER = logging.getLogger("nipype.interface")
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
     filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
-    tmask = File(exists=True, mandatory=True, desc="Temporal mask.")
+    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask.")
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
@@ -101,7 +101,7 @@ class CensoringPlot(SimpleInterface):
             )
 
         # Plot censored volumes as vertical lines
-        tmask_df = pd.read_table(self.inputs.tmask)
+        tmask_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = tmask_df["framewise_displacement"].values
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
@@ -180,7 +180,7 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
         desc="Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.",
     )
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
-    tmask = File(exists=True, mandatory=True, desc="Temporal mask")
+    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask")
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
@@ -229,7 +229,7 @@ class QCPlots(SimpleInterface):
     qcplots.inputs.name_source = rawbold
     qcplots.inputs.bold_file = rawbold
     qcplots.inputs.TR = TR
-    qcplots.inputs.tmask = temporalmask
+    qcplots.inputs.temporal_mask = temporalmask
     qcplots.inputs.mask_file = mask
     qcplots.inputs.dummy_scans = dummy_scans
     qcplots.run()
@@ -258,11 +258,11 @@ class QCPlots(SimpleInterface):
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
-        tmask_df = pd.read_table(self.inputs.tmask)
+        tmask_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = tmask_df["framewise_displacement"].values
         num_censored_volumes = int(tmask_arr.sum())
 
-        # Apply dummy scans and temporal mask to interpolated/full data
+        # Apply temporal mask to interpolated/full data
         rmsd_censored = rmsd[tmask_arr == 0]
         postproc_fd_timeseries = preproc_fd_timeseries[tmask_arr == 0]
 

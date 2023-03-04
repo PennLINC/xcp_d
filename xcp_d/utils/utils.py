@@ -479,7 +479,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
 def denoise_with_nilearn(
     preprocessed_bold,
     confounds_file,
-    censoring_file,
+    temporal_mask,
     lowpass,
     highpass,
     filter_order,
@@ -506,7 +506,7 @@ def denoise_with_nilearn(
     confounds_file : str
         Path to TSV file containing selected confounds, after dummy volume removal,
         but without any additional censoring.
-    censoring_file : str
+    temporal_mask : str
         Path to TSV file containing one column with zeros for low-motion volumes and
         ones for high-motion outliers.
     lowpass, highpass : float or None
@@ -540,7 +540,7 @@ def denoise_with_nilearn(
     assert "linear_trend" in confounds_df.columns
     assert confounds_df.columns[-1] == "intercept"
 
-    censoring_df = pd.read_table(censoring_file)
+    censoring_df = pd.read_table(temporal_mask)
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
     # Orthogonalize full nuisance regressors w.r.t. any signal regressors

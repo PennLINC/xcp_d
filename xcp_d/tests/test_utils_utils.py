@@ -44,8 +44,8 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes > 0
-    censoring_file = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # First, try out filtering
     (
@@ -55,7 +55,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         lowpass=lowpass,
         highpass=highpass,
         filter_order=filter_order,
@@ -74,7 +74,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         lowpass=None,
         highpass=None,
         filter_order=None,
@@ -101,7 +101,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=orth_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         lowpass=lowpass,
         highpass=highpass,
         filter_order=filter_order,
