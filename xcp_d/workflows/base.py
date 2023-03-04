@@ -43,6 +43,8 @@ from xcp_d.workflows.execsummary import (
 )
 
 LOGGER = logging.getLogger("nipype.workflow")
+MINIMUM_RUN_VOLUMES = 10
+MINIMUM_CONCATENATED_VOLUMES = 30
 
 
 @fill_doc
@@ -647,10 +649,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 for io_name in merge_elements
             }
 
+        n_good_volumes_in_task = []
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
 
-            is_bad_run = flag_bad_run(
+            n_good_volumes_in_run = flag_bad_run(
                 fmriprep_confounds_file=run_data["confounds"],
                 dummy_scans=dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
@@ -662,13 +665,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 fd_thresh=fd_thresh,
                 brain_mask=subj_data["t1w_mask"],
             )
-            if is_bad_run:
+            if n_good_volumes_in_run < MINIMUM_RUN_VOLUMES:
                 LOGGER.warning(
-                    f"More than 50% of volumes in {bold_file} are high-motion outliers. "
-                    "This run will not be processed."
+                    f"Fewer than {MINIMUM_RUN_VOLUMES} volumes in {bold_file} "
+                    "are not high-motion outliers. This run will not be processed."
                 )
                 continue
 
+            n_good_volumes_in_task.append(n_good_volumes_in_run)
             bold_postproc_wf = postproc_wf_function(
                 bold_file=bold_file,
                 high_pass=high_pass,
@@ -726,6 +730,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     # fmt:on
 
         if combineruns and (n_task_runs > 1):
+            n_good_volumes_in_task = np.sum(n_good_volumes_in_task)
+            if n_good_volumes_in_task < MINIMUM_CONCATENATED_VOLUMES:
+                LOGGER.warning(
+                    f"Fewer than {MINIMUM_CONCATENATED_VOLUMES} volumes in entity set {ent_set} "
+                    "are not high-motion outliers. Concatenation will not be performed."
+                )
+                continue
+
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,
