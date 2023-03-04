@@ -15,7 +15,7 @@ Contents
 
    installation
    usage
-   generalworkflow
-   output
+   workflows
+   outputs
    api
    dev_guide

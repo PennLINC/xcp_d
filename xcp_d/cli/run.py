@@ -41,7 +41,7 @@ def get_parser():
 
     parser = ArgumentParser(
         description="xcp_d postprocessing workflow of fMRI data",
-        epilog="see https://xcp-d.readthedocs.io/en/latest/generalworkflow.html",
+        epilog="see https://xcp-d.readthedocs.io/en/latest/workflows.html",
         formatter_class=ArgumentDefaultsHelpFormatter,
     )
 

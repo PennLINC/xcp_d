@@ -1,9 +1,9 @@
 
 .. include:: links.rst
 
-################
-Outputs of xcp_d
-################
+##################
+Outputs of *XCP-D*
+##################
 
 The  ``xcp_d`` outputs are written out in BIDS format and consist of three main parts.
 
