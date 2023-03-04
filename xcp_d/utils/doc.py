@@ -383,9 +383,9 @@ uncensored_denoised_bold : :obj:`str`
 """
 
 docdict[
-    "unfiltered_denoised_bold"
+    "interpolated_unfiltered_bold"
 ] = """
-unfiltered_denoised_bold : :obj:`str`
+interpolated_unfiltered_bold : :obj:`str`
     Path to the censored, denoised, and interpolated BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
     followed by cubic spline interpolation.

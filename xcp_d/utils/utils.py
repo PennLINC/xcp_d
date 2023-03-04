@@ -521,7 +521,7 @@ def denoise_with_nilearn(
     -------
     %(uncensored_denoised_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
-    %(interpolated_denoised_bold)s
+    %(interpolated_unfiltered_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
     %(interpolated_filtered_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
@@ -581,13 +581,13 @@ def denoise_with_nilearn(
     censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
 
     # Now interpolate the censored, denoised data with cubic spline interpolation
-    interpolated_denoised_bold = np.zeros(
+    interpolated_unfiltered_bold = np.zeros(
         (n_volumes, n_voxels),
         dtype=censored_denoised_bold.dtype,
     )
-    interpolated_denoised_bold[sample_mask, :] = censored_denoised_bold
-    interpolated_denoised_bold = signal._interpolate_volumes(
-        interpolated_denoised_bold,
+    interpolated_unfiltered_bold[sample_mask, :] = censored_denoised_bold
+    interpolated_unfiltered_bold = signal._interpolate_volumes(
+        interpolated_unfiltered_bold,
         sample_mask=sample_mask,
         t_r=TR,
     )
@@ -596,7 +596,7 @@ def denoise_with_nilearn(
     if low_pass is not None and high_pass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
         interpolated_filtered_bold = butter_bandpass(
-            interpolated_denoised_bold.copy(),
+            interpolated_unfiltered_bold.copy(),
             sampling_rate=1 / TR,
             low_pass=low_pass,
             high_pass=high_pass,
@@ -605,9 +605,9 @@ def denoise_with_nilearn(
             padlen=n_volumes - 1,
         )
     else:
-        interpolated_filtered_bold = interpolated_denoised_bold
+        interpolated_filtered_bold = interpolated_unfiltered_bold
 
-    return uncensored_denoised_bold, interpolated_denoised_bold, interpolated_filtered_bold
+    return uncensored_denoised_bold, interpolated_unfiltered_bold, interpolated_filtered_bold
 
 
 def _select_first(lst):
