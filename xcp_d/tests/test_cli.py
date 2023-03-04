@@ -14,7 +14,6 @@ from xcp_d.tests.utils import (
     get_test_data_path,
     run_command,
 )
-from xcp_d.utils.concatenation import concatenate_derivatives
 
 
 @pytest.mark.ds001419_nifti
@@ -114,17 +113,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
-
-    # Apply the concatenation outside of the workflow run
-    concatenate_derivatives(
-        subjects=["01"],
-        fmri_dir=data_dir,
-        output_dir=os.path.join(out_dir, "xcp_d"),
-        cifti=opts.cifti,
-        dcan_qc=opts.dcan_qc,
-        dummy_scans=opts.dummy_scans,
-        dummytime=opts.dummytime,
-    )
 
     generate_reports(
         subject_list=["01"],

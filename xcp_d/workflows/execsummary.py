@@ -346,44 +346,51 @@ def init_execsummary_functional_plots_wf(
         ),  # a nifti boldref
         name="inputnode",
     )
-    inputnode.inputs.preproc_nifti = preproc_nifti
+    if preproc_nifti:
+        inputnode.inputs.preproc_nifti = preproc_nifti
 
-    # Get bb_registration_file prefix from fmriprep
-    # TODO: Replace with interfaces.
-    all_files = list(layout.get_files())
-    current_bold_file = os.path.basename(preproc_nifti)
-    if "_space" in current_bold_file:
-        bb_register_prefix = current_bold_file.split("_space")[0]
+        # Only grab the bb_registration_file if the preprocessed BOLD file is a parameter.
+        # Get bb_registration_file prefix from fmriprep
+        # TODO: Replace with interfaces.
+        all_files = list(layout.get_files())
+        current_bold_file = os.path.basename(preproc_nifti)
+        if "_space" in current_bold_file:
+            bb_register_prefix = current_bold_file.split("_space")[0]
+        else:
+            bb_register_prefix = current_bold_file.split("_desc")[0]
+
+        # check if there is a bb_registration_file or coregister file
+        patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
+        registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
+        # Get the T1w registration file
+        bold_t1w_registration_file = fnmatch.filter(
+            all_files, "*" + bb_register_prefix + registration_file[0]
+        )[0]
+
+        ds_registration_figure = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                in_file=bold_t1w_registration_file,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="bbregister",
+            ),
+            name="ds_registration_figure",
+            run_without_submitting=True,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_registration_figure, [
+                ("preproc_nifti", "source_file"),
+            ]),
+        ])
+        # fmt:on
     else:
-        bb_register_prefix = current_bold_file.split("_desc")[0]
-
-    # check if there is a bb_registration_file or coregister file
-    patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
-    registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
-    # Get the T1w registration file
-    bold_t1w_registration_file = fnmatch.filter(
-        all_files, "*" + bb_register_prefix + registration_file[0]
-    )[0]
-
-    ds_registration_figure = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            in_file=bold_t1w_registration_file,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="bbregister",
-        ),
-        name="ds_registration_figure",
-        run_without_submitting=True,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_registration_figure, [
-            ("preproc_nifti", "source_file"),
-        ]),
-    ])
-    # fmt:on
+        LOGGER.warning(
+            "Preprocessed NIFTI file not provided as a parameter, "
+            "so the BBReg figure will not be extracted."
+        )
 
     # Plot the mean bold image
     calculate_mean_bold = pe.Node(

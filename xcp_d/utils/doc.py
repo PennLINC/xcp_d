@@ -75,6 +75,15 @@ template_to_t1w : :obj:`str`
 """
 
 docdict[
+    "name_source"
+] = """
+name_source : :obj:`str`
+    Path to the file that will be used as the ``source_file`` for derivatives.
+    This is generally the preprocessed BOLD file.
+    This file does not need to exist (e.g., in the case of a concatenated version of the filename).
+"""
+
+docdict[
     "params"
 ] = """
 params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \
@@ -92,6 +101,18 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
     BIDS-compliant format.
     fMRIPrep and Nibabies derivatives are assumed to be roughly equivalent in terms of
     file organization and naming.
+"""
+
+docdict[
+    "dcan_qc"
+] = """
+dcan_qc : obj:`bool`
+    This flag determines if DCAN-related QC steps will be taken.
+    Enabling this flag will trigger the following steps:
+
+    1. Brainsprite figures will be generated.
+    2. The executive summary will be generated.
+    3. DCAN QC files will be generated.
 """
 
 docdict[
@@ -271,7 +292,14 @@ docdict[
     "timeseries"
 ] = """
 timeseries : :obj:`list` of :obj:`str`
-    List of paths to atlas-specific time series files.
+    List of paths to atlas-specific time series TSV files.
+"""
+
+docdict[
+    "timeseries_ciftis"
+] = """
+timeseries_ciftis : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific time series CIFTI (ptseries) files.
 """
 
 docdict[
@@ -322,6 +350,58 @@ dummy_scans : :obj:`int` or "auto"
     Number of volumes to remove from the beginning of each run.
     If set to 'auto', xcp_d will extract non-steady-state volume indices from the
     preprocessing derivatives' confounds file.
+"""
+
+docdict[
+    "filtered_motion"
+] = """
+filtered_motion : :obj:`str`
+    Framewise displacement timeseries, potentially after bandstop or low-pass filtering.
+    This is a TSV file with one column: 'framewise_displacement'.
+"""
+
+docdict[
+    "temporal_mask"
+] = """
+temporal_mask : :obj:`str`
+    Temporal mask; all values above ``fd_thresh`` set to 1.
+    This is a TSV file with one column: 'framewise_displacement'.
+"""
+
+docdict[
+    "uncensored_denoised_bold"
+] = """
+uncensored_denoised_bold : :obj:`str`
+    Path to the uncensored, denoised BOLD file.
+    This file is the result of denoising the full (uncensored) preprocessed BOLD data using
+    betas estimated using the *censored* BOLD data and nuisance regressors.
+"""
+
+docdict[
+    "unfiltered_denoised_bold"
+] = """
+unfiltered_denoised_bold : :obj:`str`
+    Path to the censored, denoised, and interpolated BOLD file.
+    This file is the result of denoising the censored preprocessed BOLD data,
+    followed by cubic spline interpolation.
+"""
+
+docdict[
+    "filtered_denoised_bold"
+] = """
+filtered_denoised_bold : :obj:`str`
+    Path to the censored, denoised, interpolated, and filtered BOLD file.
+    This file is the result of denoising the censored preprocessed BOLD data,
+    followed by cubic spline interpolation and band-pass filtering.
+"""
+
+docdict[
+    "smoothed_denoised_bold"
+] = """
+smoothed_denoised_bold : :obj:`str`
+    Path to the censored, denoised, interpolated, filtered, and smoothed BOLD file.
+    This file is the result of denoising the censored preprocessed BOLD data,
+    followed by cubic spline interpolation, band-pass filtering, and spatial smoothing.
 """
 
 docdict_indented = {}

@@ -134,6 +134,8 @@ def init_boldpostprocess_wf(
 
     Parameters
     ----------
+    bold_file: str
+        bold file for post processing
     %(bandpass_filter)s
     %(lower_bpf)s
     %(upper_bpf)s
@@ -143,27 +145,24 @@ def init_boldpostprocess_wf(
     %(band_stop_min)s
     %(band_stop_max)s
     %(smoothing)s
-    bold_file: str
+    bold_file : str
         bold file for post processing
     %(head_radius)s
     %(params)s
-    custom_confounds: str
-        path to cusrtom nuissance regressors
+    custom_confounds_folder : str
+        path to custom nuisance regressors
     %(omp_nthreads)s
     %(dummytime)s
     %(dummy_scans)s
-    output_dir : str
-        Directory in which to save xcp_d output
+    %(output_dir)s
     %(fd_thresh)s
     n_runs
     despike: bool
         If True, run 3dDespike from AFNI
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
+    %(dcan_qc)s
     run_data : dict
     min_coverage
-    layout : BIDSLayout object
-        BIDS dataset layout
+    %(layout)s
     %(name)s
 
     Inputs
@@ -192,6 +191,25 @@ def init_boldpostprocess_wf(
         Fed from the subject workflow.
     fmriprep_confounds_tsv
         Loaded in this workflow.
+
+    Outputs
+    -------
+    %(name_source)s
+    preprocessed_bold : str
+        The preprocessed BOLD file, after dummy scan removal.
+    %(filtered_motion)s
+    %(temporal_mask)s
+    fmriprep_confounds_file
+    %(uncensored_denoised_bold)s
+    %(filtered_denoised_bold)s
+    %(smoothed_denoised_bold)s
+    boldref
+    bold_mask
+    t1w_to_native_xform
+    %(atlas_names)s
+    %(timeseries)s
+    %(timeseries_ciftis)s
+        This will not be defined.
 
     References
     ----------
@@ -295,6 +313,28 @@ produced by the regression.
 {bandpass_str}
 """
 
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "name_source",
+                "preprocessed_bold",
+                "fmriprep_confounds_file",
+                "filtered_motion",
+                "temporal_mask",
+                "uncensored_denoised_bold",
+                "filtered_denoised_bold",
+                "smoothed_denoised_bold",
+                "boldref",
+                "bold_mask",
+                "t1w_to_native_xform",
+                "atlas_names",
+                "timeseries",
+                "timeseries_ciftis",  # will not be defined
+            ],
+        ),
+        name="outputnode",
+    )
+
     mem_gbx = _create_mem_gb(bold_file)
 
     downcast_data = pe.Node(
@@ -306,11 +346,19 @@ produced by the regression.
 
     # fmt:off
     workflow.connect([
+        (inputnode, outputnode, [
+            ("bold_file", "name_source"),
+            ("t1w_to_native", "t1w_to_native_xform"),
+        ]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
             ("ref_file", "ref_file"),
             ("bold_mask", "bold_mask"),
             ("t1w_mask", "t1w_mask"),
+        ]),
+        (downcast_data, outputnode, [
+            ("bold_mask", "bold_mask"),
+            ("ref_file", "boldref"),
         ]),
     ])
     # fmt:on
@@ -340,6 +388,15 @@ produced by the regression.
         name="fcons_ts_wf",
         omp_nthreads=omp_nthreads,
     )
+
+    # fmt:off
+    workflow.connect([
+        (fcon_ts_wf, outputnode, [
+            ('outputnode.atlas_names', 'atlas_names'),
+            ('outputnode.timeseries', 'timeseries'),
+        ]),
+    ])
+    # fmt:on
 
     if bandpass_filter:
         alff_compute_wf = init_compute_alff_wf(
@@ -462,9 +519,6 @@ produced by the regression.
         output_dir=output_dir,
         TR=TR,
         motion_filter_type=motion_filter_type,
-        band_stop_max=band_stop_max,
-        band_stop_min=band_stop_min,
-        motion_filter_order=motion_filter_order,
         fd_thresh=fd_thresh,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
@@ -476,6 +530,7 @@ produced by the regression.
     # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
+            ("bold_file", "inputnode.name_source"),
             ("bold_file", "inputnode.preprocessed_bold"),
             ("ref_file", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
@@ -488,6 +543,10 @@ produced by the regression.
         ]),
         (denoise_bold, qc_report_wf, [
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
+        ]),
+        (denoise_bold, outputnode, [
+            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
+            ("filtered_denoised_bold", "filtered_denoised_bold"),
         ]),
     ])
     # fmt:on
@@ -512,6 +571,10 @@ produced by the regression.
             (consolidate_confounds_node, remove_dummy_scans, [
                 ("out_file", "confounds_file"),
             ]),
+            (remove_dummy_scans, outputnode, [
+                ("bold_file_dropped_TR", "preprocessed_bold"),
+                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
+            ]),
             (remove_dummy_scans, flag_motion_outliers, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
@@ -522,6 +585,7 @@ produced by the regression.
             ]),
             (remove_dummy_scans, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
+                ("fmriprep_confounds_file_dropped_TR", "inputnode.fmriprep_confounds_file"),
             ]),
             (remove_dummy_scans, plot_design_matrix_node, [
                 ("confounds_file_dropped_TR", "design_matrix"),
@@ -534,10 +598,15 @@ produced by the regression.
         workflow.connect([
             (inputnode, qc_report_wf, [
                 ("dummy_scans", "inputnode.dummy_scans"),
+                ("fmriprep_confounds_tsv", "inputnode.fmriprep_confounds_file"),
             ]),
             (inputnode, flag_motion_outliers, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
+                ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
+            ]),
+            (inputnode, outputnode, [
+                ("bold_file", "preprocessed_bold"),
                 ("fmriprep_confounds_tsv", "fmriprep_confounds_file"),
             ]),
             (consolidate_confounds_node, denoise_bold, [
@@ -556,6 +625,10 @@ produced by the regression.
         ]),
         (flag_motion_outliers, plot_design_matrix_node, [
             ("tmask", "censoring_file"),
+        ]),
+        (flag_motion_outliers, outputnode, [
+            ("filtered_motion", "filtered_motion"),
+            ("tmask", "temporal_mask"),
         ]),
     ])
     # fmt:on
@@ -671,6 +744,9 @@ produced by the regression.
         ]),
         (qc_report_wf, write_derivative_wf, [
             ('outputnode.qc_file', 'inputnode.qc_file'),
+        ]),
+        (resd_smoothing_wf, outputnode, [
+            ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
         ]),
         (resd_smoothing_wf, write_derivative_wf, [
             ('outputnode.smoothed_bold', 'inputnode.smoothed_bold'),

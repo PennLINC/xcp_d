@@ -19,11 +19,13 @@ from xcp_d.__about__ import __version__
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
+    _get_tr,
     collect_data,
     collect_run_data,
     collect_surface_data,
     get_entity,
     get_preproc_pipeline_info,
+    group_across_runs,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
@@ -34,6 +36,7 @@ from xcp_d.workflows.anatomical import (
 )
 from xcp_d.workflows.bold import init_boldpostprocess_wf
 from xcp_d.workflows.cifti import init_ciftipostprocess_wf
+from xcp_d.workflows.concatenation import init_concatenate_data_wf
 from xcp_d.workflows.execsummary import (
     init_brainsprite_figures_wf,
     init_execsummary_anatomical_plots_wf,
@@ -74,6 +77,7 @@ def init_xcpd_wf(
     dcan_qc=False,
     input_type="fmriprep",
     min_coverage=0.5,
+    combineruns=False,
     name="xcpd_wf",
 ):
     """Build and organize execution of xcp_d pipeline.
@@ -128,6 +132,7 @@ def init_xcpd_wf(
                 dcan_qc=False,
                 input_type="fmriprep",
                 min_coverage=0.5,
+                combineruns=False,
                 name="xcpd_wf",
             )
 
@@ -176,6 +181,7 @@ def init_xcpd_wf(
         Whether to run DCAN QC or not.
     %(input_type)s
     min_coverage
+    combineruns
     %(name)s
 
     References
@@ -218,6 +224,7 @@ def init_xcpd_wf(
             dcan_qc=dcan_qc,
             input_type=input_type,
             min_coverage=min_coverage,
+            combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
         )
 
@@ -262,6 +269,7 @@ def init_subject_wf(
     output_dir,
     input_type,
     min_coverage,
+    combineruns,
     name,
 ):
     """Organize the postprocessing pipeline for a single subject.
@@ -305,6 +313,7 @@ def init_subject_wf(
                 dcan_qc=False,
                 input_type="fmriprep",
                 min_coverage=0.5,
+                combineruns=False,
                 name="single_subject_sub-01_wf",
             )
 
@@ -347,6 +356,7 @@ def init_subject_wf(
     %(subject_id)s
     %(input_type)s
     min_coverage
+    combineruns
     %(name)s
 
     References
@@ -601,78 +611,158 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
         )
 
-    # loop over each bold run to be postprocessed
-    # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
-    # for hints on iteration
-    for i_run, bold_file in enumerate(preproc_files):
-        run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
+    # What if I grouped the preproc_files by task first, here?
+    # Then I get a list of lists of preproc files.
+    # I need a nested for loop to initialize all of the post-processing workflows.
+    # Then the concatenation workflows get connected within the first for loop.
+    # The concatenation workflow doesn't need to group inputs,
+    # but it may need to filter them to remove any runs that didn't succeed?
+    n_runs = len(preproc_files)
+    preproc_files = group_across_runs(preproc_files)
+    run_counter = 0
+    for ent_set, task_files in enumerate(preproc_files):
+        # Assuming TR is constant across runs for a given combination of entities.
+        TR = _get_tr(nb.load(task_files[0]))
 
-        is_bad_run = flag_bad_run(
-            fmriprep_confounds_file=run_data["confounds"],
-            dummy_scans=dummy_scans,
-            TR=run_data["bold_metadata"]["RepetitionTime"],
-            motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            head_radius=head_radius,
-            fd_thresh=fd_thresh,
-            brain_mask=subj_data["t1w_mask"],
-        )
-        if is_bad_run:
-            LOGGER.warning(
-                f"More than 50% of volumes in {bold_file} are high-motion outliers. "
-                "This run will not be processed."
+        n_task_runs = len(task_files)
+        if combineruns and (n_task_runs > 1):
+            merge_elements = [
+                "name_source",
+                "preprocessed_bold",
+                "fmriprep_confounds_file",
+                "filtered_motion",
+                "temporal_mask",
+                "uncensored_denoised_bold",
+                "filtered_denoised_bold",
+                "smoothed_denoised_bold",
+                "t1w_to_native_xform",
+                "bold_mask",
+                "boldref",
+                "atlas_names",  # this will be exactly the same across runs
+                "timeseries",
+                "timeseries_ciftis",
+            ]
+            merge_dict = {
+                io_name: pe.Node(
+                    niu.Merge(n_task_runs, no_flatten=True),
+                    name=f"collect_{io_name}_{ent_set}",
+                )
+                for io_name in merge_elements
+            }
+
+        for j_run, bold_file in enumerate(task_files):
+            run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
+
+            is_bad_run = flag_bad_run(
+                fmriprep_confounds_file=run_data["confounds"],
+                dummy_scans=dummy_scans,
+                TR=run_data["bold_metadata"]["RepetitionTime"],
+                motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
+                band_stop_min=band_stop_min,
+                band_stop_max=band_stop_max,
+                head_radius=head_radius,
+                fd_thresh=fd_thresh,
+                brain_mask=subj_data["t1w_mask"],
             )
-            continue
+            if is_bad_run:
+                LOGGER.warning(
+                    f"More than 50% of volumes in {bold_file} are high-motion outliers. "
+                    "This run will not be processed."
+                )
+                continue
 
-        bold_postproc_wf = postproc_wf_function(
-            bold_file=bold_file,
-            lower_bpf=lower_bpf,
-            upper_bpf=upper_bpf,
-            bpf_order=bpf_order,
-            motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            bandpass_filter=bandpass_filter,
-            smoothing=smoothing,
-            params=params,
-            head_radius=head_radius,
-            omp_nthreads=omp_nthreads,
-            n_runs=len(preproc_files),
-            custom_confounds_folder=custom_confounds_folder,
-            layout=layout,
-            despike=despike,
-            dummytime=dummytime,
-            dummy_scans=dummy_scans,
-            fd_thresh=fd_thresh,
-            dcan_qc=dcan_qc,
-            run_data=run_data,
-            output_dir=output_dir,
-            min_coverage=min_coverage,
-            name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
-        )
+            bold_postproc_wf = postproc_wf_function(
+                input_type=input_type,
+                bold_file=bold_file,
+                lower_bpf=lower_bpf,
+                upper_bpf=upper_bpf,
+                bpf_order=bpf_order,
+                motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
+                band_stop_min=band_stop_min,
+                band_stop_max=band_stop_max,
+                bandpass_filter=bandpass_filter,
+                smoothing=smoothing,
+                params=params,
+                head_radius=head_radius,
+                omp_nthreads=omp_nthreads,
+                n_runs=n_runs,
+                custom_confounds_folder=custom_confounds_folder,
+                layout=layout,
+                despike=despike,
+                dummytime=dummytime,
+                dummy_scans=dummy_scans,
+                fd_thresh=fd_thresh,
+                dcan_qc=dcan_qc,
+                run_data=run_data,
+                output_dir=output_dir,
+                min_coverage=min_coverage,
+                name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
+            )
+            run_counter += 1
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, bold_postproc_wf, [('t1w_mask', 'inputnode.t1w_mask')]),
-            (warp_anats_to_template_wf, bold_postproc_wf, [
-                ("outputnode.t1w", "inputnode.t1w"),
-                ("outputnode.t2w", "inputnode.t2w"),
-            ]),
-        ])
-        if not cifti:
+            # fmt:off
             workflow.connect([
-                (inputnode, bold_postproc_wf, [
-                    ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
+                (inputnode, bold_postproc_wf, [("t1w_mask", "inputnode.t1w_mask")]),
+                (warp_anats_to_template_wf, bold_postproc_wf, [
+                    ("outputnode.t1w", "inputnode.t1w"),
+                    ("outputnode.t2w", "inputnode.t2w"),
                 ]),
             ])
-        # fmt:on
+            # fmt:on
+
+            if not cifti:
+                # fmt:off
+                workflow.connect([
+                    (inputnode, bold_postproc_wf, [
+                        ("template_to_t1w_xform", "inputnode.template_to_t1w"),
+                    ]),
+                ])
+                # fmt:on
+
+            if combineruns and (n_task_runs > 1):
+                for io_name, node in merge_dict.items():
+                    # fmt:off
+                    workflow.connect([
+                        (bold_postproc_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
+                    ])
+                    # fmt:on
+
+        if combineruns and (n_task_runs > 1):
+            concatenate_data_wf = init_concatenate_data_wf(
+                output_dir=output_dir,
+                motion_filter_type=motion_filter_type,
+                fd_thresh=fd_thresh,
+                mem_gb=1,
+                omp_nthreads=omp_nthreads,
+                TR=TR,
+                smooth=bool(smoothing),
+                cifti=cifti,
+                dcan_qc=dcan_qc,
+                name=f"concatenate_entity_set_{ent_set}_wf",
+            )
+            concatenate_data_wf.inputs.inputnode.head_radius = head_radius
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, concatenate_data_wf, [
+                    ("t1w_mask", "inputnode.t1w_mask"),
+                    ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+                ]),
+            ])
+            # fmt:on
+
+            for io_name, node in merge_dict.items():
+                # fmt:off
+                workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
+                # fmt:on
 
     # fmt:off
-    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
-                      (about, ds_report_about, [('out_report', 'in_file')])])
+    workflow.connect([
+        (summary, ds_report_summary, [("out_report", "in_file")]),
+        (about, ds_report_about, [("out_report", "in_file")]),
+    ])
     # fmt:on
 
     for node in workflow.list_node_names():
