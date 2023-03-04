@@ -86,15 +86,15 @@ class SurfaceReHo(SimpleInterface):
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
     TR = traits.Float(mandatory=True, desc="repetition time")
-    lowpass = traits.Float(
+    low_pass = traits.Float(
         mandatory=True,
         default_value=0.10,
-        desc="lowpass filter in Hz",
+        desc="low_pass filter in Hz",
     )
-    highpass = traits.Float(
+    high_pass = traits.Float(
         mandatory=True,
         default_value=0.01,
-        desc="highpass filter in Hz",
+        desc="high_pass filter in Hz",
     )
     mask = File(
         exists=True,
@@ -119,8 +119,8 @@ class ComputeALFF(SimpleInterface):
         # compute the ALFF
         alff_mat = compute_alff(
             data_matrix=data_matrix,
-            low_pass=self.inputs.lowpass,
-            high_pass=self.inputs.highpass,
+            low_pass=self.inputs.low_pass,
+            high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
         )
 

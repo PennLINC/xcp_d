@@ -14,8 +14,8 @@ from xcp_d.utils.doc import fill_doc
 def init_writederivatives_wf(
     bold_file,
     bandpass_filter,
-    lowpass,
-    highpass,
+    low_pass,
+    high_pass,
     motion_filter_type,
     smoothing,
     params,
@@ -36,8 +36,8 @@ def init_writederivatives_wf(
             wf = init_writederivatives_wf(
                 bold_file="/path/to/file.nii.gz",
                 bandpass_filter=True,
-                lowpass=0.1,
-                highpass=0.008,
+                low_pass=0.1,
+                high_pass=0.008,
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
@@ -52,9 +52,9 @@ def init_writederivatives_wf(
     ----------
     bold_file : str
         bold or cifti files
-    lowpass : float
+    low_pass : float
         low pass filter
-    highpass : float
+    high_pass : float
         high pass filter
     %(motion_filter_type)s
     %(smoothing)s
@@ -133,7 +133,7 @@ def init_writederivatives_wf(
         "nuisance parameters": params,
     }
     if bandpass_filter:
-        cleaned_data_dictionary["Freq Band"] = [highpass, lowpass]
+        cleaned_data_dictionary["Freq Band"] = [high_pass, low_pass]
 
     smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
 

@@ -210,8 +210,8 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
     )
     TR = traits.Float(mandatory=True, desc="Repetition time")
     bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
-    lowpass = traits.Float(mandatory=True, default_value=0.10, desc="Lowpass filter in Hz")
-    highpass = traits.Float(mandatory=True, default_value=0.01, desc="Highpass filter in Hz")
+    low_pass = traits.Float(mandatory=True, default_value=0.10, desc="Lowpass filter in Hz")
+    high_pass = traits.Float(mandatory=True, default_value=0.01, desc="Highpass filter in Hz")
     filter_order = traits.Int(mandatory=True, default_value=2, desc="Filter order")
 
 
@@ -249,9 +249,9 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
 
     def _run_interface(self, runtime):
         if not self.inputs.bandpass_filter:
-            lowpass, highpass = None, None
+            low_pass, high_pass = None, None
         else:
-            lowpass, highpass = self.inputs.lowpass, self.inputs.highpass
+            low_pass, high_pass = self.inputs.low_pass, self.inputs.high_pass
 
         preprocessed_bold_arr = read_ndata(self.inputs.preprocessed_bold)
 
@@ -266,8 +266,8 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             temporal_mask=self.inputs.temporal_mask,
-            lowpass=lowpass,
-            highpass=highpass,
+            low_pass=low_pass,
+            high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
         )
@@ -329,9 +329,9 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
 
     def _run_interface(self, runtime):
         if not self.inputs.bandpass_filter:
-            lowpass, highpass = None, None
+            low_pass, high_pass = None, None
         else:
-            lowpass, highpass = self.inputs.lowpass, self.inputs.highpass
+            low_pass, high_pass = self.inputs.low_pass, self.inputs.high_pass
 
         # Use a NiftiMasker instead of apply_mask to retain TR in the image header.
         # Note that this doesn't use any of the masker's denoising capabilities.
@@ -359,8 +359,8 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             temporal_mask=self.inputs.temporal_mask,
-            lowpass=lowpass,
-            highpass=highpass,
+            low_pass=low_pass,
+            high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
         )

@@ -484,8 +484,8 @@ def denoise_with_nilearn(
     preprocessed_bold,
     confounds_file,
     temporal_mask,
-    lowpass,
-    highpass,
+    low_pass,
+    high_pass,
     filter_order,
     TR,
 ):
@@ -511,8 +511,8 @@ def denoise_with_nilearn(
         Path to TSV file containing selected confounds, after dummy volume removal,
         but without any additional censoring.
     %(temporal_mask)s
-    lowpass, highpass : float or None
-        Lowpass and highpass thresholds, in Hertz.
+    low_pass, high_pass : float or None
+        Lowpass and high_pass thresholds, in Hertz.
     filter_order : int
         Filter order.
     %(TR)s
@@ -593,13 +593,13 @@ def denoise_with_nilearn(
     )
 
     # Now apply the bandpass filter to the interpolated, denoised data
-    if lowpass is not None and highpass is not None:
+    if low_pass is not None and high_pass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
         interpolated_filtered_bold = butter_bandpass(
             interpolated_denoised_bold.copy(),
             sampling_rate=1 / TR,
-            low_pass=lowpass,
-            high_pass=highpass,
+            low_pass=low_pass,
+            high_pass=high_pass,
             order=filter_order / 2,
             padtype="constant",
             padlen=n_volumes - 1,

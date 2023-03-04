@@ -44,8 +44,8 @@ LOGGER = logging.getLogger("nipype.workflow")
 def init_ciftipostprocess_wf(
     bold_file,
     bandpass_filter,
-    lower_bpf,
-    upper_bpf,
+    high_pass,
+    low_pass,
     bpf_order,
     motion_filter_type,
     motion_filter_order,
@@ -105,8 +105,8 @@ def init_ciftipostprocess_wf(
             wf = init_ciftipostprocess_wf(
                 bold_file=bold_file,
                 bandpass_filter=True,
-                lower_bpf=0.01,
-                upper_bpf=0.08,
+                high_pass=0.01,
+                low_pass=0.08,
                 bpf_order=2,
                 motion_filter_type="notch",
                 motion_filter_order=4,
@@ -135,8 +135,8 @@ def init_ciftipostprocess_wf(
     ----------
     bold_file
     %(bandpass_filter)s
-    %(lower_bpf)s
-    %(upper_bpf)s
+    %(high_pass)s
+    %(low_pass)s
     %(bpf_order)s
     %(motion_filter_type)s
     %(motion_filter_order)s
@@ -278,7 +278,7 @@ def init_ciftipostprocess_wf(
         bandpass_str = (
             "The interpolated timeseries were then band-pass filtered using a(n) "
             f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
-            f"in order to retain signals within the {lower_bpf}-{upper_bpf} Hz frequency band."
+            f"in order to retain signals within the {high_pass}-{low_pass} Hz frequency band."
         )
 
     workflow.__desc__ = f"""\
@@ -376,8 +376,8 @@ produced by the regression.
             mem_gb=mem_gbx["timeseries"],
             TR=TR,
             bold_file=bold_file,
-            lowpass=upper_bpf,
-            highpass=lower_bpf,
+            low_pass=low_pass,
+            high_pass=high_pass,
             smoothing=smoothing,
             cifti=True,
             name="compute_alff_wf",
@@ -399,8 +399,8 @@ produced by the regression.
         cifti=True,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
-        lowpass=upper_bpf,
-        highpass=lower_bpf,
+        low_pass=low_pass,
+        high_pass=high_pass,
         motion_filter_type=motion_filter_type,
         TR=TR,
         name="write_derivative_wf",
@@ -431,8 +431,8 @@ produced by the regression.
     denoise_bold = pe.Node(
         DenoiseCifti(
             TR=TR,
-            lowpass=upper_bpf,
-            highpass=lower_bpf,
+            low_pass=low_pass,
+            high_pass=high_pass,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter,
         ),

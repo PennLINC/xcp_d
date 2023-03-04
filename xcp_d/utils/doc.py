@@ -184,23 +184,27 @@ bandpass_filter : :obj:`bool`
 """
 
 docdict[
-    "lower_bpf"
+    "high_pass"
 ] = """
-lower_bpf : :obj:`float`
+high_pass : :obj:`float`
     Lower cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
+    This internal parameter corresponds to the command-line parameter ``--lower-bpf``.
+
+    Default value is 0.01.
 """
 
 docdict[
-    "upper_bpf"
+    "low_pass"
 ] = """
-upper_bpf : :obj:`float`
+low_pass : :obj:`float`
     Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
+    This internal parameter corresponds to the command-line parameter ``--upper-bpf``.
+
+    Default value is 0.08.
 """
 
 docdict[
@@ -209,7 +213,8 @@ docdict[
 bpf_order : :obj:`int`
     Number of filter coefficients for Butterworth bandpass filter.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
+    This parameter is used in conjunction with ``lower_bpf``/``high_pass`` and
+    ``upper_bpf``/``low_pass``.
 """
 
 docdict[

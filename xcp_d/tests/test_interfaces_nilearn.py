@@ -122,8 +122,8 @@ def test_nilearn_denoisenifti(fmriprep_with_freesurfer_data, tmp_path_factory):
         mask=mask,
         TR=2,
         bandpass_filter=True,
-        highpass=0.01,
-        lowpass=0.08,
+        high_pass=0.01,
+        low_pass=0.08,
         filter_order=2,
     )
     results = interface.run(cwd=tmpdir)
@@ -161,8 +161,8 @@ def test_nilearn_denoisecifti(fmriprep_with_freesurfer_data, tmp_path_factory):
         temporal_mask=temporal_mask,
         TR=2,
         bandpass_filter=True,
-        highpass=0.01,
-        lowpass=0.08,
+        high_pass=0.01,
+        low_pass=0.08,
         filter_order=2,
     )
     results = interface.run(cwd=tmpdir)

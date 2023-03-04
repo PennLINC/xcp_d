@@ -26,8 +26,8 @@ def init_compute_alff_wf(
     mem_gb,
     bold_file,
     TR,
-    lowpass,
-    highpass,
+    low_pass,
+    high_pass,
     smoothing,
     cifti,
     omp_nthreads,
@@ -45,8 +45,8 @@ def init_compute_alff_wf(
                 mem_gb=0.1,
                 TR=2.,
                 bold_file="/path/to/file.nii.gz",
-                lowpass=0.1,
-                highpass=0.01,
+                low_pass=0.1,
+                high_pass=0.01,
                 smoothing=6,
                 cifti=False,
                 omp_nthreads=1,
@@ -57,9 +57,9 @@ def init_compute_alff_wf(
     ----------
     %(mem_gb)s
     %(TR)s
-    lowpass : float
+    low_pass : float
         low pass filter
-    highpass : float
+    high_pass : float
         high pass filter
     %(smoothing)s
     %(cifti)s
@@ -90,7 +90,7 @@ def init_compute_alff_wf(
     workflow.__desc__ = f""" \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
 the processed BOLD timeseries  to the frequency domain. The power spectrum was computed within
-the {highpass}-{lowpass} Hz frequency band and the mean square root of the power spectrum was
+the {high_pass}-{low_pass} Hz frequency band and the mean square root of the power spectrum was
 calculated at each voxel to yield voxel-wise ALFF measures.
 """
 
@@ -103,7 +103,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
     # compute alff
     alff_compt = pe.Node(
-        ComputeALFF(TR=TR, lowpass=lowpass, highpass=highpass),
+        ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
         mem_gb=mem_gb,
         name="alff_compt",
         n_procs=omp_nthreads,

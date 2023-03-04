@@ -20,7 +20,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
 
-    highpass, lowpass, filter_order, TR = 0.01, 0.08, 2, 2
+    high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
     preprocessed_bold = fmriprep_with_freesurfer_data["nifti_file"]
     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
@@ -56,8 +56,8 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
-        lowpass=lowpass,
-        highpass=highpass,
+        low_pass=low_pass,
+        high_pass=high_pass,
         filter_order=filter_order,
         TR=TR,
     )
@@ -75,8 +75,8 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
-        lowpass=None,
-        highpass=None,
+        low_pass=None,
+        high_pass=None,
         filter_order=None,
         TR=TR,
     )
@@ -102,8 +102,8 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=orth_confounds_file,
         temporal_mask=temporal_mask,
-        lowpass=lowpass,
-        highpass=highpass,
+        low_pass=low_pass,
+        high_pass=high_pass,
         filter_order=filter_order,
         TR=TR,
     )

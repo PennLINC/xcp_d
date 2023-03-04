@@ -55,8 +55,8 @@ def init_xcpd_wf(
     task_id,
     bids_filters,
     bandpass_filter,
-    lower_bpf,
-    upper_bpf,
+    high_pass,
+    low_pass,
     bpf_order,
     fd_thresh,
     motion_filter_type,
@@ -110,8 +110,8 @@ def init_xcpd_wf(
                 task_id="imagery",
                 bids_filters=None,
                 bandpass_filter=True,
-                lower_bpf=0.01,
-                upper_bpf=0.08,
+                high_pass=0.01,
+                low_pass=0.08,
                 bpf_order=2,
                 fd_thresh=0.2,
                 motion_filter_type=None,
@@ -138,11 +138,10 @@ def init_xcpd_wf(
 
     Parameters
     ----------
-    layout : :obj:`bids.layout.BIDSLayout`
-        BIDS dataset layout or None.
+    %(layout)s
     %(bandpass_filter)s
-    %(lower_bpf)s
-    %(upper_bpf)s
+    %(high_pass)s
+    %(low_pass)s
     despike: bool
         afni depsike
     %(bpf_order)s
@@ -177,8 +176,7 @@ def init_xcpd_wf(
     %(dummytime)s
     %(dummy_scans)s
     %(process_surfaces)s
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
+    %(dcan_qc)s
     %(input_type)s
     min_coverage
     combineruns
@@ -197,8 +195,8 @@ def init_xcpd_wf(
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
-            lower_bpf=lower_bpf,
-            upper_bpf=upper_bpf,
+            high_pass=high_pass,
+            low_pass=low_pass,
             bpf_order=bpf_order,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
@@ -242,8 +240,8 @@ def init_xcpd_wf(
 @fill_doc
 def init_subject_wf(
     layout,
-    lower_bpf,
-    upper_bpf,
+    high_pass,
+    low_pass,
     bpf_order,
     motion_filter_order,
     motion_filter_type,
@@ -291,8 +289,8 @@ def init_subject_wf(
                 task_id="imagery",
                 bids_filters=None,
                 bandpass_filter=True,
-                lower_bpf=0.01,
-                upper_bpf=0.08,
+                high_pass=0.01,
+                low_pass=0.08,
                 bpf_order=2,
                 motion_filter_type=None,
                 motion_filter_order=4,
@@ -319,11 +317,10 @@ def init_subject_wf(
 
     Parameters
     ----------
-    layout : BIDSLayout object
-        BIDS dataset layout or None.
+    %(layout)s
     %(bandpass_filter)s
-    %(lower_bpf)s
-    %(upper_bpf)s
+    %(high_pass)s
+    %(low_pass)s
     despike: bool
         afni depsike
     %(bpf_order)s
@@ -351,8 +348,7 @@ def init_subject_wf(
     %(dummytime)s
     %(dummy_scans)s
     %(process_surfaces)s
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
+    %(dcan_qc)s
     %(subject_id)s
     %(input_type)s
     min_coverage
@@ -675,8 +671,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             bold_postproc_wf = postproc_wf_function(
                 bold_file=bold_file,
-                lower_bpf=lower_bpf,
-                upper_bpf=upper_bpf,
+                high_pass=high_pass,
+                low_pass=low_pass,
                 bpf_order=bpf_order,
                 motion_filter_type=motion_filter_type,
                 motion_filter_order=motion_filter_order,
