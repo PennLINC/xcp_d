@@ -439,7 +439,6 @@ def plot_fmri_es(
     uncensored_denoised_bold,
     interpolated_filtered_bold,
     TR,
-    dummy_scans,
     filtered_motion,
     preprocessed_bold_figure,
     denoised_bold_figure,
@@ -454,8 +453,7 @@ def plot_fmri_es(
     Parameters
     ----------
     preprocessed_bold : str
-        Preprocessed BOLD file, after mean-centering and detrending
-        *using only the low-motion volumes*.
+        Preprocessed BOLD file, dummy scan removal.
     uncensored_denoised_bold : str
         BOLD file after regression and interpolation, but not filtering.
         The preprocessed BOLD data are censored and denoised to get the betas,
@@ -487,10 +485,6 @@ def plot_fmri_es(
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
     filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
-
-    # Remove dummy time from the preprocessed_bold_arr if needed
-    if dummy_scans > 0:
-        preprocessed_bold_arr = preprocessed_bold_arr[:, dummy_scans:]
 
     if not isinstance(preprocessed_bold_dvars, np.ndarray):
         preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)

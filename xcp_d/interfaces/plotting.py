@@ -424,11 +424,6 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
     # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
-    dummy_scans = traits.Int(
-        0,
-        usedefault=True,
-        desc="Number of dummy volumes to drop from the beginning of the run.",
-    )
 
 
 class _QCPlotsESOutputSpec(TraitedSpec):
@@ -476,7 +471,6 @@ class QCPlotsES(SimpleInterface):
             preprocessed_bold=self.inputs.preprocessed_bold,
             uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
             interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
-            dummy_scans=self.inputs.dummy_scans,
             TR=self.inputs.TR,
             mask=mask_file,
             filtered_motion=self.inputs.filtered_motion,
