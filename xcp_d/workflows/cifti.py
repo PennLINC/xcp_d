@@ -302,7 +302,8 @@ produced by the regression.
                 "filtered_motion",
                 "temporal_mask",
                 "uncensored_denoised_bold",
-                "filtered_denoised_bold",
+                "interpolated_filtered_bold",
+                "censored_filtered_bold",
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",  # will not be defined
@@ -454,6 +455,7 @@ produced by the regression.
     workflow.connect([
         (denoise_bold, censor_interpolated_data, [("filtered_denoised_bold", "in_file")]),
         (flag_motion_outliers, censor_interpolated_data, [("tmask", "temporal_mask")]),
+        (censor_interpolated_data, outputnode, [("censored_bold", "censored_filtered_bold")]),
     ])
     # fmt:on
 
@@ -516,7 +518,7 @@ produced by the regression.
         ]),
         (denoise_bold, outputnode, [
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("filtered_denoised_bold", "filtered_denoised_bold"),
+            ("filtered_denoised_bold", "interpolated_filtered_bold"),
         ]),
     ])
     # fmt:on

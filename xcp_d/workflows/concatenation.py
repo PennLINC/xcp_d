@@ -76,7 +76,9 @@ def init_concatenate_data_wf(
         One list entry for each run.
     %(uncensored_denoised_bold)s
         One list entry for each run.
-    %(filtered_denoised_bold)s
+    %(interpolated_filtered_bold)s
+        One list entry for each run.
+    %(censored_filtered_bold)s
         One list entry for each run.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
@@ -106,7 +108,8 @@ def init_concatenate_data_wf(
                 "filtered_motion",
                 "temporal_mask",
                 "uncensored_denoised_bold",
-                "filtered_denoised_bold",
+                "interpolated_filtered_bold",
+                "censored_filtered_bold",
                 "smoothed_denoised_bold",
                 "head_radius",
                 "bold_mask",  # only for niftis, from postproc workflows
@@ -162,7 +165,8 @@ def init_concatenate_data_wf(
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("filtered_denoised_bold", "filtered_denoised_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("censored_filtered_bold", "censored_filtered_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
@@ -187,7 +191,8 @@ def init_concatenate_data_wf(
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("filtered_denoised_bold", "filtered_denoised_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("censored_filtered_bold", "censored_filtered_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
@@ -225,8 +230,9 @@ def init_concatenate_data_wf(
         ]),
         (concatenate_inputs, qc_report_wf, [
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
-            ("filtered_denoised_bold", "inputnode.filtered_denoised_bold"),
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
+            ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
+            ("censored_filtered_bold", "inputnode.censored_filtered_bold"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
             ("temporal_mask", "inputnode.tmask"),
@@ -295,7 +301,7 @@ def init_concatenate_data_wf(
     # fmt:on
 
     if cifti:
-        ds_filtered_denoised_bold = pe.Node(
+        ds_censored_filtered_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
@@ -303,7 +309,7 @@ def init_concatenate_data_wf(
                 den="91k",
                 extension=".dtseries.nii",
             ),
-            name="ds_filtered_denoised_bold",
+            name="ds_censored_filtered_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
@@ -346,15 +352,30 @@ def init_concatenate_data_wf(
                 run_without_submitting=True,
                 mem_gb=2,
             )
+
+        if dcan_qc:
+            ds_interpolated_filtered_bold = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    dismiss_entities=["den"],
+                    desc="interpolated",
+                    den="91k",
+                    extension=".dtseries.nii",
+                ),
+                name="ds_interpolated_filtered_bold",
+                run_without_submitting=True,
+                mem_gb=2,
+            )
+
     else:
-        ds_filtered_denoised_bold = pe.Node(
+        ds_censored_filtered_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
             ),
-            name="ds_filtered_denoised_bold",
+            name="ds_censored_filtered_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
@@ -371,10 +392,23 @@ def init_concatenate_data_wf(
                 mem_gb=2,
             )
 
+        if dcan_qc:
+            ds_interpolated_filtered_bold = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    desc="interpolated",
+                    extension=".nii.gz",
+                    compression=True,
+                ),
+                name="ds_interpolated_filtered_bold",
+                run_without_submitting=True,
+                mem_gb=2,
+            )
+
     # fmt:off
     workflow.connect([
-        (clean_name_source, ds_filtered_denoised_bold, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_filtered_denoised_bold, [("filtered_denoised_bold", "in_file")]),
+        (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
+        (concatenate_inputs, ds_censored_filtered_bold, [("censored_filtered_bold", "in_file")]),
     ])
     # fmt:on
 
@@ -384,6 +418,16 @@ def init_concatenate_data_wf(
             (clean_name_source, ds_smoothed_denoised_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_smoothed_denoised_bold, [
                 ("smoothed_denoised_bold", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
+    if dcan_qc:
+        # fmt:off
+        workflow.connect([
+            (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
+            (concatenate_inputs, ds_interpolated_filtered_bold, [
+                ("interpolated_filtered_bold", "in_file"),
             ]),
         ])
         # fmt:on
