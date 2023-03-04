@@ -343,6 +343,8 @@ uncensored_denoised_bold : :obj:`str`
     Path to the uncensored, denoised BOLD file.
     This file is the result of denoising the full (uncensored) preprocessed BOLD data using
     betas estimated using the *censored* BOLD data and nuisance regressors.
+
+    This output should not be used for analysis. It is primarily used for DCAN QC plots.
 """
 
 docdict[
@@ -366,7 +368,7 @@ interpolated_filtered_bold : :obj:`str`
 """
 
 docdict[
-    "censored_censored_bold"
+    "censored_filtered_bold"
 ] = """
 censored_filtered_bold : :obj:`str`
     Path to the censored, denoised, interpolated, filtered, and re-censored BOLD file.
