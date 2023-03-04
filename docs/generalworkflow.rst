@@ -22,81 +22,76 @@ Processing Steps
 
 1.    Remove dummy scans [Optional]: ``xcp_d`` allows the first N number of volumes to be skipped
       or deleted before processing.
-      These volumes are usually refered to as dummy time. It can be added to the command line with
-      ``-d X`` where X is in seconds.
-      The number of volumes to be dropped is equal to X divided by the TR (rounded down).
-      For example, if your TR is .72, and you want to remove the first 2 volumes, you should enter:
-      ``-d 1.44``.
+      These volumes are usually refered to as dummy volumes.
       Most default scanning sequences include dummy volumes that are not reconstructed.
-      However, some users still prefer to remove the first reconstructed few volumes.
+      However, some users still prefer to remove the first few reconstructed volumes.
 
-2.    Confound regressors selection:
-      The confound regressors configurations in the table below are implemented in ``xcp_d`` with
-      36P as the default.
+2.    Confound regressor selection:
+      The confound regressor configurations in the table below are implemented in ``xcp_d``,
+      with 36P as the default.
       In addition to the standard confound regressors selected from fMRIPrep outputs,
-      a custom confound timeseries can be added as described below in
-      :ref:`usage_custom_confounds`.
-      If you are passing custom confound regressors, and you want none of the regressors here,
-      the option will be ``custom``.
+      custom confounds can be added as described below in :ref:`usage_custom_confounds`.
+      If you want to use custom confounds, without any of the nuisance regressors described here,
+      use ``--nuisance-regressors custom``.
 
       .. list-table:: Confound
 
-         * - Pipelines
-         - Six Motion Estimates
-         - White Matter
-         - CSF
-         - Global Signal
-         - ACompCor
-         - AROMA
-         * - 24P
-         - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-         -
-         -
-         -
-         -
-         -
-         * - 27P
-         - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-         - X
-         - X
-         - X
-         -
-         -
-         * - 36P
-         - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-         - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-         - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-         - X, X\ :sup:`2`, dX, dX\ :sup:`2`
-         -
-         -
-         * - acompcor_gsr
-         -  X, dX
-         -
-         -
-         - X
-         - 10 com, 5WM,5CSF
-         -
-         * - acompcor
-         - X, dX
-         -
-         -
-         -
-         - 10 com, 5WM,5CSF
-         -
-         * - aroma_gsr
-         - X, dX
-         - X
-         - X
-         - X
-         -
-         - X
-         * - aroma
-         - X, dX
-         - X
-         - X
-         -
-         -
-         - X
+         *  - Pipelines
+            - Six Motion Estimates
+            - White Matter
+            - CSF
+            - Global Signal
+            - ACompCor
+            - AROMA
+         *  - 24P
+            - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+            -
+            -
+            -
+            -
+            -
+         *  - 27P
+            - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+            - X
+            - X
+            - X
+            -
+            -
+         *  - 36P
+            - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+            - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+            - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+            - X, X\ :sup:`2`, dX, dX\ :sup:`2`
+            -
+            -
+         *  - acompcor_gsr
+            -  X, dX
+            -
+            -
+            - X
+            - 10 com, 5WM, 5CSF
+            -
+         *  - acompcor
+            - X, dX
+            -
+            -
+            -
+            - 10 com, 5WM, 5CSF
+            -
+         *  - aroma_gsr
+            - X, dX
+            - X
+            - X
+            - X
+            -
+            - X
+         *  - aroma
+            - X, dX
+            - X
+            - X
+            -
+            -
+            - X
 
       For more information about confound regressor selection, please refer to
       :footcite:t:`benchmarkp`.
@@ -125,25 +120,25 @@ Processing Steps
 
       .. list-table:: Respiratory Filter
 
-         * - Age Range
-         - Cutoff Range
+         *  - Age Range
+            - Cutoff Range
             (Breaths per Minute)
-         * - < 1 year
-         - 30 to  60
-         * - 1 to 2 years
-         - 25 - 50
-         * - 2 - 6 years
-         - 20 - 35
-         * - 6-12 years
-         - 15 - 25
-         * - 12 - 18 years
-         - 12 - 20
-         * - 19 - 65 years
-         - 12 - 18
-         * - 65 - 80 years
-         - 12 - 28
-         * - > 80 years
-         - 10 - 30
+         *  - < 1 year
+            - 30 to  60
+         *  - 1 to 2 years
+            - 25 - 50
+         *  - 2 - 6 years
+            - 20 - 35
+         *  - 6-12 years
+            - 15 - 25
+         *  - 12 - 18 years
+            - 12 - 20
+         *  - 19 - 65 years
+            - 12 - 18
+         *  - 65 - 80 years
+            - 12 - 28
+         *  - > 80 years
+            - 10 - 30
 
       If using the low-pass filter, a recommended cutoff is 6 BPM (i.e., 0.1 Hertz)
       :footcite:p:`gratton2020removal`.
