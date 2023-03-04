@@ -110,7 +110,6 @@ def get_segfile(bold_file):
     return segfile
 
 
-@fill_doc
 def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
@@ -121,10 +120,10 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xf
     ----------
     bold_file : str
         The preprocessed BOLD file.
-    %(template_to_t1w_xfm)s
+    template_to_t1w_xfm
         The ``from`` field is assumed to be the same space as the BOLD file is in.
         The MNI space could be MNI152NLin2009cAsym, MNI152NLin6Asym, or MNIInfant.
-    %(t1w_to_native_xfm)s
+    t1w_to_native_xfm
 
     Returns
     -------

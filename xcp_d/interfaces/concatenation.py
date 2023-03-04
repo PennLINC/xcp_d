@@ -49,7 +49,7 @@ class CleanNameSource(SimpleInterface):
 
 
 class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
-    censored_filtered_bold = traits.List(
+    censored_denoised_bold = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
@@ -146,7 +146,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
 
 
 class _FilterOutFailedRunsOutputSpec(TraitedSpec):
-    censored_filtered_bold = traits.List(
+    censored_denoised_bold = traits.List(
         File(exists=True),
         desc="Denoised BOLD data.",
     )
@@ -229,7 +229,7 @@ class FilterOutFailedRuns(SimpleInterface):
     output_spec = _FilterOutFailedRunsOutputSpec
 
     def _run_interface(self, runtime):
-        censored_filtered_bold = self.inputs.censored_filtered_bold
+        censored_denoised_bold = self.inputs.censored_denoised_bold
         inputs_to_filter = {
             "preprocessed_bold": self.inputs.preprocessed_bold,
             "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
@@ -246,14 +246,14 @@ class FilterOutFailedRuns(SimpleInterface):
             "timeseries_ciftis": self.inputs.timeseries_ciftis,
         }
 
-        n_runs = len(censored_filtered_bold)
-        successful_runs = [i for i, f in enumerate(censored_filtered_bold) if isdefined(f)]
+        n_runs = len(censored_denoised_bold)
+        successful_runs = [i for i, f in enumerate(censored_denoised_bold) if isdefined(f)]
 
         if len(successful_runs) < n_runs:
             LOGGER.warning(f"Of {n_runs} runs, only runs {successful_runs} were successful.")
 
-        self._results["censored_filtered_bold"] = [
-            censored_filtered_bold[i] for i in successful_runs
+        self._results["censored_denoised_bold"] = [
+            censored_denoised_bold[i] for i in successful_runs
         ]
 
         for input_name, input_list in inputs_to_filter.items():
@@ -269,7 +269,7 @@ class FilterOutFailedRuns(SimpleInterface):
 
 
 class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
-    censored_filtered_bold = traits.List(
+    censored_denoised_bold = traits.List(
         File(exists=True),
         mandatory=True,
         desc="Denoised BOLD data.",
@@ -328,7 +328,7 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
 
 
 class _ConcatenateInputsOutputSpec(TraitedSpec):
-    censored_filtered_bold = File(
+    censored_denoised_bold = File(
         exists=True,
         desc="Concatenated denoised BOLD data.",
     )
@@ -383,7 +383,7 @@ class ConcatenateInputs(SimpleInterface):
 
     def _run_interface(self, runtime):
         merge_inputs = {
-            "censored_filtered_bold": self.inputs.censored_filtered_bold,
+            "censored_denoised_bold": self.inputs.censored_denoised_bold,
             "preprocessed_bold": self.inputs.preprocessed_bold,
             "uncensored_denoised_bold": self.inputs.uncensored_denoised_bold,
             "interpolated_filtered_bold": self.inputs.interpolated_filtered_bold,

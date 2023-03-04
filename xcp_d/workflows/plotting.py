@@ -49,7 +49,7 @@ def init_qc_report_wf(
     Parameters
     ----------
     %(output_dir)s
-    TR
+    %(TR)s
     %(motion_filter_type)s
     %(fd_thresh)s
     %(mem_gb)s
@@ -71,7 +71,7 @@ def init_qc_report_wf(
     %(interpolated_filtered_bold)s
         Used for DCAN carpet plots.
         Only used if dcan_qc is True.
-    %(censored_filtered_bold)s
+    %(censored_denoised_bold)s
         Used for LINC carpet plots.
     %(boldref)s
         Only used with non-CIFTI data.
@@ -102,7 +102,7 @@ def init_qc_report_wf(
                 "preprocessed_bold",
                 "uncensored_denoised_bold",
                 "interpolated_filtered_bold",
-                "censored_filtered_bold",
+                "censored_denoised_bold",
                 "dummy_scans",
                 "fmriprep_confounds_file",
                 "filtered_motion",
@@ -324,7 +324,7 @@ def init_qc_report_wf(
         (inputnode, qcreport, [
             ("name_source", "name_source"),
             ("preprocessed_bold", "bold_file"),
-            ("censored_filtered_bold", "cleaned_file"),
+            ("censored_denoised_bold", "cleaned_file"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("head_radius", "head_radius"),
             ("temporal_mask", "temporal_mask"),

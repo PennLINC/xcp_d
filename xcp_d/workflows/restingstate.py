@@ -57,10 +57,8 @@ def init_compute_alff_wf(
     ----------
     %(mem_gb)s
     %(TR)s
-    low_pass : float
-        low pass filter
-    high_pass : float
-        high pass filter
+    %(low_pass)s
+    %(high_pass)s
     %(smoothing)s
     %(cifti)s
     %(omp_nthreads)s
@@ -69,7 +67,7 @@ def init_compute_alff_wf(
 
     Inputs
     ------
-    clean_bold
+    denoised_bold
        residual and filtered
     bold_mask
        bold mask if bold is nifti
@@ -78,7 +76,7 @@ def init_compute_alff_wf(
 
     Outputs
     -------
-    alff_out
+    alff
         alff output
     smoothed_alff
         smoothed alff  output
@@ -95,10 +93,12 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]), name="inputnode"
+        niu.IdentityInterface(fields=["denoised_bold", "bold_mask"]),
+        name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["alff_out", "smoothed_alff", "alffplot"]), name="outputnode"
+        niu.IdentityInterface(fields=["alff", "smoothed_alff", "alffplot"]),
+        name="outputnode",
     )
 
     # compute alff
@@ -119,13 +119,17 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     )
     alff_plot.inputs.output_path = "alff.svg"
     alff_plot.inputs.bold_file = bold_file
+
     # fmt:off
-    workflow.connect([(inputnode, alff_compt, [('clean_bold', 'in_file'),
-                                               ('bold_mask', 'mask')]),
-                      (alff_compt, alff_plot, [('alff_out', 'filename')]),
-                      (alff_plot, outputnode, [('output_path', 'alffplot')]),
-                      (alff_compt, outputnode, [('alff_out', 'alff_out')])
-                      ])
+    workflow.connect([
+        (inputnode, alff_compt, [
+            ("denoised_bold", "in_file"),
+            ("bold_mask", "mask"),
+        ]),
+        (alff_compt, alff_plot, [("alff", "filename")]),
+        (alff_plot, outputnode, [("output_path", "alffplot")]),
+        (alff_compt, outputnode, [("alff", "alff")])
+    ])
     # fmt:on
 
     if smoothing:  # If we want to smooth
@@ -142,8 +146,8 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             )
             # fmt:off
             workflow.connect([
-                (alff_compt, smooth_data, [('alff_out', 'in_file')]),
-                (smooth_data, outputnode, [('out_file', 'smoothed_alff')])
+                (alff_compt, smooth_data, [("alff", "in_file")]),
+                (smooth_data, outputnode, [("out_file", "smoothed_alff")])
             ])
             # fmt:on
 
@@ -185,9 +189,9 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
             # fmt:off
             workflow.connect([
-                (alff_compt, smooth_data, [('alff_out', 'in_file')]),
+                (alff_compt, smooth_data, [("alff", "in_file")]),
                 (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
-                (fix_cifti_intent, outputnode, [('out_file', 'smoothed_alff')]),
+                (fix_cifti_intent, outputnode, [("out_file", "smoothed_alff")]),
             ])
             # fmt:on
 
@@ -220,19 +224,20 @@ def init_cifti_reho_wf(
     ----------
     %(mem_gb)s
     %(omp_nthreads)s
+    bold_file
     %(name)s
         Default is "cifti_reho_wf".
 
     Inputs
     ------
-    clean_bold
+    denoised_bold
        residual and filtered, cifti
     bold_file
        original bold_file
 
     Outputs
     -------
-    reho_out
+    reho
         ReHo in a CIFTI file.
     rehoplot
         ReHo svg
@@ -248,11 +253,11 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 *3dReHo* in AFNI [@afni].
 """
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold"]),
+        niu.IdentityInterface(fields=["denoised_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["reho_out", "rehoplot"]),
+        niu.IdentityInterface(fields=["reho", "rehoplot"]),
         name="outputnode",
     )
 
@@ -313,22 +318,23 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     )
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
+
     # Write out results
     # fmt:off
     workflow.connect([
-        (inputnode, lh_surf, [('clean_bold', 'in_file')]),
-        (inputnode, rh_surf, [('clean_bold', 'in_file')]),
-        (inputnode, subcortical_nifti, [('clean_bold', 'in_file')]),
-        (lh_surf, lh_reho, [('out_file', 'surf_bold')]),
-        (rh_surf, rh_reho, [('out_file', 'surf_bold')]),
-        (subcortical_nifti, subcortical_reho, [('out_file', 'in_file')]),
-        (subcortical_nifti, merge_cifti, [('label_file', 'structure_label_volume')]),
-        (lh_reho, merge_cifti, [('surf_gii', 'left_metric')]),
-        (rh_reho, merge_cifti, [('surf_gii', 'right_metric')]),
-        (subcortical_reho, merge_cifti, [('out_file', 'volume_data')]),
-        (merge_cifti, outputnode, [('out_file', 'reho_out')]),
-        (merge_cifti, reho_plot, [('out_file', 'filename')]),
-        (reho_plot, outputnode, [('output_path', 'rehoplot')])
+        (inputnode, lh_surf, [("denoised_bold", "in_file")]),
+        (inputnode, rh_surf, [("denoised_bold", "in_file")]),
+        (inputnode, subcortical_nifti, [("denoised_bold", "in_file")]),
+        (lh_surf, lh_reho, [("out_file", "surf_bold")]),
+        (rh_surf, rh_reho, [("out_file", "surf_bold")]),
+        (subcortical_nifti, subcortical_reho, [("out_file", "in_file")]),
+        (subcortical_nifti, merge_cifti, [("label_file", "structure_label_volume")]),
+        (lh_reho, merge_cifti, [("surf_gii", "left_metric")]),
+        (rh_reho, merge_cifti, [("surf_gii", "right_metric")]),
+        (subcortical_reho, merge_cifti, [("out_file", "volume_data")]),
+        (merge_cifti, outputnode, [("out_file", "reho")]),
+        (merge_cifti, reho_plot, [("out_file", "filename")]),
+        (reho_plot, outputnode, [("output_path", "rehoplot")])
     ])
     # fmt:on
 
@@ -361,12 +367,13 @@ def init_nifti_reho_wf(
     ----------
     %(mem_gb)s
     %(omp_nthreads)s
+    bold_file
     %(name)s
         Default is "nifti_reho_wf".
 
     Inputs
     ------
-    clean_bold
+    denoised_bold
        residual and filtered, nifti
     bold_mask
        bold mask
@@ -375,7 +382,7 @@ def init_nifti_reho_wf(
 
     Outputs
     -------
-    reho_out
+    reho
         reho output
     rehoplot
         ReHo svg
@@ -386,13 +393,17 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_mask"]), name="inputnode"
+        niu.IdentityInterface(fields=["denoised_bold", "bold_mask"]),
+        name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["reho_out", "rehoplot"]), name="outputnode")
+    outputnode = pe.Node(niu.IdentityInterface(fields=["reho", "rehoplot"]), name="outputnode")
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
-        ReHoNamePatch(neighborhood="vertices"), name="reho_3d", mem_gb=mem_gb, n_procs=omp_nthreads
+        ReHoNamePatch(neighborhood="vertices"),
+        name="reho_3d",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
     )
     # Get the svg
     reho_plot = pe.Node(
@@ -405,14 +416,18 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     )
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
+
     # Write the results out
     # fmt:off
-    workflow.connect([(inputnode, compute_reho, [('clean_bold', 'in_file'),
-                                                 ('bold_mask', 'mask_file')]),
-                      (compute_reho, outputnode, [('out_file', 'reho_out')]),
-                      (compute_reho, reho_plot, [('out_file', 'filename')]),
-                      (reho_plot, outputnode, [('output_path', 'rehoplot')]),
-                      ])
+    workflow.connect([
+        (inputnode, compute_reho, [
+            ("denoised_bold", "in_file"),
+            ("bold_mask", "mask_file"),
+        ]),
+        (compute_reho, outputnode, [("out_file", "reho")]),
+        (compute_reho, reho_plot, [("out_file", "filename")]),
+        (reho_plot, outputnode, [("output_path", "rehoplot")]),
+    ])
     # fmt:on
 
     return workflow

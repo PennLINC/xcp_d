@@ -51,7 +51,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     connectivity_wf.inputs.inputnode.template_to_t1w_xfm = template_to_t1w_xfm
     connectivity_wf.inputs.inputnode.t1w_to_native_xfm = t1w_to_native_xfm
-    connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.boldref = boldref
@@ -150,7 +150,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         omp_nthreads=2,
         name="connectivity_wf",
     )
-    connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()

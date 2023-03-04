@@ -152,15 +152,11 @@ def init_xcpd_wf(
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    fmriprep_dir : Path
-        fmriprep output directory
     %(omp_nthreads)s
     %(cifti)s
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     bids_filters : dict or None
-    low_mem : bool
-        Write uncompressed .nii files in some cases to reduce memory usage
     %(output_dir)s
     %(fd_thresh)s
     run_uuid : str
@@ -336,8 +332,6 @@ def init_subject_wf(
     task_id : str or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     bids_filters : dict or None
-    low_mem : bool
-        Write uncompressed .nii files in some cases to reduce memory usage
     %(output_dir)s
     %(fd_thresh)s
     %(head_radius)s
@@ -632,7 +626,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "temporal_mask",
                 "uncensored_denoised_bold",
                 "interpolated_filtered_bold",
-                "censored_filtered_bold",
+                "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "t1w_to_native_xfm",
                 "bold_mask",

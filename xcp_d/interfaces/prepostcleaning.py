@@ -416,7 +416,7 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
 
 
 class _CensorOutputSpec(TraitedSpec):
-    censored_bold = File(
+    censored_denoised_bold = File(
         exists=True,
         mandatory=True,
         desc="Censored bold file",
@@ -448,7 +448,7 @@ class Censor(SimpleInterface):
         temporal_mask = temporal_mask["framewise_displacement"].to_numpy()
 
         if np.sum(temporal_mask) == 0:  # No censoring needed
-            self._results["censored_bold"] = self.inputs.in_file
+            self._results["censored_denoised_bold"] = self.inputs.in_file
             return runtime
 
         # Read in other files
@@ -488,12 +488,12 @@ class Censor(SimpleInterface):
             )
 
         # get the output
-        self._results["censored_bold"] = fname_presuffix(
+        self._results["censored_denoised_bold"] = fname_presuffix(
             self.inputs.in_file,
             suffix="_censored",
             newpath=runtime.cwd,
             use_ext=True,
         )
 
-        bold_img_censored.to_filename(self._results["censored_bold"])
+        bold_img_censored.to_filename(self._results["censored_denoised_bold"])
         return runtime

@@ -403,9 +403,9 @@ interpolated_filtered_bold : :obj:`str`
 """
 
 docdict[
-    "censored_filtered_bold"
+    "censored_denoised_bold"
 ] = """
-censored_filtered_bold : :obj:`str`
+censored_denoised_bold : :obj:`str`
     Path to the censored, denoised, interpolated, filtered, and re-censored BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
     followed by cubic spline interpolation, band-pass filtering, and re-censoring.
@@ -453,7 +453,7 @@ docdict[
 ] = """
 timeseries : :obj:`list` of :obj:`str`
     List of paths to atlas-specific time series TSV files.
-    These time series are produced from the ``censored_filtered_bold`` outputs.
+    These time series are produced from the ``censored_denoised_bold`` outputs.
 """
 
 docdict[
@@ -461,7 +461,7 @@ docdict[
 ] = """
 timeseries_ciftis : :obj:`list` of :obj:`str`
     List of paths to atlas-specific time series CIFTI (ptseries) files.
-    These time series are produced from the ``censored_filtered_bold`` outputs.
+    These time series are produced from the ``censored_denoised_bold`` outputs.
 """
 
 docdict[

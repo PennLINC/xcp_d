@@ -56,7 +56,7 @@ def init_concatenate_data_wf(
     %(fd_thresh)s
     %(mem_gb)s
     %(omp_nthreads)s
-    TR
+    %(TR)s
     smooth
     %(cifti)s
     %(dcan_qc)s
@@ -78,7 +78,7 @@ def init_concatenate_data_wf(
         One list entry for each run.
     %(interpolated_filtered_bold)s
         One list entry for each run.
-    %(censored_filtered_bold)s
+    %(censored_denoised_bold)s
         One list entry for each run.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
@@ -110,7 +110,7 @@ def init_concatenate_data_wf(
                 "temporal_mask",
                 "uncensored_denoised_bold",
                 "interpolated_filtered_bold",
-                "censored_filtered_bold",
+                "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "head_radius",
                 "bold_mask",  # only for niftis, from postproc workflows
@@ -167,7 +167,7 @@ def init_concatenate_data_wf(
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
             ("interpolated_filtered_bold", "interpolated_filtered_bold"),
-            ("censored_filtered_bold", "censored_filtered_bold"),
+            ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
@@ -193,7 +193,7 @@ def init_concatenate_data_wf(
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
             ("interpolated_filtered_bold", "interpolated_filtered_bold"),
-            ("censored_filtered_bold", "censored_filtered_bold"),
+            ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
@@ -233,7 +233,7 @@ def init_concatenate_data_wf(
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
             ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
-            ("censored_filtered_bold", "inputnode.censored_filtered_bold"),
+            ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
             ("temporal_mask", "inputnode.temporal_mask"),
@@ -409,7 +409,7 @@ def init_concatenate_data_wf(
     # fmt:off
     workflow.connect([
         (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_censored_filtered_bold, [("censored_filtered_bold", "in_file")]),
+        (concatenate_inputs, ds_censored_filtered_bold, [("censored_denoised_bold", "in_file")]),
     ])
     # fmt:on
 

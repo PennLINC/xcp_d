@@ -80,7 +80,7 @@ def init_writederivatives_wf(
     qc_file
         LINC-style quality control file
     %(interpolated_filtered_bold)s
-    processed_bold
+    censored_denoised_bold
         clean bold after censoring, regression, interpolation, filtering, and re-censoring
     smoothed_bold
         clean bold after censoring, regression, interpolation, filtering, re-censoring, and
@@ -108,7 +108,7 @@ def init_writederivatives_wf(
                 "timeseries",
                 "correlations",
                 "qc_file",
-                "processed_bold",
+                "censored_denoised_bold",
                 "smoothed_bold",
                 "interpolated_filtered_bold",
                 "alff",
@@ -563,7 +563,7 @@ def init_writederivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_denoised_bold, [("processed_bold", "in_file")]),
+        (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
         (inputnode, ds_qc_file, [("qc_file", "in_file")]),
         (inputnode, ds_reho, [("reho", "in_file")]),
     ])

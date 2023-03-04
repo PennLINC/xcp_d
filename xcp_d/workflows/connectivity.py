@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for extracting time series and computing functional connectivity."""
-
 import nilearn as nl
 from nipype import Function
 from nipype.interfaces import utility as niu
@@ -45,6 +44,7 @@ def init_nifti_functional_connectivity_wf(
     Parameters
     ----------
     %(output_dir)s
+    min_coverage
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -55,7 +55,7 @@ def init_nifti_functional_connectivity_wf(
     bold_file
         Used for names.
     %(boldref)s
-    clean_bold
+    denoised_bold
         clean bold after filtered out nuisscance and filtering
     %(template_to_t1w_xfm)s
     %(t1w_to_native_xfm)s
@@ -93,7 +93,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
                 "bold_file",
                 "bold_mask",
                 "boldref",
-                "clean_bold",
+                "denoised_bold",
                 "template_to_t1w_xfm",
                 "t1w_to_native_xfm",
             ],
@@ -197,7 +197,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     # fmt:off
     workflow.connect([
         (inputnode, nifti_connect, [
-            ("clean_bold", "filtered_file"),
+            ("denoised_bold", "filtered_file"),
             ("bold_mask", "mask"),
         ]),
         (atlas_file_grabber, nifti_connect, [
@@ -223,7 +223,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
         (atlas_name_grabber, matrix_plot, [("atlas_names", "atlas_names")]),
         (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),
@@ -280,6 +280,7 @@ def init_cifti_functional_connectivity_wf(
     Parameters
     ----------
     %(output_dir)s
+    min_coverage
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -287,7 +288,7 @@ def init_cifti_functional_connectivity_wf(
 
     Inputs
     ------
-    clean_bold
+    denoised_bold
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
@@ -324,7 +325,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_file"]),
+        niu.IdentityInterface(fields=["denoised_bold", "bold_file"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -380,7 +381,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, resample_atlas_to_data, [("clean_bold", "template_cifti")]),
+        (inputnode, resample_atlas_to_data, [("denoised_bold", "template_cifti")]),
         (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
     ])
     # fmt:on
@@ -414,7 +415,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, cifti_connect, [("clean_bold", "data_file")]),
+        (inputnode, cifti_connect, [("denoised_bold", "data_file")]),
         (atlas_file_grabber, cifti_connect, [("atlas_labels_file", "atlas_labels")]),
         (resample_atlas_to_data, cifti_connect, [("cifti_out", "atlas_file")]),
         (parcellate_atlas, cifti_connect, [("out_file", "parcellated_atlas")]),
@@ -438,7 +439,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
+        (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (cifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
         (matrix_plot, outputnode, [("connectplot", "connectplot")]),

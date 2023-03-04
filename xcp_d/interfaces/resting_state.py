@@ -104,7 +104,7 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
-    alff_out = File(exists=True, mandatory=True, desc=" alff")
+    alff = File(exists=True, mandatory=True, desc=" alff")
 
 
 class ComputeALFF(SimpleInterface):
@@ -131,7 +131,7 @@ class ComputeALFF(SimpleInterface):
         elif self.inputs.in_file.endswith(".nii.gz"):
             suffix = "_alff.nii.gz"
 
-        self._results["alff_out"] = fname_presuffix(
+        self._results["alff"] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
@@ -140,7 +140,7 @@ class ComputeALFF(SimpleInterface):
         write_ndata(
             data_matrix=alff_mat,
             template=self.inputs.in_file,
-            filename=self._results["alff_out"],
+            filename=self._results["alff"],
             mask=self.inputs.mask,
         )
         return runtime
