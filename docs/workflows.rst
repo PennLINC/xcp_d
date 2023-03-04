@@ -10,8 +10,8 @@ Processing Pipeline Details
 Input data
 **********
 
-The default inputs to ``xcp_d`` are the outputs of  ``fMRIPrep`` and ``Nibabies``.
-``xcp_d`` can also minimally process ``HCP`` data, which requires the ``--input-type hcp`` flag.
+The default inputs to XCP-D are the outputs of ``fMRIPrep`` and ``Nibabies``.
+XCP-D can also postprocess ``HCP`` data, which requires the ``--input-type hcp`` flag.
 
 
 ****************
@@ -24,6 +24,9 @@ See :ref:`usage_inputs` for information on input dataset structures.
 Anatomical processing
 =====================
 :func:`~xcp_d.workflows.anatomical.init_warp_anats_to_template_wf`
+
+XCP-D performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
+
 
 Surface normalization
 ---------------------
@@ -39,8 +42,9 @@ derivatives will be warped to fsLR-32k space.
 
 Confound regressor selection
 ============================
+:func:`~xcp_d.utils.confounds.consolidate_confounds`
 
-The confound regressor configurations in the table below are implemented in ``xcp_d``,
+The confound regressor configurations in the table below are implemented in XCP-D,
 with 36P as the default.
 In addition to the standard confound regressors selected from fMRIPrep outputs,
 custom confounds can be added as described below in :ref:`usage_custom_confounds`.
@@ -134,6 +138,7 @@ For more information about confound regressor selection, please refer to
 
 Dummy scan removal [OPTIONAL]
 =============================
+:class:`~xcp_d.interfaces.prepostcleaning.RemoveDummyVolumes`
 
 XCP-D allows the first N number of volumes to be skipped or deleted before processing.
 These volumes are usually refered to as dummy volumes.
@@ -143,6 +148,7 @@ However, some users still prefer to remove the first few reconstructed volumes.
 
 Identification of high-motion outlier volumes
 =============================================
+:class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`
 
 .. important::
    If a BOLD run does not have enough low-motion data, then the post-processing workflow
@@ -151,6 +157,8 @@ Identification of high-motion outlier volumes
 
 Motion parameter filtering [OPTIONAL]
 -------------------------------------
+:class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
+:func:`~xcp_d.utils.confounds.load_motion`
 
 Motion parameters may be contaminated with respiratory effects.
 In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
@@ -201,6 +209,8 @@ per :footcite:t:`gratton2020removal`.
 
 Framewise displacement calculation and thresholding
 ---------------------------------------------------
+:class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
+:func:`~xcp_d.utils.modified_data.compute_fd`
 
 Framewise displacement is then calculated according to the formula from Power et al. (CITE).
 Two parameters that impact FD calculation and thresholding are
@@ -208,7 +218,8 @@ Two parameters that impact FD calculation and thresholding are
 (2) the framewise displacement threshold.
 The former may be set with the ``--head-radius`` parameter, which also has an "auto" option,
 in which a brain mask from the preprocessing derivatives is loaded and
-(treating the brain as a sphere) the radius is directly calculated.
+(treating the brain as a sphere) the radius is directly calculated
+(see :func:`~xcp_d.utils.utils.estimate_brain_radius`).
 The latter is set with the ``--fd-thresh`` parameter.
 
 In this step, volumes with a framewise displacement value over the ``--fd-thresh`` parameter will
@@ -321,7 +332,6 @@ ALFF
 ----
 :func:`~xcp_d.workflows.restingstate.init_compute_alff_wf`
 
-
 Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is used.
 
 
@@ -350,11 +360,13 @@ connectivity matrices, as measured with Pearson correlation coefficients.
 For CIFTI data, both tab-delimited text file (TSV) and CIFTI versions of the parcellated time
 series and correlation matrices are written out.
 
+
 Smoothing [OPTIONAL]
 ====================
 :func:`~xcp_d.workflows.postprocessing.init_resd_smoothing_wf`
 
 The ``filtered, interpolated, denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
+
 
 Concatenation of functional derivatives [OPTIONAL]
 ==================================================
@@ -375,11 +387,11 @@ regression and also estimates BOLD-T1w coregistration and BOLD-Template normaliz
 qualites.
 The QC metrics include the following:
 
-a. Motion parameters summary: mean FD, mean and maximum RMS
-b. Mean DVARs before and after regression and its relationship to FD
-c. BOLD-T1w coregistration quality - Dice, Jaccard, Coverage and Cross-correlation indices
-d. BOLD-Template normalization quality - Dice, Jaccard, Coverage and Cross-correlation
-   indices
+   a. Motion parameters summary: mean FD, mean and maximum RMS
+   b. Mean DVARs before and after regression and its relationship to FD
+   c. BOLD-T1w coregistration quality - Dice, Jaccard, Coverage and Cross-correlation indices
+   d. BOLD-Template normalization quality - Dice, Jaccard, Coverage and Cross-correlation
+      indices
 
 
 *******
@@ -400,7 +412,7 @@ The number of volumes remaining at various FD thresholds are shown.
 Second, XCP-D generates an HTML "report" for each subject and session.
 The report contains a Processing Summary with QC values, with the BOLD volume space, the TR,
 mean FD, mean RMSD, and mean and maximum RMS,
-the Correlation between DVARS and FD before and after processing, and the number of volumes
+the correlation between DVARS and FD before and after processing, and the number of volumes
 censored.
 Next, pre and post regression "carpet" plots are alongside DVARS and FD.
 An About section that notes the release version of XCP-D, a Methods section that can be copied and
@@ -409,8 +421,8 @@ which is customized based on command line options, and an Error section, which w
 "No errors to report!" if no errors are found.
 
 Third, XCP-D outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
-MNI2009 and fsLR32k spaces, parcellated time series, functional connectivity matrices, and
-ALFF and ReHo (smoothed and unsmoothed).
+MNI152NLin2009cAsym and fsLR-32k spaces, parcellated time series, functional connectivity matrices,
+and ALFF and ReHo (smoothed and unsmoothed).
 
 Fourth, the anatomical data (processed T1w processed and segmentation files) are copied from
 fMRIPrep.
@@ -418,7 +430,7 @@ If both images are not in MNI152NLin6Asym space, they are resampled to MNI space
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space
 (fsLR-32K).
 
-See :doc:`outputs` for file details about xcp_d outputs.
+See :doc:`outputs` for details about XCP-D outputs.
 
 **********
 References

@@ -29,7 +29,7 @@ The exact command to run in *xcp_d* depends on the `installation`_ method and da
 processed.
 We start first with the *bare-metal* :ref:`installation_manually_prepared_environment`
 installation, as the command line is simpler.
-``xcp_d`` can be executed on the command line, processesing fMRIPrep outputs, using the following
+XCP-D can be executed on the command line, processesing fMRIPrep outputs, using the following
 command-line structure, for example:
 
 .. code-block:: bash
@@ -38,7 +38,7 @@ command-line structure, for example:
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
-followed by the ``xcp_d`` command-line options as if you were running it on a *bare-metal*
+followed by the XCP-D command-line options as if you were running it on a *bare-metal*
 installation.
 
 
@@ -144,11 +144,11 @@ Command-Line Arguments
 Filtering Inputs with BIDS Filter Files
 ***************************************
 
-``xcp_d`` allows users to choose which preprocessed files will be post-processed with the
+XCP-D allows users to choose which preprocessed files will be post-processed with the
 ``--bids-filter-file`` parameter.
 This argument must point to a JSON file, containing filters that will be fed into PyBIDS.
 
-The keys in this JSON file are unique to ``xcp_d``.
+The keys in this JSON file are unique to XCP-D.
 They are our internal terms for different inputs that will be selected from the preprocessed
 dataset.
 
@@ -179,7 +179,7 @@ Again, the standard space is determined based on other files.
 Example bids-filter-file
 ========================
 
-In this example file, we only run ``xcp_d`` on resting-state preprocessed BOLD runs from session
+In this example file, we only run XCP-D on resting-state preprocessed BOLD runs from session
 "01".
 
 .. code-block:: json
@@ -194,11 +194,11 @@ In this example file, we only run ``xcp_d`` on resting-state preprocessed BOLD r
 
 .. _run_docker:
 
-***************************************
-Running ``xcp_d`` via Docker containers
-***************************************
+***********************************
+Running XCP-D via Docker containers
+***********************************
 
-If you are running ``xcp_d`` locally, we recommend Docker.
+If you are running XCP-D locally, we recommend Docker.
 See :ref:`installation_container_technologies` for installation instructions.
 
 In order to run Docker smoothly, it is best to prevent permissions issues associated with the root
@@ -222,9 +222,9 @@ A Docker container can be created using the following command:
 
 .. _run_singularity:
 
-********************************************
-Running ``xcp_d`` via Singularity containers
-********************************************
+****************************************
+Running XCP-D via Singularity containers
+****************************************
 
 If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
 Singularity.
@@ -232,7 +232,7 @@ See :ref:`installation_container_technologies` for installation instructions.
 
 .. warning::
 
-   ``xcp_d`` (and perhaps other Docker-based Singularity images) may not work with
+   XCP-D (and perhaps other Docker-based Singularity images) may not work with
    Singularity <=2.4.
    We strongly recommend using Singularity 3+.
    For more information, see `this xcp_d issue <https://github.com/PennLINC/xcp_d/issues/793>`_ and
@@ -312,7 +312,7 @@ see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.h
 `this NeuroStars topic <https://neurostars.org/t/aggressive-vs-nonaggressive-denoising/5612>`_,
 and/or `Pruim et al. (2015) <https://doi.org/10.1016/j.neuroimage.2015.02.064>`_.
 
-So how do we implement this in ``xcp_d``?
+So how do we implement this in XCP-D?
 In order to define regressors that should be treated as signal,
 and thus use non-aggressive denoising instead of the default aggressive denoising,
 you should include those regressors in your custom confounds file,
@@ -320,7 +320,7 @@ with column names starting with ``signal__`` (lower-case "signal", followed by t
 
 .. important::
 
-   ``xcp_d`` will automatically perform non-aggressive denoising with any nuisance-regressor option
+   XCP-D will automatically perform non-aggressive denoising with any nuisance-regressor option
    that uses AROMA regressors
    (e.g., ``aroma`` or ``aroma_gsr``).
 
@@ -385,7 +385,7 @@ Command Line XCP-D with Custom Confounds
 Last, supply the file to xcp_d with the ``--custom_confounds`` option.
 ``--custom_confounds`` should point to the directory where this file exists, rather than to the
 file itself;
-``xcp_d`` will identify the correct file based on the filename,
+XCP-D will identify the correct file based on the filename,
 which should match the name of the preprocessed BOLD data's associated confounds file.
 You can simultaneously perform additional confound regression by including,
 for example, ``--nuisance-regressors 36P`` in the call.
@@ -440,7 +440,7 @@ plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-ni
 Advanced Applications
 *********************
 
-``xcp_d`` can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
+XCP-D can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
 We have attempted to document these applications with working code in
 `PennLINC/xcp_d-examples <https://github.com/PennLINC/xcp_d-examples>`_.
 If there is an application you think would be useful to document, please open an issue in that
@@ -451,23 +451,23 @@ repository.
 Preprocessing Requirements for XCP-D
 ************************************
 
-``xcp_d`` is designed to ingest data from a variety of different preprocessing pipelines.
-However, each supported pipeline must be explicitly supported within ``xcp_d`` in order for the
+XCP-D is designed to ingest data from a variety of different preprocessing pipelines.
+However, each supported pipeline must be explicitly supported within XCP-D in order for the
 workflow to select the correct files.
 
-Additionally, ``xcp_d`` may require files that are only created with specific settings in the
+Additionally, XCP-D may require files that are only created with specific settings in the
 preprocessing pipelines.
 
 
 fMRIPrep/Nibabies
 =================
 
-In order to work on fMRIPrep or Nibabies derivatives, ``xcp_d`` needs derivatives in one of a few
+In order to work on fMRIPrep or Nibabies derivatives, XCP-D needs derivatives in one of a few
 template spaces,
 including "MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant", and "fsLR".
 We may add support for additional templates in the future, but currently you must have at least one
 of these among your output spaces.
-``xcp_d`` does not have any specific requirements for resolution of volumetric derivatives,
+XCP-D does not have any specific requirements for resolution of volumetric derivatives,
 but we do require fsLR-space CIFTIs be outputted in 91k density.
 
 
@@ -481,13 +481,15 @@ Information on how to customize and understand these files can be found on the
 `nipype debugging <http://nipype.readthedocs.io/en/latest/users/debug.html>`_
 page.
 
-**Support and communication**.
-The documentation of this project is found here: https://xcp-d.readthedocs.io/.
+
+*************************
+Support and communication
+*************************
 
 All bugs, concerns and enhancement requests for this software can be submitted here:
 https://github.com/PennLINC/xcp_d/issues.
 
-If you have a question about using ``xcp_d``, please create a new topic on
+If you have a question about using XCP-D, please create a new topic on
 `NeuroStars <https://neurostars.org>`_ with `the "Software Support" category and the "xcp_d" tag
 <https://neurostars.org/tags/c/software-support/234/xcp_d>`_.
-The ``xcp_d`` developers follow NeuroStars, and will be able to answer your question there.
+The XCP-D developers follow NeuroStars, and will be able to answer your question there.
