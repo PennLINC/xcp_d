@@ -22,6 +22,9 @@ sections:
               parameters are filtered to remove respiratory effects before FD is calculated
               and outlier volumes are identified.
     subtitle: Framewise Displacement and Censored Volumes
+  - bids: {datatype: figures, suffix: design}
+    caption:  The "design matrix" represents the confounds that are used to denoise the BOLD data.
+    subtitle: Design Matrix for Confound Regression
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption: FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
             and then a carpet plot for the time series of each voxel/vertex's time series of activity..
