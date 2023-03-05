@@ -440,7 +440,7 @@ produced by the regression.
             motion_filter_order=motion_filter_order,
             fd_thresh=fd_thresh,
         ),
-        name="censoring",
+        name="flag_motion_outliers",
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
     )
