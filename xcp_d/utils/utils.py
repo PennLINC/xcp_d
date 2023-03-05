@@ -14,6 +14,8 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xf
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     bold_file : str
@@ -142,6 +144,8 @@ def get_std2bold_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -331,6 +335,8 @@ def butter_bandpass(
 
 def estimate_brain_radius(mask_file, head_radius="auto"):
     """Estimate brain radius from binary brain mask file.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------

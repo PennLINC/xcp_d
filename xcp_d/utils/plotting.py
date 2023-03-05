@@ -998,8 +998,9 @@ def _carpet(
 
 
 def plot_alff_reho_volumetric(output_path, filename, bold_file):
-    """
-    Plot ReHo and ALFF mosaics for niftis.
+    """Plot ReHo and ALFF mosaics for niftis.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -1065,8 +1066,9 @@ def surf_data_from_cifti(data, axis, surf_name):
 
 
 def plot_alff_reho_surface(output_path, filename, bold_file):
-    """
-    Plot ReHo and ALFF for ciftis on surface.
+    """Plot ReHo and ALFF for ciftis on surface.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -1185,6 +1187,8 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
 def plot_design_matrix(design_matrix, temporal_mask=None):
     """Plot design matrix TSV with Nilearn.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------

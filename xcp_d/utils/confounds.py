@@ -117,6 +117,8 @@ def consolidate_confounds(
 ):
     """Combine confounds files into a single tsv.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     img_file : str
