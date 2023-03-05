@@ -162,6 +162,8 @@ def cast_cifti_to_int16(in_file):
     DerivativesDataSink class from niworkflows version 1.7.1.
     For more information, see https://github.com/nipreps/niworkflows/issues/778.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     in_file : str

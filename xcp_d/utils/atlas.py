@@ -6,6 +6,8 @@ def get_atlas_names():
 
     The actual list of files for the atlases is loaded from a different function.
 
+    NOTE: This is a Node function.
+
     Returns
     -------
     :obj:`list` of :obj:`str`
@@ -32,6 +34,8 @@ def get_atlas_nifti(atlas_name):
     """Select atlas by name from xcp_d/data using pkgrf.
 
     All atlases are in MNI space.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -86,6 +90,8 @@ def get_atlas_cifti(atlas_name):
     """Select atlas by name from xcp_d/data.
 
     All atlases are in 91K space.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
