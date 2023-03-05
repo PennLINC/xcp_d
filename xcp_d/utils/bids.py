@@ -739,6 +739,8 @@ def _get_tr(img):
 def get_freesurfer_dir(fmri_dir):
     """Find FreeSurfer derivatives associated with preprocessing pipeline.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     fmri_dir : str
@@ -787,6 +789,8 @@ def get_freesurfer_dir(fmri_dir):
 
 def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
     """Find FreeSurfer sphere file.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------

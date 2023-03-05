@@ -155,13 +155,13 @@ def compute_dvars(datat):
 
     Parameters
     ----------
-    datat : numpy.ndarray
+    datat : :obj:`numpy.ndarray`
         The data matrix from which to calculate DVARS.
         Ordered as vertices by timepoints.
 
     Returns
     -------
-    numpy.ndarray
+    :obj:`numpy.ndarray`
         The calculated DVARS array.
         A (timepoints,) array.
     """
@@ -172,7 +172,22 @@ def compute_dvars(datat):
 
 
 def _make_dcan_qc_file(filtered_motion, TR):
-    """Make DCAN HDF5 file from single motion file."""
+    """Make DCAN HDF5 file from single motion file.
+
+    NOTE: This is a Node function.
+
+    Parameters
+    ----------
+    filtered_motion_file : :obj:`str`
+        File from which to extract information.
+    TR : :obj:`float`
+        Repetition time.
+
+    Returns
+    -------
+    dcan_df_file : :obj:`str`
+        Name of the HDF5-format file that is created.
+    """
     import os
 
     from xcp_d.utils.qcmetrics import make_dcan_df
@@ -188,30 +203,31 @@ def make_dcan_df(filtered_motion_file, name, TR):
 
     Parameters
     ----------
-    filtered_motion_file : str
+    filtered_motion_file : :obj:`str`
         File from which to extract information.
-    name : str
+    name : :obj:`str`
         Name of the HDF5-format file to be created.
-    TR : float
+    TR : :obj:`float`
         Repetition time.
 
     Notes
     -----
-    FD_threshold: a number >= 0 that represents the FD threshold used to calculate
-    the metrics in this list.
-    frame_removal: a binary vector/array the same length as the number of frames
-    in the concatenated time series, indicates whether a frame is removed (1) or
-    not (0)
-    format_string (legacy): a string that denotes how the frames were excluded
-    -- uses a notation devised by Avi Snyder
-    total_frame_count: a whole number that represents the total number of frames
-    in the concatenated series
-    remaining_frame_count: a whole number that represents the number of remaining
-    frames in the concatenated series
-    remaining_seconds: a whole number that represents the amount of time remaining
-    after thresholding
-    remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
-    remaining frames
+    The metrics in the file are:
+
+    -   ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate
+        the metrics in this list.
+    -   ``frame_removal``: a binary vector/array the same length as the number of frames
+        in the concatenated time series, indicates whether a frame is removed (1) or not (0)
+    -   ``format_string`` (legacy): a string that denotes how the frames were excluded.
+        This uses a notation devised by Avi Snyder.
+    -   ``total_frame_count``: a whole number that represents the total number of frames
+        in the concatenated series
+    -   ``remaining_frame_count``: a whole number that represents the number of remaining
+        frames in the concatenated series
+    -   ``remaining_seconds``: a whole number that represents the amount of time remaining
+        after thresholding
+    -   ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the
+        remaining frames
     """
     LOGGER.debug(f"Generating DCAN file: {name}")
 

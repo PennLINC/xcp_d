@@ -10,6 +10,8 @@ def make_mosaic(png_files):
     """Take path to .png anatomical slices, create a mosaic, and save to file.
 
     The mosaic will be usable in a BrainSprite viewer.
+
+    NOTE: This is a Node function.
     """
     import os
 
@@ -49,7 +51,10 @@ def modify_brainsprite_scene_template(
     lh_wm_surf,
     scene_template,
 ):
-    """Create modified .scene text file to be used for creating brainsprite PNGs later."""
+    """Create modified .scene text file to be used for creating brainsprite PNGs later.
+
+    NOTE: This is a Node function.
+    """
     import gzip
     import os
 
@@ -93,7 +98,10 @@ def modify_pngs_scene_template(
     lh_wm_surf,
     scene_template,
 ):
-    """Create modified .scene text file to be used for creating PNGs later."""
+    """Create modified .scene text file to be used for creating PNGs later.
+
+    NOTE: This is a Node function.
+    """
     import gzip
     import os
 
@@ -128,7 +136,18 @@ def modify_pngs_scene_template(
 
 
 def get_n_frames(anat_file):
-    """Infer the number of frames from an image."""
+    """Infer the number of slices in x axis from an image.
+
+    NOTE: This is a Node function.
+
+    Parameters
+    ----------
+    anat_file
+
+    Returns
+    -------
+    frame_numbers
+    """
     import nibabel as nb
     import numpy as np
 
@@ -148,7 +167,10 @@ def get_n_frames(anat_file):
 
 
 def get_png_image_names():
-    """Get a list of scene names for which to produce PNGs."""
+    """Get a list of scene names for which to produce PNGs.
+
+    NOTE: This is a Node function.
+    """
     image_descriptions = [
         "AxialInferiorTemporalCerebellum",
         "AxialBasalGangliaPutamen",
