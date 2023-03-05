@@ -13,8 +13,8 @@ sections:
     static: false
   - bids: {datatype: figures, desc: preprocessing, suffix: bold}
     caption:  FD and DVARS are two measures of in-scanner motion.
-              This plot shows standardized FD, DVARS,
-              and then a carpet plot for the time series of each voxel/vertex's time series of activity.
+              This plot shows standardized FD, DVARS, and then a carpet plot for the
+              time series of each voxel/vertex's time series of activity.
     subtitle: Carpet Plot Before Postprocessing
   - bids: {datatype: figures, desc: censoring, suffix: motion}
     caption:  Framewise displacement (FD) is used to flag high-motion volumes,
@@ -27,8 +27,9 @@ sections:
     caption:  The "design matrix" represents the confounds that are used to denoise the BOLD data.
     subtitle: Design Matrix for Confound Regression
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
-    caption:  FD and DVARS are two measures of in-scanner motion. This plot shows standardized FD, DVARS,
-              and then a carpet plot for the time series of each voxel/vertex's time series of activity.
+    caption:  FD and DVARS are two measures of in-scanner motion.
+              This plot shows standardized FD, DVARS, and then a carpet plot for the
+              time series of each voxel/vertex's time series of activity.
     subtitle: Carpet Plot After Postprocessing
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
     caption:  This plot shows heatmaps from ROI-to-ROI correlations from four atlases.
@@ -44,7 +45,8 @@ sections:
       datatype: figures
       desc: rehoVolumetricPlot
       suffix: bold
-    caption:  ReHo, or regional homogeneity. Overlaid on T1W image with same entities as the original image.
+    caption:  ReHo, or regional homogeneity.
+              Overlaid on T1W image with same entities as the original image.
     subtitle: ReHo
 - name: About
   reportlets:
